@@ -18,6 +18,7 @@ package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/module/v1alpha1/module.proto";
 import "buf/alpha/registry/v1alpha1/module.proto";
+import "google/protobuf/timestamp.proto";
 
 // ResolveService is the resolve service.
 //
@@ -63,6 +64,12 @@ service ResolveService {
   }
   // GetCmakeVersion resolves the given plugin and module references to a version.
   rpc GetCmakeVersion(GetCmakeVersionRequest) returns (GetCmakeVersionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // GetSDKVersion takes a module reference, plugin identity, and SDK version string and returns
+  // a parsed SDK version that provides the plugin version, plugin revision, module commit,
+  // and module commit create time (optional).
+  rpc GetParsedSDKVersion(GetParsedSDKVersionRequest) returns (GetParsedSDKVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -256,4 +263,26 @@ message GetRemotePackageVersionPlugin {
   // The revision of the plugin version.
   // example: 1
   uint32 revision = 4;
+}
+
+message GetParsedSDKVersionRequest {
+  LocalModuleReference module_reference = 1;
+  GetRemotePackageVersionPlugin plugin_reference = 2;
+}
+
+message GetParsedSDKVersionResponse {
+  message ParsedSDKVersion {
+    // The plugin version of the plugin used to generate the SDK version.
+    // This will always be valid semver.
+    string plugin_version = 1;
+    // The revision of the plugin version.
+    uint32 plugin_revision = 2;
+    // This is the short version of the module commit name, at least 12 char in length.
+    string module_commit_name = 3;
+    // This is the creation time of the module commit.
+    //
+    // This will always be in UTC. This may be empty.
+    google.protobuf.Timestamp module_commit_create_time = 4;
+  }
+  ParsedSDKVersion parsed_sdk_version = 1;
 }

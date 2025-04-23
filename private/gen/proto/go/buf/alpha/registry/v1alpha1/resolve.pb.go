@@ -24,6 +24,7 @@ import (
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	unsafe "unsafe"
 )
@@ -1810,11 +1811,289 @@ func (b0 GetRemotePackageVersionPlugin_builder) Build() *GetRemotePackageVersion
 	return m0
 }
 
+type GetParsedSDKVersionRequest struct {
+	state                      protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_ModuleReference *LocalModuleReference          `protobuf:"bytes,1,opt,name=module_reference,json=moduleReference,proto3"`
+	xxx_hidden_PluginReference *GetRemotePackageVersionPlugin `protobuf:"bytes,2,opt,name=plugin_reference,json=pluginReference,proto3"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
+}
+
+func (x *GetParsedSDKVersionRequest) Reset() {
+	*x = GetParsedSDKVersionRequest{}
+	mi := &file_buf_alpha_registry_v1alpha1_resolve_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetParsedSDKVersionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetParsedSDKVersionRequest) ProtoMessage() {}
+
+func (x *GetParsedSDKVersionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_registry_v1alpha1_resolve_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GetParsedSDKVersionRequest) GetModuleReference() *LocalModuleReference {
+	if x != nil {
+		return x.xxx_hidden_ModuleReference
+	}
+	return nil
+}
+
+func (x *GetParsedSDKVersionRequest) GetPluginReference() *GetRemotePackageVersionPlugin {
+	if x != nil {
+		return x.xxx_hidden_PluginReference
+	}
+	return nil
+}
+
+func (x *GetParsedSDKVersionRequest) SetModuleReference(v *LocalModuleReference) {
+	x.xxx_hidden_ModuleReference = v
+}
+
+func (x *GetParsedSDKVersionRequest) SetPluginReference(v *GetRemotePackageVersionPlugin) {
+	x.xxx_hidden_PluginReference = v
+}
+
+func (x *GetParsedSDKVersionRequest) HasModuleReference() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ModuleReference != nil
+}
+
+func (x *GetParsedSDKVersionRequest) HasPluginReference() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_PluginReference != nil
+}
+
+func (x *GetParsedSDKVersionRequest) ClearModuleReference() {
+	x.xxx_hidden_ModuleReference = nil
+}
+
+func (x *GetParsedSDKVersionRequest) ClearPluginReference() {
+	x.xxx_hidden_PluginReference = nil
+}
+
+type GetParsedSDKVersionRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	ModuleReference *LocalModuleReference
+	PluginReference *GetRemotePackageVersionPlugin
+}
+
+func (b0 GetParsedSDKVersionRequest_builder) Build() *GetParsedSDKVersionRequest {
+	m0 := &GetParsedSDKVersionRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_ModuleReference = b.ModuleReference
+	x.xxx_hidden_PluginReference = b.PluginReference
+	return m0
+}
+
+type GetParsedSDKVersionResponse struct {
+	state                       protoimpl.MessageState                        `protogen:"opaque.v1"`
+	xxx_hidden_ParsedSdkVersion *GetParsedSDKVersionResponse_ParsedSDKVersion `protobuf:"bytes,1,opt,name=parsed_sdk_version,json=parsedSdkVersion,proto3"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
+}
+
+func (x *GetParsedSDKVersionResponse) Reset() {
+	*x = GetParsedSDKVersionResponse{}
+	mi := &file_buf_alpha_registry_v1alpha1_resolve_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetParsedSDKVersionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetParsedSDKVersionResponse) ProtoMessage() {}
+
+func (x *GetParsedSDKVersionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_registry_v1alpha1_resolve_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GetParsedSDKVersionResponse) GetParsedSdkVersion() *GetParsedSDKVersionResponse_ParsedSDKVersion {
+	if x != nil {
+		return x.xxx_hidden_ParsedSdkVersion
+	}
+	return nil
+}
+
+func (x *GetParsedSDKVersionResponse) SetParsedSdkVersion(v *GetParsedSDKVersionResponse_ParsedSDKVersion) {
+	x.xxx_hidden_ParsedSdkVersion = v
+}
+
+func (x *GetParsedSDKVersionResponse) HasParsedSdkVersion() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ParsedSdkVersion != nil
+}
+
+func (x *GetParsedSDKVersionResponse) ClearParsedSdkVersion() {
+	x.xxx_hidden_ParsedSdkVersion = nil
+}
+
+type GetParsedSDKVersionResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	ParsedSdkVersion *GetParsedSDKVersionResponse_ParsedSDKVersion
+}
+
+func (b0 GetParsedSDKVersionResponse_builder) Build() *GetParsedSDKVersionResponse {
+	m0 := &GetParsedSDKVersionResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_ParsedSdkVersion = b.ParsedSdkVersion
+	return m0
+}
+
+type GetParsedSDKVersionResponse_ParsedSDKVersion struct {
+	state                             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PluginVersion          string                 `protobuf:"bytes,1,opt,name=plugin_version,json=pluginVersion,proto3"`
+	xxx_hidden_PluginRevision         uint32                 `protobuf:"varint,2,opt,name=plugin_revision,json=pluginRevision,proto3"`
+	xxx_hidden_ModuleCommitName       string                 `protobuf:"bytes,3,opt,name=module_commit_name,json=moduleCommitName,proto3"`
+	xxx_hidden_ModuleCommitCreateTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=module_commit_create_time,json=moduleCommitCreateTime,proto3"`
+	unknownFields                     protoimpl.UnknownFields
+	sizeCache                         protoimpl.SizeCache
+}
+
+func (x *GetParsedSDKVersionResponse_ParsedSDKVersion) Reset() {
+	*x = GetParsedSDKVersionResponse_ParsedSDKVersion{}
+	mi := &file_buf_alpha_registry_v1alpha1_resolve_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetParsedSDKVersionResponse_ParsedSDKVersion) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetParsedSDKVersionResponse_ParsedSDKVersion) ProtoMessage() {}
+
+func (x *GetParsedSDKVersionResponse_ParsedSDKVersion) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_registry_v1alpha1_resolve_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GetParsedSDKVersionResponse_ParsedSDKVersion) GetPluginVersion() string {
+	if x != nil {
+		return x.xxx_hidden_PluginVersion
+	}
+	return ""
+}
+
+func (x *GetParsedSDKVersionResponse_ParsedSDKVersion) GetPluginRevision() uint32 {
+	if x != nil {
+		return x.xxx_hidden_PluginRevision
+	}
+	return 0
+}
+
+func (x *GetParsedSDKVersionResponse_ParsedSDKVersion) GetModuleCommitName() string {
+	if x != nil {
+		return x.xxx_hidden_ModuleCommitName
+	}
+	return ""
+}
+
+func (x *GetParsedSDKVersionResponse_ParsedSDKVersion) GetModuleCommitCreateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_ModuleCommitCreateTime
+	}
+	return nil
+}
+
+func (x *GetParsedSDKVersionResponse_ParsedSDKVersion) SetPluginVersion(v string) {
+	x.xxx_hidden_PluginVersion = v
+}
+
+func (x *GetParsedSDKVersionResponse_ParsedSDKVersion) SetPluginRevision(v uint32) {
+	x.xxx_hidden_PluginRevision = v
+}
+
+func (x *GetParsedSDKVersionResponse_ParsedSDKVersion) SetModuleCommitName(v string) {
+	x.xxx_hidden_ModuleCommitName = v
+}
+
+func (x *GetParsedSDKVersionResponse_ParsedSDKVersion) SetModuleCommitCreateTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_ModuleCommitCreateTime = v
+}
+
+func (x *GetParsedSDKVersionResponse_ParsedSDKVersion) HasModuleCommitCreateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ModuleCommitCreateTime != nil
+}
+
+func (x *GetParsedSDKVersionResponse_ParsedSDKVersion) ClearModuleCommitCreateTime() {
+	x.xxx_hidden_ModuleCommitCreateTime = nil
+}
+
+type GetParsedSDKVersionResponse_ParsedSDKVersion_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The plugin version of the plugin used to generate the SDK version.
+	// This will always be valid semver.
+	PluginVersion string
+	// The revision of the plugin version.
+	PluginRevision uint32
+	// This is the short version of the module commit name, at least 12 char in length.
+	ModuleCommitName string
+	// This is the creation time of the module commit.
+	//
+	// This will always be in UTC. This may be empty.
+	ModuleCommitCreateTime *timestamppb.Timestamp
+}
+
+func (b0 GetParsedSDKVersionResponse_ParsedSDKVersion_builder) Build() *GetParsedSDKVersionResponse_ParsedSDKVersion {
+	m0 := &GetParsedSDKVersionResponse_ParsedSDKVersion{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_PluginVersion = b.PluginVersion
+	x.xxx_hidden_PluginRevision = b.PluginRevision
+	x.xxx_hidden_ModuleCommitName = b.ModuleCommitName
+	x.xxx_hidden_ModuleCommitCreateTime = b.ModuleCommitCreateTime
+	return m0
+}
+
 var File_buf_alpha_registry_v1alpha1_resolve_proto protoreflect.FileDescriptor
 
 const file_buf_alpha_registry_v1alpha1_resolve_proto_rawDesc = "" +
 	"\n" +
-	")buf/alpha/registry/v1alpha1/resolve.proto\x12\x1bbuf.alpha.registry.v1alpha1\x1a&buf/alpha/module/v1alpha1/module.proto\x1a(buf/alpha/registry/v1alpha1/module.proto\"\xc5\x01\n" +
+	")buf/alpha/registry/v1alpha1/resolve.proto\x12\x1bbuf.alpha.registry.v1alpha1\x1a&buf/alpha/module/v1alpha1/module.proto\x1a(buf/alpha/registry/v1alpha1/module.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc5\x01\n" +
 	"\x14GetModulePinsRequest\x12W\n" +
 	"\x11module_references\x18\x01 \x03(\v2*.buf.alpha.module.v1alpha1.ModuleReferenceR\x10moduleReferences\x12T\n" +
 	"\x13current_module_pins\x18\x02 \x03(\v2$.buf.alpha.module.v1alpha1.ModulePinR\x11currentModulePins\"^\n" +
@@ -1874,13 +2153,24 @@ const file_buf_alpha_registry_v1alpha1_resolve_proto_rawDesc = "" +
 	"\x05owner\x18\x01 \x01(\tR\x05owner\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x03 \x01(\tR\aversion\x12\x1a\n" +
-	"\brevision\x18\x04 \x01(\rR\brevision*\xf1\x01\n" +
+	"\brevision\x18\x04 \x01(\rR\brevision\"\xe1\x01\n" +
+	"\x1aGetParsedSDKVersionRequest\x12\\\n" +
+	"\x10module_reference\x18\x01 \x01(\v21.buf.alpha.registry.v1alpha1.LocalModuleReferenceR\x0fmoduleReference\x12e\n" +
+	"\x10plugin_reference\x18\x02 \x01(\v2:.buf.alpha.registry.v1alpha1.GetRemotePackageVersionPluginR\x0fpluginReference\"\x80\x03\n" +
+	"\x1bGetParsedSDKVersionResponse\x12w\n" +
+	"\x12parsed_sdk_version\x18\x01 \x01(\v2I.buf.alpha.registry.v1alpha1.GetParsedSDKVersionResponse.ParsedSDKVersionR\x10parsedSdkVersion\x1a\xe7\x01\n" +
+	"\x10ParsedSDKVersion\x12%\n" +
+	"\x0eplugin_version\x18\x01 \x01(\tR\rpluginVersion\x12'\n" +
+	"\x0fplugin_revision\x18\x02 \x01(\rR\x0epluginRevision\x12,\n" +
+	"\x12module_commit_name\x18\x03 \x01(\tR\x10moduleCommitName\x12U\n" +
+	"\x19module_commit_create_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x16moduleCommitCreateTime*\xf1\x01\n" +
 	"\x15ResolvedReferenceType\x12'\n" +
 	"#RESOLVED_REFERENCE_TYPE_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eRESOLVED_REFERENCE_TYPE_COMMIT\x10\x01\x12\"\n" +
 	"\x1eRESOLVED_REFERENCE_TYPE_BRANCH\x10\x02\x12\x1f\n" +
 	"\x1bRESOLVED_REFERENCE_TYPE_TAG\x10\x03\x12!\n" +
-	"\x1dRESOLVED_REFERENCE_TYPE_DRAFT\x10\x05\"\x04\b\x04\x10\x04*\x1dRESOLVED_REFERENCE_TYPE_TRACK2\x9f\t\n" +
+	"\x1dRESOLVED_REFERENCE_TYPE_DRAFT\x10\x05\"\x04\b\x04\x10\x04*\x1dRESOLVED_REFERENCE_TYPE_TRACK2\xaf\n" +
+	"\n" +
 	"\x0eResolveService\x12{\n" +
 	"\rGetModulePins\x121.buf.alpha.registry.v1alpha1.GetModulePinsRequest\x1a2.buf.alpha.registry.v1alpha1.GetModulePinsResponse\"\x03\x90\x02\x01\x12x\n" +
 	"\fGetGoVersion\x120.buf.alpha.registry.v1alpha1.GetGoVersionRequest\x1a1.buf.alpha.registry.v1alpha1.GetGoVersionResponse\"\x03\x90\x02\x01\x12\x81\x01\n" +
@@ -1890,93 +2180,104 @@ const file_buf_alpha_registry_v1alpha1_resolve_proto_rawDesc = "" +
 	"\x10GetPythonVersion\x124.buf.alpha.registry.v1alpha1.GetPythonVersionRequest\x1a5.buf.alpha.registry.v1alpha1.GetPythonVersionResponse\"\x03\x90\x02\x01\x12\x81\x01\n" +
 	"\x0fGetCargoVersion\x123.buf.alpha.registry.v1alpha1.GetCargoVersionRequest\x1a4.buf.alpha.registry.v1alpha1.GetCargoVersionResponse\"\x03\x90\x02\x01\x12\x81\x01\n" +
 	"\x0fGetNugetVersion\x123.buf.alpha.registry.v1alpha1.GetNugetVersionRequest\x1a4.buf.alpha.registry.v1alpha1.GetNugetVersionResponse\"\x03\x90\x02\x01\x12\x81\x01\n" +
-	"\x0fGetCmakeVersion\x123.buf.alpha.registry.v1alpha1.GetCmakeVersionRequest\x1a4.buf.alpha.registry.v1alpha1.GetCmakeVersionResponse\"\x03\x90\x02\x012\xa2\x01\n" +
+	"\x0fGetCmakeVersion\x123.buf.alpha.registry.v1alpha1.GetCmakeVersionRequest\x1a4.buf.alpha.registry.v1alpha1.GetCmakeVersionResponse\"\x03\x90\x02\x01\x12\x8d\x01\n" +
+	"\x13GetParsedSDKVersion\x127.buf.alpha.registry.v1alpha1.GetParsedSDKVersionRequest\x1a8.buf.alpha.registry.v1alpha1.GetParsedSDKVersionResponse\"\x03\x90\x02\x012\xa2\x01\n" +
 	"\x13LocalResolveService\x12\x8a\x01\n" +
 	"\x12GetLocalModulePins\x126.buf.alpha.registry.v1alpha1.GetLocalModulePinsRequest\x1a7.buf.alpha.registry.v1alpha1.GetLocalModulePinsResponse\"\x03\x90\x02\x01B\x99\x02\n" +
 	"\x1fcom.buf.alpha.registry.v1alpha1B\fResolveProtoP\x01ZYgithub.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1;registryv1alpha1\xa2\x02\x03BAR\xaa\x02\x1bBuf.Alpha.Registry.V1alpha1\xca\x02\x1bBuf\\Alpha\\Registry\\V1alpha1\xe2\x02'Buf\\Alpha\\Registry\\V1alpha1\\GPBMetadata\xea\x02\x1eBuf::Alpha::Registry::V1alpha1b\x06proto3"
 
 var file_buf_alpha_registry_v1alpha1_resolve_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_buf_alpha_registry_v1alpha1_resolve_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_buf_alpha_registry_v1alpha1_resolve_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_buf_alpha_registry_v1alpha1_resolve_proto_goTypes = []any{
-	(ResolvedReferenceType)(0),            // 0: buf.alpha.registry.v1alpha1.ResolvedReferenceType
-	(*GetModulePinsRequest)(nil),          // 1: buf.alpha.registry.v1alpha1.GetModulePinsRequest
-	(*GetModulePinsResponse)(nil),         // 2: buf.alpha.registry.v1alpha1.GetModulePinsResponse
-	(*GetLocalModulePinsRequest)(nil),     // 3: buf.alpha.registry.v1alpha1.GetLocalModulePinsRequest
-	(*LocalModuleResolveResult)(nil),      // 4: buf.alpha.registry.v1alpha1.LocalModuleResolveResult
-	(*GetLocalModulePinsResponse)(nil),    // 5: buf.alpha.registry.v1alpha1.GetLocalModulePinsResponse
-	(*GetGoVersionRequest)(nil),           // 6: buf.alpha.registry.v1alpha1.GetGoVersionRequest
-	(*GetGoVersionResponse)(nil),          // 7: buf.alpha.registry.v1alpha1.GetGoVersionResponse
-	(*GetMavenVersionRequest)(nil),        // 8: buf.alpha.registry.v1alpha1.GetMavenVersionRequest
-	(*GetMavenVersionResponse)(nil),       // 9: buf.alpha.registry.v1alpha1.GetMavenVersionResponse
-	(*GetNPMVersionRequest)(nil),          // 10: buf.alpha.registry.v1alpha1.GetNPMVersionRequest
-	(*GetNPMVersionResponse)(nil),         // 11: buf.alpha.registry.v1alpha1.GetNPMVersionResponse
-	(*GetSwiftVersionRequest)(nil),        // 12: buf.alpha.registry.v1alpha1.GetSwiftVersionRequest
-	(*GetSwiftVersionResponse)(nil),       // 13: buf.alpha.registry.v1alpha1.GetSwiftVersionResponse
-	(*GetPythonVersionRequest)(nil),       // 14: buf.alpha.registry.v1alpha1.GetPythonVersionRequest
-	(*GetPythonVersionResponse)(nil),      // 15: buf.alpha.registry.v1alpha1.GetPythonVersionResponse
-	(*GetCargoVersionRequest)(nil),        // 16: buf.alpha.registry.v1alpha1.GetCargoVersionRequest
-	(*GetCargoVersionResponse)(nil),       // 17: buf.alpha.registry.v1alpha1.GetCargoVersionResponse
-	(*GetNugetVersionRequest)(nil),        // 18: buf.alpha.registry.v1alpha1.GetNugetVersionRequest
-	(*GetNugetVersionResponse)(nil),       // 19: buf.alpha.registry.v1alpha1.GetNugetVersionResponse
-	(*GetCmakeVersionRequest)(nil),        // 20: buf.alpha.registry.v1alpha1.GetCmakeVersionRequest
-	(*GetCmakeVersionResponse)(nil),       // 21: buf.alpha.registry.v1alpha1.GetCmakeVersionResponse
-	(*GetRemotePackageVersionPlugin)(nil), // 22: buf.alpha.registry.v1alpha1.GetRemotePackageVersionPlugin
-	(*v1alpha1.ModuleReference)(nil),      // 23: buf.alpha.module.v1alpha1.ModuleReference
-	(*v1alpha1.ModulePin)(nil),            // 24: buf.alpha.module.v1alpha1.ModulePin
-	(*LocalModuleReference)(nil),          // 25: buf.alpha.registry.v1alpha1.LocalModuleReference
-	(*LocalModulePin)(nil),                // 26: buf.alpha.registry.v1alpha1.LocalModulePin
+	(ResolvedReferenceType)(0),                           // 0: buf.alpha.registry.v1alpha1.ResolvedReferenceType
+	(*GetModulePinsRequest)(nil),                         // 1: buf.alpha.registry.v1alpha1.GetModulePinsRequest
+	(*GetModulePinsResponse)(nil),                        // 2: buf.alpha.registry.v1alpha1.GetModulePinsResponse
+	(*GetLocalModulePinsRequest)(nil),                    // 3: buf.alpha.registry.v1alpha1.GetLocalModulePinsRequest
+	(*LocalModuleResolveResult)(nil),                     // 4: buf.alpha.registry.v1alpha1.LocalModuleResolveResult
+	(*GetLocalModulePinsResponse)(nil),                   // 5: buf.alpha.registry.v1alpha1.GetLocalModulePinsResponse
+	(*GetGoVersionRequest)(nil),                          // 6: buf.alpha.registry.v1alpha1.GetGoVersionRequest
+	(*GetGoVersionResponse)(nil),                         // 7: buf.alpha.registry.v1alpha1.GetGoVersionResponse
+	(*GetMavenVersionRequest)(nil),                       // 8: buf.alpha.registry.v1alpha1.GetMavenVersionRequest
+	(*GetMavenVersionResponse)(nil),                      // 9: buf.alpha.registry.v1alpha1.GetMavenVersionResponse
+	(*GetNPMVersionRequest)(nil),                         // 10: buf.alpha.registry.v1alpha1.GetNPMVersionRequest
+	(*GetNPMVersionResponse)(nil),                        // 11: buf.alpha.registry.v1alpha1.GetNPMVersionResponse
+	(*GetSwiftVersionRequest)(nil),                       // 12: buf.alpha.registry.v1alpha1.GetSwiftVersionRequest
+	(*GetSwiftVersionResponse)(nil),                      // 13: buf.alpha.registry.v1alpha1.GetSwiftVersionResponse
+	(*GetPythonVersionRequest)(nil),                      // 14: buf.alpha.registry.v1alpha1.GetPythonVersionRequest
+	(*GetPythonVersionResponse)(nil),                     // 15: buf.alpha.registry.v1alpha1.GetPythonVersionResponse
+	(*GetCargoVersionRequest)(nil),                       // 16: buf.alpha.registry.v1alpha1.GetCargoVersionRequest
+	(*GetCargoVersionResponse)(nil),                      // 17: buf.alpha.registry.v1alpha1.GetCargoVersionResponse
+	(*GetNugetVersionRequest)(nil),                       // 18: buf.alpha.registry.v1alpha1.GetNugetVersionRequest
+	(*GetNugetVersionResponse)(nil),                      // 19: buf.alpha.registry.v1alpha1.GetNugetVersionResponse
+	(*GetCmakeVersionRequest)(nil),                       // 20: buf.alpha.registry.v1alpha1.GetCmakeVersionRequest
+	(*GetCmakeVersionResponse)(nil),                      // 21: buf.alpha.registry.v1alpha1.GetCmakeVersionResponse
+	(*GetRemotePackageVersionPlugin)(nil),                // 22: buf.alpha.registry.v1alpha1.GetRemotePackageVersionPlugin
+	(*GetParsedSDKVersionRequest)(nil),                   // 23: buf.alpha.registry.v1alpha1.GetParsedSDKVersionRequest
+	(*GetParsedSDKVersionResponse)(nil),                  // 24: buf.alpha.registry.v1alpha1.GetParsedSDKVersionResponse
+	(*GetParsedSDKVersionResponse_ParsedSDKVersion)(nil), // 25: buf.alpha.registry.v1alpha1.GetParsedSDKVersionResponse.ParsedSDKVersion
+	(*v1alpha1.ModuleReference)(nil),                     // 26: buf.alpha.module.v1alpha1.ModuleReference
+	(*v1alpha1.ModulePin)(nil),                           // 27: buf.alpha.module.v1alpha1.ModulePin
+	(*LocalModuleReference)(nil),                         // 28: buf.alpha.registry.v1alpha1.LocalModuleReference
+	(*LocalModulePin)(nil),                               // 29: buf.alpha.registry.v1alpha1.LocalModulePin
+	(*timestamppb.Timestamp)(nil),                        // 30: google.protobuf.Timestamp
 }
 var file_buf_alpha_registry_v1alpha1_resolve_proto_depIdxs = []int32{
-	23, // 0: buf.alpha.registry.v1alpha1.GetModulePinsRequest.module_references:type_name -> buf.alpha.module.v1alpha1.ModuleReference
-	24, // 1: buf.alpha.registry.v1alpha1.GetModulePinsRequest.current_module_pins:type_name -> buf.alpha.module.v1alpha1.ModulePin
-	24, // 2: buf.alpha.registry.v1alpha1.GetModulePinsResponse.module_pins:type_name -> buf.alpha.module.v1alpha1.ModulePin
-	25, // 3: buf.alpha.registry.v1alpha1.GetLocalModulePinsRequest.local_module_references:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
-	25, // 4: buf.alpha.registry.v1alpha1.LocalModuleResolveResult.reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
-	26, // 5: buf.alpha.registry.v1alpha1.LocalModuleResolveResult.pin:type_name -> buf.alpha.registry.v1alpha1.LocalModulePin
+	26, // 0: buf.alpha.registry.v1alpha1.GetModulePinsRequest.module_references:type_name -> buf.alpha.module.v1alpha1.ModuleReference
+	27, // 1: buf.alpha.registry.v1alpha1.GetModulePinsRequest.current_module_pins:type_name -> buf.alpha.module.v1alpha1.ModulePin
+	27, // 2: buf.alpha.registry.v1alpha1.GetModulePinsResponse.module_pins:type_name -> buf.alpha.module.v1alpha1.ModulePin
+	28, // 3: buf.alpha.registry.v1alpha1.GetLocalModulePinsRequest.local_module_references:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
+	28, // 4: buf.alpha.registry.v1alpha1.LocalModuleResolveResult.reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
+	29, // 5: buf.alpha.registry.v1alpha1.LocalModuleResolveResult.pin:type_name -> buf.alpha.registry.v1alpha1.LocalModulePin
 	0,  // 6: buf.alpha.registry.v1alpha1.LocalModuleResolveResult.resolved_reference_type:type_name -> buf.alpha.registry.v1alpha1.ResolvedReferenceType
 	4,  // 7: buf.alpha.registry.v1alpha1.GetLocalModulePinsResponse.local_module_resolve_results:type_name -> buf.alpha.registry.v1alpha1.LocalModuleResolveResult
-	24, // 8: buf.alpha.registry.v1alpha1.GetLocalModulePinsResponse.dependencies:type_name -> buf.alpha.module.v1alpha1.ModulePin
+	27, // 8: buf.alpha.registry.v1alpha1.GetLocalModulePinsResponse.dependencies:type_name -> buf.alpha.module.v1alpha1.ModulePin
 	22, // 9: buf.alpha.registry.v1alpha1.GetGoVersionRequest.plugin_reference:type_name -> buf.alpha.registry.v1alpha1.GetRemotePackageVersionPlugin
-	25, // 10: buf.alpha.registry.v1alpha1.GetGoVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
+	28, // 10: buf.alpha.registry.v1alpha1.GetGoVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
 	22, // 11: buf.alpha.registry.v1alpha1.GetMavenVersionRequest.plugin_reference:type_name -> buf.alpha.registry.v1alpha1.GetRemotePackageVersionPlugin
-	25, // 12: buf.alpha.registry.v1alpha1.GetMavenVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
+	28, // 12: buf.alpha.registry.v1alpha1.GetMavenVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
 	22, // 13: buf.alpha.registry.v1alpha1.GetNPMVersionRequest.plugin_reference:type_name -> buf.alpha.registry.v1alpha1.GetRemotePackageVersionPlugin
-	25, // 14: buf.alpha.registry.v1alpha1.GetNPMVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
+	28, // 14: buf.alpha.registry.v1alpha1.GetNPMVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
 	22, // 15: buf.alpha.registry.v1alpha1.GetSwiftVersionRequest.plugin_reference:type_name -> buf.alpha.registry.v1alpha1.GetRemotePackageVersionPlugin
-	25, // 16: buf.alpha.registry.v1alpha1.GetSwiftVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
+	28, // 16: buf.alpha.registry.v1alpha1.GetSwiftVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
 	22, // 17: buf.alpha.registry.v1alpha1.GetPythonVersionRequest.plugin_reference:type_name -> buf.alpha.registry.v1alpha1.GetRemotePackageVersionPlugin
-	25, // 18: buf.alpha.registry.v1alpha1.GetPythonVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
+	28, // 18: buf.alpha.registry.v1alpha1.GetPythonVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
 	22, // 19: buf.alpha.registry.v1alpha1.GetCargoVersionRequest.plugin_reference:type_name -> buf.alpha.registry.v1alpha1.GetRemotePackageVersionPlugin
-	25, // 20: buf.alpha.registry.v1alpha1.GetCargoVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
+	28, // 20: buf.alpha.registry.v1alpha1.GetCargoVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
 	22, // 21: buf.alpha.registry.v1alpha1.GetNugetVersionRequest.plugin_reference:type_name -> buf.alpha.registry.v1alpha1.GetRemotePackageVersionPlugin
-	25, // 22: buf.alpha.registry.v1alpha1.GetNugetVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
+	28, // 22: buf.alpha.registry.v1alpha1.GetNugetVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
 	22, // 23: buf.alpha.registry.v1alpha1.GetCmakeVersionRequest.plugin_reference:type_name -> buf.alpha.registry.v1alpha1.GetRemotePackageVersionPlugin
-	25, // 24: buf.alpha.registry.v1alpha1.GetCmakeVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
-	1,  // 25: buf.alpha.registry.v1alpha1.ResolveService.GetModulePins:input_type -> buf.alpha.registry.v1alpha1.GetModulePinsRequest
-	6,  // 26: buf.alpha.registry.v1alpha1.ResolveService.GetGoVersion:input_type -> buf.alpha.registry.v1alpha1.GetGoVersionRequest
-	12, // 27: buf.alpha.registry.v1alpha1.ResolveService.GetSwiftVersion:input_type -> buf.alpha.registry.v1alpha1.GetSwiftVersionRequest
-	8,  // 28: buf.alpha.registry.v1alpha1.ResolveService.GetMavenVersion:input_type -> buf.alpha.registry.v1alpha1.GetMavenVersionRequest
-	10, // 29: buf.alpha.registry.v1alpha1.ResolveService.GetNPMVersion:input_type -> buf.alpha.registry.v1alpha1.GetNPMVersionRequest
-	14, // 30: buf.alpha.registry.v1alpha1.ResolveService.GetPythonVersion:input_type -> buf.alpha.registry.v1alpha1.GetPythonVersionRequest
-	16, // 31: buf.alpha.registry.v1alpha1.ResolveService.GetCargoVersion:input_type -> buf.alpha.registry.v1alpha1.GetCargoVersionRequest
-	18, // 32: buf.alpha.registry.v1alpha1.ResolveService.GetNugetVersion:input_type -> buf.alpha.registry.v1alpha1.GetNugetVersionRequest
-	20, // 33: buf.alpha.registry.v1alpha1.ResolveService.GetCmakeVersion:input_type -> buf.alpha.registry.v1alpha1.GetCmakeVersionRequest
-	3,  // 34: buf.alpha.registry.v1alpha1.LocalResolveService.GetLocalModulePins:input_type -> buf.alpha.registry.v1alpha1.GetLocalModulePinsRequest
-	2,  // 35: buf.alpha.registry.v1alpha1.ResolveService.GetModulePins:output_type -> buf.alpha.registry.v1alpha1.GetModulePinsResponse
-	7,  // 36: buf.alpha.registry.v1alpha1.ResolveService.GetGoVersion:output_type -> buf.alpha.registry.v1alpha1.GetGoVersionResponse
-	13, // 37: buf.alpha.registry.v1alpha1.ResolveService.GetSwiftVersion:output_type -> buf.alpha.registry.v1alpha1.GetSwiftVersionResponse
-	9,  // 38: buf.alpha.registry.v1alpha1.ResolveService.GetMavenVersion:output_type -> buf.alpha.registry.v1alpha1.GetMavenVersionResponse
-	11, // 39: buf.alpha.registry.v1alpha1.ResolveService.GetNPMVersion:output_type -> buf.alpha.registry.v1alpha1.GetNPMVersionResponse
-	15, // 40: buf.alpha.registry.v1alpha1.ResolveService.GetPythonVersion:output_type -> buf.alpha.registry.v1alpha1.GetPythonVersionResponse
-	17, // 41: buf.alpha.registry.v1alpha1.ResolveService.GetCargoVersion:output_type -> buf.alpha.registry.v1alpha1.GetCargoVersionResponse
-	19, // 42: buf.alpha.registry.v1alpha1.ResolveService.GetNugetVersion:output_type -> buf.alpha.registry.v1alpha1.GetNugetVersionResponse
-	21, // 43: buf.alpha.registry.v1alpha1.ResolveService.GetCmakeVersion:output_type -> buf.alpha.registry.v1alpha1.GetCmakeVersionResponse
-	5,  // 44: buf.alpha.registry.v1alpha1.LocalResolveService.GetLocalModulePins:output_type -> buf.alpha.registry.v1alpha1.GetLocalModulePinsResponse
-	35, // [35:45] is the sub-list for method output_type
-	25, // [25:35] is the sub-list for method input_type
-	25, // [25:25] is the sub-list for extension type_name
-	25, // [25:25] is the sub-list for extension extendee
-	0,  // [0:25] is the sub-list for field type_name
+	28, // 24: buf.alpha.registry.v1alpha1.GetCmakeVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
+	28, // 25: buf.alpha.registry.v1alpha1.GetParsedSDKVersionRequest.module_reference:type_name -> buf.alpha.registry.v1alpha1.LocalModuleReference
+	22, // 26: buf.alpha.registry.v1alpha1.GetParsedSDKVersionRequest.plugin_reference:type_name -> buf.alpha.registry.v1alpha1.GetRemotePackageVersionPlugin
+	25, // 27: buf.alpha.registry.v1alpha1.GetParsedSDKVersionResponse.parsed_sdk_version:type_name -> buf.alpha.registry.v1alpha1.GetParsedSDKVersionResponse.ParsedSDKVersion
+	30, // 28: buf.alpha.registry.v1alpha1.GetParsedSDKVersionResponse.ParsedSDKVersion.module_commit_create_time:type_name -> google.protobuf.Timestamp
+	1,  // 29: buf.alpha.registry.v1alpha1.ResolveService.GetModulePins:input_type -> buf.alpha.registry.v1alpha1.GetModulePinsRequest
+	6,  // 30: buf.alpha.registry.v1alpha1.ResolveService.GetGoVersion:input_type -> buf.alpha.registry.v1alpha1.GetGoVersionRequest
+	12, // 31: buf.alpha.registry.v1alpha1.ResolveService.GetSwiftVersion:input_type -> buf.alpha.registry.v1alpha1.GetSwiftVersionRequest
+	8,  // 32: buf.alpha.registry.v1alpha1.ResolveService.GetMavenVersion:input_type -> buf.alpha.registry.v1alpha1.GetMavenVersionRequest
+	10, // 33: buf.alpha.registry.v1alpha1.ResolveService.GetNPMVersion:input_type -> buf.alpha.registry.v1alpha1.GetNPMVersionRequest
+	14, // 34: buf.alpha.registry.v1alpha1.ResolveService.GetPythonVersion:input_type -> buf.alpha.registry.v1alpha1.GetPythonVersionRequest
+	16, // 35: buf.alpha.registry.v1alpha1.ResolveService.GetCargoVersion:input_type -> buf.alpha.registry.v1alpha1.GetCargoVersionRequest
+	18, // 36: buf.alpha.registry.v1alpha1.ResolveService.GetNugetVersion:input_type -> buf.alpha.registry.v1alpha1.GetNugetVersionRequest
+	20, // 37: buf.alpha.registry.v1alpha1.ResolveService.GetCmakeVersion:input_type -> buf.alpha.registry.v1alpha1.GetCmakeVersionRequest
+	23, // 38: buf.alpha.registry.v1alpha1.ResolveService.GetParsedSDKVersion:input_type -> buf.alpha.registry.v1alpha1.GetParsedSDKVersionRequest
+	3,  // 39: buf.alpha.registry.v1alpha1.LocalResolveService.GetLocalModulePins:input_type -> buf.alpha.registry.v1alpha1.GetLocalModulePinsRequest
+	2,  // 40: buf.alpha.registry.v1alpha1.ResolveService.GetModulePins:output_type -> buf.alpha.registry.v1alpha1.GetModulePinsResponse
+	7,  // 41: buf.alpha.registry.v1alpha1.ResolveService.GetGoVersion:output_type -> buf.alpha.registry.v1alpha1.GetGoVersionResponse
+	13, // 42: buf.alpha.registry.v1alpha1.ResolveService.GetSwiftVersion:output_type -> buf.alpha.registry.v1alpha1.GetSwiftVersionResponse
+	9,  // 43: buf.alpha.registry.v1alpha1.ResolveService.GetMavenVersion:output_type -> buf.alpha.registry.v1alpha1.GetMavenVersionResponse
+	11, // 44: buf.alpha.registry.v1alpha1.ResolveService.GetNPMVersion:output_type -> buf.alpha.registry.v1alpha1.GetNPMVersionResponse
+	15, // 45: buf.alpha.registry.v1alpha1.ResolveService.GetPythonVersion:output_type -> buf.alpha.registry.v1alpha1.GetPythonVersionResponse
+	17, // 46: buf.alpha.registry.v1alpha1.ResolveService.GetCargoVersion:output_type -> buf.alpha.registry.v1alpha1.GetCargoVersionResponse
+	19, // 47: buf.alpha.registry.v1alpha1.ResolveService.GetNugetVersion:output_type -> buf.alpha.registry.v1alpha1.GetNugetVersionResponse
+	21, // 48: buf.alpha.registry.v1alpha1.ResolveService.GetCmakeVersion:output_type -> buf.alpha.registry.v1alpha1.GetCmakeVersionResponse
+	24, // 49: buf.alpha.registry.v1alpha1.ResolveService.GetParsedSDKVersion:output_type -> buf.alpha.registry.v1alpha1.GetParsedSDKVersionResponse
+	5,  // 50: buf.alpha.registry.v1alpha1.LocalResolveService.GetLocalModulePins:output_type -> buf.alpha.registry.v1alpha1.GetLocalModulePinsResponse
+	40, // [40:51] is the sub-list for method output_type
+	29, // [29:40] is the sub-list for method input_type
+	29, // [29:29] is the sub-list for extension type_name
+	29, // [29:29] is the sub-list for extension extendee
+	0,  // [0:29] is the sub-list for field type_name
 }
 
 func init() { file_buf_alpha_registry_v1alpha1_resolve_proto_init() }
@@ -1991,7 +2292,7 @@ func file_buf_alpha_registry_v1alpha1_resolve_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_buf_alpha_registry_v1alpha1_resolve_proto_rawDesc), len(file_buf_alpha_registry_v1alpha1_resolve_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   22,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
