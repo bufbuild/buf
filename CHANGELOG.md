@@ -4,6 +4,7 @@
 
 - Add `CSR` category to breaking rules.
 - Add support for local bufplugins for `protoc-gen-buf-breaking` and `protoc-gen-buf-lint`.
+- Add RISC-V (64-bit) binaries for Linux to releases.
 
 ## [v1.53.0] - 2025-04-21
 
