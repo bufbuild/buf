@@ -99,7 +99,7 @@ type ResolveServiceClient interface {
 	// plugin version, plugin revision, and the SDK version string
 	// for the SDK.
 	//
-	// If the the module reference and/or plugin version is included, then the SDK at the
+	// If the module reference and/or plugin version is included, then the SDK at the
 	// specified version will be resolved. If the SDK version is included, then it will be
 	// validated with the module and plugin information provided.
 	//
@@ -289,7 +289,7 @@ type ResolveServiceHandler interface {
 	// plugin version, plugin revision, and the SDK version string
 	// for the SDK.
 	//
-	// If the the module reference and/or plugin version is included, then the SDK at the
+	// If the module reference and/or plugin version is included, then the SDK at the
 	// specified version will be resolved. If the SDK version is included, then it will be
 	// validated with the module and plugin information provided.
 	//
