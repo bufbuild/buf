@@ -86,7 +86,7 @@ func newPolicyData(
 		if err != nil {
 			return err
 		}
-		actualDigest, err := NewDigest(DigestTypeP1, bufcasDigest)
+		actualDigest, err := NewDigest(DigestTypeO1, bufcasDigest)
 		if err != nil {
 			return err
 		}
