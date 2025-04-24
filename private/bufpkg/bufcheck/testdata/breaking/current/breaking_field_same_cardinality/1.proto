@@ -51,5 +51,8 @@ message Three {
     repeated One four = 4;
     map<int32, int32> five = 5;
     map<int32, One> six = 6;
+    optional int32 seven = 7;
+    Eight eight = 8;
+    optional Eight nine = 9;
   }
 }
