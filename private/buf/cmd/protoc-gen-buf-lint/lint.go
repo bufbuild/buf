@@ -55,7 +55,7 @@ func handle(
 	pluginEnv protoplugin.PluginEnv,
 	responseWriter protoplugin.ResponseWriter,
 	request protoplugin.Request,
-) error {
+) (retErr error) {
 	responseWriter.SetFeatureProto3Optional()
 	responseWriter.SetFeatureSupportsEditions(protodescriptor.MinSupportedEdition, protodescriptor.MaxSupportedEdition)
 	externalConfig := &externalConfig{}
@@ -96,10 +96,21 @@ func handle(
 	if err != nil {
 		return err
 	}
-	// The protoc plugins do not support custom lint/breaking change plugins for now.
+	// The protoc plugins only support local plugins.
+	wasmRuntime, err := bufcli.NewWasmRuntime(ctx, container)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
+	}()
 	client, err := bufcheck.NewClient(
 		container.Logger(),
 		bufcheck.ClientWithStderr(pluginEnv.Stderr),
+		bufcheck.ClientWithRunnerProvider(
+			bufcheck.NewLocalRunnerProvider(wasmRuntime),
+		),
+		bufcheck.ClientWithLocalWasmPluginsFromOS(),
 	)
 	if err != nil {
 		return err
