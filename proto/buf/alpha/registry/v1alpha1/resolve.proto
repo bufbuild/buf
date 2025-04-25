@@ -311,5 +311,5 @@ message GetSDKInfoResponse {
   PluginInfo plugin_info = 2;
   // The SDK version string. The format is based on the SDK registry supported by the
   // provided plugin.
-  string version = 3;
+  string sdk_version = 3;
 }

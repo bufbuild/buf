@@ -1926,7 +1926,7 @@ type GetSDKInfoResponse struct {
 	state                 protoimpl.MessageState         `protogen:"opaque.v1"`
 	xxx_hidden_ModuleInfo *GetSDKInfoResponse_ModuleInfo `protobuf:"bytes,1,opt,name=module_info,json=moduleInfo,proto3"`
 	xxx_hidden_PluginInfo *GetSDKInfoResponse_PluginInfo `protobuf:"bytes,2,opt,name=plugin_info,json=pluginInfo,proto3"`
-	xxx_hidden_Version    string                         `protobuf:"bytes,3,opt,name=version,proto3"`
+	xxx_hidden_SdkVersion string                         `protobuf:"bytes,3,opt,name=sdk_version,json=sdkVersion,proto3"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -1970,9 +1970,9 @@ func (x *GetSDKInfoResponse) GetPluginInfo() *GetSDKInfoResponse_PluginInfo {
 	return nil
 }
 
-func (x *GetSDKInfoResponse) GetVersion() string {
+func (x *GetSDKInfoResponse) GetSdkVersion() string {
 	if x != nil {
-		return x.xxx_hidden_Version
+		return x.xxx_hidden_SdkVersion
 	}
 	return ""
 }
@@ -1985,8 +1985,8 @@ func (x *GetSDKInfoResponse) SetPluginInfo(v *GetSDKInfoResponse_PluginInfo) {
 	x.xxx_hidden_PluginInfo = v
 }
 
-func (x *GetSDKInfoResponse) SetVersion(v string) {
-	x.xxx_hidden_Version = v
+func (x *GetSDKInfoResponse) SetSdkVersion(v string) {
+	x.xxx_hidden_SdkVersion = v
 }
 
 func (x *GetSDKInfoResponse) HasModuleInfo() bool {
@@ -2018,7 +2018,7 @@ type GetSDKInfoResponse_builder struct {
 	PluginInfo *GetSDKInfoResponse_PluginInfo
 	// The SDK version string. The format is based on the SDK registry supported by the
 	// provided plugin.
-	Version string
+	SdkVersion string
 }
 
 func (b0 GetSDKInfoResponse_builder) Build() *GetSDKInfoResponse {
@@ -2027,7 +2027,7 @@ func (b0 GetSDKInfoResponse_builder) Build() *GetSDKInfoResponse {
 	_, _ = b, x
 	x.xxx_hidden_ModuleInfo = b.ModuleInfo
 	x.xxx_hidden_PluginInfo = b.PluginInfo
-	x.xxx_hidden_Version = b.Version
+	x.xxx_hidden_SdkVersion = b.SdkVersion
 	return m0
 }
 
@@ -2319,13 +2319,14 @@ const file_buf_alpha_registry_v1alpha1_resolve_proto_rawDesc = "" +
 	"\x10module_reference\x18\x01 \x01(\v21.buf.alpha.registry.v1alpha1.LocalModuleReferenceR\x0fmoduleReference\x12e\n" +
 	"\x10plugin_reference\x18\x02 \x01(\v2:.buf.alpha.registry.v1alpha1.GetRemotePackageVersionPluginR\x0fpluginReference\x12\x1f\n" +
 	"\vsdk_version\x18\x03 \x01(\tR\n" +
-	"sdkVersion\"\x8b\x04\n" +
+	"sdkVersion\"\x92\x04\n" +
 	"\x12GetSDKInfoResponse\x12[\n" +
 	"\vmodule_info\x18\x01 \x01(\v2:.buf.alpha.registry.v1alpha1.GetSDKInfoResponse.ModuleInfoR\n" +
 	"moduleInfo\x12[\n" +
 	"\vplugin_info\x18\x02 \x01(\v2:.buf.alpha.registry.v1alpha1.GetSDKInfoResponse.PluginInfoR\n" +
-	"pluginInfo\x12\x18\n" +
-	"\aversion\x18\x03 \x01(\tR\aversion\x1a\xa5\x01\n" +
+	"pluginInfo\x12\x1f\n" +
+	"\vsdk_version\x18\x03 \x01(\tR\n" +
+	"sdkVersion\x1a\xa5\x01\n" +
 	"\n" +
 	"ModuleInfo\x12\x14\n" +
 	"\x05owner\x18\x01 \x01(\tR\x05owner\x12\x12\n" +
