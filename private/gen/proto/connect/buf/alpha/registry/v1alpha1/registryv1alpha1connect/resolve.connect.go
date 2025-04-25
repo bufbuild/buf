@@ -103,7 +103,7 @@ type ResolveServiceClient interface {
 	// specified version will be resolved. If the SDK version is included, then it will be
 	// validated with the module and plugin information provided.
 	//
-	// This replaces the need for all subsequent RPCs, which requirees the caller to resolve
+	// This replaces the need for all subsequent RPCs, which requires the caller to resolve
 	// the registry type first. Instead, the registry type will be resolved based on the plugin
 	// information provided.
 	GetSDKInfo(context.Context, *connect.Request[v1alpha1.GetSDKInfoRequest]) (*connect.Response[v1alpha1.GetSDKInfoResponse], error)
@@ -293,7 +293,7 @@ type ResolveServiceHandler interface {
 	// specified version will be resolved. If the SDK version is included, then it will be
 	// validated with the module and plugin information provided.
 	//
-	// This replaces the need for all subsequent RPCs, which requirees the caller to resolve
+	// This replaces the need for all subsequent RPCs, which requires the caller to resolve
 	// the registry type first. Instead, the registry type will be resolved based on the plugin
 	// information provided.
 	GetSDKInfo(context.Context, *connect.Request[v1alpha1.GetSDKInfoRequest]) (*connect.Response[v1alpha1.GetSDKInfoResponse], error)
