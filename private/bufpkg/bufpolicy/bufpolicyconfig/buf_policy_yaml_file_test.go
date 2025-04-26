@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufconfig
+package bufpolicyconfig
 
 import (
 	"bytes"
@@ -94,7 +94,7 @@ func testReadBufPolicyYAMLFile(
 ) BufPolicyYAMLFile {
 	bufPolicyYAMLFile, err := ReadBufPolicyYAMLFile(
 		strings.NewReader(testCleanYAMLData(inputBufPolicyYAMLFileData)),
-		defaultBufPolicyYAMLFileName,
+		"buf.policy.yaml",
 	)
 	require.NoError(t, err)
 	return bufPolicyYAMLFile
@@ -111,4 +111,9 @@ func testReadWriteBufPolicyYAMLFileRoundTrip(
 	require.NoError(t, err)
 	outputBufPolicyYAMLData := testCleanYAMLData(buffer.String())
 	assert.Equal(t, testCleanYAMLData(expectedOutputBufYAMLFileData), outputBufPolicyYAMLData, "output:\n%s", outputBufPolicyYAMLData)
+}
+
+func testCleanYAMLData(data string) string {
+	// Just to deal with editor nonsense when writing tests.
+	return strings.TrimSpace(strings.ReplaceAll(data, "\t", "  "))
 }
