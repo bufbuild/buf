@@ -34,6 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy/bufpolicyconfig"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protosourcepath"
@@ -51,6 +52,10 @@ type client struct {
 	pluginKeyProvider               bufplugin.PluginKeyProvider
 	pluginDataProvider              bufplugin.PluginDataProvider
 	policyReadFile                  func(string) ([]byte, error)
+	policyKeyProvider               bufpolicy.PolicyKeyProvider
+	policyDataProvider              bufpolicy.PolicyDataProvider
+	policyPluginKeyProvider         bufpolicy.PolicyPluginKeyProvider
+	policyPluginDataProvider        bufpolicy.PolicyPluginDataProvider
 }
 
 func newClient(
@@ -83,11 +88,15 @@ func newClient(
 			bufconfig.FileVersionV1:      v1DefaultCheckClient,
 			bufconfig.FileVersionV2:      v2DefaultCheckClient,
 		},
-		runnerProvider:     clientOptions.runnerProvider,
-		pluginReadFile:     clientOptions.pluginReadFile,
-		pluginKeyProvider:  clientOptions.pluginKeyProvider,
-		pluginDataProvider: clientOptions.pluginDataProvider,
-		policyReadFile:     clientOptions.policyReadFile,
+		runnerProvider:           clientOptions.runnerProvider,
+		pluginReadFile:           clientOptions.pluginReadFile,
+		pluginKeyProvider:        clientOptions.pluginKeyProvider,
+		pluginDataProvider:       clientOptions.pluginDataProvider,
+		policyReadFile:           clientOptions.policyReadFile,
+		policyKeyProvider:        clientOptions.policyKeyProvider,
+		policyDataProvider:       clientOptions.policyDataProvider,
+		policyPluginKeyProvider:  clientOptions.policyPluginKeyProvider,
+		policyPluginDataProvider: clientOptions.policyPluginDataProvider,
 	}, nil
 }
 
@@ -546,16 +555,19 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 	}
 	// Load the remote plugin data for each plugin ref.
 	if len(indexedPluginRefs) > 0 {
-		// TODO: remote plugins are not yet supported with policies.
+		pluginKeyProvider := c.pluginKeyProvider
+		pluginDataProvider := c.pluginDataProvider
 		if policyConfig != nil {
-			return nil, fmt.Errorf("remote plugins are not yet supported with policies")
+			// Resolve the Plugin providers for the policy config.
+			pluginKeyProvider = c.policyPluginKeyProvider.GetPluginKeyProviderForPolicy(policyConfig.Name())
+			pluginDataProvider = c.policyPluginDataProvider.GetPluginDataProviderForPolicy(policyConfig.Name())
 		}
-		pluginRefs := xslices.IndexedToValues(indexedPluginRefs)
-		pluginKeys, err := c.pluginKeyProvider.GetPluginKeysForPluginRefs(ctx, pluginRefs, bufplugin.DigestTypeP1)
+		pluginRefs := slicesext.IndexedToValues(indexedPluginRefs)
+		pluginKeys, err := pluginKeyProvider.GetPluginKeysForPluginRefs(ctx, pluginRefs, bufplugin.DigestTypeP1)
 		if err != nil {
 			return nil, err
 		}
-		pluginDatas, err := c.pluginDataProvider.GetPluginDatasForPluginKeys(ctx, pluginKeys)
+		pluginDatas, err := pluginDataProvider.GetPluginDatasForPluginKeys(ctx, pluginKeys)
 		if err != nil {
 			return nil, err
 		}
@@ -613,8 +625,26 @@ func (c *client) getPolicyFiles(
 	}
 	// Load the remote policy data for each policy ref.
 	if len(indexedPolicyRefs) > 0 {
-		// TODO: Add support for remote policy configs.
-		return nil, fmt.Errorf("remote policy configs are not yet supported")
+		policyRefs := slicesext.IndexedToValues(indexedPolicyRefs)
+		policyKeys, err := c.policyKeyProvider.GetPolicyKeysForPolicyRefs(ctx, policyRefs, bufpolicy.DigestTypeO1)
+		if err != nil {
+			return nil, err
+		}
+		policyDatas, err := c.policyDataProvider.GetPolicyDatasForPolicyKeys(ctx, policyKeys)
+		if err != nil {
+			return nil, err
+		}
+		if len(policyDatas) != len(policyRefs) {
+			return nil, syserror.Newf("expected %d PolicyData, got %d", len(policyRefs), len(policyBytes))
+		}
+		for dataIndex, indexedPolicyRef := range indexedPolicyRefs {
+			policyData := policyDatas[dataIndex]
+			index := indexedPolicyRef.Index
+			policyBytes[index], err = policyData.Data()
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 	policyFiles := make([]bufpolicyconfig.BufPolicyYAMLFile, len(policyConfigs))
 	for index, policyConfig := range policyConfigs {
@@ -790,12 +820,16 @@ func newAllCategoriesOptions() *allCategoriesOptions {
 }
 
 type clientOptions struct {
-	stderr             io.Writer
-	runnerProvider     RunnerProvider
-	pluginReadFile     func(string) ([]byte, error)
-	pluginKeyProvider  bufplugin.PluginKeyProvider
-	pluginDataProvider bufplugin.PluginDataProvider
-	policyReadFile     func(string) ([]byte, error)
+	stderr                   io.Writer
+	runnerProvider           RunnerProvider
+	pluginReadFile           func(string) ([]byte, error)
+	pluginKeyProvider        bufplugin.PluginKeyProvider
+	pluginDataProvider       bufplugin.PluginDataProvider
+	policyReadFile           func(string) ([]byte, error)
+	policyKeyProvider        bufpolicy.PolicyKeyProvider
+	policyDataProvider       bufpolicy.PolicyDataProvider
+	policyPluginKeyProvider  bufpolicy.PolicyPluginKeyProvider
+	policyPluginDataProvider bufpolicy.PolicyPluginDataProvider
 }
 
 func newClientOptions() *clientOptions {
