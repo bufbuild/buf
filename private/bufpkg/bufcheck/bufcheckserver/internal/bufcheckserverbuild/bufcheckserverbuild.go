@@ -891,6 +891,11 @@ var (
 
 	// TODO: Improve purposes. These are in buf.build/docs. Perhaps we can abandon the "checks that" prefix.
 
+	// CSRCategorySpec is a category spec.
+	CSRCategorySpec = &check.CategorySpec{
+		ID:      "CSR",
+		Purpose: "Checks that there are no Confluent Schema Registry (CSR) compatibility breaking changes.",
+	}
 	// FileCategorySpec is a category spec.
 	FileCategorySpec = &check.CategorySpec{
 		ID:      "FILE",

@@ -43,9 +43,9 @@ func TestReparseExtensions(t *testing.T) {
 
 	// The file will include one custom option with a known/generated type.
 	fieldOpts := &descriptorpb.FieldOptions{}
-	fieldConstraints := &validate.FieldConstraints{
+	fieldRules := &validate.FieldRules{
 		Required: proto.Bool(true),
-		Type: &validate.FieldConstraints_Int32{
+		Type: &validate.FieldRules_Int32{
 			Int32: &validate.Int32Rules{
 				GreaterThan: &validate.Int32Rules_Gt{
 					Gt: 0,
@@ -53,7 +53,7 @@ func TestReparseExtensions(t *testing.T) {
 			},
 		},
 	}
-	proto.SetExtension(fieldOpts, validate.E_Field, fieldConstraints)
+	proto.SetExtension(fieldOpts, validate.E_Field, fieldRules)
 	// The file will also contain an unrecognized custom option.
 	const customOptionNum = 54321
 	const customOptionVal = float32(3.14159)
@@ -108,8 +108,8 @@ func TestReparseExtensions(t *testing.T) {
 		case protoreflect.FieldNumber(validate.E_Field.Field):
 			found++
 			msg := value.Message().Interface()
-			assert.NotSame(t, fieldConstraints, msg)
-			_, isGenType := msg.(*validate.FieldConstraints)
+			assert.NotSame(t, fieldRules, msg)
+			_, isGenType := msg.(*validate.FieldRules)
 			assert.False(t, isGenType)
 			_, isDynamicType := msg.(*dynamicpb.Message)
 			assert.True(t, isDynamicType)
@@ -117,10 +117,10 @@ func TestReparseExtensions(t *testing.T) {
 			// round-trip back to gen type to check for equality with original
 			data, err := proto.Marshal(msg)
 			require.NoError(t, err)
-			roundTrippedConstraints := &validate.FieldConstraints{}
-			err = proto.Unmarshal(data, roundTrippedConstraints)
+			roundTrippedRules := &validate.FieldRules{}
+			err = proto.Unmarshal(data, roundTrippedRules)
 			require.NoError(t, err)
-			require.Empty(t, cmp.Diff(fieldConstraints, roundTrippedConstraints, protocmp.Transform()))
+			require.Empty(t, cmp.Diff(fieldRules, roundTrippedRules, protocmp.Transform()))
 		}
 		return true
 	})

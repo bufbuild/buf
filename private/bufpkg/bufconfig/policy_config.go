@@ -20,6 +20,7 @@ import (
 	"slices"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )

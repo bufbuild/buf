@@ -231,6 +231,7 @@ func TestRunBreakingFieldSameCardinality(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 44, 5, 44, 20, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 45, 5, 45, 19, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 48, 5, 48, 19, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 54, 5, 54, 30, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 6, 3, 6, 26, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 13, 3, 13, 26, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 14, 3, 14, 24, "FIELD_SAME_CARDINALITY"),

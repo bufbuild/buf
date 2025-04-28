@@ -12,7 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcli
-
-// Version is the CLI version of buf.
-const Version = "1.53.1-dev"
+package bufpolicyconfig

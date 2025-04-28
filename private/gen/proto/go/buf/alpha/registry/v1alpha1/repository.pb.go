@@ -3551,12 +3551,12 @@ func (b0 GetRepositoryDependencyDOTStringResponse_builder) Build() *GetRepositor
 }
 
 type AddRepositoryGroupRequest struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RepositoryId   string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3"`
-	xxx_hidden_GroupName      string                 `protobuf:"bytes,2,opt,name=group_name,json=groupName,proto3"`
-	xxx_hidden_RepositoryRole RepositoryRole         `protobuf:"varint,3,opt,name=repository_role,json=repositoryRole,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3"`
+	xxx_hidden_GroupName    string                 `protobuf:"bytes,2,opt,name=group_name,json=groupName,proto3"`
+	xxx_hidden_RoleOverride RepositoryRole         `protobuf:"varint,3,opt,name=role_override,json=roleOverride,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *AddRepositoryGroupRequest) Reset() {
@@ -3598,9 +3598,9 @@ func (x *AddRepositoryGroupRequest) GetGroupName() string {
 	return ""
 }
 
-func (x *AddRepositoryGroupRequest) GetRepositoryRole() RepositoryRole {
+func (x *AddRepositoryGroupRequest) GetRoleOverride() RepositoryRole {
 	if x != nil {
-		return x.xxx_hidden_RepositoryRole
+		return x.xxx_hidden_RoleOverride
 	}
 	return RepositoryRole_REPOSITORY_ROLE_UNSPECIFIED
 }
@@ -3613,8 +3613,8 @@ func (x *AddRepositoryGroupRequest) SetGroupName(v string) {
 	x.xxx_hidden_GroupName = v
 }
 
-func (x *AddRepositoryGroupRequest) SetRepositoryRole(v RepositoryRole) {
-	x.xxx_hidden_RepositoryRole = v
+func (x *AddRepositoryGroupRequest) SetRoleOverride(v RepositoryRole) {
+	x.xxx_hidden_RoleOverride = v
 }
 
 type AddRepositoryGroupRequest_builder struct {
@@ -3625,7 +3625,10 @@ type AddRepositoryGroupRequest_builder struct {
 	// The name of the group to add.
 	GroupName string
 	// The role to associate with any user who is added to the repository via this group.
-	RepositoryRole RepositoryRole
+	//
+	// Any user who maps to this repository via this group will be granted this role. If no role is
+	// set, the user will be granted the containing-organization's base repository role.
+	RoleOverride RepositoryRole
 }
 
 func (b0 AddRepositoryGroupRequest_builder) Build() *AddRepositoryGroupRequest {
@@ -3634,7 +3637,7 @@ func (b0 AddRepositoryGroupRequest_builder) Build() *AddRepositoryGroupRequest {
 	_, _ = b, x
 	x.xxx_hidden_RepositoryId = b.RepositoryId
 	x.xxx_hidden_GroupName = b.GroupName
-	x.xxx_hidden_RepositoryRole = b.RepositoryRole
+	x.xxx_hidden_RoleOverride = b.RoleOverride
 	return m0
 }
 
@@ -4131,12 +4134,12 @@ const file_buf_alpha_registry_v1alpha1_repository_proto_rawDesc = "" +
 	"\treference\x18\x03 \x01(\tR\treference\"I\n" +
 	"(GetRepositoryDependencyDOTStringResponse\x12\x1d\n" +
 	"\n" +
-	"dot_string\x18\x01 \x01(\tR\tdotString\"\xb5\x01\n" +
+	"dot_string\x18\x01 \x01(\tR\tdotString\"\xb1\x01\n" +
 	"\x19AddRepositoryGroupRequest\x12#\n" +
 	"\rrepository_id\x18\x01 \x01(\tR\frepositoryId\x12\x1d\n" +
 	"\n" +
-	"group_name\x18\x02 \x01(\tR\tgroupName\x12T\n" +
-	"\x0frepository_role\x18\x03 \x01(\x0e2+.buf.alpha.registry.v1alpha1.RepositoryRoleR\x0erepositoryRole\"\x1c\n" +
+	"group_name\x18\x02 \x01(\tR\tgroupName\x12P\n" +
+	"\rrole_override\x18\x03 \x01(\x0e2+.buf.alpha.registry.v1alpha1.RepositoryRoleR\froleOverride\"\x1c\n" +
 	"\x1aAddRepositoryGroupResponse\"\xcb\x01\n" +
 	"\x1cUpdateRepositoryGroupRequest\x12#\n" +
 	"\rrepository_id\x18\x01 \x01(\tR\frepositoryId\x12\x1d\n" +
@@ -4264,7 +4267,7 @@ var file_buf_alpha_registry_v1alpha1_repository_proto_depIdxs = []int32{
 	3,  // 23: buf.alpha.registry.v1alpha1.GetRepositoryContributorResponse.user:type_name -> buf.alpha.registry.v1alpha1.RepositoryContributor
 	0,  // 24: buf.alpha.registry.v1alpha1.UpdateRepositorySettingsByNameRequest.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
 	4,  // 25: buf.alpha.registry.v1alpha1.GetRepositoriesMetadataResponse.metadata:type_name -> buf.alpha.registry.v1alpha1.RepositoryMetadata
-	51, // 26: buf.alpha.registry.v1alpha1.AddRepositoryGroupRequest.repository_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	51, // 26: buf.alpha.registry.v1alpha1.AddRepositoryGroupRequest.role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
 	51, // 27: buf.alpha.registry.v1alpha1.UpdateRepositoryGroupRequest.role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
 	7,  // 28: buf.alpha.registry.v1alpha1.RepositoryService.GetRepository:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryRequest
 	9,  // 29: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryByFullName:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryByFullNameRequest

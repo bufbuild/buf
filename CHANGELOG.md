@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Add `CSR` category to breaking rules.
+- Add support for local bufplugins for `protoc-gen-buf-breaking` and `protoc-gen-buf-lint`.
+
+## [v1.53.0] - 2025-04-21
+
 - Fix buf breaking annotations for JSON format.
 
 ## [v1.52.1] - 2025-04-08
@@ -1360,7 +1365,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.52.1...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.53.0...HEAD
+[v1.53.0]: https://github.com/bufbuild/buf/compare/v1.52.1...v1.53.0
 [v1.52.1]: https://github.com/bufbuild/buf/compare/v1.52.0...v1.52.1
 [v1.52.0]: https://github.com/bufbuild/buf/compare/v1.51.0...v1.52.0
 [v1.51.0]: https://github.com/bufbuild/buf/compare/v1.50.1...v1.51.0
