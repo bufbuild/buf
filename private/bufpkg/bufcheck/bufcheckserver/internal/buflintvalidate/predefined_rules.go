@@ -52,11 +52,11 @@ func checkPredefinedRuleExtension(
 	if validate.File_buf_validate_validate_proto.Messages().ByName(extendedRuleFullName.Name()) == nil {
 		return nil
 	}
-	predefinedConstraints, err := resolveExtension[*validate.PredefinedConstraints](extensionDescriptor.Options(), validate.E_Predefined, extensionResolver)
+	predefinedRules, err := resolveExtension[*validate.PredefinedRules](extensionDescriptor.Options(), validate.E_Predefined, extensionResolver)
 	if err != nil {
 		return err
 	}
-	if predefinedConstraints == nil {
+	if predefinedRules == nil {
 		return nil
 	}
 	celEnv, err := cel.NewEnv(
@@ -100,7 +100,7 @@ func checkPredefinedRuleExtension(
 	}
 	checkCEL(
 		celEnv,
-		predefinedConstraints.GetCel(),
+		predefinedRules.GetCel(),
 		"extension field",
 		"Extension field",
 		"(buf.validate.predefined).cel",

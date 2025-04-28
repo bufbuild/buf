@@ -28,22 +28,22 @@ import (
 )
 
 const (
-	// DigestTypeP1 represents the p1 policy digest type.
+	// DigestTypeO1 represents the o1 policy digest type.
 	//
-	// The string value of this is "p1".
-	DigestTypeP1 DigestType = iota + 1
+	// The string value of this is "o1".
+	DigestTypeO1 DigestType = iota + 1
 )
 
 var (
 	// AllDigestTypes are all known DigestTypes.
 	AllDigestTypes = []DigestType{
-		DigestTypeP1,
+		DigestTypeO1,
 	}
 	digestTypeToString = map[DigestType]string{
-		DigestTypeP1: "p1",
+		DigestTypeO1: "o1",
 	}
 	stringToDigestType = map[string]DigestType{
-		"p1": DigestTypeP1,
+		"o1": DigestTypeO1,
 	}
 )
 
@@ -98,7 +98,7 @@ type Digest interface {
 // NewDigest creates a new Digest.
 func NewDigest(digestType DigestType, bufcasDigest bufcas.Digest) (Digest, error) {
 	switch digestType {
-	case DigestTypeP1:
+	case DigestTypeO1:
 		if bufcasDigest.Type() != bufcas.DigestTypeShake256 {
 			return nil, syserror.Newf(
 				"trying to create a %v Digest for a cas Digest of type %v",
@@ -151,7 +151,7 @@ func ParseDigest(s string) (Digest, error) {
 		)
 	}
 	switch digestType {
-	case DigestTypeP1:
+	case DigestTypeO1:
 		bufcasDigest, err := bufcas.NewDigest(value)
 		if err != nil {
 			return nil, err
