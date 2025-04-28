@@ -255,7 +255,7 @@ func newBufLockFile(
 		if err := validatePluginExpectedDigestType(remotePluginKeys, fileVersion, bufplugin.DigestTypeP1); err != nil {
 			return nil, err
 		}
-		if err := validatePolicyExpectedDigestType(remotePolicyKeys, fileVersion, bufpolicy.DigestTypeP1); err != nil {
+		if err := validatePolicyExpectedDigestType(remotePolicyKeys, fileVersion, bufpolicy.DigestTypeO1); err != nil {
 			return nil, err
 		}
 		for policyName, pluginKeys := range policyNameToRemotePluginKeys {

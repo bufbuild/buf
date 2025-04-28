@@ -55,7 +55,7 @@ plugins:
 policies:
   - name: buf.testing/acme/policy
     commit: b8488077ea6d4f6d9562a337b98259c8
-    digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+    digest: o1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
     plugins:
       - name: buf.testing/acme/plugin
         commit: ffded0b4cf6b47cab74da08d291a3c2f
@@ -77,7 +77,7 @@ plugins:
 policies:
   - name: buf.testing/acme/policy
     commit: b8488077ea6d4f6d9562a337b98259c8
-    digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+    digest: o1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
     plugins:
       - name: buf.testing/acme/plugin
         commit: ffded0b4cf6b47cab74da08d291a3c2f
@@ -98,7 +98,7 @@ policies:
         digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
   - name: buf.testing/acme/policy
     commit: ffded0b4cf6b47cab74da08d291a3c2f
-    digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+    digest: o1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
     plugins:
       - name: buf.testing/acme/plugin
         commit: ffded0b4cf6b47cab74da08d291a3c2f
@@ -114,7 +114,7 @@ policies:
         digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
   - name: buf.testing/acme/policy
     commit: ffded0b4cf6b47cab74da08d291a3c2f
-    digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+    digest: o1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
     plugins:
       - name: buf.testing/acme/plugin
         commit: ffded0b4cf6b47cab74da08d291a3c2f
