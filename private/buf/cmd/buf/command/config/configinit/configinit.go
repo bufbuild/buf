@@ -175,6 +175,7 @@ func run(
 		},
 		nil,
 		nil,
+		nil,
 		bufconfig.BufYAMLFileWithIncludeDocsLink(),
 	)
 	if err != nil {

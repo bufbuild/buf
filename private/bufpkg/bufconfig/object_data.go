@@ -40,6 +40,11 @@ type ObjectData interface {
 	isObjectData()
 }
 
+// NewObjectData returns a new ObjectData.
+func NewObjectData(name string, data []byte) ObjectData {
+	return newObjectData(name, data)
+}
+
 // GetBufYAMLV1Beta1OrV1ObjectDataForPrefix is a helper function that gets the ObjectData for the buf.yaml file at
 // the given bucket prefix, if the buf.yaml file was v1beta1 or v1.
 //
