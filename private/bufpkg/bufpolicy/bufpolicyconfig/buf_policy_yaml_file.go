@@ -134,10 +134,10 @@ func newBufPolicyYAMLFile(
 		if breakingConfig.FileVersion() != bufconfig.FileVersionV2 {
 			validationErr = errors.Join(validationErr, fmt.Errorf("breakingConfig.FileVersion() must be %s", bufconfig.FileVersionV2))
 		}
-		if len(lintConfig.IgnorePaths()) > 0 {
+		if len(breakingConfig.IgnorePaths()) > 0 {
 			validationErr = errors.Join(validationErr, fmt.Errorf("breakingConfig.IgnorePaths() must be empty"))
 		}
-		if len(lintConfig.IgnoreIDOrCategoryToPaths()) > 0 {
+		if len(breakingConfig.IgnoreIDOrCategoryToPaths()) > 0 {
 			validationErr = errors.Join(validationErr, fmt.Errorf("breakingConfig.IgnoreIDOrCategoryToPaths() must be empty"))
 		}
 		if breakingConfig.DisableBuiltin() {
