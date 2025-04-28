@@ -6,7 +6,7 @@ toolchain go1.24.2
 
 require (
 	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.6-20250121211742-6d880cc6cc8d.1
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250307204501-0409229c3780.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250425153114-8976f5be98c1.1
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250423175228-7edf8b09cc2c.1
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.6-20250423175228-7edf8b09cc2c.1
 	buf.build/go/bufplugin v0.8.0
