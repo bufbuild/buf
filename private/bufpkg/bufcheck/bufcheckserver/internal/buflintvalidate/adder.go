@@ -21,25 +21,25 @@ import (
 )
 
 // The typical use of adder is calling adder.addForPathf([]int32{int64RulesFieldNumber, someFieldNumber}, "message")
-// from checkConstraintsForField (or a function that it calls). Notice that checkConstraintsForField
+// from checkRulesForField (or a function that it calls). Notice that checkRulesForField
 // is recursive, because it can call checkMapRules and checkRepeatedRules, both of which can
-// call checkConstraintsForField.
+// call checkRulesForField.
 //
-// If checkConstraintsForField is called by checkMapRules, when we add a file annotation, the
+// If checkRulesForField is called by checkMapRules, when we add a file annotation, the
 // location should be for something like `repeated.items.string.max_len`. We need to search for the
 // location by a path like [mapRulesFieldNumber, keysFieldNumber, StringRulesFieldNumber, ...].
 //
-// If checkConstraintsForField is not in a recursive call, when we add a file annotation, the
+// If checkRulesForField is not in a recursive call, when we add a file annotation, the
 // location should be for something like `string.max_len`. We need to search for the location by
 // a path like [int64RulesFieldNumber, ...].
 //
-// However, from checkConstraintsForField's perspective, it doesn't know whether it's in a recursive
+// However, from checkRulesForField's perspective, it doesn't know whether it's in a recursive
 // call. It always treats the path like [int64RulesFieldNumber, ...], as opposed to [mapRulesFieldNumber, keysFieldNumber, StringRulesFieldNumber, ...].
 // To preserve the first part of the path, [mapRulesFieldNumber, keysFieldNumber], we create a new adder
-// with a base path when we recursively call checkConstraintsForField. The new adder will automatically
+// with a base path when we recursively call checkRulesForField. The new adder will automatically
 // prepend the base path whenever it searches for a location. This is manageable because the recursion
-// depth is at most 2 -- if checkMapRules or checkRepeatedRules calls checkConstraintsForField,
-// this call of checkConstraintsForField won't call checkMapRules or checkRepeatedRules.
+// depth is at most 2 -- if checkMapRules or checkRepeatedRules calls checkRulesForField,
+// this call of checkRulesForField won't call checkMapRules or checkRepeatedRules.
 type adder struct {
 	field               bufprotosource.Field
 	fieldPrettyTypeName string
@@ -96,7 +96,7 @@ func (a *adder) fieldName() string {
 
 func (a *adder) getFieldRuleName(path ...int32) string {
 	name := "(buf.validate.field)"
-	fields := fieldConstraintsDescriptor.Fields()
+	fields := fieldRulesDescriptor.Fields()
 	combinedPath := path
 	if len(a.basePath) > 0 {
 		combinedPath = make([]int32, len(a.basePath), len(a.basePath)+len(path))

@@ -1,26 +1,26 @@
 module github.com/bufbuild/buf
 
-go 1.23.4
+go 1.23.0
 
 toolchain go1.24.2
 
 require (
 	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.6-20250121211742-6d880cc6cc8d.1
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250307204501-0409229c3780.1
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250423175228-7edf8b09cc2c.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.6-20250423175228-7edf8b09cc2c.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250425153114-8976f5be98c1.1
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250424215339-a457693b5db4.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.6-20250424215339-a457693b5db4.1
 	buf.build/go/bufplugin v0.8.0
-	buf.build/go/protoyaml v0.3.2
+	buf.build/go/protoyaml v0.5.0
 	buf.build/go/spdx v0.2.0
 	connectrpc.com/connect v1.18.1
 	connectrpc.com/otelconnect v0.7.2
 	github.com/bufbuild/protocompile v0.14.1
 	github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1
-	github.com/bufbuild/protovalidate-go v0.9.3
+	github.com/bufbuild/protovalidate-go v0.10.0
 	github.com/docker/docker v28.1.1+incompatible
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/gofrs/flock v0.12.1
-	github.com/google/cel-go v0.24.1
+	github.com/google/cel-go v0.25.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-containerregistry v0.20.3
 	github.com/google/uuid v1.6.0
@@ -62,7 +62,7 @@ require (
 	github.com/containerd/continuity v0.4.5 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.16.3 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.6 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/cli v28.1.1+incompatible // indirect
@@ -76,7 +76,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/google/pprof v0.0.0-20250418163039-24c5476c6587 // indirect
+	github.com/google/pprof v0.0.0-20250423184734-337e5dd93bb4 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
@@ -120,6 +120,6 @@ require (
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250414145226-207652e42e2e // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250414145226-207652e42e2e // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250425173222-7b384671a197 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250425173222-7b384671a197 // indirect
 )
