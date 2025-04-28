@@ -20,40 +20,15 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"slices"
 
+	"buf.build/go/bufplugin/option"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-)
-
-var (
-	// defaultLintConfigV2 is the default lint config for v2.
-	defaultLintConfigV2 bufconfig.LintConfig = bufconfig.NewLintConfig(
-		bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
-			bufconfig.FileVersionV2,
-			nil,
-			true, // Disable builtin is true by default.
-		),
-		"",
-		false,
-		false,
-		false,
-		"",
-		false, // Policy configs do not allow comment ignores.
-	)
-
-	defaultBreakingConfigV2 bufconfig.BreakingConfig = bufconfig.NewBreakingConfig(
-		bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
-			bufconfig.FileVersionV2,
-			nil,
-			true, // Disable builtin is true by default.
-		),
-		false,
-	)
 )
 
 // BufPolicyYAMLFile represents a Policy config file.
@@ -62,12 +37,14 @@ type BufPolicyYAMLFile interface {
 
 	// Name returns the name for the File.
 	Name() string
+	// PolicyConfig returns the PolicyConfig for the File.
+	PolicyConfig() (bufpolicy.PolicyConfig, error)
 	// LintConfig returns the LintConfig for the File.
-	LintConfig() bufconfig.LintConfig
+	LintConfig() bufpolicy.LintConfig
 	// BreakingConfig returns the BreakingConfig for the File.
-	BreakingConfig() bufconfig.BreakingConfig
+	BreakingConfig() bufpolicy.BreakingConfig
 	// PluginConfigs returns the PluginConfigs for the File.
-	PluginConfigs() []bufconfig.PluginConfig
+	PluginConfigs() []bufpolicy.PluginConfig
 
 	isBufPolicyYAMLFile()
 }
@@ -75,9 +52,9 @@ type BufPolicyYAMLFile interface {
 // NewBufPolicyYAMLFile returns a new validated BufPolicyYAMLFile.
 func NewBufPolicyYAMLFile(
 	name string,
-	lintConfig bufconfig.LintConfig,
-	breakingConfig bufconfig.BreakingConfig,
-	pluginConfigs []bufconfig.PluginConfig,
+	lintConfig bufpolicy.LintConfig,
+	breakingConfig bufpolicy.BreakingConfig,
+	pluginConfigs []bufpolicy.PluginConfig,
 ) (BufPolicyYAMLFile, error) {
 	return newBufPolicyYAMLFile(
 		nil,
@@ -126,59 +103,38 @@ type bufPolicyYAMLFile struct {
 	fileVersion    bufconfig.FileVersion
 	objectData     bufconfig.ObjectData
 	name           string
-	lintConfig     bufconfig.LintConfig
-	breakingConfig bufconfig.BreakingConfig
-	pluginConfigs  []bufconfig.PluginConfig
+	lintConfig     bufpolicy.LintConfig
+	breakingConfig bufpolicy.BreakingConfig
+	pluginConfigs  []bufpolicy.PluginConfig
 }
 
 func newBufPolicyYAMLFile(
 	objectData bufconfig.ObjectData,
 	name string,
-	lintConfig bufconfig.LintConfig,
-	breakingConfig bufconfig.BreakingConfig,
-	pluginConfigs []bufconfig.PluginConfig,
+	lintConfig bufpolicy.LintConfig,
+	breakingConfig bufpolicy.BreakingConfig,
+	pluginConfigs []bufpolicy.PluginConfig,
 ) (*bufPolicyYAMLFile, error) {
-	var validationErr error
-	if lintConfig != nil {
-		if lintConfig.FileVersion() != bufconfig.FileVersionV2 {
-			validationErr = errors.Join(validationErr, fmt.Errorf("lintConfig.FileVersion() must be %s", bufconfig.FileVersionV2))
-		}
-		if len(lintConfig.IgnorePaths()) > 0 {
-			validationErr = errors.Join(validationErr, fmt.Errorf("lintConfig.IgnorePaths() must be empty"))
-		}
-		if len(lintConfig.IgnoreIDOrCategoryToPaths()) > 0 {
-			validationErr = errors.Join(validationErr, fmt.Errorf("lintConfig.IgnoreIDOrCategoryToPaths() must be empty"))
-		}
-		if lintConfig.DisableBuiltin() {
-			validationErr = errors.Join(validationErr, fmt.Errorf("lintConfig.DisableBuiltin() must be false"))
-		}
-		if lintConfig.AllowCommentIgnores() {
-			validationErr = errors.Join(validationErr, fmt.Errorf("lintConfig.AllowCommentIgnores() must be false"))
+	var err error
+	if lintConfig == nil {
+		lintConfig, err = getDefaultLintConfigV2()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get default lint config: %w", err)
 		}
 	}
-	if breakingConfig != nil {
-		if breakingConfig.FileVersion() != bufconfig.FileVersionV2 {
-			validationErr = errors.Join(validationErr, fmt.Errorf("breakingConfig.FileVersion() must be %s", bufconfig.FileVersionV2))
+	if breakingConfig == nil {
+		breakingConfig, err = getDefaultBreakingConfigV2()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get default breaking config: %w", err)
 		}
-		if len(breakingConfig.IgnorePaths()) > 0 {
-			validationErr = errors.Join(validationErr, fmt.Errorf("breakingConfig.IgnorePaths() must be empty"))
-		}
-		if len(breakingConfig.IgnoreIDOrCategoryToPaths()) > 0 {
-			validationErr = errors.Join(validationErr, fmt.Errorf("breakingConfig.IgnoreIDOrCategoryToPaths() must be empty"))
-		}
-		if breakingConfig.DisableBuiltin() {
-			validationErr = errors.Join(validationErr, fmt.Errorf("breakingConfig.DisableBuiltin() must be false"))
-		}
-	}
-	if validationErr != nil {
-		return nil, validationErr
 	}
 	return &bufPolicyYAMLFile{
 		fileVersion:    bufconfig.FileVersionV2,
+		objectData:     objectData,
 		name:           name,
 		lintConfig:     lintConfig,
 		breakingConfig: breakingConfig,
-		pluginConfigs:  pluginConfigs,
+		pluginConfigs:  slices.Clone(pluginConfigs),
 	}, nil
 }
 
@@ -194,21 +150,23 @@ func (p *bufPolicyYAMLFile) Name() string {
 	return p.name
 }
 
-func (p *bufPolicyYAMLFile) LintConfig() bufconfig.LintConfig {
-	if p.lintConfig == nil {
-		return defaultLintConfigV2
-	}
+func (p *bufPolicyYAMLFile) PolicyConfig() (bufpolicy.PolicyConfig, error) {
+	return bufpolicy.NewPolicyConfig(
+		p.lintConfig,
+		p.breakingConfig,
+		p.pluginConfigs,
+	)
+}
+
+func (p *bufPolicyYAMLFile) LintConfig() bufpolicy.LintConfig {
 	return p.lintConfig
 }
 
-func (p *bufPolicyYAMLFile) BreakingConfig() bufconfig.BreakingConfig {
-	if p.breakingConfig == nil {
-		return defaultBreakingConfigV2
-	}
+func (p *bufPolicyYAMLFile) BreakingConfig() bufpolicy.BreakingConfig {
 	return p.breakingConfig
 }
 
-func (p *bufPolicyYAMLFile) PluginConfigs() []bufconfig.PluginConfig {
+func (p *bufPolicyYAMLFile) PluginConfigs() []bufpolicy.PluginConfig {
 	return slices.Clone(p.pluginConfigs)
 }
 
@@ -243,7 +201,7 @@ func readBufPolicyYAMLFile(
 		return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
 	}
 
-	var lintConfig bufconfig.LintConfig
+	var lintConfig bufpolicy.LintConfig
 	if !externalBufPolicyYAMLFile.Lint.isEmpty() {
 		lintConfig, err = getLintConfigForExternalLintV2(
 			externalBufPolicyYAMLFile.Lint,
@@ -252,7 +210,7 @@ func readBufPolicyYAMLFile(
 			return nil, err
 		}
 	}
-	var breakingConfig bufconfig.BreakingConfig
+	var breakingConfig bufpolicy.BreakingConfig
 	if !externalBufPolicyYAMLFile.Breaking.isEmpty() {
 		breakingConfig, err = getBreakingConfigForExternalBreaking(
 			externalBufPolicyYAMLFile.Breaking,
@@ -261,7 +219,7 @@ func readBufPolicyYAMLFile(
 			return nil, err
 		}
 	}
-	var pluginConfigs []bufconfig.PluginConfig
+	var pluginConfigs []bufpolicy.PluginConfig
 	for _, externalPluginConfig := range externalBufPolicyYAMLFile.Plugins {
 		pluginConfig, err := newPluginConfigForExternalPluginV2(externalPluginConfig)
 		if err != nil {
@@ -360,30 +318,19 @@ type externalBufPolicyYAMLFilePluginV2 struct {
 	Options map[string]any `json:"options,omitempty" yaml:"options,omitempty"`
 }
 
-func getLintConfigForExternalLintV2(externalLint externalBufPolicyYAMLFileLintV2) (bufconfig.LintConfig, error) {
-	checkConfig, err := bufconfig.NewEnabledCheckConfig(
-		bufconfig.FileVersionV2,
+func getLintConfigForExternalLintV2(externalLint externalBufPolicyYAMLFileLintV2) (bufpolicy.LintConfig, error) {
+	return bufpolicy.NewLintConfig(
 		externalLint.Use,
 		externalLint.Except,
-		nil,
-		nil,
-		false,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return bufconfig.NewLintConfig(
-		checkConfig,
 		externalLint.EnumZeroValueSuffix,
 		externalLint.RPCAllowSameRequestResponse,
 		externalLint.RPCAllowGoogleProtobufEmptyRequests,
 		externalLint.RPCAllowGoogleProtobufEmptyResponses,
 		externalLint.ServiceSuffix,
-		false, // Comment ignores are not allowed in Policy files.
-	), nil
+	)
 }
 
-func getExternalLintForLintConfig(lintConfig bufconfig.LintConfig) externalBufPolicyYAMLFileLintV2 {
+func getExternalLintForLintConfig(lintConfig bufpolicy.LintConfig) externalBufPolicyYAMLFileLintV2 {
 	return externalBufPolicyYAMLFileLintV2{
 		// Use and Except are already sorted.
 		Use:                                  lintConfig.UseIDsAndCategories(),
@@ -396,25 +343,15 @@ func getExternalLintForLintConfig(lintConfig bufconfig.LintConfig) externalBufPo
 	}
 }
 
-func getBreakingConfigForExternalBreaking(externalBreaking externalBufPolicyYAMLFileBreakingV2) (bufconfig.BreakingConfig, error) {
-	checkConfig, err := bufconfig.NewEnabledCheckConfig(
-		bufconfig.FileVersionV2,
+func getBreakingConfigForExternalBreaking(externalBreaking externalBufPolicyYAMLFileBreakingV2) (bufpolicy.BreakingConfig, error) {
+	return bufpolicy.NewBreakingConfig(
 		externalBreaking.Use,
 		externalBreaking.Except,
-		nil,
-		nil,
-		false,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return bufconfig.NewBreakingConfig(
-		checkConfig,
 		externalBreaking.IgnoreUnstablePackages,
-	), nil
+	)
 }
 
-func getExternalBreakingForBreakingConfig(breakingConfig bufconfig.BreakingConfig) externalBufPolicyYAMLFileBreakingV2 {
+func getExternalBreakingForBreakingConfig(breakingConfig bufpolicy.BreakingConfig) externalBufPolicyYAMLFileBreakingV2 {
 	return externalBufPolicyYAMLFileBreakingV2{
 		// Use and Except are already sorted.
 		Use:                    breakingConfig.UseIDsAndCategories(),
@@ -423,8 +360,8 @@ func getExternalBreakingForBreakingConfig(breakingConfig bufconfig.BreakingConfi
 	}
 }
 
-func newPluginConfigForExternalPluginV2(externalConfig externalBufPolicyYAMLFilePluginV2) (bufconfig.PluginConfig, error) {
-	options := make(map[string]any)
+func newPluginConfigForExternalPluginV2(externalConfig externalBufPolicyYAMLFilePluginV2) (bufpolicy.PluginConfig, error) {
+	keyToValue := make(map[string]any)
 	for key, value := range externalConfig.Options {
 		if len(key) == 0 {
 			return nil, errors.New("must specify option key")
@@ -433,7 +370,11 @@ func newPluginConfigForExternalPluginV2(externalConfig externalBufPolicyYAMLFile
 		if value == nil {
 			return nil, errors.New("must specify option value")
 		}
-		options[key] = value
+		keyToValue[key] = value
+	}
+	pluginOptions, err := option.NewOptions(keyToValue)
+	if err != nil {
+		return nil, fmt.Errorf("invalid plugin options: %w", err)
 	}
 	// Plugins are specified as a path, remote reference, or Wasm file.
 	path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Plugin)
@@ -445,38 +386,32 @@ func newPluginConfigForExternalPluginV2(externalConfig externalBufPolicyYAMLFile
 	}
 	name, args := path[0], path[1:]
 	// Remote plugins are specified as plugin references.
-	if pluginRef, err := bufparse.ParseRef(path[0]); err == nil {
+	var pluginRef bufparse.Ref
+	if ref, err := bufparse.ParseRef(name); err == nil {
 		// Check if the local filepath exists, if it does presume its
 		// not a remote reference. Okay to use os.Stat instead of
 		// os.Lstat.
 		if _, err := os.Stat(path[0]); os.IsNotExist(err) {
-			return bufconfig.NewRemoteWasmPluginConfig(
-				pluginRef,
-				options,
-				args,
-			)
+			pluginRef = ref
 		}
 	}
-	// Wasm plugins are suffixed with .wasm. Otherwise, it's a binary.
-	if filepath.Ext(path[0]) == ".wasm" {
-		return bufconfig.NewLocalWasmPluginConfig(
-			name,
-			options,
-			args,
-		)
-	}
-	return bufconfig.NewLocalPluginConfig(
+	return bufpolicy.NewPluginConfig(
 		name,
-		options,
+		pluginRef,
+		pluginOptions,
 		args,
 	)
 }
 
 func newExternalPluginV2ForPluginConfig(
-	config bufconfig.PluginConfig,
+	config bufpolicy.PluginConfig,
 ) (externalBufPolicyYAMLFilePluginV2, error) {
+	keyToValues := make(map[string]any)
+	config.Options().Range(func(key string, value any) {
+		keyToValues[key] = value
+	})
 	externalBufYAMLFilePluginV2 := externalBufPolicyYAMLFilePluginV2{
-		Options: config.Options(),
+		Options: keyToValues,
 	}
 	if args := config.Args(); len(args) > 0 {
 		externalBufYAMLFilePluginV2.Plugin = append([]string{config.Name()}, args...)
@@ -524,4 +459,26 @@ func getFileVersionForData(
 	default:
 		return 0, fmt.Errorf("unknown file version: %q", externalFileVersion.Version)
 	}
+}
+
+// getDefaultLintConfigV2 returns the default LintConfig for v2.
+func getDefaultLintConfigV2() (bufpolicy.LintConfig, error) {
+	return bufpolicy.NewLintConfig(
+		nil,
+		nil,
+		"",
+		false,
+		false,
+		false,
+		"",
+	)
+}
+
+// getDefaultBreakingConfigV2 is the default breaking config for v2.
+func getDefaultBreakingConfigV2() (bufpolicy.BreakingConfig, error) {
+	return bufpolicy.NewBreakingConfig(
+		nil,
+		nil,
+		false,
+	)
 }
