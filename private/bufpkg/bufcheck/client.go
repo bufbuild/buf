@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy/bufpolicyconfig"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protosourcepath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
@@ -573,7 +574,7 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 func (c *client) getPolicyFiles(
 	ctx context.Context,
 	policyConfigs []bufconfig.PolicyConfig,
-) ([]bufconfig.BufPolicyYAMLFile, error) {
+) ([]bufpolicyconfig.BufPolicyYAMLFile, error) {
 	if len(policyConfigs) == 0 {
 		return nil, nil
 	}
@@ -605,10 +606,10 @@ func (c *client) getPolicyFiles(
 		return nil, fmt.Errorf("remote policy configs are not supported")
 	}
 
-	policyFiles := make([]bufconfig.BufPolicyYAMLFile, len(policyConfigs))
+	policyFiles := make([]bufpolicyconfig.BufPolicyYAMLFile, len(policyConfigs))
 	for index, policyConfig := range policyConfigs {
 		reader := bytes.NewReader(policyBytes[index])
-		policyFile, err := bufconfig.ReadBufPolicyYAMLFile(reader, policyConfig.Name())
+		policyFile, err := bufpolicyconfig.ReadBufPolicyYAMLFile(reader, policyConfig.Name())
 		if err != nil {
 			return nil, fmt.Errorf("could not read policy file %q: %w", policyConfig.Name(), err)
 		}
