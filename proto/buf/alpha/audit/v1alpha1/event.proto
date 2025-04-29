@@ -38,8 +38,9 @@ message Actor {
   string name = 3;
 }
 
-// ResourceType is the type of the resource that was affected by the audited
-// event.
+// ResourceType is the type of the resource that was affected by the audited event.
+//
+// [#next-free-field: 20]
 enum ResourceType {
   RESOURCE_TYPE_UNSPECIFIED = 0;
   RESOURCE_TYPE_USER = 1;
@@ -51,6 +52,7 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
   RESOURCE_TYPE_REPOSITORY_IDP_GROUP = 18;
   RESOURCE_TYPE_POLICY = 17;
+  RESOURCE_TYPE_POLICY_COMMIT = 19;
   RESOURCE_TYPE_PLUGIN = 7;
   RESOURCE_TYPE_PLUGIN_COMMIT = 15;
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
@@ -73,6 +75,8 @@ message Resource {
 }
 
 // EventType is the type of audited event.
+//
+// [#next-free-field: 65]
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
   EVENT_TYPE_ORGANIZATION_CREATED = 1;
@@ -103,6 +107,7 @@ enum EventType {
   EVENT_TYPE_POLICY_DEPRECATED = 56;
   EVENT_TYPE_POLICY_UNDEPRECATED = 57;
   EVENT_TYPE_POLICY_VISIBILITY_CHANGED = 58;
+  EVENT_TYPE_POLICY_COMMIT_PUSHED = 64;
   EVENT_TYPE_PLUGIN_CREATED = 13;
   EVENT_TYPE_PLUGIN_DELETED = 14;
   EVENT_TYPE_PLUGIN_DEPRECATED = 51;
@@ -150,9 +155,11 @@ message EventMetadata {
   string trace_id = 3;
 }
 
-// Event is an audited action that happened in the BSR, with the information of
-// what happened, when it happened, who did it, which resource was affected, and
-// more contextual information on the event.
+// Event is an audited action that happened in the BSR, with the information of what happened, when
+// it happened, who did it, which resource was affected, and more contextual information on the
+// event.
+//
+// [#next-free-field: 71]
 message Event {
   // Unique id of the audited event.
   string event_id = 1;
@@ -193,6 +200,7 @@ message Event {
     PayloadPolicyDeprecated policy_deprecated = 62;
     PayloadPolicyUndeprecated policy_undeprecated = 63;
     PayloadPolicyVisibilityChanged policy_visibility_changed = 64;
+    PayloadPolicyCommitPushed policy_commit_pushed = 70;
     PayloadPluginCreated plugin_created = 19;
     PayloadPluginDeleted plugin_deleted = 20;
     PayloadPluginDeprecated plugin_deprecated = 57;
@@ -565,6 +573,19 @@ message PayloadPolicyVisibilityChanged {
   buf.alpha.registry.v1alpha1.Visibility old_visibility = 4;
   // new_visibility is the new visibility of the policy.
   buf.alpha.registry.v1alpha1.Visibility new_visibility = 5;
+}
+
+message PayloadPolicyCommitPushed {
+  // owner_id is the id of the owner of the policy.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy.
+  string owner_name = 2;
+  // policy_id is the id of the policy within which the commit was created.
+  string policy_id = 3;
+  // policy_name is the name of the policy within which the commit was created.
+  string policy_name = 4;
+  // p1_digest is the p1 digest of the pushed policy commit.
+  string p1_digest = 5;
 }
 
 message PayloadPluginCreated {

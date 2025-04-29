@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufconfig
+package bufpolicyconfig
 
 import (
 	"context"
@@ -21,112 +21,72 @@ import (
 	"io/fs"
 	"path/filepath"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
-// File is the common interface shared by all config files.
 type File interface {
-	FileInfo
-
+	// FileVersion returns the file version.
+	FileVersion() bufconfig.FileVersion
 	// ObjectData returns the underlying ObjectData.
 	//
 	// This is non-nil on Files if they were created from storage.ReadBuckets. It is nil
 	// if the File was created via a New constructor or Read method.
 	//
 	// This ObjectData is used for digest calculations.
-	ObjectData() ObjectData
+	ObjectData() bufconfig.ObjectData
 
 	isFile()
 }
 
 // *** PRIVATE ***
 
-func getFileForPrefix[F File](
+func getFile[F File](
 	ctx context.Context,
 	bucket storage.ReadBucket,
-	prefix string,
-	fileNames []string,
-	fileNameToSupportedFileVersions map[string]map[FileVersion]struct{},
+	path string,
 	readFileFunc func(
 		data []byte,
-		objectData ObjectData,
+		objectData bufconfig.ObjectData,
 		allowJSON bool,
 	) (F, error),
 ) (F, error) {
-	for _, fileName := range fileNames {
-		path := normalpath.Join(prefix, fileName)
-		data, err := storage.ReadPath(ctx, bucket, path)
-		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) {
-				continue
-			}
-			var f F
-			return f, err
-		}
-		f, err := readFileFunc(data, newObjectData(fileName, data), false)
-		if err != nil {
-			return f, newDecodeError(path, err)
-		}
-		if err := validateSupportedFileVersion(fileName, f.FileVersion(), fileNameToSupportedFileVersions); err != nil {
-			return f, newDecodeError(path, err)
-		}
-		return f, nil
-	}
 	var f F
-	return f, &fs.PathError{Op: "read", Path: normalpath.Join(prefix, fileNames[0]), Err: fs.ErrNotExist}
-}
-
-func getFileVersionForPrefix(
-	ctx context.Context,
-	bucket storage.ReadBucket,
-	prefix string,
-	fileNames []string,
-	fileNameToSupportedFileVersions map[string]map[FileVersion]struct{},
-	fileVersionRequired bool,
-	suggestedFileVersion FileVersion,
-	defaultFileVersion FileVersion,
-) (FileVersion, error) {
-	for _, fileName := range fileNames {
-		path := normalpath.Join(prefix, fileName)
-		data, err := storage.ReadPath(ctx, bucket, path)
-		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) {
-				continue
-			}
-			return 0, err
+	data, err := storage.ReadPath(ctx, bucket, path)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return f, &fs.PathError{Op: "read", Path: path, Err: fs.ErrNotExist}
 		}
-		fileVersion, err := getFileVersionForData(data, false, fileVersionRequired, fileNameToSupportedFileVersions, suggestedFileVersion, defaultFileVersion)
-		if err != nil {
-			return 0, newDecodeError(path, err)
-		}
-		if err := validateSupportedFileVersion(fileName, fileVersion, fileNameToSupportedFileVersions); err != nil {
-			return 0, newDecodeError(path, err)
-		}
-		return fileVersion, nil
+		var f F
+		return f, err
 	}
-	return 0, &fs.PathError{Op: "read", Path: normalpath.Join(prefix, fileNames[0]), Err: fs.ErrNotExist}
+	f, err = readFileFunc(data, bufconfig.NewObjectData(path, data), false)
+	if err != nil {
+		return f, newDecodeError(path, err)
+	}
+	if err := validateSupportedFileVersion(path, f.FileVersion()); err != nil {
+		return f, newDecodeError(path, err)
+	}
+	return f, nil
 }
 
-func putFileForPrefix[F File](
+func putFile[F File](
 	ctx context.Context,
 	bucket storage.WriteBucket,
-	prefix string,
+	path string,
 	f F,
-	fileName string,
-	fileNameToSupportedFileVersions map[string]map[FileVersion]struct{},
 	writeFileFunc func(
 		writer io.Writer,
 		f F,
 	) error,
 ) (retErr error) {
-	if err := validateSupportedFileVersion(fileName, f.FileVersion(), fileNameToSupportedFileVersions); err != nil {
+	if err := validateSupportedFileVersion(path, f.FileVersion()); err != nil {
 		// This is effectively a system error. We should be able to write with whatever file name we have.
-		return syserror.Wrap(newEncodeError(fileName, err))
+		return syserror.Wrap(newEncodeError(path, err))
 	}
-	path := normalpath.Join(prefix, fileName)
 	writeObjectCloser, err := bucket.Put(ctx, path, storage.PutWithAtomic())
 	if err != nil {
 		return err
@@ -142,7 +102,7 @@ func readFile[F File](
 	fileName string,
 	readFileFunc func(
 		data []byte,
-		objectData ObjectData,
+		objectData bufconfig.ObjectData,
 		allowJSON bool,
 	) (F, error),
 ) (F, error) {
@@ -151,7 +111,8 @@ func readFile[F File](
 		var f F
 		return f, err
 	}
-	f, err := readFileFunc(data, newObjectData(fileName, data), true)
+	objectData := bufconfig.NewObjectData(fileName, data)
+	f, err := readFileFunc(data, objectData, true)
 	if err != nil {
 		return f, newDecodeError(fileName, err)
 	}
@@ -192,7 +153,7 @@ func getUnmarshalNonStrict(allowJSON bool) func([]byte, any) error {
 
 func newDecodeError(fileName string, err error) error {
 	if fileName == "" {
-		fileName = "config file"
+		fileName = "policy file"
 	}
 	// We intercept PathErrors in buffetch to deal with fixing of paths.
 	// We return a cleaned, unnormalized path in the error for clarity with user's filesystem.
@@ -201,7 +162,7 @@ func newDecodeError(fileName string, err error) error {
 
 func newEncodeError(fileName string, err error) error {
 	if fileName == "" {
-		fileName = "config file"
+		fileName = "policy file"
 	}
 	// We intercept PathErrors in buffetch to deal with fixing of paths.
 	// We return a cleaned, unnormalized path in the error for clarity with user's filesystem.
