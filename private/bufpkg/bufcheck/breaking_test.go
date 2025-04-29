@@ -1276,6 +1276,10 @@ func TestRunBreakingPolicyLocal(t *testing.T) {
 	t.Parallel()
 	testBreaking(
 		t,
+		"breaking_policy_empty",
+	)
+	testBreaking(
+		t,
 		"breaking_policy_local",
 		bufanalysistesting.NewFileAnnotation(
 			t, "a.proto", 3, 1, 6, 2, "SERVICE_SUFFIXES_NO_CHANGE",
