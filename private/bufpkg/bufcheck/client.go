@@ -451,7 +451,7 @@ func (c *client) getMultiClient(
 			newCheckClientSpec("", "", defaultCheckClient, defaultOptions),
 		)
 	}
-	plugins, err := c.getPlugins(ctx, pluginConfigs)
+	plugins, err := c.getPlugins(ctx, pluginConfigs, policyConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -488,7 +488,7 @@ func (c *client) getMultiClient(
 	return newMultiClient(c.logger, checkClientSpecs), nil
 }
 
-func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.PluginConfig) ([]bufplugin.Plugin, error) {
+func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.PluginConfig, policyConfig bufconfig.PolicyConfig) ([]bufplugin.Plugin, error) {
 	plugins := make([]bufplugin.Plugin, len(pluginConfigs))
 
 	var indexedPluginRefs []slicesext.Indexed[bufparse.Ref]
@@ -539,6 +539,10 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 	}
 	// Load the remote plugin data for each plugin ref.
 	if len(indexedPluginRefs) > 0 {
+		// TODO: remove plugins are not yet supported with policies.
+		if policyConfig != nil {
+			return nil, fmt.Errorf("remote plugins are not supported with policies")
+		}
 		pluginRefs := slicesext.IndexedToValues(indexedPluginRefs)
 		pluginKeys, err := c.pluginKeyProvider.GetPluginKeysForPluginRefs(ctx, pluginRefs, bufplugin.DigestTypeP1)
 		if err != nil {
