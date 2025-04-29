@@ -30,6 +30,32 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
+var (
+	// defaultLintConfigV2 is the default lint config for v2.
+	defaultLintConfigV2 bufconfig.LintConfig = bufconfig.NewLintConfig(
+		bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
+			bufconfig.FileVersionV2,
+			nil,
+			true, // Disable builtin is true by default.
+		),
+		"",
+		false,
+		false,
+		false,
+		"",
+		false, // Policy configs do not allow comment ignores.
+	)
+
+	defaultBreakingConfigV2 bufconfig.BreakingConfig = bufconfig.NewBreakingConfig(
+		bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
+			bufconfig.FileVersionV2,
+			nil,
+			true, // Disable builtin is true by default.
+		),
+		false,
+	)
+)
+
 // BufPolicyYAMLFile represents a Policy config file.
 type BufPolicyYAMLFile interface {
 	File
@@ -169,10 +195,16 @@ func (p *bufPolicyYAMLFile) Name() string {
 }
 
 func (p *bufPolicyYAMLFile) LintConfig() bufconfig.LintConfig {
+	if p.lintConfig == nil {
+		return defaultLintConfigV2
+	}
 	return p.lintConfig
 }
 
 func (p *bufPolicyYAMLFile) BreakingConfig() bufconfig.BreakingConfig {
+	if p.breakingConfig == nil {
+		return defaultBreakingConfigV2
+	}
 	return p.breakingConfig
 }
 

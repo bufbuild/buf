@@ -501,6 +501,7 @@ func (c *controller) GetTargetImageWithConfigsAndCheckClient(
 			),
 			bufcheck.ClientWithLocalWasmPluginsFromOS(),
 			bufcheck.ClientWithRemoteWasmPlugins(pluginKeyProvider, c.pluginDataProvider),
+			bufcheck.ClientWithLocalPolicies(bucket),
 		)
 		if err != nil {
 			return nil, nil, err
@@ -807,6 +808,13 @@ func (c *controller) GetCheckClientForWorkspace(
 	if err != nil {
 		return nil, err
 	}
+	bucket, err := c.storageosProvider.NewReadWriteBucket(
+		".",
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	if err != nil {
+		return nil, err
+	}
 	return bufcheck.NewClient(
 		c.logger,
 		bufcheck.ClientWithStderr(c.container.Stderr()),
@@ -818,6 +826,7 @@ func (c *controller) GetCheckClientForWorkspace(
 			pluginKeyProvider,
 			c.pluginDataProvider,
 		),
+		bufcheck.ClientWithLocalPolicies(bucket),
 	)
 }
 

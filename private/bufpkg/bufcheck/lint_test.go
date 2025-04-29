@@ -1311,6 +1311,12 @@ func TestRunLintPolicyLocal(t *testing.T) {
 	t.Parallel()
 	testLintWithOptions(
 		t,
+		"policy_empty",
+		"",
+		nil,
+	)
+	testLintWithOptions(
+		t,
 		"policy_local",
 		"",
 		nil,
