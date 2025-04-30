@@ -116,6 +116,7 @@ func (c *client) Lint(
 	)
 	if err != nil {
 		return err
+
 	}
 	annotations = append(annotations, lintAnnotations...)
 	// Run lint policy checks.
@@ -125,10 +126,14 @@ func (c *client) Lint(
 	}
 	for index, policyFile := range policyFiles {
 		policyConfig := lintOptions.policyConfigs[index]
+		policyLintConfig, err := newPolicyLintConfig(policyConfig, policyFile)
+		if err != nil {
+			return err
+		}
 		policyAnnotations, err := c.lint(
 			ctx,
 			image,
-			policyFile.LintConfig(),
+			policyLintConfig,
 			policyFile.PluginConfigs(),
 			policyConfig,
 			nil, // relatedCheckConfigs.
@@ -246,11 +251,15 @@ func (c *client) Breaking(
 	}
 	for index, policyFile := range policyFiles {
 		policyConfig := breakingOptions.policyConfigs[index]
+		policyBreakingConfig, err := newPolicyBreakingConfig(policyConfig, policyFile)
+		if err != nil {
+			return err
+		}
 		policyAnnotations, err := c.breaking(
 			ctx,
 			image,
 			againstImage,
-			policyFile.BreakingConfig(),
+			policyBreakingConfig,
 			policyFile.PluginConfigs(),
 			policyConfig,
 			breakingOptions.excludeImports,
@@ -447,8 +456,8 @@ func (c *client) getMultiClient(
 		}
 		checkClientSpecs = append(
 			checkClientSpecs,
-			// We do not set PluginName or PolicyName for default check.Clients.
-			newCheckClientSpec("", "", defaultCheckClient, defaultOptions),
+			// We do not set PluginName for default check.Clients.
+			newCheckClientSpec("", policyConfigName, defaultCheckClient, defaultOptions),
 		)
 	}
 	plugins, err := c.getPlugins(ctx, pluginConfigs, policyConfig)

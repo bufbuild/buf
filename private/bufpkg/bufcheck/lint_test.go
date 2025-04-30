@@ -1307,7 +1307,7 @@ func TestRunLintEditionsGoFeatures(t *testing.T) {
 	)
 }
 
-func TestRunLintPolicyLocal(t *testing.T) {
+func TestRunLintPolicyEmpty(t *testing.T) {
 	t.Parallel()
 	testLintWithOptions(
 		t,
@@ -1315,6 +1315,10 @@ func TestRunLintPolicyLocal(t *testing.T) {
 		"",
 		nil,
 	)
+}
+
+func TestRunLintPolicyLocal(t *testing.T) {
+	t.Parallel()
 	testLintWithOptions(
 		t,
 		"policy_local",
@@ -1341,6 +1345,88 @@ func TestRunLintPolicyLocal(t *testing.T) {
 			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
 			bufanalysistesting.WithPolicyName("buf.policy2.yaml"),
 		),
+	)
+}
+
+func TestRunLintPolicyIgnores1(t *testing.T) {
+	t.Parallel()
+	testLint(
+		t,
+		"policy_ignores1",
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 9, 9, 9, 13, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 13, 6, 13, 10, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/bar/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/bar/bar.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/bar/bar.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+	)
+}
+
+func TestRunLintPolicyIgnores2(t *testing.T) {
+	t.Parallel()
+	testLint(
+		t,
+		"policy_ignores2",
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+	)
+}
+
+func TestRunLintPolicyIgnores3(t *testing.T) {
+	t.Parallel()
+	testLint(
+		t,
+		"policy_ignores3",
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 9, 9, 9, 13, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 13, 6, 13, 10, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+	)
+}
+
+func TestRunLintPolicyIgnores4(t *testing.T) {
+	t.Parallel()
+	testLint(
+		t,
+		"policy_ignores4",
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 9, 9, 9, 13, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 13, 6, 13, 10, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
 	)
 }
 
