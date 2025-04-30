@@ -116,7 +116,6 @@ func (c *client) Lint(
 	)
 	if err != nil {
 		return err
-
 	}
 	annotations = append(annotations, lintAnnotations...)
 	// Run lint policy checks.
