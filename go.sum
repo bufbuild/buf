@@ -8,10 +8,12 @@ buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.6-20250424215339-a45
 buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.6-20250424215339-a457693b5db4.1/go.mod h1:bUPpZtzAkcnTA7OLfKCvkvkxEAC6dG/ZIlbnbUJicL4=
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.6-20241007202033-cf42259fcbfc.1 h1:trcsXBDm8exui7mvndZnvworCyBq1xuMnod2N0j79K8=
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.6-20241007202033-cf42259fcbfc.1/go.mod h1:OUbhXurY+VHFGn9FBxcRy8UB7HXk9NvJ2qCgifOMypQ=
-buf.build/go/bufplugin v0.8.0 h1:YgR1+CNGmzR69jt85oRWTa5FioZoX/tOrHV+JxfNnnk=
-buf.build/go/bufplugin v0.8.0/go.mod h1:rcm0Esd3P/GM2rtYTvz3+9Gf8w9zdo7rG8dKSxYHHIE=
-buf.build/go/protoyaml v0.5.0 h1:RSRm3q3xfnvXF1kWrOo8gFx4jhTH5gG89mvQdWv26hQ=
-buf.build/go/protoyaml v0.5.0/go.mod h1:V87bQDLx2+PbaFLFBpBOgEeO7EqejCyi/2wgsGMPp/U=
+buf.build/go/bufplugin v0.9.0 h1:ktZJNP3If7ldcWVqh46XKeiYJVPxHQxCfjzVQDzZ/lo=
+buf.build/go/bufplugin v0.9.0/go.mod h1:Z0CxA3sKQ6EPz/Os4kJJneeRO6CjPeidtP1ABh5jPPY=
+buf.build/go/protovalidate v0.12.0 h1:4GKJotbspQjRCcqZMGVSuC8SjwZ/FmgtSuKDpKUTZew=
+buf.build/go/protovalidate v0.12.0/go.mod h1:q3PFfbzI05LeqxSwq+begW2syjy2Z6hLxZSkP1OH/D0=
+buf.build/go/protoyaml v0.6.0 h1:Nzz1lvcXF8YgNZXk+voPPwdU8FjDPTUV4ndNTXN0n2w=
+buf.build/go/protoyaml v0.6.0/go.mod h1:RgUOsBu/GYKLDSIRgQXniXbNgFlGEZnQpRAUdLAFV2Q=
 buf.build/go/spdx v0.2.0 h1:IItqM0/cMxvFJJumcBuP8NrsIzMs/UYjp/6WSpq8LTw=
 buf.build/go/spdx v0.2.0/go.mod h1:bXdwQFem9Si3nsbNy8aJKGPoaPi5DKwdeEp5/ArZ6w8=
 cel.dev/expr v0.23.1 h1:K4KOtPCJQjVggkARsjG9RWXP6O4R73aHeJMa/dmCQQg=
@@ -32,8 +34,6 @@ github.com/bufbuild/protocompile v0.14.1 h1:iA73zAf/fyljNjQKwYzUHD6AD4R8KMasmwa/
 github.com/bufbuild/protocompile v0.14.1/go.mod h1:ppVdAIhbr2H8asPk6k4pY7t9zB1OU5DoEw9xY/FUi1c=
 github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1 h1:V1xulAoqLqVg44rY97xOR+mQpD2N+GzhMHVwJ030WEU=
 github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1/go.mod h1:c5D8gWRIZ2HLWO3gXYTtUfw/hbJyD8xikv2ooPxnklQ=
-github.com/bufbuild/protovalidate-go v0.10.0 h1:QdaKhfk3/Dnb2soL9mKmuLPstq+ogAwSWCE3sQ1NBEE=
-github.com/bufbuild/protovalidate-go v0.10.0/go.mod h1:nIggbFjqS4DxJgSFBhOzH97Pb8SPNceFc5nygg1pOA8=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/chromedp/cdproto v0.0.0-20230802225258-3cf4e6d46a89/go.mod h1:GKljq0VrfU4D5yc+2qA6OVr8pmO/MBbPEWqWQ/oqGEs=
@@ -73,8 +73,6 @@ github.com/docker/go-connections v0.5.0 h1:USnMq7hx7gwdVZq1L49hLXaFtUdTADjXGp+uj
 github.com/docker/go-connections v0.5.0/go.mod h1:ov60Kzw0kKElRwhNs9UlUHAE/F9Fe6GLaXnqyDdmEXc=
 github.com/docker/go-units v0.5.0 h1:69rxXcBk27SvSaaxTtLh/8llcHD8vYHT7WSdRZ/jvr4=
 github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
-github.com/envoyproxy/protoc-gen-validate v1.2.1 h1:DEo3O99U8j4hBFwbJfrz9VtgcDfUKS7KJ7spH3d86P8=
-github.com/envoyproxy/protoc-gen-validate v1.2.1/go.mod h1:d/C80l/jxXLdfEIhX1W2TmLfsJ31lvEjwamM4DxlWXU=
 github.com/felixge/fgprof v0.9.3/go.mod h1:RdbpDgzqYVh/T9fPELJyV7EYJuHB55UTEULNun8eiPw=
 github.com/felixge/fgprof v0.9.5 h1:8+vR6yu2vvSKn08urWyEuxx75NWPEvybbkBirEpsbVY=
 github.com/felixge/fgprof v0.9.5/go.mod h1:yKl+ERSa++RYOs32d8K6WEXCB4uXdLls4ZaZPpayhMM=

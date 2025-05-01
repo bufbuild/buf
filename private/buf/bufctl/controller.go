@@ -25,6 +25,7 @@ import (
 	"slices"
 	"sort"
 
+	"buf.build/go/protovalidate"
 	"buf.build/go/protoyaml"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwkt/bufwktstore"
@@ -51,7 +52,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
-	"github.com/bufbuild/protovalidate-go"
 	"google.golang.org/protobuf/proto"
 )
 

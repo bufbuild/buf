@@ -9,14 +9,14 @@ require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250425153114-8976f5be98c1.1
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250424215339-a457693b5db4.1
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.6-20250424215339-a457693b5db4.1
-	buf.build/go/bufplugin v0.8.0
-	buf.build/go/protoyaml v0.5.0
+	buf.build/go/bufplugin v0.9.0
+	buf.build/go/protovalidate v0.12.0
+	buf.build/go/protoyaml v0.6.0
 	buf.build/go/spdx v0.2.0
 	connectrpc.com/connect v1.18.1
 	connectrpc.com/otelconnect v0.7.2
 	github.com/bufbuild/protocompile v0.14.1
 	github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1
-	github.com/bufbuild/protovalidate-go v0.10.0
 	github.com/docker/docker v28.1.1+incompatible
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/gofrs/flock v0.12.1
