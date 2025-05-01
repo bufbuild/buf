@@ -60,6 +60,12 @@ func NewPluginNameAlreadyExistsError(name string) error {
 	return fmt.Errorf("a plugin named %q already exists", name)
 }
 
+// NewPolicyNameAlreadyExistsError informs the user that a policy
+// with that name already exists.
+func NewPolicyNameAlreadyExistsError(name string) error {
+	return fmt.Errorf("a policy named %q already exists", name)
+}
+
 // NewOrganizationNotFoundError informs the user that an organization with
 // that name does not exist.
 func NewOrganizationNotFoundError(name string) error {
@@ -97,6 +103,12 @@ func NewTokenNotFoundError(tokenID string) error {
 // NewPluginNotFoundError informs the user that a plugin with
 // that name does not exist.
 func NewPluginNotFoundError(name string) error {
+	return fmt.Errorf("a plugin named %q does not exist", name)
+}
+
+// NewPolicyNotFoundError informs the user that a plugin with
+// that name does not exist.
+func NewPolicyNotFoundError(name string) error {
 	return fmt.Errorf("a plugin named %q does not exist", name)
 }
 
