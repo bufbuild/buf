@@ -50,7 +50,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <remote/owner/policy[:ref]>",
-		Short: "List policys commits",
+		Short: "List policy's commits",
 		Long: `This command lists commits in a policy based on the reference specified.
 For a commit reference, it lists the commit itself.
 For a label reference, it lists the current and past commits associated with this label.
