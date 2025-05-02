@@ -27,6 +27,7 @@ import (
 
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -761,10 +762,35 @@ func equivalentCheckConfigInV2(
 			return !ok
 		},
 	)
+	// Filter remaining rules to match the V2 rule set. Any other rules are ignored.
+	// Theres no additional rules from plugins as plugins didn't exist before v2.
+	validV2IDsMap := make(map[string]struct{})
+	for _, ruleSpec := range bufcheckserver.V2Spec.Rules {
+		if ruleSpec.Type == ruleType {
+			validV2IDsMap[ruleSpec.ID] = struct{}{}
+		}
+	}
+	for _, categorySpec := range bufcheckserver.V2Spec.Categories {
+		validV2IDsMap[categorySpec.ID] = struct{}{}
+	}
+	useIDsAndCategories := slicesext.Filter(
+		append(simplyTranslatedCheckConfig.UseIDsAndCategories(), missingIDs...),
+		func(ruleID string) bool {
+			_, ok := validV2IDsMap[ruleID]
+			return ok
+		},
+	)
+	exceptIDsAndCategories := slicesext.Filter(
+		append(simplyTranslatedCheckConfig.ExceptIDsAndCategories(), extraIDs...),
+		func(ruleID string) bool {
+			_, ok := validV2IDsMap[ruleID]
+			return ok
+		},
+	)
 	return bufconfig.NewEnabledCheckConfig(
 		bufconfig.FileVersionV2,
-		append(simplyTranslatedCheckConfig.UseIDsAndCategories(), missingIDs...),
-		append(simplyTranslatedCheckConfig.ExceptIDsAndCategories(), extraIDs...),
+		useIDsAndCategories,
+		exceptIDsAndCategories,
 		simplyTranslatedCheckConfig.IgnorePaths(),
 		simplyTranslatedCheckConfig.IgnoreIDOrCategoryToPaths(),
 		simplyTranslatedCheckConfig.DisableBuiltin(),
