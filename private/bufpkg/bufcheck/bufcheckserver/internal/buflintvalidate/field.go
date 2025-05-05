@@ -163,7 +163,10 @@ func checkField(
 	if err != nil {
 		return err
 	}
-	constraints, _ := resolve.FieldRules(fieldDescriptor)
+	constraints, err := resolve.FieldRules(fieldDescriptor)
+	if err != nil {
+		return err
+	}
 	return checkRulesForField(
 		&adder{
 			field:               field,

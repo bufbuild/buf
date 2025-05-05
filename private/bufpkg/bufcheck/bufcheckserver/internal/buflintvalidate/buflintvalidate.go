@@ -35,7 +35,10 @@ func CheckMessage(
 	if err != nil {
 		return err
 	}
-	messageRules, _ := resolve.MessageRules(messageDescriptor)
+	messageRules, err := resolve.MessageRules(messageDescriptor)
+	if err != nil {
+		return err
+	}
 	if messageRules.GetDisabled() && len(messageRules.GetCel()) > 0 {
 		addAnnotationFunc(
 			message,
