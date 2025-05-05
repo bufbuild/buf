@@ -10,8 +10,10 @@ buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.6-20241007202033-c
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.6-20241007202033-cf42259fcbfc.1/go.mod h1:OUbhXurY+VHFGn9FBxcRy8UB7HXk9NvJ2qCgifOMypQ=
 buf.build/go/bufplugin v0.8.0 h1:YgR1+CNGmzR69jt85oRWTa5FioZoX/tOrHV+JxfNnnk=
 buf.build/go/bufplugin v0.8.0/go.mod h1:rcm0Esd3P/GM2rtYTvz3+9Gf8w9zdo7rG8dKSxYHHIE=
-buf.build/go/protoyaml v0.5.0 h1:RSRm3q3xfnvXF1kWrOo8gFx4jhTH5gG89mvQdWv26hQ=
-buf.build/go/protoyaml v0.5.0/go.mod h1:V87bQDLx2+PbaFLFBpBOgEeO7EqejCyi/2wgsGMPp/U=
+buf.build/go/protovalidate v0.11.0 h1:qmX+1Z/t5lqlxQW6bNHnCGE9kX6yXBNul0jYFjD2r3Q=
+buf.build/go/protovalidate v0.11.0/go.mod h1:Ryhm9EyqOxO/jdqEBpH4mI/FUk2ULyYeuhR+QRhOgqc=
+buf.build/go/protoyaml v0.6.0 h1:Nzz1lvcXF8YgNZXk+voPPwdU8FjDPTUV4ndNTXN0n2w=
+buf.build/go/protoyaml v0.6.0/go.mod h1:RgUOsBu/GYKLDSIRgQXniXbNgFlGEZnQpRAUdLAFV2Q=
 buf.build/go/spdx v0.2.0 h1:IItqM0/cMxvFJJumcBuP8NrsIzMs/UYjp/6WSpq8LTw=
 buf.build/go/spdx v0.2.0/go.mod h1:bXdwQFem9Si3nsbNy8aJKGPoaPi5DKwdeEp5/ArZ6w8=
 cel.dev/expr v0.23.1 h1:K4KOtPCJQjVggkARsjG9RWXP6O4R73aHeJMa/dmCQQg=
