@@ -511,6 +511,7 @@ func TestEmptyFiles(t *testing.T) {
 		runDiffTest(t, "testdata/empty", "empty.include.txtar", WithIncludeTypes("include"))
 	})
 	t.Run("exclude_empty_file", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/empty", "empty.exclude.txtar", WithExcludeTypes("include"))
 	})
 }
