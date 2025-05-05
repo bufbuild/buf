@@ -506,9 +506,12 @@ func TestDependencies(t *testing.T) {
 
 func TestEmptyFiles(t *testing.T) {
 	t.Parallel()
-	t.Run("empty_file", func(t *testing.T) {
+	t.Run("include_empty_file", func(t *testing.T) {
 		t.Parallel()
-		runDiffTest(t, "testdata/empty", "empty.txtar", WithExcludeTypes("pkg"))
+		runDiffTest(t, "testdata/empty", "empty.include.txtar", WithIncludeTypes("include"))
+	})
+	t.Run("exclude_empty_file", func(t *testing.T) {
+		runDiffTest(t, "testdata/empty", "empty.exclude.txtar", WithExcludeTypes("include"))
 	})
 }
 

@@ -1,4 +1,2 @@
 syntax = "proto3";
-package pkg;
-
-import "google/protobuf/any.proto";
+package include;

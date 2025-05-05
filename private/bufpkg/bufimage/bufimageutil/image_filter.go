@@ -63,11 +63,6 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 			if mode := closure.elements[fileDescriptorProto]; mode == inclusionModeExcluded {
 				continue
 			}
-			// Check if the excluding types results in no types defined in the image file. If so,
-			// then we do not add it to the closure.
-			if _, ok := imageIndex.FileTypes[fileDescriptorProto.GetName()]; !ok {
-				continue
-			}
 			if err := closure.addElement(fileDescriptorProto, "", false, imageIndex, options); err != nil {
 				return nil, err
 			}

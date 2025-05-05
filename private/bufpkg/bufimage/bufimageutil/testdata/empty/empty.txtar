@@ -1,5 +1,0 @@
--- c.proto --
-syntax = "proto3";
-message Foo {
-  string name = 1;
-}

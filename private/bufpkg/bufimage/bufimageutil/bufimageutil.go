@@ -451,15 +451,16 @@ func (t *transitiveClosure) addElement(
 	switch typedDescriptor := descriptor.(type) {
 	case *descriptorpb.FileDescriptorProto:
 		typeNames, ok := imageIndex.FileTypes[typedDescriptor.GetName()]
-		if !ok {
-			return fmt.Errorf("missing %q", typedDescriptor.GetName())
-		}
-		// A file includes all elements. The types are resolved in the image index
-		// to ensure all nested types are included.
-		for _, typeName := range typeNames {
-			typeInfo := imageIndex.ByName[typeName]
-			if err := t.addElement(typeInfo.element, "", false, imageIndex, opts); err != nil {
-				return err
+		// If the file we are attempting to include is empty (has no types defined), it is still
+		// valid for inclusion.
+		if ok {
+			// A file includes all elements. The types are resolved in the image index
+			// to ensure all nested types are included.
+			for _, typeName := range typeNames {
+				typeInfo := imageIndex.ByName[typeName]
+				if err := t.addElement(typeInfo.element, "", false, imageIndex, opts); err != nil {
+					return err
+				}
 			}
 		}
 
