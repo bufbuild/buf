@@ -29,7 +29,6 @@ require (
 	github.com/klauspost/compress v1.18.0
 	github.com/klauspost/pgzip v1.2.6
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
-	github.com/pkg/profile v1.7.0
 	github.com/quic-go/quic-go v0.51.0
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.9.1
@@ -70,7 +69,6 @@ require (
 	github.com/docker/docker-credential-helpers v0.9.3 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/felixge/fgprof v0.9.5 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
