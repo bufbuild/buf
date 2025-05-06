@@ -16,6 +16,7 @@
 package appext
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -26,8 +27,8 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/spf13/pflag"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -167,7 +168,7 @@ func ReadConfig(container NameContainer, value any) error {
 		if err != nil {
 			return fmt.Errorf("could not read %s configuration file at %s: %w", container.AppName(), configFilePath, err)
 		}
-		if err := encoding.UnmarshalYAMLStrict(data, value); err != nil {
+		if err := unmarshalYAMLStrict(data, value); err != nil {
 			return fmt.Errorf("invalid %s configuration file: %w", container.AppName(), err)
 		}
 	}
@@ -186,7 +187,7 @@ func ReadConfigNonStrict(container NameContainer, value any) error {
 		if err != nil {
 			return fmt.Errorf("could not read %s configuration file at %s: %w", container.AppName(), configFilePath, err)
 		}
-		if err := encoding.UnmarshalYAMLNonStrict(data, value); err != nil {
+		if err := unmarshalYAMLNonStrict(data, value); err != nil {
 			return fmt.Errorf("invalid %s configuration file: %w", container.AppName(), err)
 		}
 	}
@@ -210,7 +211,7 @@ func ReadSecret(container NameContainer, name string) (string, error) {
 // The directory is created if it does not exist.
 // The value should be a pointer to marshal.
 func WriteConfig(container NameContainer, value any) error {
-	data, err := encoding.MarshalYAML(value)
+	data, err := marshalYAML(value)
 	if err != nil {
 		return err
 	}
@@ -238,4 +239,49 @@ func Listen(ctx context.Context, container NameContainer, defaultPort uint16) (n
 	// Must be 0.0.0.0
 	var listenConfig net.ListenConfig
 	return listenConfig.Listen(ctx, "tcp", fmt.Sprintf("0.0.0.0:%d", port))
+}
+
+// *** PRIVATE ***
+
+// marshalYAML marshals the given value into YAML.
+func marshalYAML(v any) (_ []byte, retErr error) {
+	buffer := bytes.NewBuffer(nil)
+	yamlEncoder := yaml.NewEncoder(buffer)
+	yamlEncoder.SetIndent(2)
+	defer func() {
+		retErr = errors.Join(retErr, yamlEncoder.Close())
+	}()
+	if err := yamlEncoder.Encode(v); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
+}
+
+// unmarshalYAMLStrict unmarshals the data as YAML, returning a user error on failure.
+//
+// If the data length is 0, this is a no-op.
+func unmarshalYAMLStrict(data []byte, v any) error {
+	if len(data) == 0 {
+		return nil
+	}
+	yamlDecoder := yaml.NewDecoder(bytes.NewReader(data))
+	yamlDecoder.KnownFields(true)
+	if err := yamlDecoder.Decode(v); err != nil {
+		return fmt.Errorf("could not unmarshal as YAML: %v", err)
+	}
+	return nil
+}
+
+// unmarshalYAMLNonStrict unmarshals the data as YAML, returning a user error on failure.
+//
+// If the data length is 0, this is a no-op.
+func unmarshalYAMLNonStrict(data []byte, v any) error {
+	if len(data) == 0 {
+		return nil
+	}
+	yamlDecoder := yaml.NewDecoder(bytes.NewReader(data))
+	if err := yamlDecoder.Decode(v); err != nil {
+		return fmt.Errorf("could not unmarshal as YAML: %v", err)
+	}
+	return nil
 }
