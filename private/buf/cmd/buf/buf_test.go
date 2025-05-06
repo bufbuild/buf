@@ -215,11 +215,6 @@ func TestSuccess6(t *testing.T) {
 	testRunStdout(t, nil, 0, ``, "lint", filepath.Join("testdata", "success", "buf", "buf.proto"))
 }
 
-func TestSuccessProfile1(t *testing.T) {
-	t.Parallel()
-	testRunStdoutProfile(t, nil, 0, ``, "build", filepath.Join("testdata", "success"))
-}
-
 func TestSuccessDir(t *testing.T) {
 	t.Parallel()
 	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "successnobufyaml"))
@@ -4525,23 +4520,6 @@ func testRunStderrContainsNoWarn(t *testing.T, stdin io.Reader, expectedExitCode
 		append(
 			args,
 			"--no-warn",
-		)...,
-	)
-}
-
-func testRunStdoutProfile(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
-	tempDirPath := t.TempDir()
-	testRunStdout(
-		t,
-		stdin,
-		0,
-		``,
-		append(
-			args,
-			"--profile",
-			fmt.Sprintf("--profile-path=%s", tempDirPath),
-			"--profile-loops=1",
-			"--profile-type=cpu",
 		)...,
 	)
 }
