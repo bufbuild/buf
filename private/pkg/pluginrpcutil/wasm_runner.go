@@ -83,7 +83,7 @@ func (r *wasmRunner) loadCompiledModuleOnce(ctx context.Context) (wasm.CompiledM
 func (r *wasmRunner) loadCompiledModule(ctx context.Context) (wasm.CompiledModule, error) {
 	moduleWasm, err := r.getData()
 	if err != nil {
-		return nil, fmt.Errorf("could not read plugin %q: %err", r.programName, err)
+		return nil, fmt.Errorf("could not read plugin %q: %w", r.programName, err)
 	}
 	// Compile the module. This CompiledModule is never released, so
 	// subsequent calls to this function will benefit from the cached

@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+service A {
+  rpc GetA(GetARequest) returns (GetAResponse);
+  rpc ListA(ListARequest) returns (ListAResponse);
+}
+
+service AMock {
+  rpc GetAllA(GetAllARequest) returns (GetAllAResponse);
+}
+
+message GetARequest {}
+message GetAResponse {}
+
+message ListARequest {
+  uint32 page_size = 1;
+}
+
+message ListAResponse {
+  message Value {
+    string id = 1;
+    bytes content = 2;
+  }
+  repeated Value values = 1;
+}
+
+message GetAllARequest {}
+message GetAllAResponse {}

@@ -35,7 +35,6 @@ func TestBasic(t *testing.T) {
 			0,
 			"FOO",
 			"Hello.",
-			"",
 		),
 		newFileAnnotation(
 			t,
@@ -46,7 +45,7 @@ func TestBasic(t *testing.T) {
 			1,
 			"FOO",
 			"Hello.",
-			"buf-plugin-foo",
+			WithPluginName("buf-plugin-foo"),
 		),
 	}
 	sb := &strings.Builder{}
@@ -110,7 +109,6 @@ path/to/file.proto(2,1) : error FOO : Hello. (buf-plugin-foo)
 					0,
 					"FOO",
 					"Hello.",
-					"",
 				),
 				newFileAnnotation(
 					t,
@@ -121,7 +119,7 @@ path/to/file.proto(2,1) : error FOO : Hello. (buf-plugin-foo)
 					0,
 					"FOO",
 					"Hello.",
-					"buf-plugin-foo",
+					WithPluginName("buf-plugin-foo"),
 				),
 			)...,
 		),

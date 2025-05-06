@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package b;
+
+service B {
+  rpc GetB(GetBRequest) returns (GetBResponse);
+}
+
+message GetBRequest {}
+message GetBResponse {
+  enum BStatus {
+    B_STATUS_UNSPECIFIED = 0;
+    B_STATUS_VALID = 1;
+  }
+  message ValueStable {
+    string name = 1;
+    BStatus status = 2;
+    string a_uuid = 3;
+  }
+  ValueStable value = 1;
+}

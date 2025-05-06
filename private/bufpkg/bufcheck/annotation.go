@@ -24,17 +24,23 @@ type annotation struct {
 	check.Annotation
 
 	pluginName string
+	policyName string
 }
 
-func newAnnotation(checkAnnotation check.Annotation, pluginName string) *annotation {
+func newAnnotation(checkAnnotation check.Annotation, pluginName string, policyName string) *annotation {
 	return &annotation{
 		Annotation: checkAnnotation,
 		pluginName: pluginName,
+		policyName: policyName,
 	}
 }
 
 func (a *annotation) PluginName() string {
 	return a.pluginName
+}
+
+func (a *annotation) PolicyName() string {
+	return a.policyName
 }
 
 func annotationsToFileAnnotations(
@@ -65,6 +71,7 @@ func annotationToFileAnnotation(
 			annotation.RuleID(),
 			annotation.Message(),
 			annotation.PluginName(),
+			annotation.PolicyName(),
 		)
 	}
 	path := fileLocation.FileDescriptor().ProtoreflectFileDescriptor().Path()
@@ -84,5 +91,6 @@ func annotationToFileAnnotation(
 		annotation.RuleID(),
 		annotation.Message(),
 		annotation.PluginName(),
+		annotation.PolicyName(),
 	)
 }

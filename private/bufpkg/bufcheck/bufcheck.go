@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"pluginrpc.com/pluginrpc"
@@ -175,13 +176,20 @@ func WithPluginConfigs(pluginConfigs ...bufconfig.PluginConfig) ClientFunctionOp
 	}
 }
 
-// RunnerProvider provides pluginrpc.Runners for a given plugin config.
+// WithPolicyConfigs returns a new ClientFunctionOption that says to also use the given policies.
+func WithPolicyConfigs(policyConfigs ...bufconfig.PolicyConfig) ClientFunctionOption {
+	return &policyConfigsOption{
+		policyConfigs: policyConfigs,
+	}
+}
+
+// RunnerProvider provides pluginrpc.Runners for a given plugin config and an optional policy config.
 type RunnerProvider interface {
 	NewRunner(plugin bufplugin.Plugin) (pluginrpc.Runner, error)
 }
 
 // RunnerProviderFunc is a function that implements RunnerProvider.
-type RunnerProviderFunc func(plugin bufplugin.Plugin) (pluginrpc.Runner, error)
+type RunnerProviderFunc func(bufplugin.Plugin) (pluginrpc.Runner, error)
 
 // NewRunner implements RunnerProvider.
 //
@@ -264,6 +272,14 @@ func ClientWithRemoteWasmPlugins(
 	return func(clientOptions *clientOptions) {
 		clientOptions.pluginKeyProvider = pluginKeyProvider
 		clientOptions.pluginDataProvider = pluginDataProvider
+	}
+}
+
+// ClientWithLocalPolicies returns a new ClientOption that specifies the read bucket
+// for local policies.
+func ClientWithLocalPolicies(readBucket storage.ReadBucket) ClientOption {
+	return func(clientOptions *clientOptions) {
+		clientOptions.policyReadBucket = readBucket
 	}
 }
 
