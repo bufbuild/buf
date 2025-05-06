@@ -504,6 +504,18 @@ func TestDependencies(t *testing.T) {
 	})
 }
 
+func TestEmptyFiles(t *testing.T) {
+	t.Parallel()
+	t.Run("include_empty_file", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/empty", "empty.include.txtar", WithIncludeTypes("include"))
+	})
+	t.Run("exclude_empty_file", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/empty", "empty.exclude.txtar", WithExcludeTypes("include"))
+	})
+}
+
 func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
 	if err != nil {

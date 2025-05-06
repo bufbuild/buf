@@ -1,0 +1,11 @@
+-- b.proto --
+syntax = "proto3";
+-- c.proto --
+syntax = "proto3";
+package pkg;
+message Foo {
+  string name = 1;
+}
+-- d.proto --
+syntax = "proto3";
+package pkg;
