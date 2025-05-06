@@ -1704,21 +1704,20 @@ type expectedFileInfo struct {
 func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string]expectedFileInfo, buildArgs ...string) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	appcmdtesting.RunCommandExitCode(
+	appcmdtesting.Run(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		0,
-		internaltesting.NewEnvFunc(t),
-		nil,
-		stdout,
-		stderr,
-		append(
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		appcmdtesting.WithStdout(stdout),
+		appcmdtesting.WithStderr(stderr),
+		appcmdtesting.WithArgs(append(
 			[]string{
 				"build",
 				"-o=-#format=binpb",
 			},
 			buildArgs...,
-		)...,
+		)...),
 	)
 	outputImage := &imagev1.Image{}
 	require.NoError(t, protoencoding.NewWireUnmarshaler(nil).Unmarshal(stdout.Bytes(), outputImage))

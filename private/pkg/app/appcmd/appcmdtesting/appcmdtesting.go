@@ -20,7 +20,8 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
+	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -31,232 +32,42 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// RunCommandSuccessStdout runs the command and makes sure it was successful, and compares the stdout output.
-func RunCommandSuccessStdout(
-	t *testing.T,
-	newCommand func(use string) *appcmd.Command,
-	expectedStdout string,
-	newEnv func(use string) map[string]string,
-	stdin io.Reader,
-	args ...string,
-) {
-	RunCommandExitCodeStdout(t, newCommand, 0, expectedStdout, newEnv, stdin, args...)
-}
+// testingUse is the use string for test commands.
+//
+// We want to use something different than actual commands to make sure that all code is binary-name-agnostic.
+const testingUse = "test"
 
-// RunCommandExitCodeStdout runs the command and compares the exit code and stdout output.
-func RunCommandExitCodeStdout(
+// Run runs the command created by newCommand with the specified options.
+func Run(
 	t *testing.T,
 	newCommand func(use string) *appcmd.Command,
-	expectedExitCode int,
-	expectedStdout string,
-	newEnv func(use string) map[string]string,
-	stdin io.Reader,
-	args ...string,
+	options ...RunOption,
 ) {
-	stdout := bytes.NewBuffer(nil)
-	stderr := bytes.NewBuffer(nil)
-	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
-	require.Equal(
-		t,
-		stringutil.TrimLines(expectedStdout),
-		stringutil.TrimLines(stdout.String()),
-		requireErrorMessage(args, stdout, stderr),
-	)
-}
-
-// RunCommandExitCodeStdoutFile runs the command and compares the exit code and stdout output.
-func RunCommandExitCodeStdoutFile(
-	t *testing.T,
-	newCommand func(use string) *appcmd.Command,
-	expectedExitCode int,
-	expectedStdout string,
-	newEnv func(use string) map[string]string,
-	stdin io.Reader,
-	args ...string,
-) {
-	file, err := os.Open(expectedStdout)
-	require.NoError(t, err)
-	expectedstdoutConts, err := io.ReadAll(file)
-	require.NoError(t, err)
-	RunCommandExitCodeStdout(t, newCommand, expectedExitCode, string(expectedstdoutConts), newEnv, stdin, args...)
-}
-
-// RunCommandExitCodeStdoutStdinFile runs the command and allows a stdinFile to be opened and piped into the command.
-func RunCommandExitCodeStdoutStdinFile(
-	t *testing.T,
-	newCommand func(use string) *appcmd.Command,
-	expectedExitCode int,
-	expectedStdout string,
-	newEnv func(use string) map[string]string,
-	stdinFile string,
-	args ...string,
-) {
-	stdin, err := os.Open(stdinFile)
-	require.NoError(t, err)
-	RunCommandExitCodeStdout(t, newCommand, expectedExitCode, expectedStdout, newEnv, stdin, args...)
-}
-
-// RunCommandExitCodeStderr runs the command and compares the exit code and stderr output.
-func RunCommandExitCodeStderr(
-	t *testing.T,
-	newCommand func(use string) *appcmd.Command,
-	expectedExitCode int,
-	expectedStderr string,
-	newEnv func(use string) map[string]string,
-	stdin io.Reader,
-	args ...string,
-) {
-	stdout := bytes.NewBuffer(nil)
-	stderr := bytes.NewBuffer(nil)
-	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
-	require.Equal(
-		t,
-		stringutil.TrimLines(expectedStderr),
-		stringutil.TrimLines(stderr.String()),
-		requireErrorMessage(args, stdout, stderr),
-	)
-}
-
-// RunCommandExitCodesStderr runs the command and compares the exit codes and stderr output.
-func RunCommandExitCodesStderr(
-	t *testing.T,
-	newCommand func(use string) *appcmd.Command,
-	expectedExitCodes []int,
-	expectedStderr string,
-	newEnv func(use string) map[string]string,
-	stdin io.Reader,
-	args ...string,
-) {
-	stdout := bytes.NewBuffer(nil)
-	stderr := bytes.NewBuffer(nil)
-	RunCommandExitCodes(t, newCommand, expectedExitCodes, newEnv, stdin, stdout, stderr, args...)
-	require.Equal(
-		t,
-		stringutil.TrimLines(expectedStderr),
-		stringutil.TrimLines(stderr.String()),
-		requireErrorMessage(args, stdout, stderr),
-	)
-}
-
-// RunCommandExitCodeStderrContains runs the command and compares the exit code and stderr output
-// with the passed partial messages.
-func RunCommandExitCodeStderrContains(
-	t *testing.T,
-	newCommand func(use string) *appcmd.Command,
-	expectedExitCode int,
-	expectedStderrPartials []string,
-	newEnv func(use string) map[string]string,
-	stdin io.Reader,
-	args ...string,
-) {
-	stdout := bytes.NewBuffer(nil)
-	stderr := bytes.NewBuffer(nil)
-	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
-	allStderr := stderr.String()
-	if len(expectedStderrPartials) == 0 {
-		require.Empty(t, allStderr, "stderr was not empty:\n"+requireErrorMessage(args, stdout, stderr))
+	runOptions := newRunOptions()
+	for _, option := range options {
+		option(runOptions)
 	}
-	for _, expectedPartial := range expectedStderrPartials {
-		require.Contains(t, allStderr, expectedPartial, "stderr expected to contain %q:\n:%s", expectedPartial, requireErrorMessage(args, stdout, stderr))
-	}
-}
 
-// RunCommandExitCodeStdoutStderr runs the command and compares the exit code, stdout, and stderr output.
-func RunCommandExitCodeStdoutStderr(
-	t *testing.T,
-	newCommand func(use string) *appcmd.Command,
-	expectedExitCode int,
-	expectedStdout string,
-	expectedStderr string,
-	newEnv func(use string) map[string]string,
-	stdin io.Reader,
-	args ...string,
-) {
-	stdout := bytes.NewBuffer(nil)
-	stderr := bytes.NewBuffer(nil)
-	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
-	require.Equal(
-		t,
-		stringutil.TrimLines(expectedStdout),
-		stringutil.TrimLines(stdout.String()),
-		requireErrorMessage(args, stdout, stderr),
-	)
-	require.Equal(
-		t,
-		stringutil.TrimLines(expectedStderr),
-		stringutil.TrimLines(stderr.String()),
-		requireErrorMessage(args, stdout, stderr),
-	)
-}
-
-// RunCommandSuccess runs the command and makes sure it was successful.
-func RunCommandSuccess(
-	t *testing.T,
-	newCommand func(use string) *appcmd.Command,
-	newEnv func(use string) map[string]string,
-	stdin io.Reader,
-	stdout io.Writer,
-	args ...string,
-) {
-	stderr := bytes.NewBuffer(nil)
-	RunCommandExitCode(t, newCommand, 0, newEnv, stdin, stdout, stderr, args...)
-}
-
-// RunCommandExitCode runs the command and compares the exit code.
-func RunCommandExitCode(
-	t *testing.T,
-	newCommand func(use string) *appcmd.Command,
-	expectedExitCode int,
-	newEnv func(use string) map[string]string,
-	stdin io.Reader,
-	stdout io.Writer,
-	stderr io.Writer,
-	args ...string,
-) {
-	RunCommandExitCodes(t, newCommand, []int{expectedExitCode}, newEnv, stdin, stdout, stderr, args...)
-}
-
-// RunCommandExitCodes runs the command and compares the exit code to the expected
-// exit codes.
-//
-// It would be nice if we could do:
-//
-//	type IntOrInts interface {
-//	  int | []int
-//	}
-//
-//	func RunCommandExitCode[I IntOrInts](expectedExitCode I)
-//
-// However we can't: https://github.com/golang/go/issues/49206
-func RunCommandExitCodes(
-	t *testing.T,
-	newCommand func(use string) *appcmd.Command,
-	expectedExitCodes []int,
-	newEnv func(use string) map[string]string,
-	stdin io.Reader,
-	stdout io.Writer,
-	stderr io.Writer,
-	args ...string,
-) {
-	// make the use something different than the actual command
-	// to make sure that all code is binary-name-agnostic.
-	use := "test"
-	stdoutCopy := bytes.NewBuffer(nil)
+	stdin := runOptions.stdin
+	stdout := runOptions.stdout
+	stdoutBuffer := bytes.NewBuffer(nil)
 	if stdout == nil {
-		stdout = stdoutCopy
+		stdout = stdoutBuffer
 	} else {
-		stdout = io.MultiWriter(stdout, stdoutCopy)
+		stdout = io.MultiWriter(stdout, stdoutBuffer)
 	}
-	stderrCopy := bytes.NewBuffer(nil)
+	stderr := runOptions.stderr
+	stderrBuffer := bytes.NewBuffer(nil)
 	if stderr == nil {
-		stderr = stderrCopy
+		stderr = stderrBuffer
 	} else {
-		stderr = io.MultiWriter(stderr, stderrCopy)
+		stderr = io.MultiWriter(stderr, stderrBuffer)
 	}
 	var env map[string]string
-	if newEnv != nil {
-		env = newEnv(use)
+	if runOptions.newEnv != nil {
+		env = runOptions.newEnv(testingUse)
 	}
+
 	exitCode := app.GetExitCode(
 		appcmd.Run(
 			context.Background(),
@@ -265,22 +76,173 @@ func RunCommandExitCodes(
 				stdin,
 				stdout,
 				stderr,
-				append([]string{"test"}, args...)...,
+				append([]string{testingUse}, runOptions.args...)...,
 			),
-			newCommand(use),
+			newCommand(testingUse),
 		),
 	)
-	if slicesext.Count(expectedExitCodes, func(i int) bool { return exitCode == i }) == 0 {
+
+	expectedExitCodes := runOptions.expectedExitCodes
+	if len(expectedExitCodes) == 0 {
+		// If no expectedExitCodes specified, we expect the 0 exit code.
+		expectedExitCodes[0] = struct{}{}
+	}
+	var foundExpectedExitCode bool
+	for expectedExitCode := range runOptions.expectedExitCodes {
+		if exitCode == expectedExitCode {
+			foundExpectedExitCode = true
+			break
+		}
+	}
+	if !foundExpectedExitCode {
+		expectedExitCodesSlice := make([]int, 0, len(runOptions.expectedExitCodes))
+		for expectedExitCode := range runOptions.expectedExitCodes {
+			expectedExitCodesSlice = append(expectedExitCodesSlice, expectedExitCode)
+		}
+		sort.Ints(expectedExitCodesSlice)
+		message := fmt.Sprintf("one of %v", expectedExitCodesSlice)
+		if len(expectedExitCodesSlice) == 1 {
+			message = strconv.Itoa(expectedExitCodesSlice[0])
+		}
 		require.True(
 			t,
 			false,
-			"expected exit code %d to be one of %v\n:%s",
+			"expected exit code %d to be %s\n:%s",
 			exitCode,
-			expectedExitCodes,
-			requireErrorMessage(args, stdoutCopy, stderrCopy),
+			message,
+			requireErrorMessage(runOptions.args, stdoutBuffer, stderrBuffer),
 		)
 	}
+
+	if runOptions.expectedStdoutPresent {
+		require.Equal(
+			t,
+			stringutil.TrimLines(runOptions.expectedStdout),
+			stringutil.TrimLines(stdoutBuffer.String()),
+			requireErrorMessage(runOptions.args, stdoutBuffer, stderrBuffer),
+		)
+	}
+	if runOptions.expectedStderrPresent {
+		require.Equal(
+			t,
+			stringutil.TrimLines(runOptions.expectedStderr),
+			stringutil.TrimLines(stderrBuffer.String()),
+			requireErrorMessage(runOptions.args, stdoutBuffer, stderrBuffer),
+		)
+	}
+	if runOptions.expectedStderrPartialsPresent {
+		if len(runOptions.expectedStderrPartials) == 0 {
+			require.Empty(
+				t,
+				stderrBuffer.String(),
+				"stderr was not empty:\n%s",
+				requireErrorMessage(runOptions.args, stdoutBuffer, stderrBuffer),
+			)
+		}
+		for _, expectedStderrPartial := range runOptions.expectedStderrPartials {
+			require.Contains(
+				t,
+				stderrBuffer.String(),
+				expectedStderrPartial,
+				"stderr expected to contain %q:\n:%s",
+				expectedStderrPartial,
+				requireErrorMessage(runOptions.args, stdoutBuffer, stderrBuffer),
+			)
+		}
+	}
 }
+
+// RunOption is a new option for Run.
+type RunOption func(*runOptions)
+
+// WithEnv will attach the given environment variable map created by newEnv.
+//
+// The default is no environment variables.
+func WithEnv(newEnv func(use string) map[string]string) RunOption {
+	return func(runOptions *runOptions) {
+		runOptions.newEnv = newEnv
+	}
+}
+
+// WithStdin will attach the given stdin to read from.
+func WithStdin(stdin io.Reader) RunOption {
+	return func(runOptions *runOptions) {
+		runOptions.stdin = stdin
+	}
+}
+
+// WithStdout will attach the given stdout to write to.
+func WithStdout(stdout io.Writer) RunOption {
+	return func(runOptions *runOptions) {
+		runOptions.stdout = stdout
+	}
+}
+
+// WithStdout will attach the given stderr to write to.
+func WithStderr(stderr io.Writer) RunOption {
+	return func(runOptions *runOptions) {
+		runOptions.stderr = stderr
+	}
+}
+
+// WithArgs adds the given args.
+func WithArgs(args ...string) RunOption {
+	return func(runOptions *runOptions) {
+		runOptions.args = args
+	}
+}
+
+// WithExpectedStdout will result in an error if the stdout does not exactly equal the given string.
+//
+// Note that this can be called with empty, which will result in Run verifying that the stdout is empty.
+func WithExpectedStdout(expectedStdout string) RunOption {
+	return func(runOptions *runOptions) {
+		runOptions.expectedStdout = expectedStdout
+		runOptions.expectedStdoutPresent = true
+	}
+}
+
+// WithExpectedStdout will result in an error if the stderr does not exactly equal the given string.
+//
+// Note that this can be called with empty, which will result in Run verifying that the stderr is empty.
+func WithExpectedStderr(expectedStderr string) RunOption {
+	return func(runOptions *runOptions) {
+		runOptions.expectedStderr = expectedStderr
+		runOptions.expectedStderrPresent = true
+	}
+}
+
+// WithExpectedStderrPartials will result in Run checking if all the given strings are contained within stderr.
+//
+// Note that this can be called with empty, which will result in Run verifying that the stderr is empty.
+func WithExpectedStderrPartials(expectedStderrPartials ...string) RunOption {
+	return func(runOptions *runOptions) {
+		runOptions.expectedStderrPartials = expectedStderrPartials
+		runOptions.expectedStderrPartialsPresent = true
+	}
+}
+
+// WithExpectedExitCode will result in Run checking that the exit code is the expected value.
+//
+// By default, Run will check that the exit code is 0.
+func WithExpectedExitCode(expectedExitCode int) RunOption {
+	return func(runOptions *runOptions) {
+		runOptions.expectedExitCodes[expectedExitCode] = struct{}{}
+	}
+}
+
+// WithExpectedExitCodes will result in Run checking that the exit code is one of the expected values.
+//
+// By default, Run will check that the exit code is 0.
+func WithExpectedExitCodes(expectedExitCodes ...int) RunOption {
+	return func(runOptions *runOptions) {
+		for _, expectedExitCode := range expectedExitCodes {
+			runOptions.expectedExitCodes[expectedExitCode] = struct{}{}
+		}
+	}
+}
+
+// *** PRIVATE ***
 
 func requireErrorMessage(args []string, stdout *bytes.Buffer, stderr *bytes.Buffer) string {
 	return fmt.Sprintf(
@@ -298,4 +260,25 @@ func requireErrorMessage(args []string, stdout *bytes.Buffer, stderr *bytes.Buff
 		stringutil.TrimLines(stdout.String()),
 		stringutil.TrimLines(stderr.String()),
 	)
+}
+
+type runOptions struct {
+	newEnv                        func(use string) map[string]string
+	stdin                         io.Reader
+	stdout                        io.Writer
+	stderr                        io.Writer
+	args                          []string
+	expectedStdout                string
+	expectedStdoutPresent         bool
+	expectedStderr                string
+	expectedStderrPresent         bool
+	expectedStderrPartials        []string
+	expectedStderrPartialsPresent bool
+	expectedExitCodes             map[int]struct{}
+}
+
+func newRunOptions() *runOptions {
+	return &runOptions{
+		expectedExitCodes: make(map[int]struct{}),
+	}
 }

@@ -77,10 +77,12 @@ func (c *cloner) CloneToBucket(
 	depthArg := strconv.Itoa(int(depth))
 
 	envContainer = app.NewEnvContainerWithOverrides(envContainer, map[string]string{
-		// In the case where this is being run in an environment where GIT_DIR is set, e.g. within
-		// a submodule, we want to treat this as a stand-alone clone rather than interacting with
-		// an existing GIT_DIR. So we filter out GIT_DIR from our environment variables.
-		"GIT_DIR": "",
+		// In the case where this is being run in an environment where GIT_DIR and GIT_INDEX_FILE
+		// are set, e.g. within a submodule, we want to treat this as a stand-alone, non-bare
+		// clone rather than interacting with an existing GIT_DIR and GIT_INDEX_FILE.
+		// So we filter out GIT_DIR and GIT_INDEX_FILE from our environment variables.
+		"GIT_DIR":        "",
+		"GIT_INDEX_FILE": "",
 	})
 
 	baseDir, err := tmp.NewDir(ctx)

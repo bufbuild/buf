@@ -22,11 +22,11 @@ import (
 	"unicode/utf8"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+	"buf.build/go/protovalidate"
+	"buf.build/go/protovalidate/resolve"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/protovalidate-go"
-	"github.com/bufbuild/protovalidate-go/resolve"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -163,7 +163,10 @@ func checkField(
 	if err != nil {
 		return err
 	}
-	constraints := resolve.FieldRules(fieldDescriptor)
+	constraints, err := resolve.FieldRules(fieldDescriptor)
+	if err != nil {
+		return err
+	}
 	return checkRulesForField(
 		&adder{
 			field:               field,

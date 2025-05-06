@@ -18,12 +18,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/pkg/profile"
 	"github.com/spf13/pflag"
 )
 
@@ -33,14 +30,6 @@ type builder struct {
 	debug     bool
 	noWarn    bool
 	logFormat string
-
-	profile           bool
-	profilePath       string
-	profileLoops      int
-	profileType       string
-	profileAllowError bool
-
-	parallelism int
 
 	timeout time.Duration
 
@@ -68,22 +57,9 @@ func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
 		flagSet.DurationVar(&b.timeout, "timeout", b.defaultTimeout, `The duration until timing out, setting it to zero means no timeout`)
 	}
 
-	flagSet.BoolVar(&b.profile, "profile", false, "Run profiling")
-	_ = flagSet.MarkHidden("profile")
-	flagSet.StringVar(&b.profilePath, "profile-path", "", "The profile base directory path")
-	_ = flagSet.MarkHidden("profile-path")
-	flagSet.IntVar(&b.profileLoops, "profile-loops", 1, "The number of loops to run")
-	_ = flagSet.MarkHidden("profile-loops")
-	flagSet.StringVar(&b.profileType, "profile-type", "cpu", "The profile type [cpu,mem,block,mutex]")
-	_ = flagSet.MarkHidden("profile-type")
-	flagSet.BoolVar(&b.profileAllowError, "profile-allow-error", false, "Allow errors for profiled commands")
-	_ = flagSet.MarkHidden("profile-allow-error")
-
 	// We do not officially support this flag, this is for testing, where we need warnings turned off.
 	flagSet.BoolVar(&b.noWarn, "no-warn", false, "Turn off warn logging")
 	_ = flagSet.MarkHidden("no-warn")
-	flagSet.IntVar(&b.parallelism, "parallelism", 0, "Manually control the parallelism")
-	_ = flagSet.MarkHidden("parallelism")
 
 	// We used to have this as a global flag, so we still need to not error when it is called.
 	var verbose bool
@@ -126,83 +102,13 @@ func (b *builder) run(
 	}
 	container := newContainer(nameContainer, logger)
 
-	if b.parallelism > 0 {
-		thread.SetParallelism(b.parallelism)
-	}
-
 	var cancel context.CancelFunc
-	if !b.profile && b.timeout != 0 {
+	if b.timeout != 0 {
 		ctx, cancel = context.WithTimeout(ctx, b.timeout)
 		defer cancel()
 	}
 
-	if !b.profile {
-		return f(ctx, container)
-	}
-	return runProfile(
-		ctx,
-		logger,
-		b.profilePath,
-		b.profileType,
-		b.profileLoops,
-		b.profileAllowError,
-		func() error {
-			return f(ctx, container)
-		},
-	)
-}
-
-// runProfile profiles the function.
-func runProfile(
-	ctx context.Context,
-	logger *slog.Logger,
-	profilePath string,
-	profileType string,
-	profileLoops int,
-	profileAllowError bool,
-	f func() error,
-) error {
-	var err error
-	if profilePath == "" {
-		profilePath, err = os.MkdirTemp("", "")
-		if err != nil {
-			return err
-		}
-	}
-	logger.DebugContext(ctx, "profile", slog.String("path", profilePath))
-	if profileType == "" {
-		profileType = "cpu"
-	}
-	if profileLoops == 0 {
-		profileLoops = 10
-	}
-	var profileFunc func(*profile.Profile)
-	switch profileType {
-	case "cpu":
-		profileFunc = profile.CPUProfile
-	case "mem":
-		profileFunc = profile.MemProfile
-	case "block":
-		profileFunc = profile.BlockProfile
-	case "mutex":
-		profileFunc = profile.MutexProfile
-	default:
-		return fmt.Errorf("unknown profile type: %q", profileType)
-	}
-	stop := profile.Start(
-		profile.Quiet,
-		profile.ProfilePath(profilePath),
-		profileFunc,
-	)
-	for range profileLoops {
-		if err := f(); err != nil {
-			if !profileAllowError {
-				return err
-			}
-		}
-	}
-	stop.Stop()
-	return nil
+	return f(ctx, container)
 }
 
 func getLogLevel(debugFlag bool, noWarnFlag bool) (LogLevel, error) {
