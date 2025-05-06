@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/spf13/pflag"
 )
 
@@ -31,8 +30,6 @@ type builder struct {
 	debug     bool
 	noWarn    bool
 	logFormat string
-
-	parallelism int
 
 	timeout time.Duration
 
@@ -63,8 +60,6 @@ func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
 	// We do not officially support this flag, this is for testing, where we need warnings turned off.
 	flagSet.BoolVar(&b.noWarn, "no-warn", false, "Turn off warn logging")
 	_ = flagSet.MarkHidden("no-warn")
-	flagSet.IntVar(&b.parallelism, "parallelism", 0, "Manually control the parallelism")
-	_ = flagSet.MarkHidden("parallelism")
 
 	// We used to have this as a global flag, so we still need to not error when it is called.
 	var verbose bool
@@ -106,10 +101,6 @@ func (b *builder) run(
 		return err
 	}
 	container := newContainer(nameContainer, logger)
-
-	if b.parallelism > 0 {
-		thread.SetParallelism(b.parallelism)
-	}
 
 	var cancel context.CancelFunc
 	if b.timeout != 0 {
