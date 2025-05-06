@@ -779,7 +779,7 @@ func testCompareGeneratedStubs(
 			filePath,
 		)
 	}
-	appcmdtesting.RunCommandSuccess(
+	appcmdtesting.Run(
 		t,
 		func(name string) *appcmd.Command {
 			return NewCommand(
@@ -787,10 +787,8 @@ func testCompareGeneratedStubs(
 				appext.NewBuilder(name),
 			)
 		},
-		internaltesting.NewEnvFunc(t),
-		nil,
-		nil,
-		genFlags...,
+		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		appcmdtesting.WithArgs(genFlags...),
 	)
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	actualReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
@@ -893,7 +891,7 @@ func testCompareGeneratedStubsArchive(
 }
 
 func testRunSuccess(t *testing.T, args ...string) {
-	appcmdtesting.RunCommandSuccess(
+	appcmdtesting.Run(
 		t,
 		func(name string) *appcmd.Command {
 			return NewCommand(
@@ -901,10 +899,8 @@ func testRunSuccess(t *testing.T, args ...string) {
 				appext.NewBuilder(name),
 			)
 		},
-		internaltesting.NewEnvFunc(t),
-		nil,
-		nil,
-		args...,
+		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		appcmdtesting.WithArgs(args...),
 	)
 }
 
@@ -1036,7 +1032,7 @@ plugins:
 }
 
 func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, expectedStderr string, args ...string) {
-	appcmdtesting.RunCommandExitCodeStdoutStderr(
+	appcmdtesting.Run(
 		t,
 		func(name string) *appcmd.Command {
 			return NewCommand(
@@ -1060,12 +1056,12 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 				),
 			)
 		},
-		expectedExitCode,
-		expectedStdout,
-		expectedStderr,
-		internaltesting.NewEnvFunc(t),
-		stdin,
-		args...,
+		appcmdtesting.WithExpectedExitCode(expectedExitCode),
+		appcmdtesting.WithExpectedStdout(expectedStdout),
+		appcmdtesting.WithExpectedStderr(expectedStderr),
+		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(args...),
 	)
 }
 

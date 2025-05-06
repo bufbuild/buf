@@ -67,20 +67,23 @@ func TestValidImportFromCorruptedCacheFile(t *testing.T) {
 		ActualDigest:   actualDigest,
 	}
 
-	appcmdtesting.RunCommandExitCodeStderr(
+	appcmdtesting.Run(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		1,
-		appFailureError(digestMismatchError).Error(),
-		func(use string) map[string]string {
-			return map[string]string{
-				useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "corrupted_cache_file"),
-			}
-		},
-		nil,
-		"build",
-		filepath.Join("testdata", "imports", "success", "students"),
-		"--no-warn",
+		appcmdtesting.WithExpectedExitCode(1),
+		appcmdtesting.WithExpectedStderr(appFailureError(digestMismatchError).Error()),
+		appcmdtesting.WithEnv(
+			func(use string) map[string]string {
+				return map[string]string{
+					useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "corrupted_cache_file"),
+				}
+			},
+		),
+		appcmdtesting.WithArgs(
+			"build",
+			filepath.Join("testdata", "imports", "success", "students"),
+			"--no-warn",
+		),
 	)
 }
 
@@ -101,20 +104,23 @@ func TestValidImportFromCorruptedCacheDep(t *testing.T) {
 		ActualDigest:   actualDigest,
 	}
 
-	appcmdtesting.RunCommandExitCodeStderr(
+	appcmdtesting.Run(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		1,
-		appFailureError(digestMismatchError).Error(),
-		func(use string) map[string]string {
-			return map[string]string{
-				useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "corrupted_cache_dep"),
-			}
-		},
-		nil,
-		"build",
-		filepath.Join("testdata", "imports", "success", "school"),
-		"--no-warn",
+		appcmdtesting.WithExpectedExitCode(1),
+		appcmdtesting.WithExpectedStderr(appFailureError(digestMismatchError).Error()),
+		appcmdtesting.WithEnv(
+			func(use string) map[string]string {
+				return map[string]string{
+					useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "corrupted_cache_dep"),
+				}
+			},
+		),
+		appcmdtesting.WithArgs(
+			"build",
+			filepath.Join("testdata", "imports", "success", "school"),
+			"--no-warn",
+		),
 	)
 }
 
@@ -208,34 +214,38 @@ func TestGraphNoWarningsValidImportFromWorkspaceNamedModules(t *testing.T) {
 }
 
 func testRunStderrWithCache(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderr string, args ...string) {
-	appcmdtesting.RunCommandExitCodeStderr(
+	appcmdtesting.Run(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		expectedExitCode,
-		expectedStderr,
-		func(use string) map[string]string {
-			return map[string]string{
-				useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "cache"),
-			}
-		},
-		stdin,
-		args...,
+		appcmdtesting.WithExpectedExitCode(expectedExitCode),
+		appcmdtesting.WithExpectedStderr(expectedStderr),
+		appcmdtesting.WithEnv(
+			func(use string) map[string]string {
+				return map[string]string{
+					useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "cache"),
+				}
+			},
+		),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(args...),
 	)
 }
 
 func testRunStderrContainsWithCache(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderrPartials []string, args ...string) {
-	appcmdtesting.RunCommandExitCodeStderrContains(
+	appcmdtesting.Run(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		expectedExitCode,
-		expectedStderrPartials,
-		func(use string) map[string]string {
-			return map[string]string{
-				useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "cache"),
-			}
-		},
-		stdin,
-		args...,
+		appcmdtesting.WithExpectedExitCode(expectedExitCode),
+		appcmdtesting.WithExpectedStderrPartials(expectedStderrPartials...),
+		appcmdtesting.WithEnv(
+			func(use string) map[string]string {
+				return map[string]string{
+					useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "cache"),
+				}
+			},
+		),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(args...),
 	)
 }
 

@@ -15,12 +15,14 @@
 package convert
 
 import (
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/stretchr/testify/require"
 )
 
 func TestConvertDefaultInputBin(t *testing.T) {
@@ -57,310 +59,329 @@ func TestConvertDefaultInputBinpb(t *testing.T) {
 
 func TestConvertDefaultInputTxtpb(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		`{"one":"55"}`,
-		nil,
-		nil,
-		"--type",
-		"buf.Foo",
-		"--from",
-		"testdata/convert/bin_json/payload.txtpb",
-		"--to",
-		"-#format=json",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout(`{"one":"55"}`),
+		appcmdtesting.WithArgs(
+			"--type",
+			"buf.Foo",
+			"--from",
+			"testdata/convert/bin_json/payload.txtpb",
+			"--to",
+			"-#format=json",
+		),
 	)
 }
 
 func TestConvertDefaultInputYAML(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		`one: "55"`,
-		nil,
-		nil,
-		"--type",
-		"buf.Foo",
-		"--from",
-		"testdata/convert/bin_json/payload.txtpb",
-		"--to",
-		"-#format=yaml",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout(`one: "55"`),
+		appcmdtesting.WithArgs(
+			"--type",
+			"buf.Foo",
+			"--from",
+			"testdata/convert/bin_json/payload.txtpb",
+			"--to",
+			"-#format=yaml",
+		),
 	)
 }
 func TestConvertFromStdinBin(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdoutStdinFile(
+	stdin, err := os.Open("testdata/convert/bin_json/payload.bin")
+	require.NoError(t, err)
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		`{"one":"55"}`,
-		nil,
-		"testdata/convert/bin_json/payload.bin",
-
-		"--type",
-		"buf.Foo",
-		"--from",
-		"-#format=bin",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout(`{"one":"55"}`),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(
+			"--type",
+			"buf.Foo",
+			"--from",
+			"-#format=bin",
+		),
 	)
 }
 func TestConvertFromStdinBinpb(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdoutStdinFile(
+	stdin, err := os.Open("testdata/convert/bin_json/payload.binpb")
+	require.NoError(t, err)
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		`{"one":"55"}`,
-		nil,
-		"testdata/convert/bin_json/payload.binpb",
-
-		"--type",
-		"buf.Foo",
-		"--from",
-		"-#format=binpb",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout(`{"one":"55"}`),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(
+			"--type",
+			"buf.Foo",
+			"--from",
+			"-#format=binpb",
+		),
 	)
 }
 func TestConvertFromStdinTxtpbJSON(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdoutStdinFile(
+	stdin, err := os.Open("testdata/convert/bin_json/payload.txtpb")
+	require.NoError(t, err)
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		`{"one":"55"}`,
-		nil,
-		"testdata/convert/bin_json/payload.txtpb",
-
-		"--type",
-		"buf.Foo",
-		"--from",
-		"-#format=txtpb",
-		"--to",
-		"-#format=json",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout(`{"one":"55"}`),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(
+			"--type",
+			"buf.Foo",
+			"--from",
+			"-#format=txtpb",
+			"--to",
+			"-#format=json",
+		),
 	)
 }
 func TestConvertFromStdinTxtpbYAML(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdoutStdinFile(
+	stdin, err := os.Open("testdata/convert/bin_json/payload.txtpb")
+	require.NoError(t, err)
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		`one: "55"`,
-		nil,
-		"testdata/convert/bin_json/payload.txtpb",
-
-		"--type",
-		"buf.Foo",
-		"--from",
-		"-#format=txtpb",
-		"--to",
-		"-#format=yaml",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout(`one: "55"`),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(
+			"--type",
+			"buf.Foo",
+			"--from",
+			"-#format=txtpb",
+			"--to",
+			"-#format=yaml",
+		),
 	)
 }
 func TestConvertDiscardedStdin(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		`{"one":"55"}`,
-		nil,
-		strings.NewReader("this should be discarded"), // stdin is discarded if not needed
-		"--type",
-		"buf.Foo",
-		"--from",
-		"testdata/convert/bin_json/payload.binpb",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout(`{"one":"55"}`),
+		appcmdtesting.WithStdin(strings.NewReader("this should be discarded")), // stdin is discarded if not needed
+		appcmdtesting.WithArgs(
+			"--type",
+			"buf.Foo",
+			"--from",
+			"testdata/convert/bin_json/payload.binpb",
+		),
 	)
 }
 func TestConvertWKTBin(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		`"3600s"`,
-		nil,
-		nil,
-		"--type",
-		"google.protobuf.Duration",
-		"--from",
-		"testdata/convert/bin_json/duration.bin",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout(`"3600s"`),
+		appcmdtesting.WithArgs(
+			"--type",
+			"google.protobuf.Duration",
+			"--from",
+			"testdata/convert/bin_json/duration.bin",
+		),
 	)
 }
 func TestConvertWKTBinpb(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		`"3600s"`,
-		nil,
-		nil,
-		"--type",
-		"google.protobuf.Duration",
-		"--from",
-		"testdata/convert/bin_json/duration.binpb",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout(`"3600s"`),
+		appcmdtesting.WithArgs(
+			"--type",
+			"google.protobuf.Duration",
+			"--from",
+			"testdata/convert/bin_json/duration.binpb",
+		),
 	)
 }
 func TestConvertWKTTxtpb(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		`"3600s"`,
-		nil,
-		nil,
-		"--type",
-		"google.protobuf.Duration",
-		"--from",
-		"testdata/convert/bin_json/duration.txtpb",
-		"--to",
-		"-#format=json",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout(`"3600s"`),
+		appcmdtesting.WithArgs(
+			"--type",
+			"google.protobuf.Duration",
+			"--from",
+			"testdata/convert/bin_json/duration.txtpb",
+			"--to",
+			"-#format=json",
+		),
 	)
 }
 func TestConvertWKTYAML(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		`3600s`,
-		nil,
-		nil,
-		"--type",
-		"google.protobuf.Duration",
-		"--from",
-		"testdata/convert/bin_json/duration.txtpb",
-		"--to",
-		"-#format=yaml",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout(`3600s`),
+		appcmdtesting.WithArgs(
+			"--type",
+			"google.protobuf.Duration",
+			"--from",
+			"testdata/convert/bin_json/duration.txtpb",
+			"--to",
+			"-#format=yaml",
+		),
 	)
 }
 func TestConvertWKTFormatBin(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdoutFile(
+	stdin, err := os.Open("testdata/convert/bin_json/duration.bin")
+	require.NoError(t, err)
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		"testdata/convert/bin_json/duration.bin",
-		nil,
-		nil,
-		"--type=google.protobuf.Duration",
-		"--from=testdata/convert/bin_json/duration.json",
-		"--to",
-		"-#format=bin",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(
+			"--type=google.protobuf.Duration",
+			"--from=testdata/convert/bin_json/duration.json",
+			"--to",
+			"-#format=bin",
+		),
 	)
 }
 func TestConvertWKTFormatBinYAML(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdoutFile(
+	stdin, err := os.Open("testdata/convert/bin_json/duration.bin")
+	require.NoError(t, err)
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		"testdata/convert/bin_json/duration.bin",
-		nil,
-		nil,
-		"--type=google.protobuf.Duration",
-		"--from=testdata/convert/bin_json/duration.yaml",
-		"--to",
-		"-#format=bin",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(
+			"--type=google.protobuf.Duration",
+			"--from=testdata/convert/bin_json/duration.yaml",
+			"--to",
+			"-#format=bin",
+		),
 	)
 }
 func TestConvertWKTFormatBinpb(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdoutFile(
+	stdin, err := os.Open("testdata/convert/bin_json/duration.binpb")
+	require.NoError(t, err)
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		"testdata/convert/bin_json/duration.binpb",
-		nil,
-		nil,
-		"--type=google.protobuf.Duration",
-		"--from=testdata/convert/bin_json/duration.json",
-		"--to",
-		"-#format=binpb",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(
+			"--type=google.protobuf.Duration",
+			"--from=testdata/convert/bin_json/duration.json",
+			"--to",
+			"-#format=binpb",
+		),
 	)
 }
 func TestConvertWKTFormatBinpbYAML(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdoutFile(
+	stdin, err := os.Open("testdata/convert/bin_json/duration.binpb")
+	require.NoError(t, err)
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		"testdata/convert/bin_json/duration.binpb",
-		nil,
-		nil,
-		"--type=google.protobuf.Duration",
-		"--from=testdata/convert/bin_json/duration.yaml",
-		"--to",
-		"-#format=binpb",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(
+			"--type=google.protobuf.Duration",
+			"--from=testdata/convert/bin_json/duration.yaml",
+			"--to",
+			"-#format=binpb",
+		),
 	)
 }
 func TestConvertWKTIncorrectInput(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		1,
-		"",
-		nil,
-		nil,
-		"filedoestexist",
-		"--type=google.protobuf.Duration",
-		"--from=testdata/convert/bin_json/duration.json",
-		"--to",
-		"-#format=binpb",
+		appcmdtesting.WithExpectedExitCode(1),
+		appcmdtesting.WithExpectedStdout(""), // explicitly check for empty stdout
+		appcmdtesting.WithArgs(
+			"filedoestexist",
+			"--type=google.protobuf.Duration",
+			"--from=testdata/convert/bin_json/duration.json",
+			"--to",
+			"-#format=binpb",
+		),
 	)
 }
 func TestConvertWKTGoogleFileLocal(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		1,
-		"",
-		nil,
-		nil,
-		"google/protobuf/timestamp.proto", // this file doesn't exist locally
-		"--type=google.protobuf.Duration",
-		"--from=duration.json",
-		"--to",
-		"-#format=binpb",
+		appcmdtesting.WithExpectedExitCode(1),
+		appcmdtesting.WithExpectedStdout(""), // explicitly check for empty stdout
+		appcmdtesting.WithArgs(
+			"google/protobuf/timestamp.proto", // this file doesn't exist locally
+			"--type=google.protobuf.Duration",
+			"--from=duration.json",
+			"--to",
+			"-#format=binpb",
+		),
 	)
 }
 func TestConvertWKTLocalWKTExists(t *testing.T) {
 	t.Parallel()
 	expected := `{"name":"blah"}` // valid google.protobuf.Method message
 	stdin := strings.NewReader(expected)
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		expected,
-		nil,
-		stdin,
-		"--type=google.protobuf.Method",
-		"--from=-#format=json",
-		"--to",
-		"-#format=json",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout(expected),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(
+			"--type=google.protobuf.Method",
+			"--from=-#format=json",
+			"--to",
+			"-#format=json",
+		),
 	)
 }
 func TestConvertWKTLocalChanged(t *testing.T) {
 	t.Parallel()
 	expected := `{"notinoriginal":"blah"}` // notinoriginal exists in the local api.proto
 	stdin := strings.NewReader(expected)
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		expected,
-		nil,
-		stdin,
-		"--type=google.protobuf.Method",
-		"--from=-#format=json",
-		"--to",
-		"-#format=json",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout(expected),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(
+			"--type=google.protobuf.Method",
+			"--from=-#format=json",
+			"--to",
+			"-#format=json",
+		),
 	)
 }
 
@@ -369,34 +390,36 @@ func TestConvertWKTLocalChanged(t *testing.T) {
 func TestConvertWKTLocalChanged2(t *testing.T) {
 	t.Parallel()
 	stdin := strings.NewReader(`{"notinchanged":"blah"}`) // notinchanged does not exist in the local api.proto
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		"{}", // we expect empty json because the field doesn't exist in api.proto
-		nil,
-		stdin,
-		"--type=google.protobuf.Method",
-		"--from=-#format=json",
-		"--to",
-		"-#format=json",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout("{}"), // we expect empty json because the field doesn't exist in api.proto
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(
+			"--type=google.protobuf.Method",
+			"--from=-#format=json",
+			"--to",
+			"-#format=json",
+		),
 	)
 }
 func TestConvertWKTImport(t *testing.T) {
 	t.Parallel()
 	expected := `{"syntax":"SYNTAX_PROTO3"}` // Syntax is imported into type.proto
 	stdin := strings.NewReader(expected)
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		expected,
-		nil,
-		stdin,
-		"--type=google.protobuf.Type",
-		"--from=-#format=json",
-		"--to",
-		"-#format=json",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout(expected),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(
+			"--type=google.protobuf.Type",
+			"--from=-#format=json",
+			"--to",
+			"-#format=json",
+		),
 	)
 }
 
