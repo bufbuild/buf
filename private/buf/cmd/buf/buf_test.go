@@ -37,7 +37,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
@@ -3055,20 +3054,20 @@ testdata/check_plugins/current/proto/common/v1/common.proto:8:5:Field name "comm
 	require.NotPanics(
 		t,
 		func() {
-			appcmdtesting.RunCommandExitCodeStderrContains(
+			appcmdtesting.Run(
 				t,
-				func(use string) *appcmd.Command { return NewRootCommand(use) },
-				1,
-				[]string{
+				NewRootCommand,
+				appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+				appcmdtesting.WithExpectedExitCode(1),
+				appcmdtesting.WithExpectedStderrPartials(
 					`panic: this panic is intentional`,
 					`Failure: plugin "buf-plugin-panic" failed: Exited with code 2: exit status 2`,
-				},
-				internaltesting.NewEnvFunc(t),
-				nil,
-				"lint",
-				filepath.Join("testdata", "check_plugins", "current"),
-				"--config",
-				`{
+				),
+				appcmdtesting.WithArgs(
+					"lint",
+					filepath.Join("testdata", "check_plugins", "current"),
+					"--config",
+					`{
 					"version":"v2",
 					"modules": [
 						{"path": "testdata/check_plugins/current/proto"},
@@ -3081,6 +3080,7 @@ testdata/check_plugins/current/proto/common/v1/common.proto:8:5:Field name "comm
 						{"plugin": "buf-plugin-panic"}
 					]
 				}`,
+				),
 			)
 		},
 	)
@@ -4473,59 +4473,63 @@ func testModInit(t *testing.T, expectedData string, document bool, name string, 
 }
 
 func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
-		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		expectedExitCode,
-		expectedStdout,
-		internaltesting.NewEnvFunc(t),
-		stdin,
-		args...,
+		NewRootCommand,
+		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithExpectedExitCode(expectedExitCode),
+		appcmdtesting.WithExpectedStdout(expectedStdout),
+		appcmdtesting.WithArgs(args...),
 	)
 }
 
 func testRunStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderr string, args ...string) {
-	appcmdtesting.RunCommandExitCodeStderr(
+	appcmdtesting.Run(
 		t,
-		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		expectedExitCode,
-		expectedStderr,
-		internaltesting.NewEnvFunc(t),
-		stdin,
-		args...,
+		NewRootCommand,
+		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithExpectedExitCode(expectedExitCode),
+		appcmdtesting.WithExpectedStderr(expectedStderr),
+		appcmdtesting.WithArgs(args...),
 	)
 }
 
 func testRunStdoutStderrNoWarn(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, expectedStderr string, args ...string) {
-	appcmdtesting.RunCommandExitCodeStdoutStderr(
+	appcmdtesting.Run(
 		t,
-		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		expectedExitCode,
-		expectedStdout,
-		expectedStderr,
-		internaltesting.NewEnvFunc(t),
-		stdin,
-		// we do not want warnings to be part of our stderr test calculation
-		append(
-			args,
-			"--no-warn",
-		)...,
+		NewRootCommand,
+		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithExpectedExitCode(expectedExitCode),
+		appcmdtesting.WithExpectedStdout(expectedStdout),
+		appcmdtesting.WithExpectedStderr(expectedStderr),
+		appcmdtesting.WithArgs(
+			// we do not want warnings to be part of our stderr test calculation
+			append(
+				args,
+				"--no-warn",
+			)...,
+		),
 	)
 }
 
 func testRunStderrContainsNoWarn(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderrPartials []string, args ...string) {
-	appcmdtesting.RunCommandExitCodeStderrContains(
+	appcmdtesting.Run(
 		t,
-		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		expectedExitCode,
-		expectedStderrPartials,
-		internaltesting.NewEnvFunc(t),
-		stdin,
-		// we do not want warnings to be part of our stderr test calculation
-		append(
-			args,
-			"--no-warn",
-		)...,
+		NewRootCommand,
+		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithExpectedExitCode(expectedExitCode),
+		appcmdtesting.WithExpectedStderrPartials(expectedStderrPartials...),
+		appcmdtesting.WithArgs(
+			// we do not want warnings to be part of our stderr test calculation
+			append(
+				args,
+				"--no-warn",
+			)...,
+		),
 	)
 }
 
@@ -4567,44 +4571,42 @@ func testRun(
 	stdout io.Writer,
 	args ...string,
 ) {
-	stderr := bytes.NewBuffer(nil)
-	appcmdtesting.RunCommandExitCode(
+	appcmdtesting.Run(
 		t,
-		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		expectedExitCode,
-		internaltesting.NewEnvFunc(t),
-		stdin,
-		stdout,
-		stderr,
-		args...,
+		NewRootCommand,
+		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithStdout(stdout),
+		appcmdtesting.WithExpectedExitCode(expectedExitCode),
+		appcmdtesting.WithArgs(args...),
 	)
 }
 
 func getRuleIDsFromLsBreaking(t *testing.T, fileVersion string, useIDs []string, exceptIDs []string) []string {
 	t.Helper()
-	var stdout bytes.Buffer
-	appcmdtesting.RunCommandExitCode(
+	stdout := bytes.NewBuffer(nil)
+	appcmdtesting.Run(
 		t,
-		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		0,
-		internaltesting.NewEnvFunc(t),
-		nil,
-		&stdout,
-		nil,
-		"config",
-		"ls-breaking-rules",
-		"--format=json",
-		"--configured-only",
-		"--config",
-		fmt.Sprintf(
-			`{ "version": %q, "breaking": { "use": %s, "except": %s } }`,
-			fileVersion,
-			"["+strings.Join(slicesext.Map(useIDs, func(s string) string { return strconv.Quote(s) }), ",")+"]",
-			"["+strings.Join(slicesext.Map(exceptIDs, func(s string) string { return strconv.Quote(s) }), ",")+"]",
+		NewRootCommand,
+		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		appcmdtesting.WithStdout(stdout),
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithArgs(
+			"config",
+			"ls-breaking-rules",
+			"--format=json",
+			"--configured-only",
+			"--config",
+			fmt.Sprintf(
+				`{ "version": %q, "breaking": { "use": %s, "except": %s } }`,
+				fileVersion,
+				"["+strings.Join(slicesext.Map(useIDs, func(s string) string { return strconv.Quote(s) }), ",")+"]",
+				"["+strings.Join(slicesext.Map(exceptIDs, func(s string) string { return strconv.Quote(s) }), ",")+"]",
+			),
 		),
 	)
 	var ids []string
-	decoder := json.NewDecoder(&stdout)
+	decoder := json.NewDecoder(stdout)
 	type entry struct {
 		ID string
 	}
@@ -4639,21 +4641,22 @@ func testLsRuleOutputJSON(
 		t.Errorf("invalid rule type %v", ruleType)
 		t.FailNow()
 	}
-	appcmdtesting.RunCommandExitCode(
+	appcmdtesting.Run(
 		t,
-		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		0,
-		internaltesting.NewEnvFunc(t),
-		nil,
-		stdout,
-		stderr,
-		"config",
-		command,
-		"--configured-only",
-		"--config",
-		config,
-		"--format",
-		"json",
+		NewRootCommand,
+		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		appcmdtesting.WithStdout(stdout),
+		appcmdtesting.WithStderr(stderr),
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithArgs(
+			"config",
+			command,
+			"--configured-only",
+			"--config",
+			config,
+			"--format",
+			"json",
+		),
 	)
 	outputRules :=
 		slicesext.Map(
