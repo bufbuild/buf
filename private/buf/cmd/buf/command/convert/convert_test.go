@@ -25,33 +25,33 @@ import (
 
 func TestConvertDefaultInputBin(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		`{"one":"55"}`,
-		nil,
-		nil,
-		"--type",
-		"buf.Foo",
-		"--from",
-		"testdata/convert/bin_json/payload.bin",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout(`{"one":"55"}`),
+		appcmdtesting.WithArgs(
+			"--type",
+			"buf.Foo",
+			"--from",
+			"testdata/convert/bin_json/payload.bin",
+		),
 	)
 }
 
 func TestConvertDefaultInputBinpb(t *testing.T) {
 	t.Parallel()
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
 		testNewCommand,
-		0,
-		`{"one":"55"}`,
-		nil,
-		nil,
-		"--type",
-		"buf.Foo",
-		"--from",
-		"testdata/convert/bin_json/payload.binpb",
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithExpectedStdout(`{"one":"55"}`),
+		appcmdtesting.WithArgs(
+			"--type",
+			"buf.Foo",
+			"--from",
+			"testdata/convert/bin_json/payload.binpb",
+		),
 	)
 }
 
