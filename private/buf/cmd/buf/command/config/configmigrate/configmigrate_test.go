@@ -32,56 +32,62 @@ import (
 )
 
 func TestConfigMigrateV1DefaultConfig(t *testing.T) {
-	t.Parallel()
+	// Cannot be parallel since we chdir.
 	testCompareConfigMigrate(t, "testdata/defaultv1", 0, "")
 }
 
-/*
 func TestConfigMigrateV1BetaV1DefaultConfig(t *testing.T) {
-	t.Parallel()
+	// Cannot be parallel since we chdir.
 	testCompareConfigMigrate(t, "testdata/defaultv1beta1", 0, "")
 }
 
 func TestConfigMigrateUnknownVersion(t *testing.T) {
-	t.Parallel()
-	testCompareConfigMigrate(t, "testdata/unknown", 1, "something")
-}*/
+	// Cannot be parallel since we chdir.
+	testCompareConfigMigrate(t, "testdata/unknown", 1, "decode buf.yaml: \"version\" is not set. Please add \"version: v2\"")
+}
 
 func testCompareConfigMigrate(t *testing.T, dir string, expectCode int, expectStderr string) {
 	// Setup temporary bucket with input, then compare it to the output.
 	storageosProvider := storageos.NewProvider()
 	inputBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join(dir, "input"))
 	require.NoError(t, err)
-	tempBucket, err := storageosProvider.NewReadWriteBucket(t.TempDir())
-	require.NoError(t, err)
-	outputBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join(dir, "input"))
+	tempDir := t.TempDir()
+	tempBucket, err := storageosProvider.NewReadWriteBucket(tempDir)
 	require.NoError(t, err)
 	ctx := context.Background()
-	storage.Copy(ctx, inputBucket, tempBucket)
-	t.Log(t.TempDir())
-	tempBucket.Walk(ctx, "", func(info storage.ObjectInfo) error {
-		t.Log(info.Path())
-		return nil
-	})
-	// Change to the tmp directory.
-	pwd, err := osext.Getwd()
+	_, err = storage.Copy(ctx, inputBucket, tempBucket)
 	require.NoError(t, err)
-	require.NoError(t, osext.Chdir(t.TempDir()))
-	defer func() {
-		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
-		if r != nil {
-			panic(r)
-		}
+	var outputBucket storage.ReadWriteBucket
+	if expectCode == 0 {
+		outputBucket, err = storageosProvider.NewReadWriteBucket(filepath.Join(dir, "output"))
+		require.NoError(t, err)
+	}
+	// Run in the temp directory.
+	func() {
+		pwd, err := osext.Getwd()
+		require.NoError(t, err)
+		require.NoError(t, osext.Chdir(tempDir))
+		defer func() {
+			r := recover()
+			assert.NoError(t, osext.Chdir(pwd))
+			if r != nil {
+				panic(r)
+			}
+		}()
+		appcmdtesting.Run(
+			t,
+			func(use string) *appcmd.Command {
+				return NewCommand(use, appext.NewBuilder(use))
+			},
+			appcmdtesting.WithExpectedExitCode(expectCode),
+			appcmdtesting.WithExpectedStderr(expectStderr),
+			appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		)
 	}()
-	appcmdtesting.Run(
-		t,
-		func(use string) *appcmd.Command { return NewCommand(use, appext.NewBuilder(use)) },
-		appcmdtesting.WithExpectedExitCode(expectCode),
-		appcmdtesting.WithExpectedStderr(expectStderr),
-		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
-	)
+	if expectCode != 0 {
+		return // Nothing to compare.
+	}
 	var diff bytes.Buffer
-	require.NoError(t, storage.Diff(ctx, &diff, tempBucket, outputBucket))
+	require.NoError(t, storage.Diff(ctx, &diff, outputBucket, tempBucket))
 	assert.Empty(t, diff.String())
 }

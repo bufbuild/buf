@@ -176,6 +176,11 @@ linters:
         path: private/buf/cmd/buf/workspace_test.go
         text: missing the call to method parallel
       - linters:
+          - paralleltest
+        # This test shouldn't run in parallel as it needs osext.Getwd.
+        path: private/buf/cmd/buf/command/config/configmigrate/configmigrate_test.go
+        text: missing the call to method parallel
+      - linters:
           - forbidigo
         # This is a legacy usage of os.Getwd we're not bothering to port yet.
         path: private/buf/cmd/buf/command/alpha/protoc/protoc_test.go
