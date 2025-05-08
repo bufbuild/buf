@@ -43,13 +43,3 @@ extend buf.validate.MapRules {
       ": 'this is required and must be ' + string(rule) + ' or fewer items but ' + string(rules.max_pairs)"
   }];
 }
-
-extend buf.validate.AnyRules {
-  optional string required_any_in = 18004 [(buf.validate.predefined).cel = {
-    id: "any.required.in"
-    expression:
-      "rules.in == this.required_any_in"
-      "? ''"
-      ": fail"
-  }];
-}
