@@ -5,7 +5,7 @@ package custom;
 import "buf/validate/validate.proto";
 
 extend buf.validate.StringRules {
-   optional string special_suffix = 1800 [(buf.validate.predefined).cel = {
+  optional string special_suffix = 1800 [(buf.validate.predefined).cel = {
     id: "string.special_suffix"
     expression: "!this.endsWith(rule + '_') ? \'value does not have suffix `%s`\'.format([rule + '_']) : \'\'"
   }];

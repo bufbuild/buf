@@ -93,6 +93,7 @@ func checkPredefinedRuleExtension(
 			celpv.RequiredEnvOptions(extensionDescriptor),
 			cel.Variable("rule", ruleType),
 			cel.Variable("this", thisType),
+			cel.Variable("rules", cel.ObjectType(string(extendedRuleFullName))),
 		)...,
 	)
 	if err != nil {
