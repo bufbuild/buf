@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/bufbuild/buf/private/pkg/app"
+	"buf.build/go/app"
 )
 
 // Checker is a checker.

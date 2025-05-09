@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"buf.build/go/app/appext"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

@@ -33,7 +33,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bufbuild/buf/private/pkg/app"
+	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/pkg/execext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/docker/docker/api/types"

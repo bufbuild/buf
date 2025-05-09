@@ -19,9 +19,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appcmd/appcmdtesting"
+	"buf.build/go/app/appext"
 	"github.com/stretchr/testify/require"
 )
 

@@ -20,10 +20,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appcmd/appcmdtesting"
+	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"

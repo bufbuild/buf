@@ -15,11 +15,11 @@
 package bufcli
 
 import (
+	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 )
 
 // NewGraphProvider returns a new GraphProvider.
