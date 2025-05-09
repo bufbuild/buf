@@ -16,8 +16,6 @@ package app
 
 import (
 	"io"
-
-	"github.com/bufbuild/buf/private/pkg/ioext"
 )
 
 type stdinContainer struct {
@@ -26,7 +24,7 @@ type stdinContainer struct {
 
 func newStdinContainer(reader io.Reader) *stdinContainer {
 	if reader == nil {
-		reader = ioext.DiscardReader
+		reader = discardReader{}
 	}
 	return &stdinContainer{
 		reader: reader,

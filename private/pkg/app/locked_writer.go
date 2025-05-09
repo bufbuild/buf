@@ -12,17 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build unix
-
-package interrupt
+package app
 
 import (
-	"os"
-	"syscall"
+	"io"
+	"sync"
 )
 
-// Signals are all interrupt signals.
-//
-// As opposed to os.Interrupt, this adds syscall.SIGTERM for unix-like platforms. For
-// other platforms, this is just os.Interrupt
-var Signals = []os.Signal{os.Interrupt, syscall.SIGTERM}
+type lockedWriter struct {
+	writer io.Writer
+	lock   sync.Mutex
+}
+
+func newLockedWriter(writer io.Writer) *lockedWriter {
+	return &lockedWriter{writer: writer}
+}
+
+func (l *lockedWriter) Write(p []byte) (int, error) {
+	l.lock.Lock()
+	n, err := l.writer.Write(p)
+	l.lock.Unlock()
+	return n, err
+}

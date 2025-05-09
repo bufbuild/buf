@@ -10,6 +10,7 @@ require (
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250424215339-a457693b5db4.1
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.6-20250424215339-a457693b5db4.1
 	buf.build/go/bufplugin v0.9.0
+	buf.build/go/interrupt v1.1.0
 	buf.build/go/protovalidate v0.12.0
 	buf.build/go/protoyaml v0.6.0
 	buf.build/go/spdx v0.2.0

@@ -12,8 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
+package app
 
-package interrupt
+import (
+	"io"
+)
 
-import _ "github.com/bufbuild/buf/private/usage"
+type discardReader struct{}
+
+func (discardReader) Read([]byte) (int, error) {
+	return 0, io.EOF
+}

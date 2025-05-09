@@ -27,8 +27,6 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -117,16 +115,16 @@ func Run(
 	if runOptions.expectedStdoutPresent {
 		require.Equal(
 			t,
-			stringutil.TrimLines(runOptions.expectedStdout),
-			stringutil.TrimLines(stdoutBuffer.String()),
+			trimLines(runOptions.expectedStdout),
+			trimLines(stdoutBuffer.String()),
 			requireErrorMessage(runOptions.args, stdoutBuffer, stderrBuffer),
 		)
 	}
 	if runOptions.expectedStderrPresent {
 		require.Equal(
 			t,
-			stringutil.TrimLines(runOptions.expectedStderr),
-			stringutil.TrimLines(stderrBuffer.String()),
+			trimLines(runOptions.expectedStderr),
+			trimLines(stderrBuffer.String()),
 			requireErrorMessage(runOptions.args, stdoutBuffer, stderrBuffer),
 		)
 	}
@@ -245,21 +243,35 @@ func WithExpectedExitCodes(expectedExitCodes ...int) RunOption {
 // *** PRIVATE ***
 
 func requireErrorMessage(args []string, stdout *bytes.Buffer, stderr *bytes.Buffer) string {
+	quotedArgs := make([]string, len(args))
+	for i, arg := range args {
+		// To make the args copy-pastable.
+		quotedArgs[i] = `'` + arg + `'`
+	}
 	return fmt.Sprintf(
 		"args: %s\nstdout: %s\nstderr: %s",
-		strings.Join(
-			slicesext.Map(
-				args,
-				// To make the args copy-pastable.
-				func(arg string) string {
-					return `'` + arg + `'`
-				},
-			),
-			" ",
-		),
-		stringutil.TrimLines(stdout.String()),
-		stringutil.TrimLines(stderr.String()),
+		strings.Join(quotedArgs, " "),
+		trimLines(stdout.String()),
+		trimLines(stderr.String()),
 	)
+}
+
+// trimLines splits the output into individual lines and trims the spaces from each line.
+//
+// This also trims the start and end spaces from the original output.
+func trimLines(output string) string {
+	return strings.TrimSpace(strings.Join(splitTrimLines(output), "\n"))
+}
+
+// splitTrimLines splits the output into individual lines and trims the spaces from each line.
+func splitTrimLines(output string) []string {
+	// this should work for windows as well as \r will be trimmed
+	split := strings.Split(output, "\n")
+	lines := make([]string, len(split))
+	for i, line := range split {
+		lines[i] = strings.TrimSpace(line)
+	}
+	return lines
 }
 
 type runOptions struct {
