@@ -16,21 +16,21 @@ package app
 
 import (
 	"io"
+	"sync"
 )
 
-type stdinContainer struct {
-	reader io.Reader
+type lockedWriter struct {
+	writer io.Writer
+	lock   sync.Mutex
 }
 
-func newStdinContainer(reader io.Reader) *stdinContainer {
-	if reader == nil {
-		reader = discardReader{}
-	}
-	return &stdinContainer{
-		reader: reader,
-	}
+func newLockedWriter(writer io.Writer) *lockedWriter {
+	return &lockedWriter{writer: writer}
 }
 
-func (s *stdinContainer) Stdin() io.Reader {
-	return s.reader
+func (l *lockedWriter) Write(p []byte) (int, error) {
+	l.lock.Lock()
+	n, err := l.writer.Write(p)
+	l.lock.Unlock()
+	return n, err
 }

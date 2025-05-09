@@ -18,19 +18,8 @@ import (
 	"io"
 )
 
-type stdinContainer struct {
-	reader io.Reader
-}
+type discardReader struct{}
 
-func newStdinContainer(reader io.Reader) *stdinContainer {
-	if reader == nil {
-		reader = discardReader{}
-	}
-	return &stdinContainer{
-		reader: reader,
-	}
-}
-
-func (s *stdinContainer) Stdin() io.Reader {
-	return s.reader
+func (discardReader) Read([]byte) (int, error) {
+	return 0, io.EOF
 }
