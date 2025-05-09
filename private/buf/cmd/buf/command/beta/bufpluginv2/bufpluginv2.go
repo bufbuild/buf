@@ -15,10 +15,10 @@
 package bufpluginv2
 
 import (
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 )
 
 // NewCommand returns a new Command.

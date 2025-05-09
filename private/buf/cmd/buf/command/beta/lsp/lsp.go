@@ -24,10 +24,10 @@ import (
 	"io"
 	"net"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buflsp"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/spf13/pflag"
 	"go.lsp.dev/jsonrpc2"

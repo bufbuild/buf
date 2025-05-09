@@ -25,6 +25,8 @@ import (
 	"slices"
 	"sort"
 
+	"buf.build/go/app"
+	"buf.build/go/app/appcmd"
 	"buf.build/go/protovalidate"
 	"buf.build/go/protoyaml"
 	"github.com/bufbuild/buf/private/buf/buffetch"
@@ -41,8 +43,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/ioext"

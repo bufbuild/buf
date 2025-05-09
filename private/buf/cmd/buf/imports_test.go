@@ -20,11 +20,11 @@ import (
 	"strings"
 	"testing"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/stretchr/testify/require"
 )

@@ -23,7 +23,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/bufbuild/buf/private/pkg/app"
+	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/klauspost/compress/zstd"
 )
