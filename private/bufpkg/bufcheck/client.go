@@ -118,8 +118,8 @@ func (c *client) Lint(
 	logRulesConfig(c.logger, config.rulesConfig)
 	files, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
 	if err != nil {
-		// If a validated Image results in an error, this is a system error.
-		return syserror.Wrap(err)
+		// An Image may be invalid if it does not contain all of the required dependencies.
+		return fmt.Errorf("input image: %w", err)
 	}
 	request, err := check.NewRequest(
 		files,
@@ -184,13 +184,13 @@ func (c *client) Breaking(
 	logRulesConfig(c.logger, config.rulesConfig)
 	fileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
 	if err != nil {
-		// If a validated Image results in an error, this is a system error.
-		return syserror.Wrap(err)
+		// An Image may be invalid if it does not contain all of the required dependencies.
+		return fmt.Errorf("input image: %w", err)
 	}
 	againstFileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(againstImage))
 	if err != nil {
-		// If a validated Image results in an error, this is a system error.
-		return syserror.Wrap(err)
+		// An Image may be invalid if it does not contain all of the required dependencies.
+		return fmt.Errorf("against image: %w", err)
 	}
 	request, err := check.NewRequest(
 		fileDescriptors,
