@@ -153,4 +153,6 @@ message StringTest {
     (buf.validate.field).string.example = "foofoofoo", // valid
     (buf.validate.field).string.example = "bfoo" // invalid
   ];
+  string valid_no_constraint_example = 33 [(buf.validate.field).string.example = "proto"];
+  string invalid_no_constraint_example = 34 [(buf.validate.field).bool.example = true];
 }

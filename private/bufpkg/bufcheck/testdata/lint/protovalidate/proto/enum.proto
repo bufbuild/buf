@@ -35,4 +35,6 @@ message EnumTest {
     (buf.validate.field).enum.defined_only = true,
     (buf.validate.field).enum.example = 4
   ];
+  TestEnum valid_no_constraint_example = 8 [(buf.validate.field).enum.example = 2];
+  TestEnum invalid_no_constraint_example = 9 [(buf.validate.field).string.example = "TEST_ENUM_FIRST"];
 }

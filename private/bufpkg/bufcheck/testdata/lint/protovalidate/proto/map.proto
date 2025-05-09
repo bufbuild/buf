@@ -70,4 +70,20 @@ message MapTest {
     (buf.validate.field).map.keys.int64.example = -1,
     (buf.validate.field).map.values.string.example = "this_is_a_long_string"
   ];
+  map<int64, string> valid_keys_values_no_constraint_example = 13 [
+    (buf.validate.field).map.keys.int64.example = -1,
+    (buf.validate.field).map.values.string.example = "good"
+  ];
+  map<int64, string> invalid_keys_valid_values_no_constriant_example = 16 [
+    (buf.validate.field).map.keys.string.example = "bad",
+    (buf.validate.field).map.values.string.example = "good"
+  ];
+  map<int64, string> valid_keys_invalid_values_no_constriant_example = 17 [
+    (buf.validate.field).map.keys.int64.example = 1,
+    (buf.validate.field).map.values.int64.example = -1
+  ];
+  map<int64, string> invalid_keys_invalid_values_no_constriant_example = 18 [
+    (buf.validate.field).map.keys.string.example = "bad",
+    (buf.validate.field).map.values.int64.example = -1
+  ];
 }

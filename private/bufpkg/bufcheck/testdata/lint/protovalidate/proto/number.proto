@@ -159,6 +159,8 @@ message IntTest {
     (buf.validate.field).double.gt = 5,
     (buf.validate.field).double.example = 1
   ];
+  double valid_double_no_constraint_example = 80 [(buf.validate.field).double.example = 1];
+  double invalid_double_no_constraint_example = 81 [(buf.validate.field).int64.example = 1];
   fixed32 valid_fixed32_example = 52 [
     (buf.validate.field).fixed32.lt = 10,
     (buf.validate.field).fixed32.gt = 5,
@@ -174,6 +176,8 @@ message IntTest {
     (buf.validate.field).fixed64.gt = 5,
     (buf.validate.field).fixed64.example = 9
   ];
+  fixed32 valid_fixed32_no_constaint_example = 82 [(buf.validate.field).fixed32.example = 1];
+  fixed32 invalid_fixed32_no_constaint_example = 83 [(buf.validate.field).sfixed32.example = 1];
   fixed64 invalid_fixed64_example = 55 [
     (buf.validate.field).fixed64.lt = 10,
     (buf.validate.field).fixed64.gt = 5,
@@ -189,6 +193,8 @@ message IntTest {
     (buf.validate.field).int32.gt = 5,
     (buf.validate.field).int32.example = 1
   ];
+  int32 valid_int32_no_constraint_example = 84 [(buf.validate.field).int32.example = 1];
+  int32 invalid_int32_no_constraint_example = 85 [(buf.validate.field).fixed32.example = 1];
   int64 valid_int64_example = 58 [
     (buf.validate.field).int64.lt = 10,
     (buf.validate.field).int64.gt = 5,
@@ -199,6 +205,8 @@ message IntTest {
     (buf.validate.field).int64.gt = 5,
     (buf.validate.field).int64.example = 1
   ];
+  int64 valid_int64_no_constraint_example = 86 [(buf.validate.field).int64.example = 1];
+  int64 invalid_int64_no_constraint_example = 87 [(buf.validate.field).fixed64.example = 1];
   sfixed32 valid_sfixed32_example = 60 [
     (buf.validate.field).sfixed32.lt = 10,
     (buf.validate.field).sfixed32.gt = 5,
@@ -209,6 +217,8 @@ message IntTest {
     (buf.validate.field).sfixed32.gt = 5,
     (buf.validate.field).sfixed32.example = 1
   ];
+  sfixed32 valid_sfixed32_no_constraint_example = 88 [(buf.validate.field).sfixed32.example = 1];
+  sfixed32 invalid_sfixed32_no_constraint_example = 89 [(buf.validate.field).fixed32.example = 1];
   sfixed64 valid_sfixed64_example = 64 [
     (buf.validate.field).sfixed64.lt = 10,
     (buf.validate.field).sfixed64.gt = 5,
@@ -219,6 +229,8 @@ message IntTest {
     (buf.validate.field).sfixed64.gt = 5,
     (buf.validate.field).sfixed64.example = 1
   ];
+  sfixed64 valid_sfixed64_no_constraint_example = 90 [(buf.validate.field).sfixed64.example = 1];
+  sfixed64 invalid_sfixed64_no_constraint_example = 91 [(buf.validate.field).fixed64.example = 1];
   sint32 valid_sint32_example = 68 [
     (buf.validate.field).sint32.lt = 10,
     (buf.validate.field).sint32.gt = 5,
@@ -229,6 +241,8 @@ message IntTest {
     (buf.validate.field).sint32.gt = 5,
     (buf.validate.field).sint32.example = 1
   ];
+  sint32 valid_sint32_no_constaint_example = 92 [(buf.validate.field).sint32.example = 1];
+  sint32 invalid_sint32_no_constaint_example = 93 [(buf.validate.field).int32.example = 1];
   sint64 valid_sint64_example = 72 [
     (buf.validate.field).sint64.lt = 10,
     (buf.validate.field).sint64.gt = 5,
@@ -239,6 +253,8 @@ message IntTest {
     (buf.validate.field).sint64.gt = 5,
     (buf.validate.field).sint64.example = 1
   ];
+  sint64 valid_sint64_no_constaint_example = 94 [(buf.validate.field).sint64.example = 1];
+  sint64 invalid_sint64_no_constaint_example = 95 [(buf.validate.field).int64.example = 1];
   uint32 valid_uint32_example = 74 [
     (buf.validate.field).uint32.lt = 10,
     (buf.validate.field).uint32.gt = 5,
@@ -249,6 +265,8 @@ message IntTest {
     (buf.validate.field).uint32.gt = 5,
     (buf.validate.field).uint32.example = 1
   ];
+  uint32 valid_uint32_no_constaint_example = 96 [(buf.validate.field).uint32.example = 1];
+  uint32 invalid_uint32_no_constaint_example = 97 [(buf.validate.field).int32.example = 1];
   uint64 valid_uint64_example = 76 [
     (buf.validate.field).uint64.lt = 10,
     (buf.validate.field).uint64.gt = 5,
@@ -259,6 +277,8 @@ message IntTest {
     (buf.validate.field).uint64.gt = 5,
     (buf.validate.field).uint64.example = 1
   ];
+  uint64 valid_uint64_no_constaint_example = 98 [(buf.validate.field).uint64.example = 1];
+  uint64 invalid_uint64_no_constaint_example = 99 [(buf.validate.field).int64.example = 1];
   google.protobuf.Int64Value valid_wkt_int64_example = 66 [
     (buf.validate.field).int64.lt = 10,
     (buf.validate.field).int64.gt = 5,
@@ -269,6 +289,8 @@ message IntTest {
     (buf.validate.field).int64.gt = 5,
     (buf.validate.field).int64.example = 1
   ];
+  google.protobuf.Int64Value valid_wkt_int64_no_constraint_example = 100 [(buf.validate.field).int64.example = 1];
+  google.protobuf.Int64Value invalid_wkt_int64_no_constraint_example = 101 [(buf.validate.field).uint64.example = 1];
   google.protobuf.Int32Value valid_wkt_int32_example = 70 [
     (buf.validate.field).int32.lt = 10,
     (buf.validate.field).int32.gt = 5,
@@ -279,6 +301,8 @@ message IntTest {
     (buf.validate.field).int32.gt = 5,
     (buf.validate.field).int32.example = 1
   ];
+  google.protobuf.Int32Value valid_wkt_int32_no_constraint_example = 102 [(buf.validate.field).int32.example = 1];
+  google.protobuf.Int32Value invalid_wkt_int32_no_constraint_example = 103 [(buf.validate.field).uint32.example = 1];
   google.protobuf.UInt32Value valid_wkt_uint32_example = 62 [
     (buf.validate.field).uint32.lt = 10,
     (buf.validate.field).uint32.gt = 5,
@@ -289,6 +313,8 @@ message IntTest {
     (buf.validate.field).uint32.gt = 5,
     (buf.validate.field).uint32.example = 1
   ];
+  google.protobuf.UInt32Value valid_wkt_uint32_no_constraint_example = 104 [(buf.validate.field).uint32.example = 1];
+  google.protobuf.UInt32Value invalid_wkt_uint32_no_constraint_example = 105 [(buf.validate.field).int32.example = 1];
   google.protobuf.UInt64Value valid_wkt_uint64_example = 78 [
     (buf.validate.field).uint64.lt = 10,
     (buf.validate.field).uint64.gt = 5,
@@ -299,4 +325,6 @@ message IntTest {
     (buf.validate.field).uint64.gt = 5,
     (buf.validate.field).uint64.example = 1
   ];
+  google.protobuf.UInt64Value valid_wkt_uint64_no_constraint_example = 106 [(buf.validate.field).uint64.example = 1];
+  google.protobuf.UInt64Value invalid_wkt_uint64_no_constraint_example = 107 [(buf.validate.field).int64.example = 1];
 }

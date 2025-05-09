@@ -42,4 +42,6 @@ message BytesTest {
     // invalid, fails one of the rules
     (buf.validate.field).bytes.example = "ÀÀÀÀÀÇÇÇÇÇÇÇÇÅÅÅÅÅÅÅÅ"
   ];
+  bytes valid_no_constraint_example = 11 [(buf.validate.field).bytes.example = "ÀÀÀÀÀÇÇÇÇÇÇÇÇÅÅÅÅÅÅÅÅ"];
+  bytes invalid_example_type_mismatch = 12 [(buf.validate.field).string.example = "ÀÀÀÀÀÇÇÇÇÇÇÇÇÅÅÅÅÅÅÅÅ"];
 }
