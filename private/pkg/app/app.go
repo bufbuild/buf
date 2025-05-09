@@ -34,7 +34,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/bufbuild/buf/private/pkg/interrupt"
+	"buf.build/go/interrupt"
 )
 
 // EnvContainer provides environment variables.
