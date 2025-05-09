@@ -96,32 +96,6 @@
       "path": [
         4,
         0,
-        7
-      ],
-      "span": [
-        46,
-        2,
-        26
-      ]
-    },
-    {
-      "path": [
-        4,
-        0,
-        7,
-        10101
-      ],
-      "span": [
-        46,
-        2,
-        26
-      ],
-      "leadingComments": " Keep if Foo | NestedFoo: comment on option\n"
-    },
-    {
-      "path": [
-        4,
-        0,
         2,
         0
       ],
@@ -818,32 +792,6 @@
         8,
         11
       ]
-    },
-    {
-      "path": [
-        6,
-        0,
-        3
-      ],
-      "span": [
-        143,
-        2,
-        29
-      ]
-    },
-    {
-      "path": [
-        6,
-        0,
-        3,
-        10101
-      ],
-      "span": [
-        143,
-        2,
-        29
-      ],
-      "leadingComments": " Keep if Svc: comment on option\n"
     },
     {
       "path": [
