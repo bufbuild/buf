@@ -6,7 +6,7 @@ import "buf/validate/validate.proto";
 import "import.proto";
 
 extend buf.validate.StringRules {
-   optional string special_prefix = 1801 [(buf.validate.predefined).cel = {
+  optional string special_prefix = 1801 [(buf.validate.predefined).cel = {
     id: "string.special_prefix"
     expression: "!this.startsWith('_' + rule) ? \'value does not have prefix `%s`\'.format(['_' + rule]) : \'\'"
   }];

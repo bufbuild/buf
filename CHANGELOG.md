@@ -6,6 +6,8 @@
 - Add support for local bufplugins for `protoc-gen-buf-breaking` and `protoc-gen-buf-lint`.
 - Add RISC-V (64-bit) binaries for Linux to releases.
 - Fix type filtering on `buf generate` for empty files, files with no declared types.
+- Fix CEL check on `buf lint` for predefined `rules` variables.
+- Fix `buf config migrate` to filter out removed rules. 
 
 ## [v1.53.0] - 2025-04-21
 

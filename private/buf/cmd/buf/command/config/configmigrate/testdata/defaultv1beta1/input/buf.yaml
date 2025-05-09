@@ -1,0 +1,18 @@
+version: v1beta1
+name: ""
+deps: []
+build:
+  roots:
+    - .
+  excludes: []
+lint:
+  use:
+    - STANDARD
+  enum_zero_value_suffix: _UNSPECIFIED
+  rpc_allow_same_request_response: false
+  rpc_allow_google_protobuf_empty_requests: false
+  rpc_allow_google_protobuf_empty_responses: false
+  service_suffix: Service
+breaking:
+  use:
+    - FILE
