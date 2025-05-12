@@ -27,7 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
 )
@@ -107,7 +107,7 @@ func (m *migrateBuilder) addBufGenYAML(ctx context.Context, bufGenYAMLFilePath s
 				" on inputs, the migrated generation will not have an 'inputs' section. To add these types in the migrated file, you can"+
 				" first add an input to 'inputs' and then add these types to the input.",
 			bufGenYAMLFilePath,
-			stringutil.SliceToHumanString(typeConfig.IncludeTypes()),
+			xstrings.SliceToHumanString(typeConfig.IncludeTypes()),
 		))
 	}
 	// No special transformation needed, writeBufGenYAMLFile handles it correctly.

@@ -26,12 +26,12 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
-	"github.com/bufbuild/buf/private/pkg/ioext"
+	"github.com/bufbuild/buf/private/pkg/standard/xio"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/stretchr/testify/require"
 )
 
@@ -337,7 +337,7 @@ func requireModuleContainFileNames(t *testing.T, module bufmodule.Module, expect
 		delete(fileNamesToBeSeen, path)
 		return nil
 	}))
-	require.Emptyf(t, fileNamesToBeSeen, "expect %s from module", stringutil.JoinSliceQuoted(slicesext.MapKeysToSlice(fileNamesToBeSeen), ","))
+	require.Emptyf(t, fileNamesToBeSeen, "expect %s from module", xstrings.JoinSliceQuoted(slicesext.MapKeysToSlice(fileNamesToBeSeen), ","))
 }
 
 func requireModuleFileContent(
@@ -349,7 +349,7 @@ func requireModuleFileContent(
 ) {
 	file, err := module.GetFile(ctx, path)
 	require.NoError(t, err)
-	content, err := ioext.ReadAllAndClose(file)
+	content, err := xio.ReadAllAndClose(file)
 	require.NoError(t, err)
 	require.Equal(t, expectedContent, string(content))
 }

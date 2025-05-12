@@ -29,7 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
 	"github.com/spf13/pflag"
@@ -112,7 +112,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		formatText,
 		fmt.Sprintf(
 			`The format to print the .proto files. Must be one of %s`,
-			stringutil.SliceToString(allFormats),
+			xstrings.SliceToString(allFormats),
 		),
 	)
 	flagSet.BoolVar(
@@ -136,7 +136,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"text",
 		fmt.Sprintf(
 			"The format for build errors printed to stderr. Must be one of %s",
-			stringutil.SliceToString(bufanalysis.AllFormatStrings),
+			xstrings.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
 	_ = flagSet.MarkDeprecated(errorFormatFlagName, "this flag no longer has any effect")

@@ -39,7 +39,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufcurl"
 	"github.com/bufbuild/buf/private/pkg/netrc"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
@@ -606,7 +606,7 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 			return fmt.Errorf(
 				"--%s value must be one of %s",
 				reflectProtocolFlagName,
-				stringutil.SliceToHumanStringOrQuoted(bufcurl.AllKnownReflectProtocolStrings),
+				xstrings.SliceToHumanStringOrQuoted(bufcurl.AllKnownReflectProtocolStrings),
 			)
 		}
 	}

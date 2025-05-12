@@ -28,7 +28,7 @@ import (
 	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buflsp"
-	"github.com/bufbuild/buf/private/pkg/ioext"
+	"github.com/bufbuild/buf/private/pkg/standard/xio"
 	"github.com/spf13/pflag"
 	"go.lsp.dev/jsonrpc2"
 )
@@ -130,10 +130,10 @@ func dial(container appext.Container, flags *flags) (io.ReadWriteCloser, error) 
 
 	default:
 		// Fall back to stdio by default.
-		return ioext.CompositeReadWriteCloser(
+		return xio.CompositeReadWriteCloser(
 			container.Stdin(),
 			container.Stdout(),
-			ioext.NopCloser,
+			xio.NopCloser,
 		), nil
 	}
 }

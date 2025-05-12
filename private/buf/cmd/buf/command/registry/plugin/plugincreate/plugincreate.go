@@ -27,7 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -99,7 +99,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		fmt.Sprintf(
 			"The type of the plugin. Must be one of %s",
-			stringutil.SliceToString(allPluginTypeStrings),
+			xstrings.SliceToString(allPluginTypeStrings),
 		),
 	)
 	_ = appcmd.MarkFlagRequired(flagSet, typeFlagName)

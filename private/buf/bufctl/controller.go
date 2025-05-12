@@ -45,7 +45,7 @@ import (
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
-	"github.com/bufbuild/buf/private/pkg/ioext"
+	"github.com/bufbuild/buf/private/pkg/standard/xio"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -726,7 +726,7 @@ func (c *controller) GetMessage(
 	if err != nil {
 		return nil, 0, err
 	}
-	data, err := ioext.ReadAllAndClose(readCloser)
+	data, err := xio.ReadAllAndClose(readCloser)
 	if err != nil {
 		return nil, 0, err
 	}

@@ -24,7 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -201,11 +201,11 @@ func newRulesConfig(
 	}
 
 	// Sort and filter empty.
-	useRuleIDsAndCategoryIDs = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(useRuleIDsAndCategoryIDs)
+	useRuleIDsAndCategoryIDs = xstrings.SliceToUniqueSortedSliceFilterEmptyStrings(useRuleIDsAndCategoryIDs)
 	if len(useRuleIDsAndCategoryIDs) == 0 {
 		useRuleIDsAndCategoryIDs = slicesext.Map(slicesext.Filter(allRulesForType, func(rule Rule) bool { return rule.Default() }), Rule.ID)
 	}
-	exceptRuleIDsAndCategoryIDs = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(exceptRuleIDsAndCategoryIDs)
+	exceptRuleIDsAndCategoryIDs = xstrings.SliceToUniqueSortedSliceFilterEmptyStrings(exceptRuleIDsAndCategoryIDs)
 	if len(useRuleIDsAndCategoryIDs) == 0 && len(exceptRuleIDsAndCategoryIDs) == 0 {
 		return nil, syserror.New("use and except should always be non-empty at this point")
 	}

@@ -27,7 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/gen/proto/go/google/protobuf"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/protocompile/protoutil"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -322,7 +322,7 @@ func checkEnumValueNoDeleteWithRules(
 					if len(previousNameToEnumValue) > 1 {
 						nameSuffix = "s"
 					}
-					suffix = fmt.Sprintf(` without reserving the name%s %s`, nameSuffix, stringutil.JoinSliceQuoted(getSortedEnumValueNames(previousNameToEnumValue), ", "))
+					suffix = fmt.Sprintf(` without reserving the name%s %s`, nameSuffix, xstrings.JoinSliceQuoted(getSortedEnumValueNames(previousNameToEnumValue), ", "))
 				}
 				responseWriter.AddProtosourceAnnotation(
 					enum.Location(),
@@ -1516,8 +1516,8 @@ func handleBreakingEnumValueSameName(
 	// FOO=2, BAR=2, BAZ=2 now would pass
 	// FOO=2, BAR=2, BAZ=2 previously would fail
 	if !slicesext.ElementsContained(names, previousNames) {
-		previousNamesString := stringutil.JoinSliceQuoted(previousNames, ", ")
-		namesString := stringutil.JoinSliceQuoted(names, ", ")
+		previousNamesString := xstrings.JoinSliceQuoted(previousNames, ", ")
+		namesString := xstrings.JoinSliceQuoted(names, ", ")
 		nameSuffix := ""
 		if len(previousNames) > 1 && len(names) > 1 {
 			nameSuffix = "s"

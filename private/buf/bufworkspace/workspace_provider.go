@@ -28,9 +28,9 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
 )
@@ -123,7 +123,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 	moduleKey bufmodule.ModuleKey,
 	options ...WorkspaceModuleKeyOption,
 ) (Workspace, error) {
-	defer slogext.DebugProfile(w.logger)()
+	defer xslog.DebugProfile(w.logger)()
 
 	config, err := newWorkspaceModuleKeyConfig(options)
 	if err != nil {
@@ -282,7 +282,7 @@ func (w *workspaceProvider) GetWorkspaceForBucket(
 	bucketTargeting buftarget.BucketTargeting,
 	options ...WorkspaceBucketOption,
 ) (Workspace, error) {
-	defer slogext.DebugProfile(w.logger)()
+	defer xslog.DebugProfile(w.logger)()
 	workspaceTargeting, err := w.getWorkspaceTargetingForBucket(
 		ctx,
 		bucket,
@@ -570,7 +570,7 @@ func getLocalModuleDescription(pathDescription string, moduleConfig bufconfig.Mo
 	case 1:
 		description = fmt.Sprintf("%s, includes: %q", description, includePaths[0])
 	default:
-		description = fmt.Sprintf("%s, includes: [%s]", description, stringutil.JoinSliceQuoted(includePaths, ", "))
+		description = fmt.Sprintf("%s, includes: [%s]", description, xstrings.JoinSliceQuoted(includePaths, ", "))
 	}
 	relExcludePaths := moduleConfig.RootToExcludes()["."]
 	excludePaths := slicesext.Map(relExcludePaths, func(relInclude string) string {
@@ -581,7 +581,7 @@ func getLocalModuleDescription(pathDescription string, moduleConfig bufconfig.Mo
 	case 1:
 		description = fmt.Sprintf("%s, excludes: %q", description, excludePaths[0])
 	default:
-		description = fmt.Sprintf("%s, excludes: [%s]", description, stringutil.JoinSliceQuoted(excludePaths, ", "))
+		description = fmt.Sprintf("%s, excludes: [%s]", description, xstrings.JoinSliceQuoted(excludePaths, ", "))
 	}
 	return description
 }

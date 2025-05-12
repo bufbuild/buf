@@ -31,7 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -231,7 +231,7 @@ func handleLintEnumPascalCase(
 	enum bufprotosource.Enum,
 ) error {
 	name := enum.Name()
-	expectedName := stringutil.ToPascalCase(name)
+	expectedName := xstrings.ToPascalCase(name)
 	if name != expectedName {
 		responseWriter.AddProtosourceAnnotation(
 			enum.NameLocation(),
@@ -432,7 +432,7 @@ func handleLintFileLowerSnakeCase(
 	base := normalpath.Base(filename)
 	ext := normalpath.Ext(filename)
 	baseWithoutExt := strings.TrimSuffix(base, ext)
-	expectedBaseWithoutExt := stringutil.ToLowerSnakeCase(baseWithoutExt)
+	expectedBaseWithoutExt := xstrings.ToLowerSnakeCase(baseWithoutExt)
 	if baseWithoutExt != expectedBaseWithoutExt {
 		responseWriter.AddProtosourceAnnotation(
 			nil,
@@ -501,7 +501,7 @@ func handleLintMessagePascalCase(
 		return nil
 	}
 	name := message.Name()
-	expectedName := stringutil.ToPascalCase(name)
+	expectedName := xstrings.ToPascalCase(name)
 	if name != expectedName {
 		responseWriter.AddProtosourceAnnotation(
 			message.NameLocation(),
@@ -606,7 +606,7 @@ func handleLintPackageLowerSnakeCase(
 	}
 	split := strings.Split(pkg, ".")
 	for i, elem := range split {
-		split[i] = stringutil.ToLowerSnakeCase(elem)
+		split[i] = xstrings.ToLowerSnakeCase(elem)
 	}
 	expectedPkg := strings.Join(split, ".")
 	if pkg != expectedPkg {
@@ -1049,7 +1049,7 @@ func handleLintRPCPascalCase(
 	method bufprotosource.Method,
 ) error {
 	name := method.Name()
-	expectedName := stringutil.ToPascalCase(name)
+	expectedName := xstrings.ToPascalCase(name)
 	if name != expectedName {
 		responseWriter.AddProtosourceAnnotation(
 			method.NameLocation(),
@@ -1205,8 +1205,8 @@ func handleLintRPCRequestStandardName(
 		split := strings.Split(name, ".")
 		name = split[len(split)-1]
 	}
-	expectedName1 := stringutil.ToPascalCase(method.Name()) + "Request"
-	expectedName2 := stringutil.ToPascalCase(service.Name()) + expectedName1
+	expectedName1 := xstrings.ToPascalCase(method.Name()) + "Request"
+	expectedName2 := xstrings.ToPascalCase(service.Name()) + expectedName1
 	if name != expectedName1 && name != expectedName2 {
 		responseWriter.AddProtosourceAnnotation(
 			method.InputTypeLocation(),
@@ -1246,8 +1246,8 @@ func handleLintRPCResponseStandardName(
 		split := strings.Split(name, ".")
 		name = split[len(split)-1]
 	}
-	expectedName1 := stringutil.ToPascalCase(method.Name()) + "Response"
-	expectedName2 := stringutil.ToPascalCase(service.Name()) + expectedName1
+	expectedName1 := xstrings.ToPascalCase(method.Name()) + "Response"
+	expectedName2 := xstrings.ToPascalCase(service.Name()) + expectedName1
 	if name != expectedName1 && name != expectedName2 {
 		responseWriter.AddProtosourceAnnotation(
 			method.OutputTypeLocation(),
@@ -1271,7 +1271,7 @@ func handleLintServicePascalCase(
 	service bufprotosource.Service,
 ) error {
 	name := service.Name()
-	expectedName := stringutil.ToPascalCase(name)
+	expectedName := xstrings.ToPascalCase(name)
 	if name != expectedName {
 		responseWriter.AddProtosourceAnnotation(
 			service.NameLocation(),

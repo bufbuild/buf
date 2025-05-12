@@ -23,7 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
@@ -405,7 +405,7 @@ func (b *moduleSetBuilder) AddRemoteModule(
 }
 
 func (b *moduleSetBuilder) Build() (ModuleSet, error) {
-	defer slogext.DebugProfile(b.logger)()
+	defer xslog.DebugProfile(b.logger)()
 
 	if !b.buildCalled.CompareAndSwap(false, true) {
 		return nil, errBuildAlreadyCalled

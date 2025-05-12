@@ -22,9 +22,9 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/execext"
-	"github.com/bufbuild/buf/private/pkg/ioext"
+	"github.com/bufbuild/buf/private/pkg/standard/xio"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/protoplugin"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -53,7 +53,7 @@ func (h *binaryHandler) Handle(
 	responseWriter protoplugin.ResponseWriter,
 	request protoplugin.Request,
 ) (retErr error) {
-	defer slogext.DebugProfile(h.logger, slog.String("plugin", filepath.Base(h.pluginPath)))()
+	defer xslog.DebugProfile(h.logger, slog.String("plugin", filepath.Base(h.pluginPath)))()
 
 	requestData, err := protoencoding.NewWireMarshaler().Marshal(request.CodeGeneratorRequest())
 	if err != nil {
@@ -98,6 +98,6 @@ func newStderrWriteCloser(delegate io.Writer, pluginPath string) io.WriteCloser 
 		// We did not document if pluginPath is normalized or not, so
 		return newProtocGenSwiftStderrWriteCloser(delegate)
 	default:
-		return ioext.NopWriteCloser(delegate)
+		return xio.NopWriteCloser(delegate)
 	}
 }

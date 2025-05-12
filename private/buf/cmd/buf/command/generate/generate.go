@@ -32,7 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/spf13/pflag"
 )
 
@@ -457,7 +457,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"text",
 		fmt.Sprintf(
 			"The format for build errors, printed to stderr. Must be one of %s",
-			stringutil.SliceToString(bufanalysis.AllFormatStrings),
+			xstrings.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
 	flagSet.StringVar(

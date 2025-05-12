@@ -29,7 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -94,7 +94,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		defaultFormat,
 		fmt.Sprintf(
 			"The format to print rules as. Must be one of %s",
-			stringutil.SliceToString(allFormats),
+			xstrings.SliceToString(allFormats),
 		),
 	)
 }

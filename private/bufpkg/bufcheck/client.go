@@ -34,8 +34,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protosourcepath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"pluginrpc.com/pluginrpc"
 )
@@ -93,7 +93,7 @@ func (c *client) Lint(
 	image bufimage.Image,
 	options ...LintOption,
 ) error {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
 	if lintConfig.Disabled() {
 		return nil
@@ -153,7 +153,7 @@ func (c *client) Breaking(
 	againstImage bufimage.Image,
 	options ...BreakingOption,
 ) error {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
 	if breakingConfig.Disabled() {
 		return nil
@@ -224,7 +224,7 @@ func (c *client) ConfiguredRules(
 	checkConfig bufconfig.CheckConfig,
 	options ...ConfiguredRulesOption,
 ) ([]Rule, error) {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
 	configuredRulesOptions := newConfiguredRulesOptions()
 	for _, option := range options {
@@ -253,7 +253,7 @@ func (c *client) AllRules(
 	fileVersion bufconfig.FileVersion,
 	options ...AllRulesOption,
 ) ([]Rule, error) {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
 	allRulesOptions := newAllRulesOptions()
 	for _, option := range options {
@@ -271,7 +271,7 @@ func (c *client) AllCategories(
 	fileVersion bufconfig.FileVersion,
 	options ...AllCategoriesOption,
 ) ([]Category, error) {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
 	allCategoriesOptions := newAllCategoriesOptions()
 	for _, option := range options {
@@ -543,7 +543,7 @@ func ignoreFileLocation(
 		for _, associatedSourcePath := range associatedSourcePaths {
 			sourceLocation := sourceLocations.ByPath(associatedSourcePath)
 			if leadingComments := sourceLocation.LeadingComments; leadingComments != "" {
-				for _, line := range stringutil.SplitTrimLinesNoEmpty(leadingComments) {
+				for _, line := range xstrings.SplitTrimLinesNoEmpty(leadingComments) {
 					if checkCommentLineForCheckIgnore(line, config.CommentIgnorePrefix, ruleID) {
 						return true, nil
 					}

@@ -20,7 +20,7 @@ import (
 	"strconv"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -122,7 +122,7 @@ var (
 		InputConfigTypeTextImage:   "text_image",
 		InputConfigTypeYAMLImage:   "yaml_image",
 	}
-	allInputConfigTypeString = stringutil.SliceToHumanString(
+	allInputConfigTypeString = xstrings.SliceToHumanString(
 		slicesext.MapValuesToSortedSlice(inputConfigTypeToString),
 	)
 )

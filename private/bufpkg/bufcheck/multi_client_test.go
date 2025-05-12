@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -312,7 +312,7 @@ func checkFieldLowerSnakeCase(
 	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
 	fieldName := string(fieldDescriptor.Name())
-	fieldNameToLowerSnakeCase := stringutil.ToLowerSnakeCase(fieldName)
+	fieldNameToLowerSnakeCase := xstrings.ToLowerSnakeCase(fieldName)
 	if fieldName != fieldNameToLowerSnakeCase {
 		responseWriter.AddAnnotation(
 			check.WithMessagef("Field name %q should be lower_snake_case, such as %q.", fieldName, fieldNameToLowerSnakeCase),

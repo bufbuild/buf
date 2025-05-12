@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/spf13/pflag"
 )
 
@@ -83,7 +83,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"text",
 		fmt.Sprintf(
 			"The format for build errors or check violations printed to stdout. Must be one of %s",
-			stringutil.SliceToString(bufcli.AllLintFormatStrings),
+			xstrings.SliceToString(bufcli.AllLintFormatStrings),
 		),
 	)
 	flagSet.StringVar(

@@ -25,7 +25,7 @@ import (
 
 	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/pkg/execext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
@@ -57,7 +57,7 @@ func (c *cloner) CloneToBucket(
 	writeBucket storage.WriteBucket,
 	options CloneToBucketOptions,
 ) (retErr error) {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
 	var err error
 	switch {

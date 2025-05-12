@@ -23,7 +23,7 @@ import (
 	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/pkg/execext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 )
 
 type lister struct{}
@@ -66,8 +66,8 @@ func (l *lister) ListFilesAndUnstagedFiles(
 				stringSliceExcept(
 					// This may not work in all Windows scenarios as we only split on "\n" but
 					// this is no worse than we previously had.
-					stringutil.SplitTrimLinesNoEmpty(string(allFilesOutput)),
-					stringutil.SplitTrimLinesNoEmpty(string(deletedFilesOutput)),
+					xstrings.SplitTrimLinesNoEmpty(string(allFilesOutput)),
+					xstrings.SplitTrimLinesNoEmpty(string(deletedFilesOutput)),
 				),
 				options.IgnorePathRegexps,
 			),

@@ -31,7 +31,7 @@ import (
 	"connectrpc.com/connect"
 	studiov1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -140,7 +140,7 @@ func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
 func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 	agentServer := httptest.NewTLSServer(
 		NewHandler(
-			slogext.NopLogger,
+			xslog.NopLogger,
 			"https://example.buf.build",
 			upstreamServer.TLS,
 			map[string]struct{}{"forbidden-header": {}},

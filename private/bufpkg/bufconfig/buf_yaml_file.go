@@ -31,7 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -976,7 +976,7 @@ func getRootToExcludes(roots []string, fullExcludes []string) (map[string][]stri
 	}
 
 	for root, excludes := range rootToExcludes {
-		uniqueSortedExcludes := stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(excludes)
+		uniqueSortedExcludes := xstrings.SliceToUniqueSortedSliceFilterEmptyStrings(excludes)
 		if len(excludes) != len(uniqueSortedExcludes) {
 			// This should never happen, but just in case.
 			return nil, fmt.Errorf("excludes %v are not unique", excludes)

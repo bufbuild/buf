@@ -27,7 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -105,7 +105,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fmt.Sprintf(
 			"The plugin's type setting, if created. Can only be set with --%s. Must be one of %s",
 			createTypeFlagName,
-			stringutil.SliceToString(bufplugin.AllPluginTypeStrings),
+			xstrings.SliceToString(bufplugin.AllPluginTypeStrings),
 		),
 	)
 	flagSet.StringVar(
