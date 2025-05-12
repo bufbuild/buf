@@ -759,8 +759,8 @@ func checkExampleValues(
 		})
 	}
 	if !hasRules {
-		adder.addForPathf(pathToExampleValues, "example value is specified by there are no constraints defined")
-		// No need to check if example values satifisy constraints, because there is none.
+		// Since there are no constraints to check example values against, we already checked
+		// if the proper example type has been set on the field, so we can return here.
 		return nil
 	}
 	// For each example value, instantiate a message of its containing message's type
