@@ -23,8 +23,8 @@ import (
 	"sync"
 
 	"buf.build/go/bufplugin/check"
-	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/thread"
 )
 

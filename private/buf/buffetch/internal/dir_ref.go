@@ -18,8 +18,8 @@ import (
 	"strings"
 
 	"buf.build/go/app"
-	"github.com/bufbuild/buf/private/pkg/standard/xpath/xfilepath"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/standard/xpath/xfilepath"
 )
 
 var (

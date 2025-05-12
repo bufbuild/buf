@@ -31,8 +31,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/spf13/pflag"
 )
 
