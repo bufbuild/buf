@@ -274,6 +274,11 @@ linters:
         path: private/pkg/osext/osext.go
         text: os.Chdir
       - linters:
+          - forbidigo
+        # We're going to move xfilepath out.
+        path: private/pkg/standard/xpath/xfilepath/xfilepath.go
+        text: os.Getwd
+      - linters:
           - gochecknoinits
         # protoencoding calls detrand.Disable via go:linkname and and init function. See the comments
         # in the file for more details.
