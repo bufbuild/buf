@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.54.0] - 2025-05-12
 
 - Add `CSR` category to breaking rules.
@@ -1371,6 +1375,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.54.0...HEAD
 [v1.54.0]: https://github.com/bufbuild/buf/compare/v1.53.0...v1.54.0
 [v1.53.0]: https://github.com/bufbuild/buf/compare/v1.52.1...v1.53.0
 [v1.52.1]: https://github.com/bufbuild/buf/compare/v1.52.0...v1.52.1
