@@ -21,7 +21,7 @@ import (
 	"regexp"
 
 	"buf.build/go/app"
-	"github.com/bufbuild/buf/private/pkg/execext"
+	"github.com/bufbuild/buf/private/pkg/standard/xos/xexec"
 	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 )
@@ -128,14 +128,14 @@ func filterNonRegularFiles(files []string) []string {
 
 func runStdout(ctx context.Context, container app.EnvStdioContainer, name string, args ...string) ([]byte, error) {
 	buffer := bytes.NewBuffer(nil)
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		name,
-		execext.WithArgs(args...),
-		execext.WithEnv(app.Environ(container)),
-		execext.WithStdin(container.Stdin()),
-		execext.WithStdout(buffer),
-		execext.WithStderr(container.Stderr()),
+		xexec.WithArgs(args...),
+		xexec.WithEnv(app.Environ(container)),
+		xexec.WithStdin(container.Stdin()),
+		xexec.WithStdout(buffer),
+		xexec.WithStderr(container.Stderr()),
 	); err != nil {
 		return nil, err
 	}

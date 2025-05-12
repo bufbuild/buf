@@ -26,7 +26,7 @@ import (
 	"strings"
 
 	"buf.build/go/app"
-	"github.com/bufbuild/buf/private/pkg/execext"
+	"github.com/bufbuild/buf/private/pkg/standard/xos/xexec"
 	"github.com/bufbuild/buf/private/pkg/standard/xio"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
@@ -145,13 +145,13 @@ func (h *protocProxyHandler) Handle(
 	if descriptorFilePath != "" && descriptorFilePath == app.DevStdinFilePath {
 		stdin = bytes.NewReader(fileDescriptorSetData)
 	}
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		h.protocPath,
-		execext.WithArgs(args...),
-		execext.WithEnv(pluginEnv.Environ),
-		execext.WithStdin(stdin),
-		execext.WithStderr(pluginEnv.Stderr),
+		xexec.WithArgs(args...),
+		xexec.WithEnv(pluginEnv.Environ),
+		xexec.WithStdin(stdin),
+		xexec.WithStderr(pluginEnv.Stderr),
 	); err != nil {
 		// TODO: strip binary path as well?
 		// We don't know if this is a system error or plugin error, so we assume system error
@@ -191,12 +191,12 @@ func (h *protocProxyHandler) getProtocVersion(
 	pluginEnv protoplugin.PluginEnv,
 ) (*pluginpb.Version, error) {
 	stdoutBuffer := bytes.NewBuffer(nil)
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		h.protocPath,
-		execext.WithArgs(slices.Concat(h.protocExtraArgs, []string{"--version"})...),
-		execext.WithEnv(pluginEnv.Environ),
-		execext.WithStdout(stdoutBuffer),
+		xexec.WithArgs(slices.Concat(h.protocExtraArgs, []string{"--version"})...),
+		xexec.WithEnv(pluginEnv.Environ),
+		xexec.WithStdout(stdoutBuffer),
 	); err != nil {
 		// TODO: strip binary path as well?
 		return nil, handlePotentialTooManyFilesError(err)

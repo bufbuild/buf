@@ -27,7 +27,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/diff"
-	"github.com/bufbuild/buf/private/pkg/execext"
+	"github.com/bufbuild/buf/private/pkg/standard/xos/xexec"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
@@ -146,13 +146,13 @@ func RunProtoc(
 	for key, value := range env {
 		environ = append(environ, key+"="+value)
 	}
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		protocBinPath,
-		execext.WithArgs(args...),
-		execext.WithEnv(environ),
-		execext.WithStdout(stdout),
-		execext.WithStderr(stderr),
+		xexec.WithArgs(args...),
+		xexec.WithEnv(environ),
+		xexec.WithStdout(stdout),
+		xexec.WithStderr(stderr),
 	); err != nil {
 		return fmt.Errorf("%s returned error: %v %v", protocBinPath, err, stderr.String())
 	}

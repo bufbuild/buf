@@ -21,7 +21,7 @@ import (
 	"sync"
 
 	"buf.build/go/app"
-	"github.com/bufbuild/buf/private/pkg/execext"
+	"github.com/bufbuild/buf/private/pkg/standard/xos/xexec"
 	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 )
 
@@ -217,14 +217,14 @@ func (s *state) depsForPackageUncached(
 
 func (s *state) runStdout(ctx context.Context, name string, args ...string) ([]byte, error) {
 	buffer := bytes.NewBuffer(nil)
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		name,
-		execext.WithArgs(args...),
-		execext.WithEnv(app.Environ(s.envStdioContainer)),
-		execext.WithStdin(s.envStdioContainer.Stdin()),
-		execext.WithStdout(buffer),
-		execext.WithStderr(s.envStdioContainer.Stderr()),
+		xexec.WithArgs(args...),
+		xexec.WithEnv(app.Environ(s.envStdioContainer)),
+		xexec.WithStdin(s.envStdioContainer.Stdin()),
+		xexec.WithStdout(buffer),
+		xexec.WithStderr(s.envStdioContainer.Stderr()),
 	); err != nil {
 		return nil, err
 	}

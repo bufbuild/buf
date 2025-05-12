@@ -21,7 +21,7 @@ import (
 	"log/slog"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/pkg/execext"
+	"github.com/bufbuild/buf/private/pkg/standard/xos/xexec"
 	"github.com/bufbuild/buf/private/pkg/standard/xio"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
@@ -61,16 +61,16 @@ func (h *binaryHandler) Handle(
 	}
 	responseBuffer := bytes.NewBuffer(nil)
 	stderrWriteCloser := newStderrWriteCloser(pluginEnv.Stderr, h.pluginPath)
-	runOptions := []execext.RunOption{
-		execext.WithEnv(pluginEnv.Environ),
-		execext.WithStdin(bytes.NewReader(requestData)),
-		execext.WithStdout(responseBuffer),
-		execext.WithStderr(stderrWriteCloser),
+	runOptions := []xexec.RunOption{
+		xexec.WithEnv(pluginEnv.Environ),
+		xexec.WithStdin(bytes.NewReader(requestData)),
+		xexec.WithStdout(responseBuffer),
+		xexec.WithStderr(stderrWriteCloser),
 	}
 	if len(h.pluginArgs) > 0 {
-		runOptions = append(runOptions, execext.WithArgs(h.pluginArgs...))
+		runOptions = append(runOptions, xexec.WithArgs(h.pluginArgs...))
 	}
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		h.pluginPath,
 		runOptions...,
