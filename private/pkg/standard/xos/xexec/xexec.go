@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package execext
+// Package xexec provides extended functionality for exec.
+package xexec
 
 import (
 	"context"

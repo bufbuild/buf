@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package stringutil
+package xstrings
 
 import _ "github.com/bufbuild/buf/private/usage"

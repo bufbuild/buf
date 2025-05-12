@@ -23,8 +23,8 @@ import (
 	"os"
 
 	"buf.build/go/app"
-	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/standard/xio"
 )
 
 type protoFileWriter struct {
@@ -62,11 +62,11 @@ func (w *protoFileWriter) PutProtoFile(
 		// This was in the old formatter, just keeping as-is for now instead of using os.Create.
 		return os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	case FileSchemeStdio, FileSchemeStdout:
-		return ioext.NopWriteCloser(container.Stdout()), nil
+		return xio.NopWriteCloser(container.Stdout()), nil
 	case FileSchemeStdin:
 		return nil, errors.New("cannot write to stdin")
 	case FileSchemeNull:
-		return ioext.DiscardWriteCloser, nil
+		return xio.DiscardWriteCloser, nil
 	default:
 		return nil, fmt.Errorf("unknown FileScheme: %v", fileScheme)
 	}

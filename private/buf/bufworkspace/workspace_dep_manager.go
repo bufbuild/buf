@@ -24,7 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -157,8 +157,8 @@ func (w *workspaceDepManager) ConfiguredRemotePluginRefs(ctx context.Context) ([
 	default:
 		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 	}
-	pluginRefs := slicesext.Filter(
-		slicesext.Map(
+	pluginRefs := xslices.Filter(
+		xslices.Map(
 			bufYAMLFile.PluginConfigs(),
 			func(value bufconfig.PluginConfig) bufparse.Ref {
 				return value.Ref()

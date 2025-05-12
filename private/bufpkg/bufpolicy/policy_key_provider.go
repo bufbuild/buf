@@ -20,7 +20,7 @@ import (
 	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 )
 
 var (
@@ -74,7 +74,7 @@ func newStaticPolicyKeyProvider(policyKeys []PolicyKey) (*staticPolicyKeyProvide
 	var policyKeysByFullName map[string]PolicyKey
 	if len(policyKeys) > 0 {
 		var err error
-		policyKeysByFullName, err = slicesext.ToUniqueValuesMap(policyKeys, func(policyKey PolicyKey) string {
+		policyKeysByFullName, err = xslices.ToUniqueValuesMap(policyKeys, func(policyKey PolicyKey) string {
 			return policyKey.FullName().String()
 		})
 		if err != nil {

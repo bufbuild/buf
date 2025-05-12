@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package ioext
+package xslog
 
 import _ "github.com/bufbuild/buf/private/usage"

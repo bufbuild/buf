@@ -21,7 +21,7 @@ import (
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/bufbuild/protocompile/protoutil"
@@ -59,7 +59,7 @@ func buildImage(
 
 	compiled, err := compiler.Compile(ctx, path)
 	if err != nil {
-		logger.Warn("error building image", slog.String("path", path), slogext.ErrorAttr(err))
+		logger.Warn("error building image", slog.String("path", path), xslog.ErrorAttr(err))
 	}
 	if compiled[0] == nil {
 		return nil, report.diagnostics
@@ -127,13 +127,13 @@ func buildImage(
 	}
 
 	if err != nil {
-		logger.Warn("could not build image", slog.String("path", path), slogext.ErrorAttr(err))
+		logger.Warn("could not build image", slog.String("path", path), xslog.ErrorAttr(err))
 		return nil, report.diagnostics
 	}
 
 	image, err := bufimage.NewImage(imageFiles)
 	if err != nil {
-		logger.Warn("could not build image", slog.String("path", path), slogext.ErrorAttr(err))
+		logger.Warn("could not build image", slog.String("path", path), xslog.ErrorAttr(err))
 		return nil, report.diagnostics
 	}
 

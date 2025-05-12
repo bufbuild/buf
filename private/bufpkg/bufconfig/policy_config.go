@@ -18,7 +18,7 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -75,14 +75,14 @@ func newPolicyConfig(
 	if name == "" {
 		return nil, errors.New("must specify a name to the policy")
 	}
-	ignore = slicesext.ToUniqueSorted(ignore)
+	ignore = xslices.ToUniqueSorted(ignore)
 	ignore, err := normalizeAndCheckPaths(ignore, "ignore")
 	if err != nil {
 		return nil, err
 	}
 	newIgnoreOnly := make(map[string][]string, len(ignoreOnly))
 	for k, v := range ignoreOnly {
-		v = slicesext.ToUniqueSorted(v)
+		v = xslices.ToUniqueSorted(v)
 		v, err := normalizeAndCheckPaths(v, "ignore_only path")
 		if err != nil {
 			return nil, err

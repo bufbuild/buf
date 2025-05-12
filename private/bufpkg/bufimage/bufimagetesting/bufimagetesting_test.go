@@ -22,7 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -877,7 +877,7 @@ func TestImageFileInfosWithOnlyTargetsAndTargetImports(t *testing.T) {
 			"c.proto",
 			"google/protobuf/timestamp.proto",
 		},
-		slicesext.Map(resultImageFileInfos, bufimage.ImageFileInfo.Path),
+		xslices.Map(resultImageFileInfos, bufimage.ImageFileInfo.Path),
 	)
 }
 

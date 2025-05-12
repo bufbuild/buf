@@ -23,8 +23,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
@@ -346,16 +346,16 @@ func TestBasic(t *testing.T) {
 			"buf.build/foo/extdep3",
 			"buf.build/foo/extdep4",
 		},
-		slicesext.Map(remoteDeps, func(remoteDep bufmodule.RemoteDep) string { return remoteDep.OpaqueID() }),
+		xslices.Map(remoteDeps, func(remoteDep bufmodule.RemoteDep) string { return remoteDep.OpaqueID() }),
 	)
-	transitiveRemoteDeps := slicesext.Filter(remoteDeps, func(remoteDep bufmodule.RemoteDep) bool { return !remoteDep.IsDirect() })
+	transitiveRemoteDeps := xslices.Filter(remoteDeps, func(remoteDep bufmodule.RemoteDep) bool { return !remoteDep.IsDirect() })
 	require.NoError(t, err)
 	require.Equal(
 		t,
 		[]string{
 			"buf.build/foo/extdep4",
 		},
-		slicesext.Map(transitiveRemoteDeps, func(remoteDep bufmodule.RemoteDep) string { return remoteDep.OpaqueID() }),
+		xslices.Map(transitiveRemoteDeps, func(remoteDep bufmodule.RemoteDep) string { return remoteDep.OpaqueID() }),
 	)
 }
 

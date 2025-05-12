@@ -31,7 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/txtar"
@@ -141,7 +141,7 @@ func fuzzBuild(ctx context.Context, dirPath string) (bufimage.Image, error) {
 	}
 	return bufimage.BuildImage(
 		ctx,
-		slogext.NopLogger,
+		xslog.NopLogger,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)

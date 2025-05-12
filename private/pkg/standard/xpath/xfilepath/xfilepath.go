@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package filepathext provides filepath utilities.
-package filepathext
+// Package xfilepath provides extended functionality for filepath.
+package xfilepath
 
 // Walking largely copied from https://github.com/golang/go/blob/master/src/path/filepath/path.go
 //
@@ -28,8 +28,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-
-	"github.com/bufbuild/buf/private/pkg/osext"
 )
 
 // RealClean does filepath.Clean and filepath.FromSlash,
@@ -45,7 +43,7 @@ func RealClean(path string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		pwd, err := osext.Getwd()
+		pwd, err := os.Getwd()
 		if err != nil {
 			return "", err
 		}

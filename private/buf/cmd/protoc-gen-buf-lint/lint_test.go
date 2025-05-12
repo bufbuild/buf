@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/protoplugin"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -313,13 +313,13 @@ func testRunHandlerFunc(
 		),
 	)
 
-	require.Equal(t, expectedExitCode, exitCode, stringutil.TrimLines(stderr.String()))
+	require.Equal(t, expectedExitCode, exitCode, xstrings.TrimLines(stderr.String()))
 	if exitCode == 0 {
 		response := &pluginpb.CodeGeneratorResponse{}
 		// we do not need fileDescriptorProtos as there are no extensions
 		unmarshaler := protoencoding.NewWireUnmarshaler(nil)
 		require.NoError(t, unmarshaler.Unmarshal(stdout.Bytes(), response))
-		require.Equal(t, stringutil.TrimLines(expectedErrorString), response.GetError(), stringutil.TrimLines(stderr.String()))
+		require.Equal(t, xstrings.TrimLines(expectedErrorString), response.GetError(), xstrings.TrimLines(stderr.String()))
 	}
 }
 

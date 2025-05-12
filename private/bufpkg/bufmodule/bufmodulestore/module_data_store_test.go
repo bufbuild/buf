@@ -23,8 +23,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -232,7 +232,7 @@ func testRequireModuleKeyNamesEqual(t *testing.T, expected []string, actual []bu
 		require.Equal(
 			t,
 			expected,
-			slicesext.Map(
+			xslices.Map(
 				actual,
 				func(value bufmodule.ModuleKey) string {
 					return value.FullName().String()
@@ -249,7 +249,7 @@ func testRequireModuleDataNamesEqual(t *testing.T, expected []string, actual []b
 		require.Equal(
 			t,
 			expected,
-			slicesext.Map(
+			xslices.Map(
 				actual,
 				func(value bufmodule.ModuleData) string {
 					return value.ModuleKey().FullName().String()

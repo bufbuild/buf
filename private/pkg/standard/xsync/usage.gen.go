@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package filepathext
+package xsync
 
 import _ "github.com/bufbuild/buf/private/usage"

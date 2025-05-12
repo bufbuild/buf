@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package testingext
+package xfilepath
 
 import _ "github.com/bufbuild/buf/private/usage"

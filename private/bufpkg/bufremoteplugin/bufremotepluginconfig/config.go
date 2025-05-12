@@ -22,7 +22,7 @@ import (
 
 	"buf.build/go/spdx"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/semver"
 )
@@ -479,7 +479,7 @@ func validateNugetTargetFrameworks(targetFrameworks []string) ([]string, error) 
 	if len(targetFrameworks) == 0 {
 		return nil, nil
 	}
-	if dups := slicesext.Duplicates(targetFrameworks); len(dups) > 0 {
+	if dups := xslices.Duplicates(targetFrameworks); len(dups) > 0 {
 		return nil, fmt.Errorf("duplicate target frameworks: %v", dups)
 	}
 	for i, targetFramework := range targetFrameworks {

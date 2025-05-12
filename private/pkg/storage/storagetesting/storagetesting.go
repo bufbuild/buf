@@ -31,7 +31,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -116,7 +116,7 @@ func AssertPathToContent(
 			return nil
 		},
 	))
-	require.Equal(t, len(paths), len(slicesext.ToUniqueSorted(paths)))
+	require.Equal(t, len(paths), len(xslices.ToUniqueSorted(paths)))
 	assert.Equal(t, len(expectedPathToContent), len(paths), paths)
 	for _, path := range paths {
 		expectedContent, ok := expectedPathToContent[path]
@@ -149,7 +149,7 @@ func AssertPaths(
 		},
 	))
 	sort.Strings(paths)
-	assert.Equal(t, slicesext.ToUniqueSorted(expectedPaths), paths)
+	assert.Equal(t, xslices.ToUniqueSorted(expectedPaths), paths)
 }
 
 // GetExternalPathFunc can be used to get the external path of

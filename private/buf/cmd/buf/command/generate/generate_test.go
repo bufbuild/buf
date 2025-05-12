@@ -32,12 +32,12 @@ import (
 	"github.com/bufbuild/buf/private/buf/buftesting"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
+	"github.com/bufbuild/buf/private/pkg/standard/xtesting"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/testingext"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -57,7 +57,7 @@ var buftestingDirPath = filepath.Join(
 )
 
 func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
-	testingext.SkipIfShort(t)
+	xtesting.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubs(
@@ -70,7 +70,7 @@ func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
 }
 
 func TestCompareGeneratedStubsGoogleapisGoZip(t *testing.T) {
-	testingext.SkipIfShort(t)
+	xtesting.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubsArchive(
@@ -84,7 +84,7 @@ func TestCompareGeneratedStubsGoogleapisGoZip(t *testing.T) {
 }
 
 func TestCompareGeneratedStubsGoogleapisGoJar(t *testing.T) {
-	testingext.SkipIfShort(t)
+	xtesting.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubsArchive(
@@ -98,7 +98,7 @@ func TestCompareGeneratedStubsGoogleapisGoJar(t *testing.T) {
 }
 
 func TestCompareGeneratedStubsGoogleapisObjc(t *testing.T) {
-	testingext.SkipIfShort(t)
+	xtesting.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubs(
@@ -109,7 +109,7 @@ func TestCompareGeneratedStubsGoogleapisObjc(t *testing.T) {
 }
 
 func TestCompareGeneratedStubsGoogleapisPyi(t *testing.T) {
-	testingext.SkipIfShort(t)
+	xtesting.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubs(
@@ -120,7 +120,7 @@ func TestCompareGeneratedStubsGoogleapisPyi(t *testing.T) {
 }
 
 func TestCompareInsertionPointOutput(t *testing.T) {
-	testingext.SkipIfShort(t)
+	xtesting.SkipIfShort(t)
 	t.Parallel()
 	insertionTestdataDirPath := filepath.Join("testdata", "insertion")
 	testCompareGeneratedStubs(
@@ -931,7 +931,7 @@ func testGenerateDeleteOutsWithArgAndConfig(
 	require.True(t, len(outputPaths) < 4, "we want to have unique plugins to work with and this test is only set up for three plugins max right now")
 	fullOutputPaths := outputPaths
 	if baseOutDirPath != "" && baseOutDirPath != "." {
-		fullOutputPaths = slicesext.Map(
+		fullOutputPaths = xslices.Map(
 			outputPaths,
 			func(outputPath string) string {
 				return normalpath.Join(baseOutDirPath, outputPath)

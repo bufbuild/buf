@@ -34,7 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin/bufprotopluginos"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
 
@@ -87,7 +87,7 @@ func run(
 	env *env,
 ) (retErr error) {
 	logger := container.Logger()
-	defer slogext.DebugProfile(logger)()
+	defer xslog.DebugProfile(logger)()
 
 	if env.PrintFreeFieldNumbers && len(env.PluginNameToPluginInfo) > 0 {
 		return fmt.Errorf("cannot call --%s and plugins at the same time", printFreeFieldNumbersFlagName)
@@ -171,7 +171,7 @@ func run(
 		images := []bufimage.Image{image}
 		if env.ByDir {
 			f := func() (retErr error) {
-				defer slogext.DebugProfile(logger)()
+				defer xslog.DebugProfile(logger)()
 				images, err = bufimage.ImageByDir(image)
 				return err
 			}

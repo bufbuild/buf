@@ -40,8 +40,8 @@ import (
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
 	"github.com/stretchr/testify/assert"
@@ -740,7 +740,7 @@ func TestCheckLsLintRulesFromConfig(t *testing.T) {
 			"plugins":[{"plugin": "buf-plugin-suffix"}]
 		}`,
 		append(
-			slicesext.Filter(builtinLintRulesV2, func(lintRule *outputCheckRule) bool {
+			xslices.Filter(builtinLintRulesV2, func(lintRule *outputCheckRule) bool {
 				return lintRule.Default
 			}),
 			&outputCheckRule{ID: "RPC_BANNED_SUFFIXES", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that there are no RPCs with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
@@ -1228,7 +1228,7 @@ func TestCheckLsBreakingRulesFromConfig(t *testing.T) {
 			"plugins":[{"plugin": "buf-plugin-suffix"}]
 		}`,
 		append(
-			slicesext.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
+			xslices.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
 				return breakingRule.Default
 			}),
 			&outputCheckRule{ID: "SERVICE_SUFFIXES_NO_CHANGE", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that services with configured suffixes are not deleted and do not have new RPCs or delete RPCs.", Plugin: "buf-plugin-suffix"},
@@ -1247,7 +1247,7 @@ func TestCheckLsBreakingRulesFromConfig(t *testing.T) {
 			"plugins":[{"plugin": "buf-plugin-suffix"}]
 		}`,
 		append(
-			slicesext.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
+			xslices.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
 				return slices.Contains(breakingRule.Categories, "WIRE")
 			}),
 			&outputCheckRule{ID: "ENUM_SUFFIXES_NO_CHANGE", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that enums with configured suffixes are not deleted and do not have new enum values or delete enum values.", Plugin: "buf-plugin-suffix"},
@@ -1283,7 +1283,7 @@ func TestCheckLsBreakingRulesFromConfig(t *testing.T) {
 			"plugins":[{"plugin": "buf-plugin-suffix"}]
 		}`,
 		append(
-			slicesext.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
+			xslices.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
 				return slices.Contains(breakingRule.Categories, "PACKAGE")
 			}),
 			&outputCheckRule{ID: "FIELD_WIRE_COMPATIBLE_TYPE", Categories: []string{"WIRE"}, Default: false, Purpose: "Checks that fields have wire-compatible types in a given message."},
@@ -1302,7 +1302,7 @@ func TestCheckLsBreakingRulesFromConfig(t *testing.T) {
 			"plugins":[{"plugin": "buf-plugin-suffix"}]
 		}`,
 		append(
-			slicesext.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
+			xslices.Filter(builtinBreakingRulesV2, func(breakingRule *outputCheckRule) bool {
 				return slices.Contains(breakingRule.Categories, "PACKAGE") || breakingRule.ID == "FIELD_WIRE_COMPATIBLE_TYPE"
 			}),
 			&outputCheckRule{ID: "SERVICE_SUFFIXES_NO_CHANGE", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that services with configured suffixes are not deleted and do not have new RPCs or delete RPCs.", Plugin: "buf-plugin-suffix"},
@@ -4578,8 +4578,8 @@ func getRuleIDsFromLsBreaking(t *testing.T, fileVersion string, useIDs []string,
 			fmt.Sprintf(
 				`{ "version": %q, "breaking": { "use": %s, "except": %s } }`,
 				fileVersion,
-				"["+strings.Join(slicesext.Map(useIDs, func(s string) string { return strconv.Quote(s) }), ",")+"]",
-				"["+strings.Join(slicesext.Map(exceptIDs, func(s string) string { return strconv.Quote(s) }), ",")+"]",
+				"["+strings.Join(xslices.Map(useIDs, func(s string) string { return strconv.Quote(s) }), ",")+"]",
+				"["+strings.Join(xslices.Map(exceptIDs, func(s string) string { return strconv.Quote(s) }), ",")+"]",
 			),
 		),
 	)
@@ -4637,8 +4637,8 @@ func testLsRuleOutputJSON(
 		),
 	)
 	outputRules :=
-		slicesext.Map(
-			slicesext.Filter(
+		xslices.Map(
+			xslices.Filter(
 				bytes.Split(stdout.Bytes(), []byte("\n")),
 				func(outputBytes []byte) bool {
 					return len(outputBytes) > 0

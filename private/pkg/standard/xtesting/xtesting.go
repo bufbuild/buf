@@ -12,8 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
+// Package xtesting provides extended functionality for testing.
+package xtesting
 
-package slicesext
+import (
+	"testing"
+	"time"
+)
 
-import _ "github.com/bufbuild/buf/private/usage"
+// SkipIfShort skips the test if testing.short is set.
+func SkipIfShort(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+}
+
+// GetTestTimeout returns the time remaining until the test times out
+// or 10m if the test is not set to timeout.
+//
+// TODO: Remove this function.
+func GetTestTimeout(t *testing.T) time.Duration {
+	if deadline, ok := t.Deadline(); ok && !deadline.IsZero() {
+		return time.Until(deadline)
+	}
+	return 10 * time.Minute
+}

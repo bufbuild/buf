@@ -24,7 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"pluginrpc.com/pluginrpc"
@@ -293,7 +293,7 @@ func PrintRulesWithDeprecated() PrintRulesOption {
 
 // GetDeprecatedIDToReplacementIDs gets a map from deprecated ID to replacement IDs.
 func GetDeprecatedIDToReplacementIDs[R RuleOrCategory](rulesOrCategories []R) (map[string][]string, error) {
-	idToRuleOrCategory, err := slicesext.ToUniqueValuesMap(rulesOrCategories, func(ruleOrCategory R) string { return ruleOrCategory.ID() })
+	idToRuleOrCategory, err := xslices.ToUniqueValuesMap(rulesOrCategories, func(ruleOrCategory R) string { return ruleOrCategory.ID() })
 	if err != nil {
 		return nil, err
 	}
