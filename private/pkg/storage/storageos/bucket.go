@@ -22,8 +22,8 @@ import (
 	"path/filepath"
 	"sync/atomic"
 
+	"buf.build/go/standard/xpath/xfilepath"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/standard/xpath/xfilepath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"

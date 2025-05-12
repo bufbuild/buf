@@ -26,12 +26,12 @@ import (
 	"strings"
 	"testing"
 
+	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/buf/buftesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
-	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/txtar"

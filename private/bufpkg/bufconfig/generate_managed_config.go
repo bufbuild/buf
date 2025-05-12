@@ -20,9 +20,9 @@ import (
 	"strconv"
 	"strings"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 )
 
 // GenerateManagedConfig is a managed mode configuration.

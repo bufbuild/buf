@@ -26,9 +26,9 @@ import (
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
+	"buf.build/go/standard/xio"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buflsp"
-	"github.com/bufbuild/buf/private/pkg/standard/xio"
 	"github.com/spf13/pflag"
 	"go.lsp.dev/jsonrpc2"
 )

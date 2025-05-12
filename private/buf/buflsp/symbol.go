@@ -27,8 +27,8 @@ import (
 	"slices"
 	"strings"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/protocompile/ast"
 	"go.lsp.dev/protocol"
 	"google.golang.org/protobuf/encoding/protowire"

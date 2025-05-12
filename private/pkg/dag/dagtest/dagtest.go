@@ -20,8 +20,8 @@ import (
 	"sort"
 	"testing"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/dag"
-	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/stretchr/testify/require"
 )
 

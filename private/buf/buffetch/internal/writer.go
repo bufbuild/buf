@@ -24,7 +24,7 @@ import (
 	"os"
 
 	"buf.build/go/app"
-	"github.com/bufbuild/buf/private/pkg/standard/xio"
+	"buf.build/go/standard/xio"
 	"github.com/klauspost/compress/zstd"
 )
 

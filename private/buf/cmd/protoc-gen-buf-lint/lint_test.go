@@ -21,11 +21,11 @@ import (
 	"testing"
 
 	"buf.build/go/app"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
-	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/protoplugin"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"

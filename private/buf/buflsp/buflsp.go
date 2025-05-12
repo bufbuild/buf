@@ -25,8 +25,8 @@ import (
 	"sync/atomic"
 
 	"buf.build/go/app/appext"
+	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/wasm"
