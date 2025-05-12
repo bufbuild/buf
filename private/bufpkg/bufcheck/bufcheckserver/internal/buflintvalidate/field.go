@@ -758,6 +758,11 @@ func checkExampleValues(
 			return true
 		})
 	}
+	if !hasRules {
+		// Since there are no constraints to check example values against, we already checked
+		// if the proper example type has been set on the field, so we can return here.
+		return nil
+	}
 	// For each example value, instantiate a message of its containing message's type
 	// and set the field that we are linting to the example value:
 	//  containingMessage {
