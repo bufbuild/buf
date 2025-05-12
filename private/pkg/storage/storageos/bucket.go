@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"sync/atomic"
 
-	"github.com/bufbuild/buf/private/pkg/filepathext"
+	"buf.build/go/standard/xpath/xfilepath"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
@@ -111,11 +111,11 @@ func (b *bucket) Walk(
 		return err
 	}
 	walkChecker := storageutil.NewWalkChecker()
-	var walkOptions []filepathext.WalkOption
+	var walkOptions []xfilepath.WalkOption
 	if b.symlinks {
-		walkOptions = append(walkOptions, filepathext.WalkWithSymlinks())
+		walkOptions = append(walkOptions, xfilepath.WalkWithSymlinks())
 	}
-	if err := filepathext.Walk(
+	if err := xfilepath.Walk(
 		externalPrefix,
 		func(externalPath string, fileInfo os.FileInfo, err error) error {
 			if err != nil {
@@ -248,7 +248,7 @@ func (b *bucket) getExternalPath(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	realClean, err := filepathext.RealClean(normalpath.Join(b.rootPath, path))
+	realClean, err := xfilepath.RealClean(normalpath.Join(b.rootPath, path))
 	if err != nil {
 		return "", err
 	}
@@ -312,7 +312,7 @@ func (b *bucket) getExternalPrefix(prefix string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	realClean, err := filepathext.RealClean(normalpath.Join(b.rootPath, prefix))
+	realClean, err := xfilepath.RealClean(normalpath.Join(b.rootPath, prefix))
 	if err != nil {
 		return "", err
 	}

@@ -25,13 +25,13 @@ import (
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appcmd/appcmdtesting"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -1722,7 +1722,7 @@ func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string
 	outputImage := &imagev1.Image{}
 	require.NoError(t, protoencoding.NewWireUnmarshaler(nil).Unmarshal(stdout.Bytes(), outputImage))
 
-	filesToCheck := slicesext.ToStructMap(slicesext.MapKeysToSlice(expectedFilePathToInfo))
+	filesToCheck := xslices.ToStructMap(xslices.MapKeysToSlice(expectedFilePathToInfo))
 
 	for _, imageFile := range outputImage.GetFile() {
 		filePath := imageFile.GetName()
@@ -1738,5 +1738,5 @@ func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string
 		}
 		delete(filesToCheck, filePath)
 	}
-	require.Zerof(t, len(filesToCheck), "expected files missing from image built: %v", slicesext.MapKeysToSortedSlice(filesToCheck))
+	require.Zerof(t, len(filesToCheck), "expected files missing from image built: %v", xslices.MapKeysToSortedSlice(filesToCheck))
 }

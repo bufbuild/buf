@@ -20,9 +20,9 @@ import (
 	"io"
 	"slices"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -232,7 +232,7 @@ func validateBufWorkYAMLDirPaths(dirPaths []string) ([]string, error) {
 	}
 	// We already know the paths are unique due to above validation.
 	// We sort to print deterministic errors.
-	sortedNormalizedDirPaths := slicesext.MapKeysToSortedSlice(normalizedDirPathToDirPath)
+	sortedNormalizedDirPaths := xslices.MapKeysToSortedSlice(normalizedDirPathToDirPath)
 	for i := range sortedNormalizedDirPaths {
 		for j := i + 1; j < len(sortedNormalizedDirPaths); j++ {
 			left := sortedNormalizedDirPaths[i]

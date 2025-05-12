@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"io/fs"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/protocompile/reporter"
 )
 
@@ -101,7 +101,7 @@ func FileAnnotationSetForErrorsWithPos(
 	errorsWithPos []reporter.ErrorWithPos,
 	options ...FileAnnotationOption,
 ) (bufanalysis.FileAnnotationSet, error) {
-	fileAnnotations, err := slicesext.MapError(
+	fileAnnotations, err := xslices.MapError(
 		errorsWithPos,
 		func(errorWithPos reporter.ErrorWithPos) (bufanalysis.FileAnnotation, error) {
 			return FileAnnotationForErrorWithPos(errorWithPos, options...)

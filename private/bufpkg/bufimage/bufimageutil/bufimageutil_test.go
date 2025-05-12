@@ -24,11 +24,11 @@ import (
 	"testing"
 
 	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -565,7 +565,7 @@ func runFilterImage(t *testing.T, image bufimage.Image, opts ...ImageFilterOptio
 	// So we serialize and then de-serialize, and use only the filtered results to parse extensions. That way, the result will omit custom options that aren't present in the filtered set (as they will be
 	// considered unrecognized fields).
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{
-		File: slicesext.Map(filteredImage.Files(), func(imageFile bufimage.ImageFile) *descriptorpb.FileDescriptorProto {
+		File: xslices.Map(filteredImage.Files(), func(imageFile bufimage.ImageFile) *descriptorpb.FileDescriptorProto {
 			return imageFile.FileDescriptorProto()
 		}),
 	}

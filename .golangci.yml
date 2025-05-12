@@ -49,7 +49,7 @@ linters:
       forbid:
         # Use private/pkg/thread.Parallelize
         - pattern: ^errgroup\.
-        # Use private/pkg/execext
+        # Use private/pkg/standard/xos/xexec
         - pattern: ^exec\.Cmd$
         - pattern: ^exec\.Command$
         - pattern: ^exec\.CommandContext$
@@ -229,7 +229,7 @@ linters:
       - linters:
           - containedctx
         # we actually want to embed a context here
-        path: private/pkg/execext/process.go
+        path: private/pkg/standard/xos/xexec/process.go
       - linters:
           - gochecknoinits
         # we actually want to use init here
@@ -242,15 +242,15 @@ linters:
       - linters:
           - forbidigo
         # this is one of two files we want to allow exec.Cmd functions in
-        path: private/pkg/execext/execext.go
+        path: private/pkg/standard/xos/xexec/xexec.go
       - linters:
           - forbidigo
         # this is one of two files we want to allow exec.Cmd functions in
-        path: private/pkg/execext/process.go
+        path: private/pkg/standard/xos/xexec/process.go
       - linters:
           - gosec
         # G204 checks that exec.Command is not called with non-constants.
-        path: private/pkg/execext/execext.go
+        path: private/pkg/standard/xos/xexec/xexec.go
         text: 'G204:'
       - linters:
           - gosec
@@ -273,6 +273,11 @@ linters:
         # We cache os.Getwd in osext, osext has a Chdir that clears the cache.
         path: private/pkg/osext/osext.go
         text: os.Chdir
+      - linters:
+          - forbidigo
+        # We're going to move xfilepath out.
+        path: private/pkg/standard/xpath/xfilepath/xfilepath.go
+        text: os.Getwd
       - linters:
           - gochecknoinits
         # protoencoding calls detrand.Disable via go:linkname and and init function. See the comments

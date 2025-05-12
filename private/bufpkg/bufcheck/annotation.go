@@ -16,8 +16,8 @@ package bufcheck
 
 import (
 	"buf.build/go/bufplugin/check"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 type annotation struct {
@@ -41,7 +41,7 @@ func annotationsToFileAnnotations(
 	pathToExternalPath map[string]string,
 	annotations []*annotation,
 ) []bufanalysis.FileAnnotation {
-	return slicesext.Map(
+	return xslices.Map(
 		annotations,
 		func(annotation *annotation) bufanalysis.FileAnnotation {
 			return annotationToFileAnnotation(pathToExternalPath, annotation)

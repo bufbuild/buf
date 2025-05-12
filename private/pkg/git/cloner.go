@@ -24,8 +24,8 @@ import (
 	"strings"
 
 	"buf.build/go/app"
-	"github.com/bufbuild/buf/private/pkg/execext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"buf.build/go/standard/xlog/xslog"
+	"buf.build/go/standard/xos/xexec"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
@@ -57,7 +57,7 @@ func (c *cloner) CloneToBucket(
 	writeBucket storage.WriteBucket,
 	options CloneToBucketOptions,
 ) (retErr error) {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
 	var err error
 	switch {
@@ -94,25 +94,25 @@ func (c *cloner) CloneToBucket(
 	}()
 
 	buffer := bytes.NewBuffer(nil)
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		"git",
-		execext.WithArgs("init"),
-		execext.WithEnv(app.Environ(envContainer)),
-		execext.WithStderr(buffer),
-		execext.WithDir(baseDir.Path()),
+		xexec.WithArgs("init"),
+		xexec.WithEnv(app.Environ(envContainer)),
+		xexec.WithStderr(buffer),
+		xexec.WithDir(baseDir.Path()),
 	); err != nil {
 		return newGitCommandError(err, buffer)
 	}
 
 	buffer.Reset()
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		"git",
-		execext.WithArgs("remote", "add", "origin", url),
-		execext.WithEnv(app.Environ(envContainer)),
-		execext.WithStderr(buffer),
-		execext.WithDir(baseDir.Path()),
+		xexec.WithArgs("remote", "add", "origin", url),
+		xexec.WithEnv(app.Environ(envContainer)),
+		xexec.WithStderr(buffer),
+		xexec.WithDir(baseDir.Path()),
 	); err != nil {
 		return newGitCommandError(err, buffer)
 	}
@@ -155,13 +155,13 @@ func (c *cloner) CloneToBucket(
 	var usedFallback bool
 	fetchRef, fallbackRef, checkoutRef := getRefspecsForName(options.Name)
 	buffer.Reset()
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		"git",
-		execext.WithArgs(append(fetchArgs, "origin", fetchRef)...),
-		execext.WithEnv(app.Environ(envContainer)),
-		execext.WithStderr(buffer),
-		execext.WithDir(baseDir.Path()),
+		xexec.WithArgs(append(fetchArgs, "origin", fetchRef)...),
+		xexec.WithEnv(app.Environ(envContainer)),
+		xexec.WithStderr(buffer),
+		xexec.WithDir(baseDir.Path()),
 	); err != nil {
 		// If the ref fetch failed, without a fallback, return the error.
 		if fallbackRef == "" {
@@ -170,13 +170,13 @@ func (c *cloner) CloneToBucket(
 		// Failed to fetch the ref directly, try to fetch the fallback ref.
 		usedFallback = true
 		buffer.Reset()
-		if err := execext.Run(
+		if err := xexec.Run(
 			ctx,
 			"git",
-			execext.WithArgs(append(fetchArgs, "origin", fallbackRef)...),
-			execext.WithEnv(app.Environ(envContainer)),
-			execext.WithStderr(buffer),
-			execext.WithDir(baseDir.Path()),
+			xexec.WithArgs(append(fetchArgs, "origin", fallbackRef)...),
+			xexec.WithEnv(app.Environ(envContainer)),
+			xexec.WithStderr(buffer),
+			xexec.WithDir(baseDir.Path()),
 		); err != nil {
 			return newGitCommandError(err, buffer)
 		}
@@ -187,13 +187,13 @@ func (c *cloner) CloneToBucket(
 	buffer.Reset()
 	if options.Filter != "" && options.SubDir != "" {
 		// Set the subdir for sparse checkout.
-		if err := execext.Run(
+		if err := xexec.Run(
 			ctx,
 			"git",
-			execext.WithArgs(append(gitConfigAuthArgs, "sparse-checkout", "set", options.SubDir)...),
-			execext.WithEnv(app.Environ(envContainer)),
-			execext.WithStderr(buffer),
-			execext.WithDir(baseDir.Path()),
+			xexec.WithArgs(append(gitConfigAuthArgs, "sparse-checkout", "set", options.SubDir)...),
+			xexec.WithEnv(app.Environ(envContainer)),
+			xexec.WithStderr(buffer),
+			xexec.WithDir(baseDir.Path()),
 		); err != nil {
 			return newGitCommandError(err, buffer)
 		}
@@ -202,13 +202,13 @@ func (c *cloner) CloneToBucket(
 	// Always checkout the FETCH_HEAD to populate the working directory.
 	// This allows for referencing HEAD in checkouts.
 	buffer.Reset()
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		"git",
-		execext.WithArgs(append(gitConfigAuthArgs, "checkout", "--force", "FETCH_HEAD")...),
-		execext.WithEnv(app.Environ(envContainer)),
-		execext.WithStderr(buffer),
-		execext.WithDir(baseDir.Path()),
+		xexec.WithArgs(append(gitConfigAuthArgs, "checkout", "--force", "FETCH_HEAD")...),
+		xexec.WithEnv(app.Environ(envContainer)),
+		xexec.WithStderr(buffer),
+		xexec.WithDir(baseDir.Path()),
 	); err != nil {
 		return newGitCommandError(err, buffer)
 	}
@@ -216,13 +216,13 @@ func (c *cloner) CloneToBucket(
 	// from the fetch ref.
 	if checkoutRef != "" && (usedFallback || checkoutRef != fetchRef) {
 		buffer.Reset()
-		if err := execext.Run(
+		if err := xexec.Run(
 			ctx,
 			"git",
-			execext.WithArgs(append(gitConfigAuthArgs, "checkout", "--force", checkoutRef)...),
-			execext.WithEnv(app.Environ(envContainer)),
-			execext.WithStderr(buffer),
-			execext.WithDir(baseDir.Path()),
+			xexec.WithArgs(append(gitConfigAuthArgs, "checkout", "--force", checkoutRef)...),
+			xexec.WithEnv(app.Environ(envContainer)),
+			xexec.WithStderr(buffer),
+			xexec.WithDir(baseDir.Path()),
 		); err != nil {
 			return newGitCommandError(err, buffer)
 		}
@@ -230,10 +230,10 @@ func (c *cloner) CloneToBucket(
 
 	if options.RecurseSubmodules {
 		buffer.Reset()
-		if err := execext.Run(
+		if err := xexec.Run(
 			ctx,
 			"git",
-			execext.WithArgs(append(
+			xexec.WithArgs(append(
 				gitConfigAuthArgs,
 				"submodule",
 				"update",
@@ -243,9 +243,9 @@ func (c *cloner) CloneToBucket(
 				"--depth",
 				depthArg,
 			)...),
-			execext.WithEnv(app.Environ(envContainer)),
-			execext.WithStderr(buffer),
-			execext.WithDir(baseDir.Path()),
+			xexec.WithEnv(app.Environ(envContainer)),
+			xexec.WithStderr(buffer),
+			xexec.WithDir(baseDir.Path()),
 		); err != nil {
 			return newGitCommandError(err, buffer)
 		}

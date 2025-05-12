@@ -24,6 +24,9 @@ import (
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/bufplugin/descriptor"
 	"buf.build/go/bufplugin/option"
+	"buf.build/go/standard/xlog/xslog"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -33,9 +36,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protosourcepath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"pluginrpc.com/pluginrpc"
 )
@@ -93,7 +93,7 @@ func (c *client) Lint(
 	image bufimage.Image,
 	options ...LintOption,
 ) error {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
 	if lintConfig.Disabled() {
 		return nil
@@ -118,8 +118,8 @@ func (c *client) Lint(
 	logRulesConfig(c.logger, config.rulesConfig)
 	files, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
 	if err != nil {
-		// If a validated Image results in an error, this is a system error.
-		return syserror.Wrap(err)
+		// An Image may be invalid if it does not contain all of the required dependencies.
+		return fmt.Errorf("input image: %w", err)
 	}
 	request, err := check.NewRequest(
 		files,
@@ -153,7 +153,7 @@ func (c *client) Breaking(
 	againstImage bufimage.Image,
 	options ...BreakingOption,
 ) error {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
 	if breakingConfig.Disabled() {
 		return nil
@@ -184,13 +184,13 @@ func (c *client) Breaking(
 	logRulesConfig(c.logger, config.rulesConfig)
 	fileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
 	if err != nil {
-		// If a validated Image results in an error, this is a system error.
-		return syserror.Wrap(err)
+		// An Image may be invalid if it does not contain all of the required dependencies.
+		return fmt.Errorf("input image: %w", err)
 	}
 	againstFileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(againstImage))
 	if err != nil {
-		// If a validated Image results in an error, this is a system error.
-		return syserror.Wrap(err)
+		// An Image may be invalid if it does not contain all of the required dependencies.
+		return fmt.Errorf("against image: %w", err)
 	}
 	request, err := check.NewRequest(
 		fileDescriptors,
@@ -224,7 +224,7 @@ func (c *client) ConfiguredRules(
 	checkConfig bufconfig.CheckConfig,
 	options ...ConfiguredRulesOption,
 ) ([]Rule, error) {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
 	configuredRulesOptions := newConfiguredRulesOptions()
 	for _, option := range options {
@@ -253,7 +253,7 @@ func (c *client) AllRules(
 	fileVersion bufconfig.FileVersion,
 	options ...AllRulesOption,
 ) ([]Rule, error) {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
 	allRulesOptions := newAllRulesOptions()
 	for _, option := range options {
@@ -271,7 +271,7 @@ func (c *client) AllCategories(
 	fileVersion bufconfig.FileVersion,
 	options ...AllCategoriesOption,
 ) ([]Category, error) {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
 	allCategoriesOptions := newAllCategoriesOptions()
 	for _, option := range options {
@@ -356,7 +356,7 @@ func (c *client) getMultiClient(
 func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.PluginConfig) ([]bufplugin.Plugin, error) {
 	plugins := make([]bufplugin.Plugin, len(pluginConfigs))
 
-	var indexedPluginRefs []slicesext.Indexed[bufparse.Ref]
+	var indexedPluginRefs []xslices.Indexed[bufparse.Ref]
 	for index, pluginConfig := range pluginConfigs {
 		switch pluginConfig.Type() {
 		case bufconfig.PluginConfigTypeLocal:
@@ -394,7 +394,7 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 			if pluginRef == nil {
 				return nil, syserror.Newf("missing Ref for remote PluginConfig %q", pluginConfig.Name())
 			}
-			indexedPluginRefs = append(indexedPluginRefs, slicesext.Indexed[bufparse.Ref]{
+			indexedPluginRefs = append(indexedPluginRefs, xslices.Indexed[bufparse.Ref]{
 				Value: pluginRef,
 				Index: index,
 			})
@@ -404,7 +404,7 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 	}
 	// Load the remote plugin data for each plugin ref.
 	if len(indexedPluginRefs) > 0 {
-		pluginRefs := slicesext.IndexedToValues(indexedPluginRefs)
+		pluginRefs := xslices.IndexedToValues(indexedPluginRefs)
 		pluginKeys, err := c.pluginKeyProvider.GetPluginKeysForPluginRefs(ctx, pluginRefs, bufplugin.DigestTypeP1)
 		if err != nil {
 			return nil, err
@@ -468,7 +468,7 @@ func filterAnnotations(
 	config *config,
 	annotations []*annotation,
 ) ([]*annotation, error) {
-	return slicesext.FilterError(
+	return xslices.FilterError(
 		annotations,
 		func(annotation *annotation) (bool, error) {
 			ignore, err := ignoreAnnotation(config, annotation)
@@ -543,7 +543,7 @@ func ignoreFileLocation(
 		for _, associatedSourcePath := range associatedSourcePaths {
 			sourceLocation := sourceLocations.ByPath(associatedSourcePath)
 			if leadingComments := sourceLocation.LeadingComments; leadingComments != "" {
-				for _, line := range stringutil.SplitTrimLinesNoEmpty(leadingComments) {
+				for _, line := range xstrings.SplitTrimLinesNoEmpty(leadingComments) {
 					if checkCommentLineForCheckIgnore(line, config.CommentIgnorePrefix, ruleID) {
 						return true, nil
 					}

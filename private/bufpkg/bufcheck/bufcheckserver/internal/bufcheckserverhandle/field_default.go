@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/standard/xslices"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -39,7 +39,7 @@ func getDefault(descriptor protoreflect.FieldDescriptor) fieldDefault {
 	case protoreflect.BytesKind:
 		data := descriptor.Default().Bytes()
 		printable := strings.Join(
-			slicesext.Map(data, func(b byte) string { return fmt.Sprintf("0x%X", b) }),
+			xslices.Map(data, func(b byte) string { return fmt.Sprintf("0x%X", b) }),
 			",")
 		return fieldDefault{
 			// cannot compare slices, so we convert []byte to string

@@ -20,8 +20,8 @@ import (
 	"strings"
 	"sync"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
@@ -81,7 +81,7 @@ func UniqueDigestTypeForModuleKeys(moduleKeys []ModuleKey) (DigestType, error) {
 	if len(moduleKeys) == 0 {
 		return 0, syserror.New("empty moduleKeys passed to UniqueDigestTypeForModuleKeys")
 	}
-	digests, err := slicesext.MapError(moduleKeys, ModuleKey.Digest)
+	digests, err := xslices.MapError(moduleKeys, ModuleKey.Digest)
 	if err != nil {
 		return 0, err
 	}
@@ -92,7 +92,7 @@ func UniqueDigestTypeForModuleKeys(moduleKeys []ModuleKey) (DigestType, error) {
 				"different digest types detected where the same digest type must be used: %v, %v\n%s",
 				digestType,
 				digest.Type(),
-				strings.Join(slicesext.Map(moduleKeys, ModuleKey.String), "\n"),
+				strings.Join(xslices.Map(moduleKeys, ModuleKey.String), "\n"),
 			)
 		}
 	}

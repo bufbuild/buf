@@ -21,7 +21,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
@@ -244,7 +244,7 @@ func (a *addedModule) ToModule(
 			if len(commits) != len(commitKeysToFetch) {
 				return nil, syserror.Newf("expected %d commit(s), got %d", commitKeysToFetch, len(commits))
 			}
-			return slicesext.Map(commits, func(commit Commit) ModuleKey {
+			return xslices.Map(commits, func(commit Commit) ModuleKey {
 				return commit.ModuleKey()
 			}), nil
 		case DigestTypeB5:
@@ -294,7 +294,7 @@ func getUniqueSortedAddedModulesByOpaqueID(
 	commitProvider CommitProvider,
 	addedModules []*addedModule,
 ) ([]*addedModule, error) {
-	opaqueIDToAddedModules := slicesext.ToValuesMap(addedModules, (*addedModule).OpaqueID)
+	opaqueIDToAddedModules := xslices.ToValuesMap(addedModules, (*addedModule).OpaqueID)
 	resultAddedModules := make([]*addedModule, 0, len(opaqueIDToAddedModules))
 	for _, addedModulesForOpaqueID := range opaqueIDToAddedModules {
 		resultAddedModule, err := selectAddedModuleForOpaqueID(ctx, commitProvider, addedModulesForOpaqueID)
@@ -327,7 +327,7 @@ func selectAddedModuleForOpaqueID(
 	addedModules []*addedModule,
 ) (*addedModule, error) {
 	// First, we see if there are any target Modules. If so, we prefer those.
-	targetAddedModules := slicesext.Filter(addedModules, (*addedModule).IsTarget)
+	targetAddedModules := xslices.Filter(addedModules, (*addedModule).IsTarget)
 	switch len(targetAddedModules) {
 	case 0:
 		// We have no target Modules. We will select a non-target Module via
@@ -354,7 +354,7 @@ func selectAddedModuleForOpaqueIDIgnoreTargeting(
 	addedModules []*addedModule,
 ) (*addedModule, error) {
 	// Now, we see if there are any local Modules. If so, we prefer those
-	localAddedModules := slicesext.Filter(addedModules, (*addedModule).IsLocal)
+	localAddedModules := xslices.Filter(addedModules, (*addedModule).IsLocal)
 	switch len(localAddedModules) {
 	case 0:
 		// We have no local Modules. We will select a remote Module.
@@ -396,8 +396,8 @@ func selectRemoteAddedModuleForOpaqueIDIgnoreTargeting(
 	if len(addedModules) == 1 {
 		return addedModules[0], nil
 	}
-	if moduleFullNameStrings := slicesext.ToUniqueSorted(
-		slicesext.Map(
+	if moduleFullNameStrings := xslices.ToUniqueSorted(
+		xslices.Map(
 			addedModules,
 			func(addedModule *addedModule) string { return addedModule.remoteModuleKey.FullName().String() },
 		),
@@ -409,7 +409,7 @@ func selectRemoteAddedModuleForOpaqueIDIgnoreTargeting(
 
 	// Now, we deduplicate by commit ID. If we end up with a single Module, we return that, otherwise we select exactly one Module
 	// based on the create time of the corresponding commit ID.
-	commitIDToAddedModules := slicesext.ToValuesMap(
+	commitIDToAddedModules := xslices.ToValuesMap(
 		addedModules,
 		func(addedModule *addedModule) uuid.UUID { return addedModule.remoteModuleKey.CommitID() },
 	)
@@ -423,7 +423,7 @@ func selectRemoteAddedModuleForOpaqueIDIgnoreTargeting(
 
 	// We now know that we have non-unique remote added Modules, and have selected exactly one addedModule per commit ID.
 
-	uniqueModuleKeys := slicesext.Map(
+	uniqueModuleKeys := xslices.Map(
 		uniqueAddedModules,
 		func(addedModule *addedModule) ModuleKey {
 			return addedModule.remoteModuleKey

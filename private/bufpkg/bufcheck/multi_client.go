@@ -23,8 +23,8 @@ import (
 	"sync"
 
 	"buf.build/go/bufplugin/check"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
+	"buf.build/go/standard/xlog/xslog"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/thread"
 )
 
@@ -49,7 +49,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 	requestRuleIDs := request.RuleIDs()
 	if len(requestRuleIDs) == 0 {
 		// If we didn't have specific ruleIDs, the requested ruleIDs are all default ruleIDs.
-		requestRuleIDs = slicesext.Map(slicesext.Filter(allRules, Rule.Default), Rule.ID)
+		requestRuleIDs = xslices.Map(xslices.Filter(allRules, Rule.Default), Rule.ID)
 	}
 	// This is a map of the requested ruleIDs.
 	requestRuleIDMap := make(map[string]struct{})
@@ -94,7 +94,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 		jobs = append(
 			jobs,
 			func(ctx context.Context) error {
-				defer slogext.DebugProfile(c.logger, slog.String("plugin", delegate.PluginName))()
+				defer xslog.DebugProfile(c.logger, slog.String("plugin", delegate.PluginName))()
 				delegateResponse, err := delegate.Client.Check(ctx, delegateRequest)
 				if err != nil {
 					if delegate.PluginName == "" {
@@ -102,7 +102,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 					}
 					return fmt.Errorf("plugin %q failed: %w", delegate.PluginName, err)
 				}
-				annotations := slicesext.Map(
+				annotations := xslices.Map(
 					delegateResponse.Annotations(),
 					func(checkAnnotation check.Annotation) *annotation {
 						return newAnnotation(checkAnnotation, delegate.PluginName)
@@ -149,7 +149,7 @@ func (c *multiClient) getRulesCategoriesAndChunkedIDs(ctx context.Context) (
 	retChunkedCategoryIDs [][]string,
 	retErr error,
 ) {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 	var rules []Rule
 	chunkedRuleIDs := make([][]string, len(c.checkClientSpecs))
 	for i, delegate := range c.checkClientSpecs {
@@ -160,13 +160,13 @@ func (c *multiClient) getRulesCategoriesAndChunkedIDs(ctx context.Context) (
 			}
 			return nil, nil, nil, nil, fmt.Errorf("plugin %q failed: %w", delegate.PluginName, err)
 		}
-		delegateRules := slicesext.Map(
+		delegateRules := xslices.Map(
 			delegateCheckRules,
 			func(checkRule check.Rule) Rule { return newRule(checkRule, delegate.PluginName) },
 		)
 		rules = append(rules, delegateRules...)
 		// Already sorted.
-		chunkedRuleIDs[i] = slicesext.Map(delegateRules, Rule.ID)
+		chunkedRuleIDs[i] = xslices.Map(delegateRules, Rule.ID)
 	}
 
 	var categories []Category
@@ -179,13 +179,13 @@ func (c *multiClient) getRulesCategoriesAndChunkedIDs(ctx context.Context) (
 			}
 			return nil, nil, nil, nil, fmt.Errorf("plugin %q failed: %w", delegate.PluginName, err)
 		}
-		delegateCategories := slicesext.Map(
+		delegateCategories := xslices.Map(
 			delegateCheckCategories,
 			func(checkCategory check.Category) Category { return newCategory(checkCategory, delegate.PluginName) },
 		)
 		categories = append(categories, delegateCategories...)
 		// Already sorted.
-		chunkedCategoryIDs[i] = slicesext.Map(delegateCategories, Category.ID)
+		chunkedCategoryIDs[i] = xslices.Map(delegateCategories, Category.ID)
 	}
 
 	if err := validateNoDuplicateRulesOrCategories(rules, categories); err != nil {
@@ -272,7 +272,7 @@ func (d *duplicateRuleOrCategoryError) Error() string {
 		)
 		_, _ = sb.WriteString(
 			strings.Join(
-				slicesext.Map(
+				xslices.Map(
 					ruleOrCategories,
 					func(ruleOrCategory RuleOrCategory) string {
 						if pluginName := ruleOrCategory.PluginName(); pluginName != "" {
@@ -298,5 +298,5 @@ func (d *duplicateRuleOrCategoryError) duplicateIDs() []string {
 	if len(d.duplicateIDToRuleOrCategories) == 0 {
 		return nil
 	}
-	return slicesext.MapKeysToSortedSlice(d.duplicateIDToRuleOrCategories)
+	return xslices.MapKeysToSortedSlice(d.duplicateIDToRuleOrCategories)
 }

@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"io"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -215,7 +215,7 @@ func readBufGenYAMLFile(
 		if err != nil {
 			return nil, err
 		}
-		inputConfigs, err := slicesext.MapError(
+		inputConfigs, err := xslices.MapError(
 			externalGenYAMLFile.Inputs,
 			newInputConfigFromExternalV2,
 		)
@@ -236,7 +236,7 @@ func readBufGenYAMLFile(
 
 func writeBufGenYAMLFile(writer io.Writer, bufGenYAMLFile BufGenYAMLFile) error {
 	// Regardless of version, we write the file as v2:
-	externalPluginConfigsV2, err := slicesext.MapError(
+	externalPluginConfigsV2, err := xslices.MapError(
 		bufGenYAMLFile.GenerateConfig().GeneratePluginConfigs(),
 		newExternalGeneratePluginConfigV2FromPluginConfig,
 	)
@@ -249,7 +249,7 @@ func writeBufGenYAMLFile(writer io.Writer, bufGenYAMLFile BufGenYAMLFile) error 
 	if err != nil {
 		return err
 	}
-	externalInputConfigsV2, err := slicesext.MapError(
+	externalInputConfigsV2, err := xslices.MapError(
 		bufGenYAMLFile.InputConfigs(),
 		newExternalInputConfigV2FromInputConfig,
 	)

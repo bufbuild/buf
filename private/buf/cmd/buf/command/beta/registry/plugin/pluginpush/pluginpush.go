@@ -26,6 +26,7 @@ import (
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
+	"buf.build/go/standard/xstrings"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
@@ -40,7 +41,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -122,7 +122,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Visibility,
 		visibilityFlagName,
 		"",
-		fmt.Sprintf(`The plugin's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibilityStrings)),
+		fmt.Sprintf(`The plugin's visibility setting. Must be one of %s`, xstrings.SliceToString(allVisibilityStrings)),
 	)
 	_ = appcmd.MarkFlagRequired(flagSet, visibilityFlagName)
 }
@@ -536,7 +536,7 @@ func visibilityFlagToVisibility(visibility string) (registryv1alpha1.CuratedPlug
 	case privateVisibility:
 		return registryv1alpha1.CuratedPluginVisibility_CURATED_PLUGIN_VISIBILITY_PRIVATE, nil
 	default:
-		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibilityStrings))
+		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, xstrings.SliceToString(allVisibilityStrings))
 	}
 }
 

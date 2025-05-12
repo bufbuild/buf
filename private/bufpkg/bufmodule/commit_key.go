@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
@@ -71,7 +71,7 @@ func UniqueDigestTypeForCommitKeys(commitKeys []CommitKey) (DigestType, error) {
 	if len(commitKeys) == 0 {
 		return 0, syserror.New("empty commitKeys passed to UniqueDigestTypeForCommitKeys")
 	}
-	digestTypes := slicesext.Map(commitKeys, CommitKey.DigestType)
+	digestTypes := xslices.Map(commitKeys, CommitKey.DigestType)
 	digestType := digestTypes[0]
 	for _, otherDigestType := range digestTypes[1:] {
 		if otherDigestType != digestType {
@@ -79,7 +79,7 @@ func UniqueDigestTypeForCommitKeys(commitKeys []CommitKey) (DigestType, error) {
 				"different digest types detected where the same digest type must be used: %v, %v\n%s",
 				otherDigestType,
 				digestType,
-				strings.Join(slicesext.Map(commitKeys, CommitKey.String), "\n"),
+				strings.Join(xslices.Map(commitKeys, CommitKey.String), "\n"),
 			)
 		}
 	}

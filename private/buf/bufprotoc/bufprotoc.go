@@ -21,12 +21,12 @@ import (
 	"log/slog"
 	"sort"
 
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 // NewModuleSetForProtoc returns a new ModuleSet for protoc -I dirPaths and filePaths.
@@ -64,7 +64,7 @@ func NewModuleSetForProtoc(
 		// https://github.com/bufbuild/buf/issues/113
 		rootBuckets = append(rootBuckets, storage.FilterReadBucket(rootBucket, storage.MatchPathExt(".proto")))
 	}
-	targetPaths, err := slicesext.MapError(
+	targetPaths, err := xslices.MapError(
 		absFilePaths,
 		func(absFilePath string) (string, error) {
 			return applyRootsToTargetPath(absIncludeDirPaths, absFilePath, normalpath.Absolute)
@@ -103,7 +103,7 @@ func applyRootsToTargetPath(roots []string, path string, pathType normalpath.Pat
 			"path %q is not contained within any of roots %s - note that specified paths "+
 				"cannot be roots, but must be contained within roots",
 			path,
-			stringutil.SliceToHumanStringQuoted(roots),
+			xstrings.SliceToHumanStringQuoted(roots),
 		)
 	case 1:
 		targetPath, err := normalpath.Rel(matchingRoots[0], path)
@@ -114,7 +114,7 @@ func applyRootsToTargetPath(roots []string, path string, pathType normalpath.Pat
 		return normalpath.NormalizeAndValidate(targetPath)
 	default:
 		// this should never happen
-		return "", fmt.Errorf("%q is contained in multiple roots %s", path, stringutil.SliceToHumanStringQuoted(roots))
+		return "", fmt.Errorf("%q is contained in multiple roots %s", path, xstrings.SliceToHumanStringQuoted(roots))
 	}
 }
 

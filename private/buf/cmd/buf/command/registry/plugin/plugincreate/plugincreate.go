@@ -22,12 +22,12 @@ import (
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
+	"buf.build/go/standard/xstrings"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -99,7 +99,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		fmt.Sprintf(
 			"The type of the plugin. Must be one of %s",
-			stringutil.SliceToString(allPluginTypeStrings),
+			xstrings.SliceToString(allPluginTypeStrings),
 		),
 	)
 	_ = appcmd.MarkFlagRequired(flagSet, typeFlagName)

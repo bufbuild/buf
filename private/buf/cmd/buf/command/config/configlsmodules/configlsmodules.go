@@ -25,11 +25,11 @@ import (
 	"buf.build/go/app"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -94,7 +94,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		defaultFormat,
 		fmt.Sprintf(
 			"The format to print rules as. Must be one of %s",
-			stringutil.SliceToString(allFormats),
+			xstrings.SliceToString(allFormats),
 		),
 	)
 }
@@ -197,8 +197,8 @@ func getExternalModulesForBufWorkYAMLFile(
 			if moduleFullName := moduleConfig.FullName(); moduleFullName != nil {
 				name = moduleFullName.String()
 			}
-			includes := slicesext.Map(moduleConfig.RootToIncludes()["."], func(include string) string { return normalpath.Join(dirPath, include) })
-			excludes := slicesext.Map(moduleConfig.RootToExcludes()["."], func(exclude string) string { return normalpath.Join(dirPath, exclude) })
+			includes := xslices.Map(moduleConfig.RootToIncludes()["."], func(include string) string { return normalpath.Join(dirPath, include) })
+			excludes := xslices.Map(moduleConfig.RootToExcludes()["."], func(exclude string) string { return normalpath.Join(dirPath, exclude) })
 			externalModules = append(
 				externalModules,
 				// The dirPath is the path specified in the buf.work.yaml.
@@ -227,8 +227,8 @@ func getExternalModulesForBufYAMLFile(
 			name = moduleFullName.String()
 		}
 		dirPath := moduleConfig.DirPath()
-		includes := slicesext.Map(moduleConfig.RootToIncludes()["."], func(include string) string { return normalpath.Join(dirPath, include) })
-		excludes := slicesext.Map(moduleConfig.RootToExcludes()["."], func(exclude string) string { return normalpath.Join(dirPath, exclude) })
+		includes := xslices.Map(moduleConfig.RootToIncludes()["."], func(include string) string { return normalpath.Join(dirPath, include) })
+		excludes := xslices.Map(moduleConfig.RootToExcludes()["."], func(exclude string) string { return normalpath.Join(dirPath, exclude) })
 		externalModules[i] = newExternalModule(dirPath, includes, excludes, name)
 	}
 	return externalModules, nil

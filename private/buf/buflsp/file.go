@@ -28,15 +28,15 @@ import (
 	"strings"
 	"time"
 
+	"buf.build/go/standard/xio"
+	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/git"
-	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/protocompile/ast"
 	"github.com/bufbuild/protocompile/parser"
@@ -216,7 +216,7 @@ func (f *file) RefreshSettings(ctx context.Context) {
 			f.lsp.logger.Warn(
 				"failed to validate buf.againstGit",
 				slog.String("uri", string(f.uri)),
-				slogext.ErrorAttr(err),
+				xslog.ErrorAttr(err),
 			)
 			f.againstGitRef = ""
 		} else {
@@ -405,7 +405,7 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 		return
 	}
 
-	defer slogext.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
+	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
 	// NOTE: We need to avoid sending a JSON null here, so we replace it with
 	// a non-nil empty slice when the diagnostics slice is nil.
@@ -428,14 +428,14 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 func (f *file) FindModule(ctx context.Context) {
 	workspace, err := f.lsp.controller.GetWorkspace(ctx, f.uri.Filename())
 	if err != nil {
-		f.lsp.logger.Warn("could not load workspace", slog.String("uri", string(f.uri)), slogext.ErrorAttr(err))
+		f.lsp.logger.Warn("could not load workspace", slog.String("uri", string(f.uri)), xslog.ErrorAttr(err))
 		return
 	}
 
 	// Get the check client for this workspace.
 	checkClient, err := f.lsp.controller.GetCheckClientForWorkspace(ctx, workspace, f.lsp.wasmRuntime)
 	if err != nil {
-		f.lsp.logger.Warn("could not get check client", slogext.ErrorAttr(err))
+		f.lsp.logger.Warn("could not get check client", xslog.ErrorAttr(err))
 		return
 	}
 
@@ -471,7 +471,7 @@ func (f *file) FindModule(ctx context.Context) {
 
 // IndexImports finds URIs for all of the files imported by this file.
 func (f *file) IndexImports(ctx context.Context) {
-	defer slogext.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
+	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
 	if f.fileNode == nil || f.importToFile != nil {
 		return
@@ -614,7 +614,7 @@ func (f *file) newFileOpener() fileOpener {
 		}
 
 		if file := f.Manager().Get(newURI); file != nil {
-			return ioext.CompositeReadCloser(strings.NewReader(file.text), ioext.NopCloser), nil
+			return xio.CompositeReadCloser(strings.NewReader(file.text), xio.NopCloser), nil
 		} else if !ok {
 			return nil, os.ErrNotExist
 		}
@@ -661,7 +661,7 @@ func (f *file) newAgainstFileOpener(ctx context.Context) fileOpener {
 			return os.Open(fileInfo.LocalPath())
 		}
 
-		return ioext.CompositeReadCloser(bytes.NewReader(data), ioext.NopCloser), err
+		return xio.CompositeReadCloser(bytes.NewReader(data), xio.NopCloser), err
 	}
 }
 
@@ -763,7 +763,7 @@ func (f *file) appendLintErrors(source string, err error) bool {
 		f.lsp.logger.Warn(
 			"error while linting",
 			slog.String("uri", string(f.uri)),
-			slogext.ErrorAttr(err),
+			xslog.ErrorAttr(err),
 		)
 		return false
 	}
@@ -793,7 +793,7 @@ func (f *file) appendLintErrors(source string, err error) bool {
 // IndexSymbols processes the AST of a file and generates symbols for each symbol in
 // the document.
 func (f *file) IndexSymbols(ctx context.Context) {
-	defer slogext.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
+	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
 	// Throw away all the old symbols. Unlike other indexing functions, we rebuild
 	// symbols unconditionally. This is because if this file depends on a file

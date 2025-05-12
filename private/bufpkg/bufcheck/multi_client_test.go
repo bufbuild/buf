@@ -23,10 +23,10 @@ import (
 	"buf.build/go/bufplugin/check/checktest"
 	"buf.build/go/bufplugin/check/checkutil"
 	"buf.build/go/bufplugin/option"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -119,7 +119,7 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 			fieldLowerSnakeCaseRuleID,
 			timestampSuffixRuleID,
 		},
-		slicesext.Map(rules, Rule.ID),
+		xslices.Map(rules, Rule.ID),
 	)
 	annotations, err := multiClient.Check(ctx, request)
 	require.NoError(t, err)
@@ -147,7 +147,7 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 				},
 			},
 		},
-		slicesext.Map(
+		xslices.Map(
 			annotations,
 			func(annotation *annotation) check.Annotation {
 				return annotation
@@ -312,7 +312,7 @@ func checkFieldLowerSnakeCase(
 	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
 	fieldName := string(fieldDescriptor.Name())
-	fieldNameToLowerSnakeCase := stringutil.ToLowerSnakeCase(fieldName)
+	fieldNameToLowerSnakeCase := xstrings.ToLowerSnakeCase(fieldName)
 	if fieldName != fieldNameToLowerSnakeCase {
 		responseWriter.AddAnnotation(
 			check.WithMessagef("Field name %q should be lower_snake_case, such as %q.", fieldName, fieldNameToLowerSnakeCase),

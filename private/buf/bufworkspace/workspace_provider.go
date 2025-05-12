@@ -21,16 +21,16 @@ import (
 	"io/fs"
 	"log/slog"
 
+	"buf.build/go/standard/xlog/xslog"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
 )
@@ -123,7 +123,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 	moduleKey bufmodule.ModuleKey,
 	options ...WorkspaceModuleKeyOption,
 ) (Workspace, error) {
-	defer slogext.DebugProfile(w.logger)()
+	defer xslog.DebugProfile(w.logger)()
 
 	config, err := newWorkspaceModuleKeyConfig(options)
 	if err != nil {
@@ -186,8 +186,8 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 			pluginConfigs = bufYAMLFile.PluginConfigs()
 			// To support remote plugins when using a config override, we need to resolve the remote
 			// Refs to PluginKeys. We use the pluginKeyProvider to resolve any remote plugin Refs.
-			remotePluginRefs := slicesext.Filter(
-				slicesext.Map(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) bufparse.Ref {
+			remotePluginRefs := xslices.Filter(
+				xslices.Map(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) bufparse.Ref {
 					return pluginConfig.Ref()
 				}),
 				func(ref bufparse.Ref) bool {
@@ -282,7 +282,7 @@ func (w *workspaceProvider) GetWorkspaceForBucket(
 	bucketTargeting buftarget.BucketTargeting,
 	options ...WorkspaceBucketOption,
 ) (Workspace, error) {
-	defer slogext.DebugProfile(w.logger)()
+	defer xslog.DebugProfile(w.logger)()
 	workspaceTargeting, err := w.getWorkspaceTargetingForBucket(
 		ctx,
 		bucket,
@@ -562,7 +562,7 @@ func getLocalModuleDescription(pathDescription string, moduleConfig bufconfig.Mo
 	description := fmt.Sprintf("path: %q", pathDescription)
 	moduleDirPath := moduleConfig.DirPath()
 	relIncludePaths := moduleConfig.RootToIncludes()["."]
-	includePaths := slicesext.Map(relIncludePaths, func(relInclude string) string {
+	includePaths := xslices.Map(relIncludePaths, func(relInclude string) string {
 		return normalpath.Join(moduleDirPath, relInclude)
 	})
 	switch len(includePaths) {
@@ -570,10 +570,10 @@ func getLocalModuleDescription(pathDescription string, moduleConfig bufconfig.Mo
 	case 1:
 		description = fmt.Sprintf("%s, includes: %q", description, includePaths[0])
 	default:
-		description = fmt.Sprintf("%s, includes: [%s]", description, stringutil.JoinSliceQuoted(includePaths, ", "))
+		description = fmt.Sprintf("%s, includes: [%s]", description, xstrings.JoinSliceQuoted(includePaths, ", "))
 	}
 	relExcludePaths := moduleConfig.RootToExcludes()["."]
-	excludePaths := slicesext.Map(relExcludePaths, func(relInclude string) string {
+	excludePaths := xslices.Map(relExcludePaths, func(relInclude string) string {
 		return normalpath.Join(moduleDirPath, relInclude)
 	})
 	switch len(excludePaths) {
@@ -581,7 +581,7 @@ func getLocalModuleDescription(pathDescription string, moduleConfig bufconfig.Mo
 	case 1:
 		description = fmt.Sprintf("%s, excludes: %q", description, excludePaths[0])
 	default:
-		description = fmt.Sprintf("%s, excludes: [%s]", description, stringutil.JoinSliceQuoted(excludePaths, ", "))
+		description = fmt.Sprintf("%s, excludes: [%s]", description, xstrings.JoinSliceQuoted(excludePaths, ", "))
 	}
 	return description
 }

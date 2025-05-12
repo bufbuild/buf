@@ -29,11 +29,11 @@ import (
 	"buf.build/go/app"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -132,7 +132,7 @@ func run(ctx context.Context, container appext.Container, flags *flags) error {
 	}
 	pathToImports := make(map[string][]string, len(pathToFile))
 	for path, file := range pathToFile {
-		imports := slicesext.Map(
+		imports := xslices.Map(
 			file.FileImports(),
 			func(fileImport bufprotosource.FileImport) string {
 				return fileImport.Import()
