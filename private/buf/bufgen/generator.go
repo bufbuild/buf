@@ -23,6 +23,7 @@ import (
 	"sort"
 
 	"buf.build/go/app"
+	"buf.build/go/standard/xslices"
 	connect "connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -36,7 +37,6 @@ import (
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"google.golang.org/protobuf/types/pluginpb"

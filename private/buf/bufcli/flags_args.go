@@ -23,8 +23,8 @@ import (
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
 	"buf.build/go/app"
 	"buf.build/go/app/appcmd"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/spf13/pflag"
 )
 

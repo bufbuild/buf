@@ -21,10 +21,10 @@ import (
 	"sort"
 	"strings"
 
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/spf13/pflag"
 )
 

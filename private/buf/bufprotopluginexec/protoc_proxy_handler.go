@@ -26,10 +26,10 @@ import (
 	"strings"
 
 	"buf.build/go/app"
+	"buf.build/go/standard/xio"
+	"buf.build/go/standard/xlog/xslog"
+	"buf.build/go/standard/xos/xexec"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/standard/xio"
-	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
-	"github.com/bufbuild/buf/private/pkg/standard/xos/xexec"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"

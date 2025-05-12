@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"io"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )

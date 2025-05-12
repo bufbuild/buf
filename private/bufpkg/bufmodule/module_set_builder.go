@@ -20,10 +20,10 @@ import (
 	"log/slog"
 	"sync/atomic"
 
+	"buf.build/go/standard/xlog/xslog"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
-	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"

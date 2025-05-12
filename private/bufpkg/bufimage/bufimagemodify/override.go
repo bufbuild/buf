@@ -20,11 +20,11 @@ import (
 	"strings"
 	"unicode"
 
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
-	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 

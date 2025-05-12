@@ -33,7 +33,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/bufbuild/buf/private/pkg/standard/xos/xexec"
+	"buf.build/go/standard/xos/xexec"
 )
 
 // Diff does a diff.

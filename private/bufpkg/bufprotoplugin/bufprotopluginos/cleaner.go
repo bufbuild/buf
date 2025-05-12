@@ -20,9 +20,9 @@ import (
 	"io/fs"
 	"path/filepath"
 
+	"buf.build/go/standard/xpath/xfilepath"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/osext"
-	"github.com/bufbuild/buf/private/pkg/standard/xpath/xfilepath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )

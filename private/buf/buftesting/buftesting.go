@@ -22,12 +22,12 @@ import (
 	"testing"
 	"time"
 
+	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/buf/bufprotoc"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/github/githubtesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
-	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/descriptorpb"

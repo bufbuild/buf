@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/bufbuild/buf/private/pkg/standard/xslices"
-	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 

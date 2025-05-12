@@ -17,7 +17,7 @@ package bufconfig
 import (
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/standard/xslices"
+	"buf.build/go/standard/xslices"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"

@@ -17,7 +17,7 @@ package bufconfig
 import (
 	"errors"
 
-	"github.com/bufbuild/buf/private/pkg/standard/xslices"
+	"buf.build/go/standard/xslices"
 )
 
 // GenerateConfig is a generation configuration.
