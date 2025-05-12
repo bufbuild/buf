@@ -32,7 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buftesting"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -931,7 +931,7 @@ func testGenerateDeleteOutsWithArgAndConfig(
 	require.True(t, len(outputPaths) < 4, "we want to have unique plugins to work with and this test is only set up for three plugins max right now")
 	fullOutputPaths := outputPaths
 	if baseOutDirPath != "" && baseOutDirPath != "." {
-		fullOutputPaths = slicesext.Map(
+		fullOutputPaths = xslices.Map(
 			outputPaths,
 			func(outputPath string) string {
 				return normalpath.Join(baseOutDirPath, outputPath)

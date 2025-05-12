@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/dag"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -199,7 +199,7 @@ func (o *omniProvider) GetModuleDatasForModuleKeys(
 	if _, err := bufparse.FullNameStringToUniqueValue(moduleKeys); err != nil {
 		return nil, err
 	}
-	return slicesext.MapError(
+	return xslices.MapError(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) (bufmodule.ModuleData, error) {
 			return o.getModuleDataForModuleKey(ctx, moduleKey)
@@ -311,7 +311,7 @@ func (o *omniProvider) getModuleDataForModuleKey(
 	if err != nil {
 		return nil, err
 	}
-	depModuleKeys, err := slicesext.MapError(
+	depModuleKeys, err := xslices.MapError(
 		moduleDeps,
 		func(moduleDep bufmodule.ModuleDep) (bufmodule.ModuleKey, error) {
 			return bufmodule.ModuleToModuleKey(moduleDep, digest.Type())
@@ -510,5 +510,5 @@ func addModuleToGraphRec(
 }
 
 func boolCount(bools ...bool) int {
-	return slicesext.Count(bools, func(value bool) bool { return value })
+	return xslices.Count(bools, func(value bool) bool { return value })
 }

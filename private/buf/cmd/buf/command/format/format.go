@@ -30,7 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufformat"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
@@ -350,7 +350,7 @@ func run(
 		}
 	}
 	if flags.Write {
-		changedPathSet := slicesext.ToStructMap(changedPaths)
+		changedPathSet := xslices.ToStructMap(changedPaths)
 		return storage.WalkReadObjects(
 			ctx,
 			formattedReadBucket,

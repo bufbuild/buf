@@ -28,7 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
@@ -182,7 +182,7 @@ func run(
 	}
 	if !flags.IncludeImportable {
 		if !flags.IncludeImports {
-			imageFileInfos = slicesext.Filter(
+			imageFileInfos = xslices.Filter(
 				imageFileInfos,
 				func(imageFileInfo bufimage.ImageFileInfo) bool {
 					return !imageFileInfo.IsImport()
@@ -239,7 +239,7 @@ func run(
 	default:
 		return appcmd.NewInvalidArgumentErrorf("--%s must be one of %s", formatFlagName, strings.Join(allFormats, ", "))
 	}
-	lines, err := slicesext.MapError(imageFileInfos, formatFunc)
+	lines, err := xslices.MapError(imageFileInfos, formatFunc)
 	if err != nil {
 		return err
 	}

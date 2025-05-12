@@ -29,7 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -519,7 +519,7 @@ func readBufYAMLFile(
 				// user error
 				return nil, err
 			}
-			relIncludes, err := slicesext.MapError(
+			relIncludes, err := xslices.MapError(
 				normalIncludes,
 				func(normalInclude string) (string, error) {
 					if normalInclude == dirPath {
@@ -540,7 +540,7 @@ func readBufYAMLFile(
 			}
 			// The only root for v2 buf.yamls must be "." and relIncludes are already relative to the moduleDirPath.
 			rootToIncludes := map[string][]string{".": relIncludes}
-			relExcludes, err := slicesext.MapError(
+			relExcludes, err := xslices.MapError(
 				externalModule.Excludes,
 				func(normalExclude string) (string, error) {
 					normalExclude, err := normalpath.NormalizeAndValidate(normalExclude)
@@ -711,7 +711,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			Version: fileVersion.String(),
 		}
 		// Already sorted.
-		externalBufYAMLFile.Deps = slicesext.Map(
+		externalBufYAMLFile.Deps = xslices.Map(
 			bufYAMLFile.ConfiguredDepModuleRefs(),
 			func(moduleRef bufparse.Ref) string {
 				return moduleRef.String()
@@ -741,7 +741,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		case FileVersionV1Beta1:
 			// If "." -> empty, do not add anything.
 			if len(rootToExcludes) != 1 || !(ok && len(excludes) == 0) {
-				roots := slicesext.MapKeysToSortedSlice(rootToExcludes)
+				roots := xslices.MapKeysToSortedSlice(rootToExcludes)
 				for _, root := range roots {
 					externalBufYAMLFile.Build.Roots = append(
 						externalBufYAMLFile.Build.Roots,
@@ -783,7 +783,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			Version: fileVersion.String(),
 		}
 		// Already sorted.
-		externalBufYAMLFile.Deps = slicesext.Map(
+		externalBufYAMLFile.Deps = xslices.Map(
 			bufYAMLFile.ConfiguredDepModuleRefs(),
 			func(moduleRef bufparse.Ref) string {
 				return moduleRef.String()
@@ -822,7 +822,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			if !ok {
 				return syserror.Newf("had rootToIncludes without key \".\" for NewModuleConfig with FileVersion %v", fileVersion)
 			}
-			externalModule.Includes = slicesext.Map(includes, joinDirPath)
+			externalModule.Includes = xslices.Map(includes, joinDirPath)
 			rootToExcludes := moduleConfig.RootToExcludes()
 			if len(rootToExcludes) != 1 {
 				return syserror.Newf("had rootToExcludes length %d for NewModuleConfig with FileVersion %v", len(rootToExcludes), fileVersion)
@@ -831,7 +831,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			if !ok {
 				return syserror.Newf("had rootToExcludes without key \".\" for NewModuleConfig with FileVersion %v", fileVersion)
 			}
-			externalModule.Excludes = slicesext.Map(excludes, joinDirPath)
+			externalModule.Excludes = xslices.Map(excludes, joinDirPath)
 
 			externalLint := getExternalLintV2ForLintConfig(moduleConfig.LintConfig(), moduleDirPath)
 			externalLintData, err := json.Marshal(externalLint)
@@ -952,7 +952,7 @@ func getRootToExcludes(roots []string, fullExcludes []string) (map[string][]stri
 	}
 
 	// Verify that all excludes are within a root.
-	rootMap := slicesext.ToStructMap(roots)
+	rootMap := xslices.ToStructMap(roots)
 	for _, fullExclude := range fullExcludes {
 		switch matchingRoots := normalpath.MapAllEqualOrContainingPaths(rootMap, fullExclude, normalpath.Relative); len(matchingRoots) {
 		case 0:
@@ -1223,10 +1223,10 @@ func getExternalLintV1Beta1V1ForLintConfig(lintConfig LintConfig, moduleDirPath 
 	// All already sorted.
 	externalLint.Use = lintConfig.UseIDsAndCategories()
 	externalLint.Except = lintConfig.ExceptIDsAndCategories()
-	externalLint.Ignore = slicesext.Map(lintConfig.IgnorePaths(), joinDirPath)
+	externalLint.Ignore = xslices.Map(lintConfig.IgnorePaths(), joinDirPath)
 	externalLint.IgnoreOnly = make(map[string][]string, len(lintConfig.IgnoreIDOrCategoryToPaths()))
 	for idOrCategory, importPaths := range lintConfig.IgnoreIDOrCategoryToPaths() {
-		externalLint.IgnoreOnly[idOrCategory] = slicesext.Map(importPaths, joinDirPath)
+		externalLint.IgnoreOnly[idOrCategory] = xslices.Map(importPaths, joinDirPath)
 	}
 	externalLint.EnumZeroValueSuffix = lintConfig.EnumZeroValueSuffix()
 	externalLint.RPCAllowSameRequestResponse = lintConfig.RPCAllowSameRequestResponse()
@@ -1246,10 +1246,10 @@ func getExternalLintV2ForLintConfig(lintConfig LintConfig, moduleDirPath string)
 	// All already sorted.
 	externalLint.Use = lintConfig.UseIDsAndCategories()
 	externalLint.Except = lintConfig.ExceptIDsAndCategories()
-	externalLint.Ignore = slicesext.Map(lintConfig.IgnorePaths(), joinDirPath)
+	externalLint.Ignore = xslices.Map(lintConfig.IgnorePaths(), joinDirPath)
 	externalLint.IgnoreOnly = make(map[string][]string, len(lintConfig.IgnoreIDOrCategoryToPaths()))
 	for idOrCategory, importPaths := range lintConfig.IgnoreIDOrCategoryToPaths() {
-		externalLint.IgnoreOnly[idOrCategory] = slicesext.Map(importPaths, joinDirPath)
+		externalLint.IgnoreOnly[idOrCategory] = xslices.Map(importPaths, joinDirPath)
 	}
 	externalLint.EnumZeroValueSuffix = lintConfig.EnumZeroValueSuffix()
 	externalLint.RPCAllowSameRequestResponse = lintConfig.RPCAllowSameRequestResponse()
@@ -1269,10 +1269,10 @@ func getExternalBreakingForBreakingConfig(breakingConfig BreakingConfig, moduleD
 	// All already sorted.
 	externalBreaking.Use = breakingConfig.UseIDsAndCategories()
 	externalBreaking.Except = breakingConfig.ExceptIDsAndCategories()
-	externalBreaking.Ignore = slicesext.Map(breakingConfig.IgnorePaths(), joinDirPath)
+	externalBreaking.Ignore = xslices.Map(breakingConfig.IgnorePaths(), joinDirPath)
 	externalBreaking.IgnoreOnly = make(map[string][]string, len(breakingConfig.IgnoreIDOrCategoryToPaths()))
 	for idOrCategory, importPaths := range breakingConfig.IgnoreIDOrCategoryToPaths() {
-		externalBreaking.IgnoreOnly[idOrCategory] = slicesext.Map(importPaths, joinDirPath)
+		externalBreaking.IgnoreOnly[idOrCategory] = xslices.Map(importPaths, joinDirPath)
 	}
 	externalBreaking.IgnoreUnstablePackages = breakingConfig.IgnoreUnstablePackages()
 	externalBreaking.DisableBuiltin = breakingConfig.DisableBuiltin()

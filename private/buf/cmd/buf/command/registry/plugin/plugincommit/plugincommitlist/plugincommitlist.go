@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -211,7 +211,7 @@ func run(
 			format,
 			resp.Msg.NextPageToken,
 			nextPageCommand(container, flags, resp.Msg.NextPageToken),
-			slicesext.Map(resp.Msg.Commits, func(commit *pluginv1beta1.Commit) bufprint.Entity {
+			xslices.Map(resp.Msg.Commits, func(commit *pluginv1beta1.Commit) bufprint.Entity {
 				return bufprint.NewCommitEntity(commit, pluginRef.FullName())
 			}),
 		)
@@ -253,7 +253,7 @@ func run(
 		}
 		return err
 	}
-	commits := slicesext.Map(
+	commits := xslices.Map(
 		resp.Msg.Values,
 		func(value *pluginv1beta1.ListLabelHistoryResponse_Value) *pluginv1beta1.Commit {
 			return value.Commit
@@ -264,7 +264,7 @@ func run(
 		format,
 		resp.Msg.NextPageToken,
 		nextPageCommand(container, flags, resp.Msg.NextPageToken),
-		slicesext.Map(commits, func(commit *pluginv1beta1.Commit) bufprint.Entity {
+		xslices.Map(commits, func(commit *pluginv1beta1.Commit) bufprint.Entity {
 			return bufprint.NewCommitEntity(commit, pluginRef.FullName())
 		}),
 	)

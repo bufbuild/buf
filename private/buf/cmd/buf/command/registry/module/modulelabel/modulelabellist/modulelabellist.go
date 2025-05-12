@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/spf13/pflag"
 )
 
@@ -162,7 +162,7 @@ func run(
 		format,
 		resp.Msg.NextPageToken,
 		nextPageCommand(container, flags, resp.Msg.NextPageToken),
-		slicesext.Map(resp.Msg.Labels, func(label *modulev1.Label) bufprint.Entity {
+		xslices.Map(resp.Msg.Labels, func(label *modulev1.Label) bufprint.Entity {
 			return bufprint.NewLabelEntity(label, moduleFullName)
 		}),
 	)

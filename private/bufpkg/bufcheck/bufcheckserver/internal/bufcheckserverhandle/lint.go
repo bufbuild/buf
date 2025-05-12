@@ -30,7 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -180,13 +180,13 @@ func handleLintDirectorySamePackage(
 		if _, ok := pkgMap[""]; ok {
 			delete(pkgMap, "")
 			if len(pkgMap) > 1 {
-				messagePrefix = fmt.Sprintf("Multiple packages %q and file with no package", strings.Join(slicesext.MapKeysToSortedSlice(pkgMap), ","))
+				messagePrefix = fmt.Sprintf("Multiple packages %q and file with no package", strings.Join(xslices.MapKeysToSortedSlice(pkgMap), ","))
 			} else {
 				// Join works with only one element as well by adding no comma
-				messagePrefix = fmt.Sprintf("Package %q and file with no package", strings.Join(slicesext.MapKeysToSortedSlice(pkgMap), ","))
+				messagePrefix = fmt.Sprintf("Package %q and file with no package", strings.Join(xslices.MapKeysToSortedSlice(pkgMap), ","))
 			}
 		} else {
-			messagePrefix = fmt.Sprintf("Multiple packages %q", strings.Join(slicesext.MapKeysToSortedSlice(pkgMap), ","))
+			messagePrefix = fmt.Sprintf("Multiple packages %q", strings.Join(xslices.MapKeysToSortedSlice(pkgMap), ","))
 		}
 		for _, file := range dirFiles {
 			responseWriter.AddProtosourceAnnotation(
@@ -708,7 +708,7 @@ func handleLintPackageSameDirectory(
 		dirMap[normalpath.Dir(file.Path())] = struct{}{}
 	}
 	if len(dirMap) > 1 {
-		dirs := slicesext.MapKeysToSortedSlice(dirMap)
+		dirs := xslices.MapKeysToSortedSlice(dirMap)
 		for _, file := range pkgFiles {
 			responseWriter.AddProtosourceAnnotation(
 				file.PackageLocation(),
@@ -873,7 +873,7 @@ func handleLintPackageSameOptionValue(
 	if len(optionValueMap) > 1 {
 		_, noOptionValue := optionValueMap[""]
 		delete(optionValueMap, "")
-		optionValues := slicesext.MapKeysToSortedSlice(optionValueMap)
+		optionValues := xslices.MapKeysToSortedSlice(optionValueMap)
 		for _, file := range pkgFiles {
 			var message string
 			if noOptionValue {
@@ -959,7 +959,7 @@ func handleLintProtovalidate(
 	// import files. This is because there can be a case where a non-import file uses a predefined
 	// rule from an imported file.
 	extensionResolver, err := protoencoding.NewResolver(
-		slicesext.Map(
+		xslices.Map(
 			request.ProtosourceFiles(),
 			func(protosourceFile bufprotosource.File) protodescriptor.FileDescriptor {
 				return protosourceFile.FileDescriptor()

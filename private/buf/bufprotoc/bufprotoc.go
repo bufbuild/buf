@@ -23,7 +23,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
@@ -64,7 +64,7 @@ func NewModuleSetForProtoc(
 		// https://github.com/bufbuild/buf/issues/113
 		rootBuckets = append(rootBuckets, storage.FilterReadBucket(rootBucket, storage.MatchPathExt(".proto")))
 	}
-	targetPaths, err := slicesext.MapError(
+	targetPaths, err := xslices.MapError(
 		absFilePaths,
 		func(absFilePath string) (string, error) {
 			return applyRootsToTargetPath(absIncludeDirPaths, absFilePath, normalpath.Absolute)

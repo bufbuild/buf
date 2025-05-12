@@ -21,7 +21,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
@@ -77,7 +77,7 @@ func UniqueDigestTypeForPolicyKeys(policyKeys []PolicyKey) (DigestType, error) {
 	if len(policyKeys) == 0 {
 		return 0, syserror.New("empty policyKeys passed to UniqueDigestTypeForPolicyKeys")
 	}
-	digests, err := slicesext.MapError(policyKeys, PolicyKey.Digest)
+	digests, err := xslices.MapError(policyKeys, PolicyKey.Digest)
 	if err != nil {
 		return 0, err
 	}
@@ -88,7 +88,7 @@ func UniqueDigestTypeForPolicyKeys(policyKeys []PolicyKey) (DigestType, error) {
 				"different digest types detected where the same digest type must be used: %v, %v\n%s",
 				digestType,
 				digest.Type(),
-				strings.Join(slicesext.Map(policyKeys, PolicyKey.String), "\n"),
+				strings.Join(xslices.Map(policyKeys, PolicyKey.String), "\n"),
 			)
 		}
 	}

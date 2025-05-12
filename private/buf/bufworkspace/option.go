@@ -16,7 +16,7 @@ package bufworkspace
 
 import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 )
 
 // WorkspaceBucketOption is an option for a new Workspace created by a Bucket.
@@ -178,14 +178,14 @@ func newWorkspaceModuleKeyConfig(options []WorkspaceModuleKeyOption) (*workspace
 		option.applyToWorkspaceModuleKeyConfig(config)
 	}
 	var err error
-	config.targetPaths, err = slicesext.MapError(
+	config.targetPaths, err = xslices.MapError(
 		config.targetPaths,
 		normalpath.NormalizeAndValidate,
 	)
 	if err != nil {
 		return nil, err
 	}
-	config.targetExcludePaths, err = slicesext.MapError(
+	config.targetExcludePaths, err = xslices.MapError(
 		config.targetExcludePaths,
 		normalpath.NormalizeAndValidate,
 	)

@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -255,7 +255,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		}
 		// Each root in buf.yaml v1beta1 should become its own module config in v2,
 		// and we iterate through these roots in deterministic order.
-		sortedRoots := slicesext.MapKeysToSortedSlice(moduleConfig.RootToExcludes())
+		sortedRoots := xslices.MapKeysToSortedSlice(moduleConfig.RootToExcludes())
 		for _, root := range sortedRoots {
 			moduleRootRelativeToDestination, err := normalpath.Rel(
 				m.destinationDirPath,

@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
@@ -229,7 +229,7 @@ func validateTypeFlags(flags *flags) error {
 	}
 	if len(typeFlags) > 1 {
 		usedFlagsErrStr := strings.Join(
-			slicesext.Map(
+			xslices.Map(
 				typeFlags,
 				func(flag string) string { return fmt.Sprintf("--%s", flag) },
 			),

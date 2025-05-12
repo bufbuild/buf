@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
@@ -122,7 +122,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fmt.Sprintf(
 			"List all the rules for the given configuration version. Implies --%s. Must be one of %s",
 			allFlagName,
-			slicesext.Map(
+			xslices.Map(
 				bufconfig.AllFileVersions,
 				func(fileVersion bufconfig.FileVersion) string {
 					return fileVersion.String()

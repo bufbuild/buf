@@ -24,7 +24,7 @@ import (
 	"buf.build/go/bufplugin/check/checkutil"
 	"buf.build/go/bufplugin/option"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/wasm"
@@ -119,7 +119,7 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 			fieldLowerSnakeCaseRuleID,
 			timestampSuffixRuleID,
 		},
-		slicesext.Map(rules, Rule.ID),
+		xslices.Map(rules, Rule.ID),
 	)
 	annotations, err := multiClient.Check(ctx, request)
 	require.NoError(t, err)
@@ -147,7 +147,7 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 				},
 			},
 		},
-		slicesext.Map(
+		xslices.Map(
 			annotations,
 			func(annotation *annotation) check.Annotation {
 				return annotation

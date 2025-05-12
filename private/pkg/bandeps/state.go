@@ -22,7 +22,7 @@ import (
 
 	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/pkg/execext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 )
 
 type state struct {
@@ -157,7 +157,7 @@ func (s *state) packagesForPackageExpressionUncached(
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.ToStructMap(getNonEmptyLines(string(data))), nil
+	return xslices.ToStructMap(getNonEmptyLines(string(data))), nil
 }
 
 func (s *state) depsForPackage(
@@ -212,7 +212,7 @@ func (s *state) depsForPackageUncached(
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.ToStructMap(getNonEmptyLines(string(data))), nil
+	return xslices.ToStructMap(getNonEmptyLines(string(data))), nil
 }
 
 func (s *state) runStdout(ctx context.Context, name string, args ...string) ([]byte, error) {

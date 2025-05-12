@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 )
 
 var (
@@ -224,19 +224,19 @@ func newModuleConfig(
 	}
 	newRootToIncludes := make(map[string][]string)
 	for root, includes := range rootToIncludes {
-		includes, err := slicesext.MapError(includes, normalpath.NormalizeAndValidate)
+		includes, err := xslices.MapError(includes, normalpath.NormalizeAndValidate)
 		if err != nil {
 			return nil, err
 		}
-		newRootToIncludes[root] = slicesext.ToUniqueSorted(includes)
+		newRootToIncludes[root] = xslices.ToUniqueSorted(includes)
 	}
 	newRootToExcludes := make(map[string][]string)
 	for root, excludes := range rootToExcludes {
-		excludes, err := slicesext.MapError(excludes, normalpath.NormalizeAndValidate)
+		excludes, err := xslices.MapError(excludes, normalpath.NormalizeAndValidate)
 		if err != nil {
 			return nil, err
 		}
-		newRootToExcludes[root] = slicesext.ToUniqueSorted(excludes)
+		newRootToExcludes[root] = xslices.ToUniqueSorted(excludes)
 	}
 	return &moduleConfig{
 		dirPath:        dirPath,

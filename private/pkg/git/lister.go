@@ -22,7 +22,7 @@ import (
 
 	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/pkg/execext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 )
 
@@ -60,7 +60,7 @@ func (l *lister) ListFilesAndUnstagedFiles(
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.ToUniqueSorted(
+	return xslices.ToUniqueSorted(
 		filterNonRegularFiles(
 			stringSliceExceptMatches(
 				stringSliceExcept(
@@ -77,7 +77,7 @@ func (l *lister) ListFilesAndUnstagedFiles(
 
 // stringSliceExcept returns all elements in source that are not in except.
 func stringSliceExcept(source []string, except []string) []string {
-	exceptMap := slicesext.ToStructMap(except)
+	exceptMap := xslices.ToStructMap(except)
 	result := make([]string, 0, len(source))
 	for _, s := range source {
 		if _, ok := exceptMap[s]; !ok {

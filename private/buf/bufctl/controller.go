@@ -48,7 +48,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/standard/xio"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
@@ -1205,13 +1205,13 @@ func (c *controller) warnUnconfiguredTransitiveImports(
 	// First, figure out if we have a local module. If we don't, just return - the Workspace
 	// was purely built from remote Modules, and therefore buf.yaml configured dependencies
 	// do not apply.
-	if slicesext.Count(workspace.Modules(), bufmodule.Module.IsLocal) == 0 {
+	if xslices.Count(workspace.Modules(), bufmodule.Module.IsLocal) == 0 {
 		return nil
 	}
 	// Construct a struct map of all the FullName strings of the configured buf.yaml
 	// Module dependencies, and the local Modules. These are considered OK to depend on
 	// for non-imports in the Image.
-	configuredFullNameStrings, err := slicesext.MapError(
+	configuredFullNameStrings, err := xslices.MapError(
 		workspace.ConfiguredDepModuleRefs(),
 		func(moduleRef bufparse.Ref) (string, error) {
 			moduleFullName := moduleRef.FullName()
@@ -1224,7 +1224,7 @@ func (c *controller) warnUnconfiguredTransitiveImports(
 	if err != nil {
 		return err
 	}
-	configuredFullNameStringMap := slicesext.ToStructMap(configuredFullNameStrings)
+	configuredFullNameStringMap := xslices.ToStructMap(configuredFullNameStrings)
 	for _, localModule := range bufmodule.ModuleSetLocalModules(workspace) {
 		if moduleFullName := localModule.FullName(); moduleFullName != nil {
 			configuredFullNameStringMap[moduleFullName.String()] = struct{}{}
@@ -1314,7 +1314,7 @@ func getImageFileInfosForModuleSet(ctx context.Context, moduleSet bufmodule.Modu
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.Map(
+	return xslices.Map(
 		fileInfos,
 		func(fileInfo bufmodule.FileInfo) bufimage.ImageFileInfo {
 			return bufimage.ImageFileInfoForModuleFileInfo(fileInfo)
@@ -1478,15 +1478,15 @@ func newStaticPluginKeyProviderForPluginConfigs(
 	pluginKeys []bufplugin.PluginKey,
 ) (_ bufplugin.PluginKeyProvider, retErr error) {
 	// Validate that all remote PluginConfigs are present in the buf.lock file.
-	pluginKeysByFullName, err := slicesext.ToUniqueValuesMap(pluginKeys, func(pluginKey bufplugin.PluginKey) string {
+	pluginKeysByFullName, err := xslices.ToUniqueValuesMap(pluginKeys, func(pluginKey bufplugin.PluginKey) string {
 		return pluginKey.FullName().String()
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate remote PluginKeys: %w", err)
 	}
 	// Remote PluginConfig Refs are any PluginConfigs that have a Ref.
-	remotePluginRefs := slicesext.Filter(
-		slicesext.Map(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) bufparse.Ref {
+	remotePluginRefs := xslices.Filter(
+		xslices.Map(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) bufparse.Ref {
 			return pluginConfig.Ref()
 		}),
 		func(pluginRef bufparse.Ref) bool {

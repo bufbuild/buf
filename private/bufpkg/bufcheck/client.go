@@ -33,7 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protosourcepath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -356,7 +356,7 @@ func (c *client) getMultiClient(
 func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.PluginConfig) ([]bufplugin.Plugin, error) {
 	plugins := make([]bufplugin.Plugin, len(pluginConfigs))
 
-	var indexedPluginRefs []slicesext.Indexed[bufparse.Ref]
+	var indexedPluginRefs []xslices.Indexed[bufparse.Ref]
 	for index, pluginConfig := range pluginConfigs {
 		switch pluginConfig.Type() {
 		case bufconfig.PluginConfigTypeLocal:
@@ -394,7 +394,7 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 			if pluginRef == nil {
 				return nil, syserror.Newf("missing Ref for remote PluginConfig %q", pluginConfig.Name())
 			}
-			indexedPluginRefs = append(indexedPluginRefs, slicesext.Indexed[bufparse.Ref]{
+			indexedPluginRefs = append(indexedPluginRefs, xslices.Indexed[bufparse.Ref]{
 				Value: pluginRef,
 				Index: index,
 			})
@@ -404,7 +404,7 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 	}
 	// Load the remote plugin data for each plugin ref.
 	if len(indexedPluginRefs) > 0 {
-		pluginRefs := slicesext.IndexedToValues(indexedPluginRefs)
+		pluginRefs := xslices.IndexedToValues(indexedPluginRefs)
 		pluginKeys, err := c.pluginKeyProvider.GetPluginKeysForPluginRefs(ctx, pluginRefs, bufplugin.DigestTypeP1)
 		if err != nil {
 			return nil, err
@@ -468,7 +468,7 @@ func filterAnnotations(
 	config *config,
 	annotations []*annotation,
 ) ([]*annotation, error) {
-	return slicesext.FilterError(
+	return xslices.FilterError(
 		annotations,
 		func(annotation *annotation) (bool, error) {
 			ignore, err := ignoreAnnotation(config, annotation)

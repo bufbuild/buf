@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	"buf.build/go/app"
-	"github.com/bufbuild/buf/private/pkg/filepathext"
+	"github.com/bufbuild/buf/private/pkg/standard/xpath/xfilepath"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
@@ -47,7 +47,7 @@ func newDirRef(
 	if strings.Contains(path, "://") {
 		return nil, NewInvalidPathError(format, path)
 	}
-	path, err := filepathext.RealClean(path)
+	path, err := xfilepath.RealClean(path)
 	if err != nil {
 		return nil, NewRealCleanPathError(path)
 	}

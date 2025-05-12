@@ -19,7 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -133,7 +133,7 @@ func newModuleTargeting(
 				}
 			}
 		}
-		moduleTargetPaths, err = slicesext.MapError(
+		moduleTargetPaths, err = xslices.MapError(
 			moduleTargetPaths,
 			func(moduleTargetPath string) (string, error) {
 				return applyRootsToTargetPath(roots, moduleTargetPath, normalpath.Relative)
@@ -142,7 +142,7 @@ func newModuleTargeting(
 		if err != nil {
 			return nil, err
 		}
-		moduleTargetExcludePaths, err = slicesext.MapError(
+		moduleTargetExcludePaths, err = xslices.MapError(
 			moduleTargetExcludePaths,
 			func(moduleTargetExcludePath string) (string, error) {
 				return applyRootsToTargetPath(roots, moduleTargetExcludePath, normalpath.Relative)

@@ -35,7 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/standard/xio"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/osext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -901,13 +901,13 @@ func validatePaths(
 	if _, err := normalpath.NormalizeAndValidate(inputSubDirPath); err != nil {
 		return err
 	}
-	if _, err := slicesext.MapError(
+	if _, err := xslices.MapError(
 		targetPaths,
 		normalpath.NormalizeAndValidate,
 	); err != nil {
 		return err
 	}
-	if _, err := slicesext.MapError(
+	if _, err := xslices.MapError(
 		targetPaths,
 		normalpath.NormalizeAndValidate,
 	); err != nil {
@@ -925,13 +925,13 @@ func mapTargetPathsAndTargetExcludePathsForArchiveAndGitRefs(
 	if inputSubDirPath == "." {
 		return targetPaths, targetExcludePaths
 	}
-	return slicesext.Map(
+	return xslices.Map(
 			targetPaths,
 			func(targetPath string) string {
 				return normalpath.Join(inputSubDirPath, targetPath)
 			},
 		),
-		slicesext.Map(
+		xslices.Map(
 			targetExcludePaths,
 			func(targetExcludePath string) string {
 				return normalpath.Join(inputSubDirPath, targetExcludePath)

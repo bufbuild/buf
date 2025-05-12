@@ -27,7 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
@@ -186,8 +186,8 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 			pluginConfigs = bufYAMLFile.PluginConfigs()
 			// To support remote plugins when using a config override, we need to resolve the remote
 			// Refs to PluginKeys. We use the pluginKeyProvider to resolve any remote plugin Refs.
-			remotePluginRefs := slicesext.Filter(
-				slicesext.Map(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) bufparse.Ref {
+			remotePluginRefs := xslices.Filter(
+				xslices.Map(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) bufparse.Ref {
 					return pluginConfig.Ref()
 				}),
 				func(ref bufparse.Ref) bool {
@@ -562,7 +562,7 @@ func getLocalModuleDescription(pathDescription string, moduleConfig bufconfig.Mo
 	description := fmt.Sprintf("path: %q", pathDescription)
 	moduleDirPath := moduleConfig.DirPath()
 	relIncludePaths := moduleConfig.RootToIncludes()["."]
-	includePaths := slicesext.Map(relIncludePaths, func(relInclude string) string {
+	includePaths := xslices.Map(relIncludePaths, func(relInclude string) string {
 		return normalpath.Join(moduleDirPath, relInclude)
 	})
 	switch len(includePaths) {
@@ -573,7 +573,7 @@ func getLocalModuleDescription(pathDescription string, moduleConfig bufconfig.Mo
 		description = fmt.Sprintf("%s, includes: [%s]", description, xstrings.JoinSliceQuoted(includePaths, ", "))
 	}
 	relExcludePaths := moduleConfig.RootToExcludes()["."]
-	excludePaths := slicesext.Map(relExcludePaths, func(relInclude string) string {
+	excludePaths := xslices.Map(relExcludePaths, func(relInclude string) string {
 		return normalpath.Join(moduleDirPath, relInclude)
 	})
 	switch len(excludePaths) {

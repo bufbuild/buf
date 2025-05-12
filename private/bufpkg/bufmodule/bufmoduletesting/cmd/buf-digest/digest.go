@@ -26,7 +26,7 @@ import (
 	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
@@ -83,7 +83,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		bufmodule.DigestTypeB5.String(),
 		fmt.Sprintf(
 			"The digest type. Must be one of %s",
-			xstrings.SliceToString(slicesext.Map(bufmodule.AllDigestTypes, bufmodule.DigestType.String)),
+			xstrings.SliceToString(xslices.Map(bufmodule.AllDigestTypes, bufmodule.DigestType.String)),
 		),
 	)
 }

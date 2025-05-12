@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
@@ -262,7 +262,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	// We don't want to do this lazily (or anything else in this function) as we want to
 	// make sure everything we have is valid before returning so we can auto-correct
 	// the cache if necessary.
-	depModuleKeys, err := slicesext.MapError(
+	depModuleKeys, err := xslices.MapError(
 		externalModuleData.Deps,
 		getDepModuleKeyForExternalModuleDataDep,
 	)

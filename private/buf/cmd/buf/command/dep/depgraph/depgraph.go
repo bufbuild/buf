@@ -27,7 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/dag"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
@@ -188,7 +188,7 @@ func run(
 		); err != nil {
 			return err
 		}
-		externalModules := slicesext.MapValuesToSlice(moduleFullNameOrOpaqueIDToExternalModule)
+		externalModules := xslices.MapValuesToSlice(moduleFullNameOrOpaqueIDToExternalModule)
 		// Sort all modules alphabetically.
 		sortExternalModules(externalModules)
 		data, err := json.Marshal(externalModules)

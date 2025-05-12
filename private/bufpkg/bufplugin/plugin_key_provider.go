@@ -20,7 +20,7 @@ import (
 	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 )
 
 var (
@@ -74,7 +74,7 @@ func newStaticPluginKeyProvider(pluginKeys []PluginKey) (*staticPluginKeyProvide
 	var pluginKeysByFullName map[string]PluginKey
 	if len(pluginKeys) > 0 {
 		var err error
-		pluginKeysByFullName, err = slicesext.ToUniqueValuesMap(pluginKeys, func(pluginKey PluginKey) string {
+		pluginKeysByFullName, err = xslices.ToUniqueValuesMap(pluginKeys, func(pluginKey PluginKey) string {
 			return pluginKey.FullName().String()
 		})
 		if err != nil {
