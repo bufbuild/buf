@@ -9,6 +9,7 @@
 - Fix CEL check on `buf lint` for predefined `rules` variables.
 - Fix `buf config migrate` to filter out removed rules. 
 - Allow users to set examples without constraints in `PROTOVALIDATE` lint rule.
+- Add ppc64le binaries for Linux to releases.
 
 ## [v1.53.0] - 2025-04-21
 
