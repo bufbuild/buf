@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package slogext
+package xslices
 
 import _ "github.com/bufbuild/buf/private/usage"

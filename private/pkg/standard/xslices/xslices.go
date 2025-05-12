@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package slicesext provides extra functionality on top of the slices package.
-package slicesext
+// Package xslices provides extended functionality for slices.
+package xslices
 
 import (
 	"cmp"

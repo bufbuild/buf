@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package ioext provides io utilities.
-package ioext
+// Package xio provides extended functionality for io.
+package xio
 
 import (
 	"bytes"

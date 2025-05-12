@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package slogext implements extended functionality for slog.
-package slogext
+// Package xslog provides extended functionality for slog.
+package xslog
 
 import (
 	"context"

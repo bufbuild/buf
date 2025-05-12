@@ -14,7 +14,7 @@
 
 //go:build unix
 
-package execext
+package xexec
 
 import (
 	"context"

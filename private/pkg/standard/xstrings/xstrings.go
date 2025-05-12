@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package stringutil implements string utilities.
-package stringutil
+// Package xstrings provides extended functionality for strings.
+package xstrings
 
 import (
 	"bytes"
 	"strings"
 	"unicode"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 )
 
 // TrimLines splits the output into individual lines and trims the spaces from each line.
@@ -135,13 +135,13 @@ func WordWrap(text string, charLimit int) []string {
 //
 // Strings with only spaces are considered empty.
 func SliceToUniqueSortedSliceFilterEmptyStrings(s []string) []string {
-	m := slicesext.ToStructMap(s)
+	m := xslices.ToStructMap(s)
 	for key := range m {
 		if strings.TrimSpace(key) == "" {
 			delete(m, key)
 		}
 	}
-	return slicesext.MapKeysToSortedSlice(m)
+	return xslices.MapKeysToSortedSlice(m)
 }
 
 // JoinSliceQuoted joins the slice with quotes.
@@ -286,6 +286,8 @@ func IsNumeric(r rune) bool {
 func IsLowerAlphanumeric(r rune) bool {
 	return IsNumeric(r) || IsLowerAlpha(r)
 }
+
+// *** PRIVATE ***
 
 func toSnakeCase(s string, options ...SnakeCaseOption) string {
 	snakeCaseOptions := &snakeCaseOptions{}
