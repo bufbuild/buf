@@ -23,8 +23,8 @@ import (
 	"os"
 
 	"buf.build/go/app"
+	"buf.build/go/standard/xio"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/standard/xio"
 )
 
 type protoFileWriter struct {

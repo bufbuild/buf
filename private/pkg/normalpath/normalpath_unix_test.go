@@ -23,7 +23,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/standard/xslices"
+	"buf.build/go/standard/xslices"
 	"github.com/stretchr/testify/assert"
 )
 

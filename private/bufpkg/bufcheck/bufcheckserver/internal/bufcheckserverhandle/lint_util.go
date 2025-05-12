@@ -17,8 +17,8 @@ package bufcheckserverhandle
 import (
 	"strings"
 
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 )
 
 func fieldToLowerSnakeCase(s string) string {

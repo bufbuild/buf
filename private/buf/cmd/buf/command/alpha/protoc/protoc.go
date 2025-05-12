@@ -24,6 +24,7 @@ import (
 	"buf.build/go/app"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
+	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/bufprotoc"
@@ -34,7 +35,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin/bufprotopluginos"
-	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
 

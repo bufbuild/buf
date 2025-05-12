@@ -21,9 +21,9 @@ import (
 	"regexp"
 
 	"buf.build/go/app"
-	"github.com/bufbuild/buf/private/pkg/standard/xos/xexec"
-	"github.com/bufbuild/buf/private/pkg/standard/xslices"
-	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
+	"buf.build/go/standard/xos/xexec"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 )
 
 type lister struct{}

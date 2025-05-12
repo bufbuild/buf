@@ -20,8 +20,8 @@ import (
 	"io"
 	"log/slog"
 
+	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/standard/xlog/xslog"
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/bufbuild/protocompile/protoutil"

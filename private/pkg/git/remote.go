@@ -26,7 +26,7 @@ import (
 	"strings"
 
 	"buf.build/go/app"
-	"github.com/bufbuild/buf/private/pkg/standard/xos/xexec"
+	"buf.build/go/standard/xos/xexec"
 )
 
 const (

@@ -16,7 +16,7 @@ package bufcheck
 
 import (
 	"buf.build/go/bufplugin/check"
-	"github.com/bufbuild/buf/private/pkg/standard/xslices"
+	"buf.build/go/standard/xslices"
 )
 
 var _ check.Rule = &rule{}

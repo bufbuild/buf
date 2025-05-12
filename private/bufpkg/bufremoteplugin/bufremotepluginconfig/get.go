@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"io"
 
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 

@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"io/fs"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/standard/xslices"
 )
 
 var (

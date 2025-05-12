@@ -34,8 +34,8 @@ import (
 	"time"
 
 	"buf.build/go/app"
+	"buf.build/go/standard/xos/xexec"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
-	"github.com/bufbuild/buf/private/pkg/standard/xos/xexec"
 	"github.com/docker/docker/api/types"
 	dockerimage "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
