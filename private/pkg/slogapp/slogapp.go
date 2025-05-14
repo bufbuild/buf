@@ -16,12 +16,11 @@
 package slogapp
 
 import (
+	"fmt"
 	"io"
 	"log/slog"
 
 	"buf.build/go/app/appext"
-	"github.com/bufbuild/buf/private/pkg/zapapp"
-	"go.uber.org/zap/exp/zapslog"
 )
 
 // LoggerProvider is an appext.LoggerProvider for use with appext.BuilderWithLoggerProvider.
@@ -31,9 +30,56 @@ func LoggerProvider(container appext.NameContainer, logLevel appext.LogLevel, lo
 
 // NewLogger returns a new Logger for the given level and format.
 func NewLogger(writer io.Writer, logLevel appext.LogLevel, logFormat appext.LogFormat) (*slog.Logger, error) {
-	core, err := zapapp.NewCore(writer, logLevel, logFormat)
+	handler, err := getHandler(writer, logLevel, logFormat)
 	if err != nil {
 		return nil, err
 	}
-	return slog.New(zapslog.NewHandler(core, zapslog.AddStacktraceAt(slog.LevelError+1))), nil
+	return slog.New(handler), nil
+}
+
+func getLevel(logLevel appext.LogLevel) (slog.Level, error) {
+	switch logLevel {
+	case appext.LogLevelDebug:
+		return slog.LevelDebug, nil
+	case appext.LogLevelInfo:
+		return slog.LevelInfo, nil
+	case appext.LogLevelWarn:
+		return slog.LevelWarn, nil
+	case appext.LogLevelError:
+		return slog.LevelError, nil
+	default:
+		return 0, fmt.Errorf("invalid level %v", logLevel)
+	}
+}
+
+func getHandler(writer io.Writer, logLevel appext.LogLevel, logFormat appext.LogFormat) (slog.Handler, error) {
+	level, err := getLevel(logLevel)
+	if err != nil {
+		return nil, err
+	}
+	switch logFormat {
+	case appext.LogFormatJSON:
+		return slog.NewJSONHandler(writer, &slog.HandlerOptions{
+			Level:       level,
+			ReplaceAttr: defaultReplaceAttr,
+		}), nil
+	case appext.LogFormatText:
+		// Use a custom console handler that formats log messages in a human-readable format.
+		return newConsoleHandler(writer, level), nil
+	case appext.LogFormatColor:
+		// Use a custom console handler that formats log messages in a human-readable format, with colors.
+		return newConsoleHandler(writer, level, withConsoleColor(true)), nil
+	default:
+		return nil, fmt.Errorf("invalid logFormat: %v", logFormat)
+	}
+}
+
+// defaultReplaceAttr provides a default ReplaceAttr func for [slog.HandlerOptions].
+func defaultReplaceAttr(groups []string, a slog.Attr) slog.Attr {
+	// Make all Duration type values more useful by converting to their default String
+	// representation, instead of using an integer number of nanoseconds.
+	if a.Value.Kind() == slog.KindDuration {
+		a.Value = slog.StringValue(a.Value.Duration().String())
+	}
+	return a
 }
