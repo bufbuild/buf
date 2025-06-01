@@ -28,16 +28,17 @@ import (
 // Note that as opposed to most structs in this codebase, we do not omitempty for
 // the fields for JSON or YAML.
 type Stats struct {
-	NumFiles                 int `json:"num_files" yaml:"num_files"`
-	NumPackages              int `json:"num_packages" yaml:"num_packages"`
-	NumFilesWithSyntaxErrors int `json:"num_files_with_syntax_errors" yaml:"num_files_with_syntax_errors"`
-	NumMessages              int `json:"num_messages" yaml:"num_messages"`
-	NumFields                int `json:"num_fields" yaml:"num_fields"`
-	NumEnums                 int `json:"num_enums" yaml:"num_enums"`
-	NumEnumValues            int `json:"num_enum_values" yaml:"num_enum_values"`
-	NumExtensions            int `json:"num_extensions" yaml:"num_extensions"`
-	NumServices              int `json:"num_services" yaml:"num_services"`
-	NumMethods               int `json:"num_methods" yaml:"num_methods"`
+	Files                 int `json:"files" yaml:"files"`
+	Types                 int `json:"types" yaml:"types"`
+	Packages              int `json:"packages" yaml:"packages"`
+	Messages              int `json:"messages" yaml:"messages"`
+	Fields                int `json:"fields" yaml:"fields"`
+	Enums                 int `json:"enums" yaml:"enums"`
+	EnumValues            int `json:"evalues" yaml:"evalues"`
+	Services              int `json:"services" yaml:"services"`
+	RPCs                  int `json:"rpcs" yaml:"rpcs"`
+	Extensions            int `json:"extensions" yaml:"extensions"`
+	FilesWithSyntaxErrors int `json:"-" yaml:"-"`
 }
 
 // FileWalker goes through all .proto files for GetStats.
@@ -75,7 +76,7 @@ func GetStats(ctx context.Context, fileWalker FileWalker) (*Stats, error) {
 			if err != nil {
 				// There was a syntax error, but we still have a partial
 				// AST we can examine.
-				statsBuilder.NumFilesWithSyntaxErrors++
+				statsBuilder.FilesWithSyntaxErrors++
 			}
 			examineFile(statsBuilder, astRoot)
 			return nil
@@ -83,7 +84,7 @@ func GetStats(ctx context.Context, fileWalker FileWalker) (*Stats, error) {
 	); err != nil {
 		return nil, err
 	}
-	statsBuilder.NumPackages = len(statsBuilder.packages)
+	statsBuilder.Packages = len(statsBuilder.packages)
 	return statsBuilder.Stats, nil
 }
 
@@ -93,16 +94,17 @@ func GetStats(ctx context.Context, fileWalker FileWalker) (*Stats, error) {
 func MergeStats(statsSlice ...*Stats) *Stats {
 	resultStats := &Stats{}
 	for _, stats := range statsSlice {
-		resultStats.NumFiles += stats.NumFiles
-		resultStats.NumPackages += stats.NumPackages
-		resultStats.NumFilesWithSyntaxErrors += stats.NumFilesWithSyntaxErrors
-		resultStats.NumMessages += stats.NumMessages
-		resultStats.NumFields += stats.NumFields
-		resultStats.NumEnums += stats.NumEnums
-		resultStats.NumEnumValues += stats.NumEnumValues
-		resultStats.NumExtensions += stats.NumExtensions
-		resultStats.NumServices += stats.NumServices
-		resultStats.NumMethods += stats.NumMethods
+		resultStats.Files += stats.Files
+		resultStats.FilesWithSyntaxErrors += stats.FilesWithSyntaxErrors
+		resultStats.Packages += stats.Packages
+		resultStats.Types += stats.Types
+		resultStats.Messages += stats.Messages
+		resultStats.Fields += stats.Fields
+		resultStats.Enums += stats.Enums
+		resultStats.EnumValues += stats.EnumValues
+		resultStats.Services += stats.Services
+		resultStats.RPCs += stats.RPCs
+		resultStats.Extensions += stats.Extensions
 	}
 	return resultStats
 }
@@ -121,7 +123,7 @@ func newStatsBuilder() *statsBuilder {
 }
 
 func examineFile(statsBuilder *statsBuilder, fileNode *ast.FileNode) {
-	statsBuilder.NumFiles++
+	statsBuilder.Files++
 	for _, decl := range fileNode.Decls {
 		switch decl := decl.(type) {
 		case *ast.PackageNode:
@@ -133,11 +135,12 @@ func examineFile(statsBuilder *statsBuilder, fileNode *ast.FileNode) {
 		case *ast.ExtendNode:
 			examineExtend(statsBuilder, decl)
 		case *ast.ServiceNode:
-			statsBuilder.NumServices++
+			statsBuilder.Services++
 			for _, decl := range decl.Decls {
 				_, ok := decl.(*ast.RPCNode)
 				if ok {
-					statsBuilder.NumMethods++
+					statsBuilder.RPCs++
+					statsBuilder.Types++
 				}
 			}
 		}
@@ -145,21 +148,22 @@ func examineFile(statsBuilder *statsBuilder, fileNode *ast.FileNode) {
 }
 
 func examineMessage(statsBuilder *statsBuilder, messageBody *ast.MessageBody) {
-	statsBuilder.NumMessages++
+	statsBuilder.Messages++
+	statsBuilder.Types++
 	for _, decl := range messageBody.Decls {
 		switch decl := decl.(type) {
 		case *ast.FieldNode, *ast.MapFieldNode:
-			statsBuilder.NumFields++
+			statsBuilder.Fields++
 		case *ast.GroupNode:
-			statsBuilder.NumFields++
+			statsBuilder.Fields++
 			examineMessage(statsBuilder, &decl.MessageBody)
 		case *ast.OneofNode:
 			for _, ooDecl := range decl.Decls {
 				switch ooDecl := ooDecl.(type) {
 				case *ast.FieldNode:
-					statsBuilder.NumFields++
+					statsBuilder.Fields++
 				case *ast.GroupNode:
-					statsBuilder.NumFields++
+					statsBuilder.Fields++
 					examineMessage(statsBuilder, &ooDecl.MessageBody)
 				}
 			}
@@ -174,11 +178,12 @@ func examineMessage(statsBuilder *statsBuilder, messageBody *ast.MessageBody) {
 }
 
 func examineEnum(statsBuilder *statsBuilder, enumNode *ast.EnumNode) {
-	statsBuilder.NumEnums++
+	statsBuilder.Enums++
+	statsBuilder.Types++
 	for _, decl := range enumNode.Decls {
 		_, ok := decl.(*ast.EnumValueNode)
 		if ok {
-			statsBuilder.NumEnumValues++
+			statsBuilder.EnumValues++
 		}
 	}
 }
@@ -187,9 +192,9 @@ func examineExtend(statsBuilder *statsBuilder, extendNode *ast.ExtendNode) {
 	for _, decl := range extendNode.Decls {
 		switch decl := decl.(type) {
 		case *ast.FieldNode:
-			statsBuilder.NumExtensions++
+			statsBuilder.Extensions++
 		case *ast.GroupNode:
-			statsBuilder.NumExtensions++
+			statsBuilder.Extensions++
 			examineMessage(statsBuilder, &decl.MessageBody)
 		}
 	}

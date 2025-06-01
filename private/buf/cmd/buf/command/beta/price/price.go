@@ -48,11 +48,11 @@ and does not interact with our servers.
 
 Your sources have:
 
-  - {{.NumMessages}} messages
-  - {{.NumEnums}} enums
-  - {{.NumMethods}} methods
+  - {{.Messages}} messages
+  - {{.Enums}} enums
+  - {{.RPCs}} RPCs
 
-This adds up to {{.NumTypes}} types.
+This adds up to {{.Types}} types.
 
 Based on this, these sources will cost:
 
@@ -149,17 +149,15 @@ func run(
 type tmplData struct {
 	*protostat.Stats
 
-	NumTypes             int
 	TeamsDollarsPerMonth string
 	ProDollarsPerMonth   string
 }
 
 func newTmplData(stats *protostat.Stats) *tmplData {
 	tmplData := &tmplData{
-		Stats:    stats,
-		NumTypes: stats.NumMessages + stats.NumEnums + stats.NumMethods,
+		Stats: stats,
 	}
-	tmplData.TeamsDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*teamsDollarsPerType)
-	tmplData.ProDollarsPerMonth = fmt.Sprintf("%.2f", math.Max(float64(tmplData.NumTypes)*proDollarsPerType, proDollarsMinimumSpend))
+	tmplData.TeamsDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.Types)*teamsDollarsPerType)
+	tmplData.ProDollarsPerMonth = fmt.Sprintf("%.2f", math.Max(float64(tmplData.Types)*proDollarsPerType, proDollarsMinimumSpend))
 	return tmplData
 }

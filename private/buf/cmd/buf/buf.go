@@ -43,7 +43,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhooklist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/stats"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/studioagent"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
@@ -104,6 +103,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/version"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/whoami"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/stats"
 	"github.com/bufbuild/buf/private/bufpkg/bufcobra"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -141,6 +141,7 @@ func NewRootCommand(name string) *appcmd.Command {
 			breaking.NewCommand("breaking", builder),
 			generate.NewCommand("generate", builder),
 			lsfiles.NewCommand("ls-files", builder),
+			stats.NewCommand("stats", builder),
 			push.NewCommand("push", builder),
 			convert.NewCommand("convert", builder),
 			curl.NewCommand("curl", builder),
@@ -327,7 +328,6 @@ func NewRootCommand(name string) *appcmd.Command {
 				SubCommands: []*appcmd.Command{
 					lsp.NewCommand("lsp", builder),
 					price.NewCommand("price", builder),
-					stats.NewCommand("stats", builder),
 					bufpluginv1beta1.NewCommand("buf-plugin-v1beta1", builder),
 					bufpluginv1.NewCommand("buf-plugin-v1", builder),
 					bufpluginv2.NewCommand("buf-plugin-v2", builder),

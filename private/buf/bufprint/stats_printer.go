@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"strconv"
 
 	"github.com/bufbuild/buf/private/pkg/protostat"
 )
@@ -37,35 +36,32 @@ func newStatsPrinter(writer io.Writer) *statsPrinter {
 func (p *statsPrinter) PrintStats(ctx context.Context, format Format, stats *protostat.Stats) error {
 	switch format {
 	case FormatText:
-		return WithTabWriter(
+		_, err := fmt.Fprintf(
 			p.writer,
-			[]string{
-				"Files",
-				"Packages",
-				"Messages",
-				"Fields",
-				"Enums",
-				"Enum Values",
-				"Extensions",
-				"Services",
-				"Methods",
-				"Files With Errors",
-			},
-			func(tabWriter TabWriter) error {
-				return tabWriter.Write(
-					strconv.Itoa(stats.NumFiles),
-					strconv.Itoa(stats.NumPackages),
-					strconv.Itoa(stats.NumMessages),
-					strconv.Itoa(stats.NumFields),
-					strconv.Itoa(stats.NumEnums),
-					strconv.Itoa(stats.NumEnumValues),
-					strconv.Itoa(stats.NumExtensions),
-					strconv.Itoa(stats.NumServices),
-					strconv.Itoa(stats.NumMethods),
-					strconv.Itoa(stats.NumFilesWithSyntaxErrors),
-				)
-			},
+			`Files:       %d
+Types:       %d
+Packages:    %d
+Messages:    %d
+Fields:      %d
+Enums:       %d
+Enum Values: %d
+Services:    %d
+RPCs:        %d
+Extensions:  %d
+`,
+
+			stats.Files,
+			stats.Types,
+			stats.Packages,
+			stats.Messages,
+			stats.Fields,
+			stats.Enums,
+			stats.EnumValues,
+			stats.Services,
+			stats.RPCs,
+			stats.Extensions,
 		)
+		return err
 	case FormatJSON:
 		return json.NewEncoder(p.writer).Encode(stats)
 	default:
