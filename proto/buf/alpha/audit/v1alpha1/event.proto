@@ -166,7 +166,7 @@ message EventMetadata {
 // it happened, who did it, which resource was affected, and more contextual information on the
 // event.
 //
-// [#next-free-field: 78]
+// [#next-free-field: 77]
 message Event {
   // Unique id of the audited event.
   string event_id = 1;
@@ -250,8 +250,8 @@ message Event {
     PayloadPluginLabelMoved plugin_label_moved = 51;
     PayloadPluginLabelArchived plugin_label_archived = 52;
     PayloadPluginLabelUnarchived plugin_label_unarchived = 53;
-    PayloadServerReviewFlowEnabled server_review_flow_enabled = 76;
-    PayloadServerReviewFlowDisabled server_review_flow_disalbed = 77;
+    PayloadServerReviewFlowEnabled server_review_flow_enabled = 75;
+    PayloadServerReviewFlowDisabled server_review_flow_disalbed = 76;
   }
 }
 
