@@ -77,7 +77,7 @@ message Resource {
 
 // EventType is the type of audited event.
 //
-// [#next-free-field: 69]
+// [#next-free-field: 72]
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
   EVENT_TYPE_ORGANIZATION_CREATED = 1;
@@ -148,6 +148,8 @@ enum EventType {
   EVENT_TYPE_PLUGIN_LABEL_MOVED = 45;
   EVENT_TYPE_PLUGIN_LABEL_ARCHIVED = 46;
   EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED = 47;
+  EVENT_TYPE_SERVER_REVIEW_FLOW_ENABLED = 70;
+  EVENT_TYPE_SERVER_REVIEW_FLOW_DISABLED = 71;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -164,7 +166,7 @@ message EventMetadata {
 // it happened, who did it, which resource was affected, and more contextual information on the
 // event.
 //
-// [#next-free-field: 75]
+// [#next-free-field: 78]
 message Event {
   // Unique id of the audited event.
   string event_id = 1;
@@ -248,6 +250,8 @@ message Event {
     PayloadPluginLabelMoved plugin_label_moved = 51;
     PayloadPluginLabelArchived plugin_label_archived = 52;
     PayloadPluginLabelUnarchived plugin_label_unarchived = 53;
+    PayloadServerReviewFlowEnabled server_review_flow_enabled = 76;
+    PayloadServerReviewFlowDisabled server_review_flow_disalbed = 77;
   }
 }
 
@@ -798,6 +802,10 @@ message PayloadServerBreakingChangePolicyEnabled {
 }
 
 message PayloadServerBreakingChangePolicyDisabled {}
+
+message PayloadServerReviewFlowEnabled {}
+
+message PayloadServerReviewFlowDisabled {}
 
 message PayloadServerUniquenessPolicyEnabled {}
 
