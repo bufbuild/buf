@@ -184,7 +184,7 @@ func (x ResourceType) Number() protoreflect.EnumNumber {
 
 // EventType is the type of audited event.
 //
-// [#next-free-field: 69]
+// [#next-free-field: 71]
 type EventType int32
 
 const (
@@ -260,6 +260,8 @@ const (
 	EventType_EVENT_TYPE_PLUGIN_LABEL_MOVED                  EventType = 45
 	EventType_EVENT_TYPE_PLUGIN_LABEL_ARCHIVED               EventType = 46
 	EventType_EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED             EventType = 47
+	EventType_EVENT_TYPE_SERVER_REVIEW_FLOW_ENABLED          EventType = 69
+	EventType_EVENT_TYPE_SERVER_REVIEW_FLOW_DISABLED         EventType = 70
 )
 
 // Enum value maps for EventType.
@@ -334,6 +336,8 @@ var (
 		45: "EVENT_TYPE_PLUGIN_LABEL_MOVED",
 		46: "EVENT_TYPE_PLUGIN_LABEL_ARCHIVED",
 		47: "EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED",
+		69: "EVENT_TYPE_SERVER_REVIEW_FLOW_ENABLED",
+		70: "EVENT_TYPE_SERVER_REVIEW_FLOW_DISABLED",
 	}
 	EventType_value = map[string]int32{
 		"EVENT_TYPE_UNSPECIFIED":                            0,
@@ -405,6 +409,8 @@ var (
 		"EVENT_TYPE_PLUGIN_LABEL_MOVED":                     45,
 		"EVENT_TYPE_PLUGIN_LABEL_ARCHIVED":                  46,
 		"EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED":                47,
+		"EVENT_TYPE_SERVER_REVIEW_FLOW_ENABLED":             69,
+		"EVENT_TYPE_SERVER_REVIEW_FLOW_DISABLED":            70,
 	}
 )
 
@@ -701,7 +707,7 @@ func (b0 EventMetadata_builder) Build() *EventMetadata {
 // it happened, who did it, which resource was affected, and more contextual information on the
 // event.
 //
-// [#next-free-field: 75]
+// [#next-free-field: 77]
 type Event struct {
 	state                protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_EventId   string                 `protobuf:"bytes,1,opt,name=event_id,json=eventId,proto3"`
@@ -1396,6 +1402,24 @@ func (x *Event) GetPluginLabelUnarchived() *PayloadPluginLabelUnarchived {
 	return nil
 }
 
+func (x *Event) GetServerReviewFlowEnabled() *PayloadServerReviewFlowEnabled {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Payload.(*event_ServerReviewFlowEnabled); ok {
+			return x.ServerReviewFlowEnabled
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetServerReviewFlowDisalbed() *PayloadServerReviewFlowDisabled {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Payload.(*event_ServerReviewFlowDisalbed); ok {
+			return x.ServerReviewFlowDisalbed
+		}
+	}
+	return nil
+}
+
 func (x *Event) SetEventId(v string) {
 	x.xxx_hidden_EventId = v
 }
@@ -1964,6 +1988,22 @@ func (x *Event) SetPluginLabelUnarchived(v *PayloadPluginLabelUnarchived) {
 		return
 	}
 	x.xxx_hidden_Payload = &event_PluginLabelUnarchived{v}
+}
+
+func (x *Event) SetServerReviewFlowEnabled(v *PayloadServerReviewFlowEnabled) {
+	if v == nil {
+		x.xxx_hidden_Payload = nil
+		return
+	}
+	x.xxx_hidden_Payload = &event_ServerReviewFlowEnabled{v}
+}
+
+func (x *Event) SetServerReviewFlowDisalbed(v *PayloadServerReviewFlowDisabled) {
+	if v == nil {
+		x.xxx_hidden_Payload = nil
+		return
+	}
+	x.xxx_hidden_Payload = &event_ServerReviewFlowDisalbed{v}
 }
 
 func (x *Event) HasActor() bool {
@@ -2547,6 +2587,22 @@ func (x *Event) HasPluginLabelUnarchived() bool {
 	return ok
 }
 
+func (x *Event) HasServerReviewFlowEnabled() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Payload.(*event_ServerReviewFlowEnabled)
+	return ok
+}
+
+func (x *Event) HasServerReviewFlowDisalbed() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Payload.(*event_ServerReviewFlowDisalbed)
+	return ok
+}
+
 func (x *Event) ClearActor() {
 	x.xxx_hidden_Actor = nil
 }
@@ -2977,6 +3033,18 @@ func (x *Event) ClearPluginLabelUnarchived() {
 	}
 }
 
+func (x *Event) ClearServerReviewFlowEnabled() {
+	if _, ok := x.xxx_hidden_Payload.(*event_ServerReviewFlowEnabled); ok {
+		x.xxx_hidden_Payload = nil
+	}
+}
+
+func (x *Event) ClearServerReviewFlowDisalbed() {
+	if _, ok := x.xxx_hidden_Payload.(*event_ServerReviewFlowDisalbed); ok {
+		x.xxx_hidden_Payload = nil
+	}
+}
+
 const Event_Payload_not_set_case case_Event_Payload = 0
 const Event_OrganizationCreated_case case_Event_Payload = 7
 const Event_OrganizationDeleted_case case_Event_Payload = 8
@@ -3046,6 +3114,8 @@ const Event_PluginLabelCreated_case case_Event_Payload = 50
 const Event_PluginLabelMoved_case case_Event_Payload = 51
 const Event_PluginLabelArchived_case case_Event_Payload = 52
 const Event_PluginLabelUnarchived_case case_Event_Payload = 53
+const Event_ServerReviewFlowEnabled_case case_Event_Payload = 75
+const Event_ServerReviewFlowDisalbed_case case_Event_Payload = 76
 
 func (x *Event) WhichPayload() case_Event_Payload {
 	if x == nil {
@@ -3188,6 +3258,10 @@ func (x *Event) WhichPayload() case_Event_Payload {
 		return Event_PluginLabelArchived_case
 	case *event_PluginLabelUnarchived:
 		return Event_PluginLabelUnarchived_case
+	case *event_ServerReviewFlowEnabled:
+		return Event_ServerReviewFlowEnabled_case
+	case *event_ServerReviewFlowDisalbed:
+		return Event_ServerReviewFlowDisalbed_case
 	default:
 		return Event_Payload_not_set_case
 	}
@@ -3281,6 +3355,8 @@ type Event_builder struct {
 	PluginLabelMoved                      *PayloadPluginLabelMoved
 	PluginLabelArchived                   *PayloadPluginLabelArchived
 	PluginLabelUnarchived                 *PayloadPluginLabelUnarchived
+	ServerReviewFlowEnabled               *PayloadServerReviewFlowEnabled
+	ServerReviewFlowDisalbed              *PayloadServerReviewFlowDisabled
 	// -- end of xxx_hidden_Payload
 }
 
@@ -3497,6 +3573,12 @@ func (b0 Event_builder) Build() *Event {
 	}
 	if b.PluginLabelUnarchived != nil {
 		x.xxx_hidden_Payload = &event_PluginLabelUnarchived{b.PluginLabelUnarchived}
+	}
+	if b.ServerReviewFlowEnabled != nil {
+		x.xxx_hidden_Payload = &event_ServerReviewFlowEnabled{b.ServerReviewFlowEnabled}
+	}
+	if b.ServerReviewFlowDisalbed != nil {
+		x.xxx_hidden_Payload = &event_ServerReviewFlowDisalbed{b.ServerReviewFlowDisalbed}
 	}
 	return m0
 }
@@ -3789,6 +3871,14 @@ type event_PluginLabelUnarchived struct {
 	PluginLabelUnarchived *PayloadPluginLabelUnarchived `protobuf:"bytes,53,opt,name=plugin_label_unarchived,json=pluginLabelUnarchived,proto3,oneof"`
 }
 
+type event_ServerReviewFlowEnabled struct {
+	ServerReviewFlowEnabled *PayloadServerReviewFlowEnabled `protobuf:"bytes,75,opt,name=server_review_flow_enabled,json=serverReviewFlowEnabled,proto3,oneof"`
+}
+
+type event_ServerReviewFlowDisalbed struct {
+	ServerReviewFlowDisalbed *PayloadServerReviewFlowDisabled `protobuf:"bytes,76,opt,name=server_review_flow_disalbed,json=serverReviewFlowDisalbed,proto3,oneof"`
+}
+
 func (*event_OrganizationCreated) isEvent_Payload() {}
 
 func (*event_OrganizationDeleted) isEvent_Payload() {}
@@ -3924,6 +4014,10 @@ func (*event_PluginLabelMoved) isEvent_Payload() {}
 func (*event_PluginLabelArchived) isEvent_Payload() {}
 
 func (*event_PluginLabelUnarchived) isEvent_Payload() {}
+
+func (*event_ServerReviewFlowEnabled) isEvent_Payload() {}
+
+func (*event_ServerReviewFlowDisalbed) isEvent_Payload() {}
 
 type PayloadOrganizationCreated struct {
 	state         protoimpl.MessageState `protogen:"opaque.v1"`
@@ -9069,6 +9163,92 @@ func (b0 PayloadServerBreakingChangePolicyDisabled_builder) Build() *PayloadServ
 	return m0
 }
 
+type PayloadServerReviewFlowEnabled struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PayloadServerReviewFlowEnabled) Reset() {
+	*x = PayloadServerReviewFlowEnabled{}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[60]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PayloadServerReviewFlowEnabled) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PayloadServerReviewFlowEnabled) ProtoMessage() {}
+
+func (x *PayloadServerReviewFlowEnabled) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[60]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type PayloadServerReviewFlowEnabled_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 PayloadServerReviewFlowEnabled_builder) Build() *PayloadServerReviewFlowEnabled {
+	m0 := &PayloadServerReviewFlowEnabled{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
+type PayloadServerReviewFlowDisabled struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PayloadServerReviewFlowDisabled) Reset() {
+	*x = PayloadServerReviewFlowDisabled{}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[61]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PayloadServerReviewFlowDisabled) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PayloadServerReviewFlowDisabled) ProtoMessage() {}
+
+func (x *PayloadServerReviewFlowDisabled) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[61]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type PayloadServerReviewFlowDisabled_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 PayloadServerReviewFlowDisabled_builder) Build() *PayloadServerReviewFlowDisabled {
+	m0 := &PayloadServerReviewFlowDisabled{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
 type PayloadServerUniquenessPolicyEnabled struct {
 	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -9077,7 +9257,7 @@ type PayloadServerUniquenessPolicyEnabled struct {
 
 func (x *PayloadServerUniquenessPolicyEnabled) Reset() {
 	*x = PayloadServerUniquenessPolicyEnabled{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[60]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9089,7 +9269,7 @@ func (x *PayloadServerUniquenessPolicyEnabled) String() string {
 func (*PayloadServerUniquenessPolicyEnabled) ProtoMessage() {}
 
 func (x *PayloadServerUniquenessPolicyEnabled) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[60]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9120,7 +9300,7 @@ type PayloadServerUniquenessPolicyDisabled struct {
 
 func (x *PayloadServerUniquenessPolicyDisabled) Reset() {
 	*x = PayloadServerUniquenessPolicyDisabled{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[61]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9132,7 +9312,7 @@ func (x *PayloadServerUniquenessPolicyDisabled) String() string {
 func (*PayloadServerUniquenessPolicyDisabled) ProtoMessage() {}
 
 func (x *PayloadServerUniquenessPolicyDisabled) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[61]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9164,7 +9344,7 @@ type PayloadDeviceAuthorizationGrantApproved struct {
 
 func (x *PayloadDeviceAuthorizationGrantApproved) Reset() {
 	*x = PayloadDeviceAuthorizationGrantApproved{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[62]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9176,7 +9356,7 @@ func (x *PayloadDeviceAuthorizationGrantApproved) String() string {
 func (*PayloadDeviceAuthorizationGrantApproved) ProtoMessage() {}
 
 func (x *PayloadDeviceAuthorizationGrantApproved) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[62]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9222,7 +9402,7 @@ type PayloadDeviceAuthorizationGrantDenied struct {
 
 func (x *PayloadDeviceAuthorizationGrantDenied) Reset() {
 	*x = PayloadDeviceAuthorizationGrantDenied{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[63]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9234,7 +9414,7 @@ func (x *PayloadDeviceAuthorizationGrantDenied) String() string {
 func (*PayloadDeviceAuthorizationGrantDenied) ProtoMessage() {}
 
 func (x *PayloadDeviceAuthorizationGrantDenied) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[63]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9284,7 +9464,7 @@ type PayloadPluginLabelCreated struct {
 
 func (x *PayloadPluginLabelCreated) Reset() {
 	*x = PayloadPluginLabelCreated{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[64]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9296,7 +9476,7 @@ func (x *PayloadPluginLabelCreated) String() string {
 func (*PayloadPluginLabelCreated) ProtoMessage() {}
 
 func (x *PayloadPluginLabelCreated) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[64]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9403,7 +9583,7 @@ type PayloadPluginLabelMoved struct {
 
 func (x *PayloadPluginLabelMoved) Reset() {
 	*x = PayloadPluginLabelMoved{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[65]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9415,7 +9595,7 @@ func (x *PayloadPluginLabelMoved) String() string {
 func (*PayloadPluginLabelMoved) ProtoMessage() {}
 
 func (x *PayloadPluginLabelMoved) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[65]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9534,7 +9714,7 @@ type PayloadPluginLabelArchived struct {
 
 func (x *PayloadPluginLabelArchived) Reset() {
 	*x = PayloadPluginLabelArchived{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[66]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9546,7 +9726,7 @@ func (x *PayloadPluginLabelArchived) String() string {
 func (*PayloadPluginLabelArchived) ProtoMessage() {}
 
 func (x *PayloadPluginLabelArchived) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[66]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9637,7 +9817,7 @@ type PayloadPluginLabelUnarchived struct {
 
 func (x *PayloadPluginLabelUnarchived) Reset() {
 	*x = PayloadPluginLabelUnarchived{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[67]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9649,7 +9829,7 @@ func (x *PayloadPluginLabelUnarchived) String() string {
 func (*PayloadPluginLabelUnarchived) ProtoMessage() {}
 
 func (x *PayloadPluginLabelUnarchived) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[67]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9741,7 +9921,7 @@ type PayloadPolicyLabelCreated struct {
 
 func (x *PayloadPolicyLabelCreated) Reset() {
 	*x = PayloadPolicyLabelCreated{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[68]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9753,7 +9933,7 @@ func (x *PayloadPolicyLabelCreated) String() string {
 func (*PayloadPolicyLabelCreated) ProtoMessage() {}
 
 func (x *PayloadPolicyLabelCreated) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[68]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9860,7 +10040,7 @@ type PayloadPolicyLabelMoved struct {
 
 func (x *PayloadPolicyLabelMoved) Reset() {
 	*x = PayloadPolicyLabelMoved{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[69]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9872,7 +10052,7 @@ func (x *PayloadPolicyLabelMoved) String() string {
 func (*PayloadPolicyLabelMoved) ProtoMessage() {}
 
 func (x *PayloadPolicyLabelMoved) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[69]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9991,7 +10171,7 @@ type PayloadPolicyLabelArchived struct {
 
 func (x *PayloadPolicyLabelArchived) Reset() {
 	*x = PayloadPolicyLabelArchived{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[70]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10003,7 +10183,7 @@ func (x *PayloadPolicyLabelArchived) String() string {
 func (*PayloadPolicyLabelArchived) ProtoMessage() {}
 
 func (x *PayloadPolicyLabelArchived) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[70]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10094,7 +10274,7 @@ type PayloadPolicyLabelUnarchived struct {
 
 func (x *PayloadPolicyLabelUnarchived) Reset() {
 	*x = PayloadPolicyLabelUnarchived{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[71]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10106,7 +10286,7 @@ func (x *PayloadPolicyLabelUnarchived) String() string {
 func (*PayloadPolicyLabelUnarchived) ProtoMessage() {}
 
 func (x *PayloadPolicyLabelUnarchived) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[71]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10195,7 +10375,7 @@ type PayloadOrganizationMemberRolesChanged_OrganizationRole struct {
 
 func (x *PayloadOrganizationMemberRolesChanged_OrganizationRole) Reset() {
 	*x = PayloadOrganizationMemberRolesChanged_OrganizationRole{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[72]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10207,7 +10387,7 @@ func (x *PayloadOrganizationMemberRolesChanged_OrganizationRole) String() string
 func (*PayloadOrganizationMemberRolesChanged_OrganizationRole) ProtoMessage() {}
 
 func (x *PayloadOrganizationMemberRolesChanged_OrganizationRole) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[72]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10268,7 +10448,7 @@ type PayloadRepositoryContributorRolesChanged_RepositoryRole struct {
 
 func (x *PayloadRepositoryContributorRolesChanged_RepositoryRole) Reset() {
 	*x = PayloadRepositoryContributorRolesChanged_RepositoryRole{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[73]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10280,7 +10460,7 @@ func (x *PayloadRepositoryContributorRolesChanged_RepositoryRole) String() strin
 func (*PayloadRepositoryContributorRolesChanged_RepositoryRole) ProtoMessage() {}
 
 func (x *PayloadRepositoryContributorRolesChanged_RepositoryRole) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[73]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10348,7 +10528,7 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\n" +
 	"user_agent\x18\x01 \x01(\tR\tuserAgent\x12\x0e\n" +
 	"\x02ip\x18\x02 \x01(\tR\x02ip\x12\x19\n" +
-	"\btrace_id\x18\x03 \x01(\tR\atraceId\"\xf8?\n" +
+	"\btrace_id\x18\x03 \x01(\tR\atraceId\"\xedA\n" +
 	"\x05Event\x12\x19\n" +
 	"\bevent_id\x18\x01 \x01(\tR\aeventId\x127\n" +
 	"\x04type\x18\x02 \x01(\x0e2#.buf.alpha.audit.v1alpha1.EventTypeR\x04type\x125\n" +
@@ -10425,7 +10605,9 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\x14plugin_label_created\x182 \x01(\v23.buf.alpha.audit.v1alpha1.PayloadPluginLabelCreatedH\x00R\x12pluginLabelCreated\x12a\n" +
 	"\x12plugin_label_moved\x183 \x01(\v21.buf.alpha.audit.v1alpha1.PayloadPluginLabelMovedH\x00R\x10pluginLabelMoved\x12j\n" +
 	"\x15plugin_label_archived\x184 \x01(\v24.buf.alpha.audit.v1alpha1.PayloadPluginLabelArchivedH\x00R\x13pluginLabelArchived\x12p\n" +
-	"\x17plugin_label_unarchived\x185 \x01(\v26.buf.alpha.audit.v1alpha1.PayloadPluginLabelUnarchivedH\x00R\x15pluginLabelUnarchivedB\t\n" +
+	"\x17plugin_label_unarchived\x185 \x01(\v26.buf.alpha.audit.v1alpha1.PayloadPluginLabelUnarchivedH\x00R\x15pluginLabelUnarchived\x12w\n" +
+	"\x1aserver_review_flow_enabled\x18K \x01(\v28.buf.alpha.audit.v1alpha1.PayloadServerReviewFlowEnabledH\x00R\x17serverReviewFlowEnabled\x12z\n" +
+	"\x1bserver_review_flow_disalbed\x18L \x01(\v29.buf.alpha.audit.v1alpha1.PayloadServerReviewFlowDisabledH\x00R\x18serverReviewFlowDisalbedB\t\n" +
 	"\apayload\"\x1c\n" +
 	"\x1aPayloadOrganizationCreated\"\x1c\n" +
 	"\x1aPayloadOrganizationDeleted\"\xa9\x02\n" +
@@ -10733,7 +10915,9 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\bcategory\x18\x01 \x01(\x0e23.buf.alpha.registry.v1alpha1.BreakingChangeCategoryR\bcategory\x12=\n" +
 	"\x18ignore_unstable_packages\x18\x02 \x01(\bH\x00R\x16ignoreUnstablePackages\x88\x01\x01B\x1b\n" +
 	"\x19_ignore_unstable_packages\"+\n" +
-	")PayloadServerBreakingChangePolicyDisabled\"&\n" +
+	")PayloadServerBreakingChangePolicyDisabled\" \n" +
+	"\x1ePayloadServerReviewFlowEnabled\"!\n" +
+	"\x1fPayloadServerReviewFlowDisabled\"&\n" +
 	"$PayloadServerUniquenessPolicyEnabled\"'\n" +
 	"%PayloadServerUniquenessPolicyDisabled\"F\n" +
 	"'PayloadDeviceAuthorizationGrantApproved\x12\x1b\n" +
@@ -10830,7 +11014,7 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\x1eRESOURCE_TYPE_REPOSITORY_LABEL\x10\f\x12\x18\n" +
 	"\x14RESOURCE_TYPE_SERVER\x10\r\x12,\n" +
 	"(RESOURCE_TYPE_DEVICE_AUTHORIZATION_GRANT\x10\x0e\x12\x1e\n" +
-	"\x1aRESOURCE_TYPE_PLUGIN_LABEL\x10\x10*\xef\x15\n" +
+	"\x1aRESOURCE_TYPE_PLUGIN_LABEL\x10\x10*\xc6\x16\n" +
 	"\tEventType\x12\x1a\n" +
 	"\x16EVENT_TYPE_UNSPECIFIED\x10\x00\x12#\n" +
 	"\x1fEVENT_TYPE_ORGANIZATION_CREATED\x10\x01\x12#\n" +
@@ -10901,12 +11085,14 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\x1fEVENT_TYPE_PLUGIN_LABEL_CREATED\x10,\x12!\n" +
 	"\x1dEVENT_TYPE_PLUGIN_LABEL_MOVED\x10-\x12$\n" +
 	" EVENT_TYPE_PLUGIN_LABEL_ARCHIVED\x10.\x12&\n" +
-	"\"EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED\x10/B\x82\x02\n" +
+	"\"EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED\x10/\x12)\n" +
+	"%EVENT_TYPE_SERVER_REVIEW_FLOW_ENABLED\x10E\x12*\n" +
+	"&EVENT_TYPE_SERVER_REVIEW_FLOW_DISABLED\x10FB\x82\x02\n" +
 	"\x1ccom.buf.alpha.audit.v1alpha1B\n" +
 	"EventProtoP\x01ZSgithub.com/bufbuild/buf/private/gen/proto/go/buf/alpha/audit/v1alpha1;auditv1alpha1\xa2\x02\x03BAA\xaa\x02\x18Buf.Alpha.Audit.V1alpha1\xca\x02\x18Buf\\Alpha\\Audit\\V1alpha1\xe2\x02$Buf\\Alpha\\Audit\\V1alpha1\\GPBMetadata\xea\x02\x1bBuf::Alpha::Audit::V1alpha1b\x06proto3"
 
 var file_buf_alpha_audit_v1alpha1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_buf_alpha_audit_v1alpha1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 74)
+var file_buf_alpha_audit_v1alpha1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 76)
 var file_buf_alpha_audit_v1alpha1_event_proto_goTypes = []any{
 	(ActorType)(0),                                                  // 0: buf.alpha.audit.v1alpha1.ActorType
 	(ResourceType)(0),                                               // 1: buf.alpha.audit.v1alpha1.ResourceType
@@ -10971,27 +11157,29 @@ var file_buf_alpha_audit_v1alpha1_event_proto_goTypes = []any{
 	(*PayloadRepositoryLabelUnarchived)(nil),                        // 60: buf.alpha.audit.v1alpha1.PayloadRepositoryLabelUnarchived
 	(*PayloadServerBreakingChangePolicyEnabled)(nil),                // 61: buf.alpha.audit.v1alpha1.PayloadServerBreakingChangePolicyEnabled
 	(*PayloadServerBreakingChangePolicyDisabled)(nil),               // 62: buf.alpha.audit.v1alpha1.PayloadServerBreakingChangePolicyDisabled
-	(*PayloadServerUniquenessPolicyEnabled)(nil),                    // 63: buf.alpha.audit.v1alpha1.PayloadServerUniquenessPolicyEnabled
-	(*PayloadServerUniquenessPolicyDisabled)(nil),                   // 64: buf.alpha.audit.v1alpha1.PayloadServerUniquenessPolicyDisabled
-	(*PayloadDeviceAuthorizationGrantApproved)(nil),                 // 65: buf.alpha.audit.v1alpha1.PayloadDeviceAuthorizationGrantApproved
-	(*PayloadDeviceAuthorizationGrantDenied)(nil),                   // 66: buf.alpha.audit.v1alpha1.PayloadDeviceAuthorizationGrantDenied
-	(*PayloadPluginLabelCreated)(nil),                               // 67: buf.alpha.audit.v1alpha1.PayloadPluginLabelCreated
-	(*PayloadPluginLabelMoved)(nil),                                 // 68: buf.alpha.audit.v1alpha1.PayloadPluginLabelMoved
-	(*PayloadPluginLabelArchived)(nil),                              // 69: buf.alpha.audit.v1alpha1.PayloadPluginLabelArchived
-	(*PayloadPluginLabelUnarchived)(nil),                            // 70: buf.alpha.audit.v1alpha1.PayloadPluginLabelUnarchived
-	(*PayloadPolicyLabelCreated)(nil),                               // 71: buf.alpha.audit.v1alpha1.PayloadPolicyLabelCreated
-	(*PayloadPolicyLabelMoved)(nil),                                 // 72: buf.alpha.audit.v1alpha1.PayloadPolicyLabelMoved
-	(*PayloadPolicyLabelArchived)(nil),                              // 73: buf.alpha.audit.v1alpha1.PayloadPolicyLabelArchived
-	(*PayloadPolicyLabelUnarchived)(nil),                            // 74: buf.alpha.audit.v1alpha1.PayloadPolicyLabelUnarchived
-	(*PayloadOrganizationMemberRolesChanged_OrganizationRole)(nil),  // 75: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole
-	(*PayloadRepositoryContributorRolesChanged_RepositoryRole)(nil), // 76: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole
-	(*timestamppb.Timestamp)(nil),                                   // 77: google.protobuf.Timestamp
-	(v1alpha1.OrganizationRole)(0),                                  // 78: buf.alpha.registry.v1alpha1.OrganizationRole
-	(v1alpha1.OrganizationRoleSource)(0),                            // 79: buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	(v1alpha1.Visibility)(0),                                        // 80: buf.alpha.registry.v1alpha1.Visibility
-	(v1alpha1.RepositoryRole)(0),                                    // 81: buf.alpha.registry.v1alpha1.RepositoryRole
-	(v1alpha1.BreakingChangeCategory)(0),                            // 82: buf.alpha.registry.v1alpha1.BreakingChangeCategory
-	(v1alpha1.RepositoryRoleSource)(0),                              // 83: buf.alpha.registry.v1alpha1.RepositoryRoleSource
+	(*PayloadServerReviewFlowEnabled)(nil),                          // 63: buf.alpha.audit.v1alpha1.PayloadServerReviewFlowEnabled
+	(*PayloadServerReviewFlowDisabled)(nil),                         // 64: buf.alpha.audit.v1alpha1.PayloadServerReviewFlowDisabled
+	(*PayloadServerUniquenessPolicyEnabled)(nil),                    // 65: buf.alpha.audit.v1alpha1.PayloadServerUniquenessPolicyEnabled
+	(*PayloadServerUniquenessPolicyDisabled)(nil),                   // 66: buf.alpha.audit.v1alpha1.PayloadServerUniquenessPolicyDisabled
+	(*PayloadDeviceAuthorizationGrantApproved)(nil),                 // 67: buf.alpha.audit.v1alpha1.PayloadDeviceAuthorizationGrantApproved
+	(*PayloadDeviceAuthorizationGrantDenied)(nil),                   // 68: buf.alpha.audit.v1alpha1.PayloadDeviceAuthorizationGrantDenied
+	(*PayloadPluginLabelCreated)(nil),                               // 69: buf.alpha.audit.v1alpha1.PayloadPluginLabelCreated
+	(*PayloadPluginLabelMoved)(nil),                                 // 70: buf.alpha.audit.v1alpha1.PayloadPluginLabelMoved
+	(*PayloadPluginLabelArchived)(nil),                              // 71: buf.alpha.audit.v1alpha1.PayloadPluginLabelArchived
+	(*PayloadPluginLabelUnarchived)(nil),                            // 72: buf.alpha.audit.v1alpha1.PayloadPluginLabelUnarchived
+	(*PayloadPolicyLabelCreated)(nil),                               // 73: buf.alpha.audit.v1alpha1.PayloadPolicyLabelCreated
+	(*PayloadPolicyLabelMoved)(nil),                                 // 74: buf.alpha.audit.v1alpha1.PayloadPolicyLabelMoved
+	(*PayloadPolicyLabelArchived)(nil),                              // 75: buf.alpha.audit.v1alpha1.PayloadPolicyLabelArchived
+	(*PayloadPolicyLabelUnarchived)(nil),                            // 76: buf.alpha.audit.v1alpha1.PayloadPolicyLabelUnarchived
+	(*PayloadOrganizationMemberRolesChanged_OrganizationRole)(nil),  // 77: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole
+	(*PayloadRepositoryContributorRolesChanged_RepositoryRole)(nil), // 78: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole
+	(*timestamppb.Timestamp)(nil),                                   // 79: google.protobuf.Timestamp
+	(v1alpha1.OrganizationRole)(0),                                  // 80: buf.alpha.registry.v1alpha1.OrganizationRole
+	(v1alpha1.OrganizationRoleSource)(0),                            // 81: buf.alpha.registry.v1alpha1.OrganizationRoleSource
+	(v1alpha1.Visibility)(0),                                        // 82: buf.alpha.registry.v1alpha1.Visibility
+	(v1alpha1.RepositoryRole)(0),                                    // 83: buf.alpha.registry.v1alpha1.RepositoryRole
+	(v1alpha1.BreakingChangeCategory)(0),                            // 84: buf.alpha.registry.v1alpha1.BreakingChangeCategory
+	(v1alpha1.RepositoryRoleSource)(0),                              // 85: buf.alpha.registry.v1alpha1.RepositoryRoleSource
 }
 var file_buf_alpha_audit_v1alpha1_event_proto_depIdxs = []int32{
 	0,   // 0: buf.alpha.audit.v1alpha1.Actor.type:type_name -> buf.alpha.audit.v1alpha1.ActorType
@@ -10999,7 +11187,7 @@ var file_buf_alpha_audit_v1alpha1_event_proto_depIdxs = []int32{
 	2,   // 2: buf.alpha.audit.v1alpha1.Event.type:type_name -> buf.alpha.audit.v1alpha1.EventType
 	3,   // 3: buf.alpha.audit.v1alpha1.Event.actor:type_name -> buf.alpha.audit.v1alpha1.Actor
 	4,   // 4: buf.alpha.audit.v1alpha1.Event.resource:type_name -> buf.alpha.audit.v1alpha1.Resource
-	77,  // 5: buf.alpha.audit.v1alpha1.Event.event_time:type_name -> google.protobuf.Timestamp
+	79,  // 5: buf.alpha.audit.v1alpha1.Event.event_time:type_name -> google.protobuf.Timestamp
 	5,   // 6: buf.alpha.audit.v1alpha1.Event.metadata:type_name -> buf.alpha.audit.v1alpha1.EventMetadata
 	7,   // 7: buf.alpha.audit.v1alpha1.Event.organization_created:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationCreated
 	8,   // 8: buf.alpha.audit.v1alpha1.Event.organization_deleted:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationDeleted
@@ -11027,10 +11215,10 @@ var file_buf_alpha_audit_v1alpha1_event_proto_depIdxs = []int32{
 	34,  // 30: buf.alpha.audit.v1alpha1.Event.policy_undeprecated:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyUndeprecated
 	35,  // 31: buf.alpha.audit.v1alpha1.Event.policy_visibility_changed:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyVisibilityChanged
 	36,  // 32: buf.alpha.audit.v1alpha1.Event.policy_commit_pushed:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyCommitPushed
-	71,  // 33: buf.alpha.audit.v1alpha1.Event.policy_label_created:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyLabelCreated
-	72,  // 34: buf.alpha.audit.v1alpha1.Event.policy_label_moved:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyLabelMoved
-	73,  // 35: buf.alpha.audit.v1alpha1.Event.policy_label_archived:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyLabelArchived
-	74,  // 36: buf.alpha.audit.v1alpha1.Event.policy_label_unarchived:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyLabelUnarchived
+	73,  // 33: buf.alpha.audit.v1alpha1.Event.policy_label_created:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyLabelCreated
+	74,  // 34: buf.alpha.audit.v1alpha1.Event.policy_label_moved:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyLabelMoved
+	75,  // 35: buf.alpha.audit.v1alpha1.Event.policy_label_archived:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyLabelArchived
+	76,  // 36: buf.alpha.audit.v1alpha1.Event.policy_label_unarchived:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyLabelUnarchived
 	37,  // 37: buf.alpha.audit.v1alpha1.Event.plugin_created:type_name -> buf.alpha.audit.v1alpha1.PayloadPluginCreated
 	38,  // 38: buf.alpha.audit.v1alpha1.Event.plugin_deleted:type_name -> buf.alpha.audit.v1alpha1.PayloadPluginDeleted
 	39,  // 39: buf.alpha.audit.v1alpha1.Event.plugin_deprecated:type_name -> buf.alpha.audit.v1alpha1.PayloadPluginDeprecated
@@ -11060,69 +11248,71 @@ var file_buf_alpha_audit_v1alpha1_event_proto_depIdxs = []int32{
 	61,  // 63: buf.alpha.audit.v1alpha1.Event.payload_server_breaking_change_policy_enabled:type_name -> buf.alpha.audit.v1alpha1.PayloadServerBreakingChangePolicyEnabled
 	62,  // 64: buf.alpha.audit.v1alpha1.Event.payload_server_breaking_change_policy_disabled:type_name -> buf.alpha.audit.v1alpha1.PayloadServerBreakingChangePolicyDisabled
 	27,  // 65: buf.alpha.audit.v1alpha1.Event.repository_default_branch_changed:type_name -> buf.alpha.audit.v1alpha1.PayloadRepositoryDefaultBranchChanged
-	63,  // 66: buf.alpha.audit.v1alpha1.Event.payload_server_uniqueness_policy_enabled:type_name -> buf.alpha.audit.v1alpha1.PayloadServerUniquenessPolicyEnabled
-	64,  // 67: buf.alpha.audit.v1alpha1.Event.payload_server_uniqueness_policy_disabled:type_name -> buf.alpha.audit.v1alpha1.PayloadServerUniquenessPolicyDisabled
+	65,  // 66: buf.alpha.audit.v1alpha1.Event.payload_server_uniqueness_policy_enabled:type_name -> buf.alpha.audit.v1alpha1.PayloadServerUniquenessPolicyEnabled
+	66,  // 67: buf.alpha.audit.v1alpha1.Event.payload_server_uniqueness_policy_disabled:type_name -> buf.alpha.audit.v1alpha1.PayloadServerUniquenessPolicyDisabled
 	49,  // 68: buf.alpha.audit.v1alpha1.Event.user_auto_merged_from_new_idp:type_name -> buf.alpha.audit.v1alpha1.PayloadUserAutoMergedFromNewIdP
-	65,  // 69: buf.alpha.audit.v1alpha1.Event.device_authorization_grant_approved:type_name -> buf.alpha.audit.v1alpha1.PayloadDeviceAuthorizationGrantApproved
-	66,  // 70: buf.alpha.audit.v1alpha1.Event.device_authorization_grant_denied:type_name -> buf.alpha.audit.v1alpha1.PayloadDeviceAuthorizationGrantDenied
-	67,  // 71: buf.alpha.audit.v1alpha1.Event.plugin_label_created:type_name -> buf.alpha.audit.v1alpha1.PayloadPluginLabelCreated
-	68,  // 72: buf.alpha.audit.v1alpha1.Event.plugin_label_moved:type_name -> buf.alpha.audit.v1alpha1.PayloadPluginLabelMoved
-	69,  // 73: buf.alpha.audit.v1alpha1.Event.plugin_label_archived:type_name -> buf.alpha.audit.v1alpha1.PayloadPluginLabelArchived
-	70,  // 74: buf.alpha.audit.v1alpha1.Event.plugin_label_unarchived:type_name -> buf.alpha.audit.v1alpha1.PayloadPluginLabelUnarchived
-	78,  // 75: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberAdded.member_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	79,  // 76: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberAdded.member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	78,  // 77: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.old_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	78,  // 78: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.new_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	79,  // 79: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.old_member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	79,  // 80: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.new_member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	75,  // 81: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.old_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole
-	75,  // 82: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.new_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole
-	78,  // 83: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRemoved.member_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	79,  // 84: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRemoved.member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	78,  // 85: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupAdded.role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	78,  // 86: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupUpdated.old_role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	78,  // 87: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupUpdated.new_role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	78,  // 88: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupRemoved.role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	80,  // 89: buf.alpha.audit.v1alpha1.PayloadRepositoryCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	80,  // 90: buf.alpha.audit.v1alpha1.PayloadRepositoryDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	80,  // 91: buf.alpha.audit.v1alpha1.PayloadRepositoryDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	80,  // 92: buf.alpha.audit.v1alpha1.PayloadRepositoryUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	81,  // 93: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorAdded.contributor_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	81,  // 94: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRoleChanged.old_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	81,  // 95: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRoleChanged.new_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	76,  // 96: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.old_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole
-	76,  // 97: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.new_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole
-	81,  // 98: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRemoved.contributor_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	80,  // 99: buf.alpha.audit.v1alpha1.PayloadRepositoryVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	80,  // 100: buf.alpha.audit.v1alpha1.PayloadRepositoryVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	81,  // 101: buf.alpha.audit.v1alpha1.PayloadRepositoryIDPGroupAdded.role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	81,  // 102: buf.alpha.audit.v1alpha1.PayloadRepositoryIDPGroupUpdated.old_role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	81,  // 103: buf.alpha.audit.v1alpha1.PayloadRepositoryIDPGroupUpdated.new_role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	81,  // 104: buf.alpha.audit.v1alpha1.PayloadRepositoryIDPGroupRemoved.role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	80,  // 105: buf.alpha.audit.v1alpha1.PayloadPolicyCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	80,  // 106: buf.alpha.audit.v1alpha1.PayloadPolicyDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	80,  // 107: buf.alpha.audit.v1alpha1.PayloadPolicyDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	80,  // 108: buf.alpha.audit.v1alpha1.PayloadPolicyUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	80,  // 109: buf.alpha.audit.v1alpha1.PayloadPolicyVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	80,  // 110: buf.alpha.audit.v1alpha1.PayloadPolicyVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	80,  // 111: buf.alpha.audit.v1alpha1.PayloadPluginCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	80,  // 112: buf.alpha.audit.v1alpha1.PayloadPluginDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	80,  // 113: buf.alpha.audit.v1alpha1.PayloadPluginDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	80,  // 114: buf.alpha.audit.v1alpha1.PayloadPluginUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	80,  // 115: buf.alpha.audit.v1alpha1.PayloadPluginVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	80,  // 116: buf.alpha.audit.v1alpha1.PayloadPluginVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	77,  // 117: buf.alpha.audit.v1alpha1.PayloadTokenCreated.token_expiry_time:type_name -> google.protobuf.Timestamp
-	77,  // 118: buf.alpha.audit.v1alpha1.PayloadSCIMTokenCreated.token_expiry_time:type_name -> google.protobuf.Timestamp
-	82,  // 119: buf.alpha.audit.v1alpha1.PayloadServerBreakingChangePolicyEnabled.category:type_name -> buf.alpha.registry.v1alpha1.BreakingChangeCategory
-	78,  // 120: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	79,  // 121: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	81,  // 122: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole.role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	83,  // 123: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole.source:type_name -> buf.alpha.registry.v1alpha1.RepositoryRoleSource
-	124, // [124:124] is the sub-list for method output_type
-	124, // [124:124] is the sub-list for method input_type
-	124, // [124:124] is the sub-list for extension type_name
-	124, // [124:124] is the sub-list for extension extendee
-	0,   // [0:124] is the sub-list for field type_name
+	67,  // 69: buf.alpha.audit.v1alpha1.Event.device_authorization_grant_approved:type_name -> buf.alpha.audit.v1alpha1.PayloadDeviceAuthorizationGrantApproved
+	68,  // 70: buf.alpha.audit.v1alpha1.Event.device_authorization_grant_denied:type_name -> buf.alpha.audit.v1alpha1.PayloadDeviceAuthorizationGrantDenied
+	69,  // 71: buf.alpha.audit.v1alpha1.Event.plugin_label_created:type_name -> buf.alpha.audit.v1alpha1.PayloadPluginLabelCreated
+	70,  // 72: buf.alpha.audit.v1alpha1.Event.plugin_label_moved:type_name -> buf.alpha.audit.v1alpha1.PayloadPluginLabelMoved
+	71,  // 73: buf.alpha.audit.v1alpha1.Event.plugin_label_archived:type_name -> buf.alpha.audit.v1alpha1.PayloadPluginLabelArchived
+	72,  // 74: buf.alpha.audit.v1alpha1.Event.plugin_label_unarchived:type_name -> buf.alpha.audit.v1alpha1.PayloadPluginLabelUnarchived
+	63,  // 75: buf.alpha.audit.v1alpha1.Event.server_review_flow_enabled:type_name -> buf.alpha.audit.v1alpha1.PayloadServerReviewFlowEnabled
+	64,  // 76: buf.alpha.audit.v1alpha1.Event.server_review_flow_disalbed:type_name -> buf.alpha.audit.v1alpha1.PayloadServerReviewFlowDisabled
+	80,  // 77: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberAdded.member_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	81,  // 78: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberAdded.member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
+	80,  // 79: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.old_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	80,  // 80: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.new_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	81,  // 81: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.old_member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
+	81,  // 82: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.new_member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
+	77,  // 83: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.old_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole
+	77,  // 84: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.new_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole
+	80,  // 85: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRemoved.member_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	81,  // 86: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRemoved.member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
+	80,  // 87: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupAdded.role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	80,  // 88: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupUpdated.old_role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	80,  // 89: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupUpdated.new_role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	80,  // 90: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupRemoved.role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	82,  // 91: buf.alpha.audit.v1alpha1.PayloadRepositoryCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	82,  // 92: buf.alpha.audit.v1alpha1.PayloadRepositoryDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	82,  // 93: buf.alpha.audit.v1alpha1.PayloadRepositoryDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	82,  // 94: buf.alpha.audit.v1alpha1.PayloadRepositoryUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	83,  // 95: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorAdded.contributor_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	83,  // 96: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRoleChanged.old_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	83,  // 97: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRoleChanged.new_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	78,  // 98: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.old_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole
+	78,  // 99: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.new_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole
+	83,  // 100: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRemoved.contributor_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	82,  // 101: buf.alpha.audit.v1alpha1.PayloadRepositoryVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	82,  // 102: buf.alpha.audit.v1alpha1.PayloadRepositoryVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	83,  // 103: buf.alpha.audit.v1alpha1.PayloadRepositoryIDPGroupAdded.role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	83,  // 104: buf.alpha.audit.v1alpha1.PayloadRepositoryIDPGroupUpdated.old_role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	83,  // 105: buf.alpha.audit.v1alpha1.PayloadRepositoryIDPGroupUpdated.new_role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	83,  // 106: buf.alpha.audit.v1alpha1.PayloadRepositoryIDPGroupRemoved.role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	82,  // 107: buf.alpha.audit.v1alpha1.PayloadPolicyCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	82,  // 108: buf.alpha.audit.v1alpha1.PayloadPolicyDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	82,  // 109: buf.alpha.audit.v1alpha1.PayloadPolicyDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	82,  // 110: buf.alpha.audit.v1alpha1.PayloadPolicyUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	82,  // 111: buf.alpha.audit.v1alpha1.PayloadPolicyVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	82,  // 112: buf.alpha.audit.v1alpha1.PayloadPolicyVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	82,  // 113: buf.alpha.audit.v1alpha1.PayloadPluginCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	82,  // 114: buf.alpha.audit.v1alpha1.PayloadPluginDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	82,  // 115: buf.alpha.audit.v1alpha1.PayloadPluginDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	82,  // 116: buf.alpha.audit.v1alpha1.PayloadPluginUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	82,  // 117: buf.alpha.audit.v1alpha1.PayloadPluginVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	82,  // 118: buf.alpha.audit.v1alpha1.PayloadPluginVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	79,  // 119: buf.alpha.audit.v1alpha1.PayloadTokenCreated.token_expiry_time:type_name -> google.protobuf.Timestamp
+	79,  // 120: buf.alpha.audit.v1alpha1.PayloadSCIMTokenCreated.token_expiry_time:type_name -> google.protobuf.Timestamp
+	84,  // 121: buf.alpha.audit.v1alpha1.PayloadServerBreakingChangePolicyEnabled.category:type_name -> buf.alpha.registry.v1alpha1.BreakingChangeCategory
+	80,  // 122: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	81,  // 123: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
+	83,  // 124: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole.role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	85,  // 125: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole.source:type_name -> buf.alpha.registry.v1alpha1.RepositoryRoleSource
+	126, // [126:126] is the sub-list for method output_type
+	126, // [126:126] is the sub-list for method input_type
+	126, // [126:126] is the sub-list for extension type_name
+	126, // [126:126] is the sub-list for extension extendee
+	0,   // [0:126] is the sub-list for field type_name
 }
 
 func init() { file_buf_alpha_audit_v1alpha1_event_proto_init() }
@@ -11199,6 +11389,8 @@ func file_buf_alpha_audit_v1alpha1_event_proto_init() {
 		(*event_PluginLabelMoved)(nil),
 		(*event_PluginLabelArchived)(nil),
 		(*event_PluginLabelUnarchived)(nil),
+		(*event_ServerReviewFlowEnabled)(nil),
+		(*event_ServerReviewFlowDisalbed)(nil),
 	}
 	file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[58].OneofWrappers = []any{}
 	type x struct{}
@@ -11207,7 +11399,7 @@ func file_buf_alpha_audit_v1alpha1_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_buf_alpha_audit_v1alpha1_event_proto_rawDesc), len(file_buf_alpha_audit_v1alpha1_event_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   74,
+			NumMessages:   76,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
