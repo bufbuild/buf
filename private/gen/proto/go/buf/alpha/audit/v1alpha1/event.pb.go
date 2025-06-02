@@ -1411,10 +1411,10 @@ func (x *Event) GetServerReviewFlowEnabled() *PayloadServerReviewFlowEnabled {
 	return nil
 }
 
-func (x *Event) GetServerReviewFlowDisalbed() *PayloadServerReviewFlowDisabled {
+func (x *Event) GetServerReviewFlowDisabled() *PayloadServerReviewFlowDisabled {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Payload.(*event_ServerReviewFlowDisalbed); ok {
-			return x.ServerReviewFlowDisalbed
+		if x, ok := x.xxx_hidden_Payload.(*event_ServerReviewFlowDisabled); ok {
+			return x.ServerReviewFlowDisabled
 		}
 	}
 	return nil
@@ -1998,12 +1998,12 @@ func (x *Event) SetServerReviewFlowEnabled(v *PayloadServerReviewFlowEnabled) {
 	x.xxx_hidden_Payload = &event_ServerReviewFlowEnabled{v}
 }
 
-func (x *Event) SetServerReviewFlowDisalbed(v *PayloadServerReviewFlowDisabled) {
+func (x *Event) SetServerReviewFlowDisabled(v *PayloadServerReviewFlowDisabled) {
 	if v == nil {
 		x.xxx_hidden_Payload = nil
 		return
 	}
-	x.xxx_hidden_Payload = &event_ServerReviewFlowDisalbed{v}
+	x.xxx_hidden_Payload = &event_ServerReviewFlowDisabled{v}
 }
 
 func (x *Event) HasActor() bool {
@@ -2595,11 +2595,11 @@ func (x *Event) HasServerReviewFlowEnabled() bool {
 	return ok
 }
 
-func (x *Event) HasServerReviewFlowDisalbed() bool {
+func (x *Event) HasServerReviewFlowDisabled() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Payload.(*event_ServerReviewFlowDisalbed)
+	_, ok := x.xxx_hidden_Payload.(*event_ServerReviewFlowDisabled)
 	return ok
 }
 
@@ -3039,8 +3039,8 @@ func (x *Event) ClearServerReviewFlowEnabled() {
 	}
 }
 
-func (x *Event) ClearServerReviewFlowDisalbed() {
-	if _, ok := x.xxx_hidden_Payload.(*event_ServerReviewFlowDisalbed); ok {
+func (x *Event) ClearServerReviewFlowDisabled() {
+	if _, ok := x.xxx_hidden_Payload.(*event_ServerReviewFlowDisabled); ok {
 		x.xxx_hidden_Payload = nil
 	}
 }
@@ -3115,7 +3115,7 @@ const Event_PluginLabelMoved_case case_Event_Payload = 51
 const Event_PluginLabelArchived_case case_Event_Payload = 52
 const Event_PluginLabelUnarchived_case case_Event_Payload = 53
 const Event_ServerReviewFlowEnabled_case case_Event_Payload = 75
-const Event_ServerReviewFlowDisalbed_case case_Event_Payload = 76
+const Event_ServerReviewFlowDisabled_case case_Event_Payload = 76
 
 func (x *Event) WhichPayload() case_Event_Payload {
 	if x == nil {
@@ -3260,8 +3260,8 @@ func (x *Event) WhichPayload() case_Event_Payload {
 		return Event_PluginLabelUnarchived_case
 	case *event_ServerReviewFlowEnabled:
 		return Event_ServerReviewFlowEnabled_case
-	case *event_ServerReviewFlowDisalbed:
-		return Event_ServerReviewFlowDisalbed_case
+	case *event_ServerReviewFlowDisabled:
+		return Event_ServerReviewFlowDisabled_case
 	default:
 		return Event_Payload_not_set_case
 	}
@@ -3356,7 +3356,7 @@ type Event_builder struct {
 	PluginLabelArchived                   *PayloadPluginLabelArchived
 	PluginLabelUnarchived                 *PayloadPluginLabelUnarchived
 	ServerReviewFlowEnabled               *PayloadServerReviewFlowEnabled
-	ServerReviewFlowDisalbed              *PayloadServerReviewFlowDisabled
+	ServerReviewFlowDisabled              *PayloadServerReviewFlowDisabled
 	// -- end of xxx_hidden_Payload
 }
 
@@ -3577,8 +3577,8 @@ func (b0 Event_builder) Build() *Event {
 	if b.ServerReviewFlowEnabled != nil {
 		x.xxx_hidden_Payload = &event_ServerReviewFlowEnabled{b.ServerReviewFlowEnabled}
 	}
-	if b.ServerReviewFlowDisalbed != nil {
-		x.xxx_hidden_Payload = &event_ServerReviewFlowDisalbed{b.ServerReviewFlowDisalbed}
+	if b.ServerReviewFlowDisabled != nil {
+		x.xxx_hidden_Payload = &event_ServerReviewFlowDisabled{b.ServerReviewFlowDisabled}
 	}
 	return m0
 }
@@ -3875,8 +3875,8 @@ type event_ServerReviewFlowEnabled struct {
 	ServerReviewFlowEnabled *PayloadServerReviewFlowEnabled `protobuf:"bytes,75,opt,name=server_review_flow_enabled,json=serverReviewFlowEnabled,proto3,oneof"`
 }
 
-type event_ServerReviewFlowDisalbed struct {
-	ServerReviewFlowDisalbed *PayloadServerReviewFlowDisabled `protobuf:"bytes,76,opt,name=server_review_flow_disalbed,json=serverReviewFlowDisalbed,proto3,oneof"`
+type event_ServerReviewFlowDisabled struct {
+	ServerReviewFlowDisabled *PayloadServerReviewFlowDisabled `protobuf:"bytes,76,opt,name=server_review_flow_disabled,json=serverReviewFlowDisabled,proto3,oneof"`
 }
 
 func (*event_OrganizationCreated) isEvent_Payload() {}
@@ -4017,7 +4017,7 @@ func (*event_PluginLabelUnarchived) isEvent_Payload() {}
 
 func (*event_ServerReviewFlowEnabled) isEvent_Payload() {}
 
-func (*event_ServerReviewFlowDisalbed) isEvent_Payload() {}
+func (*event_ServerReviewFlowDisabled) isEvent_Payload() {}
 
 type PayloadOrganizationCreated struct {
 	state         protoimpl.MessageState `protogen:"opaque.v1"`
@@ -10607,7 +10607,7 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\x15plugin_label_archived\x184 \x01(\v24.buf.alpha.audit.v1alpha1.PayloadPluginLabelArchivedH\x00R\x13pluginLabelArchived\x12p\n" +
 	"\x17plugin_label_unarchived\x185 \x01(\v26.buf.alpha.audit.v1alpha1.PayloadPluginLabelUnarchivedH\x00R\x15pluginLabelUnarchived\x12w\n" +
 	"\x1aserver_review_flow_enabled\x18K \x01(\v28.buf.alpha.audit.v1alpha1.PayloadServerReviewFlowEnabledH\x00R\x17serverReviewFlowEnabled\x12z\n" +
-	"\x1bserver_review_flow_disalbed\x18L \x01(\v29.buf.alpha.audit.v1alpha1.PayloadServerReviewFlowDisabledH\x00R\x18serverReviewFlowDisalbedB\t\n" +
+	"\x1bserver_review_flow_disabled\x18L \x01(\v29.buf.alpha.audit.v1alpha1.PayloadServerReviewFlowDisabledH\x00R\x18serverReviewFlowDisabledB\t\n" +
 	"\apayload\"\x1c\n" +
 	"\x1aPayloadOrganizationCreated\"\x1c\n" +
 	"\x1aPayloadOrganizationDeleted\"\xa9\x02\n" +
@@ -11258,7 +11258,7 @@ var file_buf_alpha_audit_v1alpha1_event_proto_depIdxs = []int32{
 	71,  // 73: buf.alpha.audit.v1alpha1.Event.plugin_label_archived:type_name -> buf.alpha.audit.v1alpha1.PayloadPluginLabelArchived
 	72,  // 74: buf.alpha.audit.v1alpha1.Event.plugin_label_unarchived:type_name -> buf.alpha.audit.v1alpha1.PayloadPluginLabelUnarchived
 	63,  // 75: buf.alpha.audit.v1alpha1.Event.server_review_flow_enabled:type_name -> buf.alpha.audit.v1alpha1.PayloadServerReviewFlowEnabled
-	64,  // 76: buf.alpha.audit.v1alpha1.Event.server_review_flow_disalbed:type_name -> buf.alpha.audit.v1alpha1.PayloadServerReviewFlowDisabled
+	64,  // 76: buf.alpha.audit.v1alpha1.Event.server_review_flow_disabled:type_name -> buf.alpha.audit.v1alpha1.PayloadServerReviewFlowDisabled
 	80,  // 77: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberAdded.member_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
 	81,  // 78: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberAdded.member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
 	80,  // 79: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.old_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
@@ -11390,7 +11390,7 @@ func file_buf_alpha_audit_v1alpha1_event_proto_init() {
 		(*event_PluginLabelArchived)(nil),
 		(*event_PluginLabelUnarchived)(nil),
 		(*event_ServerReviewFlowEnabled)(nil),
-		(*event_ServerReviewFlowDisalbed)(nil),
+		(*event_ServerReviewFlowDisabled)(nil),
 	}
 	file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[58].OneofWrappers = []any{}
 	type x struct{}

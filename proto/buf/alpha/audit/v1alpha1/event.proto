@@ -251,7 +251,7 @@ message Event {
     PayloadPluginLabelArchived plugin_label_archived = 52;
     PayloadPluginLabelUnarchived plugin_label_unarchived = 53;
     PayloadServerReviewFlowEnabled server_review_flow_enabled = 75;
-    PayloadServerReviewFlowDisabled server_review_flow_disalbed = 76;
+    PayloadServerReviewFlowDisabled server_review_flow_disabled = 76;
   }
 }
 
