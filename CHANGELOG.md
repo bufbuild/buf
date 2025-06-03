@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Promote `buf beta stats` to `buf stats`.
+- Update built-in Well-Known Types to Protobuf v31.1.
 
 ## [v1.54.0] - 2025-05-12
 

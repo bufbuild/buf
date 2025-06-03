@@ -21,12 +21,15 @@ DOCKER_BUILD_EXTRA_FLAGS ?=
 dockerbuild::
 
 define dockerbinfunc
+# Settable
+$(1)_DOCKER_BUILD_EXTRA_FLAGS ?=
+
 .PHONY: dockerbuilddeps$(1)
 dockerbuilddeps$(1)::
 
 .PHONY: dockerbuild$(1)
 dockerbuild$(1): dockerbuilddeps$(1)
-	docker build $(DOCKER_BUILD_EXTRA_FLAGS) -t $(DOCKER_ORG)/$(1):latest -f Dockerfile.$(1) .
+	docker build $(DOCKER_BUILD_EXTRA_FLAGS) $($(1)_DOCKER_BUILD_EXTRA_FLAGS) -t $(DOCKER_ORG)/$(1):latest -f Dockerfile.$(1) .
 ifdef EXTRA_DOCKER_ORG
 	docker tag $(DOCKER_ORG)/$(1):latest $(EXTRA_DOCKER_ORG)/$(1):latest
 endif
