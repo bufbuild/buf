@@ -4,6 +4,7 @@
 
 - Promote `buf beta stats` to `buf stats`.
 - Update built-in Well-Known Types to Protobuf v31.1.
+- Add `buf registry sdk info` command.
 
 ## [v1.54.0] - 2025-05-12
 
