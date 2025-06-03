@@ -19,14 +19,14 @@ import (
 	"fmt"
 
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/spf13/pflag"
 )
@@ -111,7 +111,7 @@ func run(
 	}
 	pluginClientProvider := bufregistryapiplugin.NewClientProvider(clientConfig)
 	labelServiceClient := pluginClientProvider.V1Beta1LabelServiceClient(pluginRef.FullName().Registry())
-	requestValues := slicesext.Map(labels, func(label string) *pluginv1beta1.CreateOrUpdateLabelsRequest_Value {
+	requestValues := xslices.Map(labels, func(label string) *pluginv1beta1.CreateOrUpdateLabelsRequest_Value {
 		return &pluginv1beta1.CreateOrUpdateLabelsRequest_Value{
 			LabelRef: &pluginv1beta1.LabelRef{
 				Value: &pluginv1beta1.LabelRef_Name_{
@@ -142,7 +142,7 @@ func run(
 	return bufprint.PrintNames(
 		container.Stdout(),
 		format,
-		slicesext.Map(resp.Msg.Labels, func(label *pluginv1beta1.Label) bufprint.Entity {
+		xslices.Map(resp.Msg.Labels, func(label *pluginv1beta1.Label) bufprint.Entity {
 			return bufprint.NewLabelEntity(label, pluginRef.FullName())
 		})...,
 	)

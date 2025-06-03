@@ -21,17 +21,17 @@ import (
 	"io/fs"
 	"testing"
 
+	"buf.build/go/standard/xio"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
-	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -328,7 +328,7 @@ func testNewWorkspaceProvider(t *testing.T, testModuleDatas ...bufmoduletesting.
 }
 
 func requireModuleContainFileNames(t *testing.T, module bufmodule.Module, expectedFileNames ...string) {
-	fileNamesToBeSeen := slicesext.ToStructMap(expectedFileNames)
+	fileNamesToBeSeen := xslices.ToStructMap(expectedFileNames)
 	require.NoError(t, module.WalkFileInfos(context.Background(), func(fi bufmodule.FileInfo) error {
 		path := fi.Path()
 		if _, ok := fileNamesToBeSeen[path]; !ok {
@@ -337,7 +337,7 @@ func requireModuleContainFileNames(t *testing.T, module bufmodule.Module, expect
 		delete(fileNamesToBeSeen, path)
 		return nil
 	}))
-	require.Emptyf(t, fileNamesToBeSeen, "expect %s from module", stringutil.JoinSliceQuoted(slicesext.MapKeysToSlice(fileNamesToBeSeen), ","))
+	require.Emptyf(t, fileNamesToBeSeen, "expect %s from module", xstrings.JoinSliceQuoted(xslices.MapKeysToSlice(fileNamesToBeSeen), ","))
 }
 
 func requireModuleFileContent(
@@ -349,7 +349,7 @@ func requireModuleFileContent(
 ) {
 	file, err := module.GetFile(ctx, path)
 	require.NoError(t, err)
-	content, err := ioext.ReadAllAndClose(file)
+	content, err := xio.ReadAllAndClose(file)
 	require.NoError(t, err)
 	require.Equal(t, expectedContent, string(content))
 }

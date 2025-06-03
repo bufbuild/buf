@@ -26,16 +26,16 @@ import (
 	"os"
 	"path/filepath"
 
+	"buf.build/go/app"
+	"buf.build/go/standard/xio"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
-	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/osext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -272,7 +272,7 @@ func (r *reader) getArchiveBucket(
 			readerAt = bytes.NewReader(data)
 			size = int64(len(data))
 		} else {
-			readerAt, err = ioext.ReaderAtForReader(readCloser)
+			readerAt, err = xio.ReaderAtForReader(readCloser)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -438,9 +438,9 @@ func (r *reader) getFileReadCloserAndSize(
 		if err != nil {
 			return nil, -1, err
 		}
-		return ioext.CompositeReadCloser(
+		return xio.CompositeReadCloser(
 			gzipReadCloser,
-			ioext.ChainCloser(
+			xio.ChainCloser(
 				gzipReadCloser,
 				readCloser,
 			),
@@ -451,9 +451,9 @@ func (r *reader) getFileReadCloserAndSize(
 			return nil, -1, err
 		}
 		zstdReadCloser := zstdDecoder.IOReadCloser()
-		return ioext.CompositeReadCloser(
+		return xio.CompositeReadCloser(
 			zstdReadCloser,
-			ioext.ChainCloser(
+			xio.ChainCloser(
 				zstdReadCloser,
 				readCloser,
 			),
@@ -501,7 +501,7 @@ func (r *reader) getFileReadCloserAndSizePotentiallyCompressed(
 	case FileSchemeStdout:
 		return nil, -1, errors.New("cannot read from stdout")
 	case FileSchemeNull:
-		return ioext.DiscardReadCloser, 0, nil
+		return xio.DiscardReadCloser, 0, nil
 	default:
 		return nil, -1, fmt.Errorf("unknown FileScheme: %v", fileScheme)
 	}
@@ -901,13 +901,13 @@ func validatePaths(
 	if _, err := normalpath.NormalizeAndValidate(inputSubDirPath); err != nil {
 		return err
 	}
-	if _, err := slicesext.MapError(
+	if _, err := xslices.MapError(
 		targetPaths,
 		normalpath.NormalizeAndValidate,
 	); err != nil {
 		return err
 	}
-	if _, err := slicesext.MapError(
+	if _, err := xslices.MapError(
 		targetPaths,
 		normalpath.NormalizeAndValidate,
 	); err != nil {
@@ -925,13 +925,13 @@ func mapTargetPathsAndTargetExcludePathsForArchiveAndGitRefs(
 	if inputSubDirPath == "." {
 		return targetPaths, targetExcludePaths
 	}
-	return slicesext.Map(
+	return xslices.Map(
 			targetPaths,
 			func(targetPath string) string {
 				return normalpath.Join(inputSubDirPath, targetPath)
 			},
 		),
-		slicesext.Map(
+		xslices.Map(
 			targetExcludePaths,
 			func(targetExcludePath string) string {
 				return normalpath.Join(inputSubDirPath, targetExcludePath)

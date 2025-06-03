@@ -21,9 +21,9 @@ import (
 	"slices"
 	"strings"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -169,7 +169,7 @@ func checkRequiredFeatures(
 					logger.Warn(strings.TrimSpace(warningMessage))
 					continue
 				}
-				featureErrs := slicesext.Map(
+				featureErrs := xslices.Map(
 					failed.featureToFilenames[feature],
 					func(fileName string) error {
 						return fmt.Errorf("plugin %q does not support feature %q which is required by %q", pluginName, featureName(feature), fileName)

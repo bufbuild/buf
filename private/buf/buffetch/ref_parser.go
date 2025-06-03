@@ -23,10 +23,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 

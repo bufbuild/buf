@@ -19,6 +19,10 @@ import (
 	"errors"
 	"fmt"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/buffetch"
@@ -26,10 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
@@ -101,7 +101,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"text",
 		fmt.Sprintf(
 			"The format for build errors or check violations printed to stdout. Must be one of %s",
-			stringutil.SliceToString(bufanalysis.AllFormatStrings),
+			xstrings.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
 	flagSet.BoolVar(
@@ -220,7 +220,7 @@ func run(
 		}
 		// We do not require the check configs from the against target once built, so they can
 		// be dropped here.
-		againstImages, err = slicesext.MapError(
+		againstImages, err = xslices.MapError(
 			againstImagesWithConfigs,
 			func(imageWithConfig bufctl.ImageWithConfig) (bufimage.Image, error) {
 				againstImage, ok := imageWithConfig.(bufimage.Image)
@@ -328,7 +328,7 @@ func getExternalPathsForImages[I bufimage.Image, S ~[]I](images S) ([]string, er
 			externalPaths[imageFile.ExternalPath()] = struct{}{}
 		}
 	}
-	return slicesext.MapKeysToSlice(externalPaths), nil
+	return xslices.MapKeysToSlice(externalPaths), nil
 }
 
 func validateFlags(flags *flags) error {

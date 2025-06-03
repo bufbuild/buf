@@ -17,22 +17,22 @@ package bufcheckserverhandle
 import (
 	"strings"
 
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 func fieldToLowerSnakeCase(s string) string {
 	// Try running this on googleapis and watch
 	// We allow both effectively by not passing the option
-	//return stringutil.ToLowerSnakeCase(s, stringutil.SnakeCaseWithNewWordOnDigits())
-	return stringutil.ToLowerSnakeCase(s)
+	//return xstrings.ToLowerSnakeCase(s, xstrings.SnakeCaseWithNewWordOnDigits())
+	return xstrings.ToLowerSnakeCase(s)
 }
 
 func fieldToUpperSnakeCase(s string) string {
 	// Try running this on googleapis and watch
 	// We allow both effectively by not passing the option
-	//return stringutil.ToUpperSnakeCase(s, stringutil.SnakeCaseWithNewWordOnDigits())
-	return stringutil.ToUpperSnakeCase(s)
+	//return xstrings.ToUpperSnakeCase(s, xstrings.SnakeCaseWithNewWordOnDigits())
+	return xstrings.ToUpperSnakeCase(s)
 }
 
 // validLeadingComment returns true if comment has at least one line that isn't empty

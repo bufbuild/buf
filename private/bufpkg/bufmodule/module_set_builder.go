@@ -20,10 +20,10 @@ import (
 	"log/slog"
 	"sync/atomic"
 
+	"buf.build/go/standard/xlog/xslog"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
@@ -405,7 +405,7 @@ func (b *moduleSetBuilder) AddRemoteModule(
 }
 
 func (b *moduleSetBuilder) Build() (ModuleSet, error) {
-	defer slogext.DebugProfile(b.logger)()
+	defer xslog.DebugProfile(b.logger)()
 
 	if !b.buildCalled.CompareAndSwap(false, true) {
 		return nil, errBuildAlreadyCalled
@@ -418,7 +418,7 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 		return newModuleSet(nil)
 	}
 	// If not empty, we need at least one target Module.
-	if slicesext.Count(b.addedModules, func(m *addedModule) bool { return m.IsTarget() }) < 1 {
+	if xslices.Count(b.addedModules, func(m *addedModule) bool { return m.IsTarget() }) < 1 {
 		return nil, syserror.New("no Modules were targeted in ModuleSetBuilder")
 	}
 
@@ -427,7 +427,7 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	modules, err := slicesext.MapError(
+	modules, err := xslices.MapError(
 		addedModules,
 		func(addedModule *addedModule) (Module, error) {
 			return addedModule.ToModule(b.ctx, b.moduleDataProvider, b.commitProvider)

@@ -20,11 +20,11 @@ import (
 	"log/slog"
 
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
+	"buf.build/go/standard/xslices"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
@@ -82,13 +82,13 @@ func (p *pluginDataProvider) GetPluginDatasForPluginKeys(
 		return nil, err
 	}
 
-	registryToIndexedPluginKeys := slicesext.ToIndexedValuesMap(
+	registryToIndexedPluginKeys := xslices.ToIndexedValuesMap(
 		pluginKeys,
 		func(pluginKey bufplugin.PluginKey) string {
 			return pluginKey.FullName().Registry()
 		},
 	)
-	indexedPluginDatas := make([]slicesext.Indexed[bufplugin.PluginData], 0, len(pluginKeys))
+	indexedPluginDatas := make([]xslices.Indexed[bufplugin.PluginData], 0, len(pluginKeys))
 	for registry, indexedPluginKeys := range registryToIndexedPluginKeys {
 		indexedRegistryPluginDatas, err := p.getIndexedPluginDatasForRegistryAndIndexedPluginKeys(
 			ctx,
@@ -100,15 +100,15 @@ func (p *pluginDataProvider) GetPluginDatasForPluginKeys(
 		}
 		indexedPluginDatas = append(indexedPluginDatas, indexedRegistryPluginDatas...)
 	}
-	return slicesext.IndexedToSortedValues(indexedPluginDatas), nil
+	return xslices.IndexedToSortedValues(indexedPluginDatas), nil
 }
 
 func (p *pluginDataProvider) getIndexedPluginDatasForRegistryAndIndexedPluginKeys(
 	ctx context.Context,
 	registry string,
-	indexedPluginKeys []slicesext.Indexed[bufplugin.PluginKey],
-) ([]slicesext.Indexed[bufplugin.PluginData], error) {
-	values := slicesext.Map(indexedPluginKeys, func(indexedPluginKey slicesext.Indexed[bufplugin.PluginKey]) *pluginv1beta1.DownloadRequest_Value {
+	indexedPluginKeys []xslices.Indexed[bufplugin.PluginKey],
+) ([]xslices.Indexed[bufplugin.PluginData], error) {
+	values := xslices.Map(indexedPluginKeys, func(indexedPluginKey xslices.Indexed[bufplugin.PluginKey]) *pluginv1beta1.DownloadRequest_Value {
 		return &pluginv1beta1.DownloadRequest_Value{
 			ResourceRef: &pluginv1beta1.ResourceRef{
 				Value: &pluginv1beta1.ResourceRef_Id{
@@ -132,9 +132,9 @@ func (p *pluginDataProvider) getIndexedPluginDatasForRegistryAndIndexedPluginKey
 		return nil, syserror.New("did not get the expected number of plugin datas")
 	}
 
-	commitIDToIndexedPluginKeys, err := slicesext.ToUniqueValuesMapError(
+	commitIDToIndexedPluginKeys, err := xslices.ToUniqueValuesMapError(
 		indexedPluginKeys,
-		func(indexedPluginKey slicesext.Indexed[bufplugin.PluginKey]) (uuid.UUID, error) {
+		func(indexedPluginKey xslices.Indexed[bufplugin.PluginKey]) (uuid.UUID, error) {
 			return indexedPluginKey.Value.CommitID(), nil
 		},
 	)
@@ -142,7 +142,7 @@ func (p *pluginDataProvider) getIndexedPluginDatasForRegistryAndIndexedPluginKey
 		return nil, err
 	}
 
-	indexedPluginDatas := make([]slicesext.Indexed[bufplugin.PluginData], 0, len(indexedPluginKeys))
+	indexedPluginDatas := make([]xslices.Indexed[bufplugin.PluginData], 0, len(indexedPluginKeys))
 	for _, pluginContent := range pluginContents {
 		commitID, err := uuid.Parse(pluginContent.Commit.Id)
 		if err != nil {
@@ -176,7 +176,7 @@ func (p *pluginDataProvider) getIndexedPluginDatasForRegistryAndIndexedPluginKey
 		}
 		indexedPluginDatas = append(
 			indexedPluginDatas,
-			slicesext.Indexed[bufplugin.PluginData]{
+			xslices.Indexed[bufplugin.PluginData]{
 				Value: pluginData,
 				Index: indexedPluginKey.Index,
 			},

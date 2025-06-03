@@ -20,10 +20,10 @@ import (
 	"io/fs"
 	"sort"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/dag"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
@@ -102,7 +102,7 @@ func ModuleSetToModuleReadBucketWithOnlyProtoFilesForTargetModules(moduleSet Mod
 // ModuleSetTargetModules is a convenience function that returns the target Modules
 // from a ModuleSet.
 func ModuleSetTargetModules(moduleSet ModuleSet) []Module {
-	return slicesext.Filter(
+	return xslices.Filter(
 		moduleSet.Modules(),
 		func(module Module) bool { return module.IsTarget() },
 	)
@@ -111,7 +111,7 @@ func ModuleSetTargetModules(moduleSet ModuleSet) []Module {
 // ModuleSetNonTargetModules is a convenience function that returns the non-target Modules
 // from a ModuleSet.
 func ModuleSetNonTargetModules(moduleSet ModuleSet) []Module {
-	return slicesext.Filter(
+	return xslices.Filter(
 		moduleSet.Modules(),
 		func(module Module) bool { return !module.IsTarget() },
 	)
@@ -120,7 +120,7 @@ func ModuleSetNonTargetModules(moduleSet ModuleSet) []Module {
 // ModuleSetLocalModules is a convenience function that returns the local Modules
 // from a ModuleSet.
 func ModuleSetLocalModules(moduleSet ModuleSet) []Module {
-	return slicesext.Filter(
+	return xslices.Filter(
 		moduleSet.Modules(),
 		func(module Module) bool { return module.IsLocal() },
 	)
@@ -129,7 +129,7 @@ func ModuleSetLocalModules(moduleSet ModuleSet) []Module {
 // ModuleSetRemoteModules is a convenience function that returns the remote Modules
 // from a ModuleSet.
 func ModuleSetRemoteModules(moduleSet ModuleSet) []Module {
-	return slicesext.Filter(
+	return xslices.Filter(
 		moduleSet.Modules(),
 		func(module Module) bool { return !module.IsLocal() },
 	)
@@ -142,7 +142,7 @@ func ModuleSetRemoteModules(moduleSet ModuleSet) []Module {
 //
 // Sorted by OpaqueID.
 func ModuleSetTargetLocalModulesAndTransitiveLocalDeps(moduleSet ModuleSet) ([]Module, error) {
-	targetLocalModules := slicesext.Filter(
+	targetLocalModules := xslices.Filter(
 		moduleSet.Modules(),
 		func(module Module) bool { return module.IsTarget() && module.IsLocal() },
 	)
@@ -162,7 +162,7 @@ func ModuleSetTargetLocalModulesAndTransitiveLocalDeps(moduleSet ModuleSet) ([]M
 			return nil, err
 		}
 	}
-	resultLocalModules := slicesext.MapValuesToSlice(resultOpaqueIDToLocalModule)
+	resultLocalModules := xslices.MapValuesToSlice(resultOpaqueIDToLocalModule)
 	sort.Slice(
 		resultLocalModules,
 		func(i int, j int) bool {
@@ -344,7 +344,7 @@ func (m *moduleSet) WithTargetOpaqueIDs(opaqueIDs ...string) (ModuleSet, error) 
 	if len(opaqueIDs) == 0 {
 		return nil, errors.New("at least one Module must be targeted")
 	}
-	opaqueIDMap := slicesext.ToStructMap(opaqueIDs)
+	opaqueIDMap := xslices.ToStructMap(opaqueIDs)
 	modules := make([]Module, len(m.modules))
 	for i, module := range m.modules {
 		_, isTarget := opaqueIDMap[module.OpaqueID()]
@@ -401,9 +401,9 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 		// The addition of opaqueID should give us clearer error messages than we have today.
 		return nil, &DuplicateProtoPathError{
 			ProtoPath: filePath,
-			ModuleDescriptions: slicesext.ToUniqueSorted(
-				slicesext.Map(
-					slicesext.MapValuesToSlice(matchingOpaqueIDToModule),
+			ModuleDescriptions: xslices.ToUniqueSorted(
+				xslices.Map(
+					xslices.MapValuesToSlice(matchingOpaqueIDToModule),
 					Module.Description,
 				),
 			),
@@ -489,7 +489,7 @@ func moduleSetToDAGRec(
 }
 
 func modulesOpaqueIDs(modules []Module) []string {
-	return slicesext.Map(
+	return xslices.Map(
 		modules,
 		func(module Module) string { return module.OpaqueID() },
 	)

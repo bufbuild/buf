@@ -23,15 +23,15 @@ import (
 	"runtime"
 	"testing"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appcmd/appcmdtesting"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -1704,26 +1704,25 @@ type expectedFileInfo struct {
 func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string]expectedFileInfo, buildArgs ...string) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	appcmdtesting.RunCommandExitCode(
+	appcmdtesting.Run(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		0,
-		internaltesting.NewEnvFunc(t),
-		nil,
-		stdout,
-		stderr,
-		append(
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		appcmdtesting.WithStdout(stdout),
+		appcmdtesting.WithStderr(stderr),
+		appcmdtesting.WithArgs(append(
 			[]string{
 				"build",
 				"-o=-#format=binpb",
 			},
 			buildArgs...,
-		)...,
+		)...),
 	)
 	outputImage := &imagev1.Image{}
 	require.NoError(t, protoencoding.NewWireUnmarshaler(nil).Unmarshal(stdout.Bytes(), outputImage))
 
-	filesToCheck := slicesext.ToStructMap(slicesext.MapKeysToSlice(expectedFilePathToInfo))
+	filesToCheck := xslices.ToStructMap(xslices.MapKeysToSlice(expectedFilePathToInfo))
 
 	for _, imageFile := range outputImage.GetFile() {
 		filePath := imageFile.GetName()
@@ -1739,5 +1738,5 @@ func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string
 		}
 		delete(filesToCheck, filePath)
 	}
-	require.Zerof(t, len(filesToCheck), "expected files missing from image built: %v", slicesext.MapKeysToSortedSlice(filesToCheck))
+	require.Zerof(t, len(filesToCheck), "expected files missing from image built: %v", xslices.MapKeysToSortedSlice(filesToCheck))
 }

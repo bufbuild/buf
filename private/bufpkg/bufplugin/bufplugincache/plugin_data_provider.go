@@ -19,9 +19,9 @@ import (
 	"log/slog"
 	"sync/atomic"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginstore"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
@@ -81,7 +81,7 @@ func (p *pluginDataProvider) GetPluginDatasForPluginKeys(
 	p.keysRetrieved.Add(int64(len(pluginKeys)))
 	p.keysHit.Add(int64(len(foundValues)))
 
-	commitIDToIndexedKey, err := slicesext.ToUniqueIndexedValuesMap(
+	commitIDToIndexedKey, err := xslices.ToUniqueIndexedValuesMap(
 		pluginKeys,
 		func(pluginKey bufplugin.PluginKey) uuid.UUID {
 			return pluginKey.CommitID()
@@ -90,15 +90,15 @@ func (p *pluginDataProvider) GetPluginDatasForPluginKeys(
 	if err != nil {
 		return nil, err
 	}
-	indexedValues, err := slicesext.MapError(
+	indexedValues, err := xslices.MapError(
 		append(foundValues, delegateValues...),
-		func(value bufplugin.PluginData) (slicesext.Indexed[bufplugin.PluginData], error) {
+		func(value bufplugin.PluginData) (xslices.Indexed[bufplugin.PluginData], error) {
 			commitID := value.PluginKey().CommitID()
 			indexedKey, ok := commitIDToIndexedKey[commitID]
 			if !ok {
-				return slicesext.Indexed[bufplugin.PluginData]{}, syserror.Newf("did not get value from store with commitID %q", uuidutil.ToDashless(commitID))
+				return xslices.Indexed[bufplugin.PluginData]{}, syserror.Newf("did not get value from store with commitID %q", uuidutil.ToDashless(commitID))
 			}
-			return slicesext.Indexed[bufplugin.PluginData]{
+			return xslices.Indexed[bufplugin.PluginData]{
 				Value: value,
 				Index: indexedKey.Index,
 			}, nil
@@ -107,5 +107,5 @@ func (p *pluginDataProvider) GetPluginDatasForPluginKeys(
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.IndexedToSortedValues(indexedValues), nil
+	return xslices.IndexedToSortedValues(indexedValues), nil
 }

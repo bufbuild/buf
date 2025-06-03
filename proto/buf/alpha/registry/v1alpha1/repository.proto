@@ -150,10 +150,6 @@ service RepositoryService {
   rpc ListRepositoryContributors(ListRepositoryContributorsRequest) returns (ListRepositoryContributorsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // GetRepositoryContributor returns the contributor information of a user in a repository.
-  rpc GetRepositoryContributor(GetRepositoryContributorRequest) returns (GetRepositoryContributorResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
   // GetRepositorySettings gets the settings of a repository.
   rpc GetRepositorySettings(GetRepositorySettingsRequest) returns (GetRepositorySettingsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -337,18 +333,6 @@ message ListRepositoryContributorsResponse {
   repeated RepositoryContributor users = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
-}
-
-message GetRepositoryContributorRequest {
-  // The ID of the repository for which to get the contributor information.
-  string repository_id = 1;
-  // The ID of the user for which to get the contributor information.
-  string user_id = 2;
-}
-
-message GetRepositoryContributorResponse {
-  // The contributor information of the user in the repository.
-  RepositoryContributor user = 1;
 }
 
 message GetRepositorySettingsRequest {

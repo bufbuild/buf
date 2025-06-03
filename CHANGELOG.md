@@ -2,8 +2,19 @@
 
 ## [Unreleased]
 
+- Promote `buf beta stats` to `buf stats`.
+- Update built-in Well-Known Types to Protobuf v31.1.
+
+## [v1.54.0] - 2025-05-12
+
 - Add `CSR` category to breaking rules.
 - Add support for local bufplugins for `protoc-gen-buf-breaking` and `protoc-gen-buf-lint`.
+- Add RISC-V (64-bit) binaries for Linux to releases.
+- Fix type filtering on `buf generate` for empty files, files with no declared types.
+- Fix CEL check on `buf lint` for predefined `rules` variables.
+- Fix `buf config migrate` to filter out removed rules.
+- Allow users to set examples without constraints in `PROTOVALIDATE` lint rule.
+- Add ppc64le binaries for Linux to releases.
 
 ## [v1.53.0] - 2025-04-21
 
@@ -48,7 +59,7 @@
 - Fix `buf plugin push --label` to allow pushing a plugin with a label.
 - Add `--digest-changes-only` flag to `buf registry {module,plugin} commit list` to filter
   out commits that have no digest changes.
-- Fix `buf plugin push --source-control-url` to allow pushing a plugin with the source 
+- Fix `buf plugin push --source-control-url` to allow pushing a plugin with the source
   control url.
 
 ## [v1.48.0] - 2024-12-19
@@ -57,7 +68,7 @@
 - Breaking analysis support for `buf beta lsp`.
 - Fix bug when using the `--type` flag filter for `buf build` where import ordering is not
   deterministic.
-- Add `buf plugin push` command to push a plugin to the Buf Schema Registry. 
+- Add `buf plugin push` command to push a plugin to the Buf Schema Registry.
   Only WebAssembly check plugins are supported at this time.
 - Add `buf plugin update` and `buf plugin prune` command to manage plugins in the `buf.lock`
   file. Only WebAssembly check plugins are supported at this time.
@@ -1365,7 +1376,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.53.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.54.0...HEAD
+[v1.54.0]: https://github.com/bufbuild/buf/compare/v1.53.0...v1.54.0
 [v1.53.0]: https://github.com/bufbuild/buf/compare/v1.52.1...v1.53.0
 [v1.52.1]: https://github.com/bufbuild/buf/compare/v1.52.0...v1.52.1
 [v1.52.0]: https://github.com/bufbuild/buf/compare/v1.51.0...v1.52.0

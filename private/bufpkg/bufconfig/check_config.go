@@ -17,7 +17,7 @@ package bufconfig
 import (
 	"slices"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/standard/xslices"
 )
 
 var (
@@ -134,7 +134,7 @@ func NewEnabledCheckConfigForUseIDsAndCategories(
 ) CheckConfig {
 	return newEnabledCheckConfigNoValidate(
 		fileVersion,
-		slicesext.ToUniqueSorted(use),
+		xslices.ToUniqueSorted(use),
 		nil,
 		nil,
 		nil,
@@ -162,16 +162,16 @@ func newEnabledCheckConfig(
 	ignoreOnly map[string][]string,
 	disableBuiltin bool,
 ) (*checkConfig, error) {
-	use = slicesext.ToUniqueSorted(use)
-	except = slicesext.ToUniqueSorted(except)
-	ignore = slicesext.ToUniqueSorted(ignore)
+	use = xslices.ToUniqueSorted(use)
+	except = xslices.ToUniqueSorted(except)
+	ignore = xslices.ToUniqueSorted(ignore)
 	ignore, err := normalizeAndCheckPaths(ignore, "ignore")
 	if err != nil {
 		return nil, err
 	}
 	newIgnoreOnly := make(map[string][]string, len(ignoreOnly))
 	for k, v := range ignoreOnly {
-		v = slicesext.ToUniqueSorted(v)
+		v = xslices.ToUniqueSorted(v)
 		v, err := normalizeAndCheckPaths(v, "ignore_only path")
 		if err != nil {
 			return nil, err

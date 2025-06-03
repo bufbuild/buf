@@ -20,12 +20,12 @@ import (
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
+	"buf.build/go/standard/xslices"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
 	"github.com/bufbuild/buf/private/pkg/dag"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
@@ -128,7 +128,7 @@ func (a *graphProvider) GetGraphForModuleKeys(
 	if err != nil {
 		return nil, err
 	}
-	registryCommitIDToModuleKey, err := slicesext.ToUniqueValuesMapError(
+	registryCommitIDToModuleKey, err := xslices.ToUniqueValuesMapError(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) (bufmodule.RegistryCommitID, error) {
 			return bufmodule.ModuleKeyToRegistryCommitID(moduleKey), nil
@@ -222,7 +222,7 @@ func (a *graphProvider) getV1Beta1ProtoGraphForModuleKeys(
 	// Legacy federation is allowed, or we are using b4. We may have dependencies on modules from other registries, or we
 	// are using a digest type not supported by the v1 API. Fall back to the v1beta1 API.
 
-	registryCommitIDs := slicesext.Map(moduleKeys, bufmodule.ModuleKeyToRegistryCommitID)
+	registryCommitIDs := xslices.Map(moduleKeys, bufmodule.ModuleKeyToRegistryCommitID)
 	v1beta1ProtoDigestType, err := digestTypeToV1Beta1Proto(digestType)
 	if err != nil {
 		return nil, err
@@ -232,7 +232,7 @@ func (a *graphProvider) getV1Beta1ProtoGraphForModuleKeys(
 		connect.NewRequest(
 			&modulev1beta1.GetGraphRequest{
 				// TODO FUTURE: chunking
-				ResourceRefs: slicesext.Map(
+				ResourceRefs: xslices.Map(
 					registryCommitIDs,
 					func(registryCommitID bufmodule.RegistryCommitID) *modulev1beta1.GetGraphRequest_ResourceRef {
 						return &modulev1beta1.GetGraphRequest_ResourceRef{
@@ -261,7 +261,7 @@ func (a *graphProvider) getV1ProtoGraphForRegistryAndModuleKeys(
 	registry string,
 	moduleKeys []bufmodule.ModuleKey,
 ) (*modulev1.Graph, error) {
-	commitIDs := slicesext.Map(moduleKeys, bufmodule.ModuleKey.CommitID)
+	commitIDs := xslices.Map(moduleKeys, bufmodule.ModuleKey.CommitID)
 	response, err := a.moduleClientProvider.V1GraphServiceClient(registry).GetGraph(
 		ctx,
 		connect.NewRequest(

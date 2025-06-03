@@ -19,14 +19,14 @@ import (
 	"errors"
 	"fmt"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
 )
 
@@ -83,7 +83,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"text",
 		fmt.Sprintf(
 			"The format for build errors or check violations printed to stdout. Must be one of %s",
-			stringutil.SliceToString(bufcli.AllLintFormatStrings),
+			xstrings.SliceToString(bufcli.AllLintFormatStrings),
 		),
 	)
 	flagSet.StringVar(

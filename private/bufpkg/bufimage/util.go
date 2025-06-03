@@ -18,11 +18,11 @@ import (
 	"errors"
 	"fmt"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/bufbuild/protoplugin/protopluginutil"
 	"github.com/google/uuid"
@@ -46,7 +46,7 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 	if err := normalpath.ValidatePathsNormalizedValidatedUnique(excludeFileOrDirPaths); err != nil {
 		return nil, err
 	}
-	excludeFileOrDirPathMap := slicesext.ToStructMap(excludeFileOrDirPaths)
+	excludeFileOrDirPathMap := xslices.ToStructMap(excludeFileOrDirPaths)
 	// These are the files that fileOrDirPaths actually reference and will
 	// result in the non-imports in our resulting Image. The Image will also include
 	// the ImageFiles that the nonImportImageFiles import
@@ -134,7 +134,7 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 	// make a map of the directory paths
 	// note that we do not make this a map to begin with as maps are unordered,
 	// and we want to make sure we iterate over the paths in a deterministic order
-	potentialDirPathMap := slicesext.ToStructMap(potentialDirPaths)
+	potentialDirPathMap := xslices.ToStructMap(potentialDirPaths)
 
 	// map of all paths based on the imageFiles
 	// the map of paths within potentialDirPath that matches a file in image.Files()

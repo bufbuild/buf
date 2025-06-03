@@ -22,10 +22,10 @@ import (
 
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
+	"buf.build/go/standard/xslices"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/klauspost/compress/zstd"
@@ -83,13 +83,13 @@ func (u *uploader) Upload(
 	if err != nil {
 		return nil, err
 	}
-	registryToIndexedPluginKeys := slicesext.ToIndexedValuesMap(
+	registryToIndexedPluginKeys := xslices.ToIndexedValuesMap(
 		plugins,
 		func(plugin bufplugin.Plugin) string {
 			return plugin.FullName().Registry()
 		},
 	)
-	indexedCommits := make([]slicesext.Indexed[bufplugin.Commit], 0, len(plugins))
+	indexedCommits := make([]xslices.Indexed[bufplugin.Commit], 0, len(plugins))
 	for registry, indexedPluginKeys := range registryToIndexedPluginKeys {
 		indexedRegistryPluginDatas, err := u.uploadIndexedPluginsForRegistry(
 			ctx,
@@ -102,15 +102,15 @@ func (u *uploader) Upload(
 		}
 		indexedCommits = append(indexedCommits, indexedRegistryPluginDatas...)
 	}
-	return slicesext.IndexedToSortedValues(indexedCommits), nil
+	return xslices.IndexedToSortedValues(indexedCommits), nil
 }
 
 func (u *uploader) uploadIndexedPluginsForRegistry(
 	ctx context.Context,
 	registry string,
-	indexedPlugins []slicesext.Indexed[bufplugin.Plugin],
+	indexedPlugins []xslices.Indexed[bufplugin.Plugin],
 	uploadOptions bufplugin.UploadOptions,
-) ([]slicesext.Indexed[bufplugin.Commit], error) {
+) ([]xslices.Indexed[bufplugin.Commit], error) {
 	if uploadOptions.CreateIfNotExist() {
 		// We must attempt to create each Plugin one at a time, since CreatePlugins will return
 		// an `AlreadyExists` if any of the Plugins we are attempting to create already exists,
@@ -128,7 +128,7 @@ func (u *uploader) uploadIndexedPluginsForRegistry(
 			}
 		}
 	}
-	contents, err := slicesext.MapError(indexedPlugins, func(indexedPlugin slicesext.Indexed[bufplugin.Plugin]) (*pluginv1beta1.UploadRequest_Content, error) {
+	contents, err := xslices.MapError(indexedPlugins, func(indexedPlugin xslices.Indexed[bufplugin.Plugin]) (*pluginv1beta1.UploadRequest_Content, error) {
 		plugin := indexedPlugin.Value
 		if !plugin.IsLocal() {
 			return nil, syserror.New("expected local Plugin in uploadIndexedPluginsForRegistry")
@@ -155,7 +155,7 @@ func (u *uploader) uploadIndexedPluginsForRegistry(
 			},
 			CompressionType: pluginv1beta1.CompressionType_COMPRESSION_TYPE_ZSTD,
 			Content:         compressedWasmBinary,
-			ScopedLabelRefs: slicesext.Map(uploadOptions.Labels(), func(label string) *pluginv1beta1.ScopedLabelRef {
+			ScopedLabelRefs: xslices.Map(uploadOptions.Labels(), func(label string) *pluginv1beta1.ScopedLabelRef {
 				return &pluginv1beta1.ScopedLabelRef{
 					Value: &pluginv1beta1.ScopedLabelRef_Name{
 						Name: label,
@@ -182,7 +182,7 @@ func (u *uploader) uploadIndexedPluginsForRegistry(
 		return nil, syserror.Newf("expected %d Commits, found %d", len(indexedPlugins), len(pluginCommits))
 	}
 
-	indexedCommits := make([]slicesext.Indexed[bufplugin.Commit], 0, len(indexedPlugins))
+	indexedCommits := make([]xslices.Indexed[bufplugin.Commit], 0, len(indexedPlugins))
 	for i, pluginCommit := range pluginCommits {
 		pluginFullName := indexedPlugins[i].Value.FullName()
 		commitID, err := uuidutil.FromDashless(pluginCommit.Id)
@@ -207,7 +207,7 @@ func (u *uploader) uploadIndexedPluginsForRegistry(
 		)
 		indexedCommits = append(
 			indexedCommits,
-			slicesext.Indexed[bufplugin.Commit]{
+			xslices.Indexed[bufplugin.Commit]{
 				Value: commit,
 				Index: i,
 			},
@@ -280,7 +280,7 @@ func (u *uploader) validatePluginsExist(
 		ctx,
 		connect.NewRequest(
 			&pluginv1beta1.GetPluginsRequest{
-				PluginRefs: slicesext.Map(
+				PluginRefs: xslices.Map(
 					plugins,
 					func(plugin bufplugin.Plugin) *pluginv1beta1.PluginRef {
 						return &pluginv1beta1.PluginRef{

@@ -23,12 +23,12 @@ import (
 	"sort"
 	"testing"
 
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -504,6 +504,18 @@ func TestDependencies(t *testing.T) {
 	})
 }
 
+func TestEmptyFiles(t *testing.T) {
+	t.Parallel()
+	t.Run("include_empty_file", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/empty", "empty.include.txtar", WithIncludeTypes("include"))
+	})
+	t.Run("exclude_empty_file", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/empty", "empty.exclude.txtar", WithExcludeTypes("include"))
+	})
+}
+
 func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
 	if err != nil {
@@ -553,7 +565,7 @@ func runFilterImage(t *testing.T, image bufimage.Image, opts ...ImageFilterOptio
 	// So we serialize and then de-serialize, and use only the filtered results to parse extensions. That way, the result will omit custom options that aren't present in the filtered set (as they will be
 	// considered unrecognized fields).
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{
-		File: slicesext.Map(filteredImage.Files(), func(imageFile bufimage.ImageFile) *descriptorpb.FileDescriptorProto {
+		File: xslices.Map(filteredImage.Files(), func(imageFile bufimage.ImageFile) *descriptorpb.FileDescriptorProto {
 			return imageFile.FileDescriptorProto()
 		}),
 	}

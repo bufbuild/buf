@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"strings"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/gen/data/datalegacyfederation"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -108,7 +108,7 @@ func isLegacyFederationAllowed(registries []string, additionalLegacyFederationRe
 }
 
 func getRegistries[T hasFullName](s []T) ([]string, error) {
-	registryMap, err := slicesext.ToValuesMapError(
+	registryMap, err := xslices.ToValuesMapError(
 		s,
 		func(e T) (string, error) {
 			moduleFullName := e.FullName()
@@ -125,7 +125,7 @@ func getRegistries[T hasFullName](s []T) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.MapKeysToSortedSlice(registryMap), nil
+	return xslices.MapKeysToSortedSlice(registryMap), nil
 }
 
 // getSingleRegistryForContentModules returns the single registry for the content modules in Upload.

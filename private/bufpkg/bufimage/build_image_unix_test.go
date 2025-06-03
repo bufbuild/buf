@@ -19,16 +19,16 @@ package bufimage_test
 import (
 	"testing"
 
+	"buf.build/go/standard/xtesting"
 	"github.com/bufbuild/buf/private/buf/buftesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
-	"github.com/bufbuild/buf/private/pkg/testingext"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 func TestCompareGoogleapis(t *testing.T) {
-	testingext.SkipIfShort(t)
+	xtesting.SkipIfShort(t)
 	// Don't run in parallel as it allocates a lot of memory
 	// cannot directly compare with source code info as buf alpha protoc creates additional source
 	// code infos that protoc does not

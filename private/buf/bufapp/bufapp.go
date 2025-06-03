@@ -18,7 +18,7 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/pkg/cert/certclient"
 )
 

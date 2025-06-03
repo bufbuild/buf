@@ -21,10 +21,10 @@ import (
 	"log/slog"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/pkg/execext"
-	"github.com/bufbuild/buf/private/pkg/ioext"
+	"buf.build/go/standard/xio"
+	"buf.build/go/standard/xlog/xslog"
+	"buf.build/go/standard/xos/xexec"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/protoplugin"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -53,7 +53,7 @@ func (h *binaryHandler) Handle(
 	responseWriter protoplugin.ResponseWriter,
 	request protoplugin.Request,
 ) (retErr error) {
-	defer slogext.DebugProfile(h.logger, slog.String("plugin", filepath.Base(h.pluginPath)))()
+	defer xslog.DebugProfile(h.logger, slog.String("plugin", filepath.Base(h.pluginPath)))()
 
 	requestData, err := protoencoding.NewWireMarshaler().Marshal(request.CodeGeneratorRequest())
 	if err != nil {
@@ -61,16 +61,16 @@ func (h *binaryHandler) Handle(
 	}
 	responseBuffer := bytes.NewBuffer(nil)
 	stderrWriteCloser := newStderrWriteCloser(pluginEnv.Stderr, h.pluginPath)
-	runOptions := []execext.RunOption{
-		execext.WithEnv(pluginEnv.Environ),
-		execext.WithStdin(bytes.NewReader(requestData)),
-		execext.WithStdout(responseBuffer),
-		execext.WithStderr(stderrWriteCloser),
+	runOptions := []xexec.RunOption{
+		xexec.WithEnv(pluginEnv.Environ),
+		xexec.WithStdin(bytes.NewReader(requestData)),
+		xexec.WithStdout(responseBuffer),
+		xexec.WithStderr(stderrWriteCloser),
 	}
 	if len(h.pluginArgs) > 0 {
-		runOptions = append(runOptions, execext.WithArgs(h.pluginArgs...))
+		runOptions = append(runOptions, xexec.WithArgs(h.pluginArgs...))
 	}
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		h.pluginPath,
 		runOptions...,
@@ -98,6 +98,6 @@ func newStderrWriteCloser(delegate io.Writer, pluginPath string) io.WriteCloser 
 		// We did not document if pluginPath is normalized or not, so
 		return newProtocGenSwiftStderrWriteCloser(delegate)
 	default:
-		return ioext.NopWriteCloser(delegate)
+		return xio.NopWriteCloser(delegate)
 	}
 }
