@@ -547,9 +547,9 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 	}
 	// Load the remote plugin data for each plugin ref.
 	if len(indexedPluginRefs) > 0 {
-		// TODO: remove plugins are not yet supported with policies.
+		// TODO: remote plugins are not yet supported with policies.
 		if policyConfig != nil {
-			return nil, fmt.Errorf("remote plugins are not supported with policies")
+			return nil, fmt.Errorf("remote plugins are not yet supported with policies")
 		}
 		pluginRefs := xslices.IndexedToValues(indexedPluginRefs)
 		pluginKeys, err := c.pluginKeyProvider.GetPluginKeysForPluginRefs(ctx, pluginRefs, bufplugin.DigestTypeP1)
@@ -615,7 +615,7 @@ func (c *client) getPolicyFiles(
 	// Load the remote policy data for each policy ref.
 	if len(indexedPolicyRefs) > 0 {
 		// TODO: Add support for remote policy configs.
-		return nil, fmt.Errorf("remote policy configs are not supported")
+		return nil, fmt.Errorf("remote policy configs are not yet supported")
 	}
 
 	policyFiles := make([]bufpolicyconfig.BufPolicyYAMLFile, len(policyConfigs))
