@@ -53,9 +53,9 @@ In order to resolve the SDK information, a module and plugin must be specified.
 Examples:
 
 To get the SDK information for the latest commit of a module and latest version of a plugin, you only need to specify the module and plugin.
-The following will resolve the SDK information for the latest commit of the bufbuild/eliza module and the latest version of the bufbuild/es plugin:
+The following will resolve the SDK information for the latest commit of the connectrpc/eliza module and the latest version of the bufbuild/es plugin:
 
-    $ buf registry sdk info --module=buf.build/connectrpc/eliza --plugin=buf.build/bufbuild/es
+    $ buf registry sdk info --module=buf.build/connectrpc/eliza --plugin=buf.build/connectrpc/es
     Module
     Owner:  connectrpc
     Name:   eliza
@@ -70,7 +70,7 @@ The following will resolve the SDK information for the latest commit of the bufb
     Version: <SDK version for the resolved module commit and plugin version>
 
 To get the SDK information for a specific commit of a module and/or a specific version of a plugin, you can specify the commit with the module and/or the version with the plugin.
-The following will resolve the SDK information for the specified commit of the bufbuild/eliza module and specified version of the bufbuild/es plugin:
+The following will resolve the SDK information for the specified commit of the connectrpc/eliza module and specified version of the bufbuild/es plugin:
 
     $ buf registry sdk info --module=buf.build/connectrpc/eliza:d8fbf2620c604277a0ece1ff3a26f2ff --plugin=buf.build/bufbuild/es:v1.2.1
     Module
@@ -87,7 +87,7 @@ The following will resolve the SDK information for the specified commit of the b
     Version: 1.2.1-20230727062025-d8fbf2620c60.1
 
 If you have a SDK version and want to know the corresponding module commit and plugin version information for the SDK, you can specify the module and plugin with the version string.
-The following will resolve the SDK information for the specified SDK version of the bufbuild/eliza module and bufbuild/es plugin.
+The following will resolve the SDK information for the specified SDK version of the connectrpc/eliza module and bufbuild/es plugin.
 
     $ buf registry sdk --module=buf.build/connectrpc/eliza --plugin=buf.build/bufbuild/es --version=1.2.1-20230727062025-d8fbf2620c60.1
     Module
