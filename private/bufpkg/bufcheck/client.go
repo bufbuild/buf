@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 	"strings"
 
 	"buf.build/go/bufplugin/check"
@@ -38,7 +39,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protosourcepath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"pluginrpc.com/pluginrpc"
 )
@@ -51,7 +51,7 @@ type client struct {
 	pluginReadFile                  func(string) ([]byte, error)
 	pluginKeyProvider               bufplugin.PluginKeyProvider
 	pluginDataProvider              bufplugin.PluginDataProvider
-	policyReadBucket                storage.ReadBucket
+	policyReadFile                  func(string) ([]byte, error)
 }
 
 func newClient(
@@ -88,7 +88,7 @@ func newClient(
 		pluginReadFile:     clientOptions.pluginReadFile,
 		pluginKeyProvider:  clientOptions.pluginKeyProvider,
 		pluginDataProvider: clientOptions.pluginDataProvider,
-		policyReadBucket:   clientOptions.policyReadBucket,
+		policyReadFile:     clientOptions.policyReadFile,
 	}, nil
 }
 
@@ -602,22 +602,24 @@ func (c *client) getPolicyFiles(
 			continue
 		}
 		// Local policy config.
-		if c.policyReadBucket == nil {
-			return nil, fmt.Errorf("local policy config %q is not supported by this client", policyConfig.Name())
+		if c.policyReadFile == nil {
+			// Local policy configs are not supported without a policyReadFile.
+			return nil, fmt.Errorf("unable to read local Policy %q", policyConfig.Name())
 		}
-		policyData, err := storage.ReadPath(ctx, c.policyReadBucket, policyConfig.Name())
+		fmt.Println("Reading local policy config:", policyConfig.Name())
+		dir, err := os.Getwd()
+		fmt.Println(dir, err)
+		policyData, err := c.policyReadFile(policyConfig.Name())
 		if err != nil {
 			return nil, fmt.Errorf("could not read local policy config %q: %w", policyConfig.Name(), err)
 		}
 		policyBytes[index] = policyData
 	}
-
 	// Load the remote policy data for each policy ref.
 	if len(indexedPolicyRefs) > 0 {
 		// TODO: Add support for remote policy configs.
 		return nil, fmt.Errorf("remote policy configs are not yet supported")
 	}
-
 	policyFiles := make([]bufpolicyconfig.BufPolicyYAMLFile, len(policyConfigs))
 	for index, policyConfig := range policyConfigs {
 		reader := bytes.NewReader(policyBytes[index])
@@ -797,14 +799,13 @@ type clientOptions struct {
 	pluginReadFile     func(string) ([]byte, error)
 	pluginKeyProvider  bufplugin.PluginKeyProvider
 	pluginDataProvider bufplugin.PluginDataProvider
-	policyReadBucket   storage.ReadBucket
+	policyReadFile     func(string) ([]byte, error)
 }
 
 func newClientOptions() *clientOptions {
 	return &clientOptions{
 		pluginKeyProvider:  bufplugin.NopPluginKeyProvider,
 		pluginDataProvider: bufplugin.NopPluginDataProvider,
-		policyReadBucket:   nil,
 	}
 }
 

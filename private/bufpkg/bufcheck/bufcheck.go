@@ -18,6 +18,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"os"
 
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/standard/xslices"
@@ -25,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"pluginrpc.com/pluginrpc"
@@ -246,7 +246,7 @@ func ClientWithRunnerProvider(runnerProvider RunnerProvider) ClientOption {
 
 // ClientWithLocalWasmPlugins returns a new ClientOption that specifies reading Wasm plugins.
 //
-// The readBucket is used to read the Wasm plugin data from the filesystem.
+// The readFile is used to read the Wasm plugin data from the filesystem.
 func ClientWithLocalWasmPlugins(readFile func(string) ([]byte, error)) ClientOption {
 	return func(clientOptions *clientOptions) {
 		clientOptions.pluginReadFile = readFile
@@ -275,11 +275,20 @@ func ClientWithRemoteWasmPlugins(
 	}
 }
 
-// ClientWithLocalPolicies returns a new ClientOption that specifies the read bucket
-// for local policies.
-func ClientWithLocalPolicies(readBucket storage.ReadBucket) ClientOption {
+// ClientWithLocalPolicies returns a new ClientOption that specifies reading local policies.
+//
+// The readFile is used to read the policy data from the filesystem.
+func ClientWithLocalPolicies(readFile func(string) ([]byte, error)) ClientOption {
 	return func(clientOptions *clientOptions) {
-		clientOptions.policyReadBucket = readBucket
+		clientOptions.policyReadFile = readFile
+	}
+}
+
+// ClientWithLocalPoliciesFromOS returns a new ClientOption that specifies reading local policies
+// from the OS.
+func ClientWithLocalPoliciesFromOS() ClientOption {
+	return func(clientOptions *clientOptions) {
+		clientOptions.policyReadFile = os.ReadFile
 	}
 }
 
