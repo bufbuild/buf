@@ -252,6 +252,11 @@ func TestWorkspaceBreaking(t *testing.T) {
 	}
 }
 
+// TODO
+func TestWorkspaceBreakingInputAgainstMismatch(t *testing.T) {
+	t.Parallel()
+}
+
 func TestWorkspaceArchiveDir(t *testing.T) {
 	// Archive that defines a workspace at the root of the archive.
 	t.Parallel()
