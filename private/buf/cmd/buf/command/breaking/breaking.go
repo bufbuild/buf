@@ -274,20 +274,15 @@ func run(
 		// we query the [againstImages] for the matching modules and ignore any modules from
 		// [imageWithConfigs] that are not found in [againstImages].
 		//
-		// In the case where len(imageWithConfigs) < len(againstImages) or thre are module-specific
-		// [bufconfig.BreakingConfig], we still return an error. (Issue #3641)
+		// In the case where len(imageWithConfigs) < len(againstImages) or there are module-specific
+		// [bufconfig.BreakingConfig], we still return an error. Also, if the roots change, we're
+		// torched. (Issue #3641)
 		if len(imageWithConfigs) > len(againstImages) && hasNoUniqueBreakingConfig(imageWithConfigs) {
 			imageWithConfigs, err = filterImagesNotInAgainstImages(imageWithConfigs, againstImages)
 			if err != nil {
 				return err
 			}
 		} else {
-			// If workspaces are being used as input, the number
-			// of images MUST match. Otherwise the results will
-			// be meaningless and yield false positives.
-			//
-			// And similar to the note above, if the roots change,
-			// we're torched.
 			return newInputAgainstImageCountError(len(imageWithConfigs), len(againstImages))
 		}
 	}
