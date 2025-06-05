@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"os"
 	"strings"
 
 	"buf.build/go/bufplugin/check"
@@ -606,9 +605,6 @@ func (c *client) getPolicyFiles(
 			// Local policy configs are not supported without a policyReadFile.
 			return nil, fmt.Errorf("unable to read local Policy %q", policyConfig.Name())
 		}
-		fmt.Println("Reading local policy config:", policyConfig.Name())
-		dir, err := os.Getwd()
-		fmt.Println(dir, err)
 		policyData, err := c.policyReadFile(policyConfig.Name())
 		if err != nil {
 			return nil, fmt.Errorf("could not read local policy config %q: %w", policyConfig.Name(), err)
