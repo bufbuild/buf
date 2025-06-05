@@ -322,6 +322,16 @@ func NewStatsPrinter(writer io.Writer) StatsPrinter {
 	return newStatsPrinter(writer)
 }
 
+// SDKInfoPrinter is a printer for SDK info.
+type SDKInfoPrinter interface {
+	PrintSDKInfo(ctx context.Context, format Format, sdkInfo *registryv1alpha1.GetSDKInfoResponse) error
+}
+
+// NewSDKInfoPrinter returns a new SDKInfoPrinter.
+func NewSDKInfoPrinter(writer io.Writer) SDKInfoPrinter {
+	return newSDKInfoPrinter(writer)
+}
+
 // TabWriter is a tab writer.
 type TabWriter interface {
 	Write(values ...string) error

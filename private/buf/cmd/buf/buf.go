@@ -101,6 +101,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/sdkinfo"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/version"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/whoami"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/stats"
@@ -221,6 +222,7 @@ func NewRootCommand(name string) *appcmd.Command {
 						Short: "Manage Generated SDKs",
 						SubCommands: []*appcmd.Command{
 							version.NewCommand("version", builder),
+							sdkinfo.NewCommand("info", builder),
 						},
 					},
 					{
