@@ -248,6 +248,45 @@ func moduleRefsToV1Beta1ProtoResourceRefs(moduleRefs []bufparse.Ref) []*modulev1
 	return xslices.Map(moduleRefs, moduleRefToV1Beta1ProtoResourceRef)
 }
 
+func moduleKeyToV1ProtoResourceRef(moduleKey bufmodule.ModuleKey) *modulev1.ResourceRef {
+	return &modulev1.ResourceRef{
+		Value: &modulev1.ResourceRef_Name_{
+			Name: &modulev1.ResourceRef_Name{
+				Owner:  moduleKey.FullName().Owner(),
+				Module: moduleKey.FullName().Name(),
+				Child: &modulev1.ResourceRef_Name_Ref{
+					Ref: uuidutil.ToDashless(moduleKey.CommitID()),
+				},
+			},
+		},
+	}
+}
+
+func moduleKeysToV1ProtoResourceRefs(moduleKeys []bufmodule.ModuleKey) []*modulev1.ResourceRef {
+	return xslices.Map(moduleKeys, moduleKeyToV1ProtoResourceRef)
+}
+
+func moduleKeyToV1Beta1ProtoGetGraphRequestResourceRef(moduleKey bufmodule.ModuleKey) *modulev1beta1.GetGraphRequest_ResourceRef {
+	return &modulev1beta1.GetGraphRequest_ResourceRef{
+		ResourceRef: &modulev1beta1.ResourceRef{
+			Value: &modulev1beta1.ResourceRef_Name_{
+				Name: &modulev1beta1.ResourceRef_Name{
+					Owner:  moduleKey.FullName().Owner(),
+					Module: moduleKey.FullName().Name(),
+					Child: &modulev1beta1.ResourceRef_Name_Ref{
+						Ref: uuidutil.ToDashless(moduleKey.CommitID()),
+					},
+				},
+			},
+		},
+		Registry: moduleKey.FullName().Registry(),
+	}
+}
+
+func moduleKeysToV1Beta1ProtoGetGraphRequestResourceRefs(moduleKeys []bufmodule.ModuleKey) []*modulev1beta1.GetGraphRequest_ResourceRef {
+	return xslices.Map(moduleKeys, moduleKeyToV1Beta1ProtoGetGraphRequestResourceRef)
+}
+
 // We have to make sure all the below is updated if a field is added.
 // This is enforced via exhaustruct using golangci-lint.
 // Search .golangci.yml for convert.go to see where this is enabled.

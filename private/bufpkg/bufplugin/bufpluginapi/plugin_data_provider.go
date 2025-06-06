@@ -111,8 +111,14 @@ func (p *pluginDataProvider) getIndexedPluginDatasForRegistryAndIndexedPluginKey
 	values := xslices.Map(indexedPluginKeys, func(indexedPluginKey xslices.Indexed[bufplugin.PluginKey]) *pluginv1beta1.DownloadRequest_Value {
 		return &pluginv1beta1.DownloadRequest_Value{
 			ResourceRef: &pluginv1beta1.ResourceRef{
-				Value: &pluginv1beta1.ResourceRef_Id{
-					Id: uuidutil.ToDashless(indexedPluginKey.Value.CommitID()),
+				Value: &pluginv1beta1.ResourceRef_Name_{
+					Name: &pluginv1beta1.ResourceRef_Name{
+						Owner:  indexedPluginKey.Value.FullName().Owner(),
+						Plugin: indexedPluginKey.Value.FullName().Name(),
+						Child: &pluginv1beta1.ResourceRef_Name_Ref{
+							Ref: uuidutil.ToDashless(indexedPluginKey.Value.CommitID()),
+						},
+					},
 				},
 			},
 		}
