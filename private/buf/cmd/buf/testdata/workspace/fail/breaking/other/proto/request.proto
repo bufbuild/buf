@@ -2,4 +2,6 @@ syntax = "proto3";
 
 package request;
 
-message Request {}
+message Request {
+  int64 name = 1;
+}
