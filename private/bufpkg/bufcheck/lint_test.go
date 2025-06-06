@@ -1545,7 +1545,6 @@ func testLintWithOptions(
 		logger,
 		bufcheck.ClientWithRunnerProvider(bufcheck.NewLocalRunnerProvider(wasmRuntime)),
 		bufcheck.ClientWithLocalWasmPluginsFromOS(),
-		bufcheck.ClientWithLocalPoliciesFromOS(),
 		bufcheck.ClientWithLocalPolicies(func(filePath string) ([]byte, error) {
 			// Read policies relative to the base directory path.
 			return os.ReadFile(filepath.Join(dirPath, filePath))
