@@ -1,0 +1,14 @@
+version: v2
+lint:
+  disable_builtin: true
+policies:
+  - policy: policy.yaml
+    ignore_only:
+      ENUM_PASCAL_CASE:
+        - buf/bar/bar.proto
+        - buf/foo/bar
+        - buf/foo/bar
+      MESSAGE_PASCAL_CASE:
+        - buf/bar/bar.proto
+      BASIC:
+        - buf/foo/bar

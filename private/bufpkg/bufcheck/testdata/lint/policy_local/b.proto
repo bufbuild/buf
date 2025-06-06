@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package b;
+
+service B {
+  rpc GetElement(GetElementRequest) returns (GetElementResponse);
+}
+
+message GetElementRequest {}
+message GetElementResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_VALID = 1;
+    STATUS_INVALID = 2;
+  }
+  message Value {
+    string name = 1;
+    Status status = 2;
+    string a_uuid = 3;
+  }
+  Value value = 1;
+}
