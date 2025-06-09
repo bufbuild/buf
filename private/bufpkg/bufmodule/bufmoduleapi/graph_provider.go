@@ -111,7 +111,7 @@ func (a *graphProvider) GetGraphForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 ) (*dag.Graph[bufmodule.RegistryCommitID, bufmodule.ModuleKey], error) {
-	graph := dag.NewGraph[bufmodule.RegistryCommitID, bufmodule.ModuleKey](bufmodule.ModuleKeyToRegistryCommitID)
+	graph := dag.NewGraph(bufmodule.ModuleKeyToRegistryCommitID)
 	if len(moduleKeys) == 0 {
 		return graph, nil
 	}
@@ -222,7 +222,6 @@ func (a *graphProvider) getV1Beta1ProtoGraphForModuleKeys(
 	// Legacy federation is allowed, or we are using b4. We may have dependencies on modules from other registries, or we
 	// are using a digest type not supported by the v1 API. Fall back to the v1beta1 API.
 
-	registryCommitIDs := xslices.Map(moduleKeys, bufmodule.ModuleKeyToRegistryCommitID)
 	v1beta1ProtoDigestType, err := digestTypeToV1Beta1Proto(digestType)
 	if err != nil {
 		return nil, err
@@ -232,20 +231,8 @@ func (a *graphProvider) getV1Beta1ProtoGraphForModuleKeys(
 		connect.NewRequest(
 			&modulev1beta1.GetGraphRequest{
 				// TODO FUTURE: chunking
-				ResourceRefs: xslices.Map(
-					registryCommitIDs,
-					func(registryCommitID bufmodule.RegistryCommitID) *modulev1beta1.GetGraphRequest_ResourceRef {
-						return &modulev1beta1.GetGraphRequest_ResourceRef{
-							ResourceRef: &modulev1beta1.ResourceRef{
-								Value: &modulev1beta1.ResourceRef_Id{
-									Id: uuidutil.ToDashless(registryCommitID.CommitID),
-								},
-							},
-							Registry: registryCommitID.Registry,
-						}
-					},
-				),
-				DigestType: v1beta1ProtoDigestType,
+				ResourceRefs: moduleKeysToV1Beta1ProtoGetGraphRequestResourceRefs(moduleKeys),
+				DigestType:   v1beta1ProtoDigestType,
 			},
 		),
 	)
@@ -261,13 +248,12 @@ func (a *graphProvider) getV1ProtoGraphForRegistryAndModuleKeys(
 	registry string,
 	moduleKeys []bufmodule.ModuleKey,
 ) (*modulev1.Graph, error) {
-	commitIDs := xslices.Map(moduleKeys, bufmodule.ModuleKey.CommitID)
 	response, err := a.moduleClientProvider.V1GraphServiceClient(registry).GetGraph(
 		ctx,
 		connect.NewRequest(
 			&modulev1.GetGraphRequest{
 				// TODO FUTURE: chunking
-				ResourceRefs: commitIDsToV1ProtoResourceRefs(commitIDs),
+				ResourceRefs: moduleKeysToV1ProtoResourceRefs(moduleKeys),
 			},
 		),
 	)
