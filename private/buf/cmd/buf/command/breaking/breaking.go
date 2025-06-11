@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 
 	"buf.build/go/app/appcmd"
@@ -278,7 +279,7 @@ func run(
 		// [bufconfig.BreakingConfig], we still return an error. Also, if the roots change, we're
 		// torched. (Issue #3641)
 		if len(imageWithConfigs) > len(againstImages) && hasNoUniqueBreakingConfig(imageWithConfigs) {
-			imageWithConfigs, err = filterImagesNotInAgainstImages(imageWithConfigs, againstImages)
+			imageWithConfigs, err = filterImageWithConfigsNotInAgainstImages(imageWithConfigs, againstImages)
 			if err != nil {
 				return err
 			}
@@ -373,45 +374,33 @@ func hasNoUniqueBreakingConfig(imageWithConfigs []bufctl.ImageWithConfig) bool {
 // Checks if the specified [bufconfig.BreakingConfig]s are equal. Returns true if both
 // [bufconfig.BreakingConfig] have the same configuration parameters.
 func equalBreakingConfig(breakingConfig1, breakingConfig2 bufconfig.BreakingConfig) bool {
-	if breakingConfig1.Disabled() != breakingConfig2.Disabled() {
-		return false
+	if breakingConfig1.Disabled() == breakingConfig2.Disabled() &&
+		breakingConfig1.FileVersion() == breakingConfig2.FileVersion() &&
+		slices.Equal(breakingConfig1.UseIDsAndCategories(), breakingConfig2.UseIDsAndCategories()) &&
+		slices.Equal(breakingConfig1.ExceptIDsAndCategories(), breakingConfig2.ExceptIDsAndCategories()) &&
+		slices.Equal(breakingConfig1.IgnorePaths(), breakingConfig2.IgnorePaths()) &&
+		maps.EqualFunc(
+			breakingConfig1.IgnoreIDOrCategoryToPaths(),
+			breakingConfig2.IgnoreIDOrCategoryToPaths(),
+			slices.Equal[[]string],
+		) &&
+		breakingConfig1.DisableBuiltin() == breakingConfig2.DisableBuiltin() &&
+		breakingConfig1.IgnoreUnstablePackages() == breakingConfig2.IgnoreUnstablePackages() {
+		return true
 	}
-	if breakingConfig1.FileVersion() != breakingConfig2.FileVersion() {
-		return false
-	}
-	if slices.Compare(breakingConfig1.UseIDsAndCategories(), breakingConfig2.UseIDsAndCategories()) != 0 {
-		return false
-	}
-	if slices.Compare(breakingConfig1.ExceptIDsAndCategories(), breakingConfig2.ExceptIDsAndCategories()) != 0 {
-		return false
-	}
-	if slices.Compare(breakingConfig1.IgnorePaths(), breakingConfig2.IgnorePaths()) != 0 {
-		return false
-	}
-	for ignoreID, paths1 := range breakingConfig1.IgnoreIDOrCategoryToPaths() {
-		paths2, ok := breakingConfig2.IgnoreIDOrCategoryToPaths()[ignoreID]
-		if !ok {
-			return false
-		}
-		if slices.Compare(paths1, paths2) != 0 {
-			return false
-		}
-	}
-	if breakingConfig1.DisableBuiltin() != breakingConfig2.DisableBuiltin() {
-		return false
-	}
-	return breakingConfig1.IgnoreUnstablePackages() == breakingConfig2.IgnoreUnstablePackages()
+	return false
 }
 
-// A helper function for filtering out images from [imagesWithConfig] if there is no corresponding
-// image in [againstImages]. We determine this based on image file path.
+// A helper function for filtering out [bufctl.ImageWithConfig]s from [imagesWithConfig]
+// if there is no corresponding image in [againstImages]. We determine this based on image
+// file path.
 //
 // This assumes that len(imageWithConfigs) > len(againstImages).
 // We also expect that each image in [againstImages] is mapped only once to a single
 // imageWithConfig in [imagesWithConfig]. If an againstImage is found, then we don't check
 // it again. We also validate that each image in [againstImages] is mapped to an imageWithConfig
 // from [imageWithConfigs].
-func filterImagesNotInAgainstImages(
+func filterImageWithConfigsNotInAgainstImages(
 	imageWithConfigs []bufctl.ImageWithConfig,
 	againstImages []bufimage.Image,
 ) ([]bufctl.ImageWithConfig, error) {
@@ -437,7 +426,7 @@ func filterImagesNotInAgainstImages(
 		}
 	}
 	// If we are unsuccessful in mapping all againstImages to a unique imageWithConfig, then
-	// we return the same
+	// we return the same error message.
 	if len(foundAgainstImageIndices) != len(againstImages) || len(againstImages) != len(filteredImageWithConfigs) {
 		return nil, newInputAgainstImageCountError(len(imageWithConfigs), len(againstImages))
 	}
