@@ -5,6 +5,8 @@
 - Promote `buf beta stats` to `buf stats`.
 - Update built-in Well-Known Types to Protobuf v31.1.
 - Add `buf registry sdk info` command.
+- Allow workspaces that are adding new module(s) with no module-specific breaking configurations
+  to run `buf breaking`, ignoring new module(s).
 
 ## [v1.54.0] - 2025-05-12
 

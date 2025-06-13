@@ -18,6 +18,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
@@ -262,17 +264,28 @@ func run(
 		}
 	}
 	if len(imageWithConfigs) != len(againstImages) {
-		// If workspaces are being used as input, the number
-		// of images MUST match. Otherwise the results will
-		// be meaningless and yield false positives.
+		// In the case where the input and against workspaces do not contain the same number of
+		// images, this could happen if the input contains new module(s). However, we require
+		// the number of images to match because of module-specific [bufconfig.BreakingConfig].
+		// This can result in a less satisfying UX when adding modules to a workspace.
 		//
-		// And similar to the note above, if the roots change,
-		// we're torched.
-		return fmt.Errorf(
-			"input contained %d images, whereas against contained %d images",
-			len(imageWithConfigs),
-			len(againstImages),
-		)
+		// To mitigate this for users adding new modules to their workspace, for the case where
+		// len(imageWithConfigs) > len(againstImages), if all modules in [imageWithConfigs] have
+		// the same [bufconfig.BreakingConfig] (so no unique, module-specific [bufconfig.BreakingConfig]),
+		// we query the [againstImages] for the matching modules and ignore any modules from
+		// [imageWithConfigs] that are not found in [againstImages].
+		//
+		// In the case where len(imageWithConfigs) < len(againstImages) or there are module-specific
+		// [bufconfig.BreakingConfig], we still return an error. Also, if the roots change, we're
+		// torched. (Issue #3641)
+		if len(imageWithConfigs) > len(againstImages) && hasNoUniqueBreakingConfig(imageWithConfigs) {
+			imageWithConfigs, err = filterImageWithConfigsNotInAgainstImages(imageWithConfigs, againstImages)
+			if err != nil {
+				return err
+			}
+		} else {
+			return newInputAgainstImageCountError(len(imageWithConfigs), len(againstImages))
+		}
 	}
 	// We add all check configs (both lint and breaking) as related configs to check if plugins
 	// have rules configured.
@@ -339,4 +352,92 @@ func validateFlags(flags *flags) error {
 		return fmt.Errorf("Cannot set both --%s and --%s", againstFlagName, againstRegistryFlagName)
 	}
 	return nil
+}
+
+// hasNoUniqueBreakingConfig iterates through imageWithConfigs and checks to see if there
+// are any unique [bufconfig.BreakingConfig]. It returns true if all [bufconfig.BreakingConfig]
+// are the same across all the images.
+func hasNoUniqueBreakingConfig(imageWithConfigs []bufctl.ImageWithConfig) bool {
+	var base bufconfig.BreakingConfig
+	for _, imageWithConfig := range imageWithConfigs {
+		if base == nil {
+			base = imageWithConfig.BreakingConfig()
+			continue
+		}
+		if !equalBreakingConfig(base, imageWithConfig.BreakingConfig()) {
+			return false
+		}
+		base = imageWithConfig.BreakingConfig()
+	}
+	return true
+}
+
+// Checks if the specified [bufconfig.BreakingConfig]s are equal. Returns true if both
+// [bufconfig.BreakingConfig] have the same configuration parameters.
+func equalBreakingConfig(breakingConfig1, breakingConfig2 bufconfig.BreakingConfig) bool {
+	if breakingConfig1.Disabled() == breakingConfig2.Disabled() &&
+		breakingConfig1.FileVersion() == breakingConfig2.FileVersion() &&
+		slices.Equal(breakingConfig1.UseIDsAndCategories(), breakingConfig2.UseIDsAndCategories()) &&
+		slices.Equal(breakingConfig1.ExceptIDsAndCategories(), breakingConfig2.ExceptIDsAndCategories()) &&
+		slices.Equal(breakingConfig1.IgnorePaths(), breakingConfig2.IgnorePaths()) &&
+		maps.EqualFunc(
+			breakingConfig1.IgnoreIDOrCategoryToPaths(),
+			breakingConfig2.IgnoreIDOrCategoryToPaths(),
+			slices.Equal[[]string],
+		) &&
+		breakingConfig1.DisableBuiltin() == breakingConfig2.DisableBuiltin() &&
+		breakingConfig1.IgnoreUnstablePackages() == breakingConfig2.IgnoreUnstablePackages() {
+		return true
+	}
+	return false
+}
+
+// A helper function for filtering out [bufctl.ImageWithConfig]s from [imagesWithConfig]
+// if there is no corresponding image in [againstImages]. We determine this based on image
+// file path.
+//
+// This assumes that len(imageWithConfigs) > len(againstImages).
+// We also expect that each image in [againstImages] is mapped only once to a single
+// imageWithConfig in [imagesWithConfig]. If an againstImage is found, then we don't check
+// it again. We also validate that each image in [againstImages] is mapped to an imageWithConfig
+// from [imageWithConfigs].
+func filterImageWithConfigsNotInAgainstImages(
+	imageWithConfigs []bufctl.ImageWithConfig,
+	againstImages []bufimage.Image,
+) ([]bufctl.ImageWithConfig, error) {
+	foundAgainstImageIndices := make(map[int]struct{})
+	var filteredImageWithConfigs []bufctl.ImageWithConfig
+	for _, imageWithConfig := range imageWithConfigs {
+		for _, imageFile := range imageWithConfig.Files() {
+			var foundImage bufimage.Image
+			for i, againstImage := range againstImages {
+				if _, ok := foundAgainstImageIndices[i]; ok {
+					continue
+				}
+				if againstImage.GetFile(imageFile.Path()) != nil {
+					foundAgainstImageIndices[i] = struct{}{}
+					foundImage = againstImage
+					break
+				}
+			}
+			if foundImage != nil {
+				filteredImageWithConfigs = append(filteredImageWithConfigs, imageWithConfig)
+				break
+			}
+		}
+	}
+	// If we are unsuccessful in mapping all againstImages to a unique imageWithConfig, then
+	// we return the same error message.
+	if len(foundAgainstImageIndices) != len(againstImages) || len(againstImages) != len(filteredImageWithConfigs) {
+		return nil, newInputAgainstImageCountError(len(imageWithConfigs), len(againstImages))
+	}
+	return filteredImageWithConfigs, nil
+}
+
+func newInputAgainstImageCountError(lenImageWithConfigs, lenAgainstImages int) error {
+	return fmt.Errorf(
+		"input contained %d images, whereas against contained %d images",
+		lenImageWithConfigs,
+		lenAgainstImages,
+	)
 }
