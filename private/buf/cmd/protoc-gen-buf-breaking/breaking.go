@@ -109,14 +109,6 @@ func handle(
 	if externalConfig.ExcludeImports {
 		breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())
 	}
-	moduleConfig, err := internal.GetModuleConfigForProtocPlugin(
-		ctx,
-		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
-		externalConfig.Module,
-	)
-	if err != nil {
-		return err
-	}
 	image, err := bufimage.NewImageForCodeGeneratorRequest(request.CodeGeneratorRequest())
 	if err != nil {
 		return err
@@ -139,6 +131,21 @@ func handle(
 	)
 	if err != nil {
 		return err
+	}
+	moduleConfig, pluginConfigs, allCheckConfigs, err := internal.GetModuleConfigAndPluginConfigsForProtocPlugin(
+		ctx,
+		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
+		externalConfig.Module,
+		externalConfig.PluginOverrides,
+	)
+	if err != nil {
+		return err
+	}
+	if len(pluginConfigs) > 0 {
+		breakingOptions = append(breakingOptions, bufcheck.WithPluginConfigs(pluginConfigs...))
+		// We add all check configs (both lint and breaking) across all configured modules in buf.yaml
+		// as related configs to check if plugins have rules configured.
+		breakingOptions = append(breakingOptions, bufcheck.WithRelatedCheckConfigs(allCheckConfigs...))
 	}
 	if err := client.Breaking(
 		ctx,
@@ -168,13 +175,14 @@ func handle(
 type externalConfig struct {
 	AgainstInput string `json:"against_input,omitempty" yaml:"against_input,omitempty"`
 	// This was never actually used, but we keep it around for we can do unmarshal strict without breaking anyone.
-	AgainstInputConfig json.RawMessage `json:"against_input_config,omitempty" yaml:"against_input_config,omitempty"`
-	InputConfig        json.RawMessage `json:"input_config,omitempty" yaml:"input_config,omitempty"`
-	Module             string          `json:"module,omitempty" yaml:"module,omitempty"`
-	LimitToInputFiles  bool            `json:"limit_to_input_files,omitempty" yaml:"limit_to_input_files,omitempty"`
-	ExcludeImports     bool            `json:"exclude_imports,omitempty" yaml:"exclude_imports,omitempty"`
-	LogLevel           string          `json:"log_level,omitempty" yaml:"log_level,omitempty"`
-	LogFormat          string          `json:"log_format,omitempty" yaml:"log_format,omitempty"`
-	ErrorFormat        string          `json:"error_format,omitempty" yaml:"error_format,omitempty"`
-	Timeout            time.Duration   `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	AgainstInputConfig json.RawMessage   `json:"against_input_config,omitempty" yaml:"against_input_config,omitempty"`
+	InputConfig        json.RawMessage   `json:"input_config,omitempty" yaml:"input_config,omitempty"`
+	Module             string            `json:"module,omitempty" yaml:"module,omitempty"`
+	LimitToInputFiles  bool              `json:"limit_to_input_files,omitempty" yaml:"limit_to_input_files,omitempty"`
+	ExcludeImports     bool              `json:"exclude_imports,omitempty" yaml:"exclude_imports,omitempty"`
+	LogLevel           string            `json:"log_level,omitempty" yaml:"log_level,omitempty"`
+	LogFormat          string            `json:"log_format,omitempty" yaml:"log_format,omitempty"`
+	ErrorFormat        string            `json:"error_format,omitempty" yaml:"error_format,omitempty"`
+	Timeout            time.Duration     `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	PluginOverrides    map[string]string `json:"plugin_overrides,omitempty" yaml:"plugin_overrides,omitempty"`
 }
