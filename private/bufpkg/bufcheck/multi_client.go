@@ -105,7 +105,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 				annotations := xslices.Map(
 					delegateResponse.Annotations(),
 					func(checkAnnotation check.Annotation) *annotation {
-						return newAnnotation(checkAnnotation, delegate.PluginName)
+						return newAnnotation(checkAnnotation, delegate.PluginName, delegate.PolicyName)
 					},
 				)
 				lock.Lock()

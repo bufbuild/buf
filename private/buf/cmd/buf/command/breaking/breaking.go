@@ -286,6 +286,7 @@ func run(
 	for i, imageWithConfig := range imageWithConfigs {
 		breakingOptions := []bufcheck.BreakingOption{
 			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
+			bufcheck.WithPolicyConfigs(imageWithConfig.PolicyConfigs()...),
 			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
 		}
 		if flags.ExcludeImports {

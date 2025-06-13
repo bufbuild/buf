@@ -721,6 +721,7 @@ func (f *file) RunLints(ctx context.Context) bool {
 		f.workspace.GetLintConfigForOpaqueID(f.module.OpaqueID()),
 		f.image,
 		bufcheck.WithPluginConfigs(f.workspace.PluginConfigs()...),
+		bufcheck.WithPolicyConfigs(f.workspace.PolicyConfigs()...),
 	))
 }
 
@@ -749,6 +750,7 @@ func (f *file) RunBreaking(ctx context.Context) bool {
 		f.image,
 		f.againstImage,
 		bufcheck.WithPluginConfigs(f.workspace.PluginConfigs()...),
+		bufcheck.WithPolicyConfigs(f.workspace.PolicyConfigs()...),
 	))
 }
 

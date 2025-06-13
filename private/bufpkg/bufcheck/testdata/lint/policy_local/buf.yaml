@@ -1,0 +1,19 @@
+version: v2
+lint:
+  use:
+    - PACKAGE_DEFINED
+plugins:
+  - plugin: buf-plugin-suffix.wasm
+    options:
+      service_banned_suffixes:
+        - Mock
+        - Test
+      rpc_banned_suffixes:
+        - Element
+      field_banned_suffixes:
+        - _uuid
+      enum_value_banned_suffixes:
+        - _INVALID
+policies:
+  - policy: buf.policy1.yaml
+  - policy: buf.policy2.yaml

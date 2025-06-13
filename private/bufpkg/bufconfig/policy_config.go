@@ -16,9 +16,11 @@ package bufconfig
 
 import (
 	"errors"
+	"os"
 	"slices"
 
 	"buf.build/go/standard/xslices"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -36,17 +38,30 @@ type PolicyConfig interface {
 	// Paths are relative to roots.
 	// Paths are sorted.
 	IgnoreIDOrCategoryToPaths() map[string][]string
+	// Ref returns the policy reference.
+	//
+	// This is only non-nil when the plugin is remote.
+	Ref() bufparse.Ref
 
 	isPolicyConfig()
 }
 
-// NewPolicyConfig returns a new PolicyConfig.
-func NewPolicyConfig(
+// NewLocalPolicyConfig returns a new PolicyConfig for a local policy.
+func NewLocalPolicyConfig(
 	name string,
 	ignore []string,
 	ignoreOnly map[string][]string,
 ) (PolicyConfig, error) {
-	return newPolicyConfig(name, ignore, ignoreOnly)
+	return newPolicyConfig(name, ignore, ignoreOnly, nil)
+}
+
+// NewRemotePolicyConfig returns a new PolicyConfig for a remote policy.
+func NewRemotePolicyConfig(
+	ref bufparse.Ref,
+	ignore []string,
+	ignoreOnly map[string][]string,
+) (PolicyConfig, error) {
+	return newPolicyConfig(ref.String(), ignore, ignoreOnly, ref)
 }
 
 // *** PRIVATE ***
@@ -55,15 +70,27 @@ type policyConfig struct {
 	name       string
 	ignore     []string
 	ignoreOnly map[string][]string
+	ref        bufparse.Ref
 }
 
 func newPolicyConfigForExternalV2(
 	externalConfig externalBufYAMLFilePolicyV2,
 ) (*policyConfig, error) {
+	var policyRef bufparse.Ref
+	name := externalConfig.Policy
+	if ref, err := bufparse.ParseRef(name); err == nil {
+		// Check if the local filepath exists, if it does presume its
+		// not a remote reference. Okay to use os.Stat instead of
+		// os.Lstat.
+		if _, err := os.Stat(name); os.IsNotExist(err) {
+			policyRef = ref
+		}
+	}
 	return newPolicyConfig(
-		externalConfig.Policy,
+		name,
 		externalConfig.Ignore,
 		externalConfig.IgnoreOnly,
+		policyRef,
 	)
 }
 
@@ -71,6 +98,7 @@ func newPolicyConfig(
 	name string,
 	ignore []string,
 	ignoreOnly map[string][]string,
+	policyRef bufparse.Ref,
 ) (*policyConfig, error) {
 	if name == "" {
 		return nil, errors.New("must specify a name to the policy")
@@ -94,6 +122,7 @@ func newPolicyConfig(
 		name:       name,
 		ignore:     ignore,
 		ignoreOnly: ignoreOnly,
+		ref:        policyRef,
 	}, nil
 }
 
@@ -107,6 +136,10 @@ func (p *policyConfig) IgnorePaths() []string {
 
 func (p *policyConfig) IgnoreIDOrCategoryToPaths() map[string][]string {
 	return copyStringToStringSliceMap(p.ignoreOnly)
+}
+
+func (p *policyConfig) Ref() bufparse.Ref {
+	return p.ref
 }
 
 func (p *policyConfig) isPolicyConfig() {}

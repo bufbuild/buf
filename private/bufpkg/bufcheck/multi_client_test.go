@@ -106,8 +106,8 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 	multiClient := newMultiClient(
 		slogtestext.NewLogger(t),
 		[]*checkClientSpec{
-			newCheckClientSpec("buf-plugin-field-lower-snake-case", fieldLowerSnakeCaseClient, emptyOptions),
-			newCheckClientSpec("buf-plugin-timestamp-suffix", timestampSuffixClient, emptyOptions),
+			newCheckClientSpec("buf-plugin-field-lower-snake-case", "", fieldLowerSnakeCaseClient, emptyOptions),
+			newCheckClientSpec("buf-plugin-timestamp-suffix", "", timestampSuffixClient, emptyOptions),
 		},
 	)
 
@@ -166,8 +166,8 @@ func TestMultiClientCannotHaveOverlappingRules(t *testing.T) {
 	multiClient := newMultiClient(
 		slogtestext.NewLogger(t),
 		[]*checkClientSpec{
-			newCheckClientSpec("buf-plugin-field-lower-snake-case", fieldLowerSnakeCaseClient, emptyOptions),
-			newCheckClientSpec("buf-plugin-field-lower-snake-case", fieldLowerSnakeCaseClient, emptyOptions),
+			newCheckClientSpec("buf-plugin-field-lower-snake-case", "", fieldLowerSnakeCaseClient, emptyOptions),
+			newCheckClientSpec("buf-plugin-field-lower-snake-case", "", fieldLowerSnakeCaseClient, emptyOptions),
 		},
 	)
 
@@ -200,6 +200,7 @@ func TestMultiClientCannotHaveOverlappingRulesWithBuiltIn(t *testing.T) {
 		[]bufconfig.PluginConfig{
 			duplicateBuiltInRulePluginConfig,
 		},
+		nil,
 		false,
 		emptyOptions,
 	)
@@ -260,8 +261,8 @@ func TestMultiClientCannotHaveOverlappingCategories(t *testing.T) {
 	multiClient := newMultiClient(
 		slogtestext.NewLogger(t),
 		[]*checkClientSpec{
-			newCheckClientSpec("buf-plugin-1", client1, emptyOptions),
-			newCheckClientSpec("buf-plugin-2", client2, emptyOptions),
+			newCheckClientSpec("buf-plugin-1", "", client1, emptyOptions),
+			newCheckClientSpec("buf-plugin-2", "", client2, emptyOptions),
 		},
 	)
 
@@ -294,6 +295,7 @@ func TestMultiClientCannotHaveOverlappingCategoriesWithBuiltIn(t *testing.T) {
 		[]bufconfig.PluginConfig{
 			duplicateBuiltInRulePluginConfig,
 		},
+		nil,
 		false,
 		emptyOptions,
 	)

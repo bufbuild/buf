@@ -149,6 +149,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 	var (
 		pluginConfigs    []bufconfig.PluginConfig
 		remotePluginKeys []bufplugin.PluginKey
+		policyConfigs    []bufconfig.PolicyConfig
 	)
 	if config.configOverride != "" {
 		bufYAMLFile, err := bufconfig.GetBufYAMLFileForOverride(config.configOverride)
@@ -205,6 +206,8 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 					return nil, err
 				}
 			}
+
+			policyConfigs = bufYAMLFile.PolicyConfigs()
 		}
 	}
 
@@ -243,6 +246,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 		opaqueIDToBreakingConfig,
 		pluginConfigs,
 		remotePluginKeys,
+		policyConfigs,
 		nil,
 		false,
 	), nil
@@ -408,6 +412,7 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		v1WorkspaceTargeting.bucketIDToModuleConfig,
 		nil, // No PluginConfigs for v1
 		nil, // No remote PluginKeys for v1
+		nil, // No PolicyConfigs for v1
 		v1WorkspaceTargeting.allConfiguredDepModuleRefs,
 		false,
 	)
@@ -507,6 +512,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 		v2Targeting.bucketIDToModuleConfig,
 		v2Targeting.bufYAMLFile.PluginConfigs(),
 		remotePluginKeys,
+		v2Targeting.bufYAMLFile.PolicyConfigs(),
 		v2Targeting.bufYAMLFile.ConfiguredDepModuleRefs(),
 		true,
 	)
@@ -518,6 +524,7 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 	bucketIDToModuleConfig map[string]bufconfig.ModuleConfig,
 	pluginConfigs []bufconfig.PluginConfig,
 	remotePluginKeys []bufplugin.PluginKey,
+	policyConfigs []bufconfig.PolicyConfig,
 	// Expected to already be unique by FullName.
 	configuredDepModuleRefs []bufparse.Ref,
 	isV2 bool,
@@ -544,6 +551,7 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 		opaqueIDToBreakingConfig,
 		pluginConfigs,
 		remotePluginKeys,
+		policyConfigs,
 		configuredDepModuleRefs,
 		isV2,
 	), nil
