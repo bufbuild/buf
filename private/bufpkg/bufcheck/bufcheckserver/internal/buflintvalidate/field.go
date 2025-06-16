@@ -23,7 +23,6 @@ import (
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"buf.build/go/protovalidate"
-	"buf.build/go/protovalidate/resolve"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -163,7 +162,7 @@ func checkField(
 	if err != nil {
 		return err
 	}
-	constraints, err := resolve.FieldRules(fieldDescriptor)
+	constraints, err := protovalidate.ResolveFieldRules(fieldDescriptor)
 	if err != nil {
 		return err
 	}

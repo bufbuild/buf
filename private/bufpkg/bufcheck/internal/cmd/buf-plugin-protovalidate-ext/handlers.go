@@ -20,7 +20,7 @@ import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/bufplugin/option"
-	"buf.build/go/protovalidate/resolve"
+	"buf.build/go/protovalidate"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -35,7 +35,7 @@ func checkFieldNotSkippedNoImport(
 	request check.Request,
 	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
-	constraints, err := resolve.FieldRules(fieldDescriptor)
+	constraints, err := protovalidate.ResolveFieldRules(fieldDescriptor)
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func checkFieldNotSkipped(
 	request check.Request,
 	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
-	constraints, err := resolve.FieldRules(fieldDescriptor)
+	constraints, err := protovalidate.ResolveFieldRules(fieldDescriptor)
 	if err != nil {
 		return err
 	}
@@ -90,12 +90,12 @@ func checkStringLenRangeDontShrink(
 	field protoreflect.FieldDescriptor,
 	againstField protoreflect.FieldDescriptor,
 ) error {
-	againstRules, err := resolve.FieldRules(againstField)
+	againstRules, err := protovalidate.ResolveFieldRules(againstField)
 	if err != nil {
 		return err
 	}
 	if againstStringRules := againstRules.GetString(); againstStringRules != nil {
-		constraints, _ := resolve.FieldRules(field)
+		constraints, _ := protovalidate.ResolveFieldRules(field)
 		if stringRules := constraints.GetString(); stringRules != nil {
 			if againstStringRules.MinLen != nil && stringRules.MinLen != nil && stringRules.GetMinLen() > againstStringRules.GetMinLen() {
 				responseWriter.AddAnnotation(
@@ -136,7 +136,7 @@ func checkValidateIDDashless(
 	if fieldDescriptor.Kind() != protoreflect.StringKind {
 		return nil
 	}
-	constraints, err := resolve.FieldRules(fieldDescriptor)
+	constraints, err := protovalidate.ResolveFieldRules(fieldDescriptor)
 	if err != nil {
 		return err
 	}
@@ -163,7 +163,7 @@ func checkMessageNotDisabled(
 	request check.Request,
 	messageDescriptor protoreflect.MessageDescriptor,
 ) error {
-	constraints, err := resolve.MessageRules(messageDescriptor)
+	constraints, err := protovalidate.ResolveMessageRules(messageDescriptor)
 	if err != nil {
 		return err
 	}
