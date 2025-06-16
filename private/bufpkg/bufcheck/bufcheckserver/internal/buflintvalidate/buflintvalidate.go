@@ -16,7 +16,7 @@ package buflintvalidate
 
 import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	"buf.build/go/protovalidate/resolve"
+	"buf.build/go/protovalidate"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 )
@@ -35,7 +35,7 @@ func CheckMessage(
 	if err != nil {
 		return err
 	}
-	messageRules, err := resolve.MessageRules(messageDescriptor)
+	messageRules, err := protovalidate.ResolveMessageRules(messageDescriptor)
 	if err != nil {
 		return err
 	}
