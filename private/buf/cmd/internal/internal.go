@@ -94,55 +94,6 @@ func GetModuleConfigAndPluginConfigsForProtocPlugin(
 	}
 }
 
-// GetModuleConfigForProtocPlugin gets ModuleConfigs for the protoc plugin implementations.
-//
-// This is the same in both plugins so we just pulled it out to a common spot.
-func GetModuleConfigForProtocPlugin(
-	ctx context.Context,
-	configOverride string,
-	module string,
-) (bufconfig.ModuleConfig, error) {
-	bufYAMLFile, err := bufcli.GetBufYAMLFileForDirPathOrOverride(
-		ctx,
-		".",
-		configOverride,
-	)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return bufconfig.DefaultModuleConfigV1, nil
-		}
-		return nil, err
-	}
-	if module == "" {
-		module = "."
-	}
-	// Multiple modules in a v2 workspace may have the same moduleDirPath.
-	moduleConfigsFound := []bufconfig.ModuleConfig{}
-	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
-		// If we have a v1beta1 or v1 buf.yaml, dirPath will be ".". Using the ModuleConfig from
-		// a v1beta1 or v1 buf.yaml file matches the pre-refactor behavior.
-		//
-		// If we have a v2 buf.yaml, users have to provide a module path or full name, otherwise
-		// we can't deduce what ModuleConfig to use.
-		if fullName := moduleConfig.FullName(); fullName != nil && fullName.String() == module {
-			// Can return here because BufYAMLFile guarantees that module full names are unique across
-			// its module configs.
-			return moduleConfig, nil
-		}
-		if dirPath := moduleConfig.DirPath(); dirPath == module {
-			moduleConfigsFound = append(moduleConfigsFound, moduleConfig)
-		}
-	}
-	switch len(moduleConfigsFound) {
-	case 0:
-		return nil, fmt.Errorf("no module found for %q", module)
-	case 1:
-		return moduleConfigsFound[0], nil
-	default:
-		return nil, fmt.Errorf("multiple modules found at %q, specify its full name as <remote/owner/module> instead", module)
-	}
-}
-
 // NewAppextContainerForPluginEnv creates a new appext.Container for the PluginEnv.
 //
 // This is used by the protoc plugins.
