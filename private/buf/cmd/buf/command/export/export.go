@@ -17,8 +17,10 @@ package export
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
+	"strings"
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
@@ -26,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -40,6 +43,7 @@ const (
 	configFlagName          = "config"
 	excludePathsFlagName    = "exclude-path"
 	disableSymlinksFlagName = "disable-symlinks"
+	allFlagName             = "all"
 )
 
 // NewCommand returns a new Command.
@@ -92,6 +96,7 @@ type flags struct {
 	Config          string
 	ExcludePaths    []string
 	DisableSymlinks bool
+	All             bool
 
 	// special
 	InputHashtag string
@@ -120,6 +125,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		configFlagName,
 		"",
 		`The buf.yaml file or data to use for configuration`,
+	)
+	flagSet.BoolVar(
+		&f.All,
+		allFlagName,
+		false,
+		`When set, include any available documentation and license files for the exported input. If the input has more than one module, then the documentation and license file names will be suffixed with the module name.`,
 	)
 }
 
@@ -163,6 +174,55 @@ func run(
 	)
 	if err != nil {
 		return err
+	}
+
+	// If the --all flag is set, then we need to pull the non-proto source files, documentation
+	// and license files, for the input, if available.
+	// We only add non-proto source files for target module(s).
+	//
+	// If the input has more than one target module (e.g. a workspace Git input), then we set
+	// an identifier on the file path.
+	// See [getNonProtoFilePath] docs for details on how that is set.
+	if flags.All {
+		seenModuleNamesForDocs := map[string]int{}
+		seenModuleNamesForLicense := map[string]int{}
+		targetModules := bufmodule.ModuleSetTargetModules(workspace)
+		for _, module := range targetModules {
+			docFile, err := bufmodule.GetDocFile(ctx, module)
+			// If the file is not found, then we ignore it.
+			if err != nil && !errors.Is(err, fs.ErrNotExist) {
+				return err
+			}
+			if docFile != nil {
+				docFilePath := docFile.Path()
+				if len(targetModules) > 1 {
+					docFilePath = getNonProtoFilePath(docFilePath, module, seenModuleNamesForDocs)
+				}
+				if err := storage.CopyReader(ctx, readWriteBucket, docFile, docFilePath); err != nil {
+					return errors.Join(err, docFile.Close())
+				}
+				if err := docFile.Close(); err != nil {
+					return err
+				}
+			}
+			licenseFile, err := bufmodule.GetLicenseFile(ctx, module)
+			// If the file is not found, then we ignore it.
+			if err != nil && !errors.Is(err, fs.ErrNotExist) {
+				return err
+			}
+			if licenseFile != nil {
+				licenseFilePath := licenseFile.Path()
+				if len(targetModules) > 1 {
+					licenseFilePath = getNonProtoFilePath(licenseFilePath, module, seenModuleNamesForLicense)
+				}
+				if err := storage.CopyReader(ctx, readWriteBucket, licenseFile, licenseFilePath); err != nil {
+					return errors.Join(err, licenseFile.Close())
+				}
+				if err := licenseFile.Close(); err != nil {
+					return err
+				}
+			}
+		}
 	}
 
 	// In the case where we are excluding imports, we are allowing users to specify an input
@@ -225,4 +285,38 @@ func run(
 		}
 	}
 	return nil
+}
+
+// This is a helper function that returns the path non-proto source files should be written
+// to if the --all flag has been set.
+//
+// This sets an identifier for the module using the module name, [bufparse.FullName.Name()]
+// if available, and if not, we use [module.OpaqueID()].
+//
+// e.g. README.foo.md, README.bar.md
+//
+// If a module name is repeated, e.g. acme/foo and bufbuild/foo both have the module name
+// "foo", then we use an incrementing integer based on the order they are seen in the workspace.
+//
+// e.g. README.foo.md, README.foo.2.md
+func getNonProtoFilePath(
+	path string,
+	module bufmodule.Module,
+	seenModuleNamesForPath map[string]int,
+) string {
+	moduleIdentifier := module.OpaqueID()
+	if module.FullName() != nil {
+		moduleIdentifier = module.FullName().Name()
+		seenModuleNamesForPath[module.FullName().Name()]++
+		count := seenModuleNamesForPath[module.FullName().Name()]
+		if count > 1 {
+			moduleIdentifier = fmt.Sprintf("%s.%d", module.FullName().Name(), count)
+		}
+	}
+	return fmt.Sprintf(
+		"%s.%s%s",
+		strings.TrimSuffix(path, normalpath.Ext(path)),
+		moduleIdentifier,
+		normalpath.Ext(path),
+	)
 }

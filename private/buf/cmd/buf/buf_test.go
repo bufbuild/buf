@@ -2819,6 +2819,122 @@ func TestExportProtoFileRefWithPathFlag(t *testing.T) {
 	)
 }
 
+func TestExportAllSourceFilesV1Module(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"--all",
+		"-o",
+		tempDir,
+		filepath.Join("testdata", "export", "proto"),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"LICENSE",
+		"README.md",
+		"request.proto",
+		"rpc.proto",
+	)
+}
+
+func TestExportAllSourceFilesV1Workspace(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"--all",
+		"-o",
+		tempDir,
+		filepath.Join("testdata", "export"),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"LICENSE.request",
+		"LICENSE.rpc",
+		"README.another.md",
+		"README.rpc.md",
+		"another.proto",
+		"request.proto",
+		"rpc.proto",
+		"unimported.proto",
+	)
+}
+
+func TestExportAllSourceFilesV2Module(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"--all",
+		"-o",
+		tempDir,
+		filepath.Join("testdata", "workspace", "success", "v2", "export", "proto"),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"LICENSE",
+		"README.md",
+		"request.proto",
+		"rpc.proto",
+	)
+}
+
+func TestExportAllSourceFilesV2Workspace(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"--all",
+		"-o",
+		tempDir,
+		filepath.Join("testdata", "workspace", "success", "v2", "export"),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"LICENSE.request",
+		"LICENSE.rpc",
+		"README.another.md",
+		"README.rpc.md",
+		"another.proto",
+		"request.proto",
+		"rpc.proto",
+		"unimported.proto",
+	)
+}
+
 func TestBuildWithPaths(t *testing.T) {
 	t.Parallel()
 	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "--path", filepath.Join("testdata", "paths", "a", "v3"), "--exclude-path", filepath.Join("testdata", "paths", "a", "v3", "foo"))
