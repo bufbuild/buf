@@ -130,7 +130,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.All,
 		allFlagName,
 		false,
-		`When set, include any available documentation and license files for the exported input. If the input has more than one module, then the documentation and license file names will be prefixed with the module name.`,
+		`When set, include any available documentation and license files for the exported input. If the input has more than one module, then the documentation and license file names will be suffixed with the module name.`,
 	)
 }
 
