@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `buf export --all` flag to include non-proto source files.
 
 ## [v1.55.1] - 2025-06-17
 
