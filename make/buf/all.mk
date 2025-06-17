@@ -207,3 +207,5 @@ newtodofiles:
 .PHONY: checkprecommithooks
 checkprecommithooks:
 	@bash make/buf/scripts/checkprecommithooks.bash
+
+postupgrade:: checkprecommithooks
