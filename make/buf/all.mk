@@ -203,3 +203,7 @@ newtodos:
 .PHONY: newtodofiles
 newtodofiles:
 	@bash make/buf/scripts/newtodos.bash | grep -v FUTURE | cut -f 1 -d : | sort | uniq
+
+.PHONY: checkprecommithooks
+checkprecommithooks:
+	@bash make/buf/scripts/checkprecommithooks.bash
