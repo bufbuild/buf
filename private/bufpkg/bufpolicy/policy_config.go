@@ -18,7 +18,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 )
 
-// PolicyConfig provides configuration for a Policy.
+// PolicyConfig is the configuration for a Policy.
 type PolicyConfig interface {
 	// LintConfig returns the LintConfig for the File.
 	LintConfig() bufconfig.LintConfig
