@@ -80,14 +80,6 @@ func handle(
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	moduleConfig, err := internal.GetModuleConfigForProtocPlugin(
-		ctx,
-		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
-		externalConfig.Module,
-	)
-	if err != nil {
-		return err
-	}
 	// With the "buf lint" command, we build the image and then the linter can report
 	// unused imports that the compiler reports. But with a plugin, we get descriptors
 	// that are already built and no access to any possible associated compiler warnings.
@@ -115,10 +107,23 @@ func handle(
 	if err != nil {
 		return err
 	}
+	moduleConfig, pluginConfigs, allCheckConfigs, err := internal.GetModuleConfigAndPluginConfigsForProtocPlugin(
+		ctx,
+		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
+		externalConfig.Module,
+		externalConfig.PluginOverrides,
+	)
+	if err != nil {
+		return err
+	}
 	if err := client.Lint(
 		ctx,
 		moduleConfig.LintConfig(),
 		image,
+		bufcheck.WithPluginConfigs(pluginConfigs...),
+		// We add all check configs (both lint and breaking) across all configured modules in buf.yaml
+		// as related configs to check if plugins have rules configured.
+		bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
 	); err != nil {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet
 		if errors.As(err, &fileAnnotationSet) {
@@ -148,10 +153,11 @@ func handle(
 }
 
 type externalConfig struct {
-	InputConfig json.RawMessage `json:"input_config,omitempty" yaml:"input_config,omitempty"`
-	Module      string          `json:"module,omitempty" yaml:"module,omitempty"`
-	LogLevel    string          `json:"log_level,omitempty" yaml:"log_level,omitempty"`
-	LogFormat   string          `json:"log_format,omitempty" yaml:"log_format,omitempty"`
-	ErrorFormat string          `json:"error_format,omitempty" yaml:"error_format,omitempty"`
-	Timeout     time.Duration   `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	InputConfig     json.RawMessage   `json:"input_config,omitempty" yaml:"input_config,omitempty"`
+	Module          string            `json:"module,omitempty" yaml:"module,omitempty"`
+	LogLevel        string            `json:"log_level,omitempty" yaml:"log_level,omitempty"`
+	LogFormat       string            `json:"log_format,omitempty" yaml:"log_format,omitempty"`
+	ErrorFormat     string            `json:"error_format,omitempty" yaml:"error_format,omitempty"`
+	Timeout         time.Duration     `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	PluginOverrides map[string]string `json:"plugin_overrides,omitempty" yaml:"plugin_overrides,omitempty"`
 }
