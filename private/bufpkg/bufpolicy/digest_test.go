@@ -69,8 +69,13 @@ func TestO1Digest(t *testing.T) {
 	require.NoError(t, err)
 	remotePluginConfig2, err := bufconfig.NewRemoteWasmPluginConfig(remotePluginRef2, options, args)
 	require.NoError(t, err)
+	// We should get the same digest regardless of the order of the remote plugins.
 	policyConfig.pluginConfigs = append(policyConfig.pluginConfigs, remotePluginConfig2)
-	testPolicyConfigO1Digest(t, policyConfig, "o1:8612d6270b3ea1e222554eb40aadd9194dcfedf772ffc00ac053abed3ce8e201487088ede5f889b1bfc6236f280e0cab47cf434f91de2a9ccc1ad562334582f7")
+	multiPluginDigest := "o1:8612d6270b3ea1e222554eb40aadd9194dcfedf772ffc00ac053abed3ce8e201487088ede5f889b1bfc6236f280e0cab47cf434f91de2a9ccc1ad562334582f7"
+	testPolicyConfigO1Digest(t, policyConfig, multiPluginDigest)
+	// Swap the order and assert that the digest is the same.
+	policyConfig.pluginConfigs[0], policyConfig.pluginConfigs[1] = policyConfig.pluginConfigs[1], policyConfig.pluginConfigs[0]
+	testPolicyConfigO1Digest(t, policyConfig, multiPluginDigest)
 }
 
 func testPolicyConfigO1Digest(t *testing.T, policyConfig PolicyConfig, expectDigest string) {
