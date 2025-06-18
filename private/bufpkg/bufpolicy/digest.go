@@ -267,6 +267,13 @@ func marshalStablePolicyConfig(policyConfig PolicyConfig) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed converting PluginConfigs to PolicyConfig_CheckPluginConfig: %w", err)
 	}
+	slices.SortFunc(pluginConfigs, func(a, b *policyV1Beta1PolicyConfig_PluginConfig) int {
+		// Sort by owner, plugin, and ref.
+		return strings.Compare(
+			fmt.Sprintf("%s/%s:%s", a.Name.Owner, a.Name.Plugin, a.Name.Ref),
+			fmt.Sprintf("%s/%s:%s", b.Name.Owner, b.Name.Plugin, b.Name.Ref),
+		)
+	})
 	config := policyV1Beta1PolicyConfig{
 		Lint: &policyV1Beta1PolicyConfig_LintConfig{
 			Use:                                  lintConfig.UseIDsAndCategories(),

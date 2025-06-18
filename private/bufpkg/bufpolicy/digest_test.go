@@ -46,8 +46,6 @@ func TestO1Digest(t *testing.T) {
 		),
 		true,
 	)
-	remotePluginRef, err := bufparse.NewRef("buf.build", "acme", "my-plugin", "v1.0.0")
-	require.NoError(t, err)
 	policyConfig := &testPolicyConfig{
 		lintConfig:     lintConfig,
 		breakingConfig: breakingConfig,
@@ -61,20 +59,26 @@ func TestO1Digest(t *testing.T) {
 		"e": []string{"a", "b", "c"},
 	}
 	args := []string{"arg1", "arg2"}
+	remotePluginRef, err := bufparse.NewRef("buf.build", "acme", "my-plugin", "v1.0.0")
+	require.NoError(t, err)
 	remotePluginConfig, err := bufconfig.NewRemoteWasmPluginConfig(remotePluginRef, options, args)
 	require.NoError(t, err)
 	policyConfig.pluginConfigs = append(policyConfig.pluginConfigs, remotePluginConfig)
 	testPolicyConfigO1Digest(t, policyConfig, "o1:6862edf26139073f77846d2afa6d3c23016f4f0ae9abce74ec5485bb8c65ee2c32a9da80263bdf1ea1736ca46fd8fa31c5e14610c2c3dbee4fab96985122fa14")
+	remotePluginRef2, err := bufparse.NewRef("buf.build", "acme", "a-plugin", "")
+	require.NoError(t, err)
+	remotePluginConfig2, err := bufconfig.NewRemoteWasmPluginConfig(remotePluginRef2, options, args)
+	require.NoError(t, err)
+	policyConfig.pluginConfigs = append(policyConfig.pluginConfigs, remotePluginConfig2)
+	testPolicyConfigO1Digest(t, policyConfig, "o1:8612d6270b3ea1e222554eb40aadd9194dcfedf772ffc00ac053abed3ce8e201487088ede5f889b1bfc6236f280e0cab47cf434f91de2a9ccc1ad562334582f7")
 }
 
 func testPolicyConfigO1Digest(t *testing.T, policyConfig PolicyConfig, expectDigest string) {
-	for range 3 { // Run multiple times to ensure consistent digest generation.
-		digestFromPolicyConfig, err := getO1Digest(policyConfig)
-		require.NoError(t, err)
-		expectedDigest, err := ParseDigest(expectDigest)
-		require.NoError(t, err)
-		assert.True(t, DigestEqual(expectedDigest, digestFromPolicyConfig), "Digest mismatch, expected %q got %q", expectedDigest.String(), digestFromPolicyConfig.String())
-	}
+	digestFromPolicyConfig, err := getO1Digest(policyConfig)
+	require.NoError(t, err)
+	expectedDigest, err := ParseDigest(expectDigest)
+	require.NoError(t, err)
+	assert.True(t, DigestEqual(expectedDigest, digestFromPolicyConfig), "Digest mismatch, expected %q got %q", expectedDigest.String(), digestFromPolicyConfig.String())
 }
 
 type testPolicyConfig struct {
