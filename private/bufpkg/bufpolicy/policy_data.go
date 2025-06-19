@@ -15,11 +15,8 @@
 package bufpolicy
 
 import (
-	"bytes"
 	"context"
 	"sync"
-
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 )
 
 // PolicyData presents the raw Policy data read by PolicyKey.
@@ -34,10 +31,8 @@ type PolicyData interface {
 	// The Digest from this PolicyKey is used for tamper-proofing. It will be checked
 	// against the actual data downloaded before Data() returns.
 	PolicyKey() PolicyKey
-	// Data returns the bytes of the Policy as a Wasm module.
-	//
-	// This is the raw bytes of the Wasm module in an uncompressed form.
-	Data() ([]byte, error)
+	// Config returns the PolicyConfig for the Policy.
+	Config() (PolicyConfig, error)
 
 	isPolicyData()
 }
@@ -48,12 +43,12 @@ type PolicyData interface {
 func NewPolicyData(
 	ctx context.Context,
 	policyKey PolicyKey,
-	getData func() ([]byte, error),
+	getConfig func() (PolicyConfig, error),
 ) (PolicyData, error) {
 	return newPolicyData(
 		ctx,
 		policyKey,
-		getData,
+		getConfig,
 	)
 }
 
@@ -61,7 +56,7 @@ func NewPolicyData(
 
 type policyData struct {
 	policyKey PolicyKey
-	getData   func() ([]byte, error)
+	getConfig func() (PolicyConfig, error)
 
 	checkDigest func() error
 }
@@ -69,24 +64,18 @@ type policyData struct {
 func newPolicyData(
 	ctx context.Context,
 	policyKey PolicyKey,
-	getData func() ([]byte, error),
+	getConfig func() (PolicyConfig, error),
 ) (*policyData, error) {
 	policyData := &policyData{
 		policyKey: policyKey,
-		getData:   getData,
+		getConfig: getConfig,
 	}
 	policyData.checkDigest = sync.OnceValue(func() error {
-		policyData, err := policyData.getData()
+		policyConfig, err := policyData.getConfig()
 		if err != nil {
 			return err
 		}
-		bufcasDigest, err := bufcas.NewDigestForContent(
-			bytes.NewReader(policyData),
-		)
-		if err != nil {
-			return err
-		}
-		actualDigest, err := NewDigest(DigestTypeO1, bufcasDigest)
+		actualDigest, err := getO1Digest(policyConfig)
 		if err != nil {
 			return err
 		}
@@ -111,11 +100,11 @@ func (p *policyData) PolicyKey() PolicyKey {
 	return p.policyKey
 }
 
-func (p *policyData) Data() ([]byte, error) {
+func (p *policyData) Config() (PolicyConfig, error) {
 	if err := p.checkDigest(); err != nil {
 		return nil, err
 	}
-	return p.getData()
+	return p.getConfig()
 }
 
 func (*policyData) isPolicyData() {}
