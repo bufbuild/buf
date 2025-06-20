@@ -20,7 +20,7 @@ require (
 	github.com/bufbuild/protocompile v0.14.1
 	github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1
 	github.com/docker/docker v28.2.2+incompatible
-	github.com/go-chi/chi/v5 v5.2.1
+	github.com/go-chi/chi/v5 v5.2.2
 	github.com/gofrs/flock v0.12.1
 	github.com/google/cel-go v0.25.0
 	github.com/google/go-cmp v0.7.0
