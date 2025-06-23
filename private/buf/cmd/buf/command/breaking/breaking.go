@@ -18,13 +18,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"maps"
 	"slices"
+	"strings"
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xslices"
 	"buf.build/go/standard/xstrings"
+	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/buffetch"
@@ -258,6 +261,15 @@ func run(
 				bufctl.WithConfigOverride(flags.AgainstConfig),
 			)
 			if err != nil {
+				if connect.CodeOf(err) == connect.CodeFailedPrecondition && strings.Contains(err.Error(), "no commits in the default label") {
+					// This error occurs when the against input is a module that has no commits on the default branch.
+					// We ignore this case to support new modulues that have just been created in the registry.
+					container.Logger().DebugContext(
+						ctx, "ignoring empty module without commits on the default branch",
+						slog.String("module", imageWithConfig.ModuleFullName().String()),
+					)
+					continue
+				}
 				return err
 			}
 			againstImages = append(againstImages, againstImage)
