@@ -39,18 +39,15 @@ type PolicyConfig interface {
 
 // MarshalPolicyConfigAsJSON marshals the PolicyConfig to a stable JSON representation.
 //
-// This is used for the O1 digest and should not be used for other purposes.
 // It is a valid JSON encoding of the type buf.registry.policy.v1beta1.PolicyConfig.
+// This is used to calculate the O1 digest.
 func MarshalPolicyConfigAsJSON(policyConfig PolicyConfig) ([]byte, error) {
 	return marshalPolicyConfigAsJSON(policyConfig)
 }
 
 /// *** PRIVATE ***
 
-// marshalPolicyConfigAsJSON marshals the given PolicyConfig to a stable JSON representation.
-//
-// This is used for the O1 digest and should not be used for other purposes.
-// It is a valid JSON encoding of the type buf.registry.policy.v1beta1.PolicyConfig.
+// marshalPolicyConfigAsJSON implements the stable JSON representation of the PolicyConfig.
 func marshalPolicyConfigAsJSON(policyConfig PolicyConfig) ([]byte, error) {
 	lintConfig := policyConfig.LintConfig()
 	if lintConfig == nil {
