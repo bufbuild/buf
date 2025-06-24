@@ -16,13 +16,13 @@ package buflintvalidate
 
 import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+	"buf.build/go/protovalidate"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/protovalidate-go/resolve"
 )
 
-// https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.MessageConstraints
-const disabledFieldNumberInMessageConstraints = 1
+// https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.MessageRules
+const disabledFieldNumberInMessageRules = 1
 
 // CheckMessage validates that all rules on the message are valid, and any CEL expressions compile.
 // It also checks all predefined rule extensions on the messages.
@@ -35,11 +35,14 @@ func CheckMessage(
 	if err != nil {
 		return err
 	}
-	messageConstraints := resolve.MessageConstraints(messageDescriptor)
-	if messageConstraints.GetDisabled() && len(messageConstraints.GetCel()) > 0 {
+	messageRules, err := protovalidate.ResolveMessageRules(messageDescriptor)
+	if err != nil {
+		return err
+	}
+	if messageRules.GetDisabled() && len(messageRules.GetCel()) > 0 {
 		addAnnotationFunc(
 			message,
-			message.OptionExtensionLocation(validate.E_Message, disabledFieldNumberInMessageConstraints),
+			message.OptionExtensionLocation(validate.E_Message, disabledFieldNumberInMessageRules),
 			nil,
 			"Message %q has (buf.validate.message).disabled, therefore other rules in (buf.validate.message) are not applied and should be removed.",
 			message.Name(),
@@ -47,7 +50,7 @@ func CheckMessage(
 	}
 	return checkCELForMessage(
 		addAnnotationFunc,
-		messageConstraints,
+		messageRules,
 		messageDescriptor,
 		message,
 	)

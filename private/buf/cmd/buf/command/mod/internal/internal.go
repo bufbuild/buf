@@ -20,14 +20,14 @@ import (
 	"fmt"
 	"io/fs"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
 	"buf.build/go/bufplugin/check"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -112,7 +112,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"text",
 		fmt.Sprintf(
 			"The format to print rules as. Must be one of %s",
-			stringutil.SliceToString(bufcli.AllRuleFormatStrings),
+			xstrings.SliceToString(bufcli.AllRuleFormatStrings),
 		),
 	)
 	flagSet.StringVar(
@@ -122,7 +122,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fmt.Sprintf(
 			"List all the rules for the given configuration version. Implies --%s. Must be one of %s",
 			allFlagName,
-			slicesext.Map(
+			xslices.Map(
 				bufconfig.AllFileVersions,
 				func(fileVersion bufconfig.FileVersion) string {
 					return fileVersion.String()
@@ -160,6 +160,7 @@ func lsRun(
 			[]bufconfig.ModuleConfig{
 				bufconfig.DefaultModuleConfigV1,
 			},
+			nil,
 			nil,
 			nil,
 		)

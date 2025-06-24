@@ -23,15 +23,15 @@ import (
 	"runtime"
 	"testing"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appcmd/appcmdtesting"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -982,8 +982,6 @@ func TestWorkspaceProtoFile(t *testing.T) {
 
 func TestWorkspaceBreakingFail(t *testing.T) {
 	t.Parallel()
-	// The two workspaces define a different number of
-	// images, so it's impossible to verify compatibility.
 	testRunStdout(
 		t,
 		nil,
@@ -992,6 +990,7 @@ func TestWorkspaceBreakingFail(t *testing.T) {
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "breaking"),
 	)
+	// If the against contained more images than the input, we return a mismatch.
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
@@ -1013,6 +1012,53 @@ func TestWorkspaceBreakingFail(t *testing.T) {
 		filepath.Join("testdata", "workspace", "fail", "breaking"),
 		"--against",
 		filepath.Join("testdata", "workspace", "success", "v2", "breaking"),
+	)
+	// If the input contains more images than the against, we attempt to map against images
+	// if there are no unique module-specific breaking configs for the input.
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(
+			`testdata/workspace/success/dir/other/proto/request.proto:6:3:Field "1" with name "name" on message "Request" changed type from "int64" to "string".`,
+		),
+		"breaking",
+		filepath.Join("testdata", "workspace", "success", "dir"),
+		"--against",
+		filepath.Join("testdata", "workspace", "fail", "breaking"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(
+			`testdata/workspace/success/v2/dir/other/proto/request.proto:6:3:Field "1" with name "name" on message "Request" changed type from "int64" to "string".`,
+		),
+		"breaking",
+		filepath.Join("testdata", "workspace", "success", "v2", "dir"),
+		"--against",
+		filepath.Join("testdata", "workspace", "fail", "breaking"),
+	)
+	// If we find unique module-specific breaking changes, then we still fail with a mismatch error.
+	testRunStdout(
+		t,
+		nil,
+		1,
+		``,
+		"breaking",
+		filepath.Join("testdata", "workspace", "fail", "modulebreakingconfig"),
+		"--against",
+		filepath.Join("testdata", "workspace", "fail", "breaking"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		1,
+		``,
+		"breaking",
+		filepath.Join("testdata", "workspace", "fail", "v2", "modulebreakingconfig"),
+		"--against",
+		filepath.Join("testdata", "workspace", "fail", "breaking"),
 	)
 }
 
@@ -1269,7 +1315,6 @@ func TestWorkspaceJumpContextFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		// TODO FUTURE: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
 		`Failure: decode testdata/workspace/fail/jumpcontext/buf.work.yaml: directory "../breaking/other/proto" is invalid: ../breaking/other/proto: is outside the context directory`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "jumpcontext"),
@@ -1279,7 +1324,6 @@ func TestWorkspaceJumpContextFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		// TODO FUTURE: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
 		`Failure: decode testdata/workspace/fail/v2/jumpcontext/buf.yaml: invalid module path: ../breaking/other/proto: is outside the context directory`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "v2", "jumpcontext"),
@@ -1294,7 +1338,6 @@ func TestWorkspaceDirOverlapFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		// TODO FUTURE: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
 		`Failure: decode testdata/workspace/fail/diroverlap/buf.work.yaml: directory "foo" contains directory "foo/bar"`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "diroverlap"),
@@ -1350,7 +1393,6 @@ func TestWorkspaceNoVersionFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		// TODO FUTURE: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
 		`Failure: decode testdata/workspace/fail/noversion/buf.work.yaml: "version" is not set. Please add "version: v1"`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "noversion"),
@@ -1365,7 +1407,6 @@ func TestWorkspaceInvalidVersionFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		// TODO FUTURE: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
 		`Failure: decode testdata/workspace/fail/invalidversion/buf.work.yaml: unknown file version: "v9"`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "invalidversion"),
@@ -1380,7 +1421,6 @@ func TestWorkspaceNoDirectoriesFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		// TODO FUTURE: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
 		`Failure: decode testdata/workspace/fail/nodirectories/buf.work.yaml: directories is empty`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "nodirectories"),
@@ -1704,26 +1744,25 @@ type expectedFileInfo struct {
 func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string]expectedFileInfo, buildArgs ...string) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	appcmdtesting.RunCommandExitCode(
+	appcmdtesting.Run(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		0,
-		internaltesting.NewEnvFunc(t),
-		nil,
-		stdout,
-		stderr,
-		append(
+		appcmdtesting.WithExpectedExitCode(0),
+		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		appcmdtesting.WithStdout(stdout),
+		appcmdtesting.WithStderr(stderr),
+		appcmdtesting.WithArgs(append(
 			[]string{
 				"build",
 				"-o=-#format=binpb",
 			},
 			buildArgs...,
-		)...,
+		)...),
 	)
 	outputImage := &imagev1.Image{}
 	require.NoError(t, protoencoding.NewWireUnmarshaler(nil).Unmarshal(stdout.Bytes(), outputImage))
 
-	filesToCheck := slicesext.ToStructMap(slicesext.MapKeysToSlice(expectedFilePathToInfo))
+	filesToCheck := xslices.ToStructMap(xslices.MapKeysToSlice(expectedFilePathToInfo))
 
 	for _, imageFile := range outputImage.GetFile() {
 		filePath := imageFile.GetName()
@@ -1739,5 +1778,5 @@ func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string
 		}
 		delete(filesToCheck, filePath)
 	}
-	require.Zerof(t, len(filesToCheck), "expected files missing from image built: %v", slicesext.MapKeysToSortedSlice(filesToCheck))
+	require.Zerof(t, len(filesToCheck), "expected files missing from image built: %v", xslices.MapKeysToSortedSlice(filesToCheck))
 }

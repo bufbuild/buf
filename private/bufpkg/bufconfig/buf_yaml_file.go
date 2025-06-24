@@ -26,12 +26,12 @@ import (
 	"slices"
 	"sort"
 
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -105,6 +105,10 @@ type BufYAMLFile interface {
 	//
 	// For v1 buf.yaml files, this will always return nil.
 	PluginConfigs() []PluginConfig
+	// PolicyConfigs returns the PolicyConfigs for the File.
+	//
+	// For v1 buf.yaml files, this will always return nil.
+	PolicyConfigs() []PolicyConfig
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
 	//
 	// These come from buf.yaml files.
@@ -126,6 +130,7 @@ func NewBufYAMLFile(
 	fileVersion FileVersion,
 	moduleConfigs []ModuleConfig,
 	pluginConfigs []PluginConfig,
+	policyConfigs []PolicyConfig,
 	configuredDepModuleRefs []bufparse.Ref,
 	options ...BufYAMLFileOption,
 ) (BufYAMLFile, error) {
@@ -140,6 +145,7 @@ func NewBufYAMLFile(
 		nil, // Do not set top-level lint config, use only module configs
 		nil, // Do not set top-level breaking config, use only module configs
 		pluginConfigs,
+		policyConfigs,
 		configuredDepModuleRefs,
 		bufYAMLFileOptions.includeDocsLink,
 	)
@@ -254,6 +260,7 @@ type bufYAMLFile struct {
 	topLevelLintConfig      LintConfig
 	topLevelBreakingConfig  BreakingConfig
 	pluginConfigs           []PluginConfig
+	policyConfigs           []PolicyConfig
 	configuredDepModuleRefs []bufparse.Ref
 	includeDocsLink         bool
 }
@@ -265,6 +272,7 @@ func newBufYAMLFile(
 	topLevelLintConfig LintConfig,
 	topLevelBreakingConfig BreakingConfig,
 	pluginConfigs []PluginConfig,
+	policyConfigs []PolicyConfig,
 	configuredDepModuleRefs []bufparse.Ref,
 	includeDocsLink bool,
 ) (*bufYAMLFile, error) {
@@ -320,6 +328,7 @@ func newBufYAMLFile(
 		topLevelLintConfig:      topLevelLintConfig,
 		topLevelBreakingConfig:  topLevelBreakingConfig,
 		pluginConfigs:           pluginConfigs,
+		policyConfigs:           policyConfigs,
 		configuredDepModuleRefs: configuredDepModuleRefs,
 		includeDocsLink:         includeDocsLink,
 	}, nil
@@ -351,6 +360,10 @@ func (c *bufYAMLFile) TopLevelBreakingConfig() BreakingConfig {
 
 func (c *bufYAMLFile) PluginConfigs() []PluginConfig {
 	return c.pluginConfigs
+}
+
+func (c *bufYAMLFile) PolicyConfigs() []PolicyConfig {
+	return c.policyConfigs
 }
 
 func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufparse.Ref {
@@ -455,6 +468,7 @@ func readBufYAMLFile(
 			lintConfig,
 			breakingConfig,
 			nil,
+			nil,
 			configuredDepModuleRefs,
 			includeDocsLink,
 		)
@@ -505,7 +519,7 @@ func readBufYAMLFile(
 				// user error
 				return nil, err
 			}
-			relIncludes, err := slicesext.MapError(
+			relIncludes, err := xslices.MapError(
 				normalIncludes,
 				func(normalInclude string) (string, error) {
 					if normalInclude == dirPath {
@@ -526,7 +540,7 @@ func readBufYAMLFile(
 			}
 			// The only root for v2 buf.yamls must be "." and relIncludes are already relative to the moduleDirPath.
 			rootToIncludes := map[string][]string{".": relIncludes}
-			relExcludes, err := slicesext.MapError(
+			relExcludes, err := xslices.MapError(
 				externalModule.Excludes,
 				func(normalExclude string) (string, error) {
 					normalExclude, err := normalpath.NormalizeAndValidate(normalExclude)
@@ -651,6 +665,14 @@ func readBufYAMLFile(
 			}
 			pluginConfigs = append(pluginConfigs, pluginConfig)
 		}
+		var policyConfigs []PolicyConfig
+		for _, externalPolicyConfig := range externalBufYAMLFile.Policies {
+			policyConfig, err := newPolicyConfigForExternalV2(externalPolicyConfig)
+			if err != nil {
+				return nil, err
+			}
+			policyConfigs = append(policyConfigs, policyConfig)
+		}
 		configuredDepModuleRefs, err := getConfiguredDepModuleRefsForExternalDeps(externalBufYAMLFile.Deps)
 		if err != nil {
 			return nil, err
@@ -662,6 +684,7 @@ func readBufYAMLFile(
 			topLevelLintConfig,
 			topLevelBreakingConfig,
 			pluginConfigs,
+			policyConfigs,
 			configuredDepModuleRefs,
 			includeDocsLink,
 		)
@@ -688,7 +711,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			Version: fileVersion.String(),
 		}
 		// Already sorted.
-		externalBufYAMLFile.Deps = slicesext.Map(
+		externalBufYAMLFile.Deps = xslices.Map(
 			bufYAMLFile.ConfiguredDepModuleRefs(),
 			func(moduleRef bufparse.Ref) string {
 				return moduleRef.String()
@@ -718,7 +741,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		case FileVersionV1Beta1:
 			// If "." -> empty, do not add anything.
 			if len(rootToExcludes) != 1 || !(ok && len(excludes) == 0) {
-				roots := slicesext.MapKeysToSortedSlice(rootToExcludes)
+				roots := xslices.MapKeysToSortedSlice(rootToExcludes)
 				for _, root := range roots {
 					externalBufYAMLFile.Build.Roots = append(
 						externalBufYAMLFile.Build.Roots,
@@ -760,7 +783,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			Version: fileVersion.String(),
 		}
 		// Already sorted.
-		externalBufYAMLFile.Deps = slicesext.Map(
+		externalBufYAMLFile.Deps = xslices.Map(
 			bufYAMLFile.ConfiguredDepModuleRefs(),
 			func(moduleRef bufparse.Ref) string {
 				return moduleRef.String()
@@ -799,7 +822,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			if !ok {
 				return syserror.Newf("had rootToIncludes without key \".\" for NewModuleConfig with FileVersion %v", fileVersion)
 			}
-			externalModule.Includes = slicesext.Map(includes, joinDirPath)
+			externalModule.Includes = xslices.Map(includes, joinDirPath)
 			rootToExcludes := moduleConfig.RootToExcludes()
 			if len(rootToExcludes) != 1 {
 				return syserror.Newf("had rootToExcludes length %d for NewModuleConfig with FileVersion %v", len(rootToExcludes), fileVersion)
@@ -808,7 +831,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			if !ok {
 				return syserror.Newf("had rootToExcludes without key \".\" for NewModuleConfig with FileVersion %v", fileVersion)
 			}
-			externalModule.Excludes = slicesext.Map(excludes, joinDirPath)
+			externalModule.Excludes = xslices.Map(excludes, joinDirPath)
 
 			externalLint := getExternalLintV2ForLintConfig(moduleConfig.LintConfig(), moduleDirPath)
 			externalLintData, err := json.Marshal(externalLint)
@@ -860,6 +883,16 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			externalPlugins = append(externalPlugins, externalPlugin)
 		}
 		externalBufYAMLFile.Plugins = externalPlugins
+
+		var externalPolicies []externalBufYAMLFilePolicyV2
+		for _, policyConfig := range bufYAMLFile.PolicyConfigs() {
+			externalPolicy, err := newExternalV2ForPolicyConfig(policyConfig)
+			if err != nil {
+				return syserror.Wrap(err)
+			}
+			externalPolicies = append(externalPolicies, externalPolicy)
+		}
+		externalBufYAMLFile.Policies = externalPolicies
 
 		data, err := encoding.MarshalYAML(&externalBufYAMLFile)
 		if err != nil {
@@ -919,7 +952,7 @@ func getRootToExcludes(roots []string, fullExcludes []string) (map[string][]stri
 	}
 
 	// Verify that all excludes are within a root.
-	rootMap := slicesext.ToStructMap(roots)
+	rootMap := xslices.ToStructMap(roots)
 	for _, fullExclude := range fullExcludes {
 		switch matchingRoots := normalpath.MapAllEqualOrContainingPaths(rootMap, fullExclude, normalpath.Relative); len(matchingRoots) {
 		case 0:
@@ -943,7 +976,7 @@ func getRootToExcludes(roots []string, fullExcludes []string) (map[string][]stri
 	}
 
 	for root, excludes := range rootToExcludes {
-		uniqueSortedExcludes := stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(excludes)
+		uniqueSortedExcludes := xstrings.SliceToUniqueSortedSliceFilterEmptyStrings(excludes)
 		if len(excludes) != len(uniqueSortedExcludes) {
 			// This should never happen, but just in case.
 			return nil, fmt.Errorf("excludes %v are not unique", excludes)
@@ -1190,10 +1223,10 @@ func getExternalLintV1Beta1V1ForLintConfig(lintConfig LintConfig, moduleDirPath 
 	// All already sorted.
 	externalLint.Use = lintConfig.UseIDsAndCategories()
 	externalLint.Except = lintConfig.ExceptIDsAndCategories()
-	externalLint.Ignore = slicesext.Map(lintConfig.IgnorePaths(), joinDirPath)
+	externalLint.Ignore = xslices.Map(lintConfig.IgnorePaths(), joinDirPath)
 	externalLint.IgnoreOnly = make(map[string][]string, len(lintConfig.IgnoreIDOrCategoryToPaths()))
 	for idOrCategory, importPaths := range lintConfig.IgnoreIDOrCategoryToPaths() {
-		externalLint.IgnoreOnly[idOrCategory] = slicesext.Map(importPaths, joinDirPath)
+		externalLint.IgnoreOnly[idOrCategory] = xslices.Map(importPaths, joinDirPath)
 	}
 	externalLint.EnumZeroValueSuffix = lintConfig.EnumZeroValueSuffix()
 	externalLint.RPCAllowSameRequestResponse = lintConfig.RPCAllowSameRequestResponse()
@@ -1213,10 +1246,10 @@ func getExternalLintV2ForLintConfig(lintConfig LintConfig, moduleDirPath string)
 	// All already sorted.
 	externalLint.Use = lintConfig.UseIDsAndCategories()
 	externalLint.Except = lintConfig.ExceptIDsAndCategories()
-	externalLint.Ignore = slicesext.Map(lintConfig.IgnorePaths(), joinDirPath)
+	externalLint.Ignore = xslices.Map(lintConfig.IgnorePaths(), joinDirPath)
 	externalLint.IgnoreOnly = make(map[string][]string, len(lintConfig.IgnoreIDOrCategoryToPaths()))
 	for idOrCategory, importPaths := range lintConfig.IgnoreIDOrCategoryToPaths() {
-		externalLint.IgnoreOnly[idOrCategory] = slicesext.Map(importPaths, joinDirPath)
+		externalLint.IgnoreOnly[idOrCategory] = xslices.Map(importPaths, joinDirPath)
 	}
 	externalLint.EnumZeroValueSuffix = lintConfig.EnumZeroValueSuffix()
 	externalLint.RPCAllowSameRequestResponse = lintConfig.RPCAllowSameRequestResponse()
@@ -1236,10 +1269,10 @@ func getExternalBreakingForBreakingConfig(breakingConfig BreakingConfig, moduleD
 	// All already sorted.
 	externalBreaking.Use = breakingConfig.UseIDsAndCategories()
 	externalBreaking.Except = breakingConfig.ExceptIDsAndCategories()
-	externalBreaking.Ignore = slicesext.Map(breakingConfig.IgnorePaths(), joinDirPath)
+	externalBreaking.Ignore = xslices.Map(breakingConfig.IgnorePaths(), joinDirPath)
 	externalBreaking.IgnoreOnly = make(map[string][]string, len(breakingConfig.IgnoreIDOrCategoryToPaths()))
 	for idOrCategory, importPaths := range breakingConfig.IgnoreIDOrCategoryToPaths() {
-		externalBreaking.IgnoreOnly[idOrCategory] = slicesext.Map(importPaths, joinDirPath)
+		externalBreaking.IgnoreOnly[idOrCategory] = xslices.Map(importPaths, joinDirPath)
 	}
 	externalBreaking.IgnoreUnstablePackages = breakingConfig.IgnoreUnstablePackages()
 	externalBreaking.DisableBuiltin = breakingConfig.DisableBuiltin()
@@ -1272,6 +1305,7 @@ type externalBufYAMLFileV2 struct {
 	Lint     externalBufYAMLFileLintV2              `json:"lint,omitempty" yaml:"lint,omitempty"`
 	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 	Plugins  []externalBufYAMLFilePluginV2          `json:"plugins,omitempty" yaml:"plugins,omitempty"`
+	Policies []externalBufYAMLFilePolicyV2          `json:"policies,omitempty" yaml:"policies,omitempty"`
 }
 
 // externalBufYAMLFileModuleV2 represents a single module configuration within a v2 buf.yaml file.
@@ -1302,7 +1336,7 @@ type externalBufYAMLFileLintV1Beta1V1 struct {
 	Except []string `json:"except,omitempty" yaml:"except,omitempty"`
 	// Ignore are the paths to ignore.
 	Ignore []string `json:"ignore,omitempty" yaml:"ignore,omitempty"`
-	/// IgnoreOnly are the ID/category to paths to ignore.
+	// IgnoreOnly are the ID/category to paths to ignore.
 	IgnoreOnly                           map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
 	EnumZeroValueSuffix                  string              `json:"enum_zero_value_suffix,omitempty" yaml:"enum_zero_value_suffix,omitempty"`
 	RPCAllowSameRequestResponse          bool                `json:"rpc_allow_same_request_response,omitempty" yaml:"rpc_allow_same_request_response,omitempty"`
@@ -1389,10 +1423,19 @@ func (eb externalBufYAMLFileBreakingV1Beta1V1V2) isEmpty() bool {
 		!eb.DisableBuiltin
 }
 
-// externalBufYAMLFilePluginV2 represents a single plugin config in a v2 buf.gyaml file.
+// externalBufYAMLFilePluginV2 represents a single plugin config in a v2 buf.yaml file.
 type externalBufYAMLFilePluginV2 struct {
 	Plugin  any            `json:"plugin,omitempty" yaml:"plugin,omitempty"`
 	Options map[string]any `json:"options,omitempty" yaml:"options,omitempty"`
+}
+
+// externalBufYAMLFilePolicyV2 represents a single policy config in a v2 buf.yaml file.
+type externalBufYAMLFilePolicyV2 struct {
+	Policy string `json:"policy,omitempty" yaml:"policy,omitempty"`
+	// Ignore are the paths to ignore.
+	Ignore []string `json:"ignore,omitempty" yaml:"ignore,omitempty"`
+	// IgnoreOnly are the ID/category to paths to ignore.
+	IgnoreOnly map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
 }
 
 func getZeroOrSingleValueForMap[K comparable, V any](m map[K]V) (V, error) {

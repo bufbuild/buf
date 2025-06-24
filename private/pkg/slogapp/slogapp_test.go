@@ -19,7 +19,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"buf.build/go/app/appext"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

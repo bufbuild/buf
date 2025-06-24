@@ -20,8 +20,8 @@ import (
 	"sort"
 	"testing"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/dag"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/stretchr/testify/require"
 )
 
@@ -59,7 +59,7 @@ func RequireGraphEqual[Key cmp.Ordered, Value any](
 				actual,
 				ExpectedNode[Key]{
 					Key:      toKey(value),
-					Outbound: slicesext.Map(outbound, toKey),
+					Outbound: xslices.Map(outbound, toKey),
 				},
 			)
 			return nil

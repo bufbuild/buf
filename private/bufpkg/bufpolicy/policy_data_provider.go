@@ -39,10 +39,7 @@ type PolicyDataProvider interface {
 	// If there is no error, the length of the PolicyDatas returned will match the length of the PolicyKeys.
 	// If there is an error, no PolicyDatas will be returned.
 	// If any PolicyKey is not found, an error with fs.ErrNotExist will be returned.
-	GetPolicyDatasForPolicyKeys(
-		context.Context,
-		[]PolicyKey,
-	) ([]PolicyData, error)
+	GetPolicyDatasForPolicyKeys(context.Context, []PolicyKey) ([]PolicyData, error)
 }
 
 // *** PRIVATE ***

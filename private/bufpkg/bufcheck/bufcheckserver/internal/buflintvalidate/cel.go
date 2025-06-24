@@ -19,8 +19,8 @@ import (
 	"strings"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+	celpv "buf.build/go/protovalidate/cel"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	celpv "github.com/bufbuild/protovalidate-go/cel"
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -28,15 +28,15 @@ import (
 )
 
 const (
-	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.FieldConstraints
-	celFieldNumberInFieldConstraints = 23
-	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.MessageConstraints
-	celFieldNumberInMessageConstraints = 3
+	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.FieldRules
+	celFieldNumberInFieldRules = 23
+	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.MessageRules
+	celFieldNumberInMessageRules = 3
 )
 
 func checkCELForMessage(
 	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...any),
-	messageConstraints *validate.MessageConstraints,
+	messageRules *validate.MessageRules,
 	messageDescriptor protoreflect.MessageDescriptor,
 	message bufprotosource.Message,
 ) error {
@@ -55,17 +55,17 @@ func checkCELForMessage(
 	}
 	checkCEL(
 		celEnv,
-		messageConstraints.GetCel(),
+		messageRules.GetCel(),
 		fmt.Sprintf("message %q", message.Name()),
 		fmt.Sprintf("Message %q", message.Name()),
 		"(buf.validate.message).cel",
 		func(index int, format string, args ...any) {
-			messageConstraintsOptionLocation := message.OptionExtensionLocation(
+			messageRulesOptionLocation := message.OptionExtensionLocation(
 				validate.E_Message,
-				celFieldNumberInMessageConstraints,
+				celFieldNumberInMessageRules,
 				int32(index),
 			)
-			add(message, messageConstraintsOptionLocation, nil, format, args...)
+			add(message, messageRulesOptionLocation, nil, format, args...)
 		},
 	)
 	return nil
@@ -73,12 +73,12 @@ func checkCELForMessage(
 
 func checkCELForField(
 	adder *adder,
-	fieldConstraints *validate.FieldConstraints,
+	fieldRules *validate.FieldRules,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	// forItems is true if the CEL rule is defined on a non-repeated field or on each item of a repeated field.
 	forItems bool,
 ) error {
-	if len(fieldConstraints.GetCel()) == 0 {
+	if len(fieldRules.GetCel()) == 0 {
 		return nil
 	}
 	celEnv, err := cel.NewEnv(
@@ -98,13 +98,13 @@ func checkCELForField(
 	}
 	checkCEL(
 		celEnv,
-		fieldConstraints.GetCel(),
+		fieldRules.GetCel(),
 		fmt.Sprintf("field %q", adder.fieldName()),
 		fmt.Sprintf("Field %q", adder.fieldName()),
-		adder.getFieldRuleName(celFieldNumberInFieldConstraints),
+		adder.getFieldRuleName(celFieldNumberInFieldRules),
 		func(index int, format string, args ...any) {
 			adder.addForPathf(
-				[]int32{celFieldNumberInFieldConstraints, int32(index)},
+				[]int32{celFieldNumberInFieldRules, int32(index)},
 				format,
 				args...,
 			)
@@ -116,15 +116,15 @@ func checkCELForField(
 // Returns true only if all cel expressions compile
 func checkCEL(
 	celEnv *cel.Env,
-	celConstraints []*validate.Constraint,
+	celRules []*validate.Rule,
 	parentName string,
 	parentNameCapitalized string,
 	celName string,
 	add func(int, string, ...any),
 ) bool {
 	allCelExpressionsCompile := true
-	idToConstraintIndices := make(map[string][]int, len(celConstraints))
-	for i, celConstraint := range celConstraints {
+	idToConstraintIndices := make(map[string][]int, len(celRules))
+	for i, celConstraint := range celRules {
 		if celID := celConstraint.GetId(); celID != "" {
 			for _, char := range celID {
 				if 'a' <= char && char <= 'z' {

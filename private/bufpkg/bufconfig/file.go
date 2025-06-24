@@ -151,7 +151,7 @@ func readFile[F File](
 		var f F
 		return f, err
 	}
-	f, err := readFileFunc(data, nil, true)
+	f, err := readFileFunc(data, newObjectData(fileName, data), true)
 	if err != nil {
 		return f, newDecodeError(fileName, err)
 	}

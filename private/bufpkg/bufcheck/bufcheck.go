@@ -18,13 +18,14 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"os"
 
 	"buf.build/go/bufplugin/check"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/pluginrpcutil"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"pluginrpc.com/pluginrpc"
@@ -175,13 +176,20 @@ func WithPluginConfigs(pluginConfigs ...bufconfig.PluginConfig) ClientFunctionOp
 	}
 }
 
-// RunnerProvider provides pluginrpc.Runners for a given plugin config.
+// WithPolicyConfigs returns a new ClientFunctionOption that says to also use the given policies.
+func WithPolicyConfigs(policyConfigs ...bufconfig.PolicyConfig) ClientFunctionOption {
+	return &policyConfigsOption{
+		policyConfigs: policyConfigs,
+	}
+}
+
+// RunnerProvider provides pluginrpc.Runners for a given plugin config and an optional policy config.
 type RunnerProvider interface {
 	NewRunner(plugin bufplugin.Plugin) (pluginrpc.Runner, error)
 }
 
 // RunnerProviderFunc is a function that implements RunnerProvider.
-type RunnerProviderFunc func(plugin bufplugin.Plugin) (pluginrpc.Runner, error)
+type RunnerProviderFunc func(bufplugin.Plugin) (pluginrpc.Runner, error)
 
 // NewRunner implements RunnerProvider.
 //
@@ -238,7 +246,7 @@ func ClientWithRunnerProvider(runnerProvider RunnerProvider) ClientOption {
 
 // ClientWithLocalWasmPlugins returns a new ClientOption that specifies reading Wasm plugins.
 //
-// The readBucket is used to read the Wasm plugin data from the filesystem.
+// The readFile is used to read the Wasm plugin data from the filesystem.
 func ClientWithLocalWasmPlugins(readFile func(string) ([]byte, error)) ClientOption {
 	return func(clientOptions *clientOptions) {
 		clientOptions.pluginReadFile = readFile
@@ -264,6 +272,23 @@ func ClientWithRemoteWasmPlugins(
 	return func(clientOptions *clientOptions) {
 		clientOptions.pluginKeyProvider = pluginKeyProvider
 		clientOptions.pluginDataProvider = pluginDataProvider
+	}
+}
+
+// ClientWithLocalPolicies returns a new ClientOption that specifies reading local policies.
+//
+// The readFile is used to read the policy data from the filesystem.
+func ClientWithLocalPolicies(readFile func(string) ([]byte, error)) ClientOption {
+	return func(clientOptions *clientOptions) {
+		clientOptions.policyReadFile = readFile
+	}
+}
+
+// ClientWithLocalPoliciesFromOS returns a new ClientOption that specifies reading local policies
+// from the OS.
+func ClientWithLocalPoliciesFromOS() ClientOption {
+	return func(clientOptions *clientOptions) {
+		clientOptions.policyReadFile = os.ReadFile
 	}
 }
 
@@ -293,7 +318,7 @@ func PrintRulesWithDeprecated() PrintRulesOption {
 
 // GetDeprecatedIDToReplacementIDs gets a map from deprecated ID to replacement IDs.
 func GetDeprecatedIDToReplacementIDs[R RuleOrCategory](rulesOrCategories []R) (map[string][]string, error) {
-	idToRuleOrCategory, err := slicesext.ToUniqueValuesMap(rulesOrCategories, func(ruleOrCategory R) string { return ruleOrCategory.ID() })
+	idToRuleOrCategory, err := xslices.ToUniqueValuesMap(rulesOrCategories, func(ruleOrCategory R) string { return ruleOrCategory.ID() })
 	if err != nil {
 		return nil, err
 	}

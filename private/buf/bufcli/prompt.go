@@ -22,7 +22,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bufbuild/buf/private/pkg/app"
+	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"golang.org/x/term"
 )

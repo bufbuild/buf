@@ -15,7 +15,7 @@
 package bufconnect
 
 import (
-	"github.com/bufbuild/buf/private/pkg/app"
+	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 )
 

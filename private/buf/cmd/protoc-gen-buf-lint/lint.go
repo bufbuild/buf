@@ -55,7 +55,7 @@ func handle(
 	pluginEnv protoplugin.PluginEnv,
 	responseWriter protoplugin.ResponseWriter,
 	request protoplugin.Request,
-) error {
+) (retErr error) {
 	responseWriter.SetFeatureProto3Optional()
 	responseWriter.SetFeatureSupportsEditions(protodescriptor.MinSupportedEdition, protodescriptor.MaxSupportedEdition)
 	externalConfig := &externalConfig{}
@@ -80,14 +80,6 @@ func handle(
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	moduleConfig, err := internal.GetModuleConfigForProtocPlugin(
-		ctx,
-		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
-		externalConfig.Module,
-	)
-	if err != nil {
-		return err
-	}
 	// With the "buf lint" command, we build the image and then the linter can report
 	// unused imports that the compiler reports. But with a plugin, we get descriptors
 	// that are already built and no access to any possible associated compiler warnings.
@@ -96,10 +88,30 @@ func handle(
 	if err != nil {
 		return err
 	}
-	// The protoc plugins do not support custom lint/breaking change plugins for now.
+	// The protoc plugins only support local plugins.
+	wasmRuntime, err := bufcli.NewWasmRuntime(ctx, container)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
+	}()
 	client, err := bufcheck.NewClient(
 		container.Logger(),
 		bufcheck.ClientWithStderr(pluginEnv.Stderr),
+		bufcheck.ClientWithRunnerProvider(
+			bufcheck.NewLocalRunnerProvider(wasmRuntime),
+		),
+		bufcheck.ClientWithLocalWasmPluginsFromOS(),
+	)
+	if err != nil {
+		return err
+	}
+	moduleConfig, pluginConfigs, allCheckConfigs, err := internal.GetModuleConfigAndPluginConfigsForProtocPlugin(
+		ctx,
+		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
+		externalConfig.Module,
+		externalConfig.PluginOverrides,
 	)
 	if err != nil {
 		return err
@@ -108,6 +120,10 @@ func handle(
 		ctx,
 		moduleConfig.LintConfig(),
 		image,
+		bufcheck.WithPluginConfigs(pluginConfigs...),
+		// We add all check configs (both lint and breaking) across all configured modules in buf.yaml
+		// as related configs to check if plugins have rules configured.
+		bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
 	); err != nil {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet
 		if errors.As(err, &fileAnnotationSet) {
@@ -137,10 +153,11 @@ func handle(
 }
 
 type externalConfig struct {
-	InputConfig json.RawMessage `json:"input_config,omitempty" yaml:"input_config,omitempty"`
-	Module      string          `json:"module,omitempty" yaml:"module,omitempty"`
-	LogLevel    string          `json:"log_level,omitempty" yaml:"log_level,omitempty"`
-	LogFormat   string          `json:"log_format,omitempty" yaml:"log_format,omitempty"`
-	ErrorFormat string          `json:"error_format,omitempty" yaml:"error_format,omitempty"`
-	Timeout     time.Duration   `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	InputConfig     json.RawMessage   `json:"input_config,omitempty" yaml:"input_config,omitempty"`
+	Module          string            `json:"module,omitempty" yaml:"module,omitempty"`
+	LogLevel        string            `json:"log_level,omitempty" yaml:"log_level,omitempty"`
+	LogFormat       string            `json:"log_format,omitempty" yaml:"log_format,omitempty"`
+	ErrorFormat     string            `json:"error_format,omitempty" yaml:"error_format,omitempty"`
+	Timeout         time.Duration     `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	PluginOverrides map[string]string `json:"plugin_overrides,omitempty" yaml:"plugin_overrides,omitempty"`
 }

@@ -22,11 +22,10 @@ import (
 	"unicode/utf8"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+	"buf.build/go/protovalidate"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/protovalidate-go"
-	"github.com/bufbuild/protovalidate-go/resolve"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -38,9 +37,9 @@ import (
 )
 
 const (
-	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.FieldConstraints
+	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.FieldRule
 	// These numbers are used for two purposes:
-	// 1. Identity which type oneof is specified in a FieldConstraints. i.e. Is DoubleRules defined or
+	// 1. Identity which type oneof is specified in a FieldRule. i.e. Is DoubleRules defined or
 	// StringRules defined?
 	// 2. Use it to construct a path to pass it to OptionExtensionLocation to get a more precise location.
 	floatRulesFieldNumber     = 1
@@ -147,9 +146,9 @@ var (
 		string((&wrapperspb.StringValue{}).ProtoReflect().Descriptor().FullName()): {},
 		string((&wrapperspb.BytesValue{}).ProtoReflect().Descriptor().FullName()):  {},
 	}
-	// https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.FieldConstraints
-	fieldConstraintsDescriptor = validate.File_buf_validate_validate_proto.Messages().ByName("FieldConstraints")
-	typeOneofDescriptor        = fieldConstraintsDescriptor.Oneofs().ByName("type")
+	// https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.FieldRules
+	fieldRulesDescriptor = validate.File_buf_validate_validate_proto.Messages().ByName("FieldRules")
+	typeOneofDescriptor  = fieldRulesDescriptor.Oneofs().ByName("type")
 )
 
 // checkField validates that protovalidate rules defined for this field are
@@ -163,8 +162,11 @@ func checkField(
 	if err != nil {
 		return err
 	}
-	constraints := resolve.FieldConstraints(fieldDescriptor)
-	return checkConstraintsForField(
+	constraints, err := protovalidate.ResolveFieldRules(fieldDescriptor)
+	if err != nil {
+		return err
+	}
+	return checkRulesForField(
 		&adder{
 			field:               field,
 			fieldPrettyTypeName: getFieldTypePrettyNameName(fieldDescriptor),
@@ -179,12 +181,12 @@ func checkField(
 	)
 }
 
-func checkConstraintsForField(
+func checkRulesForField(
 	adder *adder,
-	fieldConstraints *validate.FieldConstraints,
+	fieldRules *validate.FieldRules,
 	// This is needed because recursive calls of this function still need the same
-	// containing message. For example, checkConstraintsForField(.., fieldDescriptor, ...)
-	// may call checkConstraintsForField(..., fieldDescriptor.MapKey(), ...), but the map
+	// containing message. For example, checkRulesForField(.., fieldDescriptor, ...)
+	// may call checkRulesForField(..., fieldDescriptor.MapKey(), ...), but the map
 	// key should be associated with the same containing message as the field's. Since
 	// fieldDescriptor.MapKey().ContainingMessage() is not the same as fieldDescriptor.ContainingMessage(),
 	// this needs to be passed around.
@@ -195,15 +197,15 @@ func checkConstraintsForField(
 	expectRepeatedRule bool,
 	extensionTypeResolver protoencoding.Resolver,
 ) error {
-	if fieldConstraints == nil {
+	if fieldRules == nil {
 		return nil
 	}
 	if fieldDescriptor.IsExtension() {
-		checkConstraintsForExtension(adder, fieldConstraints)
+		checkRulesForExtension(adder, fieldRules)
 	}
 	if fieldDescriptor.ContainingOneof() != nil &&
 		!protodesc.ToFieldDescriptorProto(fieldDescriptor).GetProto3Optional() &&
-		fieldConstraints.GetRequired() {
+		fieldRules.GetRequired() {
 		adder.addForPathf(
 			[]int32{requiredFieldNumber},
 			"Field %q has %s but is in a oneof (%s). Oneof fields must not have %s.",
@@ -213,33 +215,33 @@ func checkConstraintsForField(
 			adder.getFieldRuleName(requiredFieldNumber),
 		)
 	}
-	checkFieldFlags(adder, fieldConstraints)
+	checkFieldFlags(adder, fieldRules)
 	if err := checkCELForField(
 		adder,
-		fieldConstraints,
+		fieldRules,
 		fieldDescriptor,
 		!expectRepeatedRule,
 	); err != nil {
 		return err
 	}
-	fieldConstraintsMessage := fieldConstraints.ProtoReflect()
-	typeRulesFieldDescriptor := fieldConstraintsMessage.WhichOneof(typeOneofDescriptor)
+	fieldRulesMessage := fieldRules.ProtoReflect()
+	typeRulesFieldDescriptor := fieldRulesMessage.WhichOneof(typeOneofDescriptor)
 	if typeRulesFieldDescriptor == nil {
 		return nil
 	}
 	typeRulesFieldNumber := int32(typeRulesFieldDescriptor.Number())
-	// Map and repeated special cases that contain fieldConstraints.
+	// Map and repeated special cases that contain fieldRules.
 	if typeRulesFieldNumber == mapRulesFieldNumber {
-		return checkMapRules(adder, fieldConstraints.GetMap(), fieldDescriptor, containingMessageDescriptor, extensionTypeResolver)
+		return checkMapRules(adder, fieldRules.GetMap(), fieldDescriptor, containingMessageDescriptor, extensionTypeResolver)
 	}
 	if typeRulesFieldNumber == repeatedRulesFieldNumber {
-		return checkRepeatedRules(adder, fieldConstraints.GetRepeated(), fieldDescriptor, containingMessageDescriptor, extensionTypeResolver)
+		return checkRepeatedRules(adder, fieldRules.GetRepeated(), fieldDescriptor, containingMessageDescriptor, extensionTypeResolver)
 	}
 	typesMatch := checkRulesTypeMatchFieldType(adder, fieldDescriptor, typeRulesFieldNumber, expectRepeatedRule)
 	if !typesMatch {
 		return nil
 	}
-	typeRulesMessage := fieldConstraintsMessage.Get(typeRulesFieldDescriptor).Message()
+	typeRulesMessage := fieldRulesMessage.Get(typeRulesFieldDescriptor).Message()
 	var exampleValues []protoreflect.Value
 	var exampleFieldNumber int32
 	typeRulesMessage.Range(func(fd protoreflect.FieldDescriptor, value protoreflect.Value) bool {
@@ -258,7 +260,7 @@ func checkConstraintsForField(
 		if err := checkExampleValues(
 			adder,
 			[]int32{typeRulesFieldNumber, exampleFieldNumber},
-			fieldConstraints,
+			fieldRules,
 			typeRulesMessage,
 			containingMessageDescriptor,
 			parentMapFieldDescriptor,
@@ -270,38 +272,38 @@ func checkConstraintsForField(
 		}
 	}
 	if numberRulesCheckFunc, ok := fieldNumberToCheckNumberRulesFunc[typeRulesFieldNumber]; ok {
-		numberRulesMessage := fieldConstraintsMessage.Get(typeRulesFieldDescriptor).Message()
+		numberRulesMessage := fieldRulesMessage.Get(typeRulesFieldDescriptor).Message()
 		return numberRulesCheckFunc(adder, typeRulesFieldNumber, numberRulesMessage)
 	}
 	switch typeRulesFieldNumber {
 	case boolRulesFieldNumber:
 		// Bool rules only have `const` and does not need validating.
 	case stringRulesFieldNumber:
-		return checkStringRules(adder, fieldConstraints.GetString())
+		return checkStringRules(adder, fieldRules.GetString())
 	case bytesRulesFieldNumber:
-		return checkBytesRules(adder, fieldConstraints.GetBytes())
+		return checkBytesRules(adder, fieldRules.GetBytes())
 	case enumRulesFieldNumber:
-		checkEnumRules(adder, fieldConstraints.GetEnum())
+		checkEnumRules(adder, fieldRules.GetEnum())
 	case anyRulesFieldNumber:
-		checkAnyRules(adder, fieldConstraints.GetAny())
+		checkAnyRules(adder, fieldRules.GetAny())
 	case durationRulesFieldNumber:
-		return checkDurationRules(adder, fieldConstraints.GetDuration())
+		return checkDurationRules(adder, fieldRules.GetDuration())
 	case timestampRulesFieldNumber:
-		return checkTimestampRules(adder, fieldConstraints.GetTimestamp())
+		return checkTimestampRules(adder, fieldRules.GetTimestamp())
 	}
 	return nil
 }
 
 func checkFieldFlags(
 	adder *adder,
-	fieldConstraints *validate.FieldConstraints,
+	fieldRules *validate.FieldRules,
 ) {
 	var fieldCount int
-	fieldConstraints.ProtoReflect().Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+	fieldRules.ProtoReflect().Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
 		fieldCount++
 		return true
 	})
-	if fieldConstraints.GetIgnore() == validate.Ignore_IGNORE_ALWAYS && fieldCount > 1 {
+	if fieldRules.GetIgnore() == validate.Ignore_IGNORE_ALWAYS && fieldCount > 1 {
 		adder.addForPathf(
 			[]int32{ignoreFieldNumber},
 			"Field %q has %s=%v and therefore other rules in %s are not applied and should be removed.",
@@ -311,7 +313,7 @@ func checkFieldFlags(
 			adder.getFieldRuleName(),
 		)
 	}
-	if fieldConstraints.GetRequired() && fieldConstraints.GetIgnore() == validate.Ignore_IGNORE_IF_UNPOPULATED {
+	if fieldRules.GetRequired() && fieldRules.GetIgnore() == validate.Ignore_IGNORE_IF_UNPOPULATED {
 		adder.addForPathsf(
 			[][]int32{
 				{requiredFieldNumber},
@@ -362,11 +364,11 @@ func checkRulesTypeMatchFieldType(
 	return false
 }
 
-func checkConstraintsForExtension(
+func checkRulesForExtension(
 	adder *adder,
-	fieldConstraints *validate.FieldConstraints,
+	fieldRules *validate.FieldRules,
 ) {
-	if fieldConstraints.GetRequired() {
+	if fieldRules.GetRequired() {
 		adder.addForPathf(
 			[]int32{requiredFieldNumber},
 			"Field %q is an extension field and cannot have %s.",
@@ -374,7 +376,7 @@ func checkConstraintsForExtension(
 			adder.getFieldRuleName(requiredFieldNumber),
 		)
 	}
-	if fieldConstraints.GetIgnore() == validate.Ignore_IGNORE_IF_UNPOPULATED {
+	if fieldRules.GetIgnore() == validate.Ignore_IGNORE_IF_UNPOPULATED {
 		adder.addForPathf(
 			[]int32{ignoreFieldNumber},
 			"Field %q is an extension field and cannot have %s=%v.",
@@ -433,7 +435,7 @@ func checkRepeatedRules(
 		)
 	}
 	itemAdder := baseAdder.cloneWithNewBasePath(repeatedRulesFieldNumber, itemsFieldNumberInRepeatedRules)
-	return checkConstraintsForField(itemAdder, repeatedRules.Items, containingMessageDescriptor, nil, fieldDescriptor, false, extensionTypeResolver)
+	return checkRulesForField(itemAdder, repeatedRules.Items, containingMessageDescriptor, nil, fieldDescriptor, false, extensionTypeResolver)
 }
 
 func checkMapRules(
@@ -473,12 +475,12 @@ func checkMapRules(
 		)
 	}
 	keyAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, keysFieldNumberInMapRules)
-	err := checkConstraintsForField(keyAdder, mapRules.Keys, containingMessageDescriptor, fieldDescriptor, fieldDescriptor.MapKey(), false, extensionTypeResolver)
+	err := checkRulesForField(keyAdder, mapRules.Keys, containingMessageDescriptor, fieldDescriptor, fieldDescriptor.MapKey(), false, extensionTypeResolver)
 	if err != nil {
 		return err
 	}
 	valueAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, valuesFieldNumberInMapRules)
-	return checkConstraintsForField(valueAdder, mapRules.Values, containingMessageDescriptor, fieldDescriptor, fieldDescriptor.MapValue(), false, extensionTypeResolver)
+	return checkRulesForField(valueAdder, mapRules.Values, containingMessageDescriptor, fieldDescriptor, fieldDescriptor.MapValue(), false, extensionTypeResolver)
 }
 
 func checkStringRules(adder *adder, stringRules *validate.StringRules) error {
@@ -729,7 +731,7 @@ func checkTimestampRules(adder *adder, timestampRules *validate.TimestampRules) 
 func checkExampleValues(
 	adder *adder,
 	pathToExampleValues []int32,
-	fieldConstraints *validate.FieldConstraints,
+	fieldRules *validate.FieldRules,
 	typeRulesMessage protoreflect.Message,
 	containingMessageDescriptor protoreflect.MessageDescriptor,
 	// Not nil only if fieldDescriptor is a synthetic field for map key/value.
@@ -745,19 +747,19 @@ func checkExampleValues(
 	if err := protoencoding.ReparseExtensions(extensionTypeResolver, typeRulesMessage); err != nil {
 		return err
 	}
-	hasConstraints := len(fieldConstraints.GetCel()) > 0
-	if !hasConstraints {
+	hasRules := len(fieldRules.GetCel()) > 0
+	if !hasRules {
 		typeRulesMessage.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
 			if string(fd.Name()) != exampleName {
-				hasConstraints = true
+				hasRules = true
 				return false
 			}
 			return true
 		})
 	}
-	if !hasConstraints {
-		adder.addForPathf(pathToExampleValues, "example value is specified by there are no constraints defined")
-		// No need to check if example values satifisy constraints, because there is none.
+	if !hasRules {
+		// Since there are no constraints to check example values against, we already checked
+		// if the proper example type has been set on the field, so we can return here.
 		return nil
 	}
 	// For each example value, instantiate a message of its containing message's type
@@ -1004,7 +1006,7 @@ func checkExampleValues(
 		if errors.As(err, &validationErr) {
 			for _, violation := range validationErr.Violations {
 				if violationFilterFunc(violation.Proto) {
-					adder.addForPathf(append(pathToExampleValues, int32(exampleValueIndex)), `"%v" is an example value but does not satisfy rule %q: %s`, exampleValue.Interface(), violation.Proto.GetConstraintId(), violation.Proto.GetMessage())
+					adder.addForPathf(append(pathToExampleValues, int32(exampleValueIndex)), `"%v" is an example value but does not satisfy rule %q: %s`, exampleValue.Interface(), violation.Proto.GetRuleId(), violation.Proto.GetMessage())
 				}
 			}
 			continue

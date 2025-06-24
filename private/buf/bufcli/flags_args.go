@@ -21,10 +21,10 @@ import (
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
+	"buf.build/go/app"
+	"buf.build/go/app/appcmd"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
 )
 
@@ -154,7 +154,7 @@ func BindVisibility(flagSet *pflag.FlagSet, addr *string, flagName string, empty
 		addr,
 		flagName,
 		defaultVisibility,
-		fmt.Sprintf(`The module's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibilityStrings)),
+		fmt.Sprintf(`The module's visibility setting. Must be one of %s`, xstrings.SliceToString(allVisibilityStrings)),
 	)
 }
 
@@ -165,7 +165,7 @@ func BindCreateVisibility(flagSet *pflag.FlagSet, addr *string, flagName string,
 		addr,
 		flagName,
 		privateVisibility,
-		fmt.Sprintf(`The module's visibility setting, if created. Can only be set with --%s. Must be one of %s`, createFlagName, stringutil.SliceToString(allVisibilityStrings)),
+		fmt.Sprintf(`The module's visibility setting, if created. Can only be set with --%s. Must be one of %s`, createFlagName, xstrings.SliceToString(allVisibilityStrings)),
 	)
 }
 
@@ -176,7 +176,7 @@ func BindArchiveStatus(flagSet *pflag.FlagSet, addr *string, flagName string) {
 		addr,
 		flagName,
 		DefaultArchiveStatus,
-		fmt.Sprintf(`The archive status of the labels listed. Must be one of %s`, stringutil.SliceToString(allArchiveStatusStrings)),
+		fmt.Sprintf(`The archive status of the labels listed. Must be one of %s`, xstrings.SliceToString(allArchiveStatusStrings)),
 	)
 }
 

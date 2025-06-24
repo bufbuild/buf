@@ -23,8 +23,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/ioext"
+	"buf.build/go/app"
+	"buf.build/go/standard/xio"
 	"github.com/klauspost/compress/zstd"
 )
 
@@ -121,9 +121,9 @@ func (w *writer) putFileWriteCloser(
 		return writeCloser, nil
 	case CompressionTypeGzip:
 		gzipWriteCloser := gzip.NewWriter(writeCloser)
-		return ioext.CompositeWriteCloser(
+		return xio.CompositeWriteCloser(
 			gzipWriteCloser,
-			ioext.ChainCloser(
+			xio.ChainCloser(
 				gzipWriteCloser,
 				writeCloser,
 			),
@@ -133,9 +133,9 @@ func (w *writer) putFileWriteCloser(
 		if err != nil {
 			return nil, err
 		}
-		return ioext.CompositeWriteCloser(
+		return xio.CompositeWriteCloser(
 			zstdWriteCloser,
-			ioext.ChainCloser(
+			xio.ChainCloser(
 				zstdWriteCloser,
 				writeCloser,
 			),
@@ -170,11 +170,11 @@ func (w *writer) putFileWriteCloserPotentiallyUncompressed(
 		if !w.stdioEnabled {
 			return nil, NewWriteStdioDisabledError()
 		}
-		return ioext.NopWriteCloser(container.Stdout()), nil
+		return xio.NopWriteCloser(container.Stdout()), nil
 	case FileSchemeStdin:
 		return nil, errors.New("cannot write to stdin")
 	case FileSchemeNull:
-		return ioext.DiscardWriteCloser, nil
+		return xio.DiscardWriteCloser, nil
 	default:
 		return nil, fmt.Errorf("unknown FileScheme: %v", fileScheme)
 	}

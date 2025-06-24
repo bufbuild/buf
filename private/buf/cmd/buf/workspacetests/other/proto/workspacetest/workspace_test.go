@@ -21,10 +21,10 @@ import (
 	"strings"
 	"testing"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/stretchr/testify/require"
 )
@@ -207,35 +207,39 @@ func TestWorkspaceWithProtoFileRef(t *testing.T) {
 }
 
 func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
-	appcmdtesting.RunCommandExitCodeStdout(
+	appcmdtesting.Run(
 		t,
 		func(use string) *appcmd.Command { return buf.NewRootCommand(use) },
-		expectedExitCode,
-		expectedStdout,
-		func(use string) map[string]string {
-			return map[string]string{
-				useEnvVar(use, "CACHE_DIR"): t.TempDir(),
-			}
-		},
-		stdin,
-		args...,
+		appcmdtesting.WithExpectedExitCode(expectedExitCode),
+		appcmdtesting.WithExpectedStdout(expectedStdout),
+		appcmdtesting.WithEnv(
+			func(use string) map[string]string {
+				return map[string]string{
+					useEnvVar(use, "CACHE_DIR"): t.TempDir(),
+				}
+			},
+		),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(args...),
 	)
 }
 
 func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, expectedStderr string, args ...string) {
-	appcmdtesting.RunCommandExitCodeStdoutStderr(
+	appcmdtesting.Run(
 		t,
 		func(use string) *appcmd.Command { return buf.NewRootCommand(use) },
-		expectedExitCode,
-		expectedStdout,
-		expectedStderr,
-		func(use string) map[string]string {
-			return map[string]string{
-				useEnvVar(use, "CACHE_DIR"): t.TempDir(),
-			}
-		},
-		stdin,
-		args...,
+		appcmdtesting.WithExpectedExitCode(expectedExitCode),
+		appcmdtesting.WithExpectedStdout(expectedStdout),
+		appcmdtesting.WithExpectedStderr(expectedStderr),
+		appcmdtesting.WithEnv(
+			func(use string) map[string]string {
+				return map[string]string{
+					useEnvVar(use, "CACHE_DIR"): t.TempDir(),
+				}
+			},
+		),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(args...),
 	)
 }
 

@@ -25,8 +25,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/execext"
+	"buf.build/go/app"
+	"buf.build/go/standard/xos/xexec"
 )
 
 const (
@@ -160,14 +160,14 @@ func validateRemoteExists(
 ) error {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		gitCommand,
-		execext.WithArgs("ls-remote", "--exit-code", name),
-		execext.WithStdout(stdout),
-		execext.WithStderr(stderr),
-		execext.WithDir(dir),
-		execext.WithEnv(app.Environ(envContainer)),
+		xexec.WithArgs("ls-remote", "--exit-code", name),
+		xexec.WithStdout(stdout),
+		xexec.WithStderr(stderr),
+		xexec.WithDir(dir),
+		xexec.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
@@ -188,16 +188,16 @@ func getRemoteURLMetadata(
 ) (string, string, error) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		gitCommand,
 		// We use `git config --get remote.<remote>.url` instead of `git remote get-url
 		// since it is more specific to the checkout.
-		execext.WithArgs("config", "--get", fmt.Sprintf("remote.%s.url", remote)),
-		execext.WithStdout(stdout),
-		execext.WithStderr(stderr),
-		execext.WithDir(dir),
-		execext.WithEnv(app.Environ(envContainer)),
+		xexec.WithArgs("config", "--get", fmt.Sprintf("remote.%s.url", remote)),
+		xexec.WithStdout(stdout),
+		xexec.WithStderr(stderr),
+		xexec.WithDir(dir),
+		xexec.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		return "", "", err
 	}
@@ -248,14 +248,14 @@ func getRemoteHEADBranch(
 ) (string, error) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		gitCommand,
-		execext.WithArgs("remote", "show", remote),
-		execext.WithStdout(stdout),
-		execext.WithStderr(stderr),
-		execext.WithDir(dir),
-		execext.WithEnv(app.Environ(envContainer)),
+		xexec.WithArgs("remote", "show", remote),
+		xexec.WithStdout(stdout),
+		xexec.WithStderr(stderr),
+		xexec.WithDir(dir),
+		xexec.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		return "", err
 	}

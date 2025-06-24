@@ -26,12 +26,13 @@ import (
 	"strings"
 
 	"buf.build/go/bufplugin/check"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/google/uuid"
@@ -115,16 +116,16 @@ func (m *migrator) getMigrateBuilder(
 	// Directories cannot jump context because in the migrated buf.yaml v2, each
 	// directory path cannot jump context. I.e. it's not valid to have `- path: ..`
 	// in a buf.yaml v2.
-	workspaceDirPaths, err := slicesext.MapError(workspaceDirPaths, normalpath.NormalizeAndValidate)
+	workspaceDirPaths, err := xslices.MapError(workspaceDirPaths, normalpath.NormalizeAndValidate)
 	if err != nil {
 		return nil, err
 	}
-	moduleDirPaths, err = slicesext.MapError(moduleDirPaths, normalpath.NormalizeAndValidate)
+	moduleDirPaths, err = xslices.MapError(moduleDirPaths, normalpath.NormalizeAndValidate)
 	if err != nil {
 		return nil, err
 	}
 	// This does mean that buf.gen.yamls need to be under the directory this is run at, but this is OK.
-	bufGenYAMLFilePaths, err = slicesext.MapError(bufGenYAMLFilePaths, normalpath.NormalizeAndValidate)
+	bufGenYAMLFilePaths, err = xslices.MapError(bufGenYAMLFilePaths, normalpath.NormalizeAndValidate)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +163,7 @@ func (m *migrator) getMigrateBuilder(
 }
 
 func (m *migrator) migrate(ctx context.Context, bucket storage.WriteBucket, migrateBuilder *migrateBuilder) (retErr error) {
-	for _, path := range slicesext.MapKeysToSortedSlice(migrateBuilder.pathsToDelete) {
+	for _, path := range xslices.MapKeysToSortedSlice(migrateBuilder.pathsToDelete) {
 		if err := bucket.Delete(ctx, path); err != nil {
 			return err
 		}
@@ -346,7 +347,7 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 	for depModule, declaredRefs := range depModuleToDeclaredRefs {
 		refStringToRef := make(map[string]bufparse.Ref)
 		for _, ref := range declaredRefs {
-			// Add ref even if ref.Ref() is empty. Therefore, slicesext.ToValuesMap is not used.
+			// Add ref even if ref.Ref() is empty. Therefore, xslices.ToValuesMap is not used.
 			refStringToRef[ref.Ref()] = ref
 		}
 		// If there are both buf.build/foo/bar and buf.build/foo/bar:some_ref, the former will
@@ -354,7 +355,7 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 		if len(refStringToRef) > 1 {
 			delete(refStringToRef, "")
 		}
-		depModuleToDeclaredRefs[depModule] = slicesext.MapValuesToSlice(refStringToRef)
+		depModuleToDeclaredRefs[depModule] = xslices.MapValuesToSlice(refStringToRef)
 		if len(refStringToRef) > 1 {
 			areDependenciesResolved = false
 		}
@@ -366,7 +367,7 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 			// We could check,
 			commitIDToKey[lockEntry.CommitID()] = lockEntry
 		}
-		depModuleToLockEntries[depModule] = slicesext.MapValuesToSlice(commitIDToKey)
+		depModuleToLockEntries[depModule] = xslices.MapValuesToSlice(commitIDToKey)
 		if len(commitIDToKey) > 1 {
 			areDependenciesResolved = false
 		}
@@ -380,7 +381,8 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 		bufYAML, err := bufconfig.NewBufYAMLFile(
 			bufconfig.FileVersionV2,
 			migrateBuilder.moduleConfigs,
-			// TODO: If we ever need to migrate from a v2 to v3, we will need to handle PluginConfigs
+			// TODO: If we ever need to migrate from a v2 to v3, we will need to handle PluginConfigs and PolicyConfigs
+			nil,
 			nil,
 			resolvedDeclaredRefs,
 		)
@@ -429,7 +431,8 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 	bufYAML, err := bufconfig.NewBufYAMLFile(
 		bufconfig.FileVersionV2,
 		migrateBuilder.moduleConfigs,
-		// TODO: If we ever need to migrate from a v2 to v3, we will need to handle PluginConfigs
+		// TODO: If we ever need to migrate from a v2 to v3, we will need to handle PluginConfigs and PolicyConfigs
+		nil,
 		nil,
 		resolvedDepModuleRefs,
 	)
@@ -462,7 +465,7 @@ func (m *migrator) getModuleToRefToCommit(
 	// migrated, so there may be duplicates. ModuleKeyProvider errors on duplicate module
 	// refs because it is expensive to make multiple calls to resolve the same module ref,
 	// so we deduplicate the module refs we are passing here.
-	moduleRefs = slicesext.DeduplicateAny(
+	moduleRefs = xslices.DeduplicateAny(
 		moduleRefs,
 		func(moduleRef bufparse.Ref) string { return moduleRef.String() },
 	)
@@ -500,7 +503,7 @@ func (m *migrator) getCommitIDToCommit(
 	// migrated, so there may be duplicates. CommitProvider errors on duplicate module
 	// keys because it is expensive to make multiple calls to resolve the same module key,
 	// so we deduplicate the module keys we are passing here.
-	moduleKeys = slicesext.DeduplicateAny(
+	moduleKeys = xslices.DeduplicateAny(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) string { return moduleKey.String() },
 	)
@@ -510,7 +513,7 @@ func (m *migrator) getCommitIDToCommit(
 	}
 	commitIDToCommit := make(map[uuid.UUID]bufmodule.Commit, len(commits))
 	for _, commit := range commits {
-		// We don't know if these are unique, so we do not use slicesext.ToUniqueValuesMapError.
+		// We don't know if these are unique, so we do not use xslices.ToUniqueValuesMapError.
 		commitIDToCommit[commit.ModuleKey().CommitID()] = commit
 	}
 	return commitIDToCommit, nil
@@ -522,9 +525,9 @@ func (m *migrator) upgradeModuleKeysToB5(
 ) ([]bufmodule.ModuleKey, error) {
 	moduleKeys = slices.Clone(moduleKeys)
 
-	b4IndexedModuleKeys, err := slicesext.FilterError(
-		slicesext.ToIndexed(moduleKeys),
-		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (bool, error) {
+	b4IndexedModuleKeys, err := xslices.FilterError(
+		xslices.ToIndexed(moduleKeys),
+		func(indexedModuleKey xslices.Indexed[bufmodule.ModuleKey]) (bool, error) {
 			digest, err := indexedModuleKey.Value.Digest()
 			if err != nil {
 				return false, err
@@ -540,9 +543,9 @@ func (m *migrator) upgradeModuleKeysToB5(
 		return moduleKeys, nil
 	}
 
-	commitKeys, err := slicesext.MapError(
+	commitKeys, err := xslices.MapError(
 		b4IndexedModuleKeys,
-		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (bufmodule.CommitKey, error) {
+		func(indexedModuleKey xslices.Indexed[bufmodule.ModuleKey]) (bufmodule.CommitKey, error) {
 			return bufmodule.NewCommitKey(
 				indexedModuleKey.Value.FullName().Registry(),
 				indexedModuleKey.Value.CommitID(),
@@ -629,7 +632,7 @@ func resolvedDeclaredAndLockedDependencies(
 		}
 		resolvedDepModuleKeys = append(resolvedDepModuleKeys, lockKeys[0])
 	}
-	resolvedDeclaredDependencies := slicesext.MapValuesToSlice(depFullNameToResolvedRef)
+	resolvedDeclaredDependencies := xslices.MapValuesToSlice(depFullNameToResolvedRef)
 	// Sort the resolved dependencies for deterministic results.
 	sort.Slice(resolvedDeclaredDependencies, func(i, j int) bool {
 		return resolvedDeclaredDependencies[i].FullName().String() < resolvedDeclaredDependencies[j].FullName().String()
@@ -707,8 +710,8 @@ func equivalentCheckConfigInV2(
 	if err != nil {
 		return nil, err
 	}
-	expectedRules = slicesext.Filter(expectedRules, func(rule bufcheck.Rule) bool { return !rule.Deprecated() })
-	expectedIDs := slicesext.Map(
+	expectedRules = xslices.Filter(expectedRules, func(rule bufcheck.Rule) bool { return !rule.Deprecated() })
+	expectedIDs := xslices.Map(
 		expectedRules,
 		func(rule bufcheck.Rule) string {
 			return rule.ID()
@@ -732,7 +735,7 @@ func equivalentCheckConfigInV2(
 	if err != nil {
 		return nil, err
 	}
-	simplyTranslatedIDs := slicesext.Map(
+	simplyTranslatedIDs := xslices.Map(
 		simplyTranslatedRules,
 		func(rule bufcheck.Rule) string {
 			return rule.ID()
@@ -743,26 +746,51 @@ func equivalentCheckConfigInV2(
 		return simplyTranslatedCheckConfig, nil
 	}
 	// Otherwise, find what's missing and what's extra.
-	expectedIDsMap := slicesext.ToStructMap(expectedIDs)
-	simplyTranslatedIDsMap := slicesext.ToStructMap(simplyTranslatedIDs)
-	missingIDs := slicesext.Filter(
+	expectedIDsMap := xslices.ToStructMap(expectedIDs)
+	simplyTranslatedIDsMap := xslices.ToStructMap(simplyTranslatedIDs)
+	missingIDs := xslices.Filter(
 		expectedIDs,
 		func(expectedID string) bool {
 			_, ok := simplyTranslatedIDsMap[expectedID]
 			return !ok
 		},
 	)
-	extraIDs := slicesext.Filter(
+	extraIDs := xslices.Filter(
 		simplyTranslatedIDs,
 		func(simplyTranslatedID string) bool {
 			_, ok := expectedIDsMap[simplyTranslatedID]
 			return !ok
 		},
 	)
+	// Filter remaining rules to match the V2 rule set. Any other rules are ignored.
+	// Theres no additional rules from plugins as plugins didn't exist before v2.
+	validV2IDsMap := make(map[string]struct{})
+	for _, ruleSpec := range bufcheckserver.V2Spec.Rules {
+		if ruleSpec.Type == ruleType {
+			validV2IDsMap[ruleSpec.ID] = struct{}{}
+		}
+	}
+	for _, categorySpec := range bufcheckserver.V2Spec.Categories {
+		validV2IDsMap[categorySpec.ID] = struct{}{}
+	}
+	useIDsAndCategories := xslices.Filter(
+		append(simplyTranslatedCheckConfig.UseIDsAndCategories(), missingIDs...),
+		func(ruleID string) bool {
+			_, ok := validV2IDsMap[ruleID]
+			return ok
+		},
+	)
+	exceptIDsAndCategories := xslices.Filter(
+		append(simplyTranslatedCheckConfig.ExceptIDsAndCategories(), extraIDs...),
+		func(ruleID string) bool {
+			_, ok := validV2IDsMap[ruleID]
+			return ok
+		},
+	)
 	return bufconfig.NewEnabledCheckConfig(
 		bufconfig.FileVersionV2,
-		append(simplyTranslatedCheckConfig.UseIDsAndCategories(), missingIDs...),
-		append(simplyTranslatedCheckConfig.ExceptIDsAndCategories(), extraIDs...),
+		useIDsAndCategories,
+		exceptIDsAndCategories,
 		simplyTranslatedCheckConfig.IgnorePaths(),
 		simplyTranslatedCheckConfig.IgnoreIDOrCategoryToPaths(),
 		simplyTranslatedCheckConfig.DisableBuiltin(),

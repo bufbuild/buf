@@ -20,10 +20,10 @@ import (
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
+	"buf.build/go/standard/xslices"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
 )
@@ -42,7 +42,7 @@ func newUniversalProtoContentForV1(v1ProtoContent *modulev1.DownloadResponse_Con
 	return &universalProtoContent{
 		CommitID: v1ProtoContent.Commit.Id,
 		ModuleID: v1ProtoContent.Commit.ModuleId,
-		Files:    slicesext.Map(v1ProtoContent.Files, newUniversalProtoFileForV1),
+		Files:    xslices.Map(v1ProtoContent.Files, newUniversalProtoFileForV1),
 	}
 }
 
@@ -60,7 +60,7 @@ func newUniversalProtoContentForV1Beta1(v1beta1ProtoContent *modulev1beta1.Downl
 	return &universalProtoContent{
 		CommitID:      v1beta1ProtoContent.Commit.Id,
 		ModuleID:      v1beta1ProtoContent.Commit.ModuleId,
-		Files:         slicesext.Map(v1beta1ProtoContent.Files, newUniversalProtoFileForV1Beta1),
+		Files:         xslices.Map(v1beta1ProtoContent.Files, newUniversalProtoFileForV1Beta1),
 		V1BufYAMLFile: v1BufYAMLFile,
 		V1BufLockFile: v1BufLockFile,
 	}
@@ -83,14 +83,14 @@ func getUniversalProtoContentsForRegistryAndCommitIDs(
 		if err != nil {
 			return nil, err
 		}
-		return slicesext.Map(v1beta1ProtoContents, newUniversalProtoContentForV1Beta1), nil
+		return xslices.Map(v1beta1ProtoContents, newUniversalProtoContentForV1Beta1), nil
 	case bufmodule.DigestTypeB5:
 		v1ProtoResourceRefs := commitIDsToV1ProtoResourceRefs(commitIDs)
 		v1ProtoContents, err := getV1ProtoContentsForRegistryAndResourceRefs(ctx, moduleClientProvider, registry, v1ProtoResourceRefs)
 		if err != nil {
 			return nil, err
 		}
-		return slicesext.Map(v1ProtoContents, newUniversalProtoContentForV1), nil
+		return xslices.Map(v1ProtoContents, newUniversalProtoContentForV1), nil
 	default:
 		return nil, syserror.Newf("unknown DigestType: %v", digestType)
 	}
@@ -107,7 +107,7 @@ func getV1ProtoContentsForRegistryAndResourceRefs(
 		connect.NewRequest(
 			&modulev1.DownloadRequest{
 				// TODO FUTURE: chunking
-				Values: slicesext.Map(
+				Values: xslices.Map(
 					v1ProtoResourceRefs,
 					func(v1ProtoResourceRef *modulev1.ResourceRef) *modulev1.DownloadRequest_Value {
 						return &modulev1.DownloadRequest_Value{
@@ -143,7 +143,7 @@ func getV1Beta1ProtoContentsForRegistryAndResourceRefs(
 		connect.NewRequest(
 			&modulev1beta1.DownloadRequest{
 				// TODO FUTURE: chunking
-				Values: slicesext.Map(
+				Values: xslices.Map(
 					v1beta1ProtoResourceRefs,
 					func(v1beta1ProtoResourceRef *modulev1beta1.ResourceRef) *modulev1beta1.DownloadRequest_Value {
 						return &modulev1beta1.DownloadRequest_Value{

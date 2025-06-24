@@ -17,7 +17,7 @@ package bufconfig
 import (
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/standard/xslices"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -91,8 +91,8 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 					{
 						Name:     "go",
 						Out:      "go/out",
-						Path:     slicesext.Map([]string{"go", "run", "goplugin"}, func(s string) any { return s }),
-						Opt:      slicesext.Map([]string{"a=b", "c"}, func(s string) any { return s }),
+						Path:     xslices.Map([]string{"go", "run", "goplugin"}, func(s string) any { return s }),
+						Opt:      xslices.Map([]string{"a=b", "c"}, func(s string) any { return s }),
 						Strategy: "directory",
 					},
 				},
@@ -119,8 +119,8 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 					{
 						Plugin:   "go",
 						Out:      "go/out",
-						Path:     slicesext.Map([]string{"go", "run", "goplugin"}, func(s string) any { return s }),
-						Opt:      slicesext.Map([]string{"a=b", "c"}, func(s string) any { return s }),
+						Path:     xslices.Map([]string{"go", "run", "goplugin"}, func(s string) any { return s }),
+						Opt:      xslices.Map([]string{"a=b", "c"}, func(s string) any { return s }),
 						Strategy: "directory",
 					},
 				},

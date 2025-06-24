@@ -17,7 +17,7 @@ inputs:
   - module: buf.build/grpc/grpc
     types:
       - grpc.reflection.v1.ServerReflection
-  - module: buf.build/protocolbuffers/wellknowntypes:v29.3
+  - module: buf.build/protocolbuffers/wellknowntypes:v31.1
     paths:
      - google/protobuf/cpp_features.proto
      - google/protobuf/java_features.proto

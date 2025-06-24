@@ -19,14 +19,14 @@ import (
 	"fmt"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/spf13/pflag"
 )
@@ -111,7 +111,7 @@ func run(
 	}
 	moduleClientProvider := bufregistryapimodule.NewClientProvider(clientConfig)
 	labelServiceClient := moduleClientProvider.V1LabelServiceClient(moduleRef.FullName().Registry())
-	requestValues := slicesext.Map(labels, func(label string) *modulev1.CreateOrUpdateLabelsRequest_Value {
+	requestValues := xslices.Map(labels, func(label string) *modulev1.CreateOrUpdateLabelsRequest_Value {
 		return &modulev1.CreateOrUpdateLabelsRequest_Value{
 			LabelRef: &modulev1.LabelRef{
 				Value: &modulev1.LabelRef_Name_{
@@ -147,7 +147,7 @@ func run(
 	return bufprint.PrintNames(
 		container.Stdout(),
 		format,
-		slicesext.Map(resp.Msg.Labels, func(label *modulev1.Label) bufprint.Entity {
+		xslices.Map(resp.Msg.Labels, func(label *modulev1.Label) bufprint.Entity {
 			return bufprint.NewLabelEntity(label, moduleRef.FullName())
 		})...,
 	)

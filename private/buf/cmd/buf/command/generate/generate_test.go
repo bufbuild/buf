@@ -26,18 +26,18 @@ import (
 	"strings"
 	"testing"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appcmd/appcmdtesting"
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xtesting"
 	"github.com/bufbuild/buf/private/buf/buftesting"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/testingext"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -57,7 +57,7 @@ var buftestingDirPath = filepath.Join(
 )
 
 func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
-	testingext.SkipIfShort(t)
+	xtesting.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubs(
@@ -70,7 +70,7 @@ func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
 }
 
 func TestCompareGeneratedStubsGoogleapisGoZip(t *testing.T) {
-	testingext.SkipIfShort(t)
+	xtesting.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubsArchive(
@@ -84,7 +84,7 @@ func TestCompareGeneratedStubsGoogleapisGoZip(t *testing.T) {
 }
 
 func TestCompareGeneratedStubsGoogleapisGoJar(t *testing.T) {
-	testingext.SkipIfShort(t)
+	xtesting.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubsArchive(
@@ -98,7 +98,7 @@ func TestCompareGeneratedStubsGoogleapisGoJar(t *testing.T) {
 }
 
 func TestCompareGeneratedStubsGoogleapisObjc(t *testing.T) {
-	testingext.SkipIfShort(t)
+	xtesting.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubs(
@@ -109,7 +109,7 @@ func TestCompareGeneratedStubsGoogleapisObjc(t *testing.T) {
 }
 
 func TestCompareGeneratedStubsGoogleapisPyi(t *testing.T) {
-	testingext.SkipIfShort(t)
+	xtesting.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubs(
@@ -120,7 +120,7 @@ func TestCompareGeneratedStubsGoogleapisPyi(t *testing.T) {
 }
 
 func TestCompareInsertionPointOutput(t *testing.T) {
-	testingext.SkipIfShort(t)
+	xtesting.SkipIfShort(t)
 	t.Parallel()
 	insertionTestdataDirPath := filepath.Join("testdata", "insertion")
 	testCompareGeneratedStubs(
@@ -779,7 +779,7 @@ func testCompareGeneratedStubs(
 			filePath,
 		)
 	}
-	appcmdtesting.RunCommandSuccess(
+	appcmdtesting.Run(
 		t,
 		func(name string) *appcmd.Command {
 			return NewCommand(
@@ -787,10 +787,8 @@ func testCompareGeneratedStubs(
 				appext.NewBuilder(name),
 			)
 		},
-		internaltesting.NewEnvFunc(t),
-		nil,
-		nil,
-		genFlags...,
+		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		appcmdtesting.WithArgs(genFlags...),
 	)
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	actualReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
@@ -893,7 +891,7 @@ func testCompareGeneratedStubsArchive(
 }
 
 func testRunSuccess(t *testing.T, args ...string) {
-	appcmdtesting.RunCommandSuccess(
+	appcmdtesting.Run(
 		t,
 		func(name string) *appcmd.Command {
 			return NewCommand(
@@ -901,10 +899,8 @@ func testRunSuccess(t *testing.T, args ...string) {
 				appext.NewBuilder(name),
 			)
 		},
-		internaltesting.NewEnvFunc(t),
-		nil,
-		nil,
-		args...,
+		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		appcmdtesting.WithArgs(args...),
 	)
 }
 
@@ -935,7 +931,7 @@ func testGenerateDeleteOutsWithArgAndConfig(
 	require.True(t, len(outputPaths) < 4, "we want to have unique plugins to work with and this test is only set up for three plugins max right now")
 	fullOutputPaths := outputPaths
 	if baseOutDirPath != "" && baseOutDirPath != "." {
-		fullOutputPaths = slicesext.Map(
+		fullOutputPaths = xslices.Map(
 			outputPaths,
 			func(outputPath string) string {
 				return normalpath.Join(baseOutDirPath, outputPath)
@@ -1036,7 +1032,7 @@ plugins:
 }
 
 func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, expectedStderr string, args ...string) {
-	appcmdtesting.RunCommandExitCodeStdoutStderr(
+	appcmdtesting.Run(
 		t,
 		func(name string) *appcmd.Command {
 			return NewCommand(
@@ -1060,12 +1056,12 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 				),
 			)
 		},
-		expectedExitCode,
-		expectedStdout,
-		expectedStderr,
-		internaltesting.NewEnvFunc(t),
-		stdin,
-		args...,
+		appcmdtesting.WithExpectedExitCode(expectedExitCode),
+		appcmdtesting.WithExpectedStdout(expectedStdout),
+		appcmdtesting.WithExpectedStderr(expectedStderr),
+		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
+		appcmdtesting.WithStdin(stdin),
+		appcmdtesting.WithArgs(args...),
 	)
 }
 

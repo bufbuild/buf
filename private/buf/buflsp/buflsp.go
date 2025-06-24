@@ -24,9 +24,9 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/wasm"
@@ -138,7 +138,7 @@ func (l *lsp) newHandler() jsonrpc2.Handler {
 			slog.String("method", req.Method()),
 			slog.Any("params", req.Params()),
 		)
-		defer slogext.DebugProfile(
+		defer xslog.DebugProfile(
 			l.logger,
 			slog.String("method", req.Method()),
 			slog.Any("params", req.Params()),
@@ -161,7 +161,7 @@ func (l *lsp) newHandler() jsonrpc2.Handler {
 			l.logger.Error(
 				"error while replying to request",
 				slog.String("method", req.Method()),
-				slogext.ErrorAttr(err),
+				xslog.ErrorAttr(err),
 			)
 		}
 		return nil

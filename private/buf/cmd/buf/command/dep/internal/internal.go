@@ -19,13 +19,13 @@ import (
 	"fmt"
 	"log/slog"
 
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -94,7 +94,7 @@ func Prune(
 	if err != nil {
 		return err
 	}
-	depModuleKeys, err := slicesext.MapError(
+	depModuleKeys, err := xslices.MapError(
 		depModules,
 		func(remoteDep bufmodule.RemoteDep) (bufmodule.ModuleKey, error) {
 			return bufmodule.ModuleToModuleKey(remoteDep, workspaceDepManager.BufLockFileDigestType())
@@ -193,7 +193,7 @@ func validateModuleKeysContains(containingModuleKeys []bufmodule.ModuleKey, modu
 
 // All ModuleKeys are expected to be unique by FullName.
 func getFullNameStringToModuleKey(moduleKeys []bufmodule.ModuleKey) (map[string]bufmodule.ModuleKey, error) {
-	return slicesext.ToUniqueValuesMap(
+	return xslices.ToUniqueValuesMap(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {
 			return moduleKey.FullName().String()

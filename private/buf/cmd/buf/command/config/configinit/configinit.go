@@ -18,11 +18,11 @@ import (
 	"context"
 	"fmt"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/spf13/pflag"
 )
 
@@ -173,6 +173,7 @@ func run(
 		[]bufconfig.ModuleConfig{
 			moduleConfig,
 		},
+		nil,
 		nil,
 		nil,
 		bufconfig.BufYAMLFileWithIncludeDocsLink(),

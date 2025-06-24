@@ -1,4 +1,4 @@
-// Copyright 2023 Buf Technologies, Inc.
+// Copyright 2023-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ option java_package = "build.buf.validate";
 extend google.protobuf.MessageOptions {
   // Rules specify the validations to be performed on this message. By default,
   // no validation is performed against a message.
-  optional MessageConstraints message = 1159;
+  optional MessageRules message = 1159;
 }
 
 // OneofOptions is an extension to google.protobuf.OneofOptions. It allows
@@ -42,7 +42,7 @@ extend google.protobuf.MessageOptions {
 extend google.protobuf.OneofOptions {
   // Rules specify the validations to be performed on this oneof. By default,
   // no validation is performed against a oneof.
-  optional OneofConstraints oneof = 1159;
+  optional OneofRules oneof = 1159;
 }
 
 // FieldOptions is an extension to google.protobuf.FieldOptions. It allows
@@ -52,9 +52,9 @@ extend google.protobuf.OneofOptions {
 extend google.protobuf.FieldOptions {
   // Rules specify the validations to be performed on this field. By default,
   // no validation is performed against a field.
-  optional FieldConstraints field = 1159;
+  optional FieldRules field = 1159;
 
-  // Specifies predefined rules. When extending a standard constraint message,
+  // Specifies predefined rules. When extending a standard rule message,
   // this adds additional CEL expressions that apply when the extension is used.
   //
   // ```proto
@@ -70,11 +70,11 @@ extend google.protobuf.FieldOptions {
   //   int32 reserved = 1 [(buf.validate.field).int32.(is_zero) = true];
   // }
   // ```
-  optional PredefinedConstraints predefined = 1160;
+  optional PredefinedRules predefined = 1160;
 }
 
-// `Constraint` represents a validation rule written in the Common Expression
-// Language (CEL) syntax. Each Constraint includes a unique identifier, an
+// `Rule` represents a validation rule written in the Common Expression
+// Language (CEL) syntax. Each Rule includes a unique identifier, an
 // optional error message, and the CEL expression to evaluate. For more
 // information on CEL, [see our documentation](https://github.com/bufbuild/protovalidate/blob/main/docs/cel.md).
 //
@@ -88,13 +88,13 @@ extend google.protobuf.FieldOptions {
 //   int32 bar = 1;
 // }
 // ```
-message Constraint {
-  // `id` is a string that serves as a machine-readable name for this Constraint.
+message Rule {
+  // `id` is a string that serves as a machine-readable name for this Rule.
   // It should be unique within its scope, which could be either a message or a field.
   optional string id = 1;
 
   // `message` is an optional field that provides a human-readable error message
-  // for this Constraint when the CEL expression evaluates to false. If a
+  // for this Rule when the CEL expression evaluates to false. If a
   // non-empty message is provided, any strings resulting from the CEL
   // expression evaluation are ignored.
   optional string message = 2;
@@ -106,9 +106,9 @@ message Constraint {
   optional string expression = 3;
 }
 
-// MessageConstraints represents validation rules that are applied to the entire message.
-// It includes disabling options and a list of Constraint messages representing Common Expression Language (CEL) validation rules.
-message MessageConstraints {
+// MessageRules represents validation rules that are applied to the entire message.
+// It includes disabling options and a list of Rule messages representing Common Expression Language (CEL) validation rules.
+message MessageRules {
   // `disabled` is a boolean flag that, when set to true, nullifies any validation rules for this message.
   // This includes any fields within the message that would otherwise support validation.
   //
@@ -120,8 +120,8 @@ message MessageConstraints {
   // ```
   optional bool disabled = 1;
 
-  // `cel` is a repeated field of type Constraint. Each Constraint specifies a validation rule to be applied to this message.
-  // These constraints are written in Common Expression Language (CEL) syntax. For more information on
+  // `cel` is a repeated field of type Rule. Each Rule specifies a validation rule to be applied to this message.
+  // These rules are written in Common Expression Language (CEL) syntax. For more information on
   // CEL, [see our documentation](https://github.com/bufbuild/protovalidate/blob/main/docs/cel.md).
   //
   //
@@ -136,15 +136,15 @@ message MessageConstraints {
   //   optional int32 foo = 1;
   // }
   // ```
-  repeated Constraint cel = 3;
+  repeated Rule cel = 3;
 }
 
-// The `OneofConstraints` message type enables you to manage constraints for
+// The `OneofRules` message type enables you to manage rules for
 // oneof fields in your protobuf messages.
-message OneofConstraints {
+message OneofRules {
   // If `required` is true, exactly one field of the oneof must be present. A
   // validation error is returned if no fields in the oneof are present. The
-  // field itself may still be a default value; further constraints
+  // field itself may still be a default value; further rules
   // should be placed on the fields themselves to ensure they are valid values,
   // such as `min_len` or `gt`.
   //
@@ -162,9 +162,9 @@ message OneofConstraints {
   optional bool required = 1;
 }
 
-// FieldConstraints encapsulates the rules for each type of field. Depending on
+// FieldRules encapsulates the rules for each type of field. Depending on
 // the field, the correct set should be used to ensure proper validations.
-message FieldConstraints {
+message FieldRules {
   // `cel` is a repeated field used to represent a textual expression
   // in the Common Expression Language (CEL) syntax. For more information on
   // CEL, [see our documentation](https://github.com/bufbuild/protovalidate/blob/main/docs/cel.md).
@@ -179,12 +179,12 @@ message FieldConstraints {
   //   }];
   // }
   // ```
-  repeated Constraint cel = 23;
+  repeated Rule cel = 23;
   // If `required` is true, the field must be populated. A populated field can be
   // described as "serialized in the wire format," which includes:
   //
   // - the following "nullable" fields must be explicitly set to be considered populated:
-  //   - singular message fields (whose fields may be unpopulated/default values)
+  //   - singular message fields (whose fields may be unpopulated / default values)
   //   - member fields of a oneof (may be their default value)
   //   - proto3 optional fields (may be their default value)
   //   - proto2 scalar fields (both optional and required)
@@ -242,15 +242,13 @@ message FieldConstraints {
     TimestampRules timestamp = 22;
   }
 
-  // DEPRECATED: use ignore=IGNORE_ALWAYS instead. TODO: remove this field pre-v1.
-  optional bool skipped = 24 [deprecated = true];
-  // DEPRECATED: use ignore=IGNORE_IF_UNPOPULATED instead. TODO: remove this field pre-v1.
-  optional bool ignore_empty = 26 [deprecated = true];
+  reserved 24, 26;
+  reserved "skipped", "ignore_empty";
 }
 
-// PredefinedConstraints are custom constraints that can be re-used with
+// PredefinedRules are custom rules that can be re-used with
 // multiple fields.
-message PredefinedConstraints {
+message PredefinedRules {
   // `cel` is a repeated field used to represent a textual expression
   // in the Common Expression Language (CEL) syntax. For more information on
   // CEL, [see our documentation](https://github.com/bufbuild/protovalidate/blob/main/docs/cel.md).
@@ -265,14 +263,18 @@ message PredefinedConstraints {
   //   }];
   // }
   // ```
-  repeated Constraint cel = 1;
+  repeated Rule cel = 1;
+
+  reserved 24, 26;
+  reserved
+    "skipped"
+    "ignore_empty"
+;
 }
 
-// Specifies how FieldConstraints.ignore behaves. See the documentation for
-// FieldConstraints.required for definitions of "populated" and "nullable".
+// Specifies how FieldRules.ignore behaves. See the documentation for
+// FieldRules.required for definitions of "populated" and "nullable".
 enum Ignore {
-  // buf:lint:ignore ENUM_NO_ALLOW_ALIAS // allowance for deprecations. TODO: remove pre-v1.
-  option allow_alias = true;
   // Validation is only skipped if it's an unpopulated nullable fields.
   //
   // ```proto
@@ -305,8 +307,7 @@ enum Ignore {
   IGNORE_UNSPECIFIED = 0;
 
   // Validation is skipped if the field is unpopulated. This rule is redundant
-  // if the field is already nullable. This value is equivalent behavior to the
-  // deprecated ignore_empty rule.
+  // if the field is already nullable.
   //
   // ```proto
   // syntax="proto3
@@ -404,7 +405,7 @@ enum Ignore {
   // The validation rules of this field will be skipped and not evaluated. This
   // is useful for situations that necessitate turning off the rules of a field
   // containing a message that may not make sense in the current context, or to
-  // temporarily disable constraints during development.
+  // temporarily disable rules during development.
   //
   // ```proto
   // message MyMessage {
@@ -416,13 +417,13 @@ enum Ignore {
   // ```
   IGNORE_ALWAYS = 3;
 
-  // Deprecated: Use IGNORE_IF_UNPOPULATED instead. TODO: Remove this value pre-v1.
-  IGNORE_EMPTY = 1 [deprecated = true];
-  // Deprecated: Use IGNORE_IF_DEFAULT_VALUE. TODO: Remove this value pre-v1.
-  IGNORE_DEFAULT = 2 [deprecated = true];
+  reserved
+    "IGNORE_EMPTY"
+    "IGNORE_DEFAULT"
+;
 }
 
-// FloatRules describes the constraints applied to `float` values. These
+// FloatRules describes the rules applied to `float` values. These
 // rules may also be applied to the `google.protobuf.FloatValue` Well-Known-Type.
 message FloatRules {
   // `const` requires the field value to exactly match the specified value. If
@@ -436,7 +437,7 @@ message FloatRules {
   // ```
   optional float const = 1 [(predefined).cel = {
     id: "float.const"
-    expression: "this != rules.const ? 'value must equal %s'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal %s'.format([getField(rules, 'const')]) : ''"
   }];
 
   oneof less_than {
@@ -586,12 +587,12 @@ message FloatRules {
   // ```proto
   // message MyFloat {
   //   // value must be in list [1.0, 2.0, 3.0]
-  //   repeated float value = 1 (buf.validate.field).float = { in: [1.0, 2.0, 3.0] };
+  //   float value = 1 [(buf.validate.field).float = { in: [1.0, 2.0, 3.0] }];
   // }
   // ```
   repeated float in = 6 [(predefined).cel = {
     id: "float.in"
-    expression: "!(this in dyn(rules)['in']) ? 'value must be in list %s'.format([dyn(rules)['in']]) : ''"
+    expression: "!(this in getField(rules, 'in')) ? 'value must be in list %s'.format([getField(rules, 'in')]) : ''"
   }];
 
   // `in` requires the field value to not be equal to any of the specified
@@ -601,7 +602,7 @@ message FloatRules {
   // ```proto
   // message MyFloat {
   //   // value must not be in list [1.0, 2.0, 3.0]
-  //   repeated float value = 1 (buf.validate.field).float = { not_in: [1.0, 2.0, 3.0] };
+  //   float value = 1 [(buf.validate.field).float = { not_in: [1.0, 2.0, 3.0] }];
   // }
   // ```
   repeated float not_in = 7 [(predefined).cel = {
@@ -617,7 +618,7 @@ message FloatRules {
   }];
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -634,8 +635,8 @@ message FloatRules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -646,7 +647,7 @@ message FloatRules {
   extensions 1000 to max;
 }
 
-// DoubleRules describes the constraints applied to `double` values. These
+// DoubleRules describes the rules applied to `double` values. These
 // rules may also be applied to the `google.protobuf.DoubleValue` Well-Known-Type.
 message DoubleRules {
   // `const` requires the field value to exactly match the specified value. If
@@ -660,7 +661,7 @@ message DoubleRules {
   // ```
   optional double const = 1 [(predefined).cel = {
     id: "double.const"
-    expression: "this != rules.const ? 'value must equal %s'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal %s'.format([getField(rules, 'const')]) : ''"
   }];
   oneof less_than {
     // `lt` requires the field value to be less than the specified value (field <
@@ -807,12 +808,12 @@ message DoubleRules {
   // ```proto
   // message MyDouble {
   //   // value must be in list [1.0, 2.0, 3.0]
-  //   repeated double value = 1 (buf.validate.field).double = { in: [1.0, 2.0, 3.0] };
+  //   double value = 1 [(buf.validate.field).double = { in: [1.0, 2.0, 3.0] }];
   // }
   // ```
   repeated double in = 6 [(predefined).cel = {
     id: "double.in"
-    expression: "!(this in dyn(rules)['in']) ? 'value must be in list %s'.format([dyn(rules)['in']]) : ''"
+    expression: "!(this in getField(rules, 'in')) ? 'value must be in list %s'.format([getField(rules, 'in')]) : ''"
   }];
 
   // `not_in` requires the field value to not be equal to any of the specified
@@ -822,7 +823,7 @@ message DoubleRules {
   // ```proto
   // message MyDouble {
   //   // value must not be in list [1.0, 2.0, 3.0]
-  //   repeated double value = 1 (buf.validate.field).double = { not_in: [1.0, 2.0, 3.0] };
+  //   double value = 1 [(buf.validate.field).double = { not_in: [1.0, 2.0, 3.0] }];
   // }
   // ```
   repeated double not_in = 7 [(predefined).cel = {
@@ -838,7 +839,7 @@ message DoubleRules {
   }];
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -855,8 +856,8 @@ message DoubleRules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -867,7 +868,7 @@ message DoubleRules {
   extensions 1000 to max;
 }
 
-// Int32Rules describes the constraints applied to `int32` values. These
+// Int32Rules describes the rules applied to `int32` values. These
 // rules may also be applied to the `google.protobuf.Int32Value` Well-Known-Type.
 message Int32Rules {
   // `const` requires the field value to exactly match the specified value. If
@@ -881,7 +882,7 @@ message Int32Rules {
   // ```
   optional int32 const = 1 [(predefined).cel = {
     id: "int32.const"
-    expression: "this != rules.const ? 'value must equal %s'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal %s'.format([getField(rules, 'const')]) : ''"
   }];
   oneof less_than {
     // `lt` requires the field value to be less than the specified value (field
@@ -1029,12 +1030,12 @@ message Int32Rules {
   // ```proto
   // message MyInt32 {
   //   // value must be in list [1, 2, 3]
-  //   repeated int32 value = 1 (buf.validate.field).int32 = { in: [1, 2, 3] };
+  //   int32 value = 1 [(buf.validate.field).int32 = { in: [1, 2, 3] }];
   // }
   // ```
   repeated int32 in = 6 [(predefined).cel = {
     id: "int32.in"
-    expression: "!(this in dyn(rules)['in']) ? 'value must be in list %s'.format([dyn(rules)['in']]) : ''"
+    expression: "!(this in getField(rules, 'in')) ? 'value must be in list %s'.format([getField(rules, 'in')]) : ''"
   }];
 
   // `not_in` requires the field value to not be equal to any of the specified
@@ -1044,7 +1045,7 @@ message Int32Rules {
   // ```proto
   // message MyInt32 {
   //   // value must not be in list [1, 2, 3]
-  //   repeated int32 value = 1 (buf.validate.field).int32 = { not_in: [1, 2, 3] };
+  //   int32 value = 1 [(buf.validate.field).int32 = { not_in: [1, 2, 3] }];
   // }
   // ```
   repeated int32 not_in = 7 [(predefined).cel = {
@@ -1053,7 +1054,7 @@ message Int32Rules {
   }];
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -1070,8 +1071,8 @@ message Int32Rules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -1082,7 +1083,7 @@ message Int32Rules {
   extensions 1000 to max;
 }
 
-// Int64Rules describes the constraints applied to `int64` values. These
+// Int64Rules describes the rules applied to `int64` values. These
 // rules may also be applied to the `google.protobuf.Int64Value` Well-Known-Type.
 message Int64Rules {
   // `const` requires the field value to exactly match the specified value. If
@@ -1096,7 +1097,7 @@ message Int64Rules {
   // ```
   optional int64 const = 1 [(predefined).cel = {
     id: "int64.const"
-    expression: "this != rules.const ? 'value must equal %s'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal %s'.format([getField(rules, 'const')]) : ''"
   }];
   oneof less_than {
     // `lt` requires the field value to be less than the specified value (field <
@@ -1244,12 +1245,12 @@ message Int64Rules {
   // ```proto
   // message MyInt64 {
   //   // value must be in list [1, 2, 3]
-  //   repeated int64 value = 1 (buf.validate.field).int64 = { in: [1, 2, 3] };
+  //   int64 value = 1 [(buf.validate.field).int64 = { in: [1, 2, 3] }];
   // }
   // ```
   repeated int64 in = 6 [(predefined).cel = {
     id: "int64.in"
-    expression: "!(this in dyn(rules)['in']) ? 'value must be in list %s'.format([dyn(rules)['in']]) : ''"
+    expression: "!(this in getField(rules, 'in')) ? 'value must be in list %s'.format([getField(rules, 'in')]) : ''"
   }];
 
   // `not_in` requires the field value to not be equal to any of the specified
@@ -1259,7 +1260,7 @@ message Int64Rules {
   // ```proto
   // message MyInt64 {
   //   // value must not be in list [1, 2, 3]
-  //   repeated int64 value = 1 (buf.validate.field).int64 = { not_in: [1, 2, 3] };
+  //   int64 value = 1 [(buf.validate.field).int64 = { not_in: [1, 2, 3] }];
   // }
   // ```
   repeated int64 not_in = 7 [(predefined).cel = {
@@ -1268,7 +1269,7 @@ message Int64Rules {
   }];
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -1285,8 +1286,8 @@ message Int64Rules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -1297,7 +1298,7 @@ message Int64Rules {
   extensions 1000 to max;
 }
 
-// UInt32Rules describes the constraints applied to `uint32` values. These
+// UInt32Rules describes the rules applied to `uint32` values. These
 // rules may also be applied to the `google.protobuf.UInt32Value` Well-Known-Type.
 message UInt32Rules {
   // `const` requires the field value to exactly match the specified value. If
@@ -1311,7 +1312,7 @@ message UInt32Rules {
   // ```
   optional uint32 const = 1 [(predefined).cel = {
     id: "uint32.const"
-    expression: "this != rules.const ? 'value must equal %s'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal %s'.format([getField(rules, 'const')]) : ''"
   }];
   oneof less_than {
     // `lt` requires the field value to be less than the specified value (field <
@@ -1459,12 +1460,12 @@ message UInt32Rules {
   // ```proto
   // message MyUInt32 {
   //   // value must be in list [1, 2, 3]
-  //   repeated uint32 value = 1 (buf.validate.field).uint32 = { in: [1, 2, 3] };
+  //   uint32 value = 1 [(buf.validate.field).uint32 = { in: [1, 2, 3] }];
   // }
   // ```
   repeated uint32 in = 6 [(predefined).cel = {
     id: "uint32.in"
-    expression: "!(this in dyn(rules)['in']) ? 'value must be in list %s'.format([dyn(rules)['in']]) : ''"
+    expression: "!(this in getField(rules, 'in')) ? 'value must be in list %s'.format([getField(rules, 'in')]) : ''"
   }];
 
   // `not_in` requires the field value to not be equal to any of the specified
@@ -1474,7 +1475,7 @@ message UInt32Rules {
   // ```proto
   // message MyUInt32 {
   //   // value must not be in list [1, 2, 3]
-  //   repeated uint32 value = 1 (buf.validate.field).uint32 = { not_in: [1, 2, 3] };
+  //   uint32 value = 1 [(buf.validate.field).uint32 = { not_in: [1, 2, 3] }];
   // }
   // ```
   repeated uint32 not_in = 7 [(predefined).cel = {
@@ -1483,7 +1484,7 @@ message UInt32Rules {
   }];
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -1500,8 +1501,8 @@ message UInt32Rules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -1512,7 +1513,7 @@ message UInt32Rules {
   extensions 1000 to max;
 }
 
-// UInt64Rules describes the constraints applied to `uint64` values. These
+// UInt64Rules describes the rules applied to `uint64` values. These
 // rules may also be applied to the `google.protobuf.UInt64Value` Well-Known-Type.
 message UInt64Rules {
   // `const` requires the field value to exactly match the specified value. If
@@ -1526,7 +1527,7 @@ message UInt64Rules {
   // ```
   optional uint64 const = 1 [(predefined).cel = {
     id: "uint64.const"
-    expression: "this != rules.const ? 'value must equal %s'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal %s'.format([getField(rules, 'const')]) : ''"
   }];
   oneof less_than {
     // `lt` requires the field value to be less than the specified value (field <
@@ -1673,12 +1674,12 @@ message UInt64Rules {
   // ```proto
   // message MyUInt64 {
   //   // value must be in list [1, 2, 3]
-  //   repeated uint64 value = 1 (buf.validate.field).uint64 = { in: [1, 2, 3] };
+  //   uint64 value = 1 [(buf.validate.field).uint64 = { in: [1, 2, 3] }];
   // }
   // ```
   repeated uint64 in = 6 [(predefined).cel = {
     id: "uint64.in"
-    expression: "!(this in dyn(rules)['in']) ? 'value must be in list %s'.format([dyn(rules)['in']]) : ''"
+    expression: "!(this in getField(rules, 'in')) ? 'value must be in list %s'.format([getField(rules, 'in')]) : ''"
   }];
 
   // `not_in` requires the field value to not be equal to any of the specified
@@ -1688,7 +1689,7 @@ message UInt64Rules {
   // ```proto
   // message MyUInt64 {
   //   // value must not be in list [1, 2, 3]
-  //   repeated uint64 value = 1 (buf.validate.field).uint64 = { not_in: [1, 2, 3] };
+  //   uint64 value = 1 [(buf.validate.field).uint64 = { not_in: [1, 2, 3] }];
   // }
   // ```
   repeated uint64 not_in = 7 [(predefined).cel = {
@@ -1697,7 +1698,7 @@ message UInt64Rules {
   }];
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -1714,8 +1715,8 @@ message UInt64Rules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -1726,7 +1727,7 @@ message UInt64Rules {
   extensions 1000 to max;
 }
 
-// SInt32Rules describes the constraints applied to `sint32` values.
+// SInt32Rules describes the rules applied to `sint32` values.
 message SInt32Rules {
   // `const` requires the field value to exactly match the specified value. If
   // the field value doesn't match, an error message is generated.
@@ -1739,7 +1740,7 @@ message SInt32Rules {
   // ```
   optional sint32 const = 1 [(predefined).cel = {
     id: "sint32.const"
-    expression: "this != rules.const ? 'value must equal %s'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal %s'.format([getField(rules, 'const')]) : ''"
   }];
   oneof less_than {
     // `lt` requires the field value to be less than the specified value (field
@@ -1887,12 +1888,12 @@ message SInt32Rules {
   // ```proto
   // message MySInt32 {
   //   // value must be in list [1, 2, 3]
-  //   repeated sint32 value = 1 (buf.validate.field).sint32 = { in: [1, 2, 3] };
+  //   sint32 value = 1 [(buf.validate.field).sint32 = { in: [1, 2, 3] }];
   // }
   // ```
   repeated sint32 in = 6 [(predefined).cel = {
     id: "sint32.in"
-    expression: "!(this in dyn(rules)['in']) ? 'value must be in list %s'.format([dyn(rules)['in']]) : ''"
+    expression: "!(this in getField(rules, 'in')) ? 'value must be in list %s'.format([getField(rules, 'in')]) : ''"
   }];
 
   // `not_in` requires the field value to not be equal to any of the specified
@@ -1902,7 +1903,7 @@ message SInt32Rules {
   // ```proto
   // message MySInt32 {
   //   // value must not be in list [1, 2, 3]
-  //   repeated sint32 value = 1 (buf.validate.field).sint32 = { not_in: [1, 2, 3] };
+  //   sint32 value = 1 [(buf.validate.field).sint32 = { not_in: [1, 2, 3] }];
   // }
   // ```
   repeated sint32 not_in = 7 [(predefined).cel = {
@@ -1911,7 +1912,7 @@ message SInt32Rules {
   }];
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -1928,8 +1929,8 @@ message SInt32Rules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -1940,7 +1941,7 @@ message SInt32Rules {
   extensions 1000 to max;
 }
 
-// SInt64Rules describes the constraints applied to `sint64` values.
+// SInt64Rules describes the rules applied to `sint64` values.
 message SInt64Rules {
   // `const` requires the field value to exactly match the specified value. If
   // the field value doesn't match, an error message is generated.
@@ -1953,7 +1954,7 @@ message SInt64Rules {
   // ```
   optional sint64 const = 1 [(predefined).cel = {
     id: "sint64.const"
-    expression: "this != rules.const ? 'value must equal %s'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal %s'.format([getField(rules, 'const')]) : ''"
   }];
   oneof less_than {
     // `lt` requires the field value to be less than the specified value (field
@@ -2101,12 +2102,12 @@ message SInt64Rules {
   // ```proto
   // message MySInt64 {
   //   // value must be in list [1, 2, 3]
-  //   repeated sint64 value = 1 (buf.validate.field).sint64 = { in: [1, 2, 3] };
+  //   sint64 value = 1 [(buf.validate.field).sint64 = { in: [1, 2, 3] }];
   // }
   // ```
   repeated sint64 in = 6 [(predefined).cel = {
     id: "sint64.in"
-    expression: "!(this in dyn(rules)['in']) ? 'value must be in list %s'.format([dyn(rules)['in']]) : ''"
+    expression: "!(this in getField(rules, 'in')) ? 'value must be in list %s'.format([getField(rules, 'in')]) : ''"
   }];
 
   // `not_in` requires the field value to not be equal to any of the specified
@@ -2116,7 +2117,7 @@ message SInt64Rules {
   // ```proto
   // message MySInt64 {
   //   // value must not be in list [1, 2, 3]
-  //   repeated sint64 value = 1 (buf.validate.field).sint64 = { not_in: [1, 2, 3] };
+  //   sint64 value = 1 [(buf.validate.field).sint64 = { not_in: [1, 2, 3] }];
   // }
   // ```
   repeated sint64 not_in = 7 [(predefined).cel = {
@@ -2125,7 +2126,7 @@ message SInt64Rules {
   }];
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -2142,8 +2143,8 @@ message SInt64Rules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -2154,7 +2155,7 @@ message SInt64Rules {
   extensions 1000 to max;
 }
 
-// Fixed32Rules describes the constraints applied to `fixed32` values.
+// Fixed32Rules describes the rules applied to `fixed32` values.
 message Fixed32Rules {
   // `const` requires the field value to exactly match the specified value.
   // If the field value doesn't match, an error message is generated.
@@ -2167,7 +2168,7 @@ message Fixed32Rules {
   // ```
   optional fixed32 const = 1 [(predefined).cel = {
     id: "fixed32.const"
-    expression: "this != rules.const ? 'value must equal %s'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal %s'.format([getField(rules, 'const')]) : ''"
   }];
   oneof less_than {
     // `lt` requires the field value to be less than the specified value (field <
@@ -2315,12 +2316,12 @@ message Fixed32Rules {
   // ```proto
   // message MyFixed32 {
   //   // value must be in list [1, 2, 3]
-  //   repeated fixed32 value = 1 (buf.validate.field).fixed32 = { in: [1, 2, 3] };
+  //   fixed32 value = 1 [(buf.validate.field).fixed32 = { in: [1, 2, 3] }];
   // }
   // ```
   repeated fixed32 in = 6 [(predefined).cel = {
     id: "fixed32.in"
-    expression: "!(this in dyn(rules)['in']) ? 'value must be in list %s'.format([dyn(rules)['in']]) : ''"
+    expression: "!(this in getField(rules, 'in')) ? 'value must be in list %s'.format([getField(rules, 'in')]) : ''"
   }];
 
   // `not_in` requires the field value to not be equal to any of the specified
@@ -2330,7 +2331,7 @@ message Fixed32Rules {
   // ```proto
   // message MyFixed32 {
   //   // value must not be in list [1, 2, 3]
-  //   repeated fixed32 value = 1 (buf.validate.field).fixed32 = { not_in: [1, 2, 3] };
+  //   fixed32 value = 1 [(buf.validate.field).fixed32 = { not_in: [1, 2, 3] }];
   // }
   // ```
   repeated fixed32 not_in = 7 [(predefined).cel = {
@@ -2339,7 +2340,7 @@ message Fixed32Rules {
   }];
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -2356,8 +2357,8 @@ message Fixed32Rules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -2368,7 +2369,7 @@ message Fixed32Rules {
   extensions 1000 to max;
 }
 
-// Fixed64Rules describes the constraints applied to `fixed64` values.
+// Fixed64Rules describes the rules applied to `fixed64` values.
 message Fixed64Rules {
   // `const` requires the field value to exactly match the specified value. If
   // the field value doesn't match, an error message is generated.
@@ -2381,7 +2382,7 @@ message Fixed64Rules {
   // ```
   optional fixed64 const = 1 [(predefined).cel = {
     id: "fixed64.const"
-    expression: "this != rules.const ? 'value must equal %s'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal %s'.format([getField(rules, 'const')]) : ''"
   }];
   oneof less_than {
     // `lt` requires the field value to be less than the specified value (field <
@@ -2529,12 +2530,12 @@ message Fixed64Rules {
   // ```proto
   // message MyFixed64 {
   //   // value must be in list [1, 2, 3]
-  //   repeated fixed64 value = 1 (buf.validate.field).fixed64 = { in: [1, 2, 3] };
+  //   fixed64 value = 1 [(buf.validate.field).fixed64 = { in: [1, 2, 3] }];
   // }
   // ```
   repeated fixed64 in = 6 [(predefined).cel = {
     id: "fixed64.in"
-    expression: "!(this in dyn(rules)['in']) ? 'value must be in list %s'.format([dyn(rules)['in']]) : ''"
+    expression: "!(this in getField(rules, 'in')) ? 'value must be in list %s'.format([getField(rules, 'in')]) : ''"
   }];
 
   // `not_in` requires the field value to not be equal to any of the specified
@@ -2544,7 +2545,7 @@ message Fixed64Rules {
   // ```proto
   // message MyFixed64 {
   //   // value must not be in list [1, 2, 3]
-  //   repeated fixed64 value = 1 (buf.validate.field).fixed64 = { not_in: [1, 2, 3] };
+  //   fixed64 value = 1 [(buf.validate.field).fixed64 = { not_in: [1, 2, 3] }];
   // }
   // ```
   repeated fixed64 not_in = 7 [(predefined).cel = {
@@ -2553,7 +2554,7 @@ message Fixed64Rules {
   }];
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -2570,8 +2571,8 @@ message Fixed64Rules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -2582,7 +2583,7 @@ message Fixed64Rules {
   extensions 1000 to max;
 }
 
-// SFixed32Rules describes the constraints applied to `fixed32` values.
+// SFixed32Rules describes the rules applied to `fixed32` values.
 message SFixed32Rules {
   // `const` requires the field value to exactly match the specified value. If
   // the field value doesn't match, an error message is generated.
@@ -2595,7 +2596,7 @@ message SFixed32Rules {
   // ```
   optional sfixed32 const = 1 [(predefined).cel = {
     id: "sfixed32.const"
-    expression: "this != rules.const ? 'value must equal %s'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal %s'.format([getField(rules, 'const')]) : ''"
   }];
   oneof less_than {
     // `lt` requires the field value to be less than the specified value (field <
@@ -2743,12 +2744,12 @@ message SFixed32Rules {
   // ```proto
   // message MySFixed32 {
   //   // value must be in list [1, 2, 3]
-  //   repeated sfixed32 value = 1 (buf.validate.field).sfixed32 = { in: [1, 2, 3] };
+  //   sfixed32 value = 1 [(buf.validate.field).sfixed32 = { in: [1, 2, 3] }];
   // }
   // ```
   repeated sfixed32 in = 6 [(predefined).cel = {
     id: "sfixed32.in"
-    expression: "!(this in dyn(rules)['in']) ? 'value must be in list %s'.format([dyn(rules)['in']]) : ''"
+    expression: "!(this in getField(rules, 'in')) ? 'value must be in list %s'.format([getField(rules, 'in')]) : ''"
   }];
 
   // `not_in` requires the field value to not be equal to any of the specified
@@ -2758,7 +2759,7 @@ message SFixed32Rules {
   // ```proto
   // message MySFixed32 {
   //   // value must not be in list [1, 2, 3]
-  //   repeated sfixed32 value = 1 (buf.validate.field).sfixed32 = { not_in: [1, 2, 3] };
+  //   sfixed32 value = 1 [(buf.validate.field).sfixed32 = { not_in: [1, 2, 3] }];
   // }
   // ```
   repeated sfixed32 not_in = 7 [(predefined).cel = {
@@ -2767,7 +2768,7 @@ message SFixed32Rules {
   }];
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -2784,8 +2785,8 @@ message SFixed32Rules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -2796,7 +2797,7 @@ message SFixed32Rules {
   extensions 1000 to max;
 }
 
-// SFixed64Rules describes the constraints applied to `fixed64` values.
+// SFixed64Rules describes the rules applied to `fixed64` values.
 message SFixed64Rules {
   // `const` requires the field value to exactly match the specified value. If
   // the field value doesn't match, an error message is generated.
@@ -2809,7 +2810,7 @@ message SFixed64Rules {
   // ```
   optional sfixed64 const = 1 [(predefined).cel = {
     id: "sfixed64.const"
-    expression: "this != rules.const ? 'value must equal %s'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal %s'.format([getField(rules, 'const')]) : ''"
   }];
   oneof less_than {
     // `lt` requires the field value to be less than the specified value (field <
@@ -2957,12 +2958,12 @@ message SFixed64Rules {
   // ```proto
   // message MySFixed64 {
   //   // value must be in list [1, 2, 3]
-  //   repeated sfixed64 value = 1 (buf.validate.field).sfixed64 = { in: [1, 2, 3] };
+  //   sfixed64 value = 1 [(buf.validate.field).sfixed64 = { in: [1, 2, 3] }];
   // }
   // ```
   repeated sfixed64 in = 6 [(predefined).cel = {
     id: "sfixed64.in"
-    expression: "!(this in dyn(rules)['in']) ? 'value must be in list %s'.format([dyn(rules)['in']]) : ''"
+    expression: "!(this in getField(rules, 'in')) ? 'value must be in list %s'.format([getField(rules, 'in')]) : ''"
   }];
 
   // `not_in` requires the field value to not be equal to any of the specified
@@ -2972,7 +2973,7 @@ message SFixed64Rules {
   // ```proto
   // message MySFixed64 {
   //   // value must not be in list [1, 2, 3]
-  //   repeated sfixed64 value = 1 (buf.validate.field).sfixed64 = { not_in: [1, 2, 3] };
+  //   sfixed64 value = 1 [(buf.validate.field).sfixed64 = { not_in: [1, 2, 3] }];
   // }
   // ```
   repeated sfixed64 not_in = 7 [(predefined).cel = {
@@ -2981,7 +2982,7 @@ message SFixed64Rules {
   }];
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -2998,8 +2999,8 @@ message SFixed64Rules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -3010,7 +3011,7 @@ message SFixed64Rules {
   extensions 1000 to max;
 }
 
-// BoolRules describes the constraints applied to `bool` values. These rules
+// BoolRules describes the rules applied to `bool` values. These rules
 // may also be applied to the `google.protobuf.BoolValue` Well-Known-Type.
 message BoolRules {
   // `const` requires the field value to exactly match the specified boolean value.
@@ -3024,11 +3025,11 @@ message BoolRules {
   // ```
   optional bool const = 1 [(predefined).cel = {
     id: "bool.const"
-    expression: "this != rules.const ? 'value must equal %s'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal %s'.format([getField(rules, 'const')]) : ''"
   }];
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -3045,8 +3046,8 @@ message BoolRules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -3057,7 +3058,7 @@ message BoolRules {
   extensions 1000 to max;
 }
 
-// StringRules describes the constraints applied to `string` values These
+// StringRules describes the rules applied to `string` values These
 // rules may also be applied to the `google.protobuf.StringValue` Well-Known-Type.
 message StringRules {
   // `const` requires the field value to exactly match the specified value. If
@@ -3071,7 +3072,7 @@ message StringRules {
   // ```
   optional string const = 1 [(predefined).cel = {
     id: "string.const"
-    expression: "this != rules.const ? 'value must equal `%s`'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal `%s`'.format([getField(rules, 'const')]) : ''"
   }];
 
   // `len` dictates that the field value must have the specified
@@ -3252,12 +3253,12 @@ message StringRules {
   // ```proto
   // message MyString {
   //   // value must be in list ["apple", "banana"]
-  //   repeated string value = 1 [(buf.validate.field).string.in = "apple", (buf.validate.field).string.in = "banana"];
+  //   string value = 1 [(buf.validate.field).string.in = "apple", (buf.validate.field).string.in = "banana"];
   // }
   // ```
   repeated string in = 10 [(predefined).cel = {
     id: "string.in"
-    expression: "!(this in dyn(rules)['in']) ? 'value must be in list %s'.format([dyn(rules)['in']]) : ''"
+    expression: "!(this in getField(rules, 'in')) ? 'value must be in list %s'.format([getField(rules, 'in')]) : ''"
   }];
 
   // `not_in` specifies that the field value cannot be equal to any
@@ -3266,7 +3267,7 @@ message StringRules {
   // ```proto
   // message MyString {
   //   // value must not be in list ["orange", "grape"]
-  //   repeated string value = 1 [(buf.validate.field).string.not_in = "orange", (buf.validate.field).string.not_in = "grape"];
+  //   string value = 1 [(buf.validate.field).string.not_in = "orange", (buf.validate.field).string.not_in = "grape"];
   // }
   // ```
   repeated string not_in = 11 [(predefined).cel = {
@@ -3274,11 +3275,17 @@ message StringRules {
     expression: "this in rules.not_in ? 'value must not be in list %s'.format([rules.not_in]) : ''"
   }];
 
-  // `WellKnown` rules provide advanced constraints against common string
-  // patterns
+  // `WellKnown` rules provide advanced rules against common string
+  // patterns.
   oneof well_known {
-    // `email` specifies that the field value must be a valid email address
-    // (addr-spec only) as defined by [RFC 5322](https://tools.ietf.org/html/rfc5322#section-3.4.1).
+    // `email` specifies that the field value must be a valid email address, for
+    // example "foo@example.com".
+    //
+    // Conforms to the definition for a valid email address from the [HTML standard](https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address).
+    // Note that this standard willfully deviates from [RFC 5322](https://datatracker.ietf.org/doc/html/rfc5322),
+    // which allows many unexpected forms of email addresses and will easily match
+    // a typographical error.
+    //
     // If the field value isn't a valid email address, an error message will be generated.
     //
     // ```proto
@@ -3300,10 +3307,18 @@ message StringRules {
       }
     ];
 
-    // `hostname` specifies that the field value must be a valid
-    // hostname as defined by [RFC 1034](https://tools.ietf.org/html/rfc1034#section-3.5). This constraint doesn't support
-    // internationalized domain names (IDNs). If the field value isn't a
-    // valid hostname, an error message will be generated.
+    // `hostname` specifies that the field value must be a valid hostname, for
+    // example "foo.example.com".
+    //
+    // A valid hostname follows the rules below:
+    // - The name consists of one or more labels, separated by a dot (".").
+    // - Each label can be 1 to 63 alphanumeric characters.
+    // - A label can contain hyphens ("-"), but must not start or end with a hyphen.
+    // - The right-most label must not be digits only.
+    // - The name can have a trailing dot—for example, "foo.example.com.".
+    // - The name can be 253 characters at most, excluding the optional trailing dot.
+    //
+    // If the field value isn't a valid hostname, an error message will be generated.
     //
     // ```proto
     // message MyString {
@@ -3324,8 +3339,15 @@ message StringRules {
       }
     ];
 
-    // `ip` specifies that the field value must be a valid IP
-    // (v4 or v6) address, without surrounding square brackets for IPv6 addresses.
+    // `ip` specifies that the field value must be a valid IP (v4 or v6) address.
+    //
+    // IPv4 addresses are expected in the dotted decimal format—for example, "192.168.5.21".
+    // IPv6 addresses are expected in their text representation—for example, "::1",
+    // or "2001:0DB8:ABCD:0012::0".
+    //
+    // Both formats are well-defined in the internet standard [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986).
+    // Zone identifiers for IPv6 addresses (for example, "fe80::a%en1") are supported.
+    //
     // If the field value isn't a valid IP address, an error message will be
     // generated.
     //
@@ -3348,9 +3370,9 @@ message StringRules {
       }
     ];
 
-    // `ipv4` specifies that the field value must be a valid IPv4
-    // address. If the field value isn't a valid IPv4 address, an error message
-    // will be generated.
+    // `ipv4` specifies that the field value must be a valid IPv4 address—for
+    // example "192.168.5.21". If the field value isn't a valid IPv4 address, an
+    // error message will be generated.
     //
     // ```proto
     // message MyString {
@@ -3371,9 +3393,9 @@ message StringRules {
       }
     ];
 
-    // `ipv6` specifies that the field value must be a valid
-    // IPv6 address, without surrounding square brackets. If the field value is
-    // not a valid IPv6 address, an error message will be generated.
+    // `ipv6` specifies that the field value must be a valid IPv6 address—for
+    // example "::1", or "d7a:115c:a1e0:ab12:4843:cd96:626b:430b". If the field
+    // value is not a valid IPv6 address, an error message will be generated.
     //
     // ```proto
     // message MyString {
@@ -3394,9 +3416,13 @@ message StringRules {
       }
     ];
 
-    // `uri` specifies that the field value must be a valid,
-    // absolute URI as defined by [RFC 3986](https://tools.ietf.org/html/rfc3986#section-3). If the field value isn't a valid,
-    // absolute URI, an error message will be generated.
+    // `uri` specifies that the field value must be a valid URI, for example
+    // "https://example.com/foo/bar?baz=quux#frag".
+    //
+    // URI is defined in the internet standard [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986).
+    // Zone Identifiers in IPv6 address literals are supported ([RFC 6874](https://datatracker.ietf.org/doc/html/rfc6874)).
+    //
+    // If the field value isn't a valid URI, an error message will be generated.
     //
     // ```proto
     // message MyString {
@@ -3417,27 +3443,33 @@ message StringRules {
       }
     ];
 
-    // `uri_ref` specifies that the field value must be a valid URI
-    // as defined by [RFC 3986](https://tools.ietf.org/html/rfc3986#section-3) and may be either relative or absolute. If the
-    // field value isn't a valid URI, an error message will be generated.
+    // `uri_ref` specifies that the field value must be a valid URI Reference—either
+    // a URI such as "https://example.com/foo/bar?baz=quux#frag", or a Relative
+    // Reference such as "./foo/bar?query".
+    //
+    // URI, URI Reference, and Relative Reference are defined in the internet
+    // standard [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986). Zone
+    // Identifiers in IPv6 address literals are supported ([RFC 6874](https://datatracker.ietf.org/doc/html/rfc6874)).
+    //
+    // If the field value isn't a valid URI Reference, an error message will be
+    // generated.
     //
     // ```proto
     // message MyString {
-    //   // value must be a valid URI
+    //   // value must be a valid URI Reference
     //   string value = 1 [(buf.validate.field).string.uri_ref = true];
     // }
     // ```
     bool uri_ref = 18 [(predefined).cel = {
       id: "string.uri_ref"
-      message: "value must be a valid URI"
+      message: "value must be a valid URI Reference"
       expression: "!rules.uri_ref || this.isUriRef()"
     }];
 
     // `address` specifies that the field value must be either a valid hostname
-    // as defined by [RFC 1034](https://tools.ietf.org/html/rfc1034#section-3.5)
-    // (which doesn't support internationalized domain names or IDNs) or a valid
-    // IP (v4 or v6). If the field value isn't a valid hostname or IP, an error
-    // message will be generated.
+    // (for example, "example.com"), or a valid IP (v4 or v6) address (for example,
+    // "192.168.0.1", or "::1"). If the field value isn't a valid hostname or IP,
+    // an error message will be generated.
     //
     // ```proto
     // message MyString {
@@ -3459,7 +3491,7 @@ message StringRules {
     ];
 
     // `uuid` specifies that the field value must be a valid UUID as defined by
-    // [RFC 4122](https://tools.ietf.org/html/rfc4122#section-4.1.2). If the
+    // [RFC 4122](https://datatracker.ietf.org/doc/html/rfc4122#section-4.1.2). If the
     // field value isn't a valid UUID, an error message will be generated.
     //
     // ```proto
@@ -3482,7 +3514,7 @@ message StringRules {
     ];
 
     // `tuuid` (trimmed UUID) specifies that the field value must be a valid UUID as
-    // defined by [RFC 4122](https://tools.ietf.org/html/rfc4122#section-4.1.2) with all dashes
+    // defined by [RFC 4122](https://datatracker.ietf.org/doc/html/rfc4122#section-4.1.2) with all dashes
     // omitted. If the field value isn't a valid UUID without dashes, an error message
     // will be generated.
     //
@@ -3505,10 +3537,10 @@ message StringRules {
       }
     ];
 
-    // `ip_with_prefixlen` specifies that the field value must be a valid IP (v4 or v6)
-    // address with prefix length. If the field value isn't a valid IP with prefix
-    // length, an error message will be generated.
-    //
+    // `ip_with_prefixlen` specifies that the field value must be a valid IP
+    // (v4 or v6) address with prefix length—for example, "192.168.5.21/16" or
+    // "2001:0DB8:ABCD:0012::F1/64". If the field value isn't a valid IP with
+    // prefix length, an error message will be generated.
     //
     // ```proto
     // message MyString {
@@ -3530,9 +3562,9 @@ message StringRules {
     ];
 
     // `ipv4_with_prefixlen` specifies that the field value must be a valid
-    // IPv4 address with prefix.
-    // If the field value isn't a valid IPv4 address with prefix length,
-    // an error message will be generated.
+    // IPv4 address with prefix length—for example, "192.168.5.21/16". If the
+    // field value isn't a valid IPv4 address with prefix length, an error
+    // message will be generated.
     //
     // ```proto
     // message MyString {
@@ -3554,7 +3586,7 @@ message StringRules {
     ];
 
     // `ipv6_with_prefixlen` specifies that the field value must be a valid
-    // IPv6 address with prefix length.
+    // IPv6 address with prefix length—for example, "2001:0DB8:ABCD:0012::F1/64".
     // If the field value is not a valid IPv6 address with prefix length,
     // an error message will be generated.
     //
@@ -3577,10 +3609,15 @@ message StringRules {
       }
     ];
 
-    // `ip_prefix` specifies that the field value must be a valid IP (v4 or v6) prefix.
+    // `ip_prefix` specifies that the field value must be a valid IP (v4 or v6)
+    // prefix—for example, "192.168.0.0/16" or "2001:0DB8:ABCD:0012::0/64".
+    //
+    // The prefix must have all zeros for the unmasked bits. For example,
+    // "2001:0DB8:ABCD:0012::0/64" designates the left-most 64 bits for the
+    // prefix, and the remaining 64 bits must be zero.
+    //
     // If the field value isn't a valid IP prefix, an error message will be
-    // generated. The prefix must have all zeros for the masked bits of the prefix (e.g.,
-    // `127.0.0.0/16`, not `127.0.0.1/16`).
+    // generated.
     //
     // ```proto
     // message MyString {
@@ -3602,9 +3639,14 @@ message StringRules {
     ];
 
     // `ipv4_prefix` specifies that the field value must be a valid IPv4
-    // prefix. If the field value isn't a valid IPv4 prefix, an error message
-    // will be generated. The prefix must have all zeros for the masked bits of
-    // the prefix (e.g., `127.0.0.0/16`, not `127.0.0.1/16`).
+    // prefix, for example "192.168.0.0/16".
+    //
+    // The prefix must have all zeros for the unmasked bits. For example,
+    // "192.168.0.0/16" designates the left-most 16 bits for the prefix,
+    // and the remaining 16 bits must be zero.
+    //
+    // If the field value isn't a valid IPv4 prefix, an error message
+    // will be generated.
     //
     // ```proto
     // message MyString {
@@ -3625,10 +3667,15 @@ message StringRules {
       }
     ];
 
-    // `ipv6_prefix` specifies that the field value must be a valid IPv6 prefix.
+    // `ipv6_prefix` specifies that the field value must be a valid IPv6 prefix—for
+    // example, "2001:0DB8:ABCD:0012::0/64".
+    //
+    // The prefix must have all zeros for the unmasked bits. For example,
+    // "2001:0DB8:ABCD:0012::0/64" designates the left-most 64 bits for the
+    // prefix, and the remaining 64 bits must be zero.
+    //
     // If the field value is not a valid IPv6 prefix, an error message will be
-    // generated. The prefix must have all zeros for the masked bits of the prefix
-    // (e.g., `2001:db8::/48`, not `2001:db8::1/48`).
+    // generated.
     //
     // ```proto
     // message MyString {
@@ -3649,10 +3696,16 @@ message StringRules {
       }
     ];
 
-    // `host_and_port` specifies the field value must be a valid host and port
-    // pair. The host must be a valid hostname or IP address while the port
-    // must be in the range of 0-65535, inclusive. IPv6 addresses must be delimited
-    // with square brackets (e.g., `[::1]:1234`).
+    // `host_and_port` specifies that the field value must be valid host/port
+    // pair—for example, "example.com:8080".
+    //
+    // The host can be one of:
+    //- An IPv4 address in dotted decimal format—for example, "192.168.5.21".
+    //- An IPv6 address enclosed in square brackets—for example, "[2001:0DB8:ABCD:0012::F1]".
+    //- A hostname—for example, "example.com".
+    //
+    // The port is separated by a colon. It must be non-empty, with a decimal number
+    // in the range of 0-65535, inclusive.
     bool host_and_port = 32 [
       (predefined).cel = {
         id: "string.host_and_port"
@@ -3684,8 +3737,8 @@ message StringRules {
     // | Name                          | Number | Description                               |
     // |-------------------------------|--------|-------------------------------------------|
     // | KNOWN_REGEX_UNSPECIFIED       | 0      |                                           |
-    // | KNOWN_REGEX_HTTP_HEADER_NAME  | 1      | HTTP header name as defined by [RFC 7230](https://tools.ietf.org/html/rfc7230#section-3.2)  |
-    // | KNOWN_REGEX_HTTP_HEADER_VALUE | 2      | HTTP header value as defined by [RFC 7230](https://tools.ietf.org/html/rfc7230#section-3.2.4) |
+    // | KNOWN_REGEX_HTTP_HEADER_NAME  | 1      | HTTP header name as defined by [RFC 7230](https://datatracker.ietf.org/doc/html/rfc7230#section-3.2)  |
+    // | KNOWN_REGEX_HTTP_HEADER_VALUE | 2      | HTTP header value as defined by [RFC 7230](https://datatracker.ietf.org/doc/html/rfc7230#section-3.2.4) |
     KnownRegex well_known_regex = 24 [
       (predefined).cel = {
         id: "string.well_known_regex.header_name"
@@ -3713,7 +3766,7 @@ message StringRules {
 
   // This applies to regexes `HTTP_HEADER_NAME` and `HTTP_HEADER_VALUE` to
   // enable strict header validation. By default, this is true, and HTTP header
-  // validations are [RFC-compliant](https://tools.ietf.org/html/rfc7230#section-3). Setting to false will enable looser
+  // validations are [RFC-compliant](https://datatracker.ietf.org/doc/html/rfc7230#section-3). Setting to false will enable looser
   // validations that only disallow `\r\n\0` characters, which can be used to
   // bypass header matching rules.
   //
@@ -3726,14 +3779,14 @@ message StringRules {
   optional bool strict = 25;
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
   // message MyString {
   //   string value = 1 [
-  //     (buf.validate.field).string.example = 1,
-  //     (buf.validate.field).string.example = 2
+  //     (buf.validate.field).string.example = "hello",
+  //     (buf.validate.field).string.example = "world"
   //   ];
   // }
   // ```
@@ -3743,8 +3796,8 @@ message StringRules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -3759,14 +3812,14 @@ message StringRules {
 enum KnownRegex {
   KNOWN_REGEX_UNSPECIFIED = 0;
 
-  // HTTP header name as defined by [RFC 7230](https://tools.ietf.org/html/rfc7230#section-3.2).
+  // HTTP header name as defined by [RFC 7230](https://datatracker.ietf.org/doc/html/rfc7230#section-3.2).
   KNOWN_REGEX_HTTP_HEADER_NAME = 1;
 
-  // HTTP header value as defined by [RFC 7230](https://tools.ietf.org/html/rfc7230#section-3.2.4).
+  // HTTP header value as defined by [RFC 7230](https://datatracker.ietf.org/doc/html/rfc7230#section-3.2.4).
   KNOWN_REGEX_HTTP_HEADER_VALUE = 2;
 }
 
-// BytesRules describe the constraints applied to `bytes` values. These rules
+// BytesRules describe the rules applied to `bytes` values. These rules
 // may also be applied to the `google.protobuf.BytesValue` Well-Known-Type.
 message BytesRules {
   // `const` requires the field value to exactly match the specified bytes
@@ -3780,7 +3833,7 @@ message BytesRules {
   // ```
   optional bytes const = 1 [(predefined).cel = {
     id: "bytes.const"
-    expression: "this != rules.const ? 'value must be %x'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must be %x'.format([getField(rules, 'const')]) : ''"
   }];
 
   // `len` requires the field value to have the specified length in bytes.
@@ -3901,7 +3954,7 @@ message BytesRules {
   // ```
   repeated bytes in = 8 [(predefined).cel = {
     id: "bytes.in"
-    expression: "dyn(rules)['in'].size() > 0 && !(this in dyn(rules)['in']) ? 'value must be in list %s'.format([dyn(rules)['in']]) : ''"
+    expression: "getField(rules, 'in').size() > 0 && !(this in getField(rules, 'in')) ? 'value must be in list %s'.format([getField(rules, 'in')]) : ''"
   }];
 
   // `not_in` requires the field value to be not equal to any of the specified
@@ -3920,11 +3973,11 @@ message BytesRules {
     expression: "this in rules.not_in ? 'value must not be in list %s'.format([rules.not_in]) : ''"
   }];
 
-  // WellKnown rules provide advanced constraints against common byte
+  // WellKnown rules provide advanced rules against common byte
   // patterns
   oneof well_known {
     // `ip` ensures that the field `value` is a valid IP address (v4 or v6) in byte format.
-    // If the field value doesn't meet this constraint, an error message is generated.
+    // If the field value doesn't meet this rule, an error message is generated.
     //
     // ```proto
     // message MyBytes {
@@ -3946,7 +3999,7 @@ message BytesRules {
     ];
 
     // `ipv4` ensures that the field `value` is a valid IPv4 address in byte format.
-    // If the field value doesn't meet this constraint, an error message is generated.
+    // If the field value doesn't meet this rule, an error message is generated.
     //
     // ```proto
     // message MyBytes {
@@ -3968,7 +4021,7 @@ message BytesRules {
     ];
 
     // `ipv6` ensures that the field `value` is a valid IPv6 address in byte format.
-    // If the field value doesn't meet this constraint, an error message is generated.
+    // If the field value doesn't meet this rule, an error message is generated.
     // ```proto
     // message MyBytes {
     //   // value must be a valid IPv6 address
@@ -3990,7 +4043,7 @@ message BytesRules {
   }
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -4007,8 +4060,8 @@ message BytesRules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -4019,7 +4072,7 @@ message BytesRules {
   extensions 1000 to max;
 }
 
-// EnumRules describe the constraints applied to `enum` values.
+// EnumRules describe the rules applied to `enum` values.
 message EnumRules {
   // `const` requires the field value to exactly match the specified enum value.
   // If the field value doesn't match, an error message is generated.
@@ -4038,7 +4091,7 @@ message EnumRules {
   // ```
   optional int32 const = 1 [(predefined).cel = {
     id: "enum.const"
-    expression: "this != rules.const ? 'value must equal %s'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal %s'.format([getField(rules, 'const')]) : ''"
   }];
 
   // `defined_only` requires the field value to be one of the defined values for
@@ -4076,7 +4129,7 @@ message EnumRules {
   // ```
   repeated int32 in = 3 [(predefined).cel = {
     id: "enum.in"
-    expression: "!(this in dyn(rules)['in']) ? 'value must be in list %s'.format([dyn(rules)['in']]) : ''"
+    expression: "!(this in getField(rules, 'in')) ? 'value must be in list %s'.format([getField(rules, 'in')]) : ''"
   }];
 
   // `not_in` requires the field value to be not equal to any of the
@@ -4101,7 +4154,7 @@ message EnumRules {
   }];
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -4122,8 +4175,8 @@ message EnumRules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -4134,7 +4187,7 @@ message EnumRules {
   extensions 1000 to max;
 }
 
-// RepeatedRules describe the constraints applied to `repeated` values.
+// RepeatedRules describe the rules applied to `repeated` values.
 message RepeatedRules {
   // `min_items` requires that this field must contain at least the specified
   // minimum number of items.
@@ -4169,7 +4222,7 @@ message RepeatedRules {
   }];
 
   // `unique` indicates that all elements in this field must
-  // be unique. This constraint is strictly applicable to scalar and enum
+  // be unique. This rule is strictly applicable to scalar and enum
   // types, with message types not being supported.
   //
   // ```proto
@@ -4184,13 +4237,13 @@ message RepeatedRules {
     expression: "!rules.unique || this.unique()"
   }];
 
-  // `items` details the constraints to be applied to each item
+  // `items` details the rules to be applied to each item
   // in the field. Even for repeated message fields, validation is executed
   // against each item unless skip is explicitly specified.
   //
   // ```proto
   // message MyRepeated {
-  //   // The items in the field `value` must follow the specified constraints.
+  //   // The items in the field `value` must follow the specified rules.
   //   repeated string value = 1 [(buf.validate.field).repeated.items = {
   //     string: {
   //       min_len: 3
@@ -4199,11 +4252,11 @@ message RepeatedRules {
   //   }];
   // }
   // ```
-  optional FieldConstraints items = 4;
+  optional FieldRules items = 4;
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -4214,7 +4267,7 @@ message RepeatedRules {
   extensions 1000 to max;
 }
 
-// MapRules describe the constraints applied to `map` values.
+// MapRules describe the rules applied to `map` values.
 message MapRules {
   //Specifies the minimum number of key-value pairs allowed. If the field has
   // fewer key-value pairs than specified, an error message is generated.
@@ -4244,11 +4297,11 @@ message MapRules {
     expression: "uint(this.size()) > rules.max_pairs ? 'map must be at most %d entries'.format([rules.max_pairs]) : ''"
   }];
 
-  //Specifies the constraints to be applied to each key in the field.
+  //Specifies the rules to be applied to each key in the field.
   //
   // ```proto
   // message MyMap {
-  //   // The keys in the field `value` must follow the specified constraints.
+  //   // The keys in the field `value` must follow the specified rules.
   //   map<string, string> value = 1 [(buf.validate.field).map.keys = {
   //     string: {
   //       min_len: 3
@@ -4257,15 +4310,15 @@ message MapRules {
   //   }];
   // }
   // ```
-  optional FieldConstraints keys = 4;
+  optional FieldRules keys = 4;
 
-  //Specifies the constraints to be applied to the value of each key in the
+  //Specifies the rules to be applied to the value of each key in the
   // field. Message values will still have their validations evaluated unless
   //skip is specified here.
   //
   // ```proto
   // message MyMap {
-  //   // The values in the field `value` must follow the specified constraints.
+  //   // The values in the field `value` must follow the specified rules.
   //   map<string, string> value = 1 [(buf.validate.field).map.values = {
   //     string: {
   //       min_len: 5
@@ -4274,11 +4327,11 @@ message MapRules {
   //   }];
   // }
   // ```
-  optional FieldConstraints values = 5;
+  optional FieldRules values = 5;
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -4289,7 +4342,7 @@ message MapRules {
   extensions 1000 to max;
 }
 
-// AnyRules describe constraints applied exclusively to the `google.protobuf.Any` well-known type.
+// AnyRules describe rules applied exclusively to the `google.protobuf.Any` well-known type.
 message AnyRules {
   // `in` requires the field's `type_url` to be equal to one of the
   //specified values. If it doesn't match any of the specified values, an error
@@ -4314,7 +4367,7 @@ message AnyRules {
   repeated string not_in = 3;
 }
 
-// DurationRules describe the constraints applied exclusively to the `google.protobuf.Duration` well-known type.
+// DurationRules describe the rules applied exclusively to the `google.protobuf.Duration` well-known type.
 message DurationRules {
   // `const` dictates that the field must match the specified value of the `google.protobuf.Duration` type exactly.
   // If the field's value deviates from the specified value, an error message
@@ -4328,7 +4381,7 @@ message DurationRules {
   // ```
   optional google.protobuf.Duration const = 2 [(predefined).cel = {
     id: "duration.const"
-    expression: "this != rules.const ? 'value must equal %s'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal %s'.format([getField(rules, 'const')]) : ''"
   }];
   oneof less_than {
     // `lt` stipulates that the field must be less than the specified value of the `google.protobuf.Duration` type,
@@ -4481,7 +4534,7 @@ message DurationRules {
   // ```
   repeated google.protobuf.Duration in = 7 [(predefined).cel = {
     id: "duration.in"
-    expression: "!(this in dyn(rules)['in']) ? 'value must be in list %s'.format([dyn(rules)['in']]) : ''"
+    expression: "!(this in getField(rules, 'in')) ? 'value must be in list %s'.format([getField(rules, 'in')]) : ''"
   }];
 
   // `not_in` denotes that the field must not be equal to
@@ -4501,7 +4554,7 @@ message DurationRules {
   }];
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -4518,8 +4571,8 @@ message DurationRules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -4530,7 +4583,7 @@ message DurationRules {
   extensions 1000 to max;
 }
 
-// TimestampRules describe the constraints applied exclusively to the `google.protobuf.Timestamp` well-known type.
+// TimestampRules describe the rules applied exclusively to the `google.protobuf.Timestamp` well-known type.
 message TimestampRules {
   // `const` dictates that this field, of the `google.protobuf.Timestamp` type, must exactly match the specified value. If the field value doesn't correspond to the specified timestamp, an error message will be generated.
   //
@@ -4542,7 +4595,7 @@ message TimestampRules {
   // ```
   optional google.protobuf.Timestamp const = 2 [(predefined).cel = {
     id: "timestamp.const"
-    expression: "this != rules.const ? 'value must equal %s'.format([rules.const]) : ''"
+    expression: "this != getField(rules, 'const') ? 'value must equal %s'.format([getField(rules, 'const')]) : ''"
   }];
   oneof less_than {
     // requires the duration field value to be less than the specified value (field < value). If the field value doesn't meet the required conditions, an error message is generated.
@@ -4719,7 +4772,7 @@ message TimestampRules {
   }];
 
   // `example` specifies values that the field may have. These values SHOULD
-  // conform to other constraints. `example` values will not impact validation
+  // conform to other rules. `example` values will not impact validation
   // but may be used as helpful guidance on how to populate the given field.
   //
   // ```proto
@@ -4737,8 +4790,8 @@ message TimestampRules {
   }];
 
   // Extension fields in this range that have the (buf.validate.predefined)
-  // option set will be treated as predefined field constraints that can then be
-  // set on the field options of other fields to apply field constraints.
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
   // Extension numbers 1000 to 99999 are reserved for extension numbers that are
   // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
   // above this range are reserved for extension numbers that are not explicitly
@@ -4750,7 +4803,7 @@ message TimestampRules {
 }
 
 // `Violations` is a collection of `Violation` messages. This message type is returned by
-// protovalidate when a proto message fails to meet the requirements set by the `Constraint` validation rules.
+// protovalidate when a proto message fails to meet the requirements set by the `Rule` validation rules.
 // Each individual violation is represented by a `Violation` message.
 message Violations {
   // `violations` is a repeated field that contains all the `Violation` messages corresponding to the violations detected.
@@ -4758,30 +4811,142 @@ message Violations {
 }
 
 // `Violation` represents a single instance where a validation rule, expressed
-// as a `Constraint`, was not met. It provides information about the field that
-// caused the violation, the specific constraint that wasn't fulfilled, and a
+// as a `Rule`, was not met. It provides information about the field that
+// caused the violation, the specific rule that wasn't fulfilled, and a
 // human-readable error message.
 //
 // ```json
 // {
 //   "fieldPath": "bar",
-//   "constraintId": "foo.bar",
+//   "ruleId": "foo.bar",
 //   "message": "bar must be greater than 0"
 // }
 // ```
 message Violation {
-  // `field_path` is a machine-readable identifier that points to the specific field that failed the validation.
+  // `field` is a machine-readable path to the field that failed validation.
   // This could be a nested field, in which case the path will include all the parent fields leading to the actual field that caused the violation.
-  optional string field_path = 1;
+  //
+  // For example, consider the following message:
+  //
+  // ```proto
+  // message Message {
+  //   bool a = 1 [(buf.validate.field).required = true];
+  // }
+  // ```
+  //
+  // It could produce the following violation:
+  //
+  // ```textproto
+  // violation {
+  //   field { element { field_number: 1, field_name: "a", field_type: 8 } }
+  //   ...
+  // }
+  // ```
+  optional FieldPath field = 5;
 
-  // `constraint_id` is the unique identifier of the `Constraint` that was not fulfilled.
-  // This is the same `id` that was specified in the `Constraint` message, allowing easy tracing of which rule was violated.
-  optional string constraint_id = 2;
+  // `rule` is a machine-readable path that points to the specific rule rule that failed validation.
+  // This will be a nested field starting from the FieldRules of the field that failed validation.
+  // For custom rules, this will provide the path of the rule, e.g. `cel[0]`.
+  //
+  // For example, consider the following message:
+  //
+  // ```proto
+  // message Message {
+  //   bool a = 1 [(buf.validate.field).required = true];
+  //   bool b = 2 [(buf.validate.field).cel = {
+  //     id: "custom_rule",
+  //     expression: "!this ? 'b must be true': ''"
+  //   }]
+  // }
+  // ```
+  //
+  // It could produce the following violations:
+  //
+  // ```textproto
+  // violation {
+  //   rule { element { field_number: 25, field_name: "required", field_type: 8 } }
+  //   ...
+  // }
+  // violation {
+  //   rule { element { field_number: 23, field_name: "cel", field_type: 11, index: 0 } }
+  //   ...
+  // }
+  // ```
+  optional FieldPath rule = 6;
+
+  // `rule_id` is the unique identifier of the `Rule` that was not fulfilled.
+  // This is the same `id` that was specified in the `Rule` message, allowing easy tracing of which rule was violated.
+  optional string rule_id = 2;
 
   // `message` is a human-readable error message that describes the nature of the violation.
-  // This can be the default error message from the violated `Constraint`, or it can be a custom message that gives more context about the violation.
+  // This can be the default error message from the violated `Rule`, or it can be a custom message that gives more context about the violation.
   optional string message = 3;
 
   // `for_key` indicates whether the violation was caused by a map key, rather than a value.
   optional bool for_key = 4;
+
+  reserved 1;
+  reserved "field_path";
+}
+
+// `FieldPath` provides a path to a nested protobuf field.
+//
+// This message provides enough information to render a dotted field path even without protobuf descriptors.
+// It also provides enough information to resolve a nested field through unknown wire data.
+message FieldPath {
+  // `elements` contains each element of the path, starting from the root and recursing downward.
+  repeated FieldPathElement elements = 1;
+}
+
+// `FieldPathElement` provides enough information to nest through a single protobuf field.
+//
+// If the selected field is a map or repeated field, the `subscript` value selects a specific element from it.
+// A path that refers to a value nested under a map key or repeated field index will have a `subscript` value.
+// The `field_type` field allows unambiguous resolution of a field even if descriptors are not available.
+message FieldPathElement {
+  // `field_number` is the field number this path element refers to.
+  optional int32 field_number = 1;
+
+  // `field_name` contains the field name this path element refers to.
+  // This can be used to display a human-readable path even if the field number is unknown.
+  optional string field_name = 2;
+
+  // `field_type` specifies the type of this field. When using reflection, this value is not needed.
+  //
+  // This value is provided to make it possible to traverse unknown fields through wire data.
+  // When traversing wire data, be mindful of both packed[1] and delimited[2] encoding schemes.
+  //
+  // [1]: https://protobuf.dev/programming-guides/encoding/#packed
+  // [2]: https://protobuf.dev/programming-guides/encoding/#groups
+  //
+  // N.B.: Although groups are deprecated, the corresponding delimited encoding scheme is not, and
+  // can be explicitly used in Protocol Buffers 2023 Edition.
+  optional google.protobuf.FieldDescriptorProto.Type field_type = 3;
+
+  // `key_type` specifies the map key type of this field. This value is useful when traversing
+  // unknown fields through wire data: specifically, it allows handling the differences between
+  // different integer encodings.
+  optional google.protobuf.FieldDescriptorProto.Type key_type = 4;
+
+  // `value_type` specifies map value type of this field. This is useful if you want to display a
+  // value inside unknown fields through wire data.
+  optional google.protobuf.FieldDescriptorProto.Type value_type = 5;
+
+  // `subscript` contains a repeated index or map key, if this path element nests into a repeated or map field.
+  oneof subscript {
+    // `index` specifies a 0-based index into a repeated field.
+    uint64 index = 6;
+
+    // `bool_key` specifies a map key of type bool.
+    bool bool_key = 7;
+
+    // `int_key` specifies a map key of type int32, int64, sint32, sint64, sfixed32 or sfixed64.
+    int64 int_key = 8;
+
+    // `uint_key` specifies a map key of type uint32, uint64, fixed32 or fixed64.
+    uint64 uint_key = 9;
+
+    // `string_key` specifies a map key of type string.
+    string string_key = 10;
+  }
 }

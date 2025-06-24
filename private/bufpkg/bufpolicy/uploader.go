@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/standard/xslices"
 )
 
 var (
@@ -116,7 +116,7 @@ func newUploadOptions() *uploadOptions {
 }
 
 func (u *uploadOptions) Labels() []string {
-	return slicesext.ToUniqueSorted(u.labels)
+	return xslices.ToUniqueSorted(u.labels)
 }
 
 func (u *uploadOptions) CreateIfNotExist() bool {

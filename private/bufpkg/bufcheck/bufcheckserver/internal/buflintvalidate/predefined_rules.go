@@ -18,10 +18,10 @@ import (
 	"strings"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+	celpv "buf.build/go/protovalidate/cel"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	celpv "github.com/bufbuild/protovalidate-go/cel"
 	"github.com/google/cel-go/cel"
 )
 
@@ -52,11 +52,11 @@ func checkPredefinedRuleExtension(
 	if validate.File_buf_validate_validate_proto.Messages().ByName(extendedRuleFullName.Name()) == nil {
 		return nil
 	}
-	predefinedConstraints, err := resolveExtension[*validate.PredefinedConstraints](extensionDescriptor.Options(), validate.E_Predefined, extensionResolver)
+	predefinedRules, err := resolveExtension[*validate.PredefinedRules](extensionDescriptor.Options(), validate.E_Predefined, extensionResolver)
 	if err != nil {
 		return err
 	}
-	if predefinedConstraints == nil {
+	if predefinedRules == nil {
 		return nil
 	}
 	celEnv, err := cel.NewEnv(
@@ -93,6 +93,7 @@ func checkPredefinedRuleExtension(
 			celpv.RequiredEnvOptions(extensionDescriptor),
 			cel.Variable("rule", ruleType),
 			cel.Variable("this", thisType),
+			cel.Variable("rules", cel.ObjectType(string(extendedRuleFullName))),
 		)...,
 	)
 	if err != nil {
@@ -100,7 +101,7 @@ func checkPredefinedRuleExtension(
 	}
 	checkCEL(
 		celEnv,
-		predefinedConstraints.GetCel(),
+		predefinedRules.GetCel(),
 		"extension field",
 		"Extension field",
 		"(buf.validate.predefined).cel",
