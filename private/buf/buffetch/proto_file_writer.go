@@ -19,8 +19,8 @@ import (
 	"io"
 	"log/slog"
 
+	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
-	"github.com/bufbuild/buf/private/pkg/app"
 )
 
 type protoFileWriter struct {

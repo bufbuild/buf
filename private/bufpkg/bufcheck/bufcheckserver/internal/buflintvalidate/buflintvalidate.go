@@ -16,9 +16,9 @@ package buflintvalidate
 
 import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+	"buf.build/go/protovalidate"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/protovalidate-go/resolve"
 )
 
 // https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.MessageRules
@@ -35,7 +35,10 @@ func CheckMessage(
 	if err != nil {
 		return err
 	}
-	messageRules := resolve.MessageRules(messageDescriptor)
+	messageRules, err := protovalidate.ResolveMessageRules(messageDescriptor)
+	if err != nil {
+		return err
+	}
 	if messageRules.GetDisabled() && len(messageRules.GetCel()) > 0 {
 		addAnnotationFunc(
 			message,

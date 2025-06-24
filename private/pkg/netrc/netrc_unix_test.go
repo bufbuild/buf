@@ -26,7 +26,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/app"
+	"buf.build/go/app"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

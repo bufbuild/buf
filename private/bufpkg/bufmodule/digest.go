@@ -24,9 +24,9 @@ import (
 	"strconv"
 	"strings"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -288,7 +288,7 @@ func getB5DigestForBucketAndModuleDeps(
 	bucketWithStorageMatcherApplied storage.ReadBucket,
 	moduleDeps []ModuleDep,
 ) (Digest, error) {
-	depDigests, err := slicesext.MapError(
+	depDigests, err := xslices.MapError(
 		moduleDeps,
 		func(moduleDep ModuleDep) (Digest, error) {
 			return moduleDep.Digest(DigestTypeB5)
@@ -305,7 +305,7 @@ func getB5DigestForBucketAndDepModuleKeys(
 	bucketWithStorageMatcherApplied storage.ReadBucket,
 	depModuleKeys []ModuleKey,
 ) (Digest, error) {
-	depDigests, err := slicesext.MapError(
+	depDigests, err := xslices.MapError(
 		depModuleKeys,
 		func(moduleKey ModuleKey) (Digest, error) {
 			return moduleKey.Digest()
@@ -341,7 +341,7 @@ func getB5DigestForBucketAndDepDigests(
 		return nil, syserror.Newf("trying to compute b5 Digest with files digest of type %v", filesDigest.Type())
 	}
 	// Next, we get the b5 digests of all the dependencies and sort their string representations.
-	depDigestStrings, err := slicesext.MapError(
+	depDigestStrings, err := xslices.MapError(
 		depDigests,
 		func(digest Digest) (string, error) {
 			if digest.Type() != DigestTypeB5 {

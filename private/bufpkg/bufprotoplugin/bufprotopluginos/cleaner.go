@@ -20,7 +20,7 @@ import (
 	"io/fs"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/pkg/filepathext"
+	"buf.build/go/standard/xpath/xfilepath"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -116,7 +116,7 @@ func validatePluginOut(pwd string, pluginOut string) error {
 }
 
 func reallyCleanPath(path string) (string, error) {
-	path, err := filepathext.RealClean(path)
+	path, err := xfilepath.RealClean(path)
 	if err != nil {
 		return "", err
 	}

@@ -20,9 +20,9 @@ import (
 	"log/slog"
 	"sync"
 
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/execext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/app"
+	"buf.build/go/standard/xos/xexec"
+	"buf.build/go/standard/xslices"
 )
 
 type state struct {
@@ -157,7 +157,7 @@ func (s *state) packagesForPackageExpressionUncached(
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.ToStructMap(getNonEmptyLines(string(data))), nil
+	return xslices.ToStructMap(getNonEmptyLines(string(data))), nil
 }
 
 func (s *state) depsForPackage(
@@ -212,19 +212,19 @@ func (s *state) depsForPackageUncached(
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.ToStructMap(getNonEmptyLines(string(data))), nil
+	return xslices.ToStructMap(getNonEmptyLines(string(data))), nil
 }
 
 func (s *state) runStdout(ctx context.Context, name string, args ...string) ([]byte, error) {
 	buffer := bytes.NewBuffer(nil)
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		name,
-		execext.WithArgs(args...),
-		execext.WithEnv(app.Environ(s.envStdioContainer)),
-		execext.WithStdin(s.envStdioContainer.Stdin()),
-		execext.WithStdout(buffer),
-		execext.WithStderr(s.envStdioContainer.Stderr()),
+		xexec.WithArgs(args...),
+		xexec.WithEnv(app.Environ(s.envStdioContainer)),
+		xexec.WithStdin(s.envStdioContainer.Stdin()),
+		xexec.WithStdout(buffer),
+		xexec.WithStderr(s.envStdioContainer.Stderr()),
 	); err != nil {
 		return nil, err
 	}

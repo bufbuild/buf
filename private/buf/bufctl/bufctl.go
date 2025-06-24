@@ -15,7 +15,7 @@
 package bufctl
 
 import (
-	"github.com/bufbuild/buf/private/pkg/app"
+	"buf.build/go/app"
 )
 
 const (

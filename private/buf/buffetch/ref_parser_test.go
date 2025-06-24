@@ -20,9 +20,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"

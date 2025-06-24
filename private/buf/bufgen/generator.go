@@ -22,6 +22,8 @@ import (
 	"path/filepath"
 	"sort"
 
+	"buf.build/go/app"
+	"buf.build/go/standard/xslices"
 	connect "connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -34,9 +36,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -136,7 +136,7 @@ func (g *generator) deleteOuts(
 ) error {
 	return bufprotopluginos.NewCleaner(g.storageosProvider).DeleteOuts(
 		ctx,
-		slicesext.Map(
+		xslices.Map(
 			pluginConfigs,
 			func(pluginConfig bufconfig.GeneratePluginConfig) string {
 				out := pluginConfig.Out()
@@ -212,7 +212,7 @@ func (g *generator) execPlugins(
 	requiredFeatures := computeRequiredFeatures(image)
 
 	// Group the pluginConfigs by similar properties to batch image processing.
-	pluginConfigsForImage := slicesext.ToIndexedValuesMap(pluginConfigs, createPluginConfigKeyForImage)
+	pluginConfigsForImage := xslices.ToIndexedValuesMap(pluginConfigs, createPluginConfigKeyForImage)
 	for _, indexedPluginConfigs := range pluginConfigsForImage {
 		image := image
 		pluginConfigForKey := indexedPluginConfigs[0].Value
@@ -360,10 +360,10 @@ func (g *generator) execRemotePluginsV2(
 	container app.EnvStdioContainer,
 	image bufimage.Image,
 	remote string,
-	indexedPluginConfigs []slicesext.Indexed[bufconfig.GeneratePluginConfig],
+	indexedPluginConfigs []xslices.Indexed[bufconfig.GeneratePluginConfig],
 	includeImportsOverride *bool,
 	includeWellKnownTypesOverride *bool,
-) ([]slicesext.Indexed[*pluginpb.CodeGeneratorResponse], error) {
+) ([]xslices.Indexed[*pluginpb.CodeGeneratorResponse], error) {
 	requests := make([]*registryv1alpha1.PluginGenerationRequest, len(indexedPluginConfigs))
 	for i, indexedPluginConfig := range indexedPluginConfigs {
 		includeImports := indexedPluginConfig.Value.IncludeImports()
@@ -405,13 +405,13 @@ func (g *generator) execRemotePluginsV2(
 	if len(responses) != len(requests) {
 		return nil, fmt.Errorf("unexpected number of responses received, got %d, wanted %d", len(responses), len(requests))
 	}
-	result := make([]slicesext.Indexed[*pluginpb.CodeGeneratorResponse], 0, len(responses))
+	result := make([]xslices.Indexed[*pluginpb.CodeGeneratorResponse], 0, len(responses))
 	for i := range requests {
 		codeGeneratorResponse := responses[i].GetResponse()
 		if codeGeneratorResponse == nil {
 			return nil, errors.New("expected code generator response")
 		}
-		result = append(result, slicesext.Indexed[*pluginpb.CodeGeneratorResponse]{
+		result = append(result, xslices.Indexed[*pluginpb.CodeGeneratorResponse]{
 			Value: codeGeneratorResponse,
 			Index: indexedPluginConfigs[i].Index,
 		})

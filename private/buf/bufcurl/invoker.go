@@ -26,9 +26,9 @@ import (
 	"net/http/httptest"
 	"sync"
 
+	"buf.build/go/app"
+	"buf.build/go/app/appext"
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"google.golang.org/protobuf/proto"

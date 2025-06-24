@@ -25,6 +25,7 @@ goos() {
 goarch() {
   case "${1}" in
     x86_64) echo amd64 ;;
+    riscv64) echo riscv64 ;;
     arm64) echo arm64 ;;
     aarch64) echo arm64 ;;
     armv7) echo arm ;;
@@ -84,7 +85,7 @@ mkdir -p "${RELEASE_DIR}"
 cd "${RELEASE_DIR}"
 
 for os in Darwin Linux Windows; do
-  for arch in x86_64 arm64 armv7; do
+  for arch in x86_64 riscv64 arm64 armv7 ppc64le; do
     # our goal is to have the binaries be suffixed with $(uname -s)-$(uname -m)
     # on mac, this is arm64, on linux, this is aarch64, for historical reasons
     # this is a hacky way to not have to rewrite this loop (and others below)
@@ -101,13 +102,12 @@ for os in Darwin Linux Windows; do
       buf \
       protoc-gen-buf-breaking \
       protoc-gen-buf-lint; do
+      if [[ ! "${arch}" =~ x86_64|arm64 ]] && [ "${os}" != "Linux" ]; then
+        continue
+      fi
       if [ "${arch}" == "armv7" ]; then
-        if [ "${os}" == "Linux" ]; then
-          CGO_ENABLED=0 GOOS=$(goos "${os}") GOARCH=$(goarch "${arch}") GOARM=7 \
-            go build -a -ldflags "-s -w" -trimpath -buildvcs=false -o "${dir}/bin/${binary}${extension}" "${DIR}/cmd/${binary}"
-        else
-          continue
-        fi 
+        CGO_ENABLED=0 GOOS=$(goos "${os}") GOARCH=$(goarch "${arch}") GOARM=7 \
+          go build -a -ldflags "-s -w" -trimpath -buildvcs=false -o "${dir}/bin/${binary}${extension}" "${DIR}/cmd/${binary}"
       else
         CGO_ENABLED=0 GOOS=$(goos "${os}") GOARCH=$(goarch "${arch}") \
           go build -a -ldflags "-s -w" -trimpath -buildvcs=false -o "${dir}/bin/${binary}${extension}" "${DIR}/cmd/${binary}"
@@ -118,8 +118,8 @@ for os in Darwin Linux Windows; do
 done
 
 for os in Darwin Linux Windows; do
-  for arch in x86_64 arm64 armv7; do
-    if [ "${arch}" == "armv7" ] && [ "${os}" != "Linux" ]; then
+  for arch in x86_64 riscv64 arm64 armv7 ppc64le; do
+    if [[ ! "${arch}" =~ x86_64|arm64 ]] && [ "${os}" != "Linux" ]; then
       continue
     fi
     if [ "${os}" == "Linux" ] && [ "${arch}" == "arm64" ]; then
@@ -141,8 +141,8 @@ for os in Darwin Linux Windows; do
 done
 
 for os in Darwin Linux; do
-  for arch in x86_64 arm64 armv7; do
-    if [ "${arch}" == "armv7" ] && [ "${os}" != "Linux" ]; then
+  for arch in x86_64 riscv64 arm64 armv7 ppc64le; do
+    if [[ ! "${arch}" =~ x86_64|arm64 ]] && [ "${os}" != "Linux" ]; then
       continue
     fi
     if [ "${os}" == "Linux" ] && [ "${arch}" == "arm64" ]; then

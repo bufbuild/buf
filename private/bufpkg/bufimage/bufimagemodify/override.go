@@ -20,11 +20,11 @@ import (
 	"strings"
 	"unicode"
 
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -318,7 +318,7 @@ func csharpNamespaceValue(imageFile bufimage.ImageFile) string {
 	}
 	packageParts := strings.Split(pkg, ".")
 	for i, part := range packageParts {
-		packageParts[i] = stringutil.ToPascalCase(part)
+		packageParts[i] = xstrings.ToPascalCase(part)
 	}
 	return strings.Join(packageParts, ".")
 }
@@ -343,7 +343,7 @@ func goPackageImportPathForFile(imageFile bufimage.ImageFile, importPathPrefix s
 }
 
 func javaOuterClassnameValue(imageFile bufimage.ImageFile) string {
-	return stringutil.ToPascalCase(normalpath.Base(imageFile.Path()))
+	return xstrings.ToPascalCase(normalpath.Base(imageFile.Path()))
 }
 
 // objcClassPrefixValue returns the objc_class_prefix for the given ImageFile based on its
@@ -398,7 +398,7 @@ func phpNamespaceValue(imageFile bufimage.ImageFile) string {
 	}
 	packageParts := strings.Split(pkg, ".")
 	for i, part := range packageParts {
-		packagePart := stringutil.ToPascalCase(part)
+		packagePart := xstrings.ToPascalCase(part)
 		if _, ok := phpReservedKeywords[strings.ToLower(part)]; ok {
 			// Append _ to the package part if it is a reserved keyword.
 			packagePart += "_"
@@ -418,7 +418,7 @@ func rubyPackageValue(imageFile bufimage.ImageFile) string {
 	}
 	packageParts := strings.Split(pkg, ".")
 	for i, part := range packageParts {
-		packageParts[i] = stringutil.ToPascalCase(part)
+		packageParts[i] = xstrings.ToPascalCase(part)
 	}
 	return strings.Join(packageParts, "::")
 }

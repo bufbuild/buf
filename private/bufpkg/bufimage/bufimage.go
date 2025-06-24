@@ -24,6 +24,7 @@ import (
 	"sort"
 	"strings"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
@@ -31,7 +32,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
@@ -92,7 +92,7 @@ func AppendWellKnownTypeImageFileInfos(
 	wktBucket storage.ReadBucket,
 	imageFileInfos []ImageFileInfo,
 ) ([]ImageFileInfo, error) {
-	pathToImageFileInfo, err := slicesext.ToUniqueValuesMap(imageFileInfos, ImageFileInfo.Path)
+	pathToImageFileInfo, err := xslices.ToUniqueValuesMap(imageFileInfos, ImageFileInfo.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func ImageFileInfosWithOnlyTargetsAndTargetImports(
 	wktBucket storage.ReadBucket,
 	imageFileInfos []ImageFileInfo,
 ) ([]ImageFileInfo, error) {
-	pathToImageFileInfo, err := slicesext.ToUniqueValuesMap(imageFileInfos, ImageFileInfo.Path)
+	pathToImageFileInfo, err := xslices.ToUniqueValuesMap(imageFileInfos, ImageFileInfo.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -728,7 +728,7 @@ func appendWellKnownTypeImageFileInfos(
 	if err != nil {
 		return nil, err
 	}
-	wktPaths := slicesext.Map(wktObjectInfos, storage.ObjectInfo.Path)
+	wktPaths := xslices.Map(wktObjectInfos, storage.ObjectInfo.Path)
 	if !slices.Equal(datawkt.AllFilePaths, wktPaths) {
 		return nil, syserror.Newf("wktBucket paths %s are not equal to datawkt.AllFilePaths %s", strings.Join(wktPaths, ","), strings.Join(datawkt.AllFilePaths, ","))
 	}

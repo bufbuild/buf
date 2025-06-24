@@ -21,8 +21,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/pkg/bandeps"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/slogapp"
