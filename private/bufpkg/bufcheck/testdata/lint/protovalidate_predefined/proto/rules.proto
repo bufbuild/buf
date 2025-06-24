@@ -1,0 +1,45 @@
+syntax = "proto2";
+
+package rules;
+
+import "buf/validate/validate.proto";
+
+extend buf.validate.StringRules {
+  optional int32 required_with_max = 80048954 [(buf.validate.predefined).cel = {
+    id: "string.required.max"
+    expression:
+      "(rules.min_len > 0 && rules.max_len > 0) || (this.size() > 0 && this.size() <= rule)"
+      "? ''"
+      ": 'this is required and must be ' + string(rule) + ' or fewer characters but ' + string(rules.max_len)"
+  }];
+}
+
+extend buf.validate.Int32Rules {
+  optional int32 required_lt = 18001 [(buf.validate.predefined).cel = {
+    id: "int32.required.lt"
+    expression:
+      "(rules.lt > 0)"
+      "? ''"
+      ": 'this is required and must be ' + string(rule)"
+  }];
+}
+
+extend buf.validate.RepeatedRules {
+  optional int32 required_max_items = 18002 [(buf.validate.predefined).cel = {
+    id: "repeated.required.max"
+    expression:
+      "(rules.min_items > 0 && rules.max_items > 0) || (this.size() > 0 && this.size() <= rule)"
+      "? ''"
+      ": 'this is required and must be ' + string(rule) + ' or fewer items but ' + string(rules.max_items)"
+  }];
+}
+
+extend buf.validate.MapRules {
+  optional int32 required_max_pairs = 18003 [(buf.validate.predefined).cel = {
+    id: "map.required.max"
+    expression:
+      "(rules.min_pairs > 0 && rules.max_pairs > 0) || (this.size() > 0 && this.size() <= rule)"
+      "? ''"
+      ": 'this is required and must be ' + string(rule) + ' or fewer items but ' + string(rules.max_pairs)"
+  }];
+}

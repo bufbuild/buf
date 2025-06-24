@@ -19,10 +19,10 @@ import (
 	"log/slog"
 	"time"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
@@ -81,13 +81,13 @@ func (a *commitProvider) GetCommitsForModuleKeys(
 		return nil, err
 	}
 
-	registryToIndexedModuleKeys := slicesext.ToIndexedValuesMap(
+	registryToIndexedModuleKeys := xslices.ToIndexedValuesMap(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {
 			return moduleKey.FullName().Registry()
 		},
 	)
-	indexedCommits := make([]slicesext.Indexed[bufmodule.Commit], 0, len(moduleKeys))
+	indexedCommits := make([]xslices.Indexed[bufmodule.Commit], 0, len(moduleKeys))
 	for registry, indexedModuleKeys := range registryToIndexedModuleKeys {
 		registryIndexedCommits, err := a.getIndexedCommitsForRegistryAndIndexedModuleKeys(
 			ctx,
@@ -100,7 +100,7 @@ func (a *commitProvider) GetCommitsForModuleKeys(
 		}
 		indexedCommits = append(indexedCommits, registryIndexedCommits...)
 	}
-	return slicesext.IndexedToSortedValues(indexedCommits), nil
+	return xslices.IndexedToSortedValues(indexedCommits), nil
 }
 
 func (a *commitProvider) GetCommitsForCommitKeys(
@@ -120,13 +120,13 @@ func (a *commitProvider) GetCommitsForCommitKeys(
 	v1ProtoModuleProvider := newV1ProtoModuleProvider(a.logger, a.moduleClientProvider)
 	v1ProtoOwnerProvider := newV1ProtoOwnerProvider(a.logger, a.ownerClientProvider)
 
-	registryToIndexedCommitKeys := slicesext.ToIndexedValuesMap(
+	registryToIndexedCommitKeys := xslices.ToIndexedValuesMap(
 		commitKeys,
 		func(commitKey bufmodule.CommitKey) string {
 			return commitKey.Registry()
 		},
 	)
-	indexedCommits := make([]slicesext.Indexed[bufmodule.Commit], 0, len(commitKeys))
+	indexedCommits := make([]xslices.Indexed[bufmodule.Commit], 0, len(commitKeys))
 	for registry, indexedCommitKeys := range registryToIndexedCommitKeys {
 		registryIndexedCommits, err := a.getIndexedCommitsForRegistryAndIndexedCommitKeys(
 			ctx,
@@ -141,45 +141,45 @@ func (a *commitProvider) GetCommitsForCommitKeys(
 		}
 		indexedCommits = append(indexedCommits, registryIndexedCommits...)
 	}
-	return slicesext.IndexedToSortedValues(indexedCommits), nil
+	return xslices.IndexedToSortedValues(indexedCommits), nil
 }
 
 func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedModuleKeys(
 	ctx context.Context,
 	registry string,
-	indexedModuleKeys []slicesext.Indexed[bufmodule.ModuleKey],
+	indexedModuleKeys []xslices.Indexed[bufmodule.ModuleKey],
 	digestType bufmodule.DigestType,
-) ([]slicesext.Indexed[bufmodule.Commit], error) {
-	commitIDToIndexedModuleKey, err := slicesext.ToUniqueValuesMapError(
+) ([]xslices.Indexed[bufmodule.Commit], error) {
+	commitIDToIndexedModuleKey, err := xslices.ToUniqueValuesMapError(
 		indexedModuleKeys,
-		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (uuid.UUID, error) {
+		func(indexedModuleKey xslices.Indexed[bufmodule.ModuleKey]) (uuid.UUID, error) {
 			return indexedModuleKey.Value.CommitID(), nil
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	commitIDs := slicesext.MapKeysToSlice(commitIDToIndexedModuleKey)
+	commitIDs := xslices.MapKeysToSlice(commitIDToIndexedModuleKey)
 	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndCommitIDs(ctx, a.moduleClientProvider, registry, commitIDs, digestType)
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.MapError(
+	return xslices.MapError(
 		universalProtoCommits,
-		func(universalProtoCommit *universalProtoCommit) (slicesext.Indexed[bufmodule.Commit], error) {
+		func(universalProtoCommit *universalProtoCommit) (xslices.Indexed[bufmodule.Commit], error) {
 			commitID, err := uuidutil.FromDashless(universalProtoCommit.ID)
 			if err != nil {
-				return slicesext.Indexed[bufmodule.Commit]{}, err
+				return xslices.Indexed[bufmodule.Commit]{}, err
 			}
 			indexedModuleKey, ok := commitIDToIndexedModuleKey[commitID]
 			if !ok {
-				return slicesext.Indexed[bufmodule.Commit]{}, syserror.Newf("no ModuleKey for proto commit ID %q", commitID)
+				return xslices.Indexed[bufmodule.Commit]{}, syserror.Newf("no ModuleKey for proto commit ID %q", commitID)
 			}
 			// This is actually backwards - this is not the expected digest, this is the actual digest.
 			// TODO FUTURE: It doesn't matter too much, but we should switch around CommitWithExpectedDigest
 			// to be CommitWithActualDigest.
 			expectedDigest := universalProtoCommit.Digest
-			return slicesext.Indexed[bufmodule.Commit]{
+			return xslices.Indexed[bufmodule.Commit]{
 				Value: bufmodule.NewCommit(
 					indexedModuleKey.Value,
 					func() (time.Time, error) {
@@ -198,33 +198,33 @@ func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedCommitKeys(
 	v1ProtoModuleProvider *v1ProtoModuleProvider,
 	v1ProtoOwnerProvider *v1ProtoOwnerProvider,
 	registry string,
-	indexedCommitKeys []slicesext.Indexed[bufmodule.CommitKey],
+	indexedCommitKeys []xslices.Indexed[bufmodule.CommitKey],
 	digestType bufmodule.DigestType,
-) ([]slicesext.Indexed[bufmodule.Commit], error) {
-	commitIDToIndexedCommitKey, err := slicesext.ToUniqueValuesMapError(
+) ([]xslices.Indexed[bufmodule.Commit], error) {
+	commitIDToIndexedCommitKey, err := xslices.ToUniqueValuesMapError(
 		indexedCommitKeys,
-		func(indexedCommitKey slicesext.Indexed[bufmodule.CommitKey]) (uuid.UUID, error) {
+		func(indexedCommitKey xslices.Indexed[bufmodule.CommitKey]) (uuid.UUID, error) {
 			return indexedCommitKey.Value.CommitID(), nil
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	commitIDs := slicesext.MapKeysToSlice(commitIDToIndexedCommitKey)
+	commitIDs := xslices.MapKeysToSlice(commitIDToIndexedCommitKey)
 	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndCommitIDs(ctx, a.moduleClientProvider, registry, commitIDs, digestType)
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.MapError(
+	return xslices.MapError(
 		universalProtoCommits,
-		func(universalProtoCommit *universalProtoCommit) (slicesext.Indexed[bufmodule.Commit], error) {
+		func(universalProtoCommit *universalProtoCommit) (xslices.Indexed[bufmodule.Commit], error) {
 			commitID, err := uuidutil.FromDashless(universalProtoCommit.ID)
 			if err != nil {
-				return slicesext.Indexed[bufmodule.Commit]{}, err
+				return xslices.Indexed[bufmodule.Commit]{}, err
 			}
 			indexedCommitKey, ok := commitIDToIndexedCommitKey[commitID]
 			if !ok {
-				return slicesext.Indexed[bufmodule.Commit]{}, syserror.Newf("no CommitKey for proto commit ID %q", commitID)
+				return xslices.Indexed[bufmodule.Commit]{}, syserror.Newf("no CommitKey for proto commit ID %q", commitID)
 			}
 			moduleKey, err := getModuleKeyForUniversalProtoCommit(
 				ctx,
@@ -234,9 +234,9 @@ func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedCommitKeys(
 				universalProtoCommit,
 			)
 			if err != nil {
-				return slicesext.Indexed[bufmodule.Commit]{}, err
+				return xslices.Indexed[bufmodule.Commit]{}, err
 			}
-			return slicesext.Indexed[bufmodule.Commit]{
+			return xslices.Indexed[bufmodule.Commit]{
 				// No digest to compare against to add as CommitOption.
 				Value: bufmodule.NewCommit(
 					moduleKey,

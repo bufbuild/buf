@@ -31,7 +31,6 @@ import (
 	"github.com/docker/docker/api/types"
 	imagetypes "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
-	imagev1 "github.com/docker/docker/image/v1"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stringid"
 )
@@ -134,10 +133,6 @@ func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadRes
 			}
 			if !strings.HasPrefix(loadedImageID, "sha256:") {
 				d.logger.Warn("Unsupported image digest", slog.String("imageID", loadedImageID))
-				continue
-			}
-			if err := imagev1.ValidateID(strings.TrimPrefix(loadedImageID, "sha256:")); err != nil {
-				d.logger.Warn("Invalid image id", slog.String("imageID", loadedImageID))
 				continue
 			}
 			imageID = loadedImageID

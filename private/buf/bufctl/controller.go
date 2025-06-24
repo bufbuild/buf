@@ -25,7 +25,12 @@ import (
 	"slices"
 	"sort"
 
+	"buf.build/go/app"
+	"buf.build/go/app/appcmd"
+	"buf.build/go/protovalidate"
 	"buf.build/go/protoyaml"
+	"buf.build/go/standard/xio"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwkt/bufwktstore"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
@@ -40,18 +45,13 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
-	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
-	"github.com/bufbuild/protovalidate-go"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -65,6 +65,7 @@ type ImageWithConfig interface {
 	LintConfig() bufconfig.LintConfig
 	BreakingConfig() bufconfig.BreakingConfig
 	PluginConfigs() []bufconfig.PluginConfig
+	PolicyConfigs() []bufconfig.PolicyConfig
 
 	isImageWithConfig()
 }
@@ -404,7 +405,10 @@ func (c *controller) GetTargetImageWithConfigsAndCheckClient(
 		}
 		lintConfig := bufconfig.DefaultLintConfigV1
 		breakingConfig := bufconfig.DefaultBreakingConfigV1
-		var pluginConfigs []bufconfig.PluginConfig
+		var (
+			pluginConfigs []bufconfig.PluginConfig
+			policyConfigs []bufconfig.PolicyConfig
+		)
 		pluginKeyProvider := bufplugin.NopPluginKeyProvider
 		bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefixOrOverride(
 			ctx,
@@ -442,6 +446,7 @@ func (c *controller) GetTargetImageWithConfigsAndCheckClient(
 			// buf.yaml file is found, the PluginConfigs from the buf.yaml file and the PluginKeys
 			// from the buf.lock file are resolved to create the PluginKeyProvider.
 			pluginConfigs = bufYAMLFile.PluginConfigs()
+			policyConfigs = bufYAMLFile.PolicyConfigs()
 			// If a config override is provided, the PluginConfig remote Refs use the BSR
 			// to resolve the PluginKeys. No buf.lock is required.
 			// If the buf.yaml file is not found, the bufplugin.NopPluginKeyProvider is returned.
@@ -485,6 +490,7 @@ func (c *controller) GetTargetImageWithConfigsAndCheckClient(
 				lintConfig,
 				breakingConfig,
 				pluginConfigs,
+				policyConfigs,
 			),
 		}
 		checkClient, err := bufcheck.NewClient(
@@ -495,6 +501,7 @@ func (c *controller) GetTargetImageWithConfigsAndCheckClient(
 			),
 			bufcheck.ClientWithLocalWasmPluginsFromOS(),
 			bufcheck.ClientWithRemoteWasmPlugins(pluginKeyProvider, c.pluginDataProvider),
+			bufcheck.ClientWithLocalPoliciesFromOS(),
 		)
 		if err != nil {
 			return nil, nil, err
@@ -726,7 +733,7 @@ func (c *controller) GetMessage(
 	if err != nil {
 		return nil, 0, err
 	}
-	data, err := ioext.ReadAllAndClose(readCloser)
+	data, err := xio.ReadAllAndClose(readCloser)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -812,6 +819,7 @@ func (c *controller) GetCheckClientForWorkspace(
 			pluginKeyProvider,
 			c.pluginDataProvider,
 		),
+		bufcheck.ClientWithLocalPoliciesFromOS(),
 	)
 }
 
@@ -1182,6 +1190,7 @@ func (c *controller) buildTargetImageWithConfigs(
 				workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
 				workspace.GetBreakingConfigForOpaqueID(module.OpaqueID()),
 				workspace.PluginConfigs(),
+				workspace.PolicyConfigs(),
 			),
 		)
 	}
@@ -1205,13 +1214,13 @@ func (c *controller) warnUnconfiguredTransitiveImports(
 	// First, figure out if we have a local module. If we don't, just return - the Workspace
 	// was purely built from remote Modules, and therefore buf.yaml configured dependencies
 	// do not apply.
-	if slicesext.Count(workspace.Modules(), bufmodule.Module.IsLocal) == 0 {
+	if xslices.Count(workspace.Modules(), bufmodule.Module.IsLocal) == 0 {
 		return nil
 	}
 	// Construct a struct map of all the FullName strings of the configured buf.yaml
 	// Module dependencies, and the local Modules. These are considered OK to depend on
 	// for non-imports in the Image.
-	configuredFullNameStrings, err := slicesext.MapError(
+	configuredFullNameStrings, err := xslices.MapError(
 		workspace.ConfiguredDepModuleRefs(),
 		func(moduleRef bufparse.Ref) (string, error) {
 			moduleFullName := moduleRef.FullName()
@@ -1224,7 +1233,7 @@ func (c *controller) warnUnconfiguredTransitiveImports(
 	if err != nil {
 		return err
 	}
-	configuredFullNameStringMap := slicesext.ToStructMap(configuredFullNameStrings)
+	configuredFullNameStringMap := xslices.ToStructMap(configuredFullNameStrings)
 	for _, localModule := range bufmodule.ModuleSetLocalModules(workspace) {
 		if moduleFullName := localModule.FullName(); moduleFullName != nil {
 			configuredFullNameStringMap[moduleFullName.String()] = struct{}{}
@@ -1314,7 +1323,7 @@ func getImageFileInfosForModuleSet(ctx context.Context, moduleSet bufmodule.Modu
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.Map(
+	return xslices.Map(
 		fileInfos,
 		func(fileInfo bufmodule.FileInfo) bufimage.ImageFileInfo {
 			return bufimage.ImageFileInfoForModuleFileInfo(fileInfo)
@@ -1478,15 +1487,15 @@ func newStaticPluginKeyProviderForPluginConfigs(
 	pluginKeys []bufplugin.PluginKey,
 ) (_ bufplugin.PluginKeyProvider, retErr error) {
 	// Validate that all remote PluginConfigs are present in the buf.lock file.
-	pluginKeysByFullName, err := slicesext.ToUniqueValuesMap(pluginKeys, func(pluginKey bufplugin.PluginKey) string {
+	pluginKeysByFullName, err := xslices.ToUniqueValuesMap(pluginKeys, func(pluginKey bufplugin.PluginKey) string {
 		return pluginKey.FullName().String()
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate remote PluginKeys: %w", err)
 	}
 	// Remote PluginConfig Refs are any PluginConfigs that have a Ref.
-	remotePluginRefs := slicesext.Filter(
-		slicesext.Map(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) bufparse.Ref {
+	remotePluginRefs := xslices.Filter(
+		xslices.Map(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) bufparse.Ref {
 			return pluginConfig.Ref()
 		}),
 		func(pluginRef bufparse.Ref) bool {

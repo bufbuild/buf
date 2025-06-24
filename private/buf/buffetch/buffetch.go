@@ -22,15 +22,15 @@ import (
 	"log/slog"
 	"net/http"
 
+	"buf.build/go/app"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 const (
@@ -51,34 +51,34 @@ var (
 	// MessageFormatsString is the string representation of all message formats.
 	//
 	// This does not include deprecated formats.
-	MessageFormatsString = stringutil.SliceToString(messageFormatsNotDeprecated)
+	MessageFormatsString = xstrings.SliceToString(messageFormatsNotDeprecated)
 	// SourceDirFormatsString is the string representation of all source directory formats.
 	// This includes all of the formats in SourceFormatsString except the protofile format.
 	//
 	// This does not include deprecated formats.
-	SourceDirFormatsString = stringutil.SliceToString(sourceDirFormatsNotDeprecated)
+	SourceDirFormatsString = xstrings.SliceToString(sourceDirFormatsNotDeprecated)
 	// SourceFormatsString is the string representation of all source formats.
 	//
 	// This does not include deprecated formats.
-	SourceFormatsString = stringutil.SliceToString(sourceFormatsNotDeprecated)
+	SourceFormatsString = xstrings.SliceToString(sourceFormatsNotDeprecated)
 	// ModuleFormatsString is the string representation of all module formats.
 	//
 	// Module formats are also source formats.
 	//
 	// This does not include deprecated formats.
-	ModuleFormatsString = stringutil.SliceToString(moduleFormatsNotDeprecated)
+	ModuleFormatsString = xstrings.SliceToString(moduleFormatsNotDeprecated)
 	// SourceOrModuleFormatsString is the string representation of all source or module formats.
 	//
 	// This does not include deprecated formats.
-	SourceOrModuleFormatsString = stringutil.SliceToString(sourceOrModuleFormatsNotDeprecated)
+	SourceOrModuleFormatsString = xstrings.SliceToString(sourceOrModuleFormatsNotDeprecated)
 	// DirOrProtoFileFormatsString is the string representation of all dir or proto file formats.
 	//
 	// This does not include deprecated formats.
-	DirOrProtoFileFormatsString = stringutil.SliceToString(dirOrProtoFileFormats)
+	DirOrProtoFileFormatsString = xstrings.SliceToString(dirOrProtoFileFormats)
 	// AllFormatsString is the string representation of all formats.
 	//
 	// This does not include deprecated formats.
-	AllFormatsString = stringutil.SliceToString(allFormatsNotDeprecated)
+	AllFormatsString = xstrings.SliceToString(allFormatsNotDeprecated)
 
 	// ErrModuleFormatDetectedForDirOrProtoFileRef is the error returned if a module is the
 	// detected format in the DirOrProtoFileRefParser. We have a special heuristic to determine

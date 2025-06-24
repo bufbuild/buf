@@ -22,10 +22,10 @@ import (
 	"sort"
 	"strings"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotocompile"
 	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -189,7 +189,7 @@ func GetFilePaths(ctx context.Context, moduleReadBucket ModuleReadBucket) ([]str
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.Map(fileInfos, func(fileInfo FileInfo) string { return fileInfo.Path() }), nil
+	return xslices.Map(fileInfos, func(fileInfo FileInfo) string { return fileInfo.Path() }), nil
 }
 
 // GetTargetFilePaths is a convenience function that gets all the target
@@ -201,7 +201,7 @@ func GetTargetFilePaths(ctx context.Context, moduleReadBucket ModuleReadBucket) 
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.Map(fileInfos, func(fileInfo FileInfo) string { return fileInfo.Path() }), nil
+	return xslices.Map(fileInfos, func(fileInfo FileInfo) string { return fileInfo.Path() }), nil
 }
 
 // GetDocFile gets the singular documentation File for the Module, if it exists.
@@ -307,8 +307,8 @@ func newModuleReadBucketForModule(
 		getBucket:            syncOnceValuesGetBucketWithStorageMatcherApplied,
 		module:               module,
 		targetPaths:          targetPaths,
-		targetPathMap:        slicesext.ToStructMap(targetPaths),
-		targetExcludePathMap: slicesext.ToStructMap(targetExcludePaths),
+		targetPathMap:        xslices.ToStructMap(targetPaths),
+		targetExcludePathMap: xslices.ToStructMap(targetExcludePaths),
 		protoFileTargetPath:  protoFileTargetPath,
 		includePackageFiles:  includePackageFiles,
 	}, nil
@@ -496,7 +496,7 @@ func (b *moduleReadBucket) getFileInfoUncached(ctx context.Context, objectInfo s
 				return nil, err
 			}
 			// This also has the effect of copying the slice.
-			return slicesext.ToUniqueSorted(slicesext.Map(fastscanResult.Imports, func(imp fastscan.Import) string { return imp.Path })), nil
+			return xslices.ToUniqueSorted(xslices.Map(fastscanResult.Imports, func(imp fastscan.Import) string { return imp.Path })), nil
 		},
 		func() (string, error) {
 			if fileType != FileTypeProto {
@@ -715,7 +715,7 @@ func newFilteredModuleReadBucket(
 	delegate ModuleReadBucket,
 	fileTypes []FileType,
 ) *filteredModuleReadBucket {
-	fileTypeMap := slicesext.ToStructMap(fileTypes)
+	fileTypeMap := xslices.ToStructMap(fileTypes)
 	_, containsFileTypeProto := fileTypeMap[FileTypeProto]
 	return &filteredModuleReadBucket{
 		delegate:              delegate,
@@ -939,7 +939,7 @@ func newExistsMultipleModulesError(path string, fileInfos ...FileInfo) error {
 		"%s was detected as part of a multiProtoFileModuleReadBucket exists in multiple locations: %v. This should only happen if the multiProtoFileModuleReadBucket was incorrectly constructed",
 		path,
 		strings.Join(
-			slicesext.Map(
+			xslices.Map(
 				fileInfos,
 				func(fileInfo FileInfo) string {
 					return fileInfo.ExternalPath()

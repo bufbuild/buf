@@ -18,9 +18,9 @@ import (
 	"context"
 	"sync"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
@@ -217,7 +217,7 @@ func ModuleDirectModuleDeps(module Module) ([]ModuleDep, error) {
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.Filter(
+	return xslices.Filter(
 		moduleDeps,
 		func(moduleDep ModuleDep) bool { return moduleDep.IsDirect() },
 	), nil
@@ -290,11 +290,11 @@ func newModule(
 		}
 		return normalpath.NormalizeAndValidate(path)
 	}
-	targetPaths, err := slicesext.MapError(targetPaths, normalizeAndValidateIfNotEmpty)
+	targetPaths, err := xslices.MapError(targetPaths, normalizeAndValidateIfNotEmpty)
 	if err != nil {
 		return nil, syserror.Wrap(err)
 	}
-	targetExcludePaths, err = slicesext.MapError(targetExcludePaths, normalizeAndValidateIfNotEmpty)
+	targetExcludePaths, err = xslices.MapError(targetExcludePaths, normalizeAndValidateIfNotEmpty)
 	if err != nil {
 		return nil, syserror.Wrap(err)
 	}

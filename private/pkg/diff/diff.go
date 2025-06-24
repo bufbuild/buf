@@ -33,7 +33,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/bufbuild/buf/private/pkg/execext"
+	"buf.build/go/standard/xos/xexec"
 )
 
 // Diff does a diff.
@@ -114,12 +114,12 @@ func doDiff(
 	}
 
 	buffer := bytes.NewBuffer(nil)
-	err = execext.Run(
+	err = xexec.Run(
 		ctx,
 		binaryPath,
-		execext.WithArgs("-u", f1, f2),
-		execext.WithStdout(buffer),
-		execext.WithStderr(buffer),
+		xexec.WithArgs("-u", f1, f2),
+		xexec.WithStdout(buffer),
+		xexec.WithStderr(buffer),
 	)
 	data := buffer.Bytes()
 	if len(data) > 0 {

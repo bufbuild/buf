@@ -21,13 +21,13 @@ import (
 	"slices"
 	"strings"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -105,7 +105,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fmt.Sprintf(
 			"The plugin's type setting, if created. Can only be set with --%s. Must be one of %s",
 			createTypeFlagName,
-			stringutil.SliceToString(bufplugin.AllPluginTypeStrings),
+			xstrings.SliceToString(bufplugin.AllPluginTypeStrings),
 		),
 	)
 	flagSet.StringVar(
@@ -229,7 +229,7 @@ func validateTypeFlags(flags *flags) error {
 	}
 	if len(typeFlags) > 1 {
 		usedFlagsErrStr := strings.Join(
-			slicesext.Map(
+			xslices.Map(
 				typeFlags,
 				func(flag string) string { return fmt.Sprintf("--%s", flag) },
 			),

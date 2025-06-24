@@ -21,11 +21,11 @@ import (
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
+	"buf.build/go/standard/xslices"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
 )
@@ -104,14 +104,14 @@ func getUniversalProtoCommitsForRegistryAndCommitIDs(
 		if err != nil {
 			return nil, err
 		}
-		return slicesext.MapError(v1beta1ProtoCommits, newUniversalProtoCommitForV1Beta1)
+		return xslices.MapError(v1beta1ProtoCommits, newUniversalProtoCommitForV1Beta1)
 	case bufmodule.DigestTypeB5:
 		v1ProtoResourceRefs := commitIDsToV1ProtoResourceRefs(commitIDs)
 		v1ProtoCommits, err := getV1ProtoCommitsForRegistryAndResourceRefs(ctx, moduleClientProvider, registry, v1ProtoResourceRefs)
 		if err != nil {
 			return nil, err
 		}
-		return slicesext.MapError(v1ProtoCommits, newUniversalProtoCommitForV1)
+		return xslices.MapError(v1ProtoCommits, newUniversalProtoCommitForV1)
 	default:
 		return nil, syserror.Newf("unknown DigestType: %v", digestType)
 	}
@@ -134,14 +134,14 @@ func getUniversalProtoCommitsForRegistryAndModuleRefs(
 		if err != nil {
 			return nil, err
 		}
-		return slicesext.MapError(v1beta1ProtoCommits, newUniversalProtoCommitForV1Beta1)
+		return xslices.MapError(v1beta1ProtoCommits, newUniversalProtoCommitForV1Beta1)
 	case bufmodule.DigestTypeB5:
 		v1ProtoResourceRefs := moduleRefsToV1ProtoResourceRefs(moduleRefs)
 		v1ProtoCommits, err := getV1ProtoCommitsForRegistryAndResourceRefs(ctx, moduleClientProvider, registry, v1ProtoResourceRefs)
 		if err != nil {
 			return nil, err
 		}
-		return slicesext.MapError(v1ProtoCommits, newUniversalProtoCommitForV1)
+		return xslices.MapError(v1ProtoCommits, newUniversalProtoCommitForV1)
 	default:
 		return nil, syserror.Newf("unknown DigestType: %v", digestType)
 	}

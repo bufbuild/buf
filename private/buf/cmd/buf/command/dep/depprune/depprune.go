@@ -17,10 +17,10 @@ package depprune
 import (
 	"context"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/dep/internal"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 )
 
 // NewCommand returns a new prune Command.

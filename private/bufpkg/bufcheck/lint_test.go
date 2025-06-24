@@ -16,6 +16,7 @@ package bufcheck_test
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -586,10 +587,12 @@ func TestRunProtovalidate(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "bool.proto", 19, 31, 19, 69, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "bool.proto", 20, 50, 20, 88, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "bool.proto", 27, 5, 27, 46, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "bool.proto", 33, 45, 33, 89, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "bytes.proto", 21, 5, 21, 48, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "bytes.proto", 26, 5, 26, 45, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "bytes.proto", 31, 5, 31, 45, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "bytes.proto", 43, 5, 43, 65, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "bytes.proto", 46, 45, 46, 106, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "cel_field.proto", 10, 37, 14, 4, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "cel_field.proto", 17, 5, 21, 6, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "cel_field.proto", 29, 5, 33, 6, "PROTOVALIDATE"),
@@ -624,8 +627,10 @@ func TestRunProtovalidate(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "duration.proto", 122, 5, 125, 6, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "duration.proto", 127, 5, 130, 6, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "duration.proto", 155, 5, 158, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "duration.proto", 164, 64, 164, 126, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "enum.proto", 28, 5, 28, 40, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "enum.proto", 36, 5, 36, 42, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "enum.proto", 39, 47, 39, 102, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "extension.proto", 25, 7, 25, 43, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "extension.proto", 30, 7, 30, 58, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "extension.proto", 40, 5, 40, 41, "PROTOVALIDATE"),
@@ -644,6 +649,10 @@ func TestRunProtovalidate(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "map.proto", 56, 41, 56, 80, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "map.proto", 70, 5, 70, 53, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "map.proto", 71, 5, 71, 77, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "map.proto", 78, 5, 78, 57, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "map.proto", 83, 5, 83, 55, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "map.proto", 86, 5, 86, 57, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "map.proto", 87, 5, 87, 55, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "message.proto", 20, 3, 20, 49, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "message.proto", 27, 5, 27, 51, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "number.proto", 20, 5, 20, 42, "PROTOVALIDATE"),
@@ -665,20 +674,34 @@ func TestRunProtovalidate(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "number.proto", 139, 5, 139, 50, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "number.proto", 142, 5, 142, 52, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "number.proto", 160, 5, 160, 44, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "number.proto", 170, 5, 170, 45, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "number.proto", 180, 5, 180, 45, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "number.proto", 190, 5, 190, 43, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "number.proto", 200, 5, 200, 43, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "number.proto", 210, 5, 210, 46, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "number.proto", 220, 5, 220, 46, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "number.proto", 230, 5, 230, 44, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "number.proto", 240, 5, 240, 44, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "number.proto", 250, 5, 250, 44, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "number.proto", 260, 5, 260, 44, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "number.proto", 270, 5, 270, 43, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "number.proto", 280, 5, 280, 43, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "number.proto", 290, 5, 290, 44, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "number.proto", 300, 5, 300, 44, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 163, 53, 163, 91, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 172, 5, 172, 45, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 180, 54, 180, 95, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 184, 5, 184, 45, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 194, 5, 194, 43, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 197, 51, 197, 91, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 206, 5, 206, 43, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 209, 51, 209, 91, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 218, 5, 218, 46, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 221, 57, 221, 97, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 230, 5, 230, 46, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 233, 57, 233, 97, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 242, 5, 242, 44, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 245, 52, 245, 90, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 254, 5, 254, 44, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 257, 52, 257, 90, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 266, 5, 266, 44, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 269, 52, 269, 90, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 278, 5, 278, 44, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 281, 52, 281, 90, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 290, 5, 290, 43, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 293, 77, 293, 116, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 302, 5, 302, 43, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 305, 77, 305, 116, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 314, 5, 314, 44, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 317, 79, 317, 117, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 326, 5, 326, 44, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 329, 79, 329, 117, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "oneof.proto", 13, 7, 13, 43, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "oneof.proto", 19, 7, 19, 43, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 25, 5, 25, 48, "PROTOVALIDATE"),
@@ -689,6 +712,7 @@ func TestRunProtovalidate(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 53, 26, 53, 74, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 55, 42, 55, 76, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 65, 5, 65, 62, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 68, 55, 68, 110, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 31, 5, 31, 46, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 36, 5, 36, 44, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 41, 5, 41, 44, "PROTOVALIDATE"),
@@ -717,6 +741,7 @@ func TestRunProtovalidate(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 133, 5, 133, 45, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 152, 5, 152, 51, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 154, 5, 154, 49, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 157, 46, 157, 86, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 57, 5, 60, 6, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 61, 5, 64, 6, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 68, 5, 71, 6, "PROTOVALIDATE"),
@@ -731,6 +756,7 @@ func TestRunProtovalidate(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 142, 5, 145, 6, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 150, 5, 153, 6, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 157, 5, 160, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 198, 65, 201, 4, "PROTOVALIDATE"),
 	)
 }
 
@@ -1229,15 +1255,42 @@ func TestRunLintCustomPlugins(t *testing.T) {
 		t,
 		"custom_plugins",
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "a.proto", "PACKAGE_DEFINED"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 8, 1, 10, 2, "SERVICE_BANNED_SUFFIXES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 1, 17, 2, "PAGE_REQUEST_HAS_TOKEN"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 19, 1, 25, 2, "PAGE_RESPONSE_HAS_TOKEN"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 21, 5, 21, 19, "VALIDATE_ID_DASHLESS"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 27, 1, 27, 26, "PAGE_REQUEST_HAS_TOKEN"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 1, 28, 27, "PAGE_RESPONSE_HAS_TOKEN"),
-		bufanalysistesting.NewFileAnnotation(t, "b.proto", 6, 3, 6, 66, "RPC_BANNED_SUFFIXES"),
-		bufanalysistesting.NewFileAnnotation(t, "b.proto", 14, 5, 14, 24, "ENUM_VALUE_BANNED_SUFFIXES"),
-		bufanalysistesting.NewFileAnnotation(t, "b.proto", 19, 5, 19, 23, "FIELD_BANNED_SUFFIXES"),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 8, 1, 10, 2, "SERVICE_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 15, 1, 17, 2, "PAGE_REQUEST_HAS_TOKEN",
+			bufanalysistesting.WithPluginName("buf-plugin-rpc-ext"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 19, 1, 25, 2, "PAGE_RESPONSE_HAS_TOKEN",
+			bufanalysistesting.WithPluginName("buf-plugin-rpc-ext"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 21, 5, 21, 19, "VALIDATE_ID_DASHLESS",
+			bufanalysistesting.WithPluginName("buf-plugin-protovalidate-ext"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 27, 1, 27, 26, "PAGE_REQUEST_HAS_TOKEN",
+			bufanalysistesting.WithPluginName("buf-plugin-rpc-ext"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 28, 1, 28, 27, "PAGE_RESPONSE_HAS_TOKEN",
+			bufanalysistesting.WithPluginName("buf-plugin-rpc-ext"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 6, 3, 6, 66, "RPC_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 14, 5, 14, 24, "ENUM_VALUE_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 19, 5, 19, 23, "FIELD_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix"),
+		),
 	)
 }
 
@@ -1252,10 +1305,22 @@ func TestRunLintCustomWasmPlugins(t *testing.T) {
 		"",
 		nil,
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "a.proto", "PACKAGE_DEFINED"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 8, 1, 10, 2, "SERVICE_BANNED_SUFFIXES"),
-		bufanalysistesting.NewFileAnnotation(t, "b.proto", 6, 3, 6, 66, "RPC_BANNED_SUFFIXES"),
-		bufanalysistesting.NewFileAnnotation(t, "b.proto", 14, 5, 14, 24, "ENUM_VALUE_BANNED_SUFFIXES"),
-		bufanalysistesting.NewFileAnnotation(t, "b.proto", 19, 5, 19, 23, "FIELD_BANNED_SUFFIXES"),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 8, 1, 10, 2, "SERVICE_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 6, 3, 6, 66, "RPC_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 14, 5, 14, 24, "ENUM_VALUE_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 19, 5, 19, 23, "FIELD_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+		),
 	)
 }
 
@@ -1265,6 +1330,129 @@ func TestRunLintEditionsGoFeatures(t *testing.T) {
 		t,
 		"editions_go_features",
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "a.proto", "PACKAGE_DEFINED"),
+	)
+}
+
+func TestRunLintPolicyEmpty(t *testing.T) {
+	t.Parallel()
+	testLintWithOptions(
+		t,
+		"policy_empty",
+		"",
+		nil,
+	)
+}
+
+func TestRunLintPolicyLocal(t *testing.T) {
+	t.Parallel()
+	testLintWithOptions(
+		t,
+		"policy_local",
+		"",
+		nil,
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "a.proto", "PACKAGE_DEFINED"),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 8, 1, 10, 2, "SERVICE_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+			bufanalysistesting.WithPolicyName("buf.policy1.yaml"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 6, 3, 6, 66, "RPC_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+			bufanalysistesting.WithPolicyName("buf.policy1.yaml"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 14, 5, 14, 24, "ENUM_VALUE_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+			bufanalysistesting.WithPolicyName("buf.policy2.yaml"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 19, 5, 19, 23, "FIELD_BANNED_SUFFIXES",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+			bufanalysistesting.WithPolicyName("buf.policy2.yaml"),
+		),
+	)
+}
+
+func TestRunLintPolicyIgnores1(t *testing.T) {
+	t.Parallel()
+	testLint(
+		t,
+		"policy_ignores1",
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 9, 9, 9, 13, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 13, 6, 13, 10, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/bar/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/bar/bar.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/bar/bar.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+	)
+}
+
+func TestRunLintPolicyIgnores2(t *testing.T) {
+	t.Parallel()
+	testLint(
+		t,
+		"policy_ignores2",
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+	)
+}
+
+func TestRunLintPolicyIgnores3(t *testing.T) {
+	t.Parallel()
+	testLint(
+		t,
+		"policy_ignores3",
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 9, 9, 9, 13, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 13, 6, 13, 10, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+	)
+}
+
+func TestRunLintPolicyIgnores4(t *testing.T) {
+	t.Parallel()
+	testLint(
+		t,
+		"policy_ignores4",
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 9, 9, 9, 13, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 13, 6, 13, 10, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE", bufanalysistesting.WithPolicyName("policy.yaml")),
 	)
 }
 
@@ -1357,6 +1545,10 @@ func testLintWithOptions(
 		logger,
 		bufcheck.ClientWithRunnerProvider(bufcheck.NewLocalRunnerProvider(wasmRuntime)),
 		bufcheck.ClientWithLocalWasmPluginsFromOS(),
+		bufcheck.ClientWithLocalPolicies(func(filePath string) ([]byte, error) {
+			// Read policies relative to the base directory path.
+			return os.ReadFile(filepath.Join(dirPath, filePath))
+		}),
 	)
 	require.NoError(t, err)
 	err = client.Lint(
@@ -1364,6 +1556,7 @@ func testLintWithOptions(
 		lintConfig,
 		image,
 		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
+		bufcheck.WithPolicyConfigs(workspace.PolicyConfigs()...),
 	)
 	if len(expectedFileAnnotations) == 0 {
 		assert.NoError(t, err)

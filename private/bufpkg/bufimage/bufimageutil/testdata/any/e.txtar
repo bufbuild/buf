@@ -99,6 +99,22 @@ message FeatureSet {
     targets = TARGET_TYPE_SERVICE,
     targets = TARGET_TYPE_METHOD
   ];
+  optional VisibilityFeature.DefaultSymbolVisibility default_symbol_visibility = 8 [
+    edition_defaults = { value: "EXPORT_ALL", edition: EDITION_LEGACY },
+    edition_defaults = { value: "EXPORT_TOP_LEVEL", edition: EDITION_2024 },
+    feature_support = { edition_introduced: EDITION_2024 },
+    retention = RETENTION_SOURCE,
+    targets = TARGET_TYPE_FILE
+  ];
+  message VisibilityFeature {
+    enum DefaultSymbolVisibility {
+      DEFAULT_SYMBOL_VISIBILITY_UNKNOWN = 0;
+      EXPORT_ALL = 1;
+      EXPORT_TOP_LEVEL = 2;
+      LOCAL_ALL = 3;
+      STRICT = 4;
+    }
+  }
   enum EnforceNamingStyle {
     ENFORCE_NAMING_STYLE_UNKNOWN = 0;
     STYLE2024 = 1;

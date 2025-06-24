@@ -21,10 +21,10 @@ import (
 	"sort"
 	"strings"
 
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
 )
 
@@ -137,7 +137,7 @@ func (f *flagsBuilder) Bind(flagSet *pflag.FlagSet) {
 		"",
 		fmt.Sprintf(
 			`The error format to use. Must be one of format %s.`,
-			stringutil.SliceToString(bufanalysis.AllFormatStringsWithAliases),
+			xstrings.SliceToString(bufanalysis.AllFormatStringsWithAliases),
 		),
 	)
 	flagSet.StringSliceVar(

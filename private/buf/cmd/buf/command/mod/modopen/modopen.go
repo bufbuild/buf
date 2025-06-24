@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"io/fs"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/pkg/browser"
 )

@@ -22,12 +22,12 @@ import (
 	"log/slog"
 	"path/filepath"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -683,7 +683,7 @@ func getMappedModuleBucketAndModuleTargeting(
 	mappedModuleBucket := storage.MultiReadBucket(rootBuckets...)
 	moduleTargeting, err := newModuleTargeting(
 		moduleDirPath,
-		slicesext.MapKeysToSlice(rootToExcludes),
+		xslices.MapKeysToSlice(rootToExcludes),
 		bucketTargeting,
 		config,
 		isTargetModule,
@@ -833,7 +833,7 @@ func checkForOverlap(
 //
 // v1 does not need to call a function like this because bucketIDs are just their module roots relative to the workspace root, which are unique.
 func bucketIDsForModuleConfigsV2(moduleConfigs []bufconfig.ModuleConfig) []string {
-	moduleDirPaths := slicesext.Map(moduleConfigs, bufconfig.ModuleConfig.DirPath)
+	moduleDirPaths := xslices.Map(moduleConfigs, bufconfig.ModuleConfig.DirPath)
 	// In a v2 bufYAMLFile, multiple module configs may have the same DirPath, but we still want to
 	// make sure each local module has a unique BucketID, which means we cannot use their DirPaths as
 	// BucketIDs directly. Instead, we append an index (1-indexed) to each DirPath to deduplicate, and
@@ -856,7 +856,7 @@ func bucketIDsForModuleConfigsV2(moduleConfigs []bufconfig.ModuleConfig) []strin
 	// [bar, bar, bar, foo, foo, foo, new].
 	//                       ^
 	bucketIDs := bucketIDsForDirPaths(moduleDirPaths, false)
-	if len(slicesext.Duplicates(bucketIDs)) == 0 {
+	if len(xslices.Duplicates(bucketIDs)) == 0 {
 		// This approach does not produce duplicate bucketIDs in the result most of the time, we return
 		// the bucketIDs if we don't detect any duplicates and it gives us the nice property that for
 		// 99% of the v2 workspaces, each module's bucketID is its DirPath.

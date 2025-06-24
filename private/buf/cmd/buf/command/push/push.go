@@ -21,18 +21,18 @@ import (
 	"slices"
 	"strings"
 
+	"buf.build/go/app"
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/git"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/spf13/pflag"
@@ -119,7 +119,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"text",
 		fmt.Sprintf(
 			"The format for build errors printed to stderr. Must be one of %s",
-			stringutil.SliceToString(bufanalysis.AllFormatStrings),
+			xstrings.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
 	flagSet.BoolVar(
@@ -233,7 +233,7 @@ func run(
 		uploadOptions = append(uploadOptions, gitMetadataUploadOptions...)
 		// Accept any additional labels the user has set using `--label`
 		if len(flags.Labels) > 0 {
-			uploadOptions = append(uploadOptions, bufmodule.UploadWithLabels(slicesext.ToUniqueSorted(flags.Labels)...))
+			uploadOptions = append(uploadOptions, bufmodule.UploadWithLabels(xslices.ToUniqueSorted(flags.Labels)...))
 		}
 	} else {
 		// Otherwise, we parse the flags set individually by the user.
@@ -269,7 +269,7 @@ func run(
 		_, err := container.Stdout().Write(
 			[]byte(
 				strings.Join(
-					slicesext.Map(
+					xslices.Map(
 						commits,
 						func(commit bufmodule.Commit) string {
 							return commit.ModuleKey().String()
@@ -390,7 +390,7 @@ func validateLabelFlagCombinations(flags *flags) error {
 	}
 	if len(usedFlags) > 1 {
 		usedFlagsErrStr := strings.Join(
-			slicesext.Map(
+			xslices.Map(
 				usedFlags,
 				func(flag string) string { return fmt.Sprintf("--%s", flag) },
 			),
@@ -427,7 +427,7 @@ func validateGitMetadataFlags(flags *flags) error {
 		}
 		if len(usedFlags) > 0 {
 			usedFlagsErrStr := strings.Join(
-				slicesext.Map(
+				xslices.Map(
 					usedFlags,
 					func(flag string) string { return fmt.Sprintf("--%s", flag) },
 				),
@@ -546,10 +546,10 @@ func getLabelUploadOption(flags *flags) bufmodule.UploadOption {
 	// flags to be set. And so we return the corresponding bufmodule.UploadOption if any
 	// flags are set.
 	if len(flags.Labels) > 0 {
-		return bufmodule.UploadWithLabels(slicesext.ToUniqueSorted(flags.Labels)...)
+		return bufmodule.UploadWithLabels(xslices.ToUniqueSorted(flags.Labels)...)
 	}
 	if len(flags.Tags) > 0 {
-		return bufmodule.UploadWithTags(slicesext.ToUniqueSorted(flags.Tags)...)
+		return bufmodule.UploadWithTags(xslices.ToUniqueSorted(flags.Tags)...)
 	}
 	if flags.Branch != "" {
 		// We upload to a single label, the branch name.

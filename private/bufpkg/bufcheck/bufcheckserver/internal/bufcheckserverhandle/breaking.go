@@ -23,11 +23,11 @@ import (
 	"strings"
 
 	"buf.build/go/bufplugin/check"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/gen/proto/go/google/protobuf"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/protocompile/protoutil"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -322,7 +322,7 @@ func checkEnumValueNoDeleteWithRules(
 					if len(previousNameToEnumValue) > 1 {
 						nameSuffix = "s"
 					}
-					suffix = fmt.Sprintf(` without reserving the name%s %s`, nameSuffix, stringutil.JoinSliceQuoted(getSortedEnumValueNames(previousNameToEnumValue), ", "))
+					suffix = fmt.Sprintf(` without reserving the name%s %s`, nameSuffix, xstrings.JoinSliceQuoted(getSortedEnumValueNames(previousNameToEnumValue), ", "))
 				}
 				responseWriter.AddProtosourceAnnotation(
 					enum.Location(),
@@ -1515,9 +1515,9 @@ func handleBreakingEnumValueSameName(
 	// ie if you now have FOO=2, BAR=2, you need to have had FOO=2, BAR=2 previously
 	// FOO=2, BAR=2, BAZ=2 now would pass
 	// FOO=2, BAR=2, BAZ=2 previously would fail
-	if !slicesext.ElementsContained(names, previousNames) {
-		previousNamesString := stringutil.JoinSliceQuoted(previousNames, ", ")
-		namesString := stringutil.JoinSliceQuoted(names, ", ")
+	if !xslices.ElementsContained(names, previousNames) {
+		previousNamesString := xstrings.JoinSliceQuoted(previousNames, ", ")
+		namesString := xstrings.JoinSliceQuoted(names, ", ")
 		nameSuffix := ""
 		if len(previousNames) > 1 && len(names) > 1 {
 			nameSuffix = "s"
@@ -2231,7 +2231,7 @@ func handleBreakingPackageNoDelete(
 			// ResponseWriter only expects a single against file name, so we grab the first one in
 			// alphabetical order from the previous descriptors, so this is deterministic. As noted,
 			// this is to provide a path for check ignoring unstable packages.
-			previousDescriptorsFileNames := slicesext.Map(
+			previousDescriptorsFileNames := xslices.Map(
 				previousDescriptors,
 				func(previousDescriptor bufprotosource.Descriptor) string {
 					return previousDescriptor.File().Path()

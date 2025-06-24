@@ -212,3 +212,16 @@ func (d *digest) String() string {
 }
 
 func (*digest) isDigest() {}
+
+// getO1Digest returns the O1 digest for the given PolicyConfig.
+func getO1Digest(policyConfig PolicyConfig) (Digest, error) {
+	policyDataJSON, err := marshalPolicyConfigAsJSON(policyConfig)
+	if err != nil {
+		return nil, err
+	}
+	bufcasDigest, err := bufcas.NewDigestForContent(bytes.NewReader(policyDataJSON))
+	if err != nil {
+		return nil, err
+	}
+	return NewDigest(DigestTypeO1, bufcasDigest)
+}

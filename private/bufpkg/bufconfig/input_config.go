@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -122,8 +122,8 @@ var (
 		InputConfigTypeTextImage:   "text_image",
 		InputConfigTypeYAMLImage:   "yaml_image",
 	}
-	allInputConfigTypeString = stringutil.SliceToHumanString(
-		slicesext.MapValuesToSortedSlice(inputConfigTypeToString),
+	allInputConfigTypeString = xstrings.SliceToHumanString(
+		xslices.MapValuesToSortedSlice(inputConfigTypeToString),
 	)
 )
 

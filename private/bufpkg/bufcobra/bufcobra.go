@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/standard/xslices"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -77,7 +77,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	excludes := slicesext.ToStructMap(config.ExcludeCommands)
+	excludes := xslices.ToStructMap(config.ExcludeCommands)
 	for _, command := range cobraCommand.Commands() {
 		if _, ok := excludes[command.CommandPath()]; ok {
 			command.Hidden = true
