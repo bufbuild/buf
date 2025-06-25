@@ -48,6 +48,8 @@ func V1Beta1ProtoToDigest(protoDigest *policyv1beta1.Digest) (bufpolicy.Digest, 
 	return bufpolicy.NewDigest(digestType, bufcasDigest)
 }
 
+// V1Beta1ProtoToPolicyConfig converts the given proto PolicyConfig to a PolicyConfig.
+// The registry is used to resolve plugin references.
 func V1Beta1ProtoToPolicyConfig(registry string, protoPolicyConfig *policyv1beta1.PolicyConfig) (bufpolicy.PolicyConfig, error) {
 	return newPolicyConfig(registry, protoPolicyConfig)
 }
