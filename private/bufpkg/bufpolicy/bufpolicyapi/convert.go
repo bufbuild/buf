@@ -18,7 +18,11 @@ import (
 	"fmt"
 
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
+	"buf.build/go/bufplugin/option"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 )
 
@@ -44,6 +48,10 @@ func V1Beta1ProtoToDigest(protoDigest *policyv1beta1.Digest) (bufpolicy.Digest, 
 	return bufpolicy.NewDigest(digestType, bufcasDigest)
 }
 
+func V1Beta1ProtoToPolicyConfig(registry string, protoPolicyConfig *policyv1beta1.PolicyConfig) (bufpolicy.PolicyConfig, error) {
+	return newPolicyConfig(registry, protoPolicyConfig)
+}
+
 // *** PRIVATE ***
 
 func policyVisibilityToV1Beta1Proto(policyVisibility bufpolicy.PolicyVisibility) (policyv1beta1.PolicyVisibility, error) {
@@ -63,4 +71,128 @@ func v1beta1ProtoToDigestType(protoDigestType policyv1beta1.DigestType) (bufpoli
 		return 0, fmt.Errorf("unknown policyv1beta1.DigestType: %v", protoDigestType)
 	}
 	return digestType, nil
+}
+
+// policyConfig implements bufpolicy.PolicyConfig.
+type policyConfig struct {
+	lintConfig     bufconfig.LintConfig
+	breakingConfig bufconfig.BreakingConfig
+	pluginConfigs  []bufconfig.PluginConfig
+}
+
+func newPolicyConfig(
+	registry string,
+	policyConfigV1Beta1 *policyv1beta1.PolicyConfig,
+) (*policyConfig, error) {
+	lintConfig, err := getLintConfigForV1Beta1LintConfig(policyConfigV1Beta1.Lint)
+	if err != nil {
+		return nil, err
+	}
+	breakingConfig, err := getBreakingConfigForV1Beta1BreakingConfig(policyConfigV1Beta1.Breaking)
+	if err != nil {
+		return nil, err
+	}
+	pluginConfigs, err := xslices.MapError(
+		policyConfigV1Beta1.Plugins,
+		func(pluginConfigV1Beta1 *policyv1beta1.PolicyConfig_CheckPluginConfig) (bufconfig.PluginConfig, error) {
+			return getPluginConfigForV1Beta1PluginConfig(registry, pluginConfigV1Beta1)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &policyConfig{
+		lintConfig:     lintConfig,
+		breakingConfig: breakingConfig,
+		pluginConfigs:  pluginConfigs,
+	}, nil
+}
+
+// LintConfig returns the LintConfig for the File.
+func (p *policyConfig) LintConfig() bufconfig.LintConfig {
+	return p.lintConfig
+}
+
+// BreakingConfig returns the BreakingConfig for the File.
+func (p *policyConfig) BreakingConfig() bufconfig.BreakingConfig {
+	return p.breakingConfig
+}
+
+// PluginConfigs returns the PluginConfigs for the File.
+func (p *policyConfig) PluginConfigs() []bufconfig.PluginConfig {
+	return p.pluginConfigs
+}
+
+func getLintConfigForV1Beta1LintConfig(
+	lintConfigV1Beta1 *policyv1beta1.PolicyConfig_LintConfig,
+) (bufconfig.LintConfig, error) {
+	checkConfig, err := bufconfig.NewEnabledCheckConfig(
+		bufconfig.FileVersionV2,
+		lintConfigV1Beta1.Use,
+		lintConfigV1Beta1.Except,
+		nil,
+		nil,
+		false,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return bufconfig.NewLintConfig(
+		checkConfig,
+		lintConfigV1Beta1.EnumZeroValueSuffix,
+		lintConfigV1Beta1.RpcAllowSameRequestResponse,
+		lintConfigV1Beta1.RpcAllowGoogleProtobufEmptyRequests,
+		lintConfigV1Beta1.RpcAllowGoogleProtobufEmptyResponses,
+		lintConfigV1Beta1.ServiceSuffix,
+		false, // Comment ignores are not allowed in Policy files.
+	), nil
+}
+
+func getBreakingConfigForV1Beta1BreakingConfig(
+	breakingConfigV1Beta1 *policyv1beta1.PolicyConfig_BreakingConfig,
+) (bufconfig.BreakingConfig, error) {
+	checkConfig, err := bufconfig.NewEnabledCheckConfig(
+		bufconfig.FileVersionV2,
+		breakingConfigV1Beta1.Use,
+		breakingConfigV1Beta1.Except,
+		nil,
+		nil,
+		false,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return bufconfig.NewBreakingConfig(
+		checkConfig,
+		breakingConfigV1Beta1.IgnoreUnstablePackages,
+	), nil
+}
+
+func getPluginConfigForV1Beta1PluginConfig(
+	registry string,
+	pluginConfigV1Beta1 *policyv1beta1.PolicyConfig_CheckPluginConfig,
+) (bufconfig.PluginConfig, error) {
+	nameV1Beta1 := pluginConfigV1Beta1.Name
+	pluginRef, err := bufparse.NewRef(
+		registry,
+		nameV1Beta1.Owner,
+		nameV1Beta1.Plugin,
+		nameV1Beta1.Ref,
+	)
+	if err != nil {
+		return nil, err
+	}
+	options, err := option.OptionsForProtoOptions(pluginConfigV1Beta1.Options)
+	if err != nil {
+		return nil, err
+	}
+	optionsMap := make(map[string]any)
+	options.Range(func(key string, value any) {
+		optionsMap[key] = value
+	})
+	return bufconfig.NewRemoteWasmPluginConfig(
+		pluginRef,
+		optionsMap,
+		pluginConfigV1Beta1.Args,
+	)
 }
