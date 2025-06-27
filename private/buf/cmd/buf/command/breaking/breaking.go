@@ -18,13 +18,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"maps"
 	"slices"
 
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xslices"
 	"buf.build/go/standard/xstrings"
+	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/buffetch"
@@ -32,6 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/spf13/pflag"
@@ -236,9 +240,15 @@ func run(
 			return err
 		}
 	}
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
+	if err != nil {
+		return err
+	}
+	moduleServiceProvider := bufregistryapimodule.NewClientProvider(clientConfig)
 	if flags.AgainstRegistry {
 		for _, imageWithConfig := range imageWithConfigs {
-			if imageWithConfig.ModuleFullName() == nil {
+			moduleFullName := imageWithConfig.ModuleFullName()
+			if moduleFullName == nil {
 				if imageWithConfig.ModuleOpaqueID() == "" {
 					// This can occur in the case of a [buffetch.MessageRef], where we resolve the message
 					// ref directly from the bucket without building the [bufmodule.Module]. In that case,
@@ -251,9 +261,42 @@ func run(
 					imageWithConfig.ModuleOpaqueID(),
 				)
 			}
+			// Check commits exist for the module on the default label before we try to get the against image.
+			// TODO: remove this check once we have error details to indicate that the against input
+			// has no commits on the default label. We use the API directly here to avoid issues of conflating
+			// dependency errors to empty module errors.
+			commitServiceClient := moduleServiceProvider.V1CommitServiceClient(moduleFullName.Registry())
+			if _, err := commitServiceClient.GetCommits(
+				ctx,
+				connect.NewRequest(
+					&modulev1.GetCommitsRequest{
+						ResourceRefs: []*modulev1.ResourceRef{
+							{
+								Value: &modulev1.ResourceRef_Name_{
+									Name: &modulev1.ResourceRef_Name{
+										Owner:  moduleFullName.Owner(),
+										Module: moduleFullName.Name(),
+									},
+								},
+							},
+						},
+					},
+				),
+			); err != nil {
+				if connect.CodeOf(err) == connect.CodeFailedPrecondition {
+					// This error occurs when the against input is a module that has no commits on the default branch.
+					// We ignore this case to support new modulues that have just been created in the registry.
+					container.Logger().DebugContext(
+						ctx, "ignoring empty module without commits on the default branch",
+						slog.String("module", imageWithConfig.ModuleFullName().String()),
+					)
+					continue
+				}
+				return err
+			}
 			againstImage, err := controller.GetImage(
 				ctx,
-				imageWithConfig.ModuleFullName().String(),
+				moduleFullName.String(),
 				bufctl.WithTargetPaths(externalPaths, flags.ExcludePaths),
 				bufctl.WithConfigOverride(flags.AgainstConfig),
 			)

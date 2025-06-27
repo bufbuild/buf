@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 - Add `buf export --all` flag to include non-proto source files.
+- Fix `buf breaking --against-registry` to work with new modules that have no commits on the
+  default branch.
 
 ## [v1.55.1] - 2025-06-17
 
