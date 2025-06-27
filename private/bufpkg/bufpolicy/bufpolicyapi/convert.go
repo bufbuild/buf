@@ -86,6 +86,9 @@ func newPolicyConfig(
 	registry string,
 	policyConfigV1Beta1 *policyv1beta1.PolicyConfig,
 ) (*policyConfig, error) {
+	if policyConfigV1Beta1 == nil {
+		return nil, fmt.Errorf("policyConfigV1Beta1 must not be nil")
+	}
 	lintConfig, err := getLintConfigForV1Beta1LintConfig(policyConfigV1Beta1.Lint)
 	if err != nil {
 		return nil, err
@@ -130,8 +133,8 @@ func getLintConfigForV1Beta1LintConfig(
 ) (bufconfig.LintConfig, error) {
 	checkConfig, err := bufconfig.NewEnabledCheckConfig(
 		bufconfig.FileVersionV2,
-		lintConfigV1Beta1.Use,
-		lintConfigV1Beta1.Except,
+		lintConfigV1Beta1.GetUse(),
+		lintConfigV1Beta1.GetExcept(),
 		nil,
 		nil,
 		false,
@@ -141,11 +144,11 @@ func getLintConfigForV1Beta1LintConfig(
 	}
 	return bufconfig.NewLintConfig(
 		checkConfig,
-		lintConfigV1Beta1.EnumZeroValueSuffix,
-		lintConfigV1Beta1.RpcAllowSameRequestResponse,
-		lintConfigV1Beta1.RpcAllowGoogleProtobufEmptyRequests,
-		lintConfigV1Beta1.RpcAllowGoogleProtobufEmptyResponses,
-		lintConfigV1Beta1.ServiceSuffix,
+		lintConfigV1Beta1.GetEnumZeroValueSuffix(),
+		lintConfigV1Beta1.GetRpcAllowSameRequestResponse(),
+		lintConfigV1Beta1.GetRpcAllowGoogleProtobufEmptyRequests(),
+		lintConfigV1Beta1.GetRpcAllowGoogleProtobufEmptyResponses(),
+		lintConfigV1Beta1.GetServiceSuffix(),
 		false, // Comment ignores are not allowed in Policy files.
 	), nil
 }
@@ -155,8 +158,8 @@ func getBreakingConfigForV1Beta1BreakingConfig(
 ) (bufconfig.BreakingConfig, error) {
 	checkConfig, err := bufconfig.NewEnabledCheckConfig(
 		bufconfig.FileVersionV2,
-		breakingConfigV1Beta1.Use,
-		breakingConfigV1Beta1.Except,
+		breakingConfigV1Beta1.GetUse(),
+		breakingConfigV1Beta1.GetExcept(),
 		nil,
 		nil,
 		false,
@@ -166,7 +169,7 @@ func getBreakingConfigForV1Beta1BreakingConfig(
 	}
 	return bufconfig.NewBreakingConfig(
 		checkConfig,
-		breakingConfigV1Beta1.IgnoreUnstablePackages,
+		breakingConfigV1Beta1.GetIgnoreUnstablePackages(),
 	), nil
 }
 
@@ -174,17 +177,17 @@ func getPluginConfigForV1Beta1PluginConfig(
 	registry string,
 	pluginConfigV1Beta1 *policyv1beta1.PolicyConfig_CheckPluginConfig,
 ) (bufconfig.PluginConfig, error) {
-	nameV1Beta1 := pluginConfigV1Beta1.Name
+	nameV1Beta1 := pluginConfigV1Beta1.GetName()
 	pluginRef, err := bufparse.NewRef(
 		registry,
-		nameV1Beta1.Owner,
-		nameV1Beta1.Plugin,
-		nameV1Beta1.Ref,
+		nameV1Beta1.GetOwner(),
+		nameV1Beta1.GetPlugin(),
+		nameV1Beta1.GetRef(),
 	)
 	if err != nil {
 		return nil, err
 	}
-	options, err := option.OptionsForProtoOptions(pluginConfigV1Beta1.Options)
+	options, err := option.OptionsForProtoOptions(pluginConfigV1Beta1.GetOptions())
 	if err != nil {
 		return nil, err
 	}
@@ -195,6 +198,6 @@ func getPluginConfigForV1Beta1PluginConfig(
 	return bufconfig.NewRemoteWasmPluginConfig(
 		pluginRef,
 		optionsMap,
-		pluginConfigV1Beta1.Args,
+		pluginConfigV1Beta1.GetArgs(),
 	)
 }
