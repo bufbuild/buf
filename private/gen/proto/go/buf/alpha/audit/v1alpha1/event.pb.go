@@ -7089,7 +7089,7 @@ type PayloadPolicyCommitPushed struct {
 	xxx_hidden_OwnerName  string                 `protobuf:"bytes,2,opt,name=owner_name,json=ownerName,proto3"`
 	xxx_hidden_PolicyId   string                 `protobuf:"bytes,3,opt,name=policy_id,json=policyId,proto3"`
 	xxx_hidden_PolicyName string                 `protobuf:"bytes,4,opt,name=policy_name,json=policyName,proto3"`
-	xxx_hidden_P1Digest   string                 `protobuf:"bytes,5,opt,name=p1_digest,json=p1Digest,proto3"`
+	xxx_hidden_O1Digest   string                 `protobuf:"bytes,5,opt,name=o1_digest,json=o1Digest,proto3"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -7147,9 +7147,9 @@ func (x *PayloadPolicyCommitPushed) GetPolicyName() string {
 	return ""
 }
 
-func (x *PayloadPolicyCommitPushed) GetP1Digest() string {
+func (x *PayloadPolicyCommitPushed) GetO1Digest() string {
 	if x != nil {
-		return x.xxx_hidden_P1Digest
+		return x.xxx_hidden_O1Digest
 	}
 	return ""
 }
@@ -7170,8 +7170,8 @@ func (x *PayloadPolicyCommitPushed) SetPolicyName(v string) {
 	x.xxx_hidden_PolicyName = v
 }
 
-func (x *PayloadPolicyCommitPushed) SetP1Digest(v string) {
-	x.xxx_hidden_P1Digest = v
+func (x *PayloadPolicyCommitPushed) SetO1Digest(v string) {
+	x.xxx_hidden_O1Digest = v
 }
 
 type PayloadPolicyCommitPushed_builder struct {
@@ -7185,8 +7185,8 @@ type PayloadPolicyCommitPushed_builder struct {
 	PolicyId string
 	// policy_name is the name of the policy within which the commit was created.
 	PolicyName string
-	// p1_digest is the p1 digest of the pushed policy commit.
-	P1Digest string
+	// o1_digest is the o1 digest of the pushed policy commit.
+	O1Digest string
 }
 
 func (b0 PayloadPolicyCommitPushed_builder) Build() *PayloadPolicyCommitPushed {
@@ -7197,7 +7197,7 @@ func (b0 PayloadPolicyCommitPushed_builder) Build() *PayloadPolicyCommitPushed {
 	x.xxx_hidden_OwnerName = b.OwnerName
 	x.xxx_hidden_PolicyId = b.PolicyId
 	x.xxx_hidden_PolicyName = b.PolicyName
-	x.xxx_hidden_P1Digest = b.P1Digest
+	x.xxx_hidden_O1Digest = b.O1Digest
 	return m0
 }
 
@@ -11433,7 +11433,7 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\tpolicy_id\x18\x03 \x01(\tR\bpolicyId\x12\x1f\n" +
 	"\vpolicy_name\x18\x04 \x01(\tR\n" +
 	"policyName\x12\x1b\n" +
-	"\tp1_digest\x18\x05 \x01(\tR\bp1Digest\"\xba\x01\n" +
+	"\to1_digest\x18\x05 \x01(\tR\bo1Digest\"\xba\x01\n" +
 	"\x14PayloadPluginCreated\x12\x19\n" +
 	"\bowner_id\x18\x01 \x01(\tR\aownerId\x12\x1d\n" +
 	"\n" +
