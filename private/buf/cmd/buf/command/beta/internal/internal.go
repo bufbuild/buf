@@ -17,10 +17,10 @@ package internal
 import (
 	"context"
 
+	"buf.build/go/app"
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
 	"buf.build/go/bufplugin/check"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/spf13/pflag"
 	"pluginrpc.com/pluginrpc"
 )

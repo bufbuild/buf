@@ -17,7 +17,7 @@ package bufconfig
 import (
 	"errors"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/standard/xslices"
 )
 
 // GenerateConfig is a generation configuration.
@@ -76,7 +76,7 @@ func newGenerateConfigFromExternalFileV1Beta1(
 	if len(externalFile.Plugins) == 0 {
 		return nil, newNoPluginsError()
 	}
-	generatePluginConfigs, err := slicesext.MapError(
+	generatePluginConfigs, err := xslices.MapError(
 		externalFile.Plugins,
 		newGeneratePluginConfigFromExternalV1Beta1,
 	)
@@ -99,7 +99,7 @@ func newGenerateConfigFromExternalFileV1(
 	if len(externalFile.Plugins) == 0 {
 		return nil, newNoPluginsError()
 	}
-	generatePluginConfigs, err := slicesext.MapError(
+	generatePluginConfigs, err := xslices.MapError(
 		externalFile.Plugins,
 		newGeneratePluginConfigFromExternalV1,
 	)
@@ -120,7 +120,7 @@ func newGenerateConfigFromExternalFileV2(
 	if err != nil {
 		return nil, err
 	}
-	generatePluginConfigs, err := slicesext.MapError(
+	generatePluginConfigs, err := xslices.MapError(
 		externalFile.Plugins,
 		newGeneratePluginConfigFromExternalV2,
 	)

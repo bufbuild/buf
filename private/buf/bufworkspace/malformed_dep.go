@@ -17,9 +17,9 @@ package bufworkspace
 import (
 	"sort"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -55,8 +55,8 @@ type MalformedDep interface {
 
 // MalformedDepsForWorkspace gets the MalformedDeps for the workspace.
 func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
-	localFullNameStringMap := slicesext.ToStructMapOmitEmpty(
-		slicesext.Map(
+	localFullNameStringMap := xslices.ToStructMapOmitEmpty(
+		xslices.Map(
 			bufmodule.ModuleSetLocalModules(workspace),
 			func(module bufmodule.Module) string {
 				if moduleFullName := module.FullName(); moduleFullName != nil {
@@ -70,7 +70,7 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 	if err != nil {
 		return nil, err
 	}
-	moduleFullNameStringToRemoteDep, err := slicesext.ToUniqueValuesMapError(
+	moduleFullNameStringToRemoteDep, err := xslices.ToUniqueValuesMapError(
 		remoteDeps,
 		func(remoteDep bufmodule.RemoteDep) (string, error) {
 			moduleFullName := remoteDep.FullName()
@@ -83,7 +83,7 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 	if err != nil {
 		return nil, err
 	}
-	moduleFullNameStringToConfiguredDepModuleRef, err := slicesext.ToUniqueValuesMapError(
+	moduleFullNameStringToConfiguredDepModuleRef, err := xslices.ToUniqueValuesMapError(
 		workspace.ConfiguredDepModuleRefs(),
 		func(moduleRef bufparse.Ref) (string, error) {
 			moduleFullName := moduleRef.FullName()

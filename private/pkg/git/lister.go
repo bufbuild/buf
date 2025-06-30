@@ -20,10 +20,10 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/execext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"buf.build/go/app"
+	"buf.build/go/standard/xos/xexec"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 )
 
 type lister struct{}
@@ -60,14 +60,14 @@ func (l *lister) ListFilesAndUnstagedFiles(
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.ToUniqueSorted(
+	return xslices.ToUniqueSorted(
 		filterNonRegularFiles(
 			stringSliceExceptMatches(
 				stringSliceExcept(
 					// This may not work in all Windows scenarios as we only split on "\n" but
 					// this is no worse than we previously had.
-					stringutil.SplitTrimLinesNoEmpty(string(allFilesOutput)),
-					stringutil.SplitTrimLinesNoEmpty(string(deletedFilesOutput)),
+					xstrings.SplitTrimLinesNoEmpty(string(allFilesOutput)),
+					xstrings.SplitTrimLinesNoEmpty(string(deletedFilesOutput)),
 				),
 				options.IgnorePathRegexps,
 			),
@@ -77,7 +77,7 @@ func (l *lister) ListFilesAndUnstagedFiles(
 
 // stringSliceExcept returns all elements in source that are not in except.
 func stringSliceExcept(source []string, except []string) []string {
-	exceptMap := slicesext.ToStructMap(except)
+	exceptMap := xslices.ToStructMap(except)
 	result := make([]string, 0, len(source))
 	for _, s := range source {
 		if _, ok := exceptMap[s]; !ok {
@@ -128,14 +128,14 @@ func filterNonRegularFiles(files []string) []string {
 
 func runStdout(ctx context.Context, container app.EnvStdioContainer, name string, args ...string) ([]byte, error) {
 	buffer := bytes.NewBuffer(nil)
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		name,
-		execext.WithArgs(args...),
-		execext.WithEnv(app.Environ(container)),
-		execext.WithStdin(container.Stdin()),
-		execext.WithStdout(buffer),
-		execext.WithStderr(container.Stderr()),
+		xexec.WithArgs(args...),
+		xexec.WithEnv(app.Environ(container)),
+		xexec.WithStdin(container.Stdin()),
+		xexec.WithStdout(buffer),
+		xexec.WithStderr(container.Stderr()),
 	); err != nil {
 		return nil, err
 	}

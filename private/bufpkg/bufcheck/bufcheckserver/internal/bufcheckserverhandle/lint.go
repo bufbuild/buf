@@ -22,6 +22,8 @@ import (
 	"strings"
 
 	"buf.build/go/bufplugin/check"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver/internal/bufcheckserverutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver/internal/buflintvalidate"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal/bufcheckopt"
@@ -30,8 +32,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -180,13 +180,13 @@ func handleLintDirectorySamePackage(
 		if _, ok := pkgMap[""]; ok {
 			delete(pkgMap, "")
 			if len(pkgMap) > 1 {
-				messagePrefix = fmt.Sprintf("Multiple packages %q and file with no package", strings.Join(slicesext.MapKeysToSortedSlice(pkgMap), ","))
+				messagePrefix = fmt.Sprintf("Multiple packages %q and file with no package", strings.Join(xslices.MapKeysToSortedSlice(pkgMap), ","))
 			} else {
 				// Join works with only one element as well by adding no comma
-				messagePrefix = fmt.Sprintf("Package %q and file with no package", strings.Join(slicesext.MapKeysToSortedSlice(pkgMap), ","))
+				messagePrefix = fmt.Sprintf("Package %q and file with no package", strings.Join(xslices.MapKeysToSortedSlice(pkgMap), ","))
 			}
 		} else {
-			messagePrefix = fmt.Sprintf("Multiple packages %q", strings.Join(slicesext.MapKeysToSortedSlice(pkgMap), ","))
+			messagePrefix = fmt.Sprintf("Multiple packages %q", strings.Join(xslices.MapKeysToSortedSlice(pkgMap), ","))
 		}
 		for _, file := range dirFiles {
 			responseWriter.AddProtosourceAnnotation(
@@ -231,7 +231,7 @@ func handleLintEnumPascalCase(
 	enum bufprotosource.Enum,
 ) error {
 	name := enum.Name()
-	expectedName := stringutil.ToPascalCase(name)
+	expectedName := xstrings.ToPascalCase(name)
 	if name != expectedName {
 		responseWriter.AddProtosourceAnnotation(
 			enum.NameLocation(),
@@ -432,7 +432,7 @@ func handleLintFileLowerSnakeCase(
 	base := normalpath.Base(filename)
 	ext := normalpath.Ext(filename)
 	baseWithoutExt := strings.TrimSuffix(base, ext)
-	expectedBaseWithoutExt := stringutil.ToLowerSnakeCase(baseWithoutExt)
+	expectedBaseWithoutExt := xstrings.ToLowerSnakeCase(baseWithoutExt)
 	if baseWithoutExt != expectedBaseWithoutExt {
 		responseWriter.AddProtosourceAnnotation(
 			nil,
@@ -501,7 +501,7 @@ func handleLintMessagePascalCase(
 		return nil
 	}
 	name := message.Name()
-	expectedName := stringutil.ToPascalCase(name)
+	expectedName := xstrings.ToPascalCase(name)
 	if name != expectedName {
 		responseWriter.AddProtosourceAnnotation(
 			message.NameLocation(),
@@ -606,7 +606,7 @@ func handleLintPackageLowerSnakeCase(
 	}
 	split := strings.Split(pkg, ".")
 	for i, elem := range split {
-		split[i] = stringutil.ToLowerSnakeCase(elem)
+		split[i] = xstrings.ToLowerSnakeCase(elem)
 	}
 	expectedPkg := strings.Join(split, ".")
 	if pkg != expectedPkg {
@@ -708,7 +708,7 @@ func handleLintPackageSameDirectory(
 		dirMap[normalpath.Dir(file.Path())] = struct{}{}
 	}
 	if len(dirMap) > 1 {
-		dirs := slicesext.MapKeysToSortedSlice(dirMap)
+		dirs := xslices.MapKeysToSortedSlice(dirMap)
 		for _, file := range pkgFiles {
 			responseWriter.AddProtosourceAnnotation(
 				file.PackageLocation(),
@@ -873,7 +873,7 @@ func handleLintPackageSameOptionValue(
 	if len(optionValueMap) > 1 {
 		_, noOptionValue := optionValueMap[""]
 		delete(optionValueMap, "")
-		optionValues := slicesext.MapKeysToSortedSlice(optionValueMap)
+		optionValues := xslices.MapKeysToSortedSlice(optionValueMap)
 		for _, file := range pkgFiles {
 			var message string
 			if noOptionValue {
@@ -959,7 +959,7 @@ func handleLintProtovalidate(
 	// import files. This is because there can be a case where a non-import file uses a predefined
 	// rule from an imported file.
 	extensionResolver, err := protoencoding.NewResolver(
-		slicesext.Map(
+		xslices.Map(
 			request.ProtosourceFiles(),
 			func(protosourceFile bufprotosource.File) protodescriptor.FileDescriptor {
 				return protosourceFile.FileDescriptor()
@@ -1049,7 +1049,7 @@ func handleLintRPCPascalCase(
 	method bufprotosource.Method,
 ) error {
 	name := method.Name()
-	expectedName := stringutil.ToPascalCase(name)
+	expectedName := xstrings.ToPascalCase(name)
 	if name != expectedName {
 		responseWriter.AddProtosourceAnnotation(
 			method.NameLocation(),
@@ -1205,8 +1205,8 @@ func handleLintRPCRequestStandardName(
 		split := strings.Split(name, ".")
 		name = split[len(split)-1]
 	}
-	expectedName1 := stringutil.ToPascalCase(method.Name()) + "Request"
-	expectedName2 := stringutil.ToPascalCase(service.Name()) + expectedName1
+	expectedName1 := xstrings.ToPascalCase(method.Name()) + "Request"
+	expectedName2 := xstrings.ToPascalCase(service.Name()) + expectedName1
 	if name != expectedName1 && name != expectedName2 {
 		responseWriter.AddProtosourceAnnotation(
 			method.InputTypeLocation(),
@@ -1246,8 +1246,8 @@ func handleLintRPCResponseStandardName(
 		split := strings.Split(name, ".")
 		name = split[len(split)-1]
 	}
-	expectedName1 := stringutil.ToPascalCase(method.Name()) + "Response"
-	expectedName2 := stringutil.ToPascalCase(service.Name()) + expectedName1
+	expectedName1 := xstrings.ToPascalCase(method.Name()) + "Response"
+	expectedName2 := xstrings.ToPascalCase(service.Name()) + expectedName1
 	if name != expectedName1 && name != expectedName2 {
 		responseWriter.AddProtosourceAnnotation(
 			method.OutputTypeLocation(),
@@ -1271,7 +1271,7 @@ func handleLintServicePascalCase(
 	service bufprotosource.Service,
 ) error {
 	name := service.Name()
-	expectedName := stringutil.ToPascalCase(name)
+	expectedName := xstrings.ToPascalCase(name)
 	if name != expectedName {
 		responseWriter.AddProtosourceAnnotation(
 			service.NameLocation(),

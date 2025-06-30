@@ -20,13 +20,13 @@ import (
 	"fmt"
 	"log/slog"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/dep/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -122,7 +122,7 @@ func run(
 	logger.DebugContext(
 		ctx,
 		"all deps",
-		slog.Any("deps", slicesext.Map(configuredDepModuleKeys, bufmodule.ModuleKey.String)),
+		slog.Any("deps", xslices.Map(configuredDepModuleKeys, bufmodule.ModuleKey.String)),
 	)
 
 	// Store the existing buf.lock data.

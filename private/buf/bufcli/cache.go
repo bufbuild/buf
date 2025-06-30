@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/buf/bufwkt/bufwktstore"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
@@ -34,7 +35,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"

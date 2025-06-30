@@ -21,10 +21,10 @@ import (
 	"strings"
 
 	"buf.build/go/bufplugin/check"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -148,7 +148,7 @@ func newRulesConfig(
 		len(ignoreRuleIDOrCategoryIDToRootPaths),
 	)
 	for ruleIDOrCategoryID, rootPaths := range ignoreRuleIDOrCategoryIDToRootPaths {
-		ignoreRuleIDOrCategoryIDToRootPathMap[ruleIDOrCategoryID] = slicesext.ToStructMap(rootPaths)
+		ignoreRuleIDOrCategoryIDToRootPathMap[ruleIDOrCategoryID] = xslices.ToStructMap(rootPaths)
 	}
 
 	ruleIDToRule, err := getIDToRuleOrCategory(allRulesForType)
@@ -172,7 +172,7 @@ func newRulesConfig(
 	for _, ids := range [][]string{
 		useRuleIDsAndCategoryIDs,
 		exceptRuleIDsAndCategoryIDs,
-		slicesext.MapKeysToSlice(ignoreRuleIDOrCategoryIDToRootPathMap),
+		xslices.MapKeysToSlice(ignoreRuleIDOrCategoryIDToRootPathMap),
 	} {
 		for _, id := range ids {
 			replacementRuleIDs, ok := deprecatedRuleIDToReplacementRuleIDs[id]
@@ -201,11 +201,11 @@ func newRulesConfig(
 	}
 
 	// Sort and filter empty.
-	useRuleIDsAndCategoryIDs = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(useRuleIDsAndCategoryIDs)
+	useRuleIDsAndCategoryIDs = xstrings.SliceToUniqueSortedSliceFilterEmptyStrings(useRuleIDsAndCategoryIDs)
 	if len(useRuleIDsAndCategoryIDs) == 0 {
-		useRuleIDsAndCategoryIDs = slicesext.Map(slicesext.Filter(allRulesForType, func(rule Rule) bool { return rule.Default() }), Rule.ID)
+		useRuleIDsAndCategoryIDs = xslices.Map(xslices.Filter(allRulesForType, func(rule Rule) bool { return rule.Default() }), Rule.ID)
 	}
-	exceptRuleIDsAndCategoryIDs = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(exceptRuleIDsAndCategoryIDs)
+	exceptRuleIDsAndCategoryIDs = xstrings.SliceToUniqueSortedSliceFilterEmptyStrings(exceptRuleIDsAndCategoryIDs)
 	if len(useRuleIDsAndCategoryIDs) == 0 && len(exceptRuleIDsAndCategoryIDs) == 0 {
 		return nil, syserror.New("use and except should always be non-empty at this point")
 	}
@@ -270,7 +270,7 @@ func newRulesConfig(
 		}
 		delete(resultRuleIDToRule, ruleID)
 	}
-	resultRules := slicesext.MapValuesToSlice(resultRuleIDToRule)
+	resultRules := xslices.MapValuesToSlice(resultRuleIDToRule)
 	if len(resultRules) == 0 {
 		return nil, syserror.New("resultRules was empty")
 	}
@@ -333,8 +333,8 @@ func newRulesConfig(
 
 	return &rulesConfig{
 		RuleType:                ruleType,
-		RuleIDs:                 slicesext.Map(resultRules, Rule.ID),
-		IgnoreRootPaths:         slicesext.ToStructMap(ignoreRootPaths),
+		RuleIDs:                 xslices.Map(resultRules, Rule.ID),
+		IgnoreRootPaths:         xslices.ToStructMap(ignoreRootPaths),
 		IgnoreRuleIDToRootPaths: ignoreRuleIDToRootPathMap,
 		ReferencedDeprecatedRuleIDToReplacementIDs:     referencedDeprecatedRuleIDToReplacementIDs,
 		ReferencedDeprecatedCategoryIDToReplacementIDs: referencedDeprecatedCategoryIDToReplacementIDs,
@@ -363,7 +363,7 @@ func warnUnusedPlugins(logger *slog.Logger, rulesConfig *rulesConfig) {
 	if len(rulesConfig.UnusedPluginNameToRuleIDs) == 0 {
 		return
 	}
-	unusedPluginNames := slicesext.MapKeysToSortedSlice(rulesConfig.UnusedPluginNameToRuleIDs)
+	unusedPluginNames := xslices.MapKeysToSortedSlice(rulesConfig.UnusedPluginNameToRuleIDs)
 	var sb strings.Builder
 	_, _ = sb.WriteString("Your buf.yaml has plugins added which have no rules configured:\n\n")
 	for _, unusedPluginName := range unusedPluginNames {
@@ -394,8 +394,8 @@ func warnReferencedDeprecatedIDsForIDType(
 	capitalizedIDType string,
 	pluralIDType string,
 ) {
-	for _, deprecatedID := range slicesext.MapKeysToSortedSlice(referencedDeprecatedIDToReplacementIDs) {
-		replacementIDs := slicesext.MapKeysToSortedSlice(referencedDeprecatedIDToReplacementIDs[deprecatedID])
+	for _, deprecatedID := range xslices.MapKeysToSortedSlice(referencedDeprecatedIDToReplacementIDs) {
+		replacementIDs := xslices.MapKeysToSortedSlice(referencedDeprecatedIDToReplacementIDs[deprecatedID])
 		var replaceString string
 		switch len(replacementIDs) {
 		case 0:
@@ -459,7 +459,7 @@ func getRuleIDToCategoryIDs(rules []Rule) (map[string][]string, error) {
 		if _, ok := m[rule.ID()]; ok {
 			return nil, syserror.Newf("duplicate rule ID: %q", rule.ID())
 		}
-		m[rule.ID()] = slicesext.Map(rule.Categories(), check.Category.ID)
+		m[rule.ID()] = xslices.Map(rule.Categories(), check.Category.ID)
 	}
 	return m, nil
 }
@@ -498,7 +498,7 @@ func transformRuleOrCategoryIDsToRuleIDs(
 			return nil, fmt.Errorf("%q is not a known rule or category ID", ruleOrCategoryID)
 		}
 	}
-	return slicesext.MapKeysToSortedSlice(ruleIDMap), nil
+	return xslices.MapKeysToSortedSlice(ruleIDMap), nil
 }
 
 func transformRuleOrCategoryIDToIgnoreRootPathsToRuleIDs(
@@ -556,7 +556,7 @@ func transformRuleIDsToUndeprecated(
 			undeprecatedRuleIDMap[ruleID] = struct{}{}
 		}
 	}
-	return slicesext.MapKeysToSortedSlice(undeprecatedRuleIDMap)
+	return xslices.MapKeysToSortedSlice(undeprecatedRuleIDMap)
 }
 
 func transformRuleIDToIgnoreRootPathsToUndeprecated(
@@ -606,7 +606,7 @@ func normalizeIgnoreRootPaths(rootPaths []string) ([]string, error) {
 		}
 		rootPathMap[rootPath] = struct{}{}
 	}
-	return slicesext.MapKeysToSortedSlice(rootPathMap), nil
+	return xslices.MapKeysToSortedSlice(rootPathMap), nil
 }
 
 func normalizeKeyToIgnoreRootPathMap[K comparable](
@@ -614,11 +614,11 @@ func normalizeKeyToIgnoreRootPathMap[K comparable](
 ) (map[K]map[string]struct{}, error) {
 	keyToNormalizedRootPathMap := make(map[K]map[string]struct{}, len(keyToRootPaths))
 	for key, rootPathMap := range keyToRootPaths {
-		rootPaths, err := normalizeIgnoreRootPaths(slicesext.MapKeysToSortedSlice(rootPathMap))
+		rootPaths, err := normalizeIgnoreRootPaths(xslices.MapKeysToSortedSlice(rootPathMap))
 		if err != nil {
 			return nil, err
 		}
-		keyToNormalizedRootPathMap[key] = slicesext.ToStructMap(rootPaths)
+		keyToNormalizedRootPathMap[key] = xslices.ToStructMap(rootPaths)
 	}
 	return keyToNormalizedRootPathMap, nil
 }

@@ -23,6 +23,7 @@ import (
 	"strings"
 	"testing"
 
+	"buf.build/go/standard/xtesting"
 	"github.com/bufbuild/buf/private/buf/buftesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -32,7 +33,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
-	"github.com/bufbuild/buf/private/pkg/testingext"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -45,7 +45,7 @@ var buftestingDirPath = filepath.Join(
 )
 
 func TestGoogleapis(t *testing.T) {
-	testingext.SkipIfShort(t)
+	xtesting.SkipIfShort(t)
 	t.Parallel()
 	image := testBuildGoogleapis(t, true)
 	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(image.Files()))

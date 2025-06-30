@@ -15,10 +15,10 @@
 package bufcli
 
 import (
+	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 )
 
 // NewPluginKeyProvider returns a new PluginKeyProvider.

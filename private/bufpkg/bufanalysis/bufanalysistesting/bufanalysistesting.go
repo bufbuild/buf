@@ -44,6 +44,7 @@ func NewFileAnnotationNoLocation(
 	t *testing.T,
 	path string,
 	typeString string,
+	options ...FileAnnotationOption,
 ) bufanalysis.FileAnnotation {
 	return NewFileAnnotation(
 		t,
@@ -53,6 +54,7 @@ func NewFileAnnotationNoLocation(
 		1,
 		1,
 		typeString,
+		options...,
 	)
 }
 
@@ -65,6 +67,7 @@ func NewFileAnnotation(
 	endLine int,
 	endColumn int,
 	typeString string,
+	options ...FileAnnotationOption,
 ) bufanalysis.FileAnnotation {
 	return newFileAnnotation(
 		t,
@@ -74,9 +77,25 @@ func NewFileAnnotation(
 		endLine,
 		endColumn,
 		typeString,
-		"",
-		"",
+		"", // message
+		options...,
 	)
+}
+
+type FileAnnotationOption func(*fileAnnotationOptions)
+
+// WithPluginName returns a FileAnnotationOption that sets the plugin name.
+func WithPluginName(pluginName string) FileAnnotationOption {
+	return func(options *fileAnnotationOptions) {
+		options.pluginName = pluginName
+	}
+}
+
+// WithPolicyName returns a FileAnnotationOption that sets the policy name.
+func WithPolicyName(policyName string) FileAnnotationOption {
+	return func(options *fileAnnotationOptions) {
+		options.policyName = policyName
+	}
 }
 
 func newFileAnnotation(
@@ -88,8 +107,12 @@ func newFileAnnotation(
 	endColumn int,
 	typeString string,
 	message string,
-	pluginName string,
+	options ...FileAnnotationOption,
 ) bufanalysis.FileAnnotation {
+	fileAnnotationOptions := &fileAnnotationOptions{}
+	for _, option := range options {
+		option(fileAnnotationOptions)
+	}
 	var fileInfo bufanalysis.FileInfo
 	if path != "" {
 		fileInfo = newFileInfo(path)
@@ -102,8 +125,15 @@ func newFileAnnotation(
 		endColumn,
 		typeString,
 		message,
-		pluginName,
+		fileAnnotationOptions.pluginName,
+		fileAnnotationOptions.policyName,
 	)
+}
+
+// fileAnnotationOptions holds the options for a FileAnnotation.
+type fileAnnotationOptions struct {
+	pluginName string
+	policyName string
 }
 
 // AssertFileAnnotationsEqual asserts that the annotations are equal minus the message.
@@ -138,13 +168,15 @@ func AssertFileAnnotationsEqual(
 					)
 				}
 			} else {
-				t.Logf("    bufanalysistesting.NewFileAnnotation(t, %q, %d, %d, %d, %d, %q),",
+				t.Logf("    bufanalysistesting.NewFileAnnotation(t, %q, %d, %d, %d, %d, %q, %q %q),",
 					path,
 					annotation.StartLine(),
 					annotation.StartColumn(),
 					annotation.EndLine(),
 					annotation.EndColumn(),
 					annotation.Type(),
+					annotation.PluginName(),
+					annotation.PolicyName(),
 				)
 			}
 		}
@@ -172,7 +204,8 @@ func normalizeFileAnnotations(
 			a.EndColumn(),
 			a.Type(),
 			"",
-			"",
+			a.PluginName(),
+			a.PolicyName(),
 		)
 	}
 	return normalizedFileAnnotations

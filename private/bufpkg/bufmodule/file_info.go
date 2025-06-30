@@ -17,7 +17,7 @@ package bufmodule
 import (
 	"sync"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -61,7 +61,7 @@ type FileInfo interface {
 
 // FileInfoPaths is a convenience function that returns the paths of the FileInfos.
 func FileInfoPaths(fileInfos []FileInfo) []string {
-	return slicesext.Map(fileInfos, func(fileInfo FileInfo) string { return fileInfo.Path() })
+	return xslices.Map(fileInfos, func(fileInfo FileInfo) string { return fileInfo.Path() })
 }
 
 // *** PRIVATE ***

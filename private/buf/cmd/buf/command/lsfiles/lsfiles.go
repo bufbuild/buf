@@ -21,15 +21,15 @@ import (
 	"sort"
 	"strings"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
 	"github.com/spf13/pflag"
@@ -112,7 +112,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		formatText,
 		fmt.Sprintf(
 			`The format to print the .proto files. Must be one of %s`,
-			stringutil.SliceToString(allFormats),
+			xstrings.SliceToString(allFormats),
 		),
 	)
 	flagSet.BoolVar(
@@ -136,7 +136,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"text",
 		fmt.Sprintf(
 			"The format for build errors printed to stderr. Must be one of %s",
-			stringutil.SliceToString(bufanalysis.AllFormatStrings),
+			xstrings.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
 	_ = flagSet.MarkDeprecated(errorFormatFlagName, "this flag no longer has any effect")
@@ -182,7 +182,7 @@ func run(
 	}
 	if !flags.IncludeImportable {
 		if !flags.IncludeImports {
-			imageFileInfos = slicesext.Filter(
+			imageFileInfos = xslices.Filter(
 				imageFileInfos,
 				func(imageFileInfo bufimage.ImageFileInfo) bool {
 					return !imageFileInfo.IsImport()
@@ -239,7 +239,7 @@ func run(
 	default:
 		return appcmd.NewInvalidArgumentErrorf("--%s must be one of %s", formatFlagName, strings.Join(allFormats, ", "))
 	}
-	lines, err := slicesext.MapError(imageFileInfos, formatFunc)
+	lines, err := xslices.MapError(imageFileInfos, formatFunc)
 	if err != nil {
 		return err
 	}

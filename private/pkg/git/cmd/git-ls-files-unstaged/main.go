@@ -21,7 +21,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/bufbuild/buf/private/pkg/app"
+	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 )
 

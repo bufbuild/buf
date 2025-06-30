@@ -22,13 +22,13 @@ import (
 	"slices"
 	"strings"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy/bufpolicyconfig"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
 	"github.com/spf13/pflag"
@@ -137,13 +137,13 @@ func upload(
 		if err != nil {
 			return nil, fmt.Errorf("could not read policy file %q: %w", flags.Config, err)
 		}
-		// Parse the policy YAML file to validate it.
-		_, err = bufpolicyconfig.ReadBufPolicyYAMLFile(bytes.NewReader(data), flags.Config)
+		// Parse the policy YAML file to validate it upfront.
+		policyYamlFile, err := bufpolicyconfig.ReadBufPolicyYAMLFile(bytes.NewReader(data), flags.Config)
 		if err != nil {
 			return nil, fmt.Errorf("unable to validate policy file %q: %w", flags.Config, err)
 		}
-		policy, err = bufpolicy.NewPolicy("", policyFullName, flags.Config, uuid.Nil, func() ([]byte, error) {
-			return data, nil
+		policy, err = bufpolicy.NewPolicy("", policyFullName, flags.Config, uuid.Nil, func() (bufpolicy.PolicyConfig, error) {
+			return policyYamlFile, nil
 		})
 		if err != nil {
 			return nil, fmt.Errorf("unable to create policy from file %q: %w", flags.Config, err)
@@ -206,7 +206,7 @@ func validateTypeFlags(flags *flags) error {
 	}
 	if len(typeFlags) > 1 {
 		usedFlagsErrStr := strings.Join(
-			slicesext.Map(
+			xslices.Map(
 				typeFlags,
 				func(flag string) string { return fmt.Sprintf("--%s", flag) },
 			),

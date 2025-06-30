@@ -19,8 +19,8 @@ import (
 
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/bufplugin/descriptor"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -101,11 +101,11 @@ func protosourceFilesForFileDescriptors(ctx context.Context, fileDescriptors []d
 	}
 	resolver, err := protodesc.NewFiles(
 		&descriptorpb.FileDescriptorSet{
-			File: slicesext.Map(fileDescriptors, descriptor.FileDescriptor.FileDescriptorProto),
+			File: xslices.Map(fileDescriptors, descriptor.FileDescriptor.FileDescriptorProto),
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	return bufprotosource.NewFiles(ctx, slicesext.Map(fileDescriptors, newInputFile), resolver)
+	return bufprotosource.NewFiles(ctx, xslices.Map(fileDescriptors, newInputFile), resolver)
 }

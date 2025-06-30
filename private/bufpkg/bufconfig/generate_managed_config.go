@@ -20,9 +20,9 @@ import (
 	"strconv"
 	"strings"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 // GenerateManagedConfig is a managed mode configuration.
@@ -707,7 +707,7 @@ func disablesAndOverridesFromExceptAndOverrideV1(
 		disables = append(disables, disable)
 	}
 	// Sort by keys for deterministic order.
-	sortedFullNames := slicesext.MapKeysToSortedSlice(moduleFullNameToOverride)
+	sortedFullNames := xslices.MapKeysToSortedSlice(moduleFullNameToOverride)
 	for _, overrideFullName := range sortedFullNames {
 		if _, err := bufparse.ParseFullName(overrideFullName); err != nil {
 			return nil, nil, err
@@ -733,14 +733,14 @@ func overrideRulesForPerFileOverridesV1(
 	fileOptionToFilePathToOverride map[string]map[string]string,
 ) ([]ManagedOverrideRule, error) {
 	var overrideRules []ManagedOverrideRule
-	sortedFileOptionStrings := slicesext.MapKeysToSortedSlice(fileOptionToFilePathToOverride)
+	sortedFileOptionStrings := xslices.MapKeysToSortedSlice(fileOptionToFilePathToOverride)
 	for _, fileOptionString := range sortedFileOptionStrings {
 		fileOption, ok := stringToFileOption[strings.ToLower(fileOptionString)]
 		if !ok {
 			return nil, fmt.Errorf("%q is not a valid file option", fileOptionString)
 		}
 		filePathToOverride := fileOptionToFilePathToOverride[fileOptionString]
-		sortedFilePaths := slicesext.MapKeysToSortedSlice(filePathToOverride)
+		sortedFilePaths := xslices.MapKeysToSortedSlice(filePathToOverride)
 		for _, filePath := range sortedFilePaths {
 			err := validatePath(filePath)
 			if err != nil {

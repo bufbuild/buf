@@ -20,15 +20,15 @@ import (
 	"fmt"
 	"slices"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/dag"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
 	"github.com/spf13/pflag"
@@ -114,7 +114,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"text",
 		fmt.Sprintf(
 			"The format for build errors printed to stderr. Must be one of %s",
-			stringutil.SliceToString(bufanalysis.AllFormatStrings),
+			xstrings.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
 	flagSet.StringVar(
@@ -123,7 +123,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		dotFormatString,
 		fmt.Sprintf(
 			"The format to print graph as. Must be one of %s",
-			stringutil.SliceToString(allGraphFormatStrings),
+			xstrings.SliceToString(allGraphFormatStrings),
 		),
 	)
 }
@@ -188,7 +188,7 @@ func run(
 		); err != nil {
 			return err
 		}
-		externalModules := slicesext.MapValuesToSlice(moduleFullNameOrOpaqueIDToExternalModule)
+		externalModules := xslices.MapValuesToSlice(moduleFullNameOrOpaqueIDToExternalModule)
 		// Sort all modules alphabetically.
 		sortExternalModules(externalModules)
 		data, err := json.Marshal(externalModules)

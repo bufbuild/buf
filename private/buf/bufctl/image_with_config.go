@@ -28,6 +28,7 @@ type imageWithConfig struct {
 	lintConfig     bufconfig.LintConfig
 	breakingConfig bufconfig.BreakingConfig
 	pluginConfigs  []bufconfig.PluginConfig
+	policyConfigs  []bufconfig.PolicyConfig
 }
 
 func newImageWithConfig(
@@ -37,6 +38,7 @@ func newImageWithConfig(
 	lintConfig bufconfig.LintConfig,
 	breakingConfig bufconfig.BreakingConfig,
 	pluginConfigs []bufconfig.PluginConfig,
+	policyConfigs []bufconfig.PolicyConfig,
 ) *imageWithConfig {
 	return &imageWithConfig{
 		Image:          image,
@@ -45,6 +47,7 @@ func newImageWithConfig(
 		lintConfig:     lintConfig,
 		breakingConfig: breakingConfig,
 		pluginConfigs:  pluginConfigs,
+		policyConfigs:  policyConfigs,
 	}
 }
 
@@ -66,6 +69,10 @@ func (i *imageWithConfig) BreakingConfig() bufconfig.BreakingConfig {
 
 func (i *imageWithConfig) PluginConfigs() []bufconfig.PluginConfig {
 	return i.pluginConfigs
+}
+
+func (i *imageWithConfig) PolicyConfigs() []bufconfig.PolicyConfig {
+	return i.policyConfigs
 }
 
 func (*imageWithConfig) isImageWithConfig() {}

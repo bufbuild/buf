@@ -20,9 +20,9 @@ import (
 	"log/slog"
 	"strings"
 
+	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"google.golang.org/protobuf/types/pluginpb"
 )

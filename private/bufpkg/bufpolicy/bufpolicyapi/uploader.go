@@ -16,15 +16,18 @@ package bufpolicyapi
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
+	"buf.build/go/bufplugin/option"
+	"buf.build/go/standard/xslices"
 	"connectrpc.com/connect"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapipolicy"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
@@ -81,13 +84,13 @@ func (u *uploader) Upload(
 	if err != nil {
 		return nil, err
 	}
-	registryToIndexedPolicyKeys := slicesext.ToIndexedValuesMap(
+	registryToIndexedPolicyKeys := xslices.ToIndexedValuesMap(
 		policies,
 		func(policy bufpolicy.Policy) string {
 			return policy.FullName().Registry()
 		},
 	)
-	indexedCommits := make([]slicesext.Indexed[bufpolicy.Commit], 0, len(policies))
+	indexedCommits := make([]xslices.Indexed[bufpolicy.Commit], 0, len(policies))
 	for registry, indexedPolicyKeys := range registryToIndexedPolicyKeys {
 		indexedRegistryPolicyDatas, err := u.uploadIndexedPoliciesForRegistry(
 			ctx,
@@ -100,15 +103,15 @@ func (u *uploader) Upload(
 		}
 		indexedCommits = append(indexedCommits, indexedRegistryPolicyDatas...)
 	}
-	return slicesext.IndexedToSortedValues(indexedCommits), nil
+	return xslices.IndexedToSortedValues(indexedCommits), nil
 }
 
 func (u *uploader) uploadIndexedPoliciesForRegistry(
 	ctx context.Context,
 	registry string,
-	indexedPolicies []slicesext.Indexed[bufpolicy.Policy],
+	indexedPolicies []xslices.Indexed[bufpolicy.Policy],
 	uploadOptions bufpolicy.UploadOptions,
-) ([]slicesext.Indexed[bufpolicy.Commit], error) {
+) ([]xslices.Indexed[bufpolicy.Commit], error) {
 	if uploadOptions.CreateIfNotExist() {
 		// We must attempt to create each Policy one at a time, since CreatePolicies will return
 		// an `AlreadyExists` if any of the Policies we are attempting to create already exists,
@@ -125,7 +128,7 @@ func (u *uploader) uploadIndexedPoliciesForRegistry(
 			}
 		}
 	}
-	contents, err := slicesext.MapError(indexedPolicies, func(indexedPolicy slicesext.Indexed[bufpolicy.Policy]) (*policyv1beta1.UploadRequest_Content, error) {
+	contents, err := xslices.MapError(indexedPolicies, func(indexedPolicy xslices.Indexed[bufpolicy.Policy]) (*policyv1beta1.UploadRequest_Content, error) {
 		policy := indexedPolicy.Value
 		if !policy.IsLocal() {
 			return nil, syserror.New("expected local Policy in uploadIndexedPoliciesForRegistry")
@@ -133,7 +136,36 @@ func (u *uploader) uploadIndexedPoliciesForRegistry(
 		if policy.FullName() == nil {
 			return nil, syserror.Newf("expected Policy name for local Policy: %s", policy.Description())
 		}
-		data, err := policy.Data()
+		config, err := policy.Config()
+		if err != nil {
+			return nil, err
+		}
+		lintConfig := config.LintConfig()
+		breakingConfig := config.BreakingConfig()
+		pluginConfigs := config.PluginConfigs()
+		pluginConfigsProto, err := xslices.MapError(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) (*policyv1beta1.PolicyConfig_CheckPluginConfig, error) {
+			options, err := option.NewOptions(pluginConfig.Options())
+			if err != nil {
+				return nil, err
+			}
+			optionsProto, err := options.ToProto()
+			if err != nil {
+				return nil, err
+			}
+			ref := pluginConfig.Ref()
+			if ref == nil {
+				return nil, fmt.Errorf("expected remote PluginConfig to have a Ref")
+			}
+			return &policyv1beta1.PolicyConfig_CheckPluginConfig{
+				Name: &policyv1beta1.PolicyConfig_CheckPluginConfig_Name{
+					Owner:  ref.FullName().Owner(),
+					Plugin: ref.FullName().Name(),
+					Ref:    ref.Ref(),
+				},
+				Options: optionsProto,
+				Args:    pluginConfig.Args(),
+			}, nil
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -146,8 +178,24 @@ func (u *uploader) uploadIndexedPoliciesForRegistry(
 					},
 				},
 			},
-			Content: data,
-			ScopedLabelRefs: slicesext.Map(uploadOptions.Labels(), func(label string) *policyv1beta1.ScopedLabelRef {
+			Config: &policyv1beta1.PolicyConfig{
+				Lint: &policyv1beta1.PolicyConfig_LintConfig{
+					Use:                                  lintConfig.UseIDsAndCategories(),
+					Except:                               lintConfig.ExceptIDsAndCategories(),
+					EnumZeroValueSuffix:                  lintConfig.EnumZeroValueSuffix(),
+					RpcAllowSameRequestResponse:          lintConfig.RPCAllowSameRequestResponse(),
+					RpcAllowGoogleProtobufEmptyRequests:  lintConfig.RPCAllowGoogleProtobufEmptyRequests(),
+					RpcAllowGoogleProtobufEmptyResponses: lintConfig.RPCAllowGoogleProtobufEmptyRequests(),
+					ServiceSuffix:                        lintConfig.ServiceSuffix(),
+				},
+				Breaking: &policyv1beta1.PolicyConfig_BreakingConfig{
+					Use:                    breakingConfig.UseIDsAndCategories(),
+					Except:                 breakingConfig.ExceptIDsAndCategories(),
+					IgnoreUnstablePackages: breakingConfig.IgnoreUnstablePackages(),
+				},
+				Plugins: pluginConfigsProto,
+			},
+			ScopedLabelRefs: xslices.Map(uploadOptions.Labels(), func(label string) *policyv1beta1.ScopedLabelRef {
 				return &policyv1beta1.ScopedLabelRef{
 					Value: &policyv1beta1.ScopedLabelRef_Name{
 						Name: label,
@@ -173,7 +221,7 @@ func (u *uploader) uploadIndexedPoliciesForRegistry(
 		return nil, syserror.Newf("expected %d Commits, found %d", len(indexedPolicies), len(policyCommits))
 	}
 
-	indexedCommits := make([]slicesext.Indexed[bufpolicy.Commit], 0, len(indexedPolicies))
+	indexedCommits := make([]xslices.Indexed[bufpolicy.Commit], 0, len(indexedPolicies))
 	for i, policyCommit := range policyCommits {
 		policyFullName := indexedPolicies[i].Value.FullName()
 		commitID, err := uuidutil.FromDashless(policyCommit.Id)
@@ -198,7 +246,7 @@ func (u *uploader) uploadIndexedPoliciesForRegistry(
 		)
 		indexedCommits = append(
 			indexedCommits,
-			slicesext.Indexed[bufpolicy.Commit]{
+			xslices.Indexed[bufpolicy.Commit]{
 				Value: commit,
 				Index: i,
 			},
@@ -266,7 +314,7 @@ func (u *uploader) validatePoliciesExist(
 		ctx,
 		connect.NewRequest(
 			&policyv1beta1.GetPoliciesRequest{
-				PolicyRefs: slicesext.Map(
+				PolicyRefs: xslices.Map(
 					policies,
 					func(policy bufpolicy.Policy) *policyv1beta1.PolicyRef {
 						return &policyv1beta1.PolicyRef{

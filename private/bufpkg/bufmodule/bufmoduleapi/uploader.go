@@ -24,10 +24,10 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
+	"buf.build/go/standard/xslices"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
@@ -110,7 +110,7 @@ func (a *uploader) Upload(
 	}
 	// Only push named modules to the registry. Any dependencies for named modules must have a name.
 	// Local unnamed modules can be excluded if the UploadWithExcludeUnnamed option is set.
-	contentModules, err = slicesext.FilterError(contentModules, func(module bufmodule.Module) (bool, error) {
+	contentModules, err = xslices.FilterError(contentModules, func(module bufmodule.Module) (bool, error) {
 		moduleName := module.FullName()
 		if moduleName == nil {
 			moduleDescription := module.Description()
@@ -124,7 +124,7 @@ func (a *uploader) Upload(
 		if err != nil {
 			return false, err
 		}
-		if allDepModuleDescriptions := slicesext.Reduce(deps, func(allDepModuleDescriptions []string, dep bufmodule.ModuleDep) []string {
+		if allDepModuleDescriptions := xslices.Reduce(deps, func(allDepModuleDescriptions []string, dep bufmodule.ModuleDep) []string {
 			if moduleName := dep.FullName(); moduleName == nil {
 				return append(allDepModuleDescriptions, dep.Description())
 			}
@@ -134,7 +134,7 @@ func (a *uploader) Upload(
 				"all dependencies for module %q must be named but these modules are not:\n%s",
 				moduleName.String(),
 				strings.Join(
-					slicesext.Map(allDepModuleDescriptions, func(moduleDescription string) string { return "  " + moduleDescription }),
+					xslices.Map(allDepModuleDescriptions, func(moduleDescription string) string { return "  " + moduleDescription }),
 					"\n",
 				),
 			)
@@ -188,8 +188,8 @@ func (a *uploader) Upload(
 
 	var v1beta1ProtoScopedLabelRefs []*modulev1beta1.ScopedLabelRef
 	if len(uploadOptions.Tags()) > 0 {
-		contentModuleSortedDefaultLabels := slicesext.ToUniqueSorted(
-			slicesext.Map(
+		contentModuleSortedDefaultLabels := xslices.ToUniqueSorted(
+			xslices.Map(
 				modules,
 				func(module *modulev1.Module) string {
 					return module.DefaultLabelName
@@ -199,7 +199,7 @@ func (a *uploader) Upload(
 		if len(contentModuleSortedDefaultLabels) > 1 {
 			return nil, fmt.Errorf(
 				`--tag was used, but modules %q had multiple default tags %q. If multiple modules are being pushed and --tag is used, all modules must have the same default label.`,
-				strings.Join(slicesext.Map(
+				strings.Join(xslices.Map(
 					contentModules,
 					func(module bufmodule.Module) string {
 						return module.FullName().String()
@@ -217,7 +217,7 @@ func (a *uploader) Upload(
 		// the use of the `--label` flag, so all references will have the same labels.
 		// We just pre-compute them now.
 		labelNames := append(uploadOptions.Tags(), contentModuleSortedDefaultLabels[0])
-		v1beta1ProtoScopedLabelRefs = slicesext.Map(
+		v1beta1ProtoScopedLabelRefs = xslices.Map(
 			labelNames,
 			labelNameToV1Beta1ProtoScopedLabelRef,
 		)
@@ -226,14 +226,14 @@ func (a *uploader) Upload(
 		// the use of the `--label` flag, so all references will have the same labels.
 		// We just pre-compute them now.
 		if len(uploadOptions.Labels()) > 0 {
-			v1beta1ProtoScopedLabelRefs = slicesext.Map(
+			v1beta1ProtoScopedLabelRefs = xslices.Map(
 				uploadOptions.Labels(),
 				labelNameToV1Beta1ProtoScopedLabelRef,
 			)
 		}
 	}
 	// Maintains ordering, important for when we create bufmodule.Commit objects below.
-	v1beta1ProtoUploadRequestContents, err := slicesext.MapError(
+	v1beta1ProtoUploadRequestContents, err := xslices.MapError(
 		contentModules,
 		func(module bufmodule.Module) (*modulev1beta1.UploadRequest_Content, error) {
 			return getV1Beta1ProtoUploadRequestContent(
@@ -254,7 +254,7 @@ func (a *uploader) Upload(
 		return nil, err
 	}
 
-	v1beta1ProtoUploadRequestDepRefs, err := slicesext.MapError(
+	v1beta1ProtoUploadRequestDepRefs, err := xslices.MapError(
 		remoteDeps,
 		remoteDepToV1Beta1ProtoUploadRequestDepRef,
 	)
@@ -263,9 +263,9 @@ func (a *uploader) Upload(
 	}
 
 	// A sorted slice of unique registries for the RemoteDeps.
-	remoteDepRegistries := slicesext.MapKeysToSortedSlice(
+	remoteDepRegistries := xslices.MapKeysToSortedSlice(
 		// A map from registry to RemoteDeps for that registry.
-		slicesext.ToValuesMap(
+		xslices.ToValuesMap(
 			remoteDeps,
 			func(remoteDep bufmodule.RemoteDep) string {
 				// We've already validated two or three times that FullName is present here.
@@ -293,7 +293,7 @@ func (a *uploader) Upload(
 		if err != nil {
 			return nil, err
 		}
-		universalProtoCommits, err = slicesext.MapError(response.Msg.Commits, newUniversalProtoCommitForV1Beta1)
+		universalProtoCommits, err = xslices.MapError(response.Msg.Commits, newUniversalProtoCommitForV1Beta1)
 		if err != nil {
 			return nil, err
 		}
@@ -302,11 +302,11 @@ func (a *uploader) Upload(
 		// for federation. Do this so that we can maintain federated API endpoint metrics.
 		//
 		// Maintains ordering, important for when we create bufmodule.Commit objects below.
-		v1ProtoUploadRequestContents := slicesext.Map(
+		v1ProtoUploadRequestContents := xslices.Map(
 			v1beta1ProtoUploadRequestContents,
 			v1beta1ProtoUploadRequestContentToV1ProtoUploadRequestContent,
 		)
-		protoDepCommitIds := slicesext.Map(
+		protoDepCommitIds := xslices.Map(
 			v1beta1ProtoUploadRequestDepRefs,
 			func(v1beta1ProtoDepRef *modulev1beta1.UploadRequest_DepRef) string {
 				return v1beta1ProtoDepRef.CommitId
@@ -324,7 +324,7 @@ func (a *uploader) Upload(
 		if err != nil {
 			return nil, err
 		}
-		universalProtoCommits, err = slicesext.MapError(response.Msg.Commits, newUniversalProtoCommitForV1)
+		universalProtoCommits, err = xslices.MapError(response.Msg.Commits, newUniversalProtoCommitForV1)
 		if err != nil {
 			return nil, err
 		}
@@ -424,7 +424,7 @@ func (a *uploader) validateContentModulesExist(
 		ctx,
 		connect.NewRequest(
 			&modulev1.GetModulesRequest{
-				ModuleRefs: slicesext.Map(
+				ModuleRefs: xslices.Map(
 					contentModules,
 					func(module bufmodule.Module) *modulev1.ModuleRef {
 						return &modulev1.ModuleRef{

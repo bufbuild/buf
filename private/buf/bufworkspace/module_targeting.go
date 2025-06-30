@@ -17,10 +17,10 @@ package bufworkspace
 import (
 	"fmt"
 
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -133,7 +133,7 @@ func newModuleTargeting(
 				}
 			}
 		}
-		moduleTargetPaths, err = slicesext.MapError(
+		moduleTargetPaths, err = xslices.MapError(
 			moduleTargetPaths,
 			func(moduleTargetPath string) (string, error) {
 				return applyRootsToTargetPath(roots, moduleTargetPath, normalpath.Relative)
@@ -142,7 +142,7 @@ func newModuleTargeting(
 		if err != nil {
 			return nil, err
 		}
-		moduleTargetExcludePaths, err = slicesext.MapError(
+		moduleTargetExcludePaths, err = xslices.MapError(
 			moduleTargetExcludePaths,
 			func(moduleTargetExcludePath string) (string, error) {
 				return applyRootsToTargetPath(roots, moduleTargetExcludePath, normalpath.Relative)
@@ -176,7 +176,7 @@ func applyRootsToTargetPath(roots []string, path string, pathType normalpath.Pat
 			"path %q is not contained within any of roots %s - note that specified paths "+
 				"cannot be roots, but must be contained within roots",
 			path,
-			stringutil.SliceToHumanStringQuoted(roots),
+			xstrings.SliceToHumanStringQuoted(roots),
 		)
 	case 1:
 		targetPath, err := normalpath.Rel(matchingRoots[0], path)
@@ -187,6 +187,6 @@ func applyRootsToTargetPath(roots []string, path string, pathType normalpath.Pat
 		return normalpath.Normalize(targetPath), nil
 	default:
 		// this should never happen
-		return "", fmt.Errorf("%q is contained in multiple roots %s", path, stringutil.SliceToHumanStringQuoted(roots))
+		return "", fmt.Errorf("%q is contained in multiple roots %s", path, xstrings.SliceToHumanStringQuoted(roots))
 	}
 }

@@ -149,6 +149,11 @@ type FileAnnotation interface {
 	// May be empty if this annotation did not originate from a plugin.
 	// This may be added to the printed message field for certain printers.
 	PluginName() string
+	// PolicyName is the name of the policy that the annotation originated from.
+	//
+	// May be empty if this annotation did not originate from a policy.
+	// This may be added to the printed message field for certain printers.
+	PolicyName() string
 
 	isFileAnnotation()
 }
@@ -163,6 +168,7 @@ func NewFileAnnotation(
 	typeString string,
 	message string,
 	pluginName string,
+	policyName string,
 ) FileAnnotation {
 	return newFileAnnotation(
 		fileInfo,
@@ -173,6 +179,7 @@ func NewFileAnnotation(
 		typeString,
 		message,
 		pluginName,
+		policyName,
 	)
 }
 
