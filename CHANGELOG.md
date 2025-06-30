@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 - Add `buf export --all` flag to include non-proto source files.
+- Add s390x binaries for Linux to releases.
+- Fix ppc64le binaries for Linux released as x86_64 binaries.
 
 ## [v1.55.1] - 2025-06-17
 
