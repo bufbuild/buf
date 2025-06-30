@@ -373,7 +373,7 @@ var (
 			bufcheckserverbuild.LintPackageDefinedRuleSpecBuilder.Build(true, []string{"MINIMAL", "BASIC", "DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintPackageDirectoryMatchRuleSpecBuilder.Build(true, []string{"MINIMAL", "BASIC", "DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintPackageLowerSnakeCaseRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
-			bufcheckserverbuild.LintPackageNoImportCycleRuleSpecBuilder.Build(true, []string{"MINIMAL", "BASIC", "DEFAULT", "STANDARD"}),
+			bufcheckserverbuild.LintPackageNoImportCycleRuleSpecBuilder.Build(true, []string{"DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintPackageSameCsharpNamespaceRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintPackageSameDirectoryRuleSpecBuilder.Build(true, []string{"MINIMAL", "BASIC", "DEFAULT", "STANDARD"}),
 			bufcheckserverbuild.LintPackageSameGoPackageRuleSpecBuilder.Build(true, []string{"BASIC", "DEFAULT", "STANDARD"}),

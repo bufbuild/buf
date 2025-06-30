@@ -55,7 +55,6 @@ var (
 		{ID: "DIRECTORY_SAME_PACKAGE", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files in a given directory are in the same package."},
 		{ID: "PACKAGE_DEFINED", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files have a package defined."},
 		{ID: "PACKAGE_DIRECTORY_MATCH", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files are in a directory that matches their package name."},
-		{ID: "PACKAGE_NO_IMPORT_CYCLE", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that packages do not have import cycles."},
 		{ID: "PACKAGE_SAME_DIRECTORY", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files with a given package are in the same directory."},
 		{ID: "ENUM_FIRST_VALUE_ZERO", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all first values of enums have a numeric value of 0."},
 		{ID: "ENUM_NO_ALLOW_ALIAS", Categories: []string{"BASIC", "STANDARD"}, Default: true, Purpose: "Checks that enums do not have the allow_alias option set."},
@@ -81,6 +80,7 @@ var (
 		{ID: "ENUM_VALUE_PREFIX", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that enum values are prefixed with ENUM_NAME_UPPER_SNAKE_CASE."},
 		{ID: "ENUM_ZERO_VALUE_SUFFIX", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that enum zero values have a consistent suffix (configurable, default suffix is \"_UNSPECIFIED\")."},
 		{ID: "FILE_LOWER_SNAKE_CASE", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that filenames are lower_snake_case."},
+		{ID: "PACKAGE_NO_IMPORT_CYCLE", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that packages do not have import cycles."},
 		{ID: "PACKAGE_VERSION_SUFFIX", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that the last component of all packages is a version of the form v\\d+, v\\d+test.*, v\\d+(alpha|beta)\\d+, or v\\d+p\\d+(alpha|beta)\\d+, where numbers are >=1."},
 		{ID: "PROTOVALIDATE", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that protovalidate rules are valid and all CEL expressions compile."},
 		{ID: "RPC_REQUEST_RESPONSE_UNIQUE", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that RPC request and response types are only used in one RPC (configurable)."},
@@ -763,7 +763,6 @@ func TestCheckLsLintRulesFromConfig(t *testing.T) {
 			{ID: "DIRECTORY_SAME_PACKAGE", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files in a given directory are in the same package."},
 			{ID: "PACKAGE_DEFINED", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files have a package defined."},
 			{ID: "PACKAGE_DIRECTORY_MATCH", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files are in a directory that matches their package name."},
-			{ID: "PACKAGE_NO_IMPORT_CYCLE", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that packages do not have import cycles."},
 			{ID: "PACKAGE_SAME_DIRECTORY", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files with a given package are in the same directory."},
 			{ID: "ENUM_VALUE_BANNED_SUFFIXES", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that there are no enum values of top-level enums with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
 			{ID: "FIELD_BANNED_SUFFIXES", Categories: []string{"ATTRIBUTES_SUFFIXES"}, Default: false, Purpose: "Ensure that there are no fields with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
@@ -840,7 +839,6 @@ func TestCheckLsLintRulesFromConfig(t *testing.T) {
 			{ID: "DIRECTORY_SAME_PACKAGE", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files in a given directory are in the same package."},
 			{ID: "PACKAGE_DEFINED", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files have a package defined."},
 			{ID: "PACKAGE_DIRECTORY_MATCH", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files are in a directory that matches their package name."},
-			{ID: "PACKAGE_NO_IMPORT_CYCLE", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that packages do not have import cycles."},
 			{ID: "PACKAGE_SAME_DIRECTORY", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files with a given package are in the same directory."},
 			{ID: "SERVICE_SUFFIX", Categories: []string{"STANDARD"}, Default: true, Purpose: "Checks that services have a consistent suffix (configurable, default suffix is \"Service\")."},
 			{ID: "RPC_BANNED_SUFFIXES", Categories: []string{"OPERATION_SUFFIXES"}, Default: true, Purpose: "Ensure that there are no RPCs with the list of configured banned suffixes.", Plugin: "buf-plugin-suffix"},
@@ -913,7 +911,6 @@ ID                                 CATEGORIES                DEFAULT  PURPOSE
 DIRECTORY_SAME_PACKAGE             MINIMAL, BASIC, STANDARD  *        Checks that all files in a given directory are in the same package.
 PACKAGE_DEFINED                    MINIMAL, BASIC, STANDARD  *        Checks that all files have a package defined.
 PACKAGE_DIRECTORY_MATCH            MINIMAL, BASIC, STANDARD  *        Checks that all files are in a directory that matches their package name.
-PACKAGE_NO_IMPORT_CYCLE            MINIMAL, BASIC, STANDARD  *        Checks that packages do not have import cycles.
 PACKAGE_SAME_DIRECTORY             MINIMAL, BASIC, STANDARD  *        Checks that all files with a given package are in the same directory.
 ENUM_FIRST_VALUE_ZERO              BASIC, STANDARD           *        Checks that all first values of enums have a numeric value of 0.
 ENUM_NO_ALLOW_ALIAS                BASIC, STANDARD           *        Checks that enums do not have the allow_alias option set.
@@ -939,6 +936,7 @@ SYNTAX_SPECIFIED                   BASIC, STANDARD           *        Checks tha
 ENUM_VALUE_PREFIX                  STANDARD                  *        Checks that enum values are prefixed with ENUM_NAME_UPPER_SNAKE_CASE.
 ENUM_ZERO_VALUE_SUFFIX             STANDARD                  *        Checks that enum zero values have a consistent suffix (configurable, default suffix is "_UNSPECIFIED").
 FILE_LOWER_SNAKE_CASE              STANDARD                  *        Checks that filenames are lower_snake_case.
+PACKAGE_NO_IMPORT_CYCLE            STANDARD                  *        Checks that packages do not have import cycles.
 PACKAGE_VERSION_SUFFIX             STANDARD                  *        Checks that the last component of all packages is a version of the form v\d+, v\d+test.*, v\d+(alpha|beta)\d+, or v\d+p\d+(alpha|beta)\d+, where numbers are >=1.
 PROTOVALIDATE                      STANDARD                  *        Checks that protovalidate rules are valid and all CEL expressions compile.
 RPC_REQUEST_RESPONSE_UNIQUE        STANDARD                  *        Checks that RPC request and response types are only used in one RPC (configurable).
