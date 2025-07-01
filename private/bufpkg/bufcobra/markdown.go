@@ -262,7 +262,9 @@ func writeFlags(f *pflag.FlagSet, writer io.Writer) error {
 		}
 		p(" {#%s}", flag.Name)
 		p("\n")
-		p(usage)
+		// Skip fmt.Fprintf for usage, which may contain `%` format characters that aren't
+		// intended to be formatted. Instead, write the raw contents.
+		_, err = writer.Write([]byte(usage))
 		if flag.NoOptDefVal != "" {
 			switch flag.Value.Type() {
 			case "string":
