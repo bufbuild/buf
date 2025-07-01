@@ -20,11 +20,9 @@ import (
 	"fmt"
 	"os"
 	"slices"
-	"strings"
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
@@ -36,7 +34,6 @@ import (
 
 const (
 	labelFlagName            = "label"
-	configFlagName           = "config"
 	createFlagName           = "create"
 	createVisibilityFlagName = "create-visibility"
 )
@@ -48,10 +45,10 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <remote/owner/policy>",
+		Use:   name + " <policy>",
 		Short: "Push a policy to a registry",
-		Long:  `The first argument is the policy full name in the format <remote/owner/policy>.`,
-		Args:  appcmd.MaximumNArgs(1),
+		Long:  `The first argument is the path to the local policy config.`,
+		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -63,10 +60,8 @@ func NewCommand(
 
 type flags struct {
 	Labels           []string
-	Config           string
 	Create           bool
 	CreateVisibility string
-	CreateType       string
 	SourceControlURL string
 }
 
@@ -81,12 +76,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		labelFlagName,
 		nil,
 		"Associate the label with the policies pushed. Can be used multiple times.",
-	)
-	flagSet.StringVar(
-		&f.Config,
-		configFlagName,
-		"",
-		"The path to the policy YAML file to push.",
 	)
 	flagSet.BoolVar(
 		&f.Create,
@@ -107,12 +96,7 @@ func run(
 	if err := validateFlags(flags); err != nil {
 		return err
 	}
-	// We parse the policy full name from the user-provided argument.
-	policyFullName, err := bufparse.ParseFullName(container.Arg(0))
-	if err != nil {
-		return appcmd.WrapInvalidArgumentError(err)
-	}
-	commit, err := upload(ctx, container, flags, policyFullName)
+	commit, err := upload(ctx, container, flags)
 	if err != nil {
 		return err
 	}
@@ -127,30 +111,37 @@ func upload(
 	ctx context.Context,
 	container appext.Container,
 	flags *flags,
-	policyFullName bufparse.FullName,
 ) (_ bufpolicy.Commit, retErr error) {
 	var policy bufpolicy.Policy
-	switch {
-	case flags.Config != "":
-		// We read the policy YAML file.
-		data, err := os.ReadFile(flags.Config)
-		if err != nil {
-			return nil, fmt.Errorf("could not read policy file %q: %w", flags.Config, err)
-		}
-		// Parse the policy YAML file to validate it upfront.
-		policyYamlFile, err := bufpolicyconfig.ReadBufPolicyYAMLFile(bytes.NewReader(data), flags.Config)
-		if err != nil {
-			return nil, fmt.Errorf("unable to validate policy file %q: %w", flags.Config, err)
-		}
-		policy, err = bufpolicy.NewPolicy("", policyFullName, flags.Config, uuid.Nil, func() (bufpolicy.PolicyConfig, error) {
-			return policyYamlFile, nil
-		})
-		if err != nil {
-			return nil, fmt.Errorf("unable to create policy from file %q: %w", flags.Config, err)
-		}
-	default:
-		// This should never happen because the flags are validated.
-		return nil, syserror.Newf("--%s must be set", configFlagName)
+	if container.NumArgs() != 1 {
+		// This should never happen because the args length is validated.
+		return nil, syserror.Newf("policy arg must be provided")
+	}
+	policyFilePath := container.Arg(0)
+	// We read the policy YAML file.
+	data, err := os.ReadFile(policyFilePath)
+	if err != nil {
+		return nil, appcmd.NewInvalidArgumentErrorf("could not read policy file %q: %w", policyFilePath, err)
+	}
+	// Parse the policy YAML file to validate it upfront.
+	policyYamlFile, err := bufpolicyconfig.ReadBufPolicyYAMLFile(bytes.NewReader(data), policyFilePath)
+	if err != nil {
+		return nil, appcmd.NewInvalidArgumentErrorf("unable to validate policy file %q: %w", policyFilePath, err)
+	}
+	// We parse the policy full name from the user-provided argument.
+	if policyYamlFile.Name() == "" {
+		return nil, appcmd.NewInvalidArgumentErrorf("policy file %q must have a name", policyFilePath)
+	}
+	policyFullName, err := bufparse.ParseFullName(policyYamlFile.Name())
+	if err != nil {
+		return nil, appcmd.NewInvalidArgumentErrorf("unable to parse policy full name %q: %w", policyYamlFile.Name(), err)
+	}
+	policy, err = bufpolicy.NewPolicy("", policyFullName, policyFilePath, uuid.Nil, func() (bufpolicy.PolicyConfig, error) {
+		// The policy YAML file implements the PolicyConfig interface, so we can return it directly.
+		return policyYamlFile, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create policy from file %q: %w", policyFilePath, err)
 	}
 	uploader, err := bufcli.NewPolicyUploader(container)
 	if err != nil {
@@ -186,9 +177,6 @@ func validateFlags(flags *flags) error {
 	if err := validateLabelFlags(flags); err != nil {
 		return err
 	}
-	if err := validateTypeFlags(flags); err != nil {
-		return err
-	}
 	if err := validateCreateFlags(flags); err != nil {
 		return err
 	}
@@ -197,27 +185,6 @@ func validateFlags(flags *flags) error {
 
 func validateLabelFlags(flags *flags) error {
 	return validateLabelFlagValues(flags)
-}
-
-func validateTypeFlags(flags *flags) error {
-	var typeFlags []string
-	if flags.Config != "" {
-		typeFlags = append(typeFlags, configFlagName)
-	}
-	if len(typeFlags) > 1 {
-		usedFlagsErrStr := strings.Join(
-			xslices.Map(
-				typeFlags,
-				func(flag string) string { return fmt.Sprintf("--%s", flag) },
-			),
-			", ",
-		)
-		return appcmd.NewInvalidArgumentErrorf("These flags cannot be used in combination with one another: %s", usedFlagsErrStr)
-	}
-	if len(typeFlags) == 0 {
-		return appcmd.NewInvalidArgumentErrorf("--%s must be set", configFlagName)
-	}
-	return nil
 }
 
 func validateLabelFlagValues(flags *flags) error {
