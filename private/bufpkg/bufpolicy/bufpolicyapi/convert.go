@@ -77,9 +77,9 @@ func v1beta1ProtoToDigestType(protoDigestType policyv1beta1.DigestType) (bufpoli
 
 // policyConfig implements bufpolicy.PolicyConfig.
 type policyConfig struct {
-	lintConfig     bufconfig.LintConfig
-	breakingConfig bufconfig.BreakingConfig
-	pluginConfigs  []bufconfig.PluginConfig
+	lintConfig     bufpolicy.LintConfig
+	breakingConfig bufpolicy.BreakingConfig
+	pluginConfigs  []bufpolicy.PluginConfig
 }
 
 func newPolicyConfig(
@@ -99,7 +99,7 @@ func newPolicyConfig(
 	}
 	pluginConfigs, err := xslices.MapError(
 		policyConfigV1Beta1.Plugins,
-		func(pluginConfigV1Beta1 *policyv1beta1.PolicyConfig_CheckPluginConfig) (bufconfig.PluginConfig, error) {
+		func(pluginConfigV1Beta1 *policyv1beta1.PolicyConfig_CheckPluginConfig) (bufpolicy.PluginConfig, error) {
 			return getPluginConfigForV1Beta1PluginConfig(registry, pluginConfigV1Beta1)
 		},
 	)
@@ -114,23 +114,61 @@ func newPolicyConfig(
 }
 
 // LintConfig returns the LintConfig for the File.
-func (p *policyConfig) LintConfig() bufconfig.LintConfig {
+func (p *policyConfig) LintConfig() bufpolicy.LintConfig {
 	return p.lintConfig
 }
 
 // BreakingConfig returns the BreakingConfig for the File.
-func (p *policyConfig) BreakingConfig() bufconfig.BreakingConfig {
+func (p *policyConfig) BreakingConfig() bufpolicy.BreakingConfig {
 	return p.breakingConfig
 }
 
 // PluginConfigs returns the PluginConfigs for the File.
-func (p *policyConfig) PluginConfigs() []bufconfig.PluginConfig {
+func (p *policyConfig) PluginConfigs() []bufpolicy.PluginConfig {
 	return p.pluginConfigs
+}
+
+// pluginConfig implements bufpolicy.PluginConfig.
+type pluginConfig struct {
+	name    string
+	ref     bufparse.Ref
+	options option.Options
+	args    []string
+}
+
+func newPluginConfig(
+	name string,
+	ref bufparse.Ref,
+	options option.Options,
+	args []string,
+) *pluginConfig {
+	return &pluginConfig{
+		name:    name,
+		ref:     ref,
+		options: options,
+		args:    args,
+	}
+}
+
+func (p *pluginConfig) Name() string {
+	return p.name
+}
+
+func (p *pluginConfig) Ref() bufparse.Ref {
+	return p.ref
+}
+
+func (p *pluginConfig) Options() option.Options {
+	return p.options
+}
+
+func (p *pluginConfig) Args() []string {
+	return p.args
 }
 
 func getLintConfigForV1Beta1LintConfig(
 	lintConfigV1Beta1 *policyv1beta1.PolicyConfig_LintConfig,
-) (bufconfig.LintConfig, error) {
+) (bufpolicy.LintConfig, error) {
 	checkConfig, err := bufconfig.NewEnabledCheckConfig(
 		bufconfig.FileVersionV2,
 		lintConfigV1Beta1.GetUse(),
@@ -155,7 +193,7 @@ func getLintConfigForV1Beta1LintConfig(
 
 func getBreakingConfigForV1Beta1BreakingConfig(
 	breakingConfigV1Beta1 *policyv1beta1.PolicyConfig_BreakingConfig,
-) (bufconfig.BreakingConfig, error) {
+) (bufpolicy.BreakingConfig, error) {
 	checkConfig, err := bufconfig.NewEnabledCheckConfig(
 		bufconfig.FileVersionV2,
 		breakingConfigV1Beta1.GetUse(),
@@ -176,7 +214,7 @@ func getBreakingConfigForV1Beta1BreakingConfig(
 func getPluginConfigForV1Beta1PluginConfig(
 	registry string,
 	pluginConfigV1Beta1 *policyv1beta1.PolicyConfig_CheckPluginConfig,
-) (bufconfig.PluginConfig, error) {
+) (bufpolicy.PluginConfig, error) {
 	nameV1Beta1 := pluginConfigV1Beta1.GetName()
 	pluginRef, err := bufparse.NewRef(
 		registry,
@@ -191,13 +229,10 @@ func getPluginConfigForV1Beta1PluginConfig(
 	if err != nil {
 		return nil, err
 	}
-	optionsMap := make(map[string]any)
-	options.Range(func(key string, value any) {
-		optionsMap[key] = value
-	})
-	return bufconfig.NewRemoteWasmPluginConfig(
+	return newPluginConfig(
+		pluginRef.String(),
 		pluginRef,
-		optionsMap,
+		options,
 		pluginConfigV1Beta1.GetArgs(),
-	)
+	), nil
 }

@@ -23,18 +23,61 @@ import (
 	pluginoptionv1 "buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go/buf/plugin/option/v1"
 	"buf.build/go/bufplugin/option"
 	"buf.build/go/standard/xslices"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 // PolicyConfig is the configuration for a Policy.
 type PolicyConfig interface {
 	// LintConfig returns the LintConfig for the File.
-	LintConfig() bufconfig.LintConfig
+	LintConfig() LintConfig
 	// BreakingConfig returns the BreakingConfig for the File.
-	BreakingConfig() bufconfig.BreakingConfig
+	BreakingConfig() BreakingConfig
 	// PluginConfigs returns the PluginConfigs for the File.
-	PluginConfigs() []bufconfig.PluginConfig
+	PluginConfigs() []PluginConfig
+}
+
+// CheckConfig is the common interface for the configuration shared by
+// LintConfig and BreakingConfig.
+//
+// It is a subset of bufconfig.CheckConfig.
+type CheckConfig interface {
+	// Sorted.
+	UseIDsAndCategories() []string
+	// Sorted
+	ExceptIDsAndCategories() []string
+}
+
+// LintConfig is the configuration for a Policy Lint.
+//
+// It is a subset of bufconfig.LintConfig.
+type LintConfig interface {
+	CheckConfig
+
+	EnumZeroValueSuffix() string
+	RPCAllowSameRequestResponse() bool
+	RPCAllowGoogleProtobufEmptyRequests() bool
+	RPCAllowGoogleProtobufEmptyResponses() bool
+	ServiceSuffix() string
+}
+
+// BreakingConfig is the configuration for a Policy Breaking.
+//
+// It is a subset of bufconfig.BreakingConfig.
+type BreakingConfig interface {
+	CheckConfig
+
+	IgnoreUnstablePackages() bool
+}
+
+// PluginConfig is a configuration for a Policy Plugin.
+//
+// It is related to, but not a subset of, bufconfig.PluginConfig.
+type PluginConfig interface {
+	Name() string
+	Ref() bufparse.Ref
+	Options() option.Options
+	Args() []string
 }
 
 // MarshalPolicyConfigAsJSON marshals the PolicyConfig to a stable JSON representation.
@@ -45,7 +88,7 @@ func MarshalPolicyConfigAsJSON(policyConfig PolicyConfig) ([]byte, error) {
 	return marshalPolicyConfigAsJSON(policyConfig)
 }
 
-/// *** PRIVATE ***
+// *** PRIVATE ***
 
 // marshalPolicyConfigAsJSON implements the stable JSON representation of the PolicyConfig.
 func marshalPolicyConfigAsJSON(policyConfig PolicyConfig) ([]byte, error) {
@@ -57,7 +100,7 @@ func marshalPolicyConfigAsJSON(policyConfig PolicyConfig) ([]byte, error) {
 	if breakingConfig == nil {
 		return nil, syserror.Newf("policyConfig.BreakingConfig() must not be nil")
 	}
-	pluginConfigs, err := xslices.MapError(policyConfig.PluginConfigs(), func(pluginConfig bufconfig.PluginConfig) (*policyV1Beta1PolicyConfig_PluginConfig, error) {
+	pluginConfigs, err := xslices.MapError(policyConfig.PluginConfigs(), func(pluginConfig PluginConfig) (*policyV1Beta1PolicyConfig_PluginConfig, error) {
 		ref := pluginConfig.Ref()
 		if ref == nil {
 			return nil, fmt.Errorf("PluginConfig must have a non-nil Ref")
@@ -166,12 +209,8 @@ type optionV1ListValue struct {
 	Values []*optionV1Value `json:"values,omitempty"`
 }
 
-// optionsToOptionsV1Options converts a map of options to a slice of optionV1Option.
-func optionsToOptionConfig(keyToValue map[string]any) ([]*optionV1Option, error) {
-	options, err := option.NewOptions(keyToValue) // This will validate the options.
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert options: %w", err)
-	}
+// optionsToOptionsV1Options converts a set of options to a slice of optionV1Option.
+func optionsToOptionConfig(options option.Options) ([]*optionV1Option, error) {
 	optionsProto, err := options.ToProto()
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert options to proto: %w", err)
