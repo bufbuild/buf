@@ -157,7 +157,7 @@ enum EventType {
   EVENT_TYPE_POLICY_ENFORCEMENT_CREATED = 74;
   EVENT_TYPE_POLICY_ENFORCEMENT_DELETED = 75;
   EVENT_TYPE_POLICY_ENFORCEMENT_POLICY_CHANGED = 76;
-  EVENT_TYPE_POLICY_ENFORCEMENT_INCLUDE_TARGETS_CHANGED = 77;
+  EVENT_TYPE_POLICY_ENFORCEMENT_TARGETS_CHANGED = 77;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -997,8 +997,10 @@ message PayloadPolicyEnforcementCreated {
   string enforcement_id = 1;
   // policy_id is the id of the policy that is enforced.
   string policy_id = 2;
+  // policy_ref is the reference of the policy that is enforced.
+  string policy_ref = 3;
   // include_targets are the include targets of the policy enforcement.
-  repeated string include_targets = 3;
+  repeated string include_targets = 4;
 }
 
 message PayloadPolicyEnforcementDeleted {
@@ -1013,6 +1015,10 @@ message PayloadPolicyEnforcementPolicyChanged {
   string old_policy_id = 2;
   // new_policy_id is the id of the new policy.
   string new_policy_id = 3;
+  // old_policy_ref is the reference of the old policy.
+  string old_policy_ref = 4;
+  // new_policy_ref is the reference of the new policy.
+  string new_policy_ref = 5;
 }
 
 message PayloadPolicyEnforcementIncludeTargetsChanged {

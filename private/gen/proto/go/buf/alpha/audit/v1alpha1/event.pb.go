@@ -253,25 +253,25 @@ const (
 	EventType_EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_ENABLED  EventType = 32
 	EventType_EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_DISABLED EventType = 33
 	// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
-	EventType_EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED          EventType = 34
-	EventType_EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED           EventType = 35
-	EventType_EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED          EventType = 36
-	EventType_EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP              EventType = 37
-	EventType_EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_APPROVED        EventType = 41
-	EventType_EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_DENIED          EventType = 42
-	EventType_EVENT_TYPE_PLUGIN_LABEL_CREATED                       EventType = 44
-	EventType_EVENT_TYPE_PLUGIN_LABEL_MOVED                         EventType = 45
-	EventType_EVENT_TYPE_PLUGIN_LABEL_ARCHIVED                      EventType = 46
-	EventType_EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED                    EventType = 47
-	EventType_EVENT_TYPE_SERVER_REVIEW_FLOW_ENABLED                 EventType = 69
-	EventType_EVENT_TYPE_SERVER_REVIEW_FLOW_DISABLED                EventType = 70
-	EventType_EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_CREATED              EventType = 71
-	EventType_EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_UPDATED              EventType = 72
-	EventType_EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_DELETED              EventType = 73
-	EventType_EVENT_TYPE_POLICY_ENFORCEMENT_CREATED                 EventType = 74
-	EventType_EVENT_TYPE_POLICY_ENFORCEMENT_DELETED                 EventType = 75
-	EventType_EVENT_TYPE_POLICY_ENFORCEMENT_POLICY_CHANGED          EventType = 76
-	EventType_EVENT_TYPE_POLICY_ENFORCEMENT_INCLUDE_TARGETS_CHANGED EventType = 77
+	EventType_EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED   EventType = 34
+	EventType_EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED    EventType = 35
+	EventType_EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED   EventType = 36
+	EventType_EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP       EventType = 37
+	EventType_EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_APPROVED EventType = 41
+	EventType_EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_DENIED   EventType = 42
+	EventType_EVENT_TYPE_PLUGIN_LABEL_CREATED                EventType = 44
+	EventType_EVENT_TYPE_PLUGIN_LABEL_MOVED                  EventType = 45
+	EventType_EVENT_TYPE_PLUGIN_LABEL_ARCHIVED               EventType = 46
+	EventType_EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED             EventType = 47
+	EventType_EVENT_TYPE_SERVER_REVIEW_FLOW_ENABLED          EventType = 69
+	EventType_EVENT_TYPE_SERVER_REVIEW_FLOW_DISABLED         EventType = 70
+	EventType_EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_CREATED       EventType = 71
+	EventType_EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_UPDATED       EventType = 72
+	EventType_EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_DELETED       EventType = 73
+	EventType_EVENT_TYPE_POLICY_ENFORCEMENT_CREATED          EventType = 74
+	EventType_EVENT_TYPE_POLICY_ENFORCEMENT_DELETED          EventType = 75
+	EventType_EVENT_TYPE_POLICY_ENFORCEMENT_POLICY_CHANGED   EventType = 76
+	EventType_EVENT_TYPE_POLICY_ENFORCEMENT_TARGETS_CHANGED  EventType = 77
 )
 
 // Enum value maps for EventType.
@@ -354,87 +354,87 @@ var (
 		74: "EVENT_TYPE_POLICY_ENFORCEMENT_CREATED",
 		75: "EVENT_TYPE_POLICY_ENFORCEMENT_DELETED",
 		76: "EVENT_TYPE_POLICY_ENFORCEMENT_POLICY_CHANGED",
-		77: "EVENT_TYPE_POLICY_ENFORCEMENT_INCLUDE_TARGETS_CHANGED",
+		77: "EVENT_TYPE_POLICY_ENFORCEMENT_TARGETS_CHANGED",
 	}
 	EventType_value = map[string]int32{
-		"EVENT_TYPE_UNSPECIFIED":                                0,
-		"EVENT_TYPE_ORGANIZATION_CREATED":                       1,
-		"EVENT_TYPE_ORGANIZATION_DELETED":                       2,
-		"EVENT_TYPE_ORGANIZATION_MEMBER_ADDED":                  3,
-		"EVENT_TYPE_ORGANIZATION_MEMBER_ROLE_CHANGED":           4,
-		"EVENT_TYPE_ORGANIZATION_MEMBER_ROLES_CHANGED":          50,
-		"EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED":                5,
-		"EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED":               21,
-		"EVENT_TYPE_ORGANIZATION_IDP_GROUP_UPDATED":             59,
-		"EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED":             22,
-		"EVENT_TYPE_REPOSITORY_CREATED":                         6,
-		"EVENT_TYPE_REPOSITORY_DEPRECATED":                      48,
-		"EVENT_TYPE_REPOSITORY_UNDEPRECATED":                    49,
-		"EVENT_TYPE_REPOSITORY_DELETED":                         7,
-		"EVENT_TYPE_REPOSITORY_COMMIT_PUSHED":                   8,
-		"EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ADDED":               9,
-		"EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLE_CHANGED":        10,
-		"EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLES_CHANGED":       63,
-		"EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED":             11,
-		"EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED":              12,
-		"EVENT_TYPE_REPOSITORY_DEFAULT_LABEL_NAME_CHANGED":      40,
-		"EVENT_TYPE_REPOSITORY_IDP_GROUP_ADDED":                 60,
-		"EVENT_TYPE_REPOSITORY_IDP_GROUP_UPDATED":               61,
-		"EVENT_TYPE_REPOSITORY_IDP_GROUP_REMOVED":               62,
-		"EVENT_TYPE_POLICY_CREATED":                             54,
-		"EVENT_TYPE_POLICY_DELETED":                             55,
-		"EVENT_TYPE_POLICY_DEPRECATED":                          56,
-		"EVENT_TYPE_POLICY_UNDEPRECATED":                        57,
-		"EVENT_TYPE_POLICY_VISIBILITY_CHANGED":                  58,
-		"EVENT_TYPE_POLICY_COMMIT_PUSHED":                       64,
-		"EVENT_TYPE_POLICY_LABEL_CREATED":                       65,
-		"EVENT_TYPE_POLICY_LABEL_MOVED":                         66,
-		"EVENT_TYPE_POLICY_LABEL_ARCHIVED":                      67,
-		"EVENT_TYPE_POLICY_LABEL_UNARCHIVED":                    68,
-		"EVENT_TYPE_PLUGIN_CREATED":                             13,
-		"EVENT_TYPE_PLUGIN_DELETED":                             14,
-		"EVENT_TYPE_PLUGIN_DEPRECATED":                          51,
-		"EVENT_TYPE_PLUGIN_UNDEPRECATED":                        52,
-		"EVENT_TYPE_PLUGIN_VISIBILITY_CHANGED":                  53,
-		"EVENT_TYPE_PLUGIN_COMMIT_PUSHED":                       43,
-		"EVENT_TYPE_CURATED_PLUGIN_CREATED":                     20,
-		"EVENT_TYPE_CURATED_PLUGIN_DELETED":                     31,
-		"EVENT_TYPE_USER_CREATED":                               15,
-		"EVENT_TYPE_USER_DELETED":                               16,
-		"EVENT_TYPE_USER_DEACTIVATED":                           17,
-		"EVENT_TYPE_USER_LOGGED_IN":                             18,
-		"EVENT_TYPE_USER_LOGGED_OUT":                            19,
-		"EVENT_TYPE_TOKEN_CREATED":                              23,
-		"EVENT_TYPE_TOKEN_DELETED":                              24,
-		"EVENT_TYPE_USER_REACTIVATED":                           25,
-		"EVENT_TYPE_SCIM_TOKEN_CREATED":                         26,
-		"EVENT_TYPE_SCIM_TOKEN_DELETED":                         27,
-		"EVENT_TYPE_REPOSITORY_COMMIT_DELETED":                  28,
-		"EVENT_TYPE_REPOSITORY_LABEL_CREATED":                   29,
-		"EVENT_TYPE_REPOSITORY_LABEL_MOVED":                     30,
-		"EVENT_TYPE_REPOSITORY_LABEL_ARCHIVED":                  38,
-		"EVENT_TYPE_REPOSITORY_LABEL_UNARCHIVED":                39,
-		"EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_ENABLED":      32,
-		"EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_DISABLED":     33,
-		"EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED":          34,
-		"EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED":           35,
-		"EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED":          36,
-		"EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP":              37,
-		"EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_APPROVED":        41,
-		"EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_DENIED":          42,
-		"EVENT_TYPE_PLUGIN_LABEL_CREATED":                       44,
-		"EVENT_TYPE_PLUGIN_LABEL_MOVED":                         45,
-		"EVENT_TYPE_PLUGIN_LABEL_ARCHIVED":                      46,
-		"EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED":                    47,
-		"EVENT_TYPE_SERVER_REVIEW_FLOW_ENABLED":                 69,
-		"EVENT_TYPE_SERVER_REVIEW_FLOW_DISABLED":                70,
-		"EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_CREATED":              71,
-		"EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_UPDATED":              72,
-		"EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_DELETED":              73,
-		"EVENT_TYPE_POLICY_ENFORCEMENT_CREATED":                 74,
-		"EVENT_TYPE_POLICY_ENFORCEMENT_DELETED":                 75,
-		"EVENT_TYPE_POLICY_ENFORCEMENT_POLICY_CHANGED":          76,
-		"EVENT_TYPE_POLICY_ENFORCEMENT_INCLUDE_TARGETS_CHANGED": 77,
+		"EVENT_TYPE_UNSPECIFIED":                            0,
+		"EVENT_TYPE_ORGANIZATION_CREATED":                   1,
+		"EVENT_TYPE_ORGANIZATION_DELETED":                   2,
+		"EVENT_TYPE_ORGANIZATION_MEMBER_ADDED":              3,
+		"EVENT_TYPE_ORGANIZATION_MEMBER_ROLE_CHANGED":       4,
+		"EVENT_TYPE_ORGANIZATION_MEMBER_ROLES_CHANGED":      50,
+		"EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED":            5,
+		"EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED":           21,
+		"EVENT_TYPE_ORGANIZATION_IDP_GROUP_UPDATED":         59,
+		"EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED":         22,
+		"EVENT_TYPE_REPOSITORY_CREATED":                     6,
+		"EVENT_TYPE_REPOSITORY_DEPRECATED":                  48,
+		"EVENT_TYPE_REPOSITORY_UNDEPRECATED":                49,
+		"EVENT_TYPE_REPOSITORY_DELETED":                     7,
+		"EVENT_TYPE_REPOSITORY_COMMIT_PUSHED":               8,
+		"EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ADDED":           9,
+		"EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLE_CHANGED":    10,
+		"EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLES_CHANGED":   63,
+		"EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED":         11,
+		"EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED":          12,
+		"EVENT_TYPE_REPOSITORY_DEFAULT_LABEL_NAME_CHANGED":  40,
+		"EVENT_TYPE_REPOSITORY_IDP_GROUP_ADDED":             60,
+		"EVENT_TYPE_REPOSITORY_IDP_GROUP_UPDATED":           61,
+		"EVENT_TYPE_REPOSITORY_IDP_GROUP_REMOVED":           62,
+		"EVENT_TYPE_POLICY_CREATED":                         54,
+		"EVENT_TYPE_POLICY_DELETED":                         55,
+		"EVENT_TYPE_POLICY_DEPRECATED":                      56,
+		"EVENT_TYPE_POLICY_UNDEPRECATED":                    57,
+		"EVENT_TYPE_POLICY_VISIBILITY_CHANGED":              58,
+		"EVENT_TYPE_POLICY_COMMIT_PUSHED":                   64,
+		"EVENT_TYPE_POLICY_LABEL_CREATED":                   65,
+		"EVENT_TYPE_POLICY_LABEL_MOVED":                     66,
+		"EVENT_TYPE_POLICY_LABEL_ARCHIVED":                  67,
+		"EVENT_TYPE_POLICY_LABEL_UNARCHIVED":                68,
+		"EVENT_TYPE_PLUGIN_CREATED":                         13,
+		"EVENT_TYPE_PLUGIN_DELETED":                         14,
+		"EVENT_TYPE_PLUGIN_DEPRECATED":                      51,
+		"EVENT_TYPE_PLUGIN_UNDEPRECATED":                    52,
+		"EVENT_TYPE_PLUGIN_VISIBILITY_CHANGED":              53,
+		"EVENT_TYPE_PLUGIN_COMMIT_PUSHED":                   43,
+		"EVENT_TYPE_CURATED_PLUGIN_CREATED":                 20,
+		"EVENT_TYPE_CURATED_PLUGIN_DELETED":                 31,
+		"EVENT_TYPE_USER_CREATED":                           15,
+		"EVENT_TYPE_USER_DELETED":                           16,
+		"EVENT_TYPE_USER_DEACTIVATED":                       17,
+		"EVENT_TYPE_USER_LOGGED_IN":                         18,
+		"EVENT_TYPE_USER_LOGGED_OUT":                        19,
+		"EVENT_TYPE_TOKEN_CREATED":                          23,
+		"EVENT_TYPE_TOKEN_DELETED":                          24,
+		"EVENT_TYPE_USER_REACTIVATED":                       25,
+		"EVENT_TYPE_SCIM_TOKEN_CREATED":                     26,
+		"EVENT_TYPE_SCIM_TOKEN_DELETED":                     27,
+		"EVENT_TYPE_REPOSITORY_COMMIT_DELETED":              28,
+		"EVENT_TYPE_REPOSITORY_LABEL_CREATED":               29,
+		"EVENT_TYPE_REPOSITORY_LABEL_MOVED":                 30,
+		"EVENT_TYPE_REPOSITORY_LABEL_ARCHIVED":              38,
+		"EVENT_TYPE_REPOSITORY_LABEL_UNARCHIVED":            39,
+		"EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_ENABLED":  32,
+		"EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_DISABLED": 33,
+		"EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED":      34,
+		"EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED":       35,
+		"EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED":      36,
+		"EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP":          37,
+		"EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_APPROVED":    41,
+		"EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_DENIED":      42,
+		"EVENT_TYPE_PLUGIN_LABEL_CREATED":                   44,
+		"EVENT_TYPE_PLUGIN_LABEL_MOVED":                     45,
+		"EVENT_TYPE_PLUGIN_LABEL_ARCHIVED":                  46,
+		"EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED":                47,
+		"EVENT_TYPE_SERVER_REVIEW_FLOW_ENABLED":             69,
+		"EVENT_TYPE_SERVER_REVIEW_FLOW_DISABLED":            70,
+		"EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_CREATED":          71,
+		"EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_UPDATED":          72,
+		"EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_DELETED":          73,
+		"EVENT_TYPE_POLICY_ENFORCEMENT_CREATED":             74,
+		"EVENT_TYPE_POLICY_ENFORCEMENT_DELETED":             75,
+		"EVENT_TYPE_POLICY_ENFORCEMENT_POLICY_CHANGED":      76,
+		"EVENT_TYPE_POLICY_ENFORCEMENT_TARGETS_CHANGED":     77,
 	}
 )
 
@@ -11190,7 +11190,8 @@ type PayloadPolicyEnforcementCreated struct {
 	state                     protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_EnforcementId  string                 `protobuf:"bytes,1,opt,name=enforcement_id,json=enforcementId,proto3"`
 	xxx_hidden_PolicyId       string                 `protobuf:"bytes,2,opt,name=policy_id,json=policyId,proto3"`
-	xxx_hidden_IncludeTargets []string               `protobuf:"bytes,3,rep,name=include_targets,json=includeTargets,proto3"`
+	xxx_hidden_PolicyRef      string                 `protobuf:"bytes,3,opt,name=policy_ref,json=policyRef,proto3"`
+	xxx_hidden_IncludeTargets []string               `protobuf:"bytes,4,rep,name=include_targets,json=includeTargets,proto3"`
 	unknownFields             protoimpl.UnknownFields
 	sizeCache                 protoimpl.SizeCache
 }
@@ -11234,6 +11235,13 @@ func (x *PayloadPolicyEnforcementCreated) GetPolicyId() string {
 	return ""
 }
 
+func (x *PayloadPolicyEnforcementCreated) GetPolicyRef() string {
+	if x != nil {
+		return x.xxx_hidden_PolicyRef
+	}
+	return ""
+}
+
 func (x *PayloadPolicyEnforcementCreated) GetIncludeTargets() []string {
 	if x != nil {
 		return x.xxx_hidden_IncludeTargets
@@ -11249,6 +11257,10 @@ func (x *PayloadPolicyEnforcementCreated) SetPolicyId(v string) {
 	x.xxx_hidden_PolicyId = v
 }
 
+func (x *PayloadPolicyEnforcementCreated) SetPolicyRef(v string) {
+	x.xxx_hidden_PolicyRef = v
+}
+
 func (x *PayloadPolicyEnforcementCreated) SetIncludeTargets(v []string) {
 	x.xxx_hidden_IncludeTargets = v
 }
@@ -11260,6 +11272,8 @@ type PayloadPolicyEnforcementCreated_builder struct {
 	EnforcementId string
 	// policy_id is the id of the policy that is enforced.
 	PolicyId string
+	// policy_ref is the reference of the policy that is enforced.
+	PolicyRef string
 	// include_targets are the include targets of the policy enforcement.
 	IncludeTargets []string
 }
@@ -11270,6 +11284,7 @@ func (b0 PayloadPolicyEnforcementCreated_builder) Build() *PayloadPolicyEnforcem
 	_, _ = b, x
 	x.xxx_hidden_EnforcementId = b.EnforcementId
 	x.xxx_hidden_PolicyId = b.PolicyId
+	x.xxx_hidden_PolicyRef = b.PolicyRef
 	x.xxx_hidden_IncludeTargets = b.IncludeTargets
 	return m0
 }
@@ -11337,6 +11352,8 @@ type PayloadPolicyEnforcementPolicyChanged struct {
 	xxx_hidden_EnforcementId string                 `protobuf:"bytes,1,opt,name=enforcement_id,json=enforcementId,proto3"`
 	xxx_hidden_OldPolicyId   string                 `protobuf:"bytes,2,opt,name=old_policy_id,json=oldPolicyId,proto3"`
 	xxx_hidden_NewPolicyId   string                 `protobuf:"bytes,3,opt,name=new_policy_id,json=newPolicyId,proto3"`
+	xxx_hidden_OldPolicyRef  string                 `protobuf:"bytes,4,opt,name=old_policy_ref,json=oldPolicyRef,proto3"`
+	xxx_hidden_NewPolicyRef  string                 `protobuf:"bytes,5,opt,name=new_policy_ref,json=newPolicyRef,proto3"`
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
@@ -11387,6 +11404,20 @@ func (x *PayloadPolicyEnforcementPolicyChanged) GetNewPolicyId() string {
 	return ""
 }
 
+func (x *PayloadPolicyEnforcementPolicyChanged) GetOldPolicyRef() string {
+	if x != nil {
+		return x.xxx_hidden_OldPolicyRef
+	}
+	return ""
+}
+
+func (x *PayloadPolicyEnforcementPolicyChanged) GetNewPolicyRef() string {
+	if x != nil {
+		return x.xxx_hidden_NewPolicyRef
+	}
+	return ""
+}
+
 func (x *PayloadPolicyEnforcementPolicyChanged) SetEnforcementId(v string) {
 	x.xxx_hidden_EnforcementId = v
 }
@@ -11399,6 +11430,14 @@ func (x *PayloadPolicyEnforcementPolicyChanged) SetNewPolicyId(v string) {
 	x.xxx_hidden_NewPolicyId = v
 }
 
+func (x *PayloadPolicyEnforcementPolicyChanged) SetOldPolicyRef(v string) {
+	x.xxx_hidden_OldPolicyRef = v
+}
+
+func (x *PayloadPolicyEnforcementPolicyChanged) SetNewPolicyRef(v string) {
+	x.xxx_hidden_NewPolicyRef = v
+}
+
 type PayloadPolicyEnforcementPolicyChanged_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -11408,6 +11447,10 @@ type PayloadPolicyEnforcementPolicyChanged_builder struct {
 	OldPolicyId string
 	// new_policy_id is the id of the new policy.
 	NewPolicyId string
+	// old_policy_ref is the reference of the old policy.
+	OldPolicyRef string
+	// new_policy_ref is the reference of the new policy.
+	NewPolicyRef string
 }
 
 func (b0 PayloadPolicyEnforcementPolicyChanged_builder) Build() *PayloadPolicyEnforcementPolicyChanged {
@@ -11417,6 +11460,8 @@ func (b0 PayloadPolicyEnforcementPolicyChanged_builder) Build() *PayloadPolicyEn
 	x.xxx_hidden_EnforcementId = b.EnforcementId
 	x.xxx_hidden_OldPolicyId = b.OldPolicyId
 	x.xxx_hidden_NewPolicyId = b.NewPolicyId
+	x.xxx_hidden_OldPolicyRef = b.OldPolicyRef
+	x.xxx_hidden_NewPolicyRef = b.NewPolicyRef
 	return m0
 }
 
@@ -12167,17 +12212,21 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\x11plugin_owner_name\x18\x06 \x01(\tR\x0fpluginOwnerName\x12\x1b\n" +
 	"\tplugin_id\x18\a \x01(\tR\bpluginId\x12\x1f\n" +
 	"\vplugin_name\x18\b \x01(\tR\n" +
-	"pluginName\"\x8e\x01\n" +
+	"pluginName\"\xad\x01\n" +
 	"\x1fPayloadPolicyEnforcementCreated\x12%\n" +
 	"\x0eenforcement_id\x18\x01 \x01(\tR\renforcementId\x12\x1b\n" +
-	"\tpolicy_id\x18\x02 \x01(\tR\bpolicyId\x12'\n" +
-	"\x0finclude_targets\x18\x03 \x03(\tR\x0eincludeTargets\"H\n" +
+	"\tpolicy_id\x18\x02 \x01(\tR\bpolicyId\x12\x1d\n" +
+	"\n" +
+	"policy_ref\x18\x03 \x01(\tR\tpolicyRef\x12'\n" +
+	"\x0finclude_targets\x18\x04 \x03(\tR\x0eincludeTargets\"H\n" +
 	"\x1fPayloadPolicyEnforcementDeleted\x12%\n" +
-	"\x0eenforcement_id\x18\x01 \x01(\tR\renforcementId\"\x96\x01\n" +
+	"\x0eenforcement_id\x18\x01 \x01(\tR\renforcementId\"\xe2\x01\n" +
 	"%PayloadPolicyEnforcementPolicyChanged\x12%\n" +
 	"\x0eenforcement_id\x18\x01 \x01(\tR\renforcementId\x12\"\n" +
 	"\rold_policy_id\x18\x02 \x01(\tR\voldPolicyId\x12\"\n" +
-	"\rnew_policy_id\x18\x03 \x01(\tR\vnewPolicyId\"\xb6\x01\n" +
+	"\rnew_policy_id\x18\x03 \x01(\tR\vnewPolicyId\x12$\n" +
+	"\x0eold_policy_ref\x18\x04 \x01(\tR\foldPolicyRef\x12$\n" +
+	"\x0enew_policy_ref\x18\x05 \x01(\tR\fnewPolicyRef\"\xb6\x01\n" +
 	"-PayloadPolicyEnforcementIncludeTargetsChanged\x12%\n" +
 	"\x0eenforcement_id\x18\x01 \x01(\tR\renforcementId\x12.\n" +
 	"\x13old_include_targets\x18\x02 \x03(\tR\x11oldIncludeTargets\x12.\n" +
@@ -12209,7 +12258,7 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\x14RESOURCE_TYPE_SERVER\x10\r\x12,\n" +
 	"(RESOURCE_TYPE_DEVICE_AUTHORIZATION_GRANT\x10\x0e\x12\x1e\n" +
 	"\x1aRESOURCE_TYPE_PLUGIN_LABEL\x10\x10\x12'\n" +
-	"#RESOURCE_TYPE_SDK_PLUGIN_CONSTRAINT\x10\x15*\x93\x19\n" +
+	"#RESOURCE_TYPE_SDK_PLUGIN_CONSTRAINT\x10\x15*\x8b\x19\n" +
 	"\tEventType\x12\x1a\n" +
 	"\x16EVENT_TYPE_UNSPECIFIED\x10\x00\x12#\n" +
 	"\x1fEVENT_TYPE_ORGANIZATION_CREATED\x10\x01\x12#\n" +
@@ -12288,8 +12337,8 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"(EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_DELETED\x10I\x12)\n" +
 	"%EVENT_TYPE_POLICY_ENFORCEMENT_CREATED\x10J\x12)\n" +
 	"%EVENT_TYPE_POLICY_ENFORCEMENT_DELETED\x10K\x120\n" +
-	",EVENT_TYPE_POLICY_ENFORCEMENT_POLICY_CHANGED\x10L\x129\n" +
-	"5EVENT_TYPE_POLICY_ENFORCEMENT_INCLUDE_TARGETS_CHANGED\x10MB\x82\x02\n" +
+	",EVENT_TYPE_POLICY_ENFORCEMENT_POLICY_CHANGED\x10L\x121\n" +
+	"-EVENT_TYPE_POLICY_ENFORCEMENT_TARGETS_CHANGED\x10MB\x82\x02\n" +
 	"\x1ccom.buf.alpha.audit.v1alpha1B\n" +
 	"EventProtoP\x01ZSgithub.com/bufbuild/buf/private/gen/proto/go/buf/alpha/audit/v1alpha1;auditv1alpha1\xa2\x02\x03BAA\xaa\x02\x18Buf.Alpha.Audit.V1alpha1\xca\x02\x18Buf\\Alpha\\Audit\\V1alpha1\xe2\x02$Buf\\Alpha\\Audit\\V1alpha1\\GPBMetadata\xea\x02\x1bBuf::Alpha::Audit::V1alpha1b\x06proto3"
 
