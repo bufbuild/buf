@@ -22,10 +22,8 @@ import (
 
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
-	"buf.build/go/bufplugin/option"
 	"buf.build/go/standard/xslices"
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapipolicy"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -143,12 +141,8 @@ func (u *uploader) uploadIndexedPoliciesForRegistry(
 		lintConfig := config.LintConfig()
 		breakingConfig := config.BreakingConfig()
 		pluginConfigs := config.PluginConfigs()
-		pluginConfigsProto, err := xslices.MapError(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) (*policyv1beta1.PolicyConfig_CheckPluginConfig, error) {
-			options, err := option.NewOptions(pluginConfig.Options())
-			if err != nil {
-				return nil, err
-			}
-			optionsProto, err := options.ToProto()
+		pluginConfigsProto, err := xslices.MapError(pluginConfigs, func(pluginConfig bufpolicy.PluginConfig) (*policyv1beta1.PolicyConfig_CheckPluginConfig, error) {
+			optionsProto, err := pluginConfig.Options().ToProto()
 			if err != nil {
 				return nil, err
 			}
