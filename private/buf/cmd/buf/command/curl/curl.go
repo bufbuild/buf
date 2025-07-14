@@ -1183,7 +1183,7 @@ func makeHTTP3RoundTripper(f *flags, authority string, printer verbose.Printer) 
 	roundTripper := &http3.Transport{
 		TLSClientConfig: tlsConfig,
 		QUICConfig:      quicCfg,
-		Dial: func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlyConnection, error) {
+		Dial: func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
 			printer.Printf("* Dialing (udp) %s...", addr)
 			udpAddr, err := net.ResolveUDPAddr("udp", addr)
 			if err != nil {
