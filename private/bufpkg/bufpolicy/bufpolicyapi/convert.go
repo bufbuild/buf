@@ -74,17 +74,6 @@ func V1Beta1ProtoToPolicyConfig(registry string, policyConfigV1Beta1 *policyv1be
 	)
 }
 
-//// PolicyConfigToV1Beta1Proto converts the given PolicyConfig to a proto PolicyConfig.
-//func PolicyConfigToV1Beta1Proto(bufpolicy.PolicyConfig) (*policyv1beta1.PolicyConfig, error) {
-//	// This function is not implemented in this example.
-//	// In a real implementation, it would convert a bufpolicy.PolicyConfig
-//	// to a policyv1beta1.PolicyConfig.
-//	return nil, fmt.Errorf("PolicyConfigToV1Beta1Proto is not implemented")
-//	lintConfig, err := bufpolicy.NewLintConfig(
-//
-//	)
-//}
-
 // *** PRIVATE ***
 
 func policyVisibilityToV1Beta1Proto(policyVisibility bufpolicy.PolicyVisibility) (policyv1beta1.PolicyVisibility, error) {
