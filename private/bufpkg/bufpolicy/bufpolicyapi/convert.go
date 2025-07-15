@@ -21,7 +21,6 @@ import (
 	"buf.build/go/bufplugin/option"
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 )
@@ -50,9 +49,41 @@ func V1Beta1ProtoToDigest(protoDigest *policyv1beta1.Digest) (bufpolicy.Digest, 
 
 // V1Beta1ProtoToPolicyConfig converts the given proto PolicyConfig to a PolicyConfig.
 // The registry is used to resolve plugin references.
-func V1Beta1ProtoToPolicyConfig(registry string, protoPolicyConfig *policyv1beta1.PolicyConfig) (bufpolicy.PolicyConfig, error) {
-	return newPolicyConfig(registry, protoPolicyConfig)
+func V1Beta1ProtoToPolicyConfig(registry string, policyConfigV1Beta1 *policyv1beta1.PolicyConfig) (bufpolicy.PolicyConfig, error) {
+	lintConfig, err := getLintConfigForV1Beta1LintConfig(policyConfigV1Beta1.GetLint())
+	if err != nil {
+		return nil, err
+	}
+	breakingConfig, err := getBreakingConfigForV1Beta1BreakingConfig(policyConfigV1Beta1.GetBreaking())
+	if err != nil {
+		return nil, err
+	}
+	pluginConfigs, err := xslices.MapError(
+		policyConfigV1Beta1.GetPlugins(),
+		func(pluginConfigV1Beta1 *policyv1beta1.PolicyConfig_CheckPluginConfig) (bufpolicy.PluginConfig, error) {
+			return getPluginConfigForV1Beta1PluginConfig(registry, pluginConfigV1Beta1)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return bufpolicy.NewPolicyConfig(
+		lintConfig,
+		breakingConfig,
+		pluginConfigs,
+	)
 }
+
+//// PolicyConfigToV1Beta1Proto converts the given PolicyConfig to a proto PolicyConfig.
+//func PolicyConfigToV1Beta1Proto(bufpolicy.PolicyConfig) (*policyv1beta1.PolicyConfig, error) {
+//	// This function is not implemented in this example.
+//	// In a real implementation, it would convert a bufpolicy.PolicyConfig
+//	// to a policyv1beta1.PolicyConfig.
+//	return nil, fmt.Errorf("PolicyConfigToV1Beta1Proto is not implemented")
+//	lintConfig, err := bufpolicy.NewLintConfig(
+//
+//	)
+//}
 
 // *** PRIVATE ***
 
@@ -75,140 +106,28 @@ func v1beta1ProtoToDigestType(protoDigestType policyv1beta1.DigestType) (bufpoli
 	return digestType, nil
 }
 
-// policyConfig implements bufpolicy.PolicyConfig.
-type policyConfig struct {
-	lintConfig     bufpolicy.LintConfig
-	breakingConfig bufpolicy.BreakingConfig
-	pluginConfigs  []bufpolicy.PluginConfig
-}
-
-func newPolicyConfig(
-	registry string,
-	policyConfigV1Beta1 *policyv1beta1.PolicyConfig,
-) (*policyConfig, error) {
-	if policyConfigV1Beta1 == nil {
-		return nil, fmt.Errorf("policyConfigV1Beta1 must not be nil")
-	}
-	lintConfig, err := getLintConfigForV1Beta1LintConfig(policyConfigV1Beta1.Lint)
-	if err != nil {
-		return nil, err
-	}
-	breakingConfig, err := getBreakingConfigForV1Beta1BreakingConfig(policyConfigV1Beta1.Breaking)
-	if err != nil {
-		return nil, err
-	}
-	pluginConfigs, err := xslices.MapError(
-		policyConfigV1Beta1.Plugins,
-		func(pluginConfigV1Beta1 *policyv1beta1.PolicyConfig_CheckPluginConfig) (bufpolicy.PluginConfig, error) {
-			return getPluginConfigForV1Beta1PluginConfig(registry, pluginConfigV1Beta1)
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &policyConfig{
-		lintConfig:     lintConfig,
-		breakingConfig: breakingConfig,
-		pluginConfigs:  pluginConfigs,
-	}, nil
-}
-
-// LintConfig returns the LintConfig for the File.
-func (p *policyConfig) LintConfig() bufpolicy.LintConfig {
-	return p.lintConfig
-}
-
-// BreakingConfig returns the BreakingConfig for the File.
-func (p *policyConfig) BreakingConfig() bufpolicy.BreakingConfig {
-	return p.breakingConfig
-}
-
-// PluginConfigs returns the PluginConfigs for the File.
-func (p *policyConfig) PluginConfigs() []bufpolicy.PluginConfig {
-	return p.pluginConfigs
-}
-
-// pluginConfig implements bufpolicy.PluginConfig.
-type pluginConfig struct {
-	name    string
-	ref     bufparse.Ref
-	options option.Options
-	args    []string
-}
-
-func newPluginConfig(
-	name string,
-	ref bufparse.Ref,
-	options option.Options,
-	args []string,
-) *pluginConfig {
-	return &pluginConfig{
-		name:    name,
-		ref:     ref,
-		options: options,
-		args:    args,
-	}
-}
-
-func (p *pluginConfig) Name() string {
-	return p.name
-}
-
-func (p *pluginConfig) Ref() bufparse.Ref {
-	return p.ref
-}
-
-func (p *pluginConfig) Options() option.Options {
-	return p.options
-}
-
-func (p *pluginConfig) Args() []string {
-	return p.args
-}
-
 func getLintConfigForV1Beta1LintConfig(
 	lintConfigV1Beta1 *policyv1beta1.PolicyConfig_LintConfig,
 ) (bufpolicy.LintConfig, error) {
-	checkConfig, err := bufconfig.NewEnabledCheckConfig(
-		bufconfig.FileVersionV2,
+	return bufpolicy.NewLintConfig(
 		lintConfigV1Beta1.GetUse(),
 		lintConfigV1Beta1.GetExcept(),
-		nil,
-		nil,
-		false,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return bufconfig.NewLintConfig(
-		checkConfig,
 		lintConfigV1Beta1.GetEnumZeroValueSuffix(),
 		lintConfigV1Beta1.GetRpcAllowSameRequestResponse(),
 		lintConfigV1Beta1.GetRpcAllowGoogleProtobufEmptyRequests(),
 		lintConfigV1Beta1.GetRpcAllowGoogleProtobufEmptyResponses(),
 		lintConfigV1Beta1.GetServiceSuffix(),
-		false, // Comment ignores are not allowed in Policy files.
-	), nil
+	)
 }
 
 func getBreakingConfigForV1Beta1BreakingConfig(
 	breakingConfigV1Beta1 *policyv1beta1.PolicyConfig_BreakingConfig,
 ) (bufpolicy.BreakingConfig, error) {
-	checkConfig, err := bufconfig.NewEnabledCheckConfig(
-		bufconfig.FileVersionV2,
+	return bufpolicy.NewBreakingConfig(
 		breakingConfigV1Beta1.GetUse(),
 		breakingConfigV1Beta1.GetExcept(),
-		nil,
-		nil,
-		false,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return bufconfig.NewBreakingConfig(
-		checkConfig,
 		breakingConfigV1Beta1.GetIgnoreUnstablePackages(),
-	), nil
+	)
 }
 
 func getPluginConfigForV1Beta1PluginConfig(
@@ -225,14 +144,14 @@ func getPluginConfigForV1Beta1PluginConfig(
 	if err != nil {
 		return nil, err
 	}
-	options, err := option.OptionsForProtoOptions(pluginConfigV1Beta1.GetOptions())
+	pluginOptions, err := option.OptionsForProtoOptions(pluginConfigV1Beta1.GetOptions())
 	if err != nil {
 		return nil, err
 	}
-	return newPluginConfig(
-		pluginRef.String(),
+	return bufpolicy.NewPluginConfig(
+		nameV1Beta1.String(),
 		pluginRef,
-		options,
+		pluginOptions,
 		pluginConfigV1Beta1.GetArgs(),
-	), nil
+	)
 }
