@@ -22,7 +22,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -39,7 +38,6 @@ type runner struct {
 	shutdownTimeout   time.Duration
 	readHeaderTimeout time.Duration
 	tlsConfig         *tls.Config
-	walkFunc          chi.WalkFunc
 	disableH2C        bool
 }
 
@@ -72,17 +70,6 @@ func RunWithReadHeaderTimeout(readHeaderTimeout time.Duration) RunOption {
 func RunWithTLSConfig(tlsConfig *tls.Config) RunOption {
 	return func(runner *runner) {
 		runner.tlsConfig = tlsConfig
-	}
-}
-
-// RunWithWalkFunc returns a new RunOption that runs chi.Walk to walk the
-// handler after all middlewares and routes have been mounted, but before the
-// server is started.
-// The walkFunc will only be called if the handler passed to Run is a
-// chi.Routes.
-func RunWithWalkFunc(walkFunc chi.WalkFunc) RunOption {
-	return func(runner *runner) {
-		runner.walkFunc = walkFunc
 	}
 }
 
@@ -124,14 +111,6 @@ func Run(
 		TLSConfig:         s.tlsConfig,
 		Protocols:         protocols,
 		IdleTimeout:       DefaultIdleTimeout,
-	}
-	if s.walkFunc != nil {
-		routes, ok := handler.(chi.Routes)
-		if ok {
-			if err := chi.Walk(routes, s.walkFunc); err != nil {
-				return err
-			}
-		}
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
