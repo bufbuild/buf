@@ -16,6 +16,8 @@ package bufanalysis
 
 import (
 	"bytes"
+	"crypto/sha1"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -322,4 +324,51 @@ func printEachAnnotationOnNewLine(
 		}
 	}
 	return nil
+}
+
+func printAsCodeClimate(writer io.Writer, fileAnnotations []FileAnnotation) error {
+
+	var report []CodeQualityViolation
+
+	for _, ann := range fileAnnotations {
+		path := ""
+		if fi := ann.FileInfo(); fi != nil {
+			path = fi.Path()
+		}
+
+		var location CodeQualityLocation
+		if ann.StartColumn() > 0 || ann.EndColumn() > 0 {
+			location = CodeQualityLocation{
+				Path: path,
+				Positions: &CodeQualityPositionRange{
+					Begin: CodeQualityPosition{
+						Line: ann.StartLine(),
+					},
+				},
+			}
+		} else {
+			location = CodeQualityLocation{
+				Path: path,
+				Lines: &CodeQualityLineRange{
+					Begin: ann.StartLine(),
+				},
+			}
+		}
+
+		report = append(report, CodeQualityViolation{
+			Description: ann.Message(),
+			CheckName:   ann.Type(),
+			Fingerprint: fmt.Sprintf("%x", hashAnnotation(ann)), // see hashing below
+			Location:    location,
+			Severity:    "minor", // Default; no idea what this should be
+		})
+	}
+
+	return json.NewEncoder(writer).Encode(CodeQualityReport(report))
+}
+
+func hashAnnotation(ann FileAnnotation) string {
+	data := fmt.Sprintf("%s-%s-%d", ann.Type(), ann.Message(), ann.StartLine())
+	hash := sha1.Sum([]byte(data))
+	return base64.StdEncoding.EncodeToString(hash[:])
 }
