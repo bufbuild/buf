@@ -179,6 +179,13 @@ func MarshalPolicyConfigAsJSON(policyConfig PolicyConfig) ([]byte, error) {
 	return marshalPolicyConfigAsJSON(policyConfig)
 }
 
+// UnmarshalJSONPolicyConfig unmarshals the given JSON data into a PolicyConfig.
+//
+// Data is a valid JSON encoding of the type buf.registry.policy.v1beta1.PolicyConfig.
+func UnmarshalJSONPolicyConfig(registry string, data []byte) (PolicyConfig, error) {
+	return unmarshalJSONPolicyConfig(registry, data)
+}
+
 // *** PRIVATE ***
 
 type policyConfig struct {
@@ -388,6 +395,68 @@ func marshalPolicyConfigAsJSON(policyConfig PolicyConfig) ([]byte, error) {
 		return nil, syserror.Newf("not a valid JSON representation of type buf.registry.policy.v1beta1.PolicyConfig: %w", err)
 	}
 	return data, nil
+}
+
+func unmarshalJSONPolicyConfig(registry string, data []byte) (PolicyConfig, error) {
+	var policyConfigV1Beta1 policyv1beta1.PolicyConfig
+	if err := protoencoding.NewJSONUnmarshaler(nil, protoencoding.JSONUnmarshalerWithDisallowUnknown()).Unmarshal(data, &policyConfigV1Beta1); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JSON as PolicyConfig: %w", err)
+	}
+	lintConfigV1Beta1 := policyConfigV1Beta1.GetLint()
+	lintConfig, err := newLintConfig(
+		lintConfigV1Beta1.GetUse(),
+		lintConfigV1Beta1.GetExcept(),
+		lintConfigV1Beta1.GetEnumZeroValueSuffix(),
+		lintConfigV1Beta1.GetRpcAllowSameRequestResponse(),
+		lintConfigV1Beta1.GetRpcAllowGoogleProtobufEmptyRequests(),
+		lintConfigV1Beta1.GetRpcAllowGoogleProtobufEmptyResponses(),
+		lintConfigV1Beta1.GetServiceSuffix(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	breakingConfigV1Beta1 := policyConfigV1Beta1.GetBreaking()
+	breakingConfig, err := newBreakingConfig(
+		breakingConfigV1Beta1.GetUse(),
+		breakingConfigV1Beta1.GetExcept(),
+		breakingConfigV1Beta1.GetIgnoreUnstablePackages(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	pluginConfigs, err := xslices.MapError(
+		policyConfigV1Beta1.GetPlugins(),
+		func(pluginConfigV1Beta1 *policyv1beta1.PolicyConfig_CheckPluginConfig) (PluginConfig, error) {
+			nameV1Beta1 := pluginConfigV1Beta1.GetName()
+			pluginRef, err := bufparse.NewRef(
+				registry,
+				nameV1Beta1.GetOwner(),
+				nameV1Beta1.GetPlugin(),
+				nameV1Beta1.GetRef(),
+			)
+			if err != nil {
+				return nil, err
+			}
+			pluginOptions, err := option.OptionsForProtoOptions(pluginConfigV1Beta1.GetOptions())
+			if err != nil {
+				return nil, err
+			}
+			return newPluginConfig(
+				nameV1Beta1.String(),
+				pluginRef,
+				pluginOptions,
+				pluginConfigV1Beta1.GetArgs(),
+			)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return newPolicyConfig(
+		lintConfig,
+		breakingConfig,
+		pluginConfigs,
+	)
 }
 
 // policyV1Beta1PolicyConfig is a stable JSON representation of the buf.registry.policy.v1beta1.PolicyConfig.

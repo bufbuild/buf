@@ -74,6 +74,52 @@ func V1Beta1ProtoToPolicyConfig(registry string, policyConfigV1Beta1 *policyv1be
 	)
 }
 
+// PolicyConfigToV1Beta1Proto converts the given PolicyConfig to a proto PolicyConfig.
+func PolicyConfigToV1Beta1Proto(policyConfig bufpolicy.PolicyConfig) (*policyv1beta1.PolicyConfig, error) {
+	pluginConfigs, err := xslices.MapError(
+		policyConfig.PluginConfigs(),
+		func(pluginConfig bufpolicy.PluginConfig) (*policyv1beta1.PolicyConfig_CheckPluginConfig, error) {
+			pluginRef := pluginConfig.Ref()
+			if pluginRef == nil {
+				return nil, fmt.Errorf("plugin config %q has no reference", pluginConfig.Name())
+			}
+			pluginOptions, err := pluginConfig.Options().ToProto()
+			if err != nil {
+				return nil, err
+			}
+			return &policyv1beta1.PolicyConfig_CheckPluginConfig{
+				Name: &policyv1beta1.PolicyConfig_CheckPluginConfig_Name{
+					Owner:  pluginRef.FullName().Owner(),
+					Plugin: pluginRef.FullName().Name(),
+					Ref:    pluginRef.Ref(),
+				},
+				Options: pluginOptions,
+				Args:    pluginConfig.Args(),
+			}, nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &policyv1beta1.PolicyConfig{
+		Lint: &policyv1beta1.PolicyConfig_LintConfig{
+			Use:                                  policyConfig.LintConfig().UseIDsAndCategories(),
+			Except:                               policyConfig.LintConfig().ExceptIDsAndCategories(),
+			EnumZeroValueSuffix:                  policyConfig.LintConfig().EnumZeroValueSuffix(),
+			RpcAllowSameRequestResponse:          policyConfig.LintConfig().RPCAllowSameRequestResponse(),
+			RpcAllowGoogleProtobufEmptyRequests:  policyConfig.LintConfig().RPCAllowGoogleProtobufEmptyRequests(),
+			RpcAllowGoogleProtobufEmptyResponses: policyConfig.LintConfig().RPCAllowGoogleProtobufEmptyResponses(),
+			ServiceSuffix:                        policyConfig.LintConfig().ServiceSuffix(),
+		},
+		Breaking: &policyv1beta1.PolicyConfig_BreakingConfig{
+			Use:                    policyConfig.BreakingConfig().UseIDsAndCategories(),
+			Except:                 policyConfig.BreakingConfig().ExceptIDsAndCategories(),
+			IgnoreUnstablePackages: policyConfig.BreakingConfig().IgnoreUnstablePackages(),
+		},
+		Plugins: pluginConfigs,
+	}, nil
+}
+
 // *** PRIVATE ***
 
 func policyVisibilityToV1Beta1Proto(policyVisibility bufpolicy.PolicyVisibility) (policyv1beta1.PolicyVisibility, error) {
