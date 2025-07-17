@@ -234,7 +234,7 @@ func PrintFileAnnotationSet(writer io.Writer, fileAnnotationSet FileAnnotationSe
 	case FormatGithubActions:
 		return printAsGithubActions(writer, fileAnnotationSet.FileAnnotations())
 	case FormatGitlab:
-		return printAsCodeClimate(writer, fileAnnotationSet.FileAnnotations())
+		return printAsGitLabCodeQuality(writer, fileAnnotationSet.FileAnnotations())
 	default:
 		return fmt.Errorf("unknown FileAnnotation Format: %v", format)
 	}

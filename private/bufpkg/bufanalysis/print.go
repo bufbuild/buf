@@ -326,7 +326,7 @@ func printEachAnnotationOnNewLine(
 	return nil
 }
 
-func printAsCodeClimate(writer io.Writer, fileAnnotations []FileAnnotation) error {
+func printAsGitLabCodeQuality(writer io.Writer, fileAnnotations []FileAnnotation) error {
 
 	var report []CodeQualityViolation
 
