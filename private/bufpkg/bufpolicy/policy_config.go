@@ -18,23 +18,157 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"sort"
 	"strings"
 
 	pluginoptionv1 "buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go/buf/plugin/option/v1"
+	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
 	"buf.build/go/bufplugin/option"
 	"buf.build/go/standard/xslices"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 // PolicyConfig is the configuration for a Policy.
 type PolicyConfig interface {
-	// LintConfig returns the LintConfig for the File.
-	LintConfig() bufconfig.LintConfig
-	// BreakingConfig returns the BreakingConfig for the File.
-	BreakingConfig() bufconfig.BreakingConfig
-	// PluginConfigs returns the PluginConfigs for the File.
-	PluginConfigs() []bufconfig.PluginConfig
+	// LintConfig returns the LintConfig for the Policy.
+	LintConfig() LintConfig
+	// BreakingConfig returns the BreakingConfig for the Policy.
+	BreakingConfig() BreakingConfig
+	// PluginConfigs returns an iterator over PluginConfig for the Policy.
+	//
+	// Sorted by plugin name.
+	PluginConfigs() []PluginConfig
+
+	isPolicyConfig()
+}
+
+// LintConfig is the configuration for a Policy Lint.
+type LintConfig interface {
+	// The list of check rules and/or categories used for the Policy.
+	//
+	// Sorted.
+	UseIDsAndCategories() []string
+	// The list of check rules and/or categories to exclude for the Policy.
+	//
+	// Sorted.
+	ExceptIDsAndCategories() []string
+	// EnumZeroValueSuffix returns the suffix that controls the behavior of the
+	// ENUM_ZERO_VALUE_SUFFIX lint rule. By default, this rule verifies that the zero value of all
+	// enums ends in `_UNSPECIFIED`, however, this allows organizations to choose a different
+	// suffix.
+	EnumZeroValueSuffix() string
+	// RPCAllowSameRequestResponse returns true to allow the same message type to be used for a
+	// single RPC's request and response type.
+	RPCAllowSameRequestResponse() bool
+	// RPCAllowGoogleProtobufEmptyRequests returns true to allow RPC requests to be
+	// google.protobuf.Empty messages.
+	RPCAllowGoogleProtobufEmptyRequests() bool
+	// RPCAllowGoogleProtobufEmptyResponses returns true to allow RPC responses to be
+	// google.protobuf.Empty messages.
+	RPCAllowGoogleProtobufEmptyResponses() bool
+	// ServiceSuffix returns the suffix that controls the behavior of the SERVICE_SUFFIX lint rule.
+	// By default, this rule verifies that all service names are suffixed with `Service`, however
+	// this allows organizations to choose a different suffix.
+	ServiceSuffix() string
+
+	isLintConfig()
+}
+
+// BreakingConfig is the configuration for a Policy Breaking.
+type BreakingConfig interface {
+	// The list of check rules and/or categories used for the Policy.
+	//
+	// Sorted.
+	UseIDsAndCategories() []string
+	// The list of check rules and/or categories to exclude for the Policy.
+	//
+	// Sorted.
+	ExceptIDsAndCategories() []string
+	// IgnoreUnstablePackages returns true if unstable packages should be ignored:
+	//   - v\d+test.*
+	//   - v\d+(alpha|beta)\d*
+	//   - v\d+p\d+(alpha|beta)\d*
+	IgnoreUnstablePackages() bool
+
+	isBreakingConfig()
+}
+
+// PluginConfig is a configuration for a Policy Plugin.
+type PluginConfig interface {
+	// Name returns the name of the plugin.
+	Name() string
+	// Ref returns the reference to the plugin, may be nil.
+	Ref() bufparse.Ref
+	// Options returns the options for the plugin, which may be empty.
+	Options() option.Options
+	// Args returns the arguments for the plugin, which may be empty.
+	Args() []string
+
+	isPluginConfig()
+}
+
+// NewPolicyConfig creates a new PolicyConfig.
+func NewPolicyConfig(
+	lintConfig LintConfig,
+	breakingConfig BreakingConfig,
+	pluginConfigs []PluginConfig,
+) (PolicyConfig, error) {
+	return newPolicyConfig(
+		lintConfig,
+		breakingConfig,
+		pluginConfigs,
+	)
+}
+
+// NewLintConfig creates a new LintConfig.
+func NewLintConfig(
+	use []string,
+	except []string,
+	enumZeroValueSuffix string,
+	rpcAllowSameRequestResponse bool,
+	rpcAllowGoogleProtobufEmptyRequests bool,
+	rpcAllowGoogleProtobufEmptyResponses bool,
+	serviceSuffix string,
+) (LintConfig, error) {
+	return newLintConfig(
+		use,
+		except,
+		enumZeroValueSuffix,
+		rpcAllowSameRequestResponse,
+		rpcAllowGoogleProtobufEmptyRequests,
+		rpcAllowGoogleProtobufEmptyResponses,
+		serviceSuffix,
+	)
+}
+
+// NewBreakingConfig creates a new BreakingConfig.
+func NewBreakingConfig(
+	use []string,
+	except []string,
+	ignoreUnstablePackages bool,
+) (BreakingConfig, error) {
+	return newBreakingConfig(
+		use,
+		except,
+		ignoreUnstablePackages,
+	)
+}
+
+// NewPluginConfig creates a new PluginConfig.
+func NewPluginConfig(
+	name string,
+	ref bufparse.Ref,
+	options option.Options,
+	args []string,
+) (PluginConfig, error) {
+	return newPluginConfig(
+		name,
+		ref,
+		options,
+		args,
+	)
 }
 
 // MarshalPolicyConfigAsJSON marshals the PolicyConfig to a stable JSON representation.
@@ -45,19 +179,178 @@ func MarshalPolicyConfigAsJSON(policyConfig PolicyConfig) ([]byte, error) {
 	return marshalPolicyConfigAsJSON(policyConfig)
 }
 
-/// *** PRIVATE ***
+// UnmarshalJSONPolicyConfig unmarshals the given JSON data into a PolicyConfig.
+//
+// Data is a valid JSON encoding of the type buf.registry.policy.v1beta1.PolicyConfig.
+func UnmarshalJSONPolicyConfig(registry string, data []byte) (PolicyConfig, error) {
+	return unmarshalJSONPolicyConfig(registry, data)
+}
 
-// marshalPolicyConfigAsJSON implements the stable JSON representation of the PolicyConfig.
+// *** PRIVATE ***
+
+type policyConfig struct {
+	lintConfig     LintConfig
+	breakingConfig BreakingConfig
+	pluginConfigs  []PluginConfig
+}
+
+func newPolicyConfig(
+	lintConfig LintConfig,
+	breakingConfig BreakingConfig,
+	pluginConfigs []PluginConfig,
+) (PolicyConfig, error) {
+	pluginConfigs = slices.Clone(pluginConfigs)
+	sort.Slice(pluginConfigs, func(i, j int) bool {
+		return pluginConfigs[i].Name() < pluginConfigs[j].Name()
+	})
+	var registry string
+	for _, pluginConfig := range pluginConfigs {
+		ref := pluginConfig.Ref()
+		if ref == nil {
+			continue // Local plugin, no need to validate.
+		}
+		if ref.FullName().Registry() == "" {
+			return nil, syserror.Newf("plugin config %q must have a non-empty registry", pluginConfig.Name())
+		}
+		if registry != "" && ref.FullName().Registry() != registry {
+			return nil, fmt.Errorf("all plugin configs must have the same registry, got %q and %q", registry, ref.FullName().Registry())
+		}
+	}
+	return &policyConfig{
+		lintConfig:     lintConfig,
+		breakingConfig: breakingConfig,
+		pluginConfigs:  pluginConfigs,
+	}, nil
+}
+
+func (p *policyConfig) LintConfig() LintConfig         { return p.lintConfig }
+func (p *policyConfig) BreakingConfig() BreakingConfig { return p.breakingConfig }
+func (p *policyConfig) PluginConfigs() []PluginConfig  { return slices.Clone(p.pluginConfigs) }
+func (p *policyConfig) isPolicyConfig()                {}
+
+type lintConfig struct {
+	use                                  []string
+	except                               []string
+	enumZeroValueSuffix                  string
+	rpcAllowSameRequestResponse          bool
+	rpcAllowGoogleProtobufEmptyRequests  bool
+	rpcAllowGoogleProtobufEmptyResponses bool
+	serviceSuffix                        string
+}
+
+func newLintConfig(
+	use []string,
+	except []string,
+	enumZeroValueSuffix string,
+	rpcAllowSameRequestResponse bool,
+	rpcAllowGoogleProtobufEmptyRequests bool,
+	rpcAllowGoogleProtobufEmptyResponses bool,
+	serviceSuffix string,
+) (*lintConfig, error) {
+	use = slices.Clone(use)
+	sort.Strings(use)
+	except = slices.Clone(except)
+	sort.Strings(except)
+	return &lintConfig{
+		use:                                  use,
+		except:                               except,
+		enumZeroValueSuffix:                  enumZeroValueSuffix,
+		rpcAllowSameRequestResponse:          rpcAllowSameRequestResponse,
+		rpcAllowGoogleProtobufEmptyRequests:  rpcAllowGoogleProtobufEmptyRequests,
+		rpcAllowGoogleProtobufEmptyResponses: rpcAllowGoogleProtobufEmptyResponses,
+		serviceSuffix:                        serviceSuffix,
+	}, nil
+}
+
+func (c *lintConfig) UseIDsAndCategories() []string     { return slices.Clone(c.use) }
+func (c *lintConfig) ExceptIDsAndCategories() []string  { return slices.Clone(c.except) }
+func (c *lintConfig) EnumZeroValueSuffix() string       { return c.enumZeroValueSuffix }
+func (c *lintConfig) RPCAllowSameRequestResponse() bool { return c.rpcAllowSameRequestResponse }
+func (c *lintConfig) RPCAllowGoogleProtobufEmptyRequests() bool {
+	return c.rpcAllowGoogleProtobufEmptyRequests
+}
+func (c *lintConfig) RPCAllowGoogleProtobufEmptyResponses() bool {
+	return c.rpcAllowGoogleProtobufEmptyResponses
+}
+func (c *lintConfig) ServiceSuffix() string { return c.serviceSuffix }
+func (c *lintConfig) isLintConfig()         {}
+
+type breakingConfig struct {
+	use                    []string
+	except                 []string
+	ignoreUnstablePackages bool
+}
+
+func newBreakingConfig(
+	use []string,
+	except []string,
+	ignoreUnstablePackages bool,
+) (*breakingConfig, error) {
+	use = slices.Clone(use)
+	sort.Strings(use)
+	except = slices.Clone(except)
+	sort.Strings(except)
+	return &breakingConfig{
+		use:                    use,
+		except:                 except,
+		ignoreUnstablePackages: ignoreUnstablePackages,
+	}, nil
+}
+
+func (c *breakingConfig) UseIDsAndCategories() []string    { return slices.Clone(c.use) }
+func (c *breakingConfig) ExceptIDsAndCategories() []string { return slices.Clone(c.except) }
+func (c *breakingConfig) IgnoreUnstablePackages() bool     { return c.ignoreUnstablePackages }
+func (c *breakingConfig) isBreakingConfig()                {}
+
+type pluginConfig struct {
+	name    string
+	ref     bufparse.Ref
+	options option.Options
+	args    []string
+}
+
+func newPluginConfig(
+	name string,
+	ref bufparse.Ref,
+	options option.Options,
+	args []string,
+) (*pluginConfig, error) {
+	return &pluginConfig{
+		name:    name,
+		ref:     ref,
+		options: options,
+		args:    args,
+	}, nil
+}
+
+func (p *pluginConfig) Name() string            { return p.name }
+func (p *pluginConfig) Ref() bufparse.Ref       { return p.ref }
+func (p *pluginConfig) Options() option.Options { return p.options }
+func (p *pluginConfig) Args() []string          { return slices.Clone(p.args) }
+func (p *pluginConfig) isPluginConfig()         {}
+
 func marshalPolicyConfigAsJSON(policyConfig PolicyConfig) ([]byte, error) {
-	lintConfig := policyConfig.LintConfig()
-	if lintConfig == nil {
-		return nil, syserror.Newf("policyConfig.LintConfig() must not be nil")
+	var lintConfigV1Beta1 *policyV1Beta1PolicyConfig_LintConfig
+	if lintConfig := policyConfig.LintConfig(); lintConfig != nil {
+		lintConfigV1Beta1 = &policyV1Beta1PolicyConfig_LintConfig{
+			Use:                                  lintConfig.UseIDsAndCategories(),
+			Except:                               lintConfig.ExceptIDsAndCategories(),
+			EnumZeroValueSuffix:                  lintConfig.EnumZeroValueSuffix(),
+			RpcAllowSameRequestResponse:          lintConfig.RPCAllowSameRequestResponse(),
+			RpcAllowGoogleProtobufEmptyRequests:  lintConfig.RPCAllowGoogleProtobufEmptyRequests(),
+			RpcAllowGoogleProtobufEmptyResponses: lintConfig.RPCAllowGoogleProtobufEmptyResponses(),
+			ServiceSuffix:                        lintConfig.ServiceSuffix(),
+		}
 	}
-	breakingConfig := policyConfig.BreakingConfig()
-	if breakingConfig == nil {
-		return nil, syserror.Newf("policyConfig.BreakingConfig() must not be nil")
+	var breakingConfigV1Beta1 *policyV1Beta1PolicyConfig_BreakingConfig
+	if breakingConfig := policyConfig.BreakingConfig(); breakingConfig != nil {
+		breakingConfigV1Beta1 = &policyV1Beta1PolicyConfig_BreakingConfig{
+			Use:                    breakingConfig.UseIDsAndCategories(),
+			Except:                 breakingConfig.ExceptIDsAndCategories(),
+			IgnoreUnstablePackages: breakingConfig.IgnoreUnstablePackages(),
+		}
 	}
-	pluginConfigs, err := xslices.MapError(policyConfig.PluginConfigs(), func(pluginConfig bufconfig.PluginConfig) (*policyV1Beta1PolicyConfig_PluginConfig, error) {
+	pluginConfigs, err := xslices.MapError(policyConfig.PluginConfigs(), func(pluginConfig PluginConfig) (*policyV1Beta1PolicyConfig_PluginConfig, error) {
 		ref := pluginConfig.Ref()
 		if ref == nil {
 			return nil, fmt.Errorf("PluginConfig must have a non-nil Ref")
@@ -77,7 +370,7 @@ func marshalPolicyConfigAsJSON(policyConfig PolicyConfig) ([]byte, error) {
 		}, nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed converting PluginConfigs to PolicyConfig_CheckPluginConfig: %w", err)
+		return nil, fmt.Errorf("failed to convert plugin configs: %w", err)
 	}
 	slices.SortFunc(pluginConfigs, func(a, b *policyV1Beta1PolicyConfig_PluginConfig) int {
 		// Sort by owner, plugin, and ref.
@@ -87,23 +380,83 @@ func marshalPolicyConfigAsJSON(policyConfig PolicyConfig) ([]byte, error) {
 		)
 	})
 	config := policyV1Beta1PolicyConfig{
-		Lint: &policyV1Beta1PolicyConfig_LintConfig{
-			Use:                                  lintConfig.UseIDsAndCategories(),
-			Except:                               lintConfig.ExceptIDsAndCategories(),
-			EnumZeroValueSuffix:                  lintConfig.EnumZeroValueSuffix(),
-			RpcAllowSameRequestResponse:          lintConfig.RPCAllowSameRequestResponse(),
-			RpcAllowGoogleProtobufEmptyRequests:  lintConfig.RPCAllowGoogleProtobufEmptyRequests(),
-			RpcAllowGoogleProtobufEmptyResponses: lintConfig.RPCAllowGoogleProtobufEmptyResponses(),
-			ServiceSuffix:                        lintConfig.ServiceSuffix(),
-		},
-		Breaking: &policyV1Beta1PolicyConfig_BreakingConfig{
-			Use:                    breakingConfig.UseIDsAndCategories(),
-			Except:                 breakingConfig.ExceptIDsAndCategories(),
-			IgnoreUnstablePackages: breakingConfig.IgnoreUnstablePackages(),
-		},
-		Plugins: pluginConfigs,
+		Lint:     lintConfigV1Beta1,
+		Breaking: breakingConfigV1Beta1,
+		Plugins:  pluginConfigs,
 	}
-	return json.Marshal(config)
+	data, err := json.Marshal(config)
+	if err != nil {
+		return nil, syserror.Newf("failed to marshal PolicyConfig as JSON: %w", err)
+	}
+	// Assert the data is a valid JSON representation of the type
+	// buf.registry.policy.v1beta1.PolicyConfig.
+	var policyConfigProto policyv1beta1.PolicyConfig
+	if err := protoencoding.NewJSONUnmarshaler(nil, protoencoding.JSONUnmarshalerWithDisallowUnknown()).Unmarshal(data, &policyConfigProto); err != nil {
+		return nil, syserror.Newf("not a valid JSON representation of type buf.registry.policy.v1beta1.PolicyConfig: %w", err)
+	}
+	return data, nil
+}
+
+func unmarshalJSONPolicyConfig(registry string, data []byte) (PolicyConfig, error) {
+	var policyConfigV1Beta1 policyv1beta1.PolicyConfig
+	if err := protoencoding.NewJSONUnmarshaler(nil, protoencoding.JSONUnmarshalerWithDisallowUnknown()).Unmarshal(data, &policyConfigV1Beta1); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JSON as PolicyConfig: %w", err)
+	}
+	lintConfigV1Beta1 := policyConfigV1Beta1.GetLint()
+	lintConfig, err := newLintConfig(
+		lintConfigV1Beta1.GetUse(),
+		lintConfigV1Beta1.GetExcept(),
+		lintConfigV1Beta1.GetEnumZeroValueSuffix(),
+		lintConfigV1Beta1.GetRpcAllowSameRequestResponse(),
+		lintConfigV1Beta1.GetRpcAllowGoogleProtobufEmptyRequests(),
+		lintConfigV1Beta1.GetRpcAllowGoogleProtobufEmptyResponses(),
+		lintConfigV1Beta1.GetServiceSuffix(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	breakingConfigV1Beta1 := policyConfigV1Beta1.GetBreaking()
+	breakingConfig, err := newBreakingConfig(
+		breakingConfigV1Beta1.GetUse(),
+		breakingConfigV1Beta1.GetExcept(),
+		breakingConfigV1Beta1.GetIgnoreUnstablePackages(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	pluginConfigs, err := xslices.MapError(
+		policyConfigV1Beta1.GetPlugins(),
+		func(pluginConfigV1Beta1 *policyv1beta1.PolicyConfig_CheckPluginConfig) (PluginConfig, error) {
+			nameV1Beta1 := pluginConfigV1Beta1.GetName()
+			pluginRef, err := bufparse.NewRef(
+				registry,
+				nameV1Beta1.GetOwner(),
+				nameV1Beta1.GetPlugin(),
+				nameV1Beta1.GetRef(),
+			)
+			if err != nil {
+				return nil, err
+			}
+			pluginOptions, err := option.OptionsForProtoOptions(pluginConfigV1Beta1.GetOptions())
+			if err != nil {
+				return nil, err
+			}
+			return newPluginConfig(
+				nameV1Beta1.String(),
+				pluginRef,
+				pluginOptions,
+				pluginConfigV1Beta1.GetArgs(),
+			)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return newPolicyConfig(
+		lintConfig,
+		breakingConfig,
+		pluginConfigs,
+	)
 }
 
 // policyV1Beta1PolicyConfig is a stable JSON representation of the buf.registry.policy.v1beta1.PolicyConfig.
@@ -117,8 +470,8 @@ type policyV1Beta1PolicyConfig struct {
 type policyV1Beta1PolicyConfig_LintConfig struct {
 	Use                                  []string `json:"use,omitempty"`
 	Except                               []string `json:"except,omitempty"`
-	EnumZeroValueSuffix                  string   `json:"enumZeroValue_suffix,omitempty"`
-	RpcAllowSameRequestResponse          bool     `json:"rpcAllowSame_request_response,omitempty"`
+	EnumZeroValueSuffix                  string   `json:"enumZeroValueSuffix,omitempty"`
+	RpcAllowSameRequestResponse          bool     `json:"rpcAllowSameRequestResponse,omitempty"`
 	RpcAllowGoogleProtobufEmptyRequests  bool     `json:"rpcAllowGoogleProtobufEmptyRequests,omitempty"`
 	RpcAllowGoogleProtobufEmptyResponses bool     `json:"rpcAllowGoogleProtobufEmptyResponses,omitempty"`
 	ServiceSuffix                        string   `json:"serviceSuffix,omitempty"`
@@ -154,8 +507,8 @@ type optionV1Option struct {
 // optionV1Value is a stable JSON representation of the buf.plugin.option.v1.Value.
 type optionV1Value struct {
 	BoolValue   bool               `json:"boolValue,omitempty"`
-	Int64Value  int64              `json:"intValue,omitempty"`
-	DoubleValue float64            `json:"floatValue,omitempty"`
+	Int64Value  int64              `json:"int64Value,omitempty"`
+	DoubleValue float64            `json:"doubleValue,omitempty"`
 	StringValue string             `json:"stringValue,omitempty"`
 	BytesValue  []byte             `json:"bytesValue,omitempty"`
 	ListValue   *optionV1ListValue `json:"listValue,omitempty"`
@@ -166,12 +519,8 @@ type optionV1ListValue struct {
 	Values []*optionV1Value `json:"values,omitempty"`
 }
 
-// optionsToOptionsV1Options converts a map of options to a slice of optionV1Option.
-func optionsToOptionConfig(keyToValue map[string]any) ([]*optionV1Option, error) {
-	options, err := option.NewOptions(keyToValue) // This will validate the options.
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert options: %w", err)
-	}
+// optionsToOptionsV1Options converts a set of options to a slice of optionV1Option.
+func optionsToOptionConfig(options option.Options) ([]*optionV1Option, error) {
 	optionsProto, err := options.ToProto()
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert options to proto: %w", err)
