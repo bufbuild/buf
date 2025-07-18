@@ -604,8 +604,8 @@ message PayloadPolicyCommitPushed {
   string policy_id = 3;
   // policy_name is the name of the policy within which the commit was created.
   string policy_name = 4;
-  // p1_digest is the p1 digest of the pushed policy commit.
-  string p1_digest = 5;
+  // o1_digest is the o1 digest of the pushed policy commit.
+  string o1_digest = 5;
 }
 
 message PayloadPluginCreated {

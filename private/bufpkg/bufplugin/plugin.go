@@ -15,6 +15,7 @@
 package bufplugin
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 	"sync"
@@ -308,7 +309,7 @@ func newGetDigestFuncForPluginAndDigestType(plugin *plugin, digestType DigestTyp
 		if err != nil {
 			return nil, err
 		}
-		bufcasDigest, err := bufcas.NewDigest(data)
+		bufcasDigest, err := bufcas.NewDigestForContent(bytes.NewReader(data))
 		if err != nil {
 			return nil, err
 		}

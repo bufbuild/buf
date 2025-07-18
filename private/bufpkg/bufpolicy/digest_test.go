@@ -17,7 +17,7 @@ package bufpolicy
 import (
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"buf.build/go/bufplugin/option"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,57 +25,76 @@ import (
 
 func TestO1Digest(t *testing.T) {
 	t.Parallel()
-	lintConfig := bufconfig.NewLintConfig(
-		bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
-			bufconfig.FileVersionV2,
-			[]string{"LINT_ID_1", "LINT_ID_2"},
-			true, // Disable builtin is true by default.
-		),
+	lintConfig, err := newLintConfig(
+		[]string{"LINT_ID_1", "LINT_ID_2"},
+		[]string{},
 		"enumZeroValueSuffix",
 		true,
 		true,
 		true,
 		"serviceSuffix",
-		false, // Policy configs do not allow comment ignores.
 	)
-	breakingConfig := bufconfig.NewBreakingConfig(
-		bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
-			bufconfig.FileVersionV2,
-			[]string{"BREAKING_ID_1", "BREAKING_ID_2"},
-			true, // Disable builtin is true by default.
-		),
+	require.NoError(t, err)
+	breakingConfig, err := newBreakingConfig(
+		[]string{"BREAKING_ID_1", "BREAKING_ID_2"},
+		nil,
 		true,
 	)
-	policyConfig := &testPolicyConfig{
-		lintConfig:     lintConfig,
-		breakingConfig: breakingConfig,
-	}
-	testPolicyConfigO1Digest(t, policyConfig, "o1:db2906a09cca66da39f800207c75a8a2134d1c7918eca793e19ab07d76bea7a8f1282827205a6b7013ee0c1196af4ae7ef3abc6c41dab039bc24153d2e2dc4af")
+	require.NoError(t, err)
+	policyConfig, err := newPolicyConfig(lintConfig, breakingConfig, nil)
+	require.NoError(t, err)
+
+	testPolicyConfigO1Digest(
+		t,
+		policyConfig,
+		"o1:960327c2f0e3382b3e2caee5a5b8043b7a17287e82dc06a5c3a5ed76773e8622c18ddeead96bb5abe44b340965b49103462f4e5a1c11dbd05d1188d9afd7cff8",
+	)
+
 	// Add a remote plugin config.
-	options := map[string]any{
+	options, err := option.NewOptions(map[string]any{
 		"a": "b",
 		"c": 3,
 		"d": 1.2,
 		"e": []string{"a", "b", "c"},
-	}
+	})
+	require.NoError(t, err)
 	args := []string{"arg1", "arg2"}
 	remotePluginRef, err := bufparse.NewRef("buf.build", "acme", "my-plugin", "v1.0.0")
 	require.NoError(t, err)
-	remotePluginConfig, err := bufconfig.NewRemoteWasmPluginConfig(remotePluginRef, options, args)
+	pluginConfig1, err := newPluginConfig(
+		remotePluginRef.String(),
+		remotePluginRef,
+		options,
+		args,
+	)
 	require.NoError(t, err)
-	policyConfig.pluginConfigs = append(policyConfig.pluginConfigs, remotePluginConfig)
-	testPolicyConfigO1Digest(t, policyConfig, "o1:6862edf26139073f77846d2afa6d3c23016f4f0ae9abce74ec5485bb8c65ee2c32a9da80263bdf1ea1736ca46fd8fa31c5e14610c2c3dbee4fab96985122fa14")
+
+	policyConfig, err = newPolicyConfig(lintConfig, breakingConfig, []PluginConfig{pluginConfig1})
+	require.NoError(t, err)
+	testPolicyConfigO1Digest(
+		t,
+		policyConfig,
+		"o1:dee43e33da2570aa194ab5a3abe427c0c98012690bebe4e70540fb520e096a9a84b2272b3df85eeebf39d8f839b671d466517639a2495e325d619c1a9fe4eda3",
+	)
+
 	remotePluginRef2, err := bufparse.NewRef("buf.build", "acme", "a-plugin", "")
 	require.NoError(t, err)
-	remotePluginConfig2, err := bufconfig.NewRemoteWasmPluginConfig(remotePluginRef2, options, args)
+	pluginConfig2, err := newPluginConfig(
+		remotePluginRef2.String(),
+		remotePluginRef2,
+		options,
+		args,
+	)
 	require.NoError(t, err)
+
 	// We should get the same digest regardless of the order of the remote plugins.
-	policyConfig.pluginConfigs = append(policyConfig.pluginConfigs, remotePluginConfig2)
-	const multiPluginDigest = "o1:8612d6270b3ea1e222554eb40aadd9194dcfedf772ffc00ac053abed3ce8e201487088ede5f889b1bfc6236f280e0cab47cf434f91de2a9ccc1ad562334582f7"
-	testPolicyConfigO1Digest(t, policyConfig, multiPluginDigest)
-	// Swap the order and assert that the digest is the same.
-	policyConfig.pluginConfigs[0], policyConfig.pluginConfigs[1] = policyConfig.pluginConfigs[1], policyConfig.pluginConfigs[0]
-	testPolicyConfigO1Digest(t, policyConfig, multiPluginDigest)
+	const multiPluginDigest = "o1:d2c302094a3884a7e6afef19e774ce814308dcc0c52e3ad8f5e0ff6b5b7ec412cc61a93a39063db7418d6f7965ac7800bb41cc4f7d6eca6ac7dd5a0ee786fc70"
+	policyConfig2, err := newPolicyConfig(lintConfig, breakingConfig, []PluginConfig{pluginConfig2, pluginConfig1})
+	require.NoError(t, err)
+	policyConfig3, err := newPolicyConfig(lintConfig, breakingConfig, []PluginConfig{pluginConfig1, pluginConfig2})
+	require.NoError(t, err)
+	testPolicyConfigO1Digest(t, policyConfig2, multiPluginDigest)
+	testPolicyConfigO1Digest(t, policyConfig3, multiPluginDigest)
 }
 
 func testPolicyConfigO1Digest(t *testing.T, policyConfig PolicyConfig, expectDigest string) {
@@ -84,20 +103,4 @@ func testPolicyConfigO1Digest(t *testing.T, policyConfig PolicyConfig, expectDig
 	expectedDigest, err := ParseDigest(expectDigest)
 	require.NoError(t, err)
 	assert.True(t, DigestEqual(expectedDigest, digestFromPolicyConfig), "Digest mismatch, expected %q got %q", expectedDigest.String(), digestFromPolicyConfig.String())
-}
-
-type testPolicyConfig struct {
-	lintConfig     bufconfig.LintConfig
-	breakingConfig bufconfig.BreakingConfig
-	pluginConfigs  []bufconfig.PluginConfig
-}
-
-func (p *testPolicyConfig) LintConfig() bufconfig.LintConfig {
-	return p.lintConfig
-}
-func (p *testPolicyConfig) BreakingConfig() bufconfig.BreakingConfig {
-	return p.breakingConfig
-}
-func (p *testPolicyConfig) PluginConfigs() []bufconfig.PluginConfig {
-	return p.pluginConfigs
 }
