@@ -653,8 +653,6 @@ func TestRunProtovalidate(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "map.proto", 83, 5, 83, 55, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "map.proto", 86, 5, 86, 57, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "map.proto", 87, 5, 87, 55, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "message.proto", 20, 3, 20, 49, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "message.proto", 27, 5, 27, 51, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "number.proto", 20, 5, 20, 42, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "number.proto", 25, 5, 25, 43, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "number.proto", 28, 5, 28, 43, "PROTOVALIDATE"),

@@ -20,7 +20,6 @@ import (
 )
 
 const (
-	messageNotDisabledRuleID                = "MESSAGE_NOT_DISABLED"
 	validateIDDashlessRuleID                = "VALIDATE_ID_DASHLESS"
 	fieldValidationNotSkippedNoImportRuleID = "FIELD_VALIDATION_NOT_SKIPPED_NO_IMPORT"
 	fieldValidationNotSkippedRuleID         = "FIELD_VALIDATION_NOT_SKIPPED"
@@ -30,16 +29,6 @@ const (
 func main() {
 	check.Main(&check.Spec{
 		Rules: []*check.RuleSpec{
-			{
-				ID:             messageNotDisabledRuleID,
-				CategoryIDs:    nil,
-				Default:        true,
-				Deprecated:     false,
-				Purpose:        `Checks that no message has (buf.validate.message).disabled set.`,
-				Type:           check.RuleTypeLint,
-				ReplacementIDs: nil,
-				Handler:        checkutil.NewMessageRuleHandler(checkMessageNotDisabled),
-			},
 			{
 				ID:             validateIDDashlessRuleID,
 				CategoryIDs:    nil,
