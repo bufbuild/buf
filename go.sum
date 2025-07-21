@@ -2,10 +2,10 @@ buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.6-20250718181942-e3
 buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.6-20250718181942-e35f9b667443.1/go.mod h1:TsmeaGU5CZAF7zRM05vIKgXh56GgwaoMS8X+a77RV5Q=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250717185734-6c6e0d3c608e.1 h1:Lg6klmCi3v7VvpqeeLEER9/m5S8y9e9DjhqQnSCNy4k=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250717185734-6c6e0d3c608e.1/go.mod h1:avRlCjnFzl98VPaeCtJ24RrV/wwHFzB8sWXhj26+n/U=
-buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250718182902-cff8dfdaa3bc.1 h1:riWJp+Gk+0h2goni5dWYt9V/aInNsAuM9Bhn0SVpsRE=
-buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250718182902-cff8dfdaa3bc.1/go.mod h1:Pg8J+uFIAbEbQ7u+ZNZ2TnAeBSgdChMHHn+YnyqKYpQ=
-buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.6-20250718182902-cff8dfdaa3bc.1 h1:JsTo1234EIew4mN2FR57Le+JJb4zeLceyDwAlNY84dc=
-buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.6-20250718182902-cff8dfdaa3bc.1/go.mod h1:RsJBKYlgzsbl5LAhIu0cNrPPzBNenMLTAAykRxFidtw=
+buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250721151928-2b7ae473b098.1 h1:icgV8NMRNi31JwLZ8OJQK1HNIX3RTBdhjvpRPJF4fyI=
+buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250721151928-2b7ae473b098.1/go.mod h1:/MMEAJmz7PEmksjkSxhWXell82FXiG7BLUPBJRmKBsA=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.6-20250721151928-2b7ae473b098.1 h1:fgiFo9f0jCni7kb5QxQ78CccZv6WLTH5Iea2B+AvSKY=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.6-20250721151928-2b7ae473b098.1/go.mod h1:RsJBKYlgzsbl5LAhIu0cNrPPzBNenMLTAAykRxFidtw=
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.6-20241007202033-cf42259fcbfc.1 h1:trcsXBDm8exui7mvndZnvworCyBq1xuMnod2N0j79K8=
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.6-20241007202033-cf42259fcbfc.1/go.mod h1:OUbhXurY+VHFGn9FBxcRy8UB7HXk9NvJ2qCgifOMypQ=
 buf.build/go/app v0.1.0 h1:nlqD/h0rhIN73ZoiDElprrPiO2N6JV+RmNK34K29Ihg=
