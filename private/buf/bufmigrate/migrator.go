@@ -402,7 +402,9 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 			bufLock, err = bufconfig.NewBufLockFile(
 				bufconfig.FileVersionV2,
 				resolvedLockEntries,
-				nil,
+				nil, // Plugins are not supported in v1.
+				nil, // Policies are not supported in v1.
+				nil, // Policy PluginKeys are not supported in v1.
 			)
 			if err != nil {
 				return nil, nil, err
@@ -449,6 +451,8 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 			bufconfig.FileVersionV2,
 			resolvedDepModuleKeys,
 			nil, // Plugins are not supported in v1.
+			nil, // Policies are not supported in v1.
+			nil, // Policy PluginKeys are not supported in v1.
 		)
 		if err != nil {
 			return nil, nil, err

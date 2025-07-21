@@ -262,7 +262,7 @@ func writeFlags(f *pflag.FlagSet, writer io.Writer) error {
 		}
 		p(" {#%s}", flag.Name)
 		p("\n")
-		p(usage)
+		p("%s", usage)
 		if flag.NoOptDefVal != "" {
 			switch flag.Value.Type() {
 			case "string":
