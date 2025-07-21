@@ -5,10 +5,10 @@ go 1.24
 toolchain go1.24.4
 
 require (
-	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.6-20250121211742-6d880cc6cc8d.1
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250717165733-d22d418d82d8.1
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250616221922-7d6913ad2095.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.6-20250616221922-7d6913ad2095.1
+	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.6-20250718181942-e35f9b667443.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250717185734-6c6e0d3c608e.1
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250718182902-cff8dfdaa3bc.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.6-20250718182902-cff8dfdaa3bc.1
 	buf.build/go/app v0.1.0
 	buf.build/go/bufplugin v0.9.0
 	buf.build/go/protovalidate v0.14.0
@@ -22,7 +22,7 @@ require (
 	github.com/docker/docker v28.3.2+incompatible
 	github.com/go-chi/chi/v5 v5.2.2
 	github.com/gofrs/flock v0.12.1
-	github.com/google/cel-go v0.25.0
+	github.com/google/cel-go v0.26.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-containerregistry v0.20.6
 	github.com/google/uuid v1.6.0
@@ -32,10 +32,10 @@ require (
 	github.com/klauspost/pgzip v1.2.6
 	github.com/mattn/go-colorable v0.1.14
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
-	github.com/quic-go/quic-go v0.53.0
+	github.com/quic-go/quic-go v0.54.0
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.9.1
-	github.com/spf13/pflag v1.0.6
+	github.com/spf13/pflag v1.0.7
 	github.com/stretchr/testify v1.10.0
 	github.com/tetratelabs/wazero v1.9.0
 	go.lsp.dev/jsonrpc2 v0.10.0
@@ -90,7 +90,7 @@ require (
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
-	github.com/segmentio/encoding v0.5.1 // indirect
+	github.com/segmentio/encoding v0.5.2 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stoewer/go-strcase v1.3.1 // indirect
 	github.com/vbatts/tar-split v0.12.1 // indirect
@@ -104,10 +104,10 @@ require (
 	go.opentelemetry.io/proto/otlp v1.7.0 // indirect
 	go.uber.org/mock v0.5.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc // indirect
+	golang.org/x/exp v0.0.0-20250718183923-645b1fa84792 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250715232539-7130f93afb79 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250715232539-7130f93afb79 // indirect
 	google.golang.org/grpc v1.72.2 // indirect
 )
