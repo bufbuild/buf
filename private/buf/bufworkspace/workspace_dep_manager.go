@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -44,11 +45,21 @@ type WorkspaceDepManager interface {
 	ExistingBufLockFileDepModuleKeys(ctx context.Context) ([]bufmodule.ModuleKey, error)
 	// ExistingBufLockFileRemotePluginKeys returns the PluginKeys from the buf.lock file.
 	ExistingBufLockFileRemotePluginKeys(ctx context.Context) ([]bufplugin.PluginKey, error)
+	// ExistingBufLockFileRemotePolicyKeys returns the PolicyKeys from the buf.lock file.
+	ExistingBufLockFileRemotePolicyKeys(ctx context.Context) ([]bufpolicy.PolicyKey, error)
+	// ExistingBufLockFilePolicyNameToRemotePluginKeys returns the PluginKeys for each Policy name from the buf.lock file.
+	ExistingBufLockFilePolicyNameToRemotePluginKeys(ctx context.Context) (map[string][]bufplugin.PluginKey, error)
 	// UpdateBufLockFile updates the lock file that backs the Workspace to contain exactly
 	// the given ModuleKeys and PluginKeys.
 	//
 	// If a buf.lock does not exist, one will be created.
-	UpdateBufLockFile(ctx context.Context, depModuleKeys []bufmodule.ModuleKey, remotePluginKeys []bufplugin.PluginKey) error
+	UpdateBufLockFile(
+		ctx context.Context,
+		depModuleKeys []bufmodule.ModuleKey,
+		remotePluginKeys []bufplugin.PluginKey,
+		remotePolicyKeys []bufpolicy.PolicyKey,
+		policyNameToRemotePluginKeys map[string][]bufplugin.PluginKey,
+	) error
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
 	//
 	// These come from buf.yaml files.
@@ -206,11 +217,39 @@ func (w *workspaceDepManager) ExistingBufLockFileRemotePluginKeys(ctx context.Co
 	return bufLockFile.RemotePluginKeys(), nil
 }
 
-func (w *workspaceDepManager) UpdateBufLockFile(ctx context.Context, depModuleKeys []bufmodule.ModuleKey, remotePluginKeys []bufplugin.PluginKey) error {
+func (w *workspaceDepManager) ExistingBufLockFileRemotePolicyKeys(ctx context.Context) ([]bufpolicy.PolicyKey, error) {
+	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, w.bucket, w.targetSubDirPath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return bufLockFile.RemotePolicyKeys(), nil
+}
+
+func (w *workspaceDepManager) ExistingBufLockFilePolicyNameToRemotePluginKeys(ctx context.Context) (map[string][]bufplugin.PluginKey, error) {
+	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, w.bucket, w.targetSubDirPath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return bufLockFile.PolicyNameToRemotePluginKeys(), nil
+}
+
+func (w *workspaceDepManager) UpdateBufLockFile(ctx context.Context, depModuleKeys []bufmodule.ModuleKey, remotePluginKeys []bufplugin.PluginKey, remotePolicyKeys []bufpolicy.PolicyKey, policyNameToRemotePolicyKeys map[string][]bufplugin.PluginKey) error {
 	var bufLockFile bufconfig.BufLockFile
 	var err error
 	if w.isV2 {
-		bufLockFile, err = bufconfig.NewBufLockFile(bufconfig.FileVersionV2, depModuleKeys, remotePluginKeys)
+		bufLockFile, err = bufconfig.NewBufLockFile(
+			bufconfig.FileVersionV2,
+			depModuleKeys,
+			remotePluginKeys,
+			remotePolicyKeys,
+			policyNameToRemotePolicyKeys,
+		)
 		if err != nil {
 			return err
 		}
@@ -227,7 +266,7 @@ func (w *workspaceDepManager) UpdateBufLockFile(ctx context.Context, depModuleKe
 		if len(remotePluginKeys) > 0 {
 			return syserror.Newf("remote plugins are not supported for v1 buf.yaml files")
 		}
-		bufLockFile, err = bufconfig.NewBufLockFile(fileVersion, depModuleKeys, nil)
+		bufLockFile, err = bufconfig.NewBufLockFile(fileVersion, depModuleKeys, nil, nil, nil)
 		if err != nil {
 			return err
 		}

@@ -151,7 +151,7 @@ func (p *policyDataProvider) getIndexedPolicyDatasForRegistryAndIndexedPolicyKey
 			return nil, syserror.Newf("did not get policy key from store with commitID %q", commitID)
 		}
 		getContent := func() (bufpolicy.PolicyConfig, error) {
-			return newPolicyConfig(registry, policyContent.GetConfig())
+			return V1Beta1ProtoToPolicyConfig(registry, policyContent.GetConfig())
 		}
 		policyData, err := bufpolicy.NewPolicyData(ctx, indexedPolicyKey.Value, getContent)
 		if err != nil {

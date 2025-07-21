@@ -110,7 +110,15 @@ func Prune(
 	if err != nil {
 		return err
 	}
-	return workspaceDepManager.UpdateBufLockFile(ctx, depModuleKeys, existingRemotePluginKeys)
+	existingRemotePolicyKeys, err := workspaceDepManager.ExistingBufLockFileRemotePolicyKeys(ctx)
+	if err != nil {
+		return err
+	}
+	existingPolicyNameToRemotePluginKeys, err := workspaceDepManager.ExistingBufLockFilePolicyNameToRemotePluginKeys(ctx)
+	if err != nil {
+		return err
+	}
+	return workspaceDepManager.UpdateBufLockFile(ctx, depModuleKeys, existingRemotePluginKeys, existingRemotePolicyKeys, existingPolicyNameToRemotePluginKeys)
 }
 
 // LogUnusedConfiguredDepsForWorkspace takes a workspace and logs the unused configured

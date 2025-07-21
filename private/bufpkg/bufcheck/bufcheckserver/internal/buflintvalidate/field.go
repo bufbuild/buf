@@ -313,7 +313,7 @@ func checkFieldFlags(
 			adder.getFieldRuleName(),
 		)
 	}
-	if fieldRules.GetRequired() && fieldRules.GetIgnore() == validate.Ignore_IGNORE_IF_UNPOPULATED {
+	if fieldRules.GetRequired() && fieldRules.GetIgnore() == validate.Ignore_IGNORE_IF_ZERO_VALUE {
 		adder.addForPathsf(
 			[][]int32{
 				{requiredFieldNumber},
@@ -323,7 +323,7 @@ func checkFieldFlags(
 			adder.fieldName(),
 			adder.getFieldRuleName(requiredFieldNumber),
 			adder.getFieldRuleName(ignoreFieldNumber),
-			validate.Ignore_IGNORE_IF_UNPOPULATED,
+			validate.Ignore_IGNORE_IF_ZERO_VALUE,
 		)
 	}
 }
@@ -376,13 +376,13 @@ func checkRulesForExtension(
 			adder.getFieldRuleName(requiredFieldNumber),
 		)
 	}
-	if fieldRules.GetIgnore() == validate.Ignore_IGNORE_IF_UNPOPULATED {
+	if fieldRules.GetIgnore() == validate.Ignore_IGNORE_IF_ZERO_VALUE {
 		adder.addForPathf(
 			[]int32{ignoreFieldNumber},
 			"Field %q is an extension field and cannot have %s=%v.",
 			adder.fieldName(),
 			adder.getFieldRuleName(ignoreFieldNumber),
-			validate.Ignore_IGNORE_IF_UNPOPULATED,
+			validate.Ignore_IGNORE_IF_ZERO_VALUE,
 		)
 	}
 }

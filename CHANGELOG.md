@@ -3,6 +3,12 @@
 ## [Unreleased]
 
 - Add `buf export --all` flag to include non-proto source files.
+- Add s390x binaries for Linux to releases.
+- Fix ppc64le binaries for Linux released as x86_64 binaries.
+- `buf lint` will no longer warn about uses of `(buf.validate.message).disabled`, as it was
+  removed in protovalidate v0.14.0. Please update to protovalidate v0.14.0 or higher, using the
+  steps outlined in the
+  [protovalidate release notes](https://github.com/bufbuild/protovalidate/releases/tag/v0.14.0).
 
 ## [v1.55.1] - 2025-06-17
 

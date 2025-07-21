@@ -156,22 +156,3 @@ func checkValidateIDDashless(
 	}
 	return nil
 }
-
-func checkMessageNotDisabled(
-	_ context.Context,
-	responseWriter check.ResponseWriter,
-	request check.Request,
-	messageDescriptor protoreflect.MessageDescriptor,
-) error {
-	constraints, err := protovalidate.ResolveMessageRules(messageDescriptor)
-	if err != nil {
-		return err
-	}
-	if constraints.GetDisabled() {
-		responseWriter.AddAnnotation(
-			check.WithMessagef("%s has (buf.validate.message).disabled set to true", string(messageDescriptor.Name())),
-			check.WithDescriptor(messageDescriptor),
-		)
-	}
-	return nil
-}
