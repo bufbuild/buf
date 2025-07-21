@@ -199,8 +199,9 @@ func NewRootCommand(name string) *appcmd.Command {
 				},
 			},
 			{
-				Use:   "policy",
-				Short: "Work with policies",
+				Use:    "policy",
+				Short:  "Work with policies",
+				Hidden: true,
 				SubCommands: []*appcmd.Command{
 					policypush.NewCommand("push", builder),
 				},
