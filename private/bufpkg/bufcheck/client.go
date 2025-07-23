@@ -183,6 +183,7 @@ func (c *client) lint(
 		ctx,
 		lintConfig.FileVersion(),
 		pluginConfigs,
+		policyConfig,
 		lintConfig.DisableBuiltin(),
 	)
 	if err != nil {
@@ -316,6 +317,7 @@ func (c *client) breaking(
 		ctx,
 		breakingConfig.FileVersion(),
 		pluginConfigs,
+		policyConfig,
 		breakingConfig.DisableBuiltin(),
 	)
 	if err != nil {
@@ -388,6 +390,7 @@ func (c *client) ConfiguredRules(
 		ctx,
 		checkConfig.FileVersion(),
 		configuredRulesOptions.pluginConfigs,
+		nil, // PolicyConfig.
 		checkConfig.DisableBuiltin(),
 	)
 	if err != nil {
@@ -413,7 +416,7 @@ func (c *client) AllRules(
 	for _, option := range options {
 		option.applyToAllRules(allRulesOptions)
 	}
-	rules, _, err := c.allRulesAndCategories(ctx, fileVersion, allRulesOptions.pluginConfigs, false)
+	rules, _, err := c.allRulesAndCategories(ctx, fileVersion, allRulesOptions.pluginConfigs, nil, false)
 	if err != nil {
 		return nil, err
 	}
@@ -431,7 +434,7 @@ func (c *client) AllCategories(
 	for _, option := range options {
 		option.applyToAllCategories(allCategoriesOptions)
 	}
-	_, categories, err := c.allRulesAndCategories(ctx, fileVersion, allCategoriesOptions.pluginConfigs, false)
+	_, categories, err := c.allRulesAndCategories(ctx, fileVersion, allCategoriesOptions.pluginConfigs, nil, false)
 	return categories, err
 }
 
@@ -439,12 +442,13 @@ func (c *client) allRulesAndCategories(
 	ctx context.Context,
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
+	policyConfig bufconfig.PolicyConfig, // May be nil.
 	disableBuiltin bool,
 ) ([]Rule, []Category, error) {
 	// Just passing through to fulfill all contracts, ie checkClientSpec has non-nil Options.
 	// Options are not used here.
 	// config struct really just needs refactoring.
-	multiClient, err := c.getMultiClient(ctx, fileVersion, pluginConfigs, nil, disableBuiltin, option.EmptyOptions)
+	multiClient, err := c.getMultiClient(ctx, fileVersion, pluginConfigs, policyConfig, disableBuiltin, option.EmptyOptions)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -645,11 +649,11 @@ func (c *client) getPolicies(ctx context.Context, policyConfigs []bufconfig.Poli
 		policyRefs := xslices.IndexedToValues(indexedPolicyRefs)
 		policyKeys, err := c.policyKeyProvider.GetPolicyKeysForPolicyRefs(ctx, policyRefs, bufpolicy.DigestTypeO1)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("could not get PolicyKeys for PolicyRefs: %w", err)
 		}
 		policyDatas, err := c.policyDataProvider.GetPolicyDatasForPolicyKeys(ctx, policyKeys)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("could not get PolicyDatas for PolicyKeys: %w", err)
 		}
 		if len(policyDatas) != len(policyRefs) {
 			return nil, syserror.Newf("expected %d PolicyData, got %d", len(policyRefs), len(policyDatas))
@@ -846,8 +850,12 @@ type clientOptions struct {
 
 func newClientOptions() *clientOptions {
 	return &clientOptions{
-		pluginKeyProvider:  bufplugin.NopPluginKeyProvider,
-		pluginDataProvider: bufplugin.NopPluginDataProvider,
+		pluginKeyProvider:        bufplugin.NopPluginKeyProvider,
+		pluginDataProvider:       bufplugin.NopPluginDataProvider,
+		policyKeyProvider:        bufpolicy.NopPolicyKeyProvider,
+		policyDataProvider:       bufpolicy.NopPolicyDataProvider,
+		policyPluginKeyProvider:  bufpolicy.NopPolicyPluginKeyProvider,
+		policyPluginDataProvider: bufpolicy.NopPolicyPluginDataProvider,
 	}
 }
 

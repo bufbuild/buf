@@ -15,6 +15,8 @@
 package bufpolicy
 
 import (
+	"fmt"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 )
 
@@ -32,6 +34,18 @@ type PolicyPluginKeyProvider interface {
 	GetPluginKeyProviderForPolicy(policyName string) bufplugin.PluginKeyProvider
 }
 
+// NewStaticPolicyPluginKeyProvider returns a new PolicyPluginKeyProvider for a static set of
+// PolicyNames to PluginKeys.
+//
+// Each set of PluginKeys must be unique by FullName. If there are duplicates,
+// an error will be returned.
+//
+// When resolving Refs, the Ref will be matched to the PolicyPluginKey by FullName.
+// If the Ref is not found in the set of provided keys, an fs.ErrNotExist will be returned.
+func NewStaticPolicyPluginKeyProvider(policyNameToPluginKeys map[string][]bufplugin.PluginKey) (PolicyPluginKeyProvider, error) {
+	return newStaticPolicyPluginKeyProvider(policyNameToPluginKeys)
+}
+
 // *** PRIVATE ***
 
 type nopPolicyPluginKeyProvider struct{}
@@ -39,5 +53,30 @@ type nopPolicyPluginKeyProvider struct{}
 var _ PolicyPluginKeyProvider = nopPolicyPluginKeyProvider{}
 
 func (nopPolicyPluginKeyProvider) GetPluginKeyProviderForPolicy(policyName string) bufplugin.PluginKeyProvider {
+	return bufplugin.NopPluginKeyProvider
+}
+
+type staticPolicyPluginKeyProvider struct {
+	policyNameToPluginKeyProvider map[string]bufplugin.PluginKeyProvider
+}
+
+func newStaticPolicyPluginKeyProvider(policyNameToPluginKeys map[string][]bufplugin.PluginKey) (*staticPolicyPluginKeyProvider, error) {
+	policyNameToPluginKeyProvider := make(map[string]bufplugin.PluginKeyProvider)
+	for policyName, pluginKeys := range policyNameToPluginKeys {
+		pluginKeyProvider, err := bufplugin.NewStaticPluginKeyProvider(pluginKeys)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create PluginKeyProvider for policy %q: %w", policyName, err)
+		}
+		policyNameToPluginKeyProvider[policyName] = pluginKeyProvider
+	}
+	return &staticPolicyPluginKeyProvider{
+		policyNameToPluginKeyProvider: policyNameToPluginKeyProvider,
+	}, nil
+}
+
+func (s staticPolicyPluginKeyProvider) GetPluginKeyProviderForPolicy(policyName string) bufplugin.PluginKeyProvider {
+	if pluginKeyProvider, ok := s.policyNameToPluginKeyProvider[policyName]; ok {
+		return pluginKeyProvider
+	}
 	return bufplugin.NopPluginKeyProvider
 }

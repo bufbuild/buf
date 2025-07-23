@@ -32,6 +32,18 @@ type PolicyPluginDataProvider interface {
 	GetPluginDataProviderForPolicy(policyName string) bufplugin.PluginDataProvider
 }
 
+// NewStaticPolicyPluginDataProvider returns a new PolicyPluginDataProvider for a static set of
+// PolicyNames to PluginData.
+//
+// Each set of PluginDatas must be unique by FullName. If there are duplicates,
+// an error will be returned.
+//
+// When resolving Refs, the Ref will be matched to the PolicyPluginData by FullName.
+// If the Ref is not found in the set of provided keys, an fs.ErrNotExist will be returned.
+func NewStaticPolicyPluginDataProvider(policyNameToPluginDataProvider map[string]bufplugin.PluginDataProvider) (PolicyPluginDataProvider, error) {
+	return newStaticPolicyPluginDataProvider(policyNameToPluginDataProvider)
+}
+
 // *** PRIVATE ***
 
 type nopPolicyPluginDataProvider struct{}
@@ -39,5 +51,22 @@ type nopPolicyPluginDataProvider struct{}
 var _ PolicyPluginDataProvider = nopPolicyPluginDataProvider{}
 
 func (nopPolicyPluginDataProvider) GetPluginDataProviderForPolicy(policyName string) bufplugin.PluginDataProvider {
+	return bufplugin.NopPluginDataProvider
+}
+
+type staticPolicyPluginDataProvider struct {
+	policyNameToPluginDataProvider map[string]bufplugin.PluginDataProvider
+}
+
+func newStaticPolicyPluginDataProvider(policyNameToPluginDataProvider map[string]bufplugin.PluginDataProvider) (*staticPolicyPluginDataProvider, error) {
+	return &staticPolicyPluginDataProvider{
+		policyNameToPluginDataProvider: policyNameToPluginDataProvider,
+	}, nil
+}
+
+func (s staticPolicyPluginDataProvider) GetPluginDataProviderForPolicy(policyName string) bufplugin.PluginDataProvider {
+	if pluginDataProvider, ok := s.policyNameToPluginDataProvider[policyName]; ok {
+		return pluginDataProvider
+	}
 	return bufplugin.NopPluginDataProvider
 }
