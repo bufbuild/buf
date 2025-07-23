@@ -206,6 +206,13 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 					return nil, err
 				}
 			}
+			// TODO: Supporting Policies for ModuleKeys requires resolving each policies remote
+			// plugins.  This is not currently supported. Instead of requiring the resolved Keys for
+			// the workspace, passing resolvers for the remote refs would allow for lazy resolution.
+			policyConfigs := bufYAMLFile.PolicyConfigs()
+			if len(policyConfigs) > 0 {
+				return nil, fmt.Errorf("policies are not supported for ModuleKeys")
+			}
 		}
 	}
 
