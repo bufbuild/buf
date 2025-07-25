@@ -20,8 +20,11 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy/bufpolicyapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapipolicy"
 )
 
 // NewModuleUploader returns a new Uploader for ModuleSets.
@@ -42,6 +45,15 @@ func NewPluginUploader(container appext.Container) (bufplugin.Uploader, error) {
 	return newPluginUploader(container, bufregistryapiplugin.NewClientProvider(clientConfig)), nil
 }
 
+// NewPolicyUploader returns a new Uploader for Policys.
+func NewPolicyUploader(container appext.Container) (bufpolicy.Uploader, error) {
+	clientConfig, err := NewConnectClientConfig(container)
+	if err != nil {
+		return nil, err
+	}
+	return newPolicyUploader(container, bufregistryapipolicy.NewClientProvider(clientConfig)), nil
+}
+
 func newModuleUploader(
 	container appext.Container,
 	clientProvider bufregistryapimodule.ClientProvider,
@@ -59,6 +71,16 @@ func newPluginUploader(
 	clientProvider bufregistryapiplugin.ClientProvider,
 ) bufplugin.Uploader {
 	return bufpluginapi.NewUploader(
+		container.Logger(),
+		clientProvider,
+	)
+}
+
+func newPolicyUploader(
+	container appext.Container,
+	clientProvider bufregistryapipolicy.ClientProvider,
+) bufpolicy.Uploader {
+	return bufpolicyapi.NewUploader(
 		container.Logger(),
 		clientProvider,
 	)
