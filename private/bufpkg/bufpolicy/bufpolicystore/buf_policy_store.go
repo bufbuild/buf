@@ -199,6 +199,6 @@ func getPolicyDataStorePath(policyKey bufpolicy.PolicyKey) (string, error) {
 		fullName.Registry(),
 		fullName.Owner(),
 		fullName.Name(),
-		uuidutil.ToDashless(policyKey.CommitID())+".yaml",
+		uuidutil.ToDashless(policyKey.CommitID())+".json",
 	), nil
 }

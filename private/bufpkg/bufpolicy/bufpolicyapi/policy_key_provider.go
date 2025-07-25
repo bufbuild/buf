@@ -123,7 +123,6 @@ func (p *policyKeyProvider) getIndexedPolicyKeysForRegistryAndIndexedPolicyRefs(
 			},
 		}
 	})
-
 	policyResponse, err := p.clientProvider.V1Beta1CommitServiceClient(registry).GetCommits(
 		ctx,
 		connect.NewRequest(&policyv1beta1.GetCommitsRequest{

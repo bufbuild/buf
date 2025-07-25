@@ -1273,12 +1273,20 @@ func TestRunBreakingWithCustomPlugins(t *testing.T) {
 	)
 }
 
-func TestRunBreakingPolicyLocal(t *testing.T) {
+func TestRunBreakingPolicyEmpty(t *testing.T) {
 	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_policy_empty",
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 1, 1, 1, 1, "MESSAGE_NO_DELETE",
+			bufanalysistesting.WithPolicyName("empty.policy.yaml"),
+		),
 	)
+}
+
+func TestRunBreakingPolicyLocal(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_policy_local",

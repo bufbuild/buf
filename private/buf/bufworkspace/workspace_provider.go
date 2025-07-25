@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -149,7 +150,6 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 	var (
 		pluginConfigs    []bufconfig.PluginConfig
 		remotePluginKeys []bufplugin.PluginKey
-		policyConfigs    []bufconfig.PolicyConfig
 	)
 	if config.configOverride != "" {
 		bufYAMLFile, err := bufconfig.GetBufYAMLFileForOverride(config.configOverride)
@@ -206,8 +206,13 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 					return nil, err
 				}
 			}
-
-			policyConfigs = bufYAMLFile.PolicyConfigs()
+			// TODO: Supporting Policies for ModuleKeys requires resolving each policies remote
+			// plugins.  This is not currently supported. Instead of requiring the resolved Keys for
+			// the workspace, passing resolvers for the remote refs would allow for lazy resolution.
+			policyConfigs := bufYAMLFile.PolicyConfigs()
+			if len(policyConfigs) > 0 {
+				return nil, fmt.Errorf("policies are not supported for ModuleKeys")
+			}
 		}
 	}
 
@@ -246,7 +251,9 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 		opaqueIDToBreakingConfig,
 		pluginConfigs,
 		remotePluginKeys,
-		policyConfigs,
+		nil, // PolicyConfigs are not supported for ModuleKeys
+		nil,
+		nil,
 		nil,
 		false,
 	), nil
@@ -413,6 +420,8 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		nil, // No PluginConfigs for v1
 		nil, // No remote PluginKeys for v1
 		nil, // No PolicyConfigs for v1
+		nil, // No remote PolicyKeys for v1
+		nil, // No Policy's PluginKeys for v1.
 		v1WorkspaceTargeting.allConfiguredDepModuleRefs,
 		false,
 	)
@@ -424,7 +433,11 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 	v2Targeting *v2Targeting,
 ) (*workspace, error) {
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, w.logger, w.moduleDataProvider, w.commitProvider)
-	var remotePluginKeys []bufplugin.PluginKey
+	var (
+		remotePluginKeys             []bufplugin.PluginKey
+		remotePolicyKeys             []bufpolicy.PolicyKey
+		policyNameToRemotePluginKeys map[string][]bufplugin.PluginKey
+	)
 	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
 		ctx,
 		bucket,
@@ -454,6 +467,8 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 			)
 		}
 		remotePluginKeys = bufLockFile.RemotePluginKeys()
+		remotePolicyKeys = bufLockFile.RemotePolicyKeys()
+		policyNameToRemotePluginKeys = bufLockFile.PolicyNameToRemotePluginKeys()
 	}
 	// Only check for duplicate module description in v2, which would be an user error, i.e.
 	// This is not a system error:
@@ -513,6 +528,8 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 		v2Targeting.bufYAMLFile.PluginConfigs(),
 		remotePluginKeys,
 		v2Targeting.bufYAMLFile.PolicyConfigs(),
+		remotePolicyKeys,
+		policyNameToRemotePluginKeys,
 		v2Targeting.bufYAMLFile.ConfiguredDepModuleRefs(),
 		true,
 	)
@@ -525,6 +542,8 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 	pluginConfigs []bufconfig.PluginConfig,
 	remotePluginKeys []bufplugin.PluginKey,
 	policyConfigs []bufconfig.PolicyConfig,
+	remotePolicyKeys []bufpolicy.PolicyKey,
+	policyNameToRemotePluginKeys map[string][]bufplugin.PluginKey,
 	// Expected to already be unique by FullName.
 	configuredDepModuleRefs []bufparse.Ref,
 	isV2 bool,
@@ -552,6 +571,8 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 		pluginConfigs,
 		remotePluginKeys,
 		policyConfigs,
+		remotePolicyKeys,
+		policyNameToRemotePluginKeys,
 		configuredDepModuleRefs,
 		isV2,
 	), nil
