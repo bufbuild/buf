@@ -19,14 +19,14 @@ import (
 	"fmt"
 
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapipolicy"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -205,7 +205,7 @@ func run(
 			format,
 			resp.Msg.NextPageToken,
 			nextPageCommand(container, flags, resp.Msg.NextPageToken),
-			slicesext.Map(resp.Msg.Commits, func(commit *policyv1beta1.Commit) bufprint.Entity {
+			xslices.Map(resp.Msg.Commits, func(commit *policyv1beta1.Commit) bufprint.Entity {
 				return bufprint.NewCommitEntity(commit, policyRef.FullName())
 			}),
 		)
@@ -246,7 +246,7 @@ func run(
 		}
 		return err
 	}
-	commits := slicesext.Map(
+	commits := xslices.Map(
 		resp.Msg.Values,
 		func(value *policyv1beta1.ListLabelHistoryResponse_Value) *policyv1beta1.Commit {
 			return value.Commit
@@ -257,7 +257,7 @@ func run(
 		format,
 		resp.Msg.NextPageToken,
 		nextPageCommand(container, flags, resp.Msg.NextPageToken),
-		slicesext.Map(commits, func(commit *policyv1beta1.Commit) bufprint.Entity {
+		xslices.Map(commits, func(commit *policyv1beta1.Commit) bufprint.Entity {
 			return bufprint.NewCommitEntity(commit, policyRef.FullName())
 		}),
 	)
