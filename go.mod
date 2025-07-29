@@ -2,7 +2,7 @@ module github.com/bufbuild/buf
 
 go 1.24
 
-toolchain go1.24.5
+toolchain go1.24.4
 
 require (
 	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.6-20250718181942-e35f9b667443.1
@@ -19,7 +19,7 @@ require (
 	connectrpc.com/otelconnect v0.7.2
 	github.com/bufbuild/protocompile v0.14.1
 	github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1
-	github.com/docker/docker v28.3.2+incompatible
+	github.com/docker/docker v28.3.3+incompatible
 	github.com/go-chi/chi/v5 v5.2.2
 	github.com/gofrs/flock v0.12.1
 	github.com/google/cel-go v0.26.0
@@ -67,7 +67,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/cli v28.3.2+incompatible // indirect
+	github.com/docker/cli v28.3.3+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.3 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
@@ -90,7 +90,7 @@ require (
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
-	github.com/segmentio/encoding v0.5.2 // indirect
+	github.com/segmentio/encoding v0.5.3 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stoewer/go-strcase v1.3.1 // indirect
 	github.com/vbatts/tar-split v0.12.1 // indirect
@@ -107,7 +107,7 @@ require (
 	golang.org/x/exp v0.0.0-20250718183923-645b1fa84792 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250721164621-a45f3dfb1074 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250721164621-a45f3dfb1074 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250728155136-f173205681a0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250728155136-f173205681a0 // indirect
 	google.golang.org/grpc v1.72.2 // indirect
 )
