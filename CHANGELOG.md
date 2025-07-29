@@ -9,6 +9,8 @@
   removed in protovalidate v0.14.0. Please update to protovalidate v0.14.0 or higher, using the
   steps outlined in the
   [protovalidate release notes](https://github.com/bufbuild/protovalidate/releases/tag/v0.14.0).
+- Fix `buf breaking --against-registry` to work with new modules that have no commits on the
+  default branch.
 
 ## [v1.55.1] - 2025-06-17
 
