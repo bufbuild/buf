@@ -16,54 +16,79 @@ package bufcheck
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy/bufpolicyconfig"
 )
 
-func newPolicyLintConfig(
-	policyConfig bufconfig.PolicyConfig,
-	policyFile bufpolicyconfig.BufPolicyYAMLFile,
+// policyToBufConfigLintConfig creates a new bufconfig.LintConfig from the source bufpolicy.Policy
+// applied through the buf.yaml file's policy configuration.
+func policyToBufConfigLintConfig(
+	policy bufpolicy.Policy,
+	bufYamlPolicyConfig bufconfig.PolicyConfig,
 ) (bufconfig.LintConfig, error) {
-	policyFileLintConfig := policyFile.LintConfig()
+	policyConfig, err := policy.Config()
+	if err != nil {
+		return nil, err
+	}
+	policyLintConfig := policyConfig.LintConfig()
 	checkConfig, err := bufconfig.NewEnabledCheckConfig(
-		policyFileLintConfig.FileVersion(),
-		policyFileLintConfig.UseIDsAndCategories(),
-		policyFileLintConfig.ExceptIDsAndCategories(),
-		policyConfig.IgnorePaths(),
-		policyConfig.IgnoreIDOrCategoryToPaths(),
-		policyFileLintConfig.DisableBuiltin(),
+		bufconfig.FileVersionV2,
+		policyLintConfig.UseIDsAndCategories(),
+		policyLintConfig.ExceptIDsAndCategories(),
+		bufYamlPolicyConfig.IgnorePaths(),
+		bufYamlPolicyConfig.IgnoreIDOrCategoryToPaths(),
+		false, // Builtin checks are not disabled in policy files.
 	)
 	if err != nil {
 		return nil, err
 	}
 	return bufconfig.NewLintConfig(
 		checkConfig,
-		policyFileLintConfig.EnumZeroValueSuffix(),
-		policyFileLintConfig.RPCAllowSameRequestResponse(),
-		policyFileLintConfig.RPCAllowGoogleProtobufEmptyRequests(),
-		policyFileLintConfig.RPCAllowGoogleProtobufEmptyResponses(),
-		policyFileLintConfig.ServiceSuffix(),
-		policyFileLintConfig.AllowCommentIgnores(),
+		policyLintConfig.EnumZeroValueSuffix(),
+		policyLintConfig.RPCAllowSameRequestResponse(),
+		policyLintConfig.RPCAllowGoogleProtobufEmptyRequests(),
+		policyLintConfig.RPCAllowGoogleProtobufEmptyResponses(),
+		policyLintConfig.ServiceSuffix(),
+		false, // We do not allow comment ignores in policy files.
 	), nil
 }
 
-func newPolicyBreakingConfig(
-	policyConfig bufconfig.PolicyConfig,
-	policyFile bufpolicyconfig.BufPolicyYAMLFile,
+// policyToBufConfigBreakingConfig creates a new bufconfig.BreakingConfig from the source bufpolicy.Policy
+// applied through the buf.yaml file's policy configuration.
+func policyToBufConfigBreakingConfig(
+	policy bufpolicy.Policy,
+	bufYamlPolicyConfig bufconfig.PolicyConfig,
 ) (bufconfig.BreakingConfig, error) {
-	policyFileBreakingConfig := policyFile.BreakingConfig()
+	policyConfig, err := policy.Config()
+	if err != nil {
+		return nil, err
+	}
+	policyBreakingConfig := policyConfig.BreakingConfig()
 	checkConfig, err := bufconfig.NewEnabledCheckConfig(
-		policyFileBreakingConfig.FileVersion(),
-		policyFileBreakingConfig.UseIDsAndCategories(),
-		policyFileBreakingConfig.ExceptIDsAndCategories(),
-		policyConfig.IgnorePaths(),
-		policyConfig.IgnoreIDOrCategoryToPaths(),
-		policyFileBreakingConfig.DisableBuiltin(),
+		bufconfig.FileVersionV2,
+		policyBreakingConfig.UseIDsAndCategories(),
+		policyBreakingConfig.ExceptIDsAndCategories(),
+		bufYamlPolicyConfig.IgnorePaths(),
+		bufYamlPolicyConfig.IgnoreIDOrCategoryToPaths(),
+		false, // Builtin checks are not disabled in policy files.
 	)
 	if err != nil {
 		return nil, err
 	}
 	return bufconfig.NewBreakingConfig(
 		checkConfig,
-		policyFileBreakingConfig.IgnoreUnstablePackages(),
+		policyBreakingConfig.IgnoreUnstablePackages(),
 	), nil
+}
+
+// policyToBufConfigPluginConfigs converts the given policy to a slice of bufconfig.PluginConfig.
+func policyToBufConfigPluginConfigs(
+	policy bufpolicy.Policy,
+) ([]bufconfig.PluginConfig, error) {
+	policyConfig, err := policy.Config()
+	if err != nil {
+		return nil, err
+	}
+	pluginConfigs := policyConfig.PluginConfigs()
+	return bufpolicyconfig.PluginConfigsToBufConfig(pluginConfigs)
 }

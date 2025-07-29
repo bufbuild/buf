@@ -32,9 +32,14 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufplugincache"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginstore"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy/bufpolicyapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy/bufpolicycache"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy/bufpolicystore"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapipolicy"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -60,6 +65,7 @@ var (
 		v3CacheModuleLockRelDirPath,
 		v3CacheModuleRelDirPath,
 		v3CachePluginRelDirPath,
+		v3CachePolicyRelDirPath,
 		v3CacheWKTRelDirPath,
 		v3CacheWasmRuntimeRelDirPath,
 	}
@@ -122,6 +128,10 @@ var (
 	//
 	// Normalized.
 	v3CacheWasmRuntimeRelDirPath = normalpath.Join("v3", "wasmruntime")
+	// v3CachePolicyRelDirPath is the relative path to the files cache directory in its newest iteration.
+	//
+	// Normalized.
+	v3CachePolicyRelDirPath = normalpath.Join("v3", "policies")
 )
 
 // NewModuleDataProvider returns a new ModuleDataProvider while creating the
@@ -170,6 +180,21 @@ func NewPluginDataProvider(container appext.Container) (bufplugin.PluginDataProv
 	return newPluginDataProvider(
 		container,
 		bufregistryapiplugin.NewClientProvider(
+			clientConfig,
+		),
+	)
+}
+
+// NewPolicyDataProvider returns a new PolicyDataProvider while creating the
+// required cache directories.
+func NewPolicyDataProvider(container appext.Container) (bufpolicy.PolicyDataProvider, error) {
+	clientConfig, err := NewConnectClientConfig(container)
+	if err != nil {
+		return nil, err
+	}
+	return newPolicyDataProvider(
+		container,
+		bufregistryapipolicy.NewClientProvider(
 			clientConfig,
 		),
 	)
@@ -295,6 +320,33 @@ func newPluginDataProvider(
 		container.Logger(),
 		delegateModuleDataProvider,
 		bufpluginstore.NewPluginDataStore(
+			container.Logger(),
+			cacheBucket,
+		),
+	), nil
+}
+
+func newPolicyDataProvider(
+	container appext.Container,
+	policyClientProvider bufregistryapipolicy.ClientProvider,
+) (bufpolicy.PolicyDataProvider, error) {
+	if err := createCacheDir(container.CacheDirPath(), v3CachePolicyRelDirPath); err != nil {
+		return nil, err
+	}
+	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CachePolicyRelDirPath)
+	storageosProvider := storageos.NewProvider() // No symlinks.
+	cacheBucket, err := storageosProvider.NewReadWriteBucket(fullCacheDirPath)
+	if err != nil {
+		return nil, err
+	}
+	delegateModuleDataProvider := bufpolicyapi.NewPolicyDataProvider(
+		container.Logger(),
+		policyClientProvider,
+	)
+	return bufpolicycache.NewPolicyDataProvider(
+		container.Logger(),
+		delegateModuleDataProvider,
+		bufpolicystore.NewPolicyDataStore(
 			container.Logger(),
 			cacheBucket,
 		),

@@ -503,6 +503,29 @@ func TestRunPackageNoImportCycle(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "c1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
 		bufanalysistesting.NewFileAnnotation(t, "d1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
 	)
+	testLintWithOptions(
+		t,
+		"package_no_import_cycle",
+		"",
+		func(image bufimage.Image) bufimage.Image {
+			// Testing that import cycles are still detected via imports, but are
+			// not reported for imports, only for non-imports.
+			var newImageFiles []bufimage.ImageFile
+			for _, imageFile := range image.Files() {
+				if imageFile.FileDescriptorProto().GetPackage() == "b" {
+					newImageFiles = append(newImageFiles, bufimage.ImageFileWithIsImport(imageFile, true))
+				} else {
+					require.False(t, imageFile.IsImport())
+					newImageFiles = append(newImageFiles, imageFile)
+				}
+			}
+			newImage, err := bufimage.NewImage(newImageFiles)
+			require.NoError(t, err)
+			return newImage
+		},
+		bufanalysistesting.NewFileAnnotation(t, "c1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
+		bufanalysistesting.NewFileAnnotation(t, "d1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
+	)
 }
 
 func TestRunPackageSameDirectory(t *testing.T) {
@@ -1338,6 +1361,14 @@ func TestRunLintPolicyEmpty(t *testing.T) {
 		"policy_empty",
 		"",
 		nil,
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 3, 1, 3, 11, "PACKAGE_DIRECTORY_MATCH",
+			bufanalysistesting.WithPolicyName("empty.policy.yaml"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 3, 1, 3, 11, "PACKAGE_VERSION_SUFFIX",
+			bufanalysistesting.WithPolicyName("empty.policy.yaml"),
+		),
 	)
 }
 
