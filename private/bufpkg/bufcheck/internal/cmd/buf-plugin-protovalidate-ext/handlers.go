@@ -20,7 +20,7 @@ import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/bufplugin/option"
-	"github.com/bufbuild/protovalidate-go/resolve"
+	"buf.build/go/protovalidate"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -35,7 +35,10 @@ func checkFieldNotSkippedNoImport(
 	request check.Request,
 	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
-	constraints := resolve.FieldRules(fieldDescriptor)
+	constraints, err := protovalidate.ResolveFieldRules(fieldDescriptor)
+	if err != nil {
+		return err
+	}
 	if constraints.GetIgnore() == validate.Ignore_IGNORE_ALWAYS {
 		skippedRuleName := "(buf.validate.field).skipped"
 		if fieldDescriptor.Cardinality() == protoreflect.Repeated {
@@ -59,7 +62,10 @@ func checkFieldNotSkipped(
 	request check.Request,
 	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
-	constraints := resolve.FieldRules(fieldDescriptor)
+	constraints, err := protovalidate.ResolveFieldRules(fieldDescriptor)
+	if err != nil {
+		return err
+	}
 	if constraints.GetIgnore() == validate.Ignore_IGNORE_ALWAYS {
 		skippedRuleName := "(buf.validate.field).skipped"
 		if fieldDescriptor.Cardinality() == protoreflect.Repeated {
@@ -84,9 +90,12 @@ func checkStringLenRangeDontShrink(
 	field protoreflect.FieldDescriptor,
 	againstField protoreflect.FieldDescriptor,
 ) error {
-	againstRules := resolve.FieldRules(againstField)
+	againstRules, err := protovalidate.ResolveFieldRules(againstField)
+	if err != nil {
+		return err
+	}
 	if againstStringRules := againstRules.GetString(); againstStringRules != nil {
-		constraints := resolve.FieldRules(field)
+		constraints, _ := protovalidate.ResolveFieldRules(field)
 		if stringRules := constraints.GetString(); stringRules != nil {
 			if againstStringRules.MinLen != nil && stringRules.MinLen != nil && stringRules.GetMinLen() > againstStringRules.GetMinLen() {
 				responseWriter.AddAnnotation(
@@ -127,7 +136,10 @@ func checkValidateIDDashless(
 	if fieldDescriptor.Kind() != protoreflect.StringKind {
 		return nil
 	}
-	constraints := resolve.FieldRules(fieldDescriptor)
+	constraints, err := protovalidate.ResolveFieldRules(fieldDescriptor)
+	if err != nil {
+		return err
+	}
 	if stringRules := constraints.GetString(); stringRules == nil || !stringRules.GetTuuid() {
 		missingRuleName := "(buf.validate.field).string.tuuid"
 		if fieldDescriptor.Cardinality() == protoreflect.Repeated {
@@ -140,22 +152,6 @@ func checkValidateIDDashless(
 				fieldDescriptor.FullName(),
 				missingRuleName,
 			),
-		)
-	}
-	return nil
-}
-
-func checkMessageNotDisabled(
-	_ context.Context,
-	responseWriter check.ResponseWriter,
-	request check.Request,
-	messageDescriptor protoreflect.MessageDescriptor,
-) error {
-	constraints := resolve.MessageRules(messageDescriptor)
-	if constraints.GetDisabled() {
-		responseWriter.AddAnnotation(
-			check.WithMessagef("%s has (buf.validate.message).disabled set to true", string(messageDescriptor.Name())),
-			check.WithDescriptor(messageDescriptor),
 		)
 	}
 	return nil

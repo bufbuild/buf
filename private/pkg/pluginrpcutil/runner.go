@@ -21,7 +21,7 @@ import (
 	"os/exec"
 	"slices"
 
-	"github.com/bufbuild/buf/private/pkg/execext"
+	"buf.build/go/standard/xos/xexec"
 	"pluginrpc.com/pluginrpc"
 )
 
@@ -45,14 +45,14 @@ func (r *runner) Run(ctx context.Context, env pluginrpc.Env) error {
 	if len(r.programArgs) > 0 {
 		args = append(slices.Clone(r.programArgs), env.Args...)
 	}
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		r.programName,
-		execext.WithArgs(args...),
-		execext.WithStdin(env.Stdin),
-		execext.WithStdout(env.Stdout),
-		execext.WithStderr(env.Stderr),
-		execext.WithEnv(os.Environ()),
+		xexec.WithArgs(args...),
+		xexec.WithStdin(env.Stdin),
+		xexec.WithStdout(env.Stdout),
+		xexec.WithStderr(env.Stderr),
+		xexec.WithEnv(os.Environ()),
 	); err != nil {
 		execExitError := &exec.ExitError{}
 		if errors.As(err, &execExitError) {

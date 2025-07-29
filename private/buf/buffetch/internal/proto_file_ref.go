@@ -14,7 +14,7 @@
 
 package internal
 
-import "github.com/bufbuild/buf/private/pkg/app"
+import "buf.build/go/app"
 
 var (
 	_ ParsedProtoFileRef = &protoFileRef{}

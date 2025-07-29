@@ -18,7 +18,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 )

@@ -22,11 +22,10 @@ import (
 	"unicode/utf8"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+	"buf.build/go/protovalidate"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/protovalidate-go"
-	"github.com/bufbuild/protovalidate-go/resolve"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -163,7 +162,10 @@ func checkField(
 	if err != nil {
 		return err
 	}
-	constraints := resolve.FieldRules(fieldDescriptor)
+	constraints, err := protovalidate.ResolveFieldRules(fieldDescriptor)
+	if err != nil {
+		return err
+	}
 	return checkRulesForField(
 		&adder{
 			field:               field,
@@ -311,7 +313,7 @@ func checkFieldFlags(
 			adder.getFieldRuleName(),
 		)
 	}
-	if fieldRules.GetRequired() && fieldRules.GetIgnore() == validate.Ignore_IGNORE_IF_UNPOPULATED {
+	if fieldRules.GetRequired() && fieldRules.GetIgnore() == validate.Ignore_IGNORE_IF_ZERO_VALUE {
 		adder.addForPathsf(
 			[][]int32{
 				{requiredFieldNumber},
@@ -321,7 +323,7 @@ func checkFieldFlags(
 			adder.fieldName(),
 			adder.getFieldRuleName(requiredFieldNumber),
 			adder.getFieldRuleName(ignoreFieldNumber),
-			validate.Ignore_IGNORE_IF_UNPOPULATED,
+			validate.Ignore_IGNORE_IF_ZERO_VALUE,
 		)
 	}
 }
@@ -374,13 +376,13 @@ func checkRulesForExtension(
 			adder.getFieldRuleName(requiredFieldNumber),
 		)
 	}
-	if fieldRules.GetIgnore() == validate.Ignore_IGNORE_IF_UNPOPULATED {
+	if fieldRules.GetIgnore() == validate.Ignore_IGNORE_IF_ZERO_VALUE {
 		adder.addForPathf(
 			[]int32{ignoreFieldNumber},
 			"Field %q is an extension field and cannot have %s=%v.",
 			adder.fieldName(),
 			adder.getFieldRuleName(ignoreFieldNumber),
-			validate.Ignore_IGNORE_IF_UNPOPULATED,
+			validate.Ignore_IGNORE_IF_ZERO_VALUE,
 		)
 	}
 }
@@ -756,8 +758,8 @@ func checkExampleValues(
 		})
 	}
 	if !hasRules {
-		adder.addForPathf(pathToExampleValues, "example value is specified by there are no constraints defined")
-		// No need to check if example values satifisy constraints, because there is none.
+		// Since there are no constraints to check example values against, we already checked
+		// if the proper example type has been set on the field, so we can return here.
 		return nil
 	}
 	// For each example value, instantiate a message of its containing message's type

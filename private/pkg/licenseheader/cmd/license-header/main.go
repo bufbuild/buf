@@ -21,8 +21,8 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
+	"buf.build/go/app"
+	"buf.build/go/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/diff"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/licenseheader"

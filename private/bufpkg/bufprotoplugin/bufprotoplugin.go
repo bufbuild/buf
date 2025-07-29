@@ -25,7 +25,7 @@ import (
 	"log/slog"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/pkg/app"
+	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/protoplugin"
 	"google.golang.org/protobuf/types/pluginpb"

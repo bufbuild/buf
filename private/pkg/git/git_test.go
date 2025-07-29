@@ -27,7 +27,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/app"
+	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"

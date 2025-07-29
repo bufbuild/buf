@@ -40,7 +40,7 @@ message Actor {
 
 // ResourceType is the type of the resource that was affected by the audited event.
 //
-// [#next-free-field: 20]
+// [#next-free-field: 22]
 enum ResourceType {
   RESOURCE_TYPE_UNSPECIFIED = 0;
   RESOURCE_TYPE_USER = 1;
@@ -53,6 +53,7 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY_IDP_GROUP = 18;
   RESOURCE_TYPE_POLICY = 17;
   RESOURCE_TYPE_POLICY_COMMIT = 19;
+  RESOURCE_TYPE_POLICY_LABEL = 20;
   RESOURCE_TYPE_PLUGIN = 7;
   RESOURCE_TYPE_PLUGIN_COMMIT = 15;
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
@@ -62,6 +63,7 @@ enum ResourceType {
   RESOURCE_TYPE_SERVER = 13;
   RESOURCE_TYPE_DEVICE_AUTHORIZATION_GRANT = 14;
   RESOURCE_TYPE_PLUGIN_LABEL = 16;
+  RESOURCE_TYPE_SDK_PLUGIN_CONSTRAINT = 21;
 }
 
 // Resource is the affected resource by the audited event.
@@ -76,7 +78,7 @@ message Resource {
 
 // EventType is the type of audited event.
 //
-// [#next-free-field: 65]
+// [#next-free-field: 74]
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
   EVENT_TYPE_ORGANIZATION_CREATED = 1;
@@ -108,6 +110,10 @@ enum EventType {
   EVENT_TYPE_POLICY_UNDEPRECATED = 57;
   EVENT_TYPE_POLICY_VISIBILITY_CHANGED = 58;
   EVENT_TYPE_POLICY_COMMIT_PUSHED = 64;
+  EVENT_TYPE_POLICY_LABEL_CREATED = 65;
+  EVENT_TYPE_POLICY_LABEL_MOVED = 66;
+  EVENT_TYPE_POLICY_LABEL_ARCHIVED = 67;
+  EVENT_TYPE_POLICY_LABEL_UNARCHIVED = 68;
   EVENT_TYPE_PLUGIN_CREATED = 13;
   EVENT_TYPE_PLUGIN_DELETED = 14;
   EVENT_TYPE_PLUGIN_DEPRECATED = 51;
@@ -143,6 +149,11 @@ enum EventType {
   EVENT_TYPE_PLUGIN_LABEL_MOVED = 45;
   EVENT_TYPE_PLUGIN_LABEL_ARCHIVED = 46;
   EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED = 47;
+  EVENT_TYPE_SERVER_REVIEW_FLOW_ENABLED = 69;
+  EVENT_TYPE_SERVER_REVIEW_FLOW_DISABLED = 70;
+  EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_CREATED = 71;
+  EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_UPDATED = 72;
+  EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_DELETED = 73;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -159,7 +170,7 @@ message EventMetadata {
 // it happened, who did it, which resource was affected, and more contextual information on the
 // event.
 //
-// [#next-free-field: 71]
+// [#next-free-field: 80]
 message Event {
   // Unique id of the audited event.
   string event_id = 1;
@@ -201,6 +212,10 @@ message Event {
     PayloadPolicyUndeprecated policy_undeprecated = 63;
     PayloadPolicyVisibilityChanged policy_visibility_changed = 64;
     PayloadPolicyCommitPushed policy_commit_pushed = 70;
+    PayloadPolicyLabelCreated policy_label_created = 71;
+    PayloadPolicyLabelMoved policy_label_moved = 72;
+    PayloadPolicyLabelArchived policy_label_archived = 73;
+    PayloadPolicyLabelUnarchived policy_label_unarchived = 74;
     PayloadPluginCreated plugin_created = 19;
     PayloadPluginDeleted plugin_deleted = 20;
     PayloadPluginDeprecated plugin_deprecated = 57;
@@ -239,6 +254,11 @@ message Event {
     PayloadPluginLabelMoved plugin_label_moved = 51;
     PayloadPluginLabelArchived plugin_label_archived = 52;
     PayloadPluginLabelUnarchived plugin_label_unarchived = 53;
+    PayloadServerReviewFlowEnabled server_review_flow_enabled = 75;
+    PayloadServerReviewFlowDisabled server_review_flow_disabled = 76;
+    PayloadSDKPluginConstraintCreated sdk_plugin_constraint_created = 77;
+    PayloadSDKPluginConstraintUpdated sdk_plugin_constraint_updated = 78;
+    PayloadSDKPluginConstraintDeleted sdk_plugin_constraint_deleted = 79;
   }
 }
 
@@ -584,8 +604,8 @@ message PayloadPolicyCommitPushed {
   string policy_id = 3;
   // policy_name is the name of the policy within which the commit was created.
   string policy_name = 4;
-  // p1_digest is the p1 digest of the pushed policy commit.
-  string p1_digest = 5;
+  // o1_digest is the o1 digest of the pushed policy commit.
+  string o1_digest = 5;
 }
 
 message PayloadPluginCreated {
@@ -790,6 +810,10 @@ message PayloadServerBreakingChangePolicyEnabled {
 
 message PayloadServerBreakingChangePolicyDisabled {}
 
+message PayloadServerReviewFlowEnabled {}
+
+message PayloadServerReviewFlowDisabled {}
+
 message PayloadServerUniquenessPolicyEnabled {}
 
 message PayloadServerUniquenessPolicyDisabled {}
@@ -851,4 +875,111 @@ message PayloadPluginLabelUnarchived {
   string plugin_id = 3;
   // plugin_name is the name of the plugin from which the label was unarchived.
   string plugin_name = 4;
+}
+
+message PayloadPolicyLabelCreated {
+  // owner_id is the id of the owner of the policy on which the label was created.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy on which the label was created.
+  string owner_name = 2;
+  // policy_id is the id of the policy on which the label was created.
+  string policy_id = 3;
+  // policy_name is the name of the policy from which the label was created.
+  string policy_name = 4;
+  // commit_id is the id of the commit on which the label was created.
+  string commit_id = 6;
+}
+
+message PayloadPolicyLabelMoved {
+  // owner_id is the id of the owner of the policy on which the label was moved.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy on which the label was moved.
+  string owner_name = 2;
+  // policy_id is the id of the policy on which the label was moved.
+  string policy_id = 3;
+  // policy_name is the name of the policy from which the label was moved.
+  string policy_name = 4;
+  // to_commit_id is the id of the commit on which the label was moved to.
+  string to_commit_id = 6;
+  // from_commit_id is the id of the commit on which the label was moved from.
+  string from_commit_id = 7;
+}
+
+message PayloadPolicyLabelArchived {
+  // owner_id is the id of the owner of the policy on which the label was archived.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy on which the label was archived.
+  string owner_name = 2;
+  // policy_id is the id of the policy on which the label was archived.
+  string policy_id = 3;
+  // policy_name is the name of the policy from which the label was archived.
+  string policy_name = 4;
+}
+
+message PayloadPolicyLabelUnarchived {
+  // owner_id is the id of the owner of the policy on which the label was unarchived.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy on which the label was unarchived.
+  string owner_name = 2;
+  // policy_id is the id of the policy on which the label was unarchived.
+  string policy_id = 3;
+  // policy_name is the name of the policy from which the label was unarchived.
+  string policy_name = 4;
+}
+
+message PayloadSDKPluginConstraintCreated {
+  // repository_owner_id is the id of the owner of the repository of the SDK constraint.
+  string repository_owner_id = 1;
+  // repository_owner_name is the name of the owner of the repository of the SDK constraint.
+  string repository_owner_name = 2;
+  // repository_id is the id of the repository of the SDK constraint.
+  string repository_id = 3;
+  // repository_name is the name of the repository of the SDK constraint.
+  string repository_name = 4;
+  // plugin_owner_id is the id of the owner of the plugin of the SDK constraint.
+  string plugin_owner_id = 5;
+  // plugin_owner_name is the name of the owner of the plugin of the SDK constraint.
+  string plugin_owner_name = 6;
+  // plugin_id is the id of the plugin of the SDK constraint.
+  string plugin_id = 7;
+  // plugin_name is the name of the plugin of the SDK constraint.
+  string plugin_name = 8;
+}
+
+message PayloadSDKPluginConstraintUpdated {
+  // repository_owner_id is the id of the owner of the repository of the SDK constraint.
+  string repository_owner_id = 1;
+  // repository_owner_name is the name of the owner of the repository of the SDK constraint.
+  string repository_owner_name = 2;
+  // repository_id is the id of the repository of the SDK constraint.
+  string repository_id = 3;
+  // repository_name is the name of the repository of the SDK constraint.
+  string repository_name = 4;
+  // plugin_owner_id is the id of the owner of the plugin of the SDK constraint.
+  string plugin_owner_id = 5;
+  // plugin_owner_name is the name of the owner of the plugin of the SDK constraint.
+  string plugin_owner_name = 6;
+  // plugin_id is the id of the plugin of the SDK constraint.
+  string plugin_id = 7;
+  // plugin_name is the name of the plugin of the SDK constraint.
+  string plugin_name = 8;
+}
+
+message PayloadSDKPluginConstraintDeleted {
+  // repository_owner_id is the id of the owner of the repository of the SDK constraint.
+  string repository_owner_id = 1;
+  // repository_owner_name is the name of the owner of the repository of the SDK constraint.
+  string repository_owner_name = 2;
+  // repository_id is the id of the repository of the SDK constraint.
+  string repository_id = 3;
+  // repository_name is the name of the repository of the SDK constraint.
+  string repository_name = 4;
+  // plugin_owner_id is the id of the owner of the plugin of the SDK constraint.
+  string plugin_owner_id = 5;
+  // plugin_owner_name is the name of the owner of the plugin of the SDK constraint.
+  string plugin_owner_name = 6;
+  // plugin_id is the id of the plugin of the SDK constraint.
+  string plugin_id = 7;
+  // plugin_name is the name of the plugin of the SDK constraint.
+  string plugin_name = 8;
 }

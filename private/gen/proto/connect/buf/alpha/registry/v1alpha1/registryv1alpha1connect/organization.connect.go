@@ -80,9 +80,6 @@ const (
 	// OrganizationServiceRemoveOrganizationMemberProcedure is the fully-qualified name of the
 	// OrganizationService's RemoveOrganizationMember RPC.
 	OrganizationServiceRemoveOrganizationMemberProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationMember"
-	// OrganizationServiceSetOrganizationMemberProcedure is the fully-qualified name of the
-	// OrganizationService's SetOrganizationMember RPC.
-	OrganizationServiceSetOrganizationMemberProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/SetOrganizationMember"
 	// OrganizationServiceGetOrganizationSettingsProcedure is the fully-qualified name of the
 	// OrganizationService's GetOrganizationSettings RPC.
 	OrganizationServiceGetOrganizationSettingsProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganizationSettings"
@@ -124,8 +121,6 @@ type OrganizationServiceClient interface {
 	UpdateOrganizationMember(context.Context, *connect.Request[v1alpha1.UpdateOrganizationMemberRequest]) (*connect.Response[v1alpha1.UpdateOrganizationMemberResponse], error)
 	// RemoveOrganizationMember remove the role of an user in the organization.
 	RemoveOrganizationMember(context.Context, *connect.Request[v1alpha1.RemoveOrganizationMemberRequest]) (*connect.Response[v1alpha1.RemoveOrganizationMemberResponse], error)
-	// SetOrganizationMember sets the role of a user in the organization.
-	SetOrganizationMember(context.Context, *connect.Request[v1alpha1.SetOrganizationMemberRequest]) (*connect.Response[v1alpha1.SetOrganizationMemberResponse], error)
 	// GetOrganizationSettings gets the settings of an organization, including organization base roles.
 	GetOrganizationSettings(context.Context, *connect.Request[v1alpha1.GetOrganizationSettingsRequest]) (*connect.Response[v1alpha1.GetOrganizationSettingsResponse], error)
 	// UpdateOrganizationSettings update the organization settings including base roles.
@@ -226,12 +221,6 @@ func NewOrganizationServiceClient(httpClient connect.HTTPClient, baseURL string,
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
-		setOrganizationMember: connect.NewClient[v1alpha1.SetOrganizationMemberRequest, v1alpha1.SetOrganizationMemberResponse](
-			httpClient,
-			baseURL+OrganizationServiceSetOrganizationMemberProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("SetOrganizationMember")),
-			connect.WithClientOptions(opts...),
-		),
 		getOrganizationSettings: connect.NewClient[v1alpha1.GetOrganizationSettingsRequest, v1alpha1.GetOrganizationSettingsResponse](
 			httpClient,
 			baseURL+OrganizationServiceGetOrganizationSettingsProcedure,
@@ -282,7 +271,6 @@ type organizationServiceClient struct {
 	addOrganizationMember      *connect.Client[v1alpha1.AddOrganizationMemberRequest, v1alpha1.AddOrganizationMemberResponse]
 	updateOrganizationMember   *connect.Client[v1alpha1.UpdateOrganizationMemberRequest, v1alpha1.UpdateOrganizationMemberResponse]
 	removeOrganizationMember   *connect.Client[v1alpha1.RemoveOrganizationMemberRequest, v1alpha1.RemoveOrganizationMemberResponse]
-	setOrganizationMember      *connect.Client[v1alpha1.SetOrganizationMemberRequest, v1alpha1.SetOrganizationMemberResponse]
 	getOrganizationSettings    *connect.Client[v1alpha1.GetOrganizationSettingsRequest, v1alpha1.GetOrganizationSettingsResponse]
 	updateOrganizationSettings *connect.Client[v1alpha1.UpdateOrganizationSettingsRequest, v1alpha1.UpdateOrganizationSettingsResponse]
 	addOrganizationGroup       *connect.Client[v1alpha1.AddOrganizationGroupRequest, v1alpha1.AddOrganizationGroupResponse]
@@ -351,12 +339,6 @@ func (c *organizationServiceClient) RemoveOrganizationMember(ctx context.Context
 	return c.removeOrganizationMember.CallUnary(ctx, req)
 }
 
-// SetOrganizationMember calls
-// buf.alpha.registry.v1alpha1.OrganizationService.SetOrganizationMember.
-func (c *organizationServiceClient) SetOrganizationMember(ctx context.Context, req *connect.Request[v1alpha1.SetOrganizationMemberRequest]) (*connect.Response[v1alpha1.SetOrganizationMemberResponse], error) {
-	return c.setOrganizationMember.CallUnary(ctx, req)
-}
-
 // GetOrganizationSettings calls
 // buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationSettings.
 func (c *organizationServiceClient) GetOrganizationSettings(ctx context.Context, req *connect.Request[v1alpha1.GetOrganizationSettingsRequest]) (*connect.Response[v1alpha1.GetOrganizationSettingsResponse], error) {
@@ -410,8 +392,6 @@ type OrganizationServiceHandler interface {
 	UpdateOrganizationMember(context.Context, *connect.Request[v1alpha1.UpdateOrganizationMemberRequest]) (*connect.Response[v1alpha1.UpdateOrganizationMemberResponse], error)
 	// RemoveOrganizationMember remove the role of an user in the organization.
 	RemoveOrganizationMember(context.Context, *connect.Request[v1alpha1.RemoveOrganizationMemberRequest]) (*connect.Response[v1alpha1.RemoveOrganizationMemberResponse], error)
-	// SetOrganizationMember sets the role of a user in the organization.
-	SetOrganizationMember(context.Context, *connect.Request[v1alpha1.SetOrganizationMemberRequest]) (*connect.Response[v1alpha1.SetOrganizationMemberResponse], error)
 	// GetOrganizationSettings gets the settings of an organization, including organization base roles.
 	GetOrganizationSettings(context.Context, *connect.Request[v1alpha1.GetOrganizationSettingsRequest]) (*connect.Response[v1alpha1.GetOrganizationSettingsResponse], error)
 	// UpdateOrganizationSettings update the organization settings including base roles.
@@ -507,12 +487,6 @@ func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...conne
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
-	organizationServiceSetOrganizationMemberHandler := connect.NewUnaryHandler(
-		OrganizationServiceSetOrganizationMemberProcedure,
-		svc.SetOrganizationMember,
-		connect.WithSchema(organizationServiceMethods.ByName("SetOrganizationMember")),
-		connect.WithHandlerOptions(opts...),
-	)
 	organizationServiceGetOrganizationSettingsHandler := connect.NewUnaryHandler(
 		OrganizationServiceGetOrganizationSettingsProcedure,
 		svc.GetOrganizationSettings,
@@ -571,8 +545,6 @@ func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...conne
 			organizationServiceUpdateOrganizationMemberHandler.ServeHTTP(w, r)
 		case OrganizationServiceRemoveOrganizationMemberProcedure:
 			organizationServiceRemoveOrganizationMemberHandler.ServeHTTP(w, r)
-		case OrganizationServiceSetOrganizationMemberProcedure:
-			organizationServiceSetOrganizationMemberHandler.ServeHTTP(w, r)
 		case OrganizationServiceGetOrganizationSettingsProcedure:
 			organizationServiceGetOrganizationSettingsHandler.ServeHTTP(w, r)
 		case OrganizationServiceUpdateOrganizationSettingsProcedure:
@@ -634,10 +606,6 @@ func (UnimplementedOrganizationServiceHandler) UpdateOrganizationMember(context.
 
 func (UnimplementedOrganizationServiceHandler) RemoveOrganizationMember(context.Context, *connect.Request[v1alpha1.RemoveOrganizationMemberRequest]) (*connect.Response[v1alpha1.RemoveOrganizationMemberResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationMember is not implemented"))
-}
-
-func (UnimplementedOrganizationServiceHandler) SetOrganizationMember(context.Context, *connect.Request[v1alpha1.SetOrganizationMemberRequest]) (*connect.Response[v1alpha1.SetOrganizationMemberResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.SetOrganizationMember is not implemented"))
 }
 
 func (UnimplementedOrganizationServiceHandler) GetOrganizationSettings(context.Context, *connect.Request[v1alpha1.GetOrganizationSettingsRequest]) (*connect.Response[v1alpha1.GetOrganizationSettingsResponse], error) {

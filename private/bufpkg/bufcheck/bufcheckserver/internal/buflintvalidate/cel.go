@@ -19,8 +19,8 @@ import (
 	"strings"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+	celpv "buf.build/go/protovalidate/cel"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	celpv "github.com/bufbuild/protovalidate-go/cel"
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
 	"google.golang.org/protobuf/reflect/protoreflect"

@@ -32,14 +32,14 @@ import (
 	"sync"
 	"time"
 
+	"buf.build/go/app"
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xstrings"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufcurl"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
@@ -606,7 +606,7 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 			return fmt.Errorf(
 				"--%s value must be one of %s",
 				reflectProtocolFlagName,
-				stringutil.SliceToHumanStringOrQuoted(bufcurl.AllKnownReflectProtocolStrings),
+				xstrings.SliceToHumanStringOrQuoted(bufcurl.AllKnownReflectProtocolStrings),
 			)
 		}
 	}
@@ -1183,7 +1183,7 @@ func makeHTTP3RoundTripper(f *flags, authority string, printer verbose.Printer) 
 	roundTripper := &http3.Transport{
 		TLSClientConfig: tlsConfig,
 		QUICConfig:      quicCfg,
-		Dial: func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlyConnection, error) {
+		Dial: func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
 			printer.Printf("* Dialing (udp) %s...", addr)
 			udpAddr, err := net.ResolveUDPAddr("udp", addr)
 			if err != nil {

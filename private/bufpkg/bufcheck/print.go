@@ -25,7 +25,7 @@ import (
 	"text/tabwriter"
 
 	"buf.build/go/bufplugin/check"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -69,9 +69,9 @@ func printRules(writer io.Writer, rules []Rule, options ...PrintRulesOption) (re
 	rules = cloneAndSortRulesForPrint(rules)
 	categoriesFunc := Rule.Categories
 	if !printRulesOptions.includeDeprecated {
-		rules = slicesext.Filter(rules, func(rule Rule) bool { return !rule.Deprecated() })
+		rules = xslices.Filter(rules, func(rule Rule) bool { return !rule.Deprecated() })
 		categoriesFunc = func(rule Rule) []check.Category {
-			return slicesext.Filter(rule.Categories(), func(category check.Category) bool { return !category.Deprecated() })
+			return xslices.Filter(rule.Categories(), func(category check.Category) bool { return !category.Deprecated() })
 		}
 	}
 	if printRulesOptions.asJSON {
@@ -196,7 +196,7 @@ func printRulesTextSection(
 }
 
 func getLongestRuleID(rules []Rule) string {
-	return slicesext.Reduce(
+	return xslices.Reduce(
 		rules,
 		func(accumulator string, rule Rule) string {
 			id := rule.ID()
@@ -213,7 +213,7 @@ func getLongestRuleCategories(
 	rules []Rule,
 	categoriesFunc func(Rule) []check.Category,
 ) string {
-	return slicesext.Reduce(
+	return xslices.Reduce(
 		rules,
 		func(accumulator string, rule Rule) string {
 			categories := getCategoriesString(categoriesFunc(rule))
@@ -227,7 +227,7 @@ func getLongestRuleCategories(
 }
 
 func getCategoriesString(categories []check.Category) string {
-	return strings.Join(slicesext.Map(categories, check.Category.ID), ", ")
+	return strings.Join(xslices.Map(categories, check.Category.ID), ", ")
 }
 
 // cloneAndSortRulesForPrint sorts the rules just for printing.
@@ -343,7 +343,7 @@ func newExternalRule(
 ) *externalRule {
 	return &externalRule{
 		ID:           rule.ID(),
-		Categories:   slicesext.Map(categoriesFunc(rule), check.Category.ID),
+		Categories:   xslices.Map(categoriesFunc(rule), check.Category.ID),
 		Default:      rule.Default(),
 		Purpose:      rule.Purpose(),
 		Plugin:       rule.PluginName(),

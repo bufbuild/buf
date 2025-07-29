@@ -18,7 +18,10 @@ import (
 	"fmt"
 
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
+	"buf.build/go/bufplugin/option"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 )
 
@@ -44,6 +47,79 @@ func V1Beta1ProtoToDigest(protoDigest *policyv1beta1.Digest) (bufpolicy.Digest, 
 	return bufpolicy.NewDigest(digestType, bufcasDigest)
 }
 
+// V1Beta1ProtoToPolicyConfig converts the given proto PolicyConfig to a PolicyConfig.
+// The registry is used to resolve plugin references.
+func V1Beta1ProtoToPolicyConfig(registry string, policyConfigV1Beta1 *policyv1beta1.PolicyConfig) (bufpolicy.PolicyConfig, error) {
+	lintConfig, err := getLintConfigForV1Beta1LintConfig(policyConfigV1Beta1.GetLint())
+	if err != nil {
+		return nil, err
+	}
+	breakingConfig, err := getBreakingConfigForV1Beta1BreakingConfig(policyConfigV1Beta1.GetBreaking())
+	if err != nil {
+		return nil, err
+	}
+	pluginConfigs, err := xslices.MapError(
+		policyConfigV1Beta1.GetPlugins(),
+		func(pluginConfigV1Beta1 *policyv1beta1.PolicyConfig_CheckPluginConfig) (bufpolicy.PluginConfig, error) {
+			return getPluginConfigForV1Beta1PluginConfig(registry, pluginConfigV1Beta1)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return bufpolicy.NewPolicyConfig(
+		lintConfig,
+		breakingConfig,
+		pluginConfigs,
+	)
+}
+
+// PolicyConfigToV1Beta1Proto converts the given PolicyConfig to a proto PolicyConfig.
+func PolicyConfigToV1Beta1Proto(policyConfig bufpolicy.PolicyConfig) (*policyv1beta1.PolicyConfig, error) {
+	pluginConfigs, err := xslices.MapError(
+		policyConfig.PluginConfigs(),
+		func(pluginConfig bufpolicy.PluginConfig) (*policyv1beta1.PolicyConfig_CheckPluginConfig, error) {
+			pluginRef := pluginConfig.Ref()
+			if pluginRef == nil {
+				return nil, fmt.Errorf("plugin config %q has no reference", pluginConfig.Name())
+			}
+			pluginOptions, err := pluginConfig.Options().ToProto()
+			if err != nil {
+				return nil, err
+			}
+			return &policyv1beta1.PolicyConfig_CheckPluginConfig{
+				Name: &policyv1beta1.PolicyConfig_CheckPluginConfig_Name{
+					Owner:  pluginRef.FullName().Owner(),
+					Plugin: pluginRef.FullName().Name(),
+					Ref:    pluginRef.Ref(),
+				},
+				Options: pluginOptions,
+				Args:    pluginConfig.Args(),
+			}, nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &policyv1beta1.PolicyConfig{
+		Lint: &policyv1beta1.PolicyConfig_LintConfig{
+			Use:                                  policyConfig.LintConfig().UseIDsAndCategories(),
+			Except:                               policyConfig.LintConfig().ExceptIDsAndCategories(),
+			EnumZeroValueSuffix:                  policyConfig.LintConfig().EnumZeroValueSuffix(),
+			RpcAllowSameRequestResponse:          policyConfig.LintConfig().RPCAllowSameRequestResponse(),
+			RpcAllowGoogleProtobufEmptyRequests:  policyConfig.LintConfig().RPCAllowGoogleProtobufEmptyRequests(),
+			RpcAllowGoogleProtobufEmptyResponses: policyConfig.LintConfig().RPCAllowGoogleProtobufEmptyResponses(),
+			ServiceSuffix:                        policyConfig.LintConfig().ServiceSuffix(),
+		},
+		Breaking: &policyv1beta1.PolicyConfig_BreakingConfig{
+			Use:                    policyConfig.BreakingConfig().UseIDsAndCategories(),
+			Except:                 policyConfig.BreakingConfig().ExceptIDsAndCategories(),
+			IgnoreUnstablePackages: policyConfig.BreakingConfig().IgnoreUnstablePackages(),
+		},
+		Plugins: pluginConfigs,
+	}, nil
+}
+
 // *** PRIVATE ***
 
 func policyVisibilityToV1Beta1Proto(policyVisibility bufpolicy.PolicyVisibility) (policyv1beta1.PolicyVisibility, error) {
@@ -63,4 +139,54 @@ func v1beta1ProtoToDigestType(protoDigestType policyv1beta1.DigestType) (bufpoli
 		return 0, fmt.Errorf("unknown policyv1beta1.DigestType: %v", protoDigestType)
 	}
 	return digestType, nil
+}
+
+func getLintConfigForV1Beta1LintConfig(
+	lintConfigV1Beta1 *policyv1beta1.PolicyConfig_LintConfig,
+) (bufpolicy.LintConfig, error) {
+	return bufpolicy.NewLintConfig(
+		lintConfigV1Beta1.GetUse(),
+		lintConfigV1Beta1.GetExcept(),
+		lintConfigV1Beta1.GetEnumZeroValueSuffix(),
+		lintConfigV1Beta1.GetRpcAllowSameRequestResponse(),
+		lintConfigV1Beta1.GetRpcAllowGoogleProtobufEmptyRequests(),
+		lintConfigV1Beta1.GetRpcAllowGoogleProtobufEmptyResponses(),
+		lintConfigV1Beta1.GetServiceSuffix(),
+	)
+}
+
+func getBreakingConfigForV1Beta1BreakingConfig(
+	breakingConfigV1Beta1 *policyv1beta1.PolicyConfig_BreakingConfig,
+) (bufpolicy.BreakingConfig, error) {
+	return bufpolicy.NewBreakingConfig(
+		breakingConfigV1Beta1.GetUse(),
+		breakingConfigV1Beta1.GetExcept(),
+		breakingConfigV1Beta1.GetIgnoreUnstablePackages(),
+	)
+}
+
+func getPluginConfigForV1Beta1PluginConfig(
+	registry string,
+	pluginConfigV1Beta1 *policyv1beta1.PolicyConfig_CheckPluginConfig,
+) (bufpolicy.PluginConfig, error) {
+	nameV1Beta1 := pluginConfigV1Beta1.GetName()
+	pluginRef, err := bufparse.NewRef(
+		registry,
+		nameV1Beta1.GetOwner(),
+		nameV1Beta1.GetPlugin(),
+		nameV1Beta1.GetRef(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	pluginOptions, err := option.OptionsForProtoOptions(pluginConfigV1Beta1.GetOptions())
+	if err != nil {
+		return nil, err
+	}
+	return bufpolicy.NewPluginConfig(
+		nameV1Beta1.String(),
+		pluginRef,
+		pluginOptions,
+		pluginConfigV1Beta1.GetArgs(),
+	)
 }

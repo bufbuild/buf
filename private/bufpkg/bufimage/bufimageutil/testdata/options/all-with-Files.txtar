@@ -68,6 +68,7 @@ message DescriptorProto {
   repeated OneofDescriptorProto oneof_decl = 8;
   repeated ReservedRange reserved_range = 9;
   repeated string reserved_name = 10;
+  optional SymbolVisibility visibility = 11;
   message ExtensionRange {
     optional int32 start = 1;
     optional int32 end = 2;
@@ -84,6 +85,7 @@ message EnumDescriptorProto {
   optional EnumOptions options = 3;
   repeated EnumReservedRange reserved_range = 4;
   repeated string reserved_name = 5;
+  optional SymbolVisibility visibility = 6;
   message EnumReservedRange {
     optional int32 start = 1;
     optional int32 end = 2;
@@ -195,6 +197,22 @@ message FeatureSet {
     targets = TARGET_TYPE_SERVICE,
     targets = TARGET_TYPE_METHOD
   ];
+  optional VisibilityFeature.DefaultSymbolVisibility default_symbol_visibility = 8 [
+    edition_defaults = { value: "EXPORT_ALL", edition: EDITION_LEGACY },
+    edition_defaults = { value: "EXPORT_TOP_LEVEL", edition: EDITION_2024 },
+    feature_support = { edition_introduced: EDITION_2024 },
+    retention = RETENTION_SOURCE,
+    targets = TARGET_TYPE_FILE
+  ];
+  message VisibilityFeature {
+    enum DefaultSymbolVisibility {
+      DEFAULT_SYMBOL_VISIBILITY_UNKNOWN = 0;
+      EXPORT_ALL = 1;
+      EXPORT_TOP_LEVEL = 2;
+      LOCAL_ALL = 3;
+      STRICT = 4;
+    }
+  }
   enum EnforceNamingStyle {
     ENFORCE_NAMING_STYLE_UNKNOWN = 0;
     STYLE2024 = 1;
@@ -369,6 +387,7 @@ message FileDescriptorProto {
   repeated int32 weak_dependency = 11;
   optional string syntax = 12;
   optional Edition edition = 14;
+  repeated string option_dependency = 15;
 }
 message FileDescriptorSet {
   repeated FileDescriptorProto file = 1;
@@ -505,6 +524,11 @@ enum Edition {
   EDITION_99998_TEST_ONLY = 99998;
   EDITION_99999_TEST_ONLY = 99999;
   EDITION_MAX = 2147483647;
+}
+enum SymbolVisibility {
+  VISIBILITY_UNSET = 0;
+  VISIBILITY_LOCAL = 1;
+  VISIBILITY_EXPORT = 2;
 }
 -- options.proto --
 syntax = "proto3";

@@ -15,6 +15,7 @@
 package bufcheck
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -24,19 +25,22 @@ import (
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/bufplugin/descriptor"
 	"buf.build/go/bufplugin/option"
+	"buf.build/go/standard/xlog/xslog"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy/bufpolicyconfig"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protosourcepath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/google/uuid"
 	"pluginrpc.com/pluginrpc"
 )
 
@@ -48,6 +52,11 @@ type client struct {
 	pluginReadFile                  func(string) ([]byte, error)
 	pluginKeyProvider               bufplugin.PluginKeyProvider
 	pluginDataProvider              bufplugin.PluginDataProvider
+	policyReadFile                  func(string) ([]byte, error)
+	policyKeyProvider               bufpolicy.PolicyKeyProvider
+	policyDataProvider              bufpolicy.PolicyDataProvider
+	policyPluginKeyProvider         bufpolicy.PolicyPluginKeyProvider
+	policyPluginDataProvider        bufpolicy.PolicyPluginDataProvider
 }
 
 func newClient(
@@ -80,10 +89,15 @@ func newClient(
 			bufconfig.FileVersionV1:      v1DefaultCheckClient,
 			bufconfig.FileVersionV2:      v2DefaultCheckClient,
 		},
-		runnerProvider:     clientOptions.runnerProvider,
-		pluginReadFile:     clientOptions.pluginReadFile,
-		pluginKeyProvider:  clientOptions.pluginKeyProvider,
-		pluginDataProvider: clientOptions.pluginDataProvider,
+		runnerProvider:           clientOptions.runnerProvider,
+		pluginReadFile:           clientOptions.pluginReadFile,
+		pluginKeyProvider:        clientOptions.pluginKeyProvider,
+		pluginDataProvider:       clientOptions.pluginDataProvider,
+		policyReadFile:           clientOptions.policyReadFile,
+		policyKeyProvider:        clientOptions.policyKeyProvider,
+		policyDataProvider:       clientOptions.policyDataProvider,
+		policyPluginKeyProvider:  clientOptions.policyPluginKeyProvider,
+		policyPluginDataProvider: clientOptions.policyPluginDataProvider,
 	}, nil
 }
 
@@ -93,33 +107,97 @@ func (c *client) Lint(
 	image bufimage.Image,
 	options ...LintOption,
 ) error {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
-	if lintConfig.Disabled() {
-		return nil
-	}
 	lintOptions := newLintOptions()
 	for _, option := range options {
 		option.applyToLint(lintOptions)
 	}
-	allRules, allCategories, err := c.allRulesAndCategories(
+	// Run lint checks.
+	var annotations []*annotation
+	lintAnnotations, err := c.lint(
 		ctx,
-		lintConfig.FileVersion(),
+		image,
+		lintConfig,
 		lintOptions.pluginConfigs,
-		lintConfig.DisableBuiltin(),
+		nil, // policyConfig.
+		lintOptions.relatedCheckConfigs,
 	)
 	if err != nil {
 		return err
 	}
-	config, err := configForLintConfig(lintConfig, allRules, allCategories, lintOptions.relatedCheckConfigs)
+	annotations = append(annotations, lintAnnotations...)
+	// Run lint policy checks.
+	policies, err := c.getPolicies(ctx, lintOptions.policyConfigs)
 	if err != nil {
 		return err
+	}
+	for index, policy := range policies {
+		policyConfig := lintOptions.policyConfigs[index]
+		policyLintConfig, err := policyToBufConfigLintConfig(policy, policyConfig)
+		if err != nil {
+			return err
+		}
+		pluginConfigs, err := policyToBufConfigPluginConfigs(policy)
+		if err != nil {
+			return err
+		}
+		policyAnnotations, err := c.lint(
+			ctx,
+			image,
+			policyLintConfig,
+			pluginConfigs,
+			policyConfig,
+			nil, // relatedCheckConfigs.
+		)
+		if err != nil {
+			return err
+		}
+		annotations = append(annotations, policyAnnotations...)
+	}
+	if len(annotations) == 0 {
+		return nil
+	}
+	return bufanalysis.NewFileAnnotationSet(
+		annotationsToFileAnnotations(
+			imageToPathToExternalPath(
+				image,
+			),
+			annotations,
+		)...,
+	)
+}
+
+func (c *client) lint(
+	ctx context.Context,
+	image bufimage.Image,
+	lintConfig bufconfig.LintConfig,
+	pluginConfigs []bufconfig.PluginConfig,
+	policyConfig bufconfig.PolicyConfig,
+	relatedCheckConfigs []bufconfig.CheckConfig,
+) ([]*annotation, error) {
+	if lintConfig.Disabled() {
+		return nil, nil
+	}
+	allRules, allCategories, err := c.allRulesAndCategories(
+		ctx,
+		lintConfig.FileVersion(),
+		pluginConfigs,
+		policyConfig,
+		lintConfig.DisableBuiltin(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	config, err := configForLintConfig(lintConfig, allRules, allCategories, relatedCheckConfigs)
+	if err != nil {
+		return nil, err
 	}
 	logRulesConfig(c.logger, config.rulesConfig)
 	files, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
 	if err != nil {
-		// If a validated Image results in an error, this is a system error.
-		return syserror.Wrap(err)
+		// An Image may be invalid if it does not contain all of the required dependencies.
+		return nil, fmt.Errorf("input image: %w", err)
 	}
 	request, err := check.NewRequest(
 		files,
@@ -127,23 +205,27 @@ func (c *client) Lint(
 		check.WithOptions(config.DefaultOptions),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	multiClient, err := c.getMultiClient(
 		ctx,
 		lintConfig.FileVersion(),
-		lintOptions.pluginConfigs,
+		pluginConfigs,
+		policyConfig,
 		lintConfig.DisableBuiltin(),
 		config.DefaultOptions,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	annotations, err := multiClient.Check(ctx, request)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return annotationsToFilteredFileAnnotationSetOrError(config, image, annotations)
+	if len(annotations) == 0 {
+		return nil, nil
+	}
+	return filterAnnotations(config, annotations)
 }
 
 func (c *client) Breaking(
@@ -153,44 +235,114 @@ func (c *client) Breaking(
 	againstImage bufimage.Image,
 	options ...BreakingOption,
 ) error {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
-	if breakingConfig.Disabled() {
-		return nil
-	}
 	breakingOptions := newBreakingOptions()
 	for _, option := range options {
 		option.applyToBreaking(breakingOptions)
 	}
-	allRules, allCategories, err := c.allRulesAndCategories(
+	// Run breaking checks.
+	var annotations []*annotation
+	breakingAnnotations, err := c.breaking(
 		ctx,
-		breakingConfig.FileVersion(),
-		breakingOptions.pluginConfigs,
-		breakingConfig.DisableBuiltin(),
-	)
-	if err != nil {
-		return err
-	}
-	config, err := configForBreakingConfig(
+		image,
+		againstImage,
 		breakingConfig,
-		allRules,
-		allCategories,
+		breakingOptions.pluginConfigs,
+		nil, // policyConfig.
 		breakingOptions.excludeImports,
 		breakingOptions.relatedCheckConfigs,
 	)
 	if err != nil {
 		return err
 	}
+	annotations = append(annotations, breakingAnnotations...)
+	// Run breaking policy checks.
+	policies, err := c.getPolicies(ctx, breakingOptions.policyConfigs)
+	if err != nil {
+		return err
+	}
+	for index, policy := range policies {
+		policyConfig := breakingOptions.policyConfigs[index]
+		policyBreakingConfig, err := policyToBufConfigBreakingConfig(policy, policyConfig)
+		if err != nil {
+			return err
+		}
+		pluginConfigs, err := policyToBufConfigPluginConfigs(policy)
+		if err != nil {
+			return err
+		}
+		policyAnnotations, err := c.breaking(
+			ctx,
+			image,
+			againstImage,
+			policyBreakingConfig,
+			pluginConfigs,
+			policyConfig,
+			breakingOptions.excludeImports,
+			nil, // relatedCheckConfigs.
+		)
+		if err != nil {
+			return err
+		}
+		annotations = append(annotations, policyAnnotations...)
+	}
+	if len(annotations) == 0 {
+		return nil
+	}
+	return bufanalysis.NewFileAnnotationSet(
+		annotationsToFileAnnotations(
+			imageToPathToExternalPath(
+				image,
+			),
+			annotations,
+		)...,
+	)
+}
+
+func (c *client) breaking(
+	ctx context.Context,
+	image bufimage.Image,
+	againstImage bufimage.Image,
+	breakingConfig bufconfig.BreakingConfig,
+	pluginConfigs []bufconfig.PluginConfig,
+	policyConfig bufconfig.PolicyConfig,
+	excludeImports bool,
+	relatedCheckConfigs []bufconfig.CheckConfig,
+) ([]*annotation, error) {
+	if breakingConfig.Disabled() {
+		return nil, nil
+	}
+	allRules, allCategories, err := c.allRulesAndCategories(
+		ctx,
+		breakingConfig.FileVersion(),
+		pluginConfigs,
+		policyConfig,
+		breakingConfig.DisableBuiltin(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	config, err := configForBreakingConfig(
+		breakingConfig,
+		allRules,
+		allCategories,
+		excludeImports,
+		relatedCheckConfigs,
+	)
+	if err != nil {
+		return nil, err
+	}
 	logRulesConfig(c.logger, config.rulesConfig)
 	fileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
 	if err != nil {
-		// If a validated Image results in an error, this is a system error.
-		return syserror.Wrap(err)
+		// An Image may be invalid if it does not contain all of the required dependencies.
+		return nil, fmt.Errorf("input image: %w", err)
 	}
 	againstFileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(againstImage))
 	if err != nil {
-		// If a validated Image results in an error, this is a system error.
-		return syserror.Wrap(err)
+		// An Image may be invalid if it does not contain all of the required dependencies.
+		return nil, fmt.Errorf("against image: %w", err)
 	}
 	request, err := check.NewRequest(
 		fileDescriptors,
@@ -199,23 +351,27 @@ func (c *client) Breaking(
 		check.WithOptions(config.DefaultOptions),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	multiClient, err := c.getMultiClient(
 		ctx,
 		breakingConfig.FileVersion(),
-		breakingOptions.pluginConfigs,
+		pluginConfigs,
+		policyConfig,
 		breakingConfig.DisableBuiltin(),
 		config.DefaultOptions,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	annotations, err := multiClient.Check(ctx, request)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return annotationsToFilteredFileAnnotationSetOrError(config, image, annotations)
+	if len(annotations) == 0 {
+		return nil, nil
+	}
+	return filterAnnotations(config, annotations)
 }
 
 func (c *client) ConfiguredRules(
@@ -224,7 +380,7 @@ func (c *client) ConfiguredRules(
 	checkConfig bufconfig.CheckConfig,
 	options ...ConfiguredRulesOption,
 ) ([]Rule, error) {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
 	configuredRulesOptions := newConfiguredRulesOptions()
 	for _, option := range options {
@@ -234,6 +390,7 @@ func (c *client) ConfiguredRules(
 		ctx,
 		checkConfig.FileVersion(),
 		configuredRulesOptions.pluginConfigs,
+		nil, // PolicyConfig.
 		checkConfig.DisableBuiltin(),
 	)
 	if err != nil {
@@ -253,13 +410,13 @@ func (c *client) AllRules(
 	fileVersion bufconfig.FileVersion,
 	options ...AllRulesOption,
 ) ([]Rule, error) {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
 	allRulesOptions := newAllRulesOptions()
 	for _, option := range options {
 		option.applyToAllRules(allRulesOptions)
 	}
-	rules, _, err := c.allRulesAndCategories(ctx, fileVersion, allRulesOptions.pluginConfigs, false)
+	rules, _, err := c.allRulesAndCategories(ctx, fileVersion, allRulesOptions.pluginConfigs, nil, false)
 	if err != nil {
 		return nil, err
 	}
@@ -271,13 +428,13 @@ func (c *client) AllCategories(
 	fileVersion bufconfig.FileVersion,
 	options ...AllCategoriesOption,
 ) ([]Category, error) {
-	defer slogext.DebugProfile(c.logger)()
+	defer xslog.DebugProfile(c.logger)()
 
 	allCategoriesOptions := newAllCategoriesOptions()
 	for _, option := range options {
 		option.applyToAllCategories(allCategoriesOptions)
 	}
-	_, categories, err := c.allRulesAndCategories(ctx, fileVersion, allCategoriesOptions.pluginConfigs, false)
+	_, categories, err := c.allRulesAndCategories(ctx, fileVersion, allCategoriesOptions.pluginConfigs, nil, false)
 	return categories, err
 }
 
@@ -285,12 +442,13 @@ func (c *client) allRulesAndCategories(
 	ctx context.Context,
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
+	policyConfig bufconfig.PolicyConfig, // May be nil.
 	disableBuiltin bool,
 ) ([]Rule, []Category, error) {
 	// Just passing through to fulfill all contracts, ie checkClientSpec has non-nil Options.
 	// Options are not used here.
 	// config struct really just needs refactoring.
-	multiClient, err := c.getMultiClient(ctx, fileVersion, pluginConfigs, disableBuiltin, option.EmptyOptions)
+	multiClient, err := c.getMultiClient(ctx, fileVersion, pluginConfigs, policyConfig, disableBuiltin, option.EmptyOptions)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -301,9 +459,14 @@ func (c *client) getMultiClient(
 	ctx context.Context,
 	fileVersion bufconfig.FileVersion,
 	pluginConfigs []bufconfig.PluginConfig,
+	policyConfig bufconfig.PolicyConfig,
 	disableBuiltin bool,
 	defaultOptions option.Options,
 ) (*multiClient, error) {
+	var policyConfigName string
+	if policyConfig != nil {
+		policyConfigName = policyConfig.Name()
+	}
 	var checkClientSpecs []*checkClientSpec
 	if !disableBuiltin {
 		defaultCheckClient, ok := c.fileVersionToDefaultCheckClient[fileVersion]
@@ -313,10 +476,10 @@ func (c *client) getMultiClient(
 		checkClientSpecs = append(
 			checkClientSpecs,
 			// We do not set PluginName for default check.Clients.
-			newCheckClientSpec("", defaultCheckClient, defaultOptions),
+			newCheckClientSpec("", policyConfigName, defaultCheckClient, defaultOptions),
 		)
 	}
-	plugins, err := c.getPlugins(ctx, pluginConfigs)
+	plugins, err := c.getPlugins(ctx, pluginConfigs, policyConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -347,16 +510,19 @@ func (c *client) getMultiClient(
 		)
 		checkClientSpecs = append(
 			checkClientSpecs,
-			newCheckClientSpec(pluginConfig.Name(), checkClient, options),
+			newCheckClientSpec(pluginConfig.Name(), policyConfigName, checkClient, options),
 		)
 	}
 	return newMultiClient(c.logger, checkClientSpecs), nil
 }
 
-func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.PluginConfig) ([]bufplugin.Plugin, error) {
+func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.PluginConfig, policyConfig bufconfig.PolicyConfig) ([]bufplugin.Plugin, error) {
+	if len(pluginConfigs) == 0 {
+		return nil, nil
+	}
 	plugins := make([]bufplugin.Plugin, len(pluginConfigs))
 
-	var indexedPluginRefs []slicesext.Indexed[bufparse.Ref]
+	var indexedPluginRefs []xslices.Indexed[bufparse.Ref]
 	for index, pluginConfig := range pluginConfigs {
 		switch pluginConfig.Type() {
 		case bufconfig.PluginConfigTypeLocal:
@@ -394,7 +560,7 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 			if pluginRef == nil {
 				return nil, syserror.Newf("missing Ref for remote PluginConfig %q", pluginConfig.Name())
 			}
-			indexedPluginRefs = append(indexedPluginRefs, slicesext.Indexed[bufparse.Ref]{
+			indexedPluginRefs = append(indexedPluginRefs, xslices.Indexed[bufparse.Ref]{
 				Value: pluginRef,
 				Index: index,
 			})
@@ -404,12 +570,19 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 	}
 	// Load the remote plugin data for each plugin ref.
 	if len(indexedPluginRefs) > 0 {
-		pluginRefs := slicesext.IndexedToValues(indexedPluginRefs)
-		pluginKeys, err := c.pluginKeyProvider.GetPluginKeysForPluginRefs(ctx, pluginRefs, bufplugin.DigestTypeP1)
+		pluginKeyProvider := c.pluginKeyProvider
+		pluginDataProvider := c.pluginDataProvider
+		if policyConfig != nil {
+			// Resolve the Plugin providers for the policy config.
+			pluginKeyProvider = c.policyPluginKeyProvider.GetPluginKeyProviderForPolicy(policyConfig.Name())
+			pluginDataProvider = c.policyPluginDataProvider.GetPluginDataProviderForPolicy(policyConfig.Name())
+		}
+		pluginRefs := xslices.IndexedToValues(indexedPluginRefs)
+		pluginKeys, err := pluginKeyProvider.GetPluginKeysForPluginRefs(ctx, pluginRefs, bufplugin.DigestTypeP1)
 		if err != nil {
 			return nil, err
 		}
-		pluginDatas, err := c.pluginDataProvider.GetPluginDatasForPluginKeys(ctx, pluginKeys)
+		pluginDatas, err := pluginDataProvider.GetPluginDatasForPluginKeys(ctx, pluginKeys)
 		if err != nil {
 			return nil, err
 		}
@@ -436,39 +609,76 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 	return plugins, nil
 }
 
-func annotationsToFilteredFileAnnotationSetOrError(
-	config *config,
-	image bufimage.Image,
-	annotations []*annotation,
-) error {
-	if len(annotations) == 0 {
-		return nil
+func (c *client) getPolicies(ctx context.Context, policyConfigs []bufconfig.PolicyConfig) ([]bufpolicy.Policy, error) {
+	if len(policyConfigs) == 0 {
+		return nil, nil
 	}
-	annotations, err := filterAnnotations(config, annotations)
-	if err != nil {
-		return err
+	policies := make([]bufpolicy.Policy, len(policyConfigs))
+
+	var indexedPolicyRefs []xslices.Indexed[bufparse.Ref]
+	for index, policyConfig := range policyConfigs {
+		if ref := policyConfig.Ref(); ref != nil {
+			indexedPolicyRefs = append(indexedPolicyRefs, xslices.Indexed[bufparse.Ref]{
+				Value: ref,
+				Index: index,
+			})
+			continue
+		}
+		// Local policy config.
+		if c.policyReadFile == nil {
+			// Local policy configs are not supported without a policyReadFile.
+			return nil, fmt.Errorf("unable to read local Policy %q", policyConfig.Name())
+		}
+		policyData, err := c.policyReadFile(policyConfig.Name())
+		if err != nil {
+			return nil, fmt.Errorf("could not read local policy config %q: %w", policyConfig.Name(), err)
+		}
+		reader := bytes.NewReader(policyData)
+		policyFile, err := bufpolicyconfig.ReadBufPolicyYAMLFile(reader, policyConfig.Name())
+		if err != nil {
+			return nil, fmt.Errorf("could not read policy file %q: %w", policyConfig.Name(), err)
+		}
+		policy, err := bufpolicy.NewPolicy("", nil, policyConfig.Name(), uuid.Nil, policyFile.PolicyConfig)
+		if err != nil {
+			return nil, err
+		}
+		policies[index] = policy
 	}
-	if len(annotations) == 0 {
-		return nil
+	// Load the remote policy data for each policy ref.
+	if len(indexedPolicyRefs) > 0 {
+		policyRefs := xslices.IndexedToValues(indexedPolicyRefs)
+		policyKeys, err := c.policyKeyProvider.GetPolicyKeysForPolicyRefs(ctx, policyRefs, bufpolicy.DigestTypeO1)
+		if err != nil {
+			return nil, fmt.Errorf("could not get PolicyKeys for PolicyRefs: %w", err)
+		}
+		policyDatas, err := c.policyDataProvider.GetPolicyDatasForPolicyKeys(ctx, policyKeys)
+		if err != nil {
+			return nil, fmt.Errorf("could not get PolicyDatas for PolicyKeys: %w", err)
+		}
+		if len(policyDatas) != len(policyRefs) {
+			return nil, syserror.Newf("expected %d PolicyData, got %d", len(policyRefs), len(policyDatas))
+		}
+		for dataIndex, indexedPolicyRef := range indexedPolicyRefs {
+			policyData := policyDatas[dataIndex]
+			policyKey := policyData.PolicyKey()
+			index := indexedPolicyRef.Index
+			policy, err := bufpolicy.NewPolicy("", policyKey.FullName(), policyKey.FullName().String(), policyKey.CommitID(), func() (bufpolicy.PolicyConfig, error) {
+				return policyData.Config()
+			})
+			if err != nil {
+				return nil, err
+			}
+			policies[index] = policy
+		}
 	}
-	// Note that NewFileAnnotationSet does its own sorting and deduplication.
-	// The bufplugin SDK does this as well, but we don't need to worry about the sort
-	// order being different.
-	return bufanalysis.NewFileAnnotationSet(
-		annotationsToFileAnnotations(
-			imageToPathToExternalPath(
-				image,
-			),
-			annotations,
-		)...,
-	)
+	return policies, nil
 }
 
 func filterAnnotations(
 	config *config,
 	annotations []*annotation,
 ) ([]*annotation, error) {
-	return slicesext.FilterError(
+	return xslices.FilterError(
 		annotations,
 		func(annotation *annotation) (bool, error) {
 			ignore, err := ignoreAnnotation(config, annotation)
@@ -543,7 +753,7 @@ func ignoreFileLocation(
 		for _, associatedSourcePath := range associatedSourcePaths {
 			sourceLocation := sourceLocations.ByPath(associatedSourcePath)
 			if leadingComments := sourceLocation.LeadingComments; leadingComments != "" {
-				for _, line := range stringutil.SplitTrimLinesNoEmpty(leadingComments) {
+				for _, line := range xstrings.SplitTrimLinesNoEmpty(leadingComments) {
 					if checkCommentLineForCheckIgnore(line, config.CommentIgnorePrefix, ruleID) {
 						return true, nil
 					}
@@ -578,6 +788,7 @@ func checkCommentLineForCheckIgnore(
 
 type lintOptions struct {
 	pluginConfigs       []bufconfig.PluginConfig
+	policyConfigs       []bufconfig.PolicyConfig
 	relatedCheckConfigs []bufconfig.CheckConfig
 }
 
@@ -587,6 +798,7 @@ func newLintOptions() *lintOptions {
 
 type breakingOptions struct {
 	pluginConfigs       []bufconfig.PluginConfig
+	policyConfigs       []bufconfig.PolicyConfig
 	excludeImports      bool
 	relatedCheckConfigs []bufconfig.CheckConfig
 }
@@ -597,6 +809,7 @@ func newBreakingOptions() *breakingOptions {
 
 type configuredRulesOptions struct {
 	pluginConfigs       []bufconfig.PluginConfig
+	policyConfigs       []bufconfig.PolicyConfig
 	relatedCheckConfigs []bufconfig.CheckConfig
 }
 
@@ -606,6 +819,7 @@ func newConfiguredRulesOptions() *configuredRulesOptions {
 
 type allRulesOptions struct {
 	pluginConfigs []bufconfig.PluginConfig
+	policyConfigs []bufconfig.PolicyConfig
 }
 
 func newAllRulesOptions() *allRulesOptions {
@@ -614,6 +828,7 @@ func newAllRulesOptions() *allRulesOptions {
 
 type allCategoriesOptions struct {
 	pluginConfigs []bufconfig.PluginConfig
+	policyConfigs []bufconfig.PolicyConfig
 }
 
 func newAllCategoriesOptions() *allCategoriesOptions {
@@ -621,17 +836,26 @@ func newAllCategoriesOptions() *allCategoriesOptions {
 }
 
 type clientOptions struct {
-	stderr             io.Writer
-	runnerProvider     RunnerProvider
-	pluginReadFile     func(name string) ([]byte, error)
-	pluginKeyProvider  bufplugin.PluginKeyProvider
-	pluginDataProvider bufplugin.PluginDataProvider
+	stderr                   io.Writer
+	runnerProvider           RunnerProvider
+	pluginReadFile           func(string) ([]byte, error)
+	pluginKeyProvider        bufplugin.PluginKeyProvider
+	pluginDataProvider       bufplugin.PluginDataProvider
+	policyReadFile           func(string) ([]byte, error)
+	policyKeyProvider        bufpolicy.PolicyKeyProvider
+	policyDataProvider       bufpolicy.PolicyDataProvider
+	policyPluginKeyProvider  bufpolicy.PolicyPluginKeyProvider
+	policyPluginDataProvider bufpolicy.PolicyPluginDataProvider
 }
 
 func newClientOptions() *clientOptions {
 	return &clientOptions{
-		pluginKeyProvider:  bufplugin.NopPluginKeyProvider,
-		pluginDataProvider: bufplugin.NopPluginDataProvider,
+		pluginKeyProvider:        bufplugin.NopPluginKeyProvider,
+		pluginDataProvider:       bufplugin.NopPluginDataProvider,
+		policyKeyProvider:        bufpolicy.NopPolicyKeyProvider,
+		policyDataProvider:       bufpolicy.NopPolicyDataProvider,
+		policyPluginKeyProvider:  bufpolicy.NopPolicyPluginKeyProvider,
+		policyPluginDataProvider: bufpolicy.NopPolicyPluginDataProvider,
 	}
 }
 
@@ -663,6 +887,30 @@ func (p *pluginConfigsOption) applyToAllRules(allRulesOptions *allRulesOptions) 
 
 func (p *pluginConfigsOption) applyToAllCategories(allCategoriesOptions *allCategoriesOptions) {
 	allCategoriesOptions.pluginConfigs = append(allCategoriesOptions.pluginConfigs, p.pluginConfigs...)
+}
+
+type policyConfigsOption struct {
+	policyConfigs []bufconfig.PolicyConfig
+}
+
+func (p *policyConfigsOption) applyToLint(lintOptions *lintOptions) {
+	lintOptions.policyConfigs = append(lintOptions.policyConfigs, p.policyConfigs...)
+}
+
+func (p *policyConfigsOption) applyToBreaking(breakingOptions *breakingOptions) {
+	breakingOptions.policyConfigs = append(breakingOptions.policyConfigs, p.policyConfigs...)
+}
+
+func (p *policyConfigsOption) applyToConfiguredRules(configuredRulesOptions *configuredRulesOptions) {
+	configuredRulesOptions.policyConfigs = append(configuredRulesOptions.policyConfigs, p.policyConfigs...)
+}
+
+func (p *policyConfigsOption) applyToAllRules(allRulesOptions *allRulesOptions) {
+	allRulesOptions.policyConfigs = append(allRulesOptions.policyConfigs, p.policyConfigs...)
+}
+
+func (p *policyConfigsOption) applyToAllCategories(allCategoriesOptions *allCategoriesOptions) {
+	allCategoriesOptions.policyConfigs = append(allCategoriesOptions.policyConfigs, p.policyConfigs...)
 }
 
 type relatedCheckConfigsOption struct {

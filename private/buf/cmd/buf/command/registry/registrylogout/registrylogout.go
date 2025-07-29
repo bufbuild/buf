@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/netext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/spf13/pflag"

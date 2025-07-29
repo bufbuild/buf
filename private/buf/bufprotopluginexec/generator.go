@@ -18,8 +18,8 @@ import (
 	"context"
 	"log/slog"
 
+	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin"
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"google.golang.org/protobuf/types/pluginpb"
 )

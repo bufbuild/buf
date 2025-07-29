@@ -21,9 +21,9 @@ import (
 	"io/fs"
 	"sort"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -129,7 +129,7 @@ func getModuleDepsRec(
 	if _, ok := parentOpaqueIDs[opaqueID]; ok {
 		return &ModuleCycleError{
 			Descriptions: append(
-				slicesext.Map(orderedParentOpaqueIDs, func(parentOpaqueID string) string {
+				xslices.Map(orderedParentOpaqueIDs, func(parentOpaqueID string) string {
 					return visitedOpaqueIDToDescription[parentOpaqueID]
 				}),
 				module.Description(),

@@ -17,7 +17,6 @@ package bufpolicy
 import (
 	"sync"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
@@ -67,8 +66,8 @@ type Policy interface {
 	Description() string
 	// Digest returns the Policy digest for the given DigestType.
 	Digest(DigestType) (Digest, error)
-	// Data returns the bytes of the Policy in yaml.
-	Data() ([]byte, error)
+	// Config returns the PolicyConfig for the Policy.
+	Config() (PolicyConfig, error)
 	// IsLocal return true if the Policy is a local Policy.
 	//
 	// Policies are either local or remote.
@@ -90,9 +89,9 @@ func NewPolicy(
 	fullName bufparse.FullName,
 	name string,
 	commitID uuid.UUID,
-	getData func() ([]byte, error),
+	getConfig func() (PolicyConfig, error),
 ) (Policy, error) {
-	return newPolicy(description, fullName, name, commitID, getData)
+	return newPolicy(description, fullName, name, commitID, getConfig)
 }
 
 // *** PRIVATE ***
@@ -102,7 +101,7 @@ type policy struct {
 	fullName              bufparse.FullName
 	name                  string
 	commitID              uuid.UUID
-	getData               func() ([]byte, error)
+	getConfig             func() (PolicyConfig, error)
 	digestTypeToGetDigest map[DigestType]func() (Digest, error)
 }
 
@@ -111,7 +110,7 @@ func newPolicy(
 	fullName bufparse.FullName,
 	name string,
 	commitID uuid.UUID,
-	getData func() ([]byte, error),
+	getConfig func() (PolicyConfig, error),
 ) (*policy, error) {
 	if name == "" {
 		return nil, syserror.New("name not present when constructing a Policy")
@@ -124,7 +123,7 @@ func newPolicy(
 		fullName:    fullName,
 		name:        name,
 		commitID:    commitID,
-		getData:     sync.OnceValues(getData),
+		getConfig:   sync.OnceValues(getConfig),
 	}
 	policy.digestTypeToGetDigest = newSyncOnceValueDigestTypeToGetDigestFuncForPolicy(policy)
 	return policy, nil
@@ -153,8 +152,8 @@ func (p *policy) Description() string {
 	return p.OpaqueID()
 }
 
-func (p *policy) Data() ([]byte, error) {
-	return p.getData()
+func (p *policy) Config() (PolicyConfig, error) {
+	return p.getConfig()
 }
 
 func (p *policy) Digest(digestType DigestType) (Digest, error) {
@@ -181,14 +180,15 @@ func newSyncOnceValueDigestTypeToGetDigestFuncForPolicy(policy *policy) map[Dige
 
 func newGetDigestFuncForPolicyAndDigestType(policy *policy, digestType DigestType) func() (Digest, error) {
 	return func() (Digest, error) {
-		data, err := policy.getData()
-		if err != nil {
-			return nil, err
+		switch digestType {
+		case DigestTypeO1:
+			policyConfig, err := policy.getConfig()
+			if err != nil {
+				return nil, err
+			}
+			return getO1Digest(policyConfig)
+		default:
+			return nil, syserror.Newf("unknown DigestType: %v", digestType)
 		}
-		bufcasDigest, err := bufcas.NewDigest(data)
-		if err != nil {
-			return nil, err
-		}
-		return NewDigest(digestType, bufcasDigest)
 	}
 }

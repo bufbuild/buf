@@ -17,13 +17,13 @@ package pluginprune
 import (
 	"context"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 // NewCommand returns a new Command.
@@ -69,7 +69,7 @@ func run(
 	}
 	return prune(
 		ctx,
-		slicesext.Map(
+		xslices.Map(
 			configuredRemotePluginRefs,
 			func(pluginRef bufparse.Ref) string {
 				return pluginRef.FullName().String()
@@ -84,7 +84,7 @@ func prune(
 	bufYAMLBasedRemotePluginNames []string,
 	workspaceDepManager bufworkspace.WorkspaceDepManager,
 ) error {
-	bufYAMLRemotePluginNames := slicesext.ToStructMap(bufYAMLBasedRemotePluginNames)
+	bufYAMLRemotePluginNames := xslices.ToStructMap(bufYAMLBasedRemotePluginNames)
 	existingRemotePluginKeys, err := workspaceDepManager.ExistingBufLockFileRemotePluginKeys(ctx)
 	if err != nil {
 		return err
@@ -102,5 +102,13 @@ func prune(
 	if err != nil {
 		return err
 	}
-	return workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys, prunedBufLockPluginKeys)
+	existingRemotePolicyKeys, err := workspaceDepManager.ExistingBufLockFileRemotePolicyKeys(ctx)
+	if err != nil {
+		return err
+	}
+	existingPolicyNameToRemotePluginKeys, err := workspaceDepManager.ExistingBufLockFilePolicyNameToRemotePluginKeys(ctx)
+	if err != nil {
+		return err
+	}
+	return workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys, prunedBufLockPluginKeys, existingRemotePolicyKeys, existingPolicyNameToRemotePluginKeys)
 }

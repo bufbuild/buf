@@ -10,9 +10,9 @@ $(call _assert_var,CACHE_INCLUDE)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/protocolbuffers/protobuf/releases 20250326 checked 20250401
+# https://github.com/protocolbuffers/protobuf/releases 20250528 checked 20250603
 # NOTE: Set to version compatible with genproto source code (only used in tests).
-PROTOC_VERSION ?= 30.2
+PROTOC_VERSION ?= 31.1
 
 # Google adds a dash to release candidate versions in the name of the
 # release artifact, i.e. v27.0-rc1 -> v27.0-rc-1
@@ -32,7 +32,11 @@ endif
 endif
 ifeq ($(UNAME_OS),Linux)
 PROTOC_OS = linux
+ifeq ($(UNAME_ARCH),s390x)
+PROTOC_ARCH := s390_64
+else
 PROTOC_ARCH := $(UNAME_ARCH)
+endif
 endif
 
 PROTOC := $(CACHE_VERSIONS)/protoc/$(PROTOC_VERSION)

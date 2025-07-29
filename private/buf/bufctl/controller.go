@@ -25,7 +25,12 @@ import (
 	"slices"
 	"sort"
 
+	"buf.build/go/app"
+	"buf.build/go/app/appcmd"
+	"buf.build/go/protovalidate"
 	"buf.build/go/protoyaml"
+	"buf.build/go/standard/xio"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwkt/bufwktstore"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
@@ -37,21 +42,17 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
-	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
-	"github.com/bufbuild/protovalidate-go"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -65,6 +66,7 @@ type ImageWithConfig interface {
 	LintConfig() bufconfig.LintConfig
 	BreakingConfig() bufconfig.BreakingConfig
 	PluginConfigs() []bufconfig.PluginConfig
+	PolicyConfigs() []bufconfig.PolicyConfig
 
 	isImageWithConfig()
 }
@@ -163,6 +165,8 @@ func NewController(
 	commitProvider bufmodule.CommitProvider,
 	pluginKeyProvider bufplugin.PluginKeyProvider,
 	pluginDataProvider bufplugin.PluginDataProvider,
+	policyKeyProvider bufpolicy.PolicyKeyProvider,
+	policyDataProvider bufpolicy.PolicyDataProvider,
 	wktStore bufwktstore.Store,
 	httpClient *http.Client,
 	httpauthAuthenticator httpauth.Authenticator,
@@ -178,6 +182,8 @@ func NewController(
 		commitProvider,
 		pluginKeyProvider,
 		pluginDataProvider,
+		policyKeyProvider,
+		policyDataProvider,
 		wktStore,
 		httpClient,
 		httpauthAuthenticator,
@@ -201,6 +207,8 @@ type controller struct {
 	commitProvider     bufmodule.CommitProvider
 	pluginKeyProvider  bufplugin.PluginKeyProvider
 	pluginDataProvider bufplugin.PluginDataProvider
+	policyKeyProvider  bufpolicy.PolicyKeyProvider
+	policyDataProvider bufpolicy.PolicyDataProvider
 	wktStore           bufwktstore.Store
 
 	disableSymlinks           bool
@@ -225,6 +233,8 @@ func newController(
 	commitProvider bufmodule.CommitProvider,
 	pluginKeyProvider bufplugin.PluginKeyProvider,
 	pluginDataProvider bufplugin.PluginDataProvider,
+	policyKeyProvider bufpolicy.PolicyKeyProvider,
+	policyDataProvider bufpolicy.PolicyDataProvider,
 	wktStore bufwktstore.Store,
 	httpClient *http.Client,
 	httpauthAuthenticator httpauth.Authenticator,
@@ -239,6 +249,8 @@ func newController(
 		commitProvider:     commitProvider,
 		pluginKeyProvider:  pluginKeyProvider,
 		pluginDataProvider: pluginDataProvider,
+		policyKeyProvider:  policyKeyProvider,
+		policyDataProvider: policyDataProvider,
 		wktStore:           wktStore,
 	}
 	for _, option := range options {
@@ -404,8 +416,14 @@ func (c *controller) GetTargetImageWithConfigsAndCheckClient(
 		}
 		lintConfig := bufconfig.DefaultLintConfigV1
 		breakingConfig := bufconfig.DefaultBreakingConfigV1
-		var pluginConfigs []bufconfig.PluginConfig
-		pluginKeyProvider := bufplugin.NopPluginKeyProvider
+		var (
+			pluginConfigs            []bufconfig.PluginConfig
+			policyConfigs            []bufconfig.PolicyConfig
+			pluginKeyProvider        = bufplugin.NopPluginKeyProvider
+			policyKeyProvider        = bufpolicy.NopPolicyKeyProvider
+			policyPluginKeyProvider  = bufpolicy.NopPolicyPluginKeyProvider
+			policyPluginDataProvider = bufpolicy.NopPolicyPluginDataProvider
+		)
 		bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefixOrOverride(
 			ctx,
 			bucket,
@@ -442,6 +460,7 @@ func (c *controller) GetTargetImageWithConfigsAndCheckClient(
 			// buf.yaml file is found, the PluginConfigs from the buf.yaml file and the PluginKeys
 			// from the buf.lock file are resolved to create the PluginKeyProvider.
 			pluginConfigs = bufYAMLFile.PluginConfigs()
+			policyConfigs = bufYAMLFile.PolicyConfigs()
 			// If a config override is provided, the PluginConfig remote Refs use the BSR
 			// to resolve the PluginKeys. No buf.lock is required.
 			// If the buf.yaml file is not found, the bufplugin.NopPluginKeyProvider is returned.
@@ -452,7 +471,11 @@ func (c *controller) GetTargetImageWithConfigsAndCheckClient(
 				// We use the BSR to resolve any remote plugin Refs.
 				pluginKeyProvider = c.pluginKeyProvider
 			} else if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
-				var pluginKeys []bufplugin.PluginKey
+				var (
+					remotePluginKeys             []bufplugin.PluginKey
+					remotePolicyKeys             []bufpolicy.PolicyKey
+					policyNameToRemotePluginKeys map[string][]bufplugin.PluginKey
+				)
 				if bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
 					ctx,
 					bucket,
@@ -463,14 +486,36 @@ func (c *controller) GetTargetImageWithConfigsAndCheckClient(
 						return nil, nil, err
 					}
 					// We did not find a buf.lock in our current directory.
-					// Remote plugins are not available.
-					pluginKeys = nil
+					// Remote plugins and policies are not available.
 				} else {
-					pluginKeys = bufLockFile.RemotePluginKeys()
+					remotePluginKeys = bufLockFile.RemotePluginKeys()
+					remotePolicyKeys = bufLockFile.RemotePolicyKeys()
+					policyNameToRemotePluginKeys = bufLockFile.PolicyNameToRemotePluginKeys()
 				}
 				pluginKeyProvider, err = newStaticPluginKeyProviderForPluginConfigs(
 					pluginConfigs,
-					pluginKeys,
+					remotePluginKeys,
+				)
+				if err != nil {
+					return nil, nil, err
+				}
+				policyKeyProvider, err = newStaticPolicyKeyProviderForPolicyConfigs(
+					policyConfigs,
+					remotePolicyKeys,
+				)
+				if err != nil {
+					return nil, nil, err
+				}
+				policyPluginKeyProvider, err = newStaticPolicyPluginKeyProviderForPolicyConfigs(
+					policyConfigs,
+					policyNameToRemotePluginKeys,
+				)
+				if err != nil {
+					return nil, nil, err
+				}
+				policyPluginDataProvider, err = newStaticPolicyPluginDataProviderForPolicyConfigs(
+					c.pluginDataProvider,
+					policyConfigs,
 				)
 				if err != nil {
 					return nil, nil, err
@@ -485,6 +530,7 @@ func (c *controller) GetTargetImageWithConfigsAndCheckClient(
 				lintConfig,
 				breakingConfig,
 				pluginConfigs,
+				policyConfigs,
 			),
 		}
 		checkClient, err := bufcheck.NewClient(
@@ -495,6 +541,13 @@ func (c *controller) GetTargetImageWithConfigsAndCheckClient(
 			),
 			bufcheck.ClientWithLocalWasmPluginsFromOS(),
 			bufcheck.ClientWithRemoteWasmPlugins(pluginKeyProvider, c.pluginDataProvider),
+			bufcheck.ClientWithLocalPoliciesFromOS(),
+			bufcheck.ClientWithRemotePolicies(
+				policyKeyProvider,
+				c.policyDataProvider,
+				policyPluginKeyProvider,
+				policyPluginDataProvider,
+			),
 		)
 		if err != nil {
 			return nil, nil, err
@@ -726,7 +779,7 @@ func (c *controller) GetMessage(
 	if err != nil {
 		return nil, 0, err
 	}
-	data, err := ioext.ReadAllAndClose(readCloser)
+	data, err := xio.ReadAllAndClose(readCloser)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -801,6 +854,27 @@ func (c *controller) GetCheckClientForWorkspace(
 	if err != nil {
 		return nil, err
 	}
+	policyKeyProvider, err := newStaticPolicyKeyProviderForPolicyConfigs(
+		workspace.PolicyConfigs(),
+		workspace.RemotePolicyKeys(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	policyPluginKeyProvider, err := newStaticPolicyPluginKeyProviderForPolicyConfigs(
+		workspace.PolicyConfigs(),
+		workspace.PolicyNameToRemotePluginKeys(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	policyPluginDataProvider, err := newStaticPolicyPluginDataProviderForPolicyConfigs(
+		c.pluginDataProvider,
+		workspace.PolicyConfigs(),
+	)
+	if err != nil {
+		return nil, err
+	}
 	return bufcheck.NewClient(
 		c.logger,
 		bufcheck.ClientWithStderr(c.container.Stderr()),
@@ -811,6 +885,13 @@ func (c *controller) GetCheckClientForWorkspace(
 		bufcheck.ClientWithRemoteWasmPlugins(
 			pluginKeyProvider,
 			c.pluginDataProvider,
+		),
+		bufcheck.ClientWithLocalPoliciesFromOS(),
+		bufcheck.ClientWithRemotePolicies(
+			policyKeyProvider,
+			c.policyDataProvider,
+			policyPluginKeyProvider,
+			policyPluginDataProvider,
 		),
 	)
 }
@@ -1182,6 +1263,7 @@ func (c *controller) buildTargetImageWithConfigs(
 				workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
 				workspace.GetBreakingConfigForOpaqueID(module.OpaqueID()),
 				workspace.PluginConfigs(),
+				workspace.PolicyConfigs(),
 			),
 		)
 	}
@@ -1205,13 +1287,13 @@ func (c *controller) warnUnconfiguredTransitiveImports(
 	// First, figure out if we have a local module. If we don't, just return - the Workspace
 	// was purely built from remote Modules, and therefore buf.yaml configured dependencies
 	// do not apply.
-	if slicesext.Count(workspace.Modules(), bufmodule.Module.IsLocal) == 0 {
+	if xslices.Count(workspace.Modules(), bufmodule.Module.IsLocal) == 0 {
 		return nil
 	}
 	// Construct a struct map of all the FullName strings of the configured buf.yaml
 	// Module dependencies, and the local Modules. These are considered OK to depend on
 	// for non-imports in the Image.
-	configuredFullNameStrings, err := slicesext.MapError(
+	configuredFullNameStrings, err := xslices.MapError(
 		workspace.ConfiguredDepModuleRefs(),
 		func(moduleRef bufparse.Ref) (string, error) {
 			moduleFullName := moduleRef.FullName()
@@ -1224,7 +1306,7 @@ func (c *controller) warnUnconfiguredTransitiveImports(
 	if err != nil {
 		return err
 	}
-	configuredFullNameStringMap := slicesext.ToStructMap(configuredFullNameStrings)
+	configuredFullNameStringMap := xslices.ToStructMap(configuredFullNameStrings)
 	for _, localModule := range bufmodule.ModuleSetLocalModules(workspace) {
 		if moduleFullName := localModule.FullName(); moduleFullName != nil {
 			configuredFullNameStringMap[moduleFullName.String()] = struct{}{}
@@ -1314,7 +1396,7 @@ func getImageFileInfosForModuleSet(ctx context.Context, moduleSet bufmodule.Modu
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.Map(
+	return xslices.Map(
 		fileInfos,
 		func(fileInfo bufmodule.FileInfo) bufimage.ImageFileInfo {
 			return bufimage.ImageFileInfoForModuleFileInfo(fileInfo)
@@ -1478,15 +1560,15 @@ func newStaticPluginKeyProviderForPluginConfigs(
 	pluginKeys []bufplugin.PluginKey,
 ) (_ bufplugin.PluginKeyProvider, retErr error) {
 	// Validate that all remote PluginConfigs are present in the buf.lock file.
-	pluginKeysByFullName, err := slicesext.ToUniqueValuesMap(pluginKeys, func(pluginKey bufplugin.PluginKey) string {
+	pluginKeysByFullName, err := xslices.ToUniqueValuesMap(pluginKeys, func(pluginKey bufplugin.PluginKey) string {
 		return pluginKey.FullName().String()
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate remote PluginKeys: %w", err)
 	}
 	// Remote PluginConfig Refs are any PluginConfigs that have a Ref.
-	remotePluginRefs := slicesext.Filter(
-		slicesext.Map(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) bufparse.Ref {
+	remotePluginRefs := xslices.Filter(
+		xslices.Map(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) bufparse.Ref {
 			return pluginConfig.Ref()
 		}),
 		func(pluginRef bufparse.Ref) bool {
@@ -1499,4 +1581,74 @@ func newStaticPluginKeyProviderForPluginConfigs(
 		}
 	}
 	return bufplugin.NewStaticPluginKeyProvider(pluginKeys)
+}
+
+// newStaticPolicyKeyProvider creates a new PolicyKeyProvider for the set of PolicyKeys.
+//
+// The PolicyKeys come from the buf.lock file. The PolicyKeyProvider is static
+// and does not change. PolicyConfigs are validated to ensure that all remote
+// PolicyConfigs are pinned in the buf.lock file.
+func newStaticPolicyKeyProviderForPolicyConfigs(
+	policyConfigs []bufconfig.PolicyConfig,
+	policyKeys []bufpolicy.PolicyKey,
+) (_ bufpolicy.PolicyKeyProvider, retErr error) {
+	// Validate that all remote PolicyConfigs are present in the buf.lock file.
+	policyKeysByFullName, err := xslices.ToUniqueValuesMap(policyKeys, func(policyKey bufpolicy.PolicyKey) string {
+		return policyKey.FullName().String()
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate remote PolicyKeys: %w", err)
+	}
+	// Remote PolicyConfig Refs are any PolicyConfigs that have a Ref.
+	remotePolicyRefs := xslices.Filter(
+		xslices.Map(policyConfigs, func(policyConfig bufconfig.PolicyConfig) bufparse.Ref {
+			return policyConfig.Ref()
+		}),
+		func(policyRef bufparse.Ref) bool {
+			return policyRef != nil
+		},
+	)
+	for _, remotePolicyRef := range remotePolicyRefs {
+		if _, ok := policyKeysByFullName[remotePolicyRef.FullName().String()]; !ok {
+			return nil, fmt.Errorf(`remote policy %q is not in the buf.lock file, use "buf policy update" to pin remote refs`, remotePolicyRef)
+		}
+	}
+	return bufpolicy.NewStaticPolicyKeyProvider(policyKeys)
+}
+
+// newStaticPolicyPluginKeyProviderForPolicyConfigs creates a new PolicyPluginKeyProvider for the set of PolicyConfigs.
+func newStaticPolicyPluginKeyProviderForPolicyConfigs(
+	policyConfigs []bufconfig.PolicyConfig,
+	policyNameToRemotePluginKeys map[string][]bufplugin.PluginKey,
+) (bufpolicy.PolicyPluginKeyProvider, error) {
+	// We do not validate that all remote PolicyConfig plugins are present in the buf.lock file.
+	// This would require loading the PolicyConfig data. Check is defered to the runtime.
+	for policyName, remotePluginKeys := range policyNameToRemotePluginKeys {
+		_, err := xslices.ToUniqueValuesMap(remotePluginKeys, func(pluginKey bufplugin.PluginKey) string {
+			return pluginKey.FullName().String()
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to validate remote PluginKeys for Policy %q: %w", policyName, err)
+		}
+	}
+	return bufpolicy.NewStaticPolicyPluginKeyProvider(policyNameToRemotePluginKeys)
+}
+
+// newStaticPolicyPluginDataProviderForPolicyConfigs creates a new PolicyPluginKeyProvider for the set of PolicyConfigs.
+//
+// The pluginDataProvider is shared across all policies.
+func newStaticPolicyPluginDataProviderForPolicyConfigs(
+	pluginDataProvider bufplugin.PluginDataProvider,
+	policyConfigs []bufconfig.PolicyConfig,
+) (bufpolicy.PolicyPluginDataProvider, error) {
+	policyNameToPluginDataProvider := make(map[string]bufplugin.PluginDataProvider)
+	for _, policyConfig := range policyConfigs {
+		policyName := policyConfig.Name()
+		if _, ok := policyNameToPluginDataProvider[policyName]; ok {
+			return nil, fmt.Errorf("duplicate policy name %q found in policy configs", policyName)
+		}
+		// We use the same pluginDataProvider for all policies.
+		policyNameToPluginDataProvider[policyName] = pluginDataProvider
+	}
+	return bufpolicy.NewStaticPolicyPluginDataProvider(policyNameToPluginDataProvider)
 }

@@ -21,16 +21,17 @@ import (
 	"io/fs"
 	"log/slog"
 
+	"buf.build/go/standard/xlog/xslog"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/slogext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
 )
@@ -123,7 +124,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 	moduleKey bufmodule.ModuleKey,
 	options ...WorkspaceModuleKeyOption,
 ) (Workspace, error) {
-	defer slogext.DebugProfile(w.logger)()
+	defer xslog.DebugProfile(w.logger)()
 
 	config, err := newWorkspaceModuleKeyConfig(options)
 	if err != nil {
@@ -186,8 +187,8 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 			pluginConfigs = bufYAMLFile.PluginConfigs()
 			// To support remote plugins when using a config override, we need to resolve the remote
 			// Refs to PluginKeys. We use the pluginKeyProvider to resolve any remote plugin Refs.
-			remotePluginRefs := slicesext.Filter(
-				slicesext.Map(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) bufparse.Ref {
+			remotePluginRefs := xslices.Filter(
+				xslices.Map(pluginConfigs, func(pluginConfig bufconfig.PluginConfig) bufparse.Ref {
 					return pluginConfig.Ref()
 				}),
 				func(ref bufparse.Ref) bool {
@@ -204,6 +205,13 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 				if err != nil {
 					return nil, err
 				}
+			}
+			// TODO: Supporting Policies for ModuleKeys requires resolving each policies remote
+			// plugins.  This is not currently supported. Instead of requiring the resolved Keys for
+			// the workspace, passing resolvers for the remote refs would allow for lazy resolution.
+			policyConfigs := bufYAMLFile.PolicyConfigs()
+			if len(policyConfigs) > 0 {
+				return nil, fmt.Errorf("policies are not supported for ModuleKeys")
 			}
 		}
 	}
@@ -243,6 +251,9 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 		opaqueIDToBreakingConfig,
 		pluginConfigs,
 		remotePluginKeys,
+		nil, // PolicyConfigs are not supported for ModuleKeys
+		nil,
+		nil,
 		nil,
 		false,
 	), nil
@@ -282,7 +293,7 @@ func (w *workspaceProvider) GetWorkspaceForBucket(
 	bucketTargeting buftarget.BucketTargeting,
 	options ...WorkspaceBucketOption,
 ) (Workspace, error) {
-	defer slogext.DebugProfile(w.logger)()
+	defer xslog.DebugProfile(w.logger)()
 	workspaceTargeting, err := w.getWorkspaceTargetingForBucket(
 		ctx,
 		bucket,
@@ -408,6 +419,9 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		v1WorkspaceTargeting.bucketIDToModuleConfig,
 		nil, // No PluginConfigs for v1
 		nil, // No remote PluginKeys for v1
+		nil, // No PolicyConfigs for v1
+		nil, // No remote PolicyKeys for v1
+		nil, // No Policy's PluginKeys for v1.
 		v1WorkspaceTargeting.allConfiguredDepModuleRefs,
 		false,
 	)
@@ -419,7 +433,11 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 	v2Targeting *v2Targeting,
 ) (*workspace, error) {
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, w.logger, w.moduleDataProvider, w.commitProvider)
-	var remotePluginKeys []bufplugin.PluginKey
+	var (
+		remotePluginKeys             []bufplugin.PluginKey
+		remotePolicyKeys             []bufpolicy.PolicyKey
+		policyNameToRemotePluginKeys map[string][]bufplugin.PluginKey
+	)
 	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
 		ctx,
 		bucket,
@@ -449,6 +467,8 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 			)
 		}
 		remotePluginKeys = bufLockFile.RemotePluginKeys()
+		remotePolicyKeys = bufLockFile.RemotePolicyKeys()
+		policyNameToRemotePluginKeys = bufLockFile.PolicyNameToRemotePluginKeys()
 	}
 	// Only check for duplicate module description in v2, which would be an user error, i.e.
 	// This is not a system error:
@@ -507,6 +527,9 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 		v2Targeting.bucketIDToModuleConfig,
 		v2Targeting.bufYAMLFile.PluginConfigs(),
 		remotePluginKeys,
+		v2Targeting.bufYAMLFile.PolicyConfigs(),
+		remotePolicyKeys,
+		policyNameToRemotePluginKeys,
 		v2Targeting.bufYAMLFile.ConfiguredDepModuleRefs(),
 		true,
 	)
@@ -518,6 +541,9 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 	bucketIDToModuleConfig map[string]bufconfig.ModuleConfig,
 	pluginConfigs []bufconfig.PluginConfig,
 	remotePluginKeys []bufplugin.PluginKey,
+	policyConfigs []bufconfig.PolicyConfig,
+	remotePolicyKeys []bufpolicy.PolicyKey,
+	policyNameToRemotePluginKeys map[string][]bufplugin.PluginKey,
 	// Expected to already be unique by FullName.
 	configuredDepModuleRefs []bufparse.Ref,
 	isV2 bool,
@@ -544,6 +570,9 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 		opaqueIDToBreakingConfig,
 		pluginConfigs,
 		remotePluginKeys,
+		policyConfigs,
+		remotePolicyKeys,
+		policyNameToRemotePluginKeys,
 		configuredDepModuleRefs,
 		isV2,
 	), nil
@@ -562,7 +591,7 @@ func getLocalModuleDescription(pathDescription string, moduleConfig bufconfig.Mo
 	description := fmt.Sprintf("path: %q", pathDescription)
 	moduleDirPath := moduleConfig.DirPath()
 	relIncludePaths := moduleConfig.RootToIncludes()["."]
-	includePaths := slicesext.Map(relIncludePaths, func(relInclude string) string {
+	includePaths := xslices.Map(relIncludePaths, func(relInclude string) string {
 		return normalpath.Join(moduleDirPath, relInclude)
 	})
 	switch len(includePaths) {
@@ -570,10 +599,10 @@ func getLocalModuleDescription(pathDescription string, moduleConfig bufconfig.Mo
 	case 1:
 		description = fmt.Sprintf("%s, includes: %q", description, includePaths[0])
 	default:
-		description = fmt.Sprintf("%s, includes: [%s]", description, stringutil.JoinSliceQuoted(includePaths, ", "))
+		description = fmt.Sprintf("%s, includes: [%s]", description, xstrings.JoinSliceQuoted(includePaths, ", "))
 	}
 	relExcludePaths := moduleConfig.RootToExcludes()["."]
-	excludePaths := slicesext.Map(relExcludePaths, func(relInclude string) string {
+	excludePaths := xslices.Map(relExcludePaths, func(relInclude string) string {
 		return normalpath.Join(moduleDirPath, relInclude)
 	})
 	switch len(excludePaths) {
@@ -581,7 +610,7 @@ func getLocalModuleDescription(pathDescription string, moduleConfig bufconfig.Mo
 	case 1:
 		description = fmt.Sprintf("%s, excludes: %q", description, excludePaths[0])
 	default:
-		description = fmt.Sprintf("%s, excludes: [%s]", description, stringutil.JoinSliceQuoted(excludePaths, ", "))
+		description = fmt.Sprintf("%s, excludes: [%s]", description, xstrings.JoinSliceQuoted(excludePaths, ", "))
 	}
 	return description
 }

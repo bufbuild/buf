@@ -19,11 +19,11 @@ import (
 	"log/slog"
 
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
+	"buf.build/go/standard/xslices"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapipolicy"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
@@ -71,7 +71,7 @@ func (p *policyKeyProvider) GetPolicyKeysForPolicyRefs(
 		return nil, nil
 	}
 	// Check unique policyRefs.
-	if _, err := slicesext.ToUniqueValuesMapError(
+	if _, err := xslices.ToUniqueValuesMapError(
 		policyRefs,
 		func(policyRef bufparse.Ref) (string, error) {
 			return policyRef.String(), nil
@@ -79,13 +79,13 @@ func (p *policyKeyProvider) GetPolicyKeysForPolicyRefs(
 	); err != nil {
 		return nil, err
 	}
-	registryToIndexedPolicyRefs := slicesext.ToIndexedValuesMap(
+	registryToIndexedPolicyRefs := xslices.ToIndexedValuesMap(
 		policyRefs,
 		func(policyRef bufparse.Ref) string {
 			return policyRef.FullName().Registry()
 		},
 	)
-	indexedPolicyKeys := make([]slicesext.Indexed[bufpolicy.PolicyKey], 0, len(policyRefs))
+	indexedPolicyKeys := make([]xslices.Indexed[bufpolicy.PolicyKey], 0, len(policyRefs))
 	for registry, indexedPolicyRefs := range registryToIndexedPolicyRefs {
 		indexedRegistryPolicyKeys, err := p.getIndexedPolicyKeysForRegistryAndIndexedPolicyRefs(
 			ctx,
@@ -98,16 +98,16 @@ func (p *policyKeyProvider) GetPolicyKeysForPolicyRefs(
 		}
 		indexedPolicyKeys = append(indexedPolicyKeys, indexedRegistryPolicyKeys...)
 	}
-	return slicesext.IndexedToSortedValues(indexedPolicyKeys), nil
+	return xslices.IndexedToSortedValues(indexedPolicyKeys), nil
 }
 
 func (p *policyKeyProvider) getIndexedPolicyKeysForRegistryAndIndexedPolicyRefs(
 	ctx context.Context,
 	registry string,
-	indexedPolicyRefs []slicesext.Indexed[bufparse.Ref],
+	indexedPolicyRefs []xslices.Indexed[bufparse.Ref],
 	digestType bufpolicy.DigestType,
-) ([]slicesext.Indexed[bufpolicy.PolicyKey], error) {
-	resourceRefs := slicesext.Map(indexedPolicyRefs, func(indexedPolicyRef slicesext.Indexed[bufparse.Ref]) *policyv1beta1.ResourceRef {
+) ([]xslices.Indexed[bufpolicy.PolicyKey], error) {
+	resourceRefs := xslices.Map(indexedPolicyRefs, func(indexedPolicyRef xslices.Indexed[bufparse.Ref]) *policyv1beta1.ResourceRef {
 		resourceRefName := &policyv1beta1.ResourceRef_Name{
 			Owner:  indexedPolicyRef.Value.FullName().Owner(),
 			Policy: indexedPolicyRef.Value.FullName().Name(),
@@ -123,7 +123,6 @@ func (p *policyKeyProvider) getIndexedPolicyKeysForRegistryAndIndexedPolicyRefs(
 			},
 		}
 	})
-
 	policyResponse, err := p.clientProvider.V1Beta1CommitServiceClient(registry).GetCommits(
 		ctx,
 		connect.NewRequest(&policyv1beta1.GetCommitsRequest{
@@ -138,7 +137,7 @@ func (p *policyKeyProvider) getIndexedPolicyKeysForRegistryAndIndexedPolicyRefs(
 		return nil, syserror.New("did not get the expected number of policy datas")
 	}
 
-	indexedPolicyKeys := make([]slicesext.Indexed[bufpolicy.PolicyKey], len(commits))
+	indexedPolicyKeys := make([]xslices.Indexed[bufpolicy.PolicyKey], len(commits))
 	for i, commit := range commits {
 		commitID, err := uuidutil.FromDashless(commit.Id)
 		if err != nil {
@@ -159,7 +158,7 @@ func (p *policyKeyProvider) getIndexedPolicyKeysForRegistryAndIndexedPolicyRefs(
 		if err != nil {
 			return nil, err
 		}
-		indexedPolicyKeys[i] = slicesext.Indexed[bufpolicy.PolicyKey]{
+		indexedPolicyKeys[i] = xslices.Indexed[bufpolicy.PolicyKey]{
 			Value: policyKey,
 			Index: indexedPolicyRefs[i].Index,
 		}

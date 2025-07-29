@@ -22,9 +22,9 @@ import (
 	"fmt"
 	"testing"
 
+	"buf.build/go/app"
+	"buf.build/go/app/appext"
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/stretchr/testify/assert"

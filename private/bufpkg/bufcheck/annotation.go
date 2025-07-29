@@ -16,20 +16,22 @@ package bufcheck
 
 import (
 	"buf.build/go/bufplugin/check"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 type annotation struct {
 	check.Annotation
 
 	pluginName string
+	policyName string
 }
 
-func newAnnotation(checkAnnotation check.Annotation, pluginName string) *annotation {
+func newAnnotation(checkAnnotation check.Annotation, pluginName string, policyName string) *annotation {
 	return &annotation{
 		Annotation: checkAnnotation,
 		pluginName: pluginName,
+		policyName: policyName,
 	}
 }
 
@@ -37,11 +39,15 @@ func (a *annotation) PluginName() string {
 	return a.pluginName
 }
 
+func (a *annotation) PolicyName() string {
+	return a.policyName
+}
+
 func annotationsToFileAnnotations(
 	pathToExternalPath map[string]string,
 	annotations []*annotation,
 ) []bufanalysis.FileAnnotation {
-	return slicesext.Map(
+	return xslices.Map(
 		annotations,
 		func(annotation *annotation) bufanalysis.FileAnnotation {
 			return annotationToFileAnnotation(pathToExternalPath, annotation)
@@ -65,6 +71,7 @@ func annotationToFileAnnotation(
 			annotation.RuleID(),
 			annotation.Message(),
 			annotation.PluginName(),
+			annotation.PolicyName(),
 		)
 	}
 	path := fileLocation.FileDescriptor().ProtoreflectFileDescriptor().Path()
@@ -84,5 +91,6 @@ func annotationToFileAnnotation(
 		annotation.RuleID(),
 		annotation.Message(),
 		annotation.PluginName(),
+		annotation.PolicyName(),
 	)
 }

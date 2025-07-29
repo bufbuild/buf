@@ -17,11 +17,11 @@ package bufimagemodify
 import (
 	"fmt"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/protocompile/walk"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -43,7 +43,7 @@ func modifyJsType(
 	for _, option := range options {
 		option(modifyOptions)
 	}
-	overrideRules := slicesext.Filter(
+	overrideRules := xslices.Filter(
 		config.Overrides(),
 		func(override bufconfig.ManagedOverrideRule) bool {
 			return override.FieldOption() == bufconfig.FieldOptionJSType &&
@@ -54,7 +54,7 @@ func modifyJsType(
 	if len(overrideRules) == 0 {
 		return nil
 	}
-	disableRules := slicesext.Filter(
+	disableRules := xslices.Filter(
 		config.Disables(),
 		func(disable bufconfig.ManagedDisableRule) bool {
 			return (disable.FieldOption() == bufconfig.FieldOptionJSType ||
