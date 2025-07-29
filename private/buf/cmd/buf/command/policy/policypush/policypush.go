@@ -136,10 +136,7 @@ func upload(
 	if err != nil {
 		return nil, appcmd.NewInvalidArgumentErrorf("unable to parse policy full name %q: %w", policyYamlFile.Name(), err)
 	}
-	policy, err = bufpolicy.NewPolicy("", policyFullName, policyFilePath, uuid.Nil, func() (bufpolicy.PolicyConfig, error) {
-		// The policy YAML file implements the PolicyConfig interface, so we can return it directly.
-		return policyYamlFile, nil
-	})
+	policy, err = bufpolicy.NewPolicy(policyFilePath, policyFullName, policyFullName.Name(), uuid.Nil, policyYamlFile.PolicyConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create policy from file %q: %w", policyFilePath, err)
 	}
