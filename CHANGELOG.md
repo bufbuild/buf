@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.56.0] - 2025-07-31
 
 - Add `buf export --all` flag to include non-proto source files.
@@ -1395,6 +1399,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.56.0...HEAD
 [v1.56.0]: https://github.com/bufbuild/buf/compare/v1.55.1...v1.56.0
 [v1.55.1]: https://github.com/bufbuild/buf/compare/v1.55.0...v1.55.1
 [v1.55.0]: https://github.com/bufbuild/buf/compare/v1.54.0...v1.55.0
