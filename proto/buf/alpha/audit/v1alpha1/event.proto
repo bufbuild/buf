@@ -154,6 +154,10 @@ enum EventType {
   EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_CREATED = 71;
   EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_UPDATED = 72;
   EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_DELETED = 73;
+  EVENT_TYPE_POLICY_ENFORCEMENT_CREATED = 74;
+  EVENT_TYPE_POLICY_ENFORCEMENT_DELETED = 75;
+  EVENT_TYPE_POLICY_ENFORCEMENT_POLICY_CHANGED = 76;
+  EVENT_TYPE_POLICY_ENFORCEMENT_TARGETS_CHANGED = 77;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -170,7 +174,7 @@ message EventMetadata {
 // it happened, who did it, which resource was affected, and more contextual information on the
 // event.
 //
-// [#next-free-field: 80]
+// [#next-free-field: 84]
 message Event {
   // Unique id of the audited event.
   string event_id = 1;
@@ -259,6 +263,10 @@ message Event {
     PayloadSDKPluginConstraintCreated sdk_plugin_constraint_created = 77;
     PayloadSDKPluginConstraintUpdated sdk_plugin_constraint_updated = 78;
     PayloadSDKPluginConstraintDeleted sdk_plugin_constraint_deleted = 79;
+    PayloadPolicyEnforcementCreated policy_enforcement_created = 80;
+    PayloadPolicyEnforcementDeleted policy_enforcement_deleted = 81;
+    PayloadPolicyEnforcementPolicyChanged policy_enforcement_policy_changed = 82;
+    PayloadPolicyEnforcementIncludeTargetsChanged policy_enforcement_include_targets_changed = 83;
   }
 }
 
@@ -982,4 +990,42 @@ message PayloadSDKPluginConstraintDeleted {
   string plugin_id = 7;
   // plugin_name is the name of the plugin of the SDK constraint.
   string plugin_name = 8;
+}
+
+message PayloadPolicyEnforcementCreated {
+  // enforcement_id is the id of the policy enforcement.
+  string enforcement_id = 1;
+  // policy_id is the id of the policy that is enforced.
+  string policy_id = 2;
+  // policy_ref is the reference of the policy that is enforced.
+  string policy_ref = 3;
+  // include_targets are the include targets of the policy enforcement.
+  repeated string include_targets = 4;
+}
+
+message PayloadPolicyEnforcementDeleted {
+  // enforcement_id is the id of the policy enforcement.
+  string enforcement_id = 1;
+}
+
+message PayloadPolicyEnforcementPolicyChanged {
+  // enforcement_id is the id of the policy enforcement.
+  string enforcement_id = 1;
+  // old_policy_id is the id of the old policy.
+  string old_policy_id = 2;
+  // new_policy_id is the id of the new policy.
+  string new_policy_id = 3;
+  // old_policy_ref is the reference of the old policy.
+  string old_policy_ref = 4;
+  // new_policy_ref is the reference of the new policy.
+  string new_policy_ref = 5;
+}
+
+message PayloadPolicyEnforcementIncludeTargetsChanged {
+  // enforcement_id is the id of the policy enforcement.
+  string enforcement_id = 1;
+  // old_include_targets are the old include targets of the policy enforcement.
+  repeated string old_include_targets = 2;
+  // new_include_targets are the new include targets of the policy enforcement.
+  repeated string new_include_targets = 3;
 }
