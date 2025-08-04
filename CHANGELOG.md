@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Update exclude types to remove unused options reducing the size of generated code.
 
 ## [v1.56.0] - 2025-07-31
 
