@@ -15,12 +15,14 @@
 package bufworkspace
 
 import (
+	"maps"
 	"slices"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 )
 
 // Workspace is a buf workspace.
@@ -81,6 +83,18 @@ type Workspace interface {
 	//
 	// These come from the buf.lock file. Only v2 supports plugins.
 	RemotePluginKeys() []bufplugin.PluginKey
+	// PolicyConfigs gets the configured PolicyConfigs of the Workspace.
+	//
+	// These come from the buf.yaml files.
+	PolicyConfigs() []bufconfig.PolicyConfig
+	// RemotePolicyKeys gets the remote PolicyKeys of the Workspace.
+	//
+	// These come from the buf.lock file. Only v2 supports policies.
+	RemotePolicyKeys() []bufpolicy.PolicyKey
+	// PolicyNameToRemotePluginKeys gets a map of policy names to remote PluginKeys.
+	//
+	// These come from the buf.lock file. Only v2 supports policies.
+	PolicyNameToRemotePluginKeys() map[string][]bufplugin.PluginKey
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as Refs.
 	//
 	// These come from buf.yaml files.
@@ -110,11 +124,14 @@ type Workspace interface {
 type workspace struct {
 	bufmodule.ModuleSet
 
-	opaqueIDToLintConfig     map[string]bufconfig.LintConfig
-	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig
-	pluginConfigs            []bufconfig.PluginConfig
-	remotePluginKeys         []bufplugin.PluginKey
-	configuredDepModuleRefs  []bufparse.Ref
+	opaqueIDToLintConfig         map[string]bufconfig.LintConfig
+	opaqueIDToBreakingConfig     map[string]bufconfig.BreakingConfig
+	pluginConfigs                []bufconfig.PluginConfig
+	remotePluginKeys             []bufplugin.PluginKey
+	policyConfigs                []bufconfig.PolicyConfig
+	remotePolicyKeys             []bufpolicy.PolicyKey
+	policyNameToRemotePluginKeys map[string][]bufplugin.PluginKey
+	configuredDepModuleRefs      []bufparse.Ref
 
 	// If true, the workspace was created from v2 buf.yamls.
 	// If false, the workspace was created from defaults, or v1beta1/v1 buf.yamls.
@@ -127,17 +144,23 @@ func newWorkspace(
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig,
 	pluginConfigs []bufconfig.PluginConfig,
 	remotePluginKeys []bufplugin.PluginKey,
+	policyConfigs []bufconfig.PolicyConfig,
+	remotePolicyKeys []bufpolicy.PolicyKey,
+	policyNameToRemotePluginKeys map[string][]bufplugin.PluginKey,
 	configuredDepModuleRefs []bufparse.Ref,
 	isV2 bool,
 ) *workspace {
 	return &workspace{
-		ModuleSet:                moduleSet,
-		opaqueIDToLintConfig:     opaqueIDToLintConfig,
-		opaqueIDToBreakingConfig: opaqueIDToBreakingConfig,
-		pluginConfigs:            pluginConfigs,
-		remotePluginKeys:         remotePluginKeys,
-		configuredDepModuleRefs:  configuredDepModuleRefs,
-		isV2:                     isV2,
+		ModuleSet:                    moduleSet,
+		opaqueIDToLintConfig:         opaqueIDToLintConfig,
+		opaqueIDToBreakingConfig:     opaqueIDToBreakingConfig,
+		pluginConfigs:                pluginConfigs,
+		remotePluginKeys:             remotePluginKeys,
+		policyConfigs:                policyConfigs,
+		remotePolicyKeys:             remotePolicyKeys,
+		policyNameToRemotePluginKeys: policyNameToRemotePluginKeys,
+		configuredDepModuleRefs:      configuredDepModuleRefs,
+		isV2:                         isV2,
 	}
 }
 
@@ -155,6 +178,18 @@ func (w *workspace) PluginConfigs() []bufconfig.PluginConfig {
 
 func (w *workspace) RemotePluginKeys() []bufplugin.PluginKey {
 	return slices.Clone(w.remotePluginKeys)
+}
+
+func (w *workspace) PolicyConfigs() []bufconfig.PolicyConfig {
+	return slices.Clone(w.policyConfigs)
+}
+
+func (w *workspace) RemotePolicyKeys() []bufpolicy.PolicyKey {
+	return slices.Clone(w.remotePolicyKeys)
+}
+
+func (w *workspace) PolicyNameToRemotePluginKeys() map[string][]bufplugin.PluginKey {
+	return maps.Clone(w.policyNameToRemotePluginKeys)
 }
 
 func (w *workspace) ConfiguredDepModuleRefs() []bufparse.Ref {

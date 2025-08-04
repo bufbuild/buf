@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"io"
 
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, options []ConfigOption) (_ *Config, retErr error) {
@@ -65,7 +65,7 @@ func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, opti
 			options,
 		)
 	default:
-		return nil, fmt.Errorf("only one plugin file can exist but found multiple plugin files: %s", stringutil.SliceToString(foundConfigFilePaths))
+		return nil, fmt.Errorf("only one plugin file can exist but found multiple plugin files: %s", xstrings.SliceToString(foundConfigFilePaths))
 	}
 }
 
@@ -82,8 +82,8 @@ func getConfigForData(ctx context.Context, data []byte, options []ConfigOption) 
 
 func getConfigForDataInternal(
 	ctx context.Context,
-	unmarshalNonStrict func([]byte, interface{}) error,
-	unmarshalStrict func([]byte, interface{}) error,
+	unmarshalNonStrict func([]byte, any) error,
+	unmarshalStrict func([]byte, any) error,
 	data []byte,
 	id string,
 	options []ConfigOption,

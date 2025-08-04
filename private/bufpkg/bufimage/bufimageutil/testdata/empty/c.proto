@@ -1,0 +1,8 @@
+syntax = "proto3";
+package pkg;
+
+import "a.proto";
+
+message Foo {
+  string name = 1;
+}

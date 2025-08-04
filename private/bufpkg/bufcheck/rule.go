@@ -16,7 +16,7 @@ package bufcheck
 
 import (
 	"buf.build/go/bufplugin/check"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/standard/xslices"
 )
 
 var _ check.Rule = &rule{}
@@ -37,7 +37,7 @@ func newRule(checkRule check.Rule, pluginName string) *rule {
 }
 
 func (r *rule) BufcheckCategories() []Category {
-	return slicesext.Map(
+	return xslices.Map(
 		r.Rule.Categories(),
 		func(checkCategory check.Category) Category {
 			return newCategory(checkCategory, r.pluginName)
@@ -54,13 +54,13 @@ func (*rule) isRuleOrCategory() {}
 
 // Returns Rules in same order as in allRules.
 func rulesForType[R check.Rule](allRules []R, ruleType check.RuleType) []R {
-	return slicesext.Filter(allRules, func(rule R) bool { return rule.Type() == ruleType })
+	return xslices.Filter(allRules, func(rule R) bool { return rule.Type() == ruleType })
 }
 
 // Returns Rules in same order as in allRules.
 func rulesForRuleIDs[R check.Rule](allRules []R, ruleIDs []string) []R {
 	rules := make([]R, 0, len(allRules))
-	ruleIDMap := slicesext.ToStructMap(ruleIDs)
+	ruleIDMap := xslices.ToStructMap(ruleIDs)
 	for _, rule := range allRules {
 		if _, ok := ruleIDMap[rule.ID()]; ok {
 			rules = append(rules, rule)

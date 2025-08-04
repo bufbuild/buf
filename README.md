@@ -98,6 +98,19 @@ Once you've installed `buf`, we recommend completing the [CLI tutorial][cli-tuto
 
 After completing the tour, check out the remainder of the [docs] for your specific areas of interest.
 
+## Builds
+
+The following is a breakdown of the binaries by CPU architecture and operating system available through our [releases]:
+
+|  | Linux | MacOS | Windows |
+| --- | --- | --- | --- |
+| x86 (64-bit) | ✅ | ✅ | ✅ |
+| ARM (64-bit) | ✅ | ✅ | ✅ |
+| ARMv7 (32-bit) | ✅ | ❌ | ❌ |
+| RISC-V (64-bit) | ✅ | ❌ | ❌ |
+| ppc64le | ✅ | ❌ | ❌ |
+| s390x | ✅ | ❌ | ❌ |
+
 ## Community
 
 For help and discussion around Protobuf, best practices, and more, join us on [Slack][badges_slack].

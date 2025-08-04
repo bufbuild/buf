@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -231,6 +232,7 @@ func TestRunBreakingFieldSameCardinality(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 44, 5, 44, 20, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 45, 5, 45, 19, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 48, 5, 48, 19, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 54, 5, 54, 30, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 6, 3, 6, 26, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 13, 3, 13, 26, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 14, 3, 14, 24, "FIELD_SAME_CARDINALITY"),
@@ -1256,9 +1258,53 @@ func TestRunBreakingWithCustomPlugins(t *testing.T) {
 	testBreaking(
 		t,
 		"breaking_custom_plugins",
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 3, 1, 6, 2, "SERVICE_SUFFIXES_NO_CHANGE"),
-		bufanalysistesting.NewFileAnnotation(t, "b.proto", 11, 3, 14, 4, "ENUM_SUFFIXES_NO_CHANGE"),
-		bufanalysistesting.NewFileAnnotation(t, "b.proto", 15, 3, 19, 4, "MESSAGE_SUFFIXES_NO_CHANGE"),
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 3, 1, 6, 2, "SERVICE_SUFFIXES_NO_CHANGE",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 11, 3, 14, 4, "ENUM_SUFFIXES_NO_CHANGE",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 15, 3, 19, 4, "MESSAGE_SUFFIXES_NO_CHANGE",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix"),
+		),
+	)
+}
+
+func TestRunBreakingPolicyEmpty(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_policy_empty",
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 1, 1, 1, 1, "MESSAGE_NO_DELETE",
+			bufanalysistesting.WithPolicyName("empty.policy.yaml"),
+		),
+	)
+}
+
+func TestRunBreakingPolicyLocal(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_policy_local",
+		bufanalysistesting.NewFileAnnotation(
+			t, "a.proto", 3, 1, 6, 2, "SERVICE_SUFFIXES_NO_CHANGE",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+			bufanalysistesting.WithPolicyName("buf.policy1.yaml"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 11, 3, 14, 4, "ENUM_SUFFIXES_NO_CHANGE",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+			bufanalysistesting.WithPolicyName("buf.policy2.yaml"),
+		),
+		bufanalysistesting.NewFileAnnotation(
+			t, "b.proto", 15, 3, 19, 4, "MESSAGE_SUFFIXES_NO_CHANGE",
+			bufanalysistesting.WithPluginName("buf-plugin-suffix.wasm"),
+			bufanalysistesting.WithPolicyName("buf.policy2.yaml"),
+		),
 	)
 }
 
@@ -1267,7 +1313,7 @@ func testBreaking(
 	relDirPath string,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second) // Increased timeout for Wasm runtime
 	defer cancel()
 	logger := slogtestext.NewLogger(t)
 
@@ -1346,11 +1392,20 @@ func testBreaking(
 	require.NoError(t, err)
 	breakingConfig := workspace.GetBreakingConfigForOpaqueID(opaqueID)
 	require.NotNil(t, breakingConfig)
-	client, err := bufcheck.NewClient(logger, bufcheck.NewLocalRunnerProvider(
-		wasm.UnimplementedRuntime,
-		bufplugin.NopPluginKeyProvider,
-		bufplugin.NopPluginDataProvider,
-	))
+	wasmRuntime, err := wasm.NewRuntime(ctx)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, wasmRuntime.Close(ctx))
+	})
+	client, err := bufcheck.NewClient(
+		logger,
+		bufcheck.ClientWithRunnerProvider(bufcheck.NewLocalRunnerProvider(wasmRuntime)),
+		bufcheck.ClientWithLocalWasmPluginsFromOS(),
+		bufcheck.ClientWithLocalPolicies(func(filePath string) ([]byte, error) {
+			// Read policies relative to the base directory path.
+			return os.ReadFile(filepath.Join(dirPath, filePath))
+		}),
+	)
 	require.NoError(t, err)
 	err = client.Breaking(
 		ctx,
@@ -1359,6 +1414,7 @@ func testBreaking(
 		previousImage,
 		bufcheck.BreakingWithExcludeImports(),
 		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
+		bufcheck.WithPolicyConfigs(workspace.PolicyConfigs()...),
 	)
 	if len(expectedFileAnnotations) == 0 {
 		assert.NoError(t, err)

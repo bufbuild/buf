@@ -27,13 +27,14 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/execext"
+	"buf.build/go/app"
+	"buf.build/go/standard/xos/xexec"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/docker/docker/api/types"
 	dockerimage "github.com/docker/docker/api/types/image"
@@ -150,26 +151,26 @@ func buildDockerPlugin(t testing.TB, dockerfilePath string, pluginIdentity strin
 	imageName := fmt.Sprintf("%s:%s", pluginIdentity, stringid.GenerateRandomID())
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
-	if err := execext.Run(
+	if err := xexec.Run(
 		context.Background(),
 		docker,
-		execext.WithArgs("build", "-t", imageName, "."),
-		execext.WithDir(filepath.Dir(dockerfilePath)),
-		execext.WithStdout(os.Stdout),
-		execext.WithStderr(os.Stderr),
-		execext.WithEnv(app.Environ(envContainer)),
+		xexec.WithArgs("build", "-t", imageName, "."),
+		xexec.WithDir(filepath.Dir(dockerfilePath)),
+		xexec.WithStdout(os.Stdout),
+		xexec.WithStderr(os.Stderr),
+		xexec.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		return "", err
 	}
 	t.Logf("created image: %s", imageName)
 	t.Cleanup(func() {
-		if err := execext.Run(
+		if err := xexec.Run(
 			context.Background(),
 			docker,
-			execext.WithArgs("rmi", "--force", imageName),
-			execext.WithDir(filepath.Dir(dockerfilePath)),
-			execext.WithStdout(os.Stdout),
-			execext.WithStderr(os.Stderr),
+			xexec.WithArgs("rmi", "--force", imageName),
+			xexec.WithDir(filepath.Dir(dockerfilePath)),
+			xexec.WithStdout(os.Stdout),
+			xexec.WithStderr(os.Stderr),
 		); err != nil {
 			t.Logf("failed to remove temporary docker image: %v", err)
 		}
@@ -298,10 +299,8 @@ func (d *dockerServer) imagesHandler(w http.ResponseWriter, r *http.Request) {
 
 func (d *dockerServer) findImageIDFromName(name string) string {
 	for imageID, builtImageInfo := range d.pushedImages {
-		for _, imageTag := range builtImageInfo.tags {
-			if imageTag == name {
-				return imageID
-			}
+		if slices.Contains(builtImageInfo.tags, name) {
+			return imageID
 		}
 	}
 	return ""

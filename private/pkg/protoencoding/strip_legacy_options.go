@@ -15,8 +15,6 @@
 package protoencoding
 
 import (
-	"fmt"
-
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -62,11 +60,7 @@ func stripLegacyOptionsFromFile(file *descriptorpb.FileDescriptorProto) (*descri
 			continue
 		}
 		if !cloned {
-			newFile, err := clone(file)
-			if err != nil {
-				return nil, err
-			}
-			file = newFile
+			file = proto.CloneOf(file)
 			cloned = true
 		}
 		file.MessageType[i] = newDescriptor
@@ -77,11 +71,7 @@ func stripLegacyOptionsFromFile(file *descriptorpb.FileDescriptorProto) (*descri
 	}
 	if newExts != nil {
 		if !cloned {
-			newFile, err := clone(file)
-			if err != nil {
-				return nil, err
-			}
-			file = newFile
+			file = proto.CloneOf(file)
 			cloned = true
 		}
 		file.Extension = newExts
@@ -100,11 +90,7 @@ func stripLegacyOptionsFromMessage(message *descriptorpb.DescriptorProto) (*desc
 	if message.GetOptions().GetMessageSetWireFormat() {
 		// Strip this option since the Go runtime does not support
 		// creating protoreflect.Descriptor instances with this set.
-		newMessage, err := clone(message)
-		if err != nil {
-			return nil, err
-		}
-		message = newMessage
+		message = proto.CloneOf(message)
 		cloned = true
 		message.Options.MessageSetWireFormat = nil
 	}
@@ -117,11 +103,7 @@ func stripLegacyOptionsFromMessage(message *descriptorpb.DescriptorProto) (*desc
 			continue
 		}
 		if !cloned {
-			newMessage, err := clone(message)
-			if err != nil {
-				return nil, err
-			}
-			message = newMessage
+			message = proto.CloneOf(message)
 			cloned = true
 		}
 		message.Field[i] = newDescriptor
@@ -136,11 +118,7 @@ func stripLegacyOptionsFromMessage(message *descriptorpb.DescriptorProto) (*desc
 			continue
 		}
 		if !cloned {
-			newMessage, err := clone(message)
-			if err != nil {
-				return nil, err
-			}
-			message = newMessage
+			message = proto.CloneOf(message)
 			cloned = true
 		}
 		message.NestedType[i] = newDescriptor
@@ -151,11 +129,7 @@ func stripLegacyOptionsFromMessage(message *descriptorpb.DescriptorProto) (*desc
 	}
 	if newExtRanges != nil {
 		if !cloned {
-			newMessage, err := clone(message)
-			if err != nil {
-				return nil, err
-			}
-			message = newMessage
+			message = proto.CloneOf(message)
 			cloned = true
 		}
 		message.ExtensionRange = newExtRanges
@@ -166,11 +140,7 @@ func stripLegacyOptionsFromMessage(message *descriptorpb.DescriptorProto) (*desc
 	}
 	if newExts != nil {
 		if !cloned {
-			newMessage, err := clone(message)
-			if err != nil {
-				return nil, err
-			}
-			message = newMessage
+			message = proto.CloneOf(message)
 			cloned = true
 		}
 		message.Extension = newExts
@@ -192,10 +162,7 @@ func stripLegacyOptionsFromField(field *descriptorpb.FieldDescriptorProto) (*des
 	// creating protoreflect.Descriptor instances with this set.
 	// Buf CLI doesn't actually support weak dependencies, so
 	// there should be no practical consequences of removing this.
-	newField, err := clone(field)
-	if err != nil {
-		return nil, err
-	}
+	newField := proto.CloneOf(field)
 	newField.Options.Weak = nil
 	return newField, nil
 }
@@ -267,10 +234,7 @@ func stripLegacyOptionsFromExtensionRanges(extRanges []*descriptorpb.DescriptorP
 			continue
 		}
 		if extRange.GetEnd() > maxTagNumber+1 /* extension range end is exclusive */ {
-			newExtRange, err := clone(extRange)
-			if err != nil {
-				return nil, err
-			}
+			newExtRange := proto.CloneOf(extRange)
 			newExtRange.End = proto.Int32(maxTagNumber + 1)
 			if newExtRanges == nil {
 				// initialize to everything so far except current item (that we're replacing)
@@ -285,14 +249,4 @@ func stripLegacyOptionsFromExtensionRanges(extRanges []*descriptorpb.DescriptorP
 		}
 	}
 	return newExtRanges, nil
-}
-
-func clone[M proto.Message](message M) (M, error) {
-	clone := proto.Clone(message)
-	newMessage, isFileProto := clone.(M)
-	if !isFileProto {
-		var zero M
-		return zero, fmt.Errorf("proto.Clone returned unexpected value: %T instead of %T", clone, message)
-	}
-	return newMessage, nil
 }

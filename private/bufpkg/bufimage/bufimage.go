@@ -24,6 +24,7 @@ import (
 	"sort"
 	"strings"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
@@ -31,7 +32,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
@@ -92,7 +92,7 @@ func AppendWellKnownTypeImageFileInfos(
 	wktBucket storage.ReadBucket,
 	imageFileInfos []ImageFileInfo,
 ) ([]ImageFileInfo, error) {
-	pathToImageFileInfo, err := slicesext.ToUniqueValuesMap(imageFileInfos, ImageFileInfo.Path)
+	pathToImageFileInfo, err := xslices.ToUniqueValuesMap(imageFileInfos, ImageFileInfo.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func ImageFileInfosWithOnlyTargetsAndTargetImports(
 	wktBucket storage.ReadBucket,
 	imageFileInfos []ImageFileInfo,
 ) ([]ImageFileInfo, error) {
-	pathToImageFileInfo, err := slicesext.ToUniqueValuesMap(imageFileInfos, ImageFileInfo.Path)
+	pathToImageFileInfo, err := xslices.ToUniqueValuesMap(imageFileInfos, ImageFileInfo.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -325,13 +325,7 @@ func CloneImage(image Image) (Image, error) {
 
 // CloneImageFile returns a deep copy of the given image file.
 func CloneImageFile(imageFile ImageFile) (ImageFile, error) {
-	clonedProto := proto.Clone(imageFile.FileDescriptorProto())
-	clonedDescriptor, ok := clonedProto.(*descriptorpb.FileDescriptorProto)
-	if !ok {
-		// Shouldn't actually be possible...
-		return nil, fmt.Errorf("failed to clone image file %q: input %T; clone is %T but expecting %T",
-			imageFile.Path(), imageFile, clonedProto, (*descriptorpb.FileDescriptorProto)(nil))
-	}
+	clonedDescriptor := proto.CloneOf(imageFile.FileDescriptorProto())
 	originalUnusedDeps := imageFile.UnusedDependencyIndexes()
 	unusedDeps := make([]int32, len(originalUnusedDeps))
 	copy(unusedDeps, originalUnusedDeps)
@@ -734,7 +728,7 @@ func appendWellKnownTypeImageFileInfos(
 	if err != nil {
 		return nil, err
 	}
-	wktPaths := slicesext.Map(wktObjectInfos, storage.ObjectInfo.Path)
+	wktPaths := xslices.Map(wktObjectInfos, storage.ObjectInfo.Path)
 	if !slices.Equal(datawkt.AllFilePaths, wktPaths) {
 		return nil, syserror.Newf("wktBucket paths %s are not equal to datawkt.AllFilePaths %s", strings.Join(wktPaths, ","), strings.Join(datawkt.AllFilePaths, ","))
 	}

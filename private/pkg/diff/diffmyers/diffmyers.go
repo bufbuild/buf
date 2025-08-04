@@ -132,7 +132,7 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 		}
 		if printHunk {
 			// Print the hunk header.
-			hunk.line = []byte(fmt.Sprintf("@@ -%d,%d +%d,%d @@\n", hunkOldStart, deleteCount, hunkNewStart, insertCount))
+			hunk.line = fmt.Appendf(nil, "@@ -%d,%d +%d,%d @@\n", hunkOldStart, deleteCount, hunkNewStart, insertCount)
 			bufferSize += len(hunk.line) + 1
 		}
 	}
@@ -209,7 +209,7 @@ func findMiddleSnake(from, to [][]byte) (d int, x int, y int, u int, v int) {
 	// Wherever we access them we just offset by maxD.
 	vf := make([]int, 2*maxD+1)
 	vb := make([]int, 2*maxD+1)
-	for i := 0; i < len(vf); i++ {
+	for i := range vf {
 		vf[i] = -1
 		vb[i] = -1
 	}

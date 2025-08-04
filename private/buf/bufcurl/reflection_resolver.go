@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"net/http"
 	"strconv"
 	"strings"
@@ -472,9 +473,7 @@ func (r *reflectionResolver) maybeCreateStreamLocked(client *reflectClient, stre
 		return false // already created
 	}
 	*stream = client.CallBidiStream(r.ctx)
-	for k, v := range r.headers {
-		(*stream).RequestHeader()[k] = v
-	}
+	maps.Copy((*stream).RequestHeader(), r.headers)
 	return true
 }
 
@@ -513,12 +512,12 @@ type extensionContainer interface {
 
 func registerExtensions(reg *protoregistry.Types, descriptor extensionContainer) {
 	exts := descriptor.Extensions()
-	for i := 0; i < exts.Len(); i++ {
+	for i := range exts.Len() {
 		extType := dynamicpb.NewExtensionType(exts.Get(i))
 		_ = reg.RegisterExtension(extType)
 	}
 	msgs := descriptor.Messages()
-	for i := 0; i < msgs.Len(); i++ {
+	for i := range msgs.Len() {
 		registerExtensions(reg, msgs.Get(i))
 	}
 }

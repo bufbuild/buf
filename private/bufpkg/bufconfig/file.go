@@ -151,7 +151,7 @@ func readFile[F File](
 		var f F
 		return f, err
 	}
-	f, err := readFileFunc(data, nil, true)
+	f, err := readFileFunc(data, newObjectData(fileName, data), true)
 	if err != nil {
 		return f, newDecodeError(fileName, err)
 	}
@@ -176,14 +176,14 @@ func writeFile[F File](
 	return nil
 }
 
-func getUnmarshalStrict(allowJSON bool) func([]byte, interface{}) error {
+func getUnmarshalStrict(allowJSON bool) func([]byte, any) error {
 	if allowJSON {
 		return encoding.UnmarshalJSONOrYAMLStrict
 	}
 	return encoding.UnmarshalYAMLStrict
 }
 
-func getUnmarshalNonStrict(allowJSON bool) func([]byte, interface{}) error {
+func getUnmarshalNonStrict(allowJSON bool) func([]byte, any) error {
 	if allowJSON {
 		return encoding.UnmarshalJSONOrYAMLNonStrict
 	}

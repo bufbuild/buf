@@ -24,8 +24,8 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
+	"buf.build/go/app"
+	"buf.build/go/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/spf13/pflag"
@@ -150,10 +150,7 @@ var (
 `)
 		data := pathToData[path]
 		for len(data) > 0 {
-			n := sliceLength
-			if n > len(data) {
-				n = len(data)
-			}
+			n := min(sliceLength, len(data))
 			accum := ""
 			for _, elem := range data[:n] {
 				accum += fmt.Sprintf("0x%02x,", elem)

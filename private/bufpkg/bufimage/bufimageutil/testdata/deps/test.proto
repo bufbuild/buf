@@ -1,0 +1,26 @@
+syntax = "proto3";
+package test;
+
+import "a.proto";
+import "google/protobuf/descriptor.proto";
+import "old.proto";
+
+message FieldA {
+  a.A a = 1;
+}
+
+message EnumA {
+  a.A.AEnum a = 1;
+}
+
+message PublicOrder {
+  option (test.message_c).c = "c";
+  option (test.message_b).b = "b";
+  option (test.message_a).a = "a";
+}
+
+extend google.protobuf.MessageOptions {
+  optional a.A message_a = 50001;
+  optional b.B message_b = 50002;
+  optional c.C message_c = 50003;
+}

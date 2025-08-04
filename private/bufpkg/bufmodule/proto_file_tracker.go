@@ -18,7 +18,7 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -93,8 +93,8 @@ func (t *protoFileTracker) validate() error {
 	var duplicateProtoPathErrors []*DuplicateProtoPathError
 	for protoPath, opaqueIDMap := range t.protoPathToOpaqueIDMap {
 		if len(opaqueIDMap) > 1 {
-			moduleDescriptions := slicesext.Map(
-				slicesext.MapKeysToSortedSlice(opaqueIDMap),
+			moduleDescriptions := xslices.Map(
+				xslices.MapKeysToSortedSlice(opaqueIDMap),
 				func(opaqueID string) string {
 					return t.opaqueIDToDescription[opaqueID]
 				},

@@ -21,10 +21,10 @@ import (
 	"sort"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
@@ -93,13 +93,13 @@ func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 	// isn't an LRU cache, and the information also may change over time.
 	v1ProtoModuleProvider := newV1ProtoModuleProvider(a.logger, a.moduleClientProvider)
 
-	registryToIndexedModuleKeys := slicesext.ToIndexedValuesMap(
+	registryToIndexedModuleKeys := xslices.ToIndexedValuesMap(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {
 			return moduleKey.FullName().Registry()
 		},
 	)
-	indexedModuleDatas := make([]slicesext.Indexed[bufmodule.ModuleData], 0, len(moduleKeys))
+	indexedModuleDatas := make([]xslices.Indexed[bufmodule.ModuleData], 0, len(moduleKeys))
 	for registry, indexedModuleKeys := range registryToIndexedModuleKeys {
 		// registryModuleDatas are in the same order as indexedModuleKeys.
 		indexedRegistryModuleDatas, err := a.getIndexedModuleDatasForRegistryAndIndexedModuleKeys(
@@ -114,7 +114,7 @@ func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 		}
 		indexedModuleDatas = append(indexedModuleDatas, indexedRegistryModuleDatas...)
 	}
-	return slicesext.IndexedToSortedValues(indexedModuleDatas), nil
+	return xslices.IndexedToSortedValues(indexedModuleDatas), nil
 }
 
 // Returns ModuleDatas in the same order as the input ModuleKeys
@@ -122,16 +122,16 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 	ctx context.Context,
 	v1ProtoModuleProvider *v1ProtoModuleProvider,
 	registry string,
-	indexedModuleKeys []slicesext.Indexed[bufmodule.ModuleKey],
+	indexedModuleKeys []xslices.Indexed[bufmodule.ModuleKey],
 	digestType bufmodule.DigestType,
-) ([]slicesext.Indexed[bufmodule.ModuleData], error) {
-	graph, err := a.graphProvider.GetGraphForModuleKeys(ctx, slicesext.IndexedToValues(indexedModuleKeys))
+) ([]xslices.Indexed[bufmodule.ModuleData], error) {
+	graph, err := a.graphProvider.GetGraphForModuleKeys(ctx, xslices.IndexedToValues(indexedModuleKeys))
 	if err != nil {
 		return nil, err
 	}
-	commitIDToIndexedModuleKey, err := slicesext.ToUniqueValuesMapError(
+	commitIDToIndexedModuleKey, err := xslices.ToUniqueValuesMapError(
 		indexedModuleKeys,
-		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (uuid.UUID, error) {
+		func(indexedModuleKey xslices.Indexed[bufmodule.ModuleKey]) (uuid.UUID, error) {
 			return indexedModuleKey.Value.CommitID(), nil
 		},
 	)
@@ -148,7 +148,7 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 	if err != nil {
 		return nil, err
 	}
-	indexedModuleDatas := make([]slicesext.Indexed[bufmodule.ModuleData], 0, len(indexedModuleKeys))
+	indexedModuleDatas := make([]xslices.Indexed[bufmodule.ModuleData], 0, len(indexedModuleKeys))
 	for _, indexedModuleKey := range indexedModuleKeys {
 		moduleKey := indexedModuleKey.Value
 		// TopoSort will get us both the direct and transitive dependencies for the key.
@@ -169,7 +169,7 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 		if !ok {
 			return nil, syserror.Newf("could not find universalProtoContent for commit ID %q", moduleKey.CommitID())
 		}
-		indexedModuleData := slicesext.Indexed[bufmodule.ModuleData]{
+		indexedModuleData := xslices.Indexed[bufmodule.ModuleData]{
 			Value: bufmodule.NewModuleData(
 				ctx,
 				moduleKey,
@@ -195,10 +195,10 @@ func (a *moduleDataProvider) getCommitIDToUniversalProtoContentForRegistryAndInd
 	ctx context.Context,
 	v1ProtoModuleProvider *v1ProtoModuleProvider,
 	registry string,
-	commitIDToIndexedModuleKey map[uuid.UUID]slicesext.Indexed[bufmodule.ModuleKey],
+	commitIDToIndexedModuleKey map[uuid.UUID]xslices.Indexed[bufmodule.ModuleKey],
 	digestType bufmodule.DigestType,
 ) (map[uuid.UUID]*universalProtoContent, error) {
-	commitIDs := slicesext.MapKeysToSlice(commitIDToIndexedModuleKey)
+	commitIDs := xslices.MapKeysToSlice(commitIDToIndexedModuleKey)
 	universalProtoContents, err := getUniversalProtoContentsForRegistryAndCommitIDs(
 		ctx,
 		a.moduleClientProvider,
@@ -209,7 +209,7 @@ func (a *moduleDataProvider) getCommitIDToUniversalProtoContentForRegistryAndInd
 	if err != nil {
 		return nil, err
 	}
-	commitIDToUniversalProtoContent, err := slicesext.ToUniqueValuesMapError(
+	commitIDToUniversalProtoContent, err := xslices.ToUniqueValuesMapError(
 		universalProtoContents,
 		func(universalProtoContent *universalProtoContent) (uuid.UUID, error) {
 			return uuidutil.FromDashless(universalProtoContent.CommitID)

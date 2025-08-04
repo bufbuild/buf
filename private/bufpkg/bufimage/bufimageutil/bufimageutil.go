@@ -266,9 +266,9 @@ func StripSourceRetentionOptions(image bufimage.Image) (bufimage.Image, error) {
 type transitiveClosure struct {
 	// The elements included in the transitive closure.
 	elements map[namedDescriptor]closureInclusionMode
-	// The ordered set of imports for each file. This allows for re-writing imports
+	// The set of imports for each file. This allows for re-writing imports
 	// for files whose contents have been pruned.
-	imports map[string]*orderedImports
+	imports map[string]map[string]struct{}
 }
 
 type closureInclusionMode int
@@ -295,7 +295,7 @@ const (
 func newTransitiveClosure() *transitiveClosure {
 	return &transitiveClosure{
 		elements: map[namedDescriptor]closureInclusionMode{},
-		imports:  map[string]*orderedImports{},
+		imports:  map[string]map[string]struct{}{},
 	}
 }
 
@@ -395,6 +395,9 @@ func (t *transitiveClosure) includeType(
 	}
 	for _, file := range pkg.files {
 		fileDescriptor := file.FileDescriptorProto()
+		if mode := t.elements[fileDescriptor]; mode == inclusionModeExcluded {
+			return fmt.Errorf("inclusion of excluded package %q", typeName)
+		}
 		if err := t.addElement(fileDescriptor, "", false, imageIndex, options); err != nil {
 			return fmt.Errorf("inclusion of type %q: %w", typeName, err)
 		}
@@ -414,10 +417,10 @@ func (t *transitiveClosure) addImport(fromPath, toPath string) {
 	}
 	imps := t.imports[fromPath]
 	if imps == nil {
-		imps = newOrderedImports()
+		imps = make(map[string]struct{}, 2)
 		t.imports[fromPath] = imps
 	}
-	imps.add(toPath)
+	imps[toPath] = struct{}{}
 }
 
 func (t *transitiveClosure) addElement(
@@ -428,8 +431,11 @@ func (t *transitiveClosure) addElement(
 	opts *imageFilterOptions,
 ) error {
 	descriptorInfo := imageIndex.ByDescriptor[descriptor]
-	t.addImport(referrerFile, descriptorInfo.file.Path())
 	if existingMode, ok := t.elements[descriptor]; ok && existingMode != inclusionModeEnclosing {
+		if existingMode == inclusionModeExcluded {
+			return nil // already excluded
+		}
+		t.addImport(referrerFile, descriptorInfo.file.Path())
 		if existingMode == inclusionModeImplicit && !impliedByCustomOption {
 			// upgrade from implied to explicitly part of closure
 			t.elements[descriptor] = inclusionModeExplicit
@@ -444,10 +450,9 @@ func (t *transitiveClosure) addElement(
 
 	switch typedDescriptor := descriptor.(type) {
 	case *descriptorpb.FileDescriptorProto:
-		typeNames, ok := imageIndex.FileTypes[typedDescriptor.GetName()]
-		if !ok {
-			return fmt.Errorf("missing %q", typedDescriptor.GetName())
-		}
+		// If the file we are attempting to include is empty (has no types defined), it is still
+		// valid for inclusion.
+		typeNames := imageIndex.FileTypes[typedDescriptor.GetName()]
 		// A file includes all elements. The types are resolved in the image index
 		// to ensure all nested types are included.
 		for _, typeName := range typeNames {
@@ -475,7 +480,7 @@ func (t *transitiveClosure) addElement(
 				}
 				oneofFieldCounts[index]++
 			}
-			if err := t.exploreCustomOptions(field, referrerFile, imageIndex, opts); err != nil {
+			if err := t.exploreCustomOptions(field, descriptorInfo.file.Path(), imageIndex, opts); err != nil {
 				return err
 			}
 		}
@@ -588,6 +593,9 @@ func (t *transitiveClosure) addElement(
 	default:
 		return errorUnsupportedFilterType(descriptor, descriptorInfo.fullName)
 	}
+
+	// Add the file to the imports for this file.
+	t.addImport(referrerFile, descriptorInfo.file.Path())
 
 	// if this type is enclosed inside another, add enclosing types
 	if err := t.addEnclosing(descriptorInfo.parent, descriptorInfo.file.Path(), imageIndex, opts); err != nil {
@@ -812,6 +820,10 @@ func (t *transitiveClosure) addExtensions(
 		}
 		descriptorInfo := imageIndex.ByDescriptor[msgDescriptor]
 		for _, extendsDescriptor := range imageIndex.NameToExtensions[descriptorInfo.fullName] {
+			if mode := t.elements[extendsDescriptor]; mode == inclusionModeExcluded {
+				// This extension field is excluded.
+				continue
+			}
 			if err := t.addElement(extendsDescriptor, "", false, imageIndex, opts); err != nil {
 				return err
 			}
@@ -908,7 +920,7 @@ func (t *transitiveClosure) exploreOptionValueForAny(
 	case isMessageKind(fd.Kind()):
 		if fd.IsList() {
 			listVal := val.List()
-			for i := 0; i < listVal.Len(); i++ {
+			for i := range listVal.Len() {
 				if err := t.exploreOptionSingularValueForAny(listVal.Get(i).Message(), referrerFile, imageIndex, opts); err != nil {
 					return err
 				}
@@ -1065,61 +1077,4 @@ func stripSourceRetentionOptionsFromFile(imageFile bufimage.ImageFile) (bufimage
 		imageFile.IsSyntaxUnspecified(),
 		imageFile.UnusedDependencyIndexes(),
 	)
-}
-
-// orderedImports is a structure to maintain an ordered set of imports. This is needed
-// because we want to be able to iterate through imports in a deterministic way when filtering
-// the image.
-type orderedImports struct {
-	pathToIndex map[string]int
-	paths       []string
-}
-
-// newOrderedImports creates a new orderedImports structure.
-func newOrderedImports() *orderedImports {
-	return &orderedImports{
-		pathToIndex: map[string]int{},
-	}
-}
-
-// index returns the index for a given path. If the path does not exist in index map, -1
-// is returned and should be considered deleted.
-func (o *orderedImports) index(path string) int {
-	if index, ok := o.pathToIndex[path]; ok {
-		return index
-	}
-	return -1
-}
-
-// add appends a path to the paths list and the index in the map. If a key already exists,
-// then this is a no-op.
-func (o *orderedImports) add(path string) {
-	if _, ok := o.pathToIndex[path]; !ok {
-		o.pathToIndex[path] = len(o.paths)
-		o.paths = append(o.paths, path)
-	}
-}
-
-// delete removes a key from the index map of ordered imports. If a non-existent path is
-// set for deletion, then this is a no-op.
-// Note that the path is not removed from the paths list. If you want to iterate through
-// the paths, use keys() to get all non-deleted keys.
-func (o *orderedImports) delete(path string) {
-	delete(o.pathToIndex, path)
-}
-
-// keys provides all non-deleted keys from the ordered imports.
-func (o *orderedImports) keys() []string {
-	keys := make([]string, 0, len(o.pathToIndex))
-	for _, path := range o.paths {
-		if _, ok := o.pathToIndex[path]; ok {
-			keys = append(keys, path)
-		}
-	}
-	return keys
-}
-
-// len returns the number of paths in the ordered imports.
-func (o *orderedImports) len() int {
-	return len(o.pathToIndex)
 }

@@ -41,7 +41,7 @@ func TestNewBlobSetDuplicatesValid(t *testing.T) {
 
 func testNewBlobs(t *testing.T, size int) []Blob {
 	var blobs []Blob
-	for i := 0; i < size; i++ {
+	for i := range size {
 		content := fmt.Sprintf("some file content %d", i)
 		blob, err := NewBlobForContent(strings.NewReader(content))
 		require.NoError(t, err)

@@ -16,13 +16,14 @@ package bufremoteplugin
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -116,9 +117,7 @@ func OutputLanguagesToProtoLanguages(languages []string) ([]registryv1alpha1.Plu
 		}
 		return nil, fmt.Errorf("invalid plugin output language: %q\nsupported languages: %s", language, strings.Join(supportedLanguages, ", "))
 	}
-	sort.Slice(protoLanguages, func(i, j int) bool {
-		return protoLanguages[i] < protoLanguages[j]
-	})
+	slices.Sort(protoLanguages)
 	return protoLanguages, nil
 }
 
@@ -343,7 +342,7 @@ func ProtoCargoConfigToCargoRegistryConfig(protoCargoConfig *registryv1alpha1.Ca
 
 // ProtoNugetConfigToNugetRegistryConfig converts protoConfig to an equivalent [*bufremotepluginconfig.NugetRegistryConfig].
 func ProtoNugetConfigToNugetRegistryConfig(protoConfig *registryv1alpha1.NugetConfig) (*bufremotepluginconfig.NugetRegistryConfig, error) {
-	targetFrameworks, err := slicesext.MapError(protoConfig.GetTargetFrameworks(), DotnetTargetFrameworkToString)
+	targetFrameworks, err := xslices.MapError(protoConfig.GetTargetFrameworks(), DotnetTargetFrameworkToString)
 	if err != nil {
 		return nil, err
 	}
@@ -353,7 +352,7 @@ func ProtoNugetConfigToNugetRegistryConfig(protoConfig *registryv1alpha1.NugetCo
 	for _, dependency := range protoConfig.GetRuntimeLibraries() {
 		var depTargetFrameworks []string
 		if len(dependency.GetTargetFrameworks()) > 0 {
-			depTargetFrameworks, err = slicesext.MapError(dependency.GetTargetFrameworks(), DotnetTargetFrameworkToString)
+			depTargetFrameworks, err = xslices.MapError(dependency.GetTargetFrameworks(), DotnetTargetFrameworkToString)
 			if err != nil {
 				return nil, err
 			}
@@ -390,7 +389,7 @@ func CargoRegistryConfigToProtoCargoConfig(cargoConfig *bufremotepluginconfig.Ca
 
 // NugetRegistryConfigToProtoNugetConfig converts nugetConfig to an equivalent [*registryv1alpha1.NugetConfig].
 func NugetRegistryConfigToProtoNugetConfig(nugetConfig *bufremotepluginconfig.NugetRegistryConfig) (*registryv1alpha1.NugetConfig, error) {
-	targetFrameworks, err := slicesext.MapError(nugetConfig.TargetFrameworks, DotnetTargetFrameworkFromString)
+	targetFrameworks, err := xslices.MapError(nugetConfig.TargetFrameworks, DotnetTargetFrameworkFromString)
 	if err != nil {
 		return nil, err
 	}
@@ -400,7 +399,7 @@ func NugetRegistryConfigToProtoNugetConfig(nugetConfig *bufremotepluginconfig.Nu
 	for _, dependency := range nugetConfig.Deps {
 		var depTargetFrameworks []registryv1alpha1.DotnetTargetFramework
 		if len(dependency.TargetFrameworks) > 0 {
-			depTargetFrameworks, err = slicesext.MapError(dependency.TargetFrameworks, DotnetTargetFrameworkFromString)
+			depTargetFrameworks, err = xslices.MapError(dependency.TargetFrameworks, DotnetTargetFrameworkFromString)
 			if err != nil {
 				return nil, err
 			}

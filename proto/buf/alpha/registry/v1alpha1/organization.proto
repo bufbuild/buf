@@ -88,8 +88,6 @@ service OrganizationService {
   rpc RemoveOrganizationMember(RemoveOrganizationMemberRequest) returns (RemoveOrganizationMemberResponse) {
     option idempotency_level = IDEMPOTENT;
   }
-  // SetOrganizationMember sets the role of a user in the organization.
-  rpc SetOrganizationMember(SetOrganizationMemberRequest) returns (SetOrganizationMemberResponse);
   // GetOrganizationSettings gets the settings of an organization, including organization base roles.
   rpc GetOrganizationSettings(GetOrganizationSettingsRequest) returns (GetOrganizationSettingsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -98,6 +96,10 @@ service OrganizationService {
   rpc UpdateOrganizationSettings(UpdateOrganizationSettingsRequest) returns (UpdateOrganizationSettingsResponse);
   // AddOrganizationGroup adds an IdP Group to the organization.
   rpc AddOrganizationGroup(AddOrganizationGroupRequest) returns (AddOrganizationGroupResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+  // UpdateOrganizationGroup updates an IdP Group for the organization.
+  rpc UpdateOrganizationGroup(UpdateOrganizationGroupRequest) returns (UpdateOrganizationGroupResponse) {
     option idempotency_level = IDEMPOTENT;
   }
   // RemoveOrganizationGroup removes an IdP Group from the organization.
@@ -213,24 +215,19 @@ message RemoveOrganizationMemberRequest {
 
 message RemoveOrganizationMemberResponse {}
 
-message SetOrganizationMemberRequest {
-  // The ID of the organization for which the user's role will be set.
-  string organization_id = 1;
-  // The ID of the user whose role will be set.
-  string user_id = 2;
-  // The role to assign to the user.
-  // Setting UNSPECIFIED means removing the user's role.
-  OrganizationRole organization_role = 3;
-}
-
-message SetOrganizationMemberResponse {}
-
 message GetOrganizationSettingsRequest {
   // The ID of the organization for which to get the settings.
   string organization_id = 1;
 }
 
 message GetOrganizationSettingsResponse {
+  message IdPGroup {
+    // The name of the IdP group.
+    string name = 1;
+    // The role override associated with this group.
+    OrganizationRole role_override = 2;
+  }
+
   reserved 2, 3;
   reserved "plugin_base_role", "template_base_role";
 
@@ -238,7 +235,7 @@ message GetOrganizationSettingsResponse {
   // The number of members in the organization.
   uint32 members_count = 4;
   // The IdP groups associated with the organization.
-  repeated string idp_groups = 5;
+  repeated IdPGroup idp_groups = 5;
 }
 
 message UpdateOrganizationSettingsRequest {
@@ -262,9 +259,28 @@ message AddOrganizationGroupRequest {
   string organization_id = 1;
   // The name of the group to add.
   string group_name = 2;
+  // The role to associate with this organization group.
+  //
+  // Any user who maps to this organization via this group will be granted this role. If no role is
+  // set, the user will be granted the 'member' role.
+  OrganizationRole role_override = 3;
 }
 
 message AddOrganizationGroupResponse {}
+
+message UpdateOrganizationGroupRequest {
+  // The ID of the organization to which this group belongs.
+  string organization_id = 1;
+  // The name of the group to update.
+  string group_name = 2;
+  // The role to associate with this organization group.
+  //
+  // Setting this to 'UNSPECIFIED' will remove the override. Leaving this unset will not update this
+  // property.
+  optional OrganizationRole role_override = 3;
+}
+
+message UpdateOrganizationGroupResponse {}
 
 message RemoveOrganizationGroupRequest {
   // The ID of the organization for which to remove the group.

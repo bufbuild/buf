@@ -58,6 +58,7 @@ func checkTagRanges[R bufprotosource.TagRange](
 			responseWriter.AddProtosourceAnnotation(
 				element.Location(),
 				previousElement.Location(),
+				element.File().Path(),
 				`Previously present %s range %q on %s %q is missing values: %s were removed.`,
 				rangeKind,
 				previousString,

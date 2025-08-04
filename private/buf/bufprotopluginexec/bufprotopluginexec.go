@@ -25,8 +25,8 @@ import (
 	"log/slog"
 	"os/exec"
 
+	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/protoplugin"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -38,11 +38,11 @@ const (
 	// This is what we want to report here.
 
 	// defaultMajorVersion is the default major version.
-	defaultMajorVersion = 5
+	defaultMajorVersion = 6
 	// defaultMinorVersion is the default minor version.
-	defaultMinorVersion = 29
+	defaultMinorVersion = 31
 	// defaultPatchVersion is the default patch version.
-	defaultPatchVersion = 3
+	defaultPatchVersion = 1
 	// defaultSuffixVersion is the default suffix version.
 	defaultSuffixVersion = ""
 )

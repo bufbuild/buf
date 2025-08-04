@@ -48,7 +48,7 @@ func TestSourcePathsRemapTrie_Insert(t *testing.T) {
 		require.Equal(t, expectedSlices, slices)
 	})
 	// shuffle a few times and make sure the trie is always constructed correctly
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		rnd := rand.New(rand.NewSource(int64(i)))
 		t.Run(fmt.Sprintf("random order %d", i), func(t *testing.T) {
 			t.Parallel()

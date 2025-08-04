@@ -23,13 +23,14 @@ GOLANGCI_LINT_ARCH := $(UNAME_ARCH)
 endif
 
 # Settable
-# https://github.com/golangci/golangci-lint/releases 20250212 checked 20250212
+# https://github.com/golangci/golangci-lint/releases 20250325 checked 20250401
 # Contrast golangci-lint configuration with the one in https://github.com/connectrpc/connect-go/blob/main/.golangci.yml when upgrading
-GOLANGCI_LINT_VERSION ?= v1.64.3
+GOLANGCI_LINT_VERSION ?= v2.0.2
 
 GOLANGCI_LINT := $(CACHE_VERSIONS)/golangci-lint/$(GOLANGCI_LINT_VERSION)
 $(GOLANGCI_LINT):
 	@rm -f $(CACHE_BIN)/golangci-lint
+	@mkdir -p $(CACHE_BIN)
 	$(eval GOLANGCI_LINT_TMP := $(shell mktemp -d))
 	curl -fsSL -o $(GOLANGCI_LINT_TMP)/golangci-lint.tar.gz \
 		https://github.com/golangci/golangci-lint/releases/download/$(GOLANGCI_LINT_VERSION)/golangci-lint-$(subst v,,$(GOLANGCI_LINT_VERSION))-$(GOLANGCI_LINT_OS)-$(GOLANGCI_LINT_ARCH).tar.gz

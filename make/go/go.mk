@@ -20,9 +20,9 @@ GO_TEST_WASM_BINS ?=
 # Settable
 GO_GET_PKGS ?=
 # Settable
-GO_MOD_VERSION ?= 1.23.0
+GO_MOD_VERSION ?= 1.22
 # Settable
-GO_MOD_TOOLCHAIN ?= 1.24.1
+GO_MOD_TOOLCHAIN ?= 1.23.5
 # Settable
 GO_ALL_REPO_PKGS ?= ./cmd/... ./internal/...
 # Settable
@@ -91,10 +91,13 @@ godeps: deps
 	go mod download
 
 .PHONY: gofmtmodtidy
-gofmtmodtidy:
+gofmtmodtidy: $(GOLANGCI_LINT)
 	@echo gofmt -s -w ALL_GO_FILES
 	@gofmt -s -w .
 	go mod tidy -v
+ifeq ($(SKIP_GOLANGCI_LINT),)
+	golangci-lint fmt
+endif
 
 format:: gofmtmodtidy
 
@@ -114,6 +117,7 @@ golangcilint: $(GOLANGCI_LINT)
 ifneq ($(SKIP_GOLANGCI_LINT),)
 	@echo Skipping golangci-lint...
 else
+	golangci-lint fmt --diff
 	golangci-lint run --timeout $(GOLANGCILINTTIMEOUT)
 endif
 

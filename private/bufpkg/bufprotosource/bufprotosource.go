@@ -139,7 +139,7 @@ type OptionExtensionDescriptor interface {
 	//
 	// See https://pkg.go.dev/google.golang.org/protobuf/proto#HasExtension
 	// See https://pkg.go.dev/google.golang.org/protobuf/proto#GetExtension
-	OptionExtension(extensionType protoreflect.ExtensionType) (interface{}, bool)
+	OptionExtension(extensionType protoreflect.ExtensionType) (any, bool)
 
 	// OptionExtensionLocation returns the source location where the given extension
 	// field value is defined. This is the same as OptionLocation, but specific to

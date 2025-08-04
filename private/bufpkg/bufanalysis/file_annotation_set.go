@@ -178,5 +178,7 @@ func hash(fileAnnotation FileAnnotation) string {
 	_, _ = hash.Write([]byte(strconv.Itoa(fileAnnotation.EndColumn())))
 	_, _ = hash.Write([]byte(fileAnnotation.Type()))
 	_, _ = hash.Write([]byte(fileAnnotation.Message()))
+	_, _ = hash.Write([]byte(fileAnnotation.PluginName()))
+	_, _ = hash.Write([]byte(fileAnnotation.PolicyName()))
 	return string(hash.Sum(nil))
 }

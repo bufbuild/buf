@@ -46,7 +46,7 @@ func normalizeAndCheckPaths(paths []string, name string) ([]string, error) {
 		outputs[i] = output
 	}
 	sort.Strings(outputs)
-	for i := 0; i < len(outputs); i++ {
+	for i := range outputs {
 		for j := i + 1; j < len(outputs); j++ {
 			output1 := outputs[i]
 			output2 := outputs[j]

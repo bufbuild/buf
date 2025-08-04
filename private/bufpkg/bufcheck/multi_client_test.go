@@ -23,11 +23,10 @@ import (
 	"buf.build/go/bufplugin/check/checktest"
 	"buf.build/go/bufplugin/check/checkutil"
 	"buf.build/go/bufplugin/option"
+	"buf.build/go/standard/xslices"
+	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -107,8 +106,8 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 	multiClient := newMultiClient(
 		slogtestext.NewLogger(t),
 		[]*checkClientSpec{
-			newCheckClientSpec("buf-plugin-field-lower-snake-case", fieldLowerSnakeCaseClient, emptyOptions),
-			newCheckClientSpec("buf-plugin-timestamp-suffix", timestampSuffixClient, emptyOptions),
+			newCheckClientSpec("buf-plugin-field-lower-snake-case", "", fieldLowerSnakeCaseClient, emptyOptions),
+			newCheckClientSpec("buf-plugin-timestamp-suffix", "", timestampSuffixClient, emptyOptions),
 		},
 	)
 
@@ -120,7 +119,7 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 			fieldLowerSnakeCaseRuleID,
 			timestampSuffixRuleID,
 		},
-		slicesext.Map(rules, Rule.ID),
+		xslices.Map(rules, Rule.ID),
 	)
 	annotations, err := multiClient.Check(ctx, request)
 	require.NoError(t, err)
@@ -148,7 +147,7 @@ func testMultiClientSimple(t *testing.T, cacheRules bool) {
 				},
 			},
 		},
-		slicesext.Map(
+		xslices.Map(
 			annotations,
 			func(annotation *annotation) check.Annotation {
 				return annotation
@@ -167,8 +166,8 @@ func TestMultiClientCannotHaveOverlappingRules(t *testing.T) {
 	multiClient := newMultiClient(
 		slogtestext.NewLogger(t),
 		[]*checkClientSpec{
-			newCheckClientSpec("buf-plugin-field-lower-snake-case", fieldLowerSnakeCaseClient, emptyOptions),
-			newCheckClientSpec("buf-plugin-field-lower-snake-case", fieldLowerSnakeCaseClient, emptyOptions),
+			newCheckClientSpec("buf-plugin-field-lower-snake-case", "", fieldLowerSnakeCaseClient, emptyOptions),
+			newCheckClientSpec("buf-plugin-field-lower-snake-case", "", fieldLowerSnakeCaseClient, emptyOptions),
 		},
 	)
 
@@ -183,11 +182,7 @@ func TestMultiClientCannotHaveOverlappingRulesWithBuiltIn(t *testing.T) {
 
 	client, err := newClient(
 		slogtestext.NewLogger(t),
-		NewLocalRunnerProvider(
-			wasm.UnimplementedRuntime,
-			bufplugin.NopPluginKeyProvider,
-			bufplugin.NopPluginDataProvider,
-		),
+		ClientWithRunnerProvider(NewLocalRunnerProvider(wasm.UnimplementedRuntime)),
 	)
 	require.NoError(t, err)
 	duplicateBuiltInRulePluginConfig, err := bufconfig.NewLocalPluginConfig(
@@ -200,10 +195,12 @@ func TestMultiClientCannotHaveOverlappingRulesWithBuiltIn(t *testing.T) {
 	require.NoError(t, err)
 
 	multiClient, err := client.getMultiClient(
+		context.Background(),
 		bufconfig.FileVersionV2,
 		[]bufconfig.PluginConfig{
 			duplicateBuiltInRulePluginConfig,
 		},
+		nil,
 		false,
 		emptyOptions,
 	)
@@ -264,8 +261,8 @@ func TestMultiClientCannotHaveOverlappingCategories(t *testing.T) {
 	multiClient := newMultiClient(
 		slogtestext.NewLogger(t),
 		[]*checkClientSpec{
-			newCheckClientSpec("buf-plugin-1", client1, emptyOptions),
-			newCheckClientSpec("buf-plugin-2", client2, emptyOptions),
+			newCheckClientSpec("buf-plugin-1", "", client1, emptyOptions),
+			newCheckClientSpec("buf-plugin-2", "", client2, emptyOptions),
 		},
 	)
 
@@ -280,11 +277,7 @@ func TestMultiClientCannotHaveOverlappingCategoriesWithBuiltIn(t *testing.T) {
 
 	client, err := newClient(
 		slogtestext.NewLogger(t),
-		NewLocalRunnerProvider(
-			wasm.UnimplementedRuntime,
-			bufplugin.NopPluginKeyProvider,
-			bufplugin.NopPluginDataProvider,
-		),
+		ClientWithRunnerProvider(NewLocalRunnerProvider(wasm.UnimplementedRuntime)),
 	)
 	require.NoError(t, err)
 	duplicateBuiltInRulePluginConfig, err := bufconfig.NewLocalPluginConfig(
@@ -297,10 +290,12 @@ func TestMultiClientCannotHaveOverlappingCategoriesWithBuiltIn(t *testing.T) {
 	require.NoError(t, err)
 
 	multiClient, err := client.getMultiClient(
+		context.Background(),
 		bufconfig.FileVersionV2,
 		[]bufconfig.PluginConfig{
 			duplicateBuiltInRulePluginConfig,
 		},
+		nil,
 		false,
 		emptyOptions,
 	)
@@ -319,7 +314,7 @@ func checkFieldLowerSnakeCase(
 	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
 	fieldName := string(fieldDescriptor.Name())
-	fieldNameToLowerSnakeCase := stringutil.ToLowerSnakeCase(fieldName)
+	fieldNameToLowerSnakeCase := xstrings.ToLowerSnakeCase(fieldName)
 	if fieldName != fieldNameToLowerSnakeCase {
 		responseWriter.AddAnnotation(
 			check.WithMessagef("Field name %q should be lower_snake_case, such as %q.", fieldName, fieldNameToLowerSnakeCase),

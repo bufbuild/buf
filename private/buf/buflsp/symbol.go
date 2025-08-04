@@ -27,8 +27,8 @@ import (
 	"slices"
 	"strings"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/protocompile/ast"
 	"go.lsp.dev/protocol"
 	"google.golang.org/protobuf/encoding/protowire"
@@ -143,7 +143,7 @@ func (s *symbol) ReferencePath() (path []string, absolute bool) {
 	case *ast.IdentNode:
 		path = []string{name.Val}
 	case *ast.CompoundIdentNode:
-		path = slicesext.Map(name.Components, func(name *ast.IdentNode) string { return name.Val })
+		path = xslices.Map(name.Components, func(name *ast.IdentNode) string { return name.Val })
 		absolute = name.LeadingDot != nil
 	}
 	return
@@ -311,12 +311,12 @@ func (s *symbol) ResolveCrossFile(ctx context.Context) {
 			// with s.file's package prepended.
 
 			// First, try removing the imported file's package from components.
-			path, ok := slicesext.TrimPrefix(components, imported.Package())
+			path, ok := xslices.TrimPrefix(components, imported.Package())
 			if !ok {
 				// If that doesn't work, try appending the importee's package.
 				// This is necessary because protobuf allows for partial package
 				// names to appear in references.
-				path, ok = slicesext.TrimPrefix(
+				path, ok = xslices.TrimPrefix(
 					slices.Concat(s.file.Package(), components),
 					imported.Package(),
 				)
@@ -565,7 +565,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 	allComments := []ast.Comments{info.LeadingComments(), info.TrailingComments()}
 	var printed bool
 	for _, comments := range allComments {
-		for i := 0; i < comments.Len(); i++ {
+		for i := range comments.Len() {
 			// The compiler does not currently provide comments without their
 			// delimited removed, so we have to do this ourselves.
 			comment := commentToMarkdown(comments.Index(i).RawText())
@@ -644,7 +644,7 @@ func newWalker(file *file) *symbolWalker {
 	}
 
 	// NOTE: Don't use range here, that produces runes, not bytes.
-	for i := 0; i < len(file.text); i++ {
+	for i := range len(file.text) {
 		if file.text[i] == '\n' {
 			walker.lineSum = append(walker.lineSum, i+1)
 		}
@@ -880,7 +880,7 @@ func (w *symbolWalker) newRef(name ast.IdentValueNode) *symbol {
 	}
 
 	// Also try with the package removed.
-	if path, ok := slicesext.TrimPrefix(components, symbol.file.Package()); ok {
+	if path, ok := xslices.TrimPrefix(components, symbol.file.Package()); ok {
 		if findDeclByPath(w.file.fileNode.Decls, path) != nil {
 			ref.file = w.file
 			ref.path = path
@@ -969,7 +969,7 @@ func comparePositions(a, b protocol.Position) int {
 // makeNestingPath converts a path composed of messages, enums, and services into a path
 // composed of their names.
 func makeNestingPath(path []ast.Node) []string {
-	return slicesext.Map(path, func(node ast.Node) string {
+	return xslices.Map(path, func(node ast.Node) string {
 		switch node := node.(type) {
 		case *ast.MessageNode:
 			return node.Name.Val

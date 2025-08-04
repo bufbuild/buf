@@ -20,8 +20,8 @@ import (
 	"sort"
 	"testing"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/dag"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/stretchr/testify/require"
 )
 
@@ -59,7 +59,7 @@ func RequireGraphEqual[Key cmp.Ordered, Value any](
 				actual,
 				ExpectedNode[Key]{
 					Key:      toKey(value),
-					Outbound: slicesext.Map(outbound, toKey),
+					Outbound: xslices.Map(outbound, toKey),
 				},
 			)
 			return nil
@@ -92,11 +92,6 @@ func normalizeKeys[Key cmp.Ordered](keys []Key) []Key {
 		return []Key{}
 	}
 	keys = slices.Clone(keys)
-	sort.Slice(
-		keys,
-		func(i int, j int) bool {
-			return keys[i] < keys[j]
-		},
-	)
+	slices.Sort(keys)
 	return keys
 }

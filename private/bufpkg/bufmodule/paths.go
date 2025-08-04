@@ -18,7 +18,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -44,7 +44,7 @@ var (
 )
 
 func init() {
-	docFilePathMap = slicesext.ToStructMap(orderedDocFilePaths)
+	docFilePathMap = xslices.ToStructMap(orderedDocFilePaths)
 }
 
 func getDocFilePathForStorageReadBucket(ctx context.Context, bucket storage.ReadBucket) string {

@@ -18,6 +18,7 @@ package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/module/v1alpha1/module.proto";
 import "buf/alpha/registry/v1alpha1/module.proto";
+import "google/protobuf/timestamp.proto";
 
 // ResolveService is the resolve service.
 //
@@ -31,6 +32,21 @@ service ResolveService {
   //
   // This function also deals with tiebreaking what ModulePin wins for the same repository.
   rpc GetModulePins(GetModulePinsRequest) returns (GetModulePinsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // GetSDKInfo takes a module, plugin, and optionally SDK version, and returns the SDK
+  // info. The SDK info includes the module, module commit, module commit create time, plugin,
+  // plugin version, plugin revision, and the SDK version string
+  // for the SDK.
+  //
+  // If the module reference and/or plugin version is included, then the SDK at the
+  // specified version will be resolved. If the SDK version is included, then it will be
+  // validated with the module and plugin information provided.
+  //
+  // This replaces the need for all subsequent RPCs, which requires the caller to resolve
+  // the registry type first. Instead, the registry type will be resolved based on the plugin
+  // information provided.
+  rpc GetSDKInfo(GetSDKInfoRequest) returns (GetSDKInfoResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // GetGoVersion resolves the given plugin and module references to a version.
@@ -256,4 +272,44 @@ message GetRemotePackageVersionPlugin {
   // The revision of the plugin version.
   // example: 1
   uint32 revision = 4;
+}
+
+message GetSDKInfoRequest {
+  // The local module reference for the SDK.
+  LocalModuleReference module_reference = 1;
+  // The plugin reference for the SDK.
+  GetRemotePackageVersionPlugin plugin_reference = 2;
+  // The SDK version string. If this is not provided, then it will be resolved using the module
+  // and plugin references provided.
+  string sdk_version = 3;
+}
+
+message GetSDKInfoResponse {
+  // ModuleInfo is the parsed module information for the SDK.
+  message ModuleInfo {
+    // The module owner name.
+    string owner = 1;
+    // The module name.
+    string name = 2;
+    // The module commit for the SDK.
+    string commit = 3;
+    // The module commit create time. This will always be in UTC.
+    google.protobuf.Timestamp module_commit_create_time = 4;
+  }
+  // PluginInfo is the parsed plugin information for the SDK.
+  message PluginInfo {
+    // The plugin owner.
+    string owner = 1;
+    // The plugin name.
+    string name = 2;
+    // The semver plugin version. This will always be valid semver.
+    string version = 3;
+    // The plugin revision.
+    uint32 plugin_revision = 4;
+  }
+  ModuleInfo module_info = 1;
+  PluginInfo plugin_info = 2;
+  // The SDK version string. The format is based on the SDK registry supported by the
+  // provided plugin.
+  string sdk_version = 3;
 }

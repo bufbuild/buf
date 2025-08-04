@@ -26,7 +26,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/app"
+	"buf.build/go/app"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -135,9 +135,9 @@ func TestPutLotsOfBigMachinesSingleLineFiles(t *testing.T) {
 	password := strings.Repeat("abcdefghijklmnopqrstuvwxyz", size)
 	machines := make([]Machine, 0, size)
 	buffer := bytes.NewBuffer(nil)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		// Write the file manually in single-line format as this is where the failure happens.
-		_, _ = buffer.WriteString(fmt.Sprintf("machine foo%d login bar%d password %s\n", i, i, password))
+		fmt.Fprintf(buffer, "machine foo%d login bar%d password %s\n", i, i, password)
 		machines = append(
 			machines,
 			NewMachine(
@@ -177,7 +177,7 @@ func TestPutLotsOfBigMachinesSingleLineFiles(t *testing.T) {
 
 	// Modify some of the existing machines.
 	machines = make([]Machine, 0, size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		modifiedPassword := password
 		if i%2 == 0 {
 			modifiedPassword = modifiedPassword + "Z"

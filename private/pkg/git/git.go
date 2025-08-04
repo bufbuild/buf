@@ -27,8 +27,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/execext"
+	"buf.build/go/app"
+	"buf.build/go/standard/xos/xexec"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
@@ -226,14 +226,14 @@ func CheckDirectoryIsValidGitCheckout(
 ) error {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		gitCommand,
-		execext.WithArgs("rev-parse"),
-		execext.WithStdout(stdout),
-		execext.WithStderr(stderr),
-		execext.WithDir(dir),
-		execext.WithEnv(app.Environ(envContainer)),
+		xexec.WithArgs("rev-parse"),
+		xexec.WithStdout(stdout),
+		xexec.WithStderr(stderr),
+		xexec.WithDir(dir),
+		xexec.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
@@ -258,14 +258,14 @@ func CheckForUncommittedGitChanges(
 	var modifiedFiles []string
 	environ := app.Environ(envContainer)
 	// Unstaged changes
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		gitCommand,
-		execext.WithArgs("diff", "--name-only"),
-		execext.WithStdout(stdout),
-		execext.WithStderr(stderr),
-		execext.WithDir(dir),
-		execext.WithEnv(environ),
+		xexec.WithArgs("diff", "--name-only"),
+		xexec.WithStdout(stdout),
+		xexec.WithStderr(stderr),
+		xexec.WithDir(dir),
+		xexec.WithEnv(environ),
 	); err != nil {
 		return nil, fmt.Errorf("failed to get unstaged changes: %w: %s", err, stderr.String())
 	}
@@ -274,14 +274,14 @@ func CheckForUncommittedGitChanges(
 	stdout = bytes.NewBuffer(nil)
 	stderr = bytes.NewBuffer(nil)
 	// Staged changes
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		gitCommand,
-		execext.WithArgs("diff", "--name-only", "--cached"),
-		execext.WithStdout(stdout),
-		execext.WithStderr(stderr),
-		execext.WithDir(dir),
-		execext.WithEnv(environ),
+		xexec.WithArgs("diff", "--name-only", "--cached"),
+		xexec.WithStdout(stdout),
+		xexec.WithStderr(stderr),
+		xexec.WithDir(dir),
+		xexec.WithEnv(environ),
 	); err != nil {
 		return nil, fmt.Errorf("failed to get staged changes: %w: %s", err, stderr.String())
 	}
@@ -298,14 +298,14 @@ func GetCurrentHEADGitCommit(
 ) (string, error) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		gitCommand,
-		execext.WithArgs("rev-parse", "HEAD"),
-		execext.WithStdout(stdout),
-		execext.WithStderr(stderr),
-		execext.WithDir(dir),
-		execext.WithEnv(app.Environ(envContainer)),
+		xexec.WithArgs("rev-parse", "HEAD"),
+		xexec.WithStdout(stdout),
+		xexec.WithStderr(stderr),
+		xexec.WithDir(dir),
+		xexec.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		return "", fmt.Errorf("failed to get current HEAD commit: %w: %s", err, stderr.String())
 	}
@@ -324,14 +324,14 @@ func GetRefsForGitCommitAndRemote(
 ) ([]string, error) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		gitCommand,
-		execext.WithArgs("ls-remote", "--heads", "--tags", remote),
-		execext.WithStdout(stdout),
-		execext.WithStderr(stderr),
-		execext.WithDir(dir),
-		execext.WithEnv(app.Environ(envContainer)),
+		xexec.WithArgs("ls-remote", "--heads", "--tags", remote),
+		xexec.WithStdout(stdout),
+		xexec.WithStderr(stderr),
+		xexec.WithDir(dir),
+		xexec.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		return nil, fmt.Errorf("failed to get refs for remote %s: %w: %s", remote, err, stderr.String())
 	}
@@ -364,14 +364,14 @@ func IsValidRef(
 ) error {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := execext.Run(
+	if err := xexec.Run(
 		ctx,
 		gitCommand,
-		execext.WithArgs("rev-parse", "--verify", ref),
-		execext.WithStdout(stdout),
-		execext.WithStderr(stderr),
-		execext.WithDir(dir),
-		execext.WithEnv(app.Environ(envContainer)),
+		xexec.WithArgs("rev-parse", "--verify", ref),
+		xexec.WithStdout(stdout),
+		xexec.WithStderr(stderr),
+		xexec.WithDir(dir),
+		xexec.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
@@ -429,12 +429,12 @@ func ReadFileAtRef(
 	// Call git show to show us the file we want.
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	if err := execext.Run(ctx, gitCommand,
-		execext.WithArgs("--no-pager", "show", ref+":"+rel),
-		execext.WithStdout(stdout),
-		execext.WithStderr(stderr),
-		execext.WithDir(dir),
-		execext.WithEnv(app.Environ(envContainer)),
+	if err := xexec.Run(ctx, gitCommand,
+		xexec.WithArgs("--no-pager", "show", ref+":"+rel),
+		xexec.WithStdout(stdout),
+		xexec.WithStderr(stderr),
+		xexec.WithDir(dir),
+		xexec.WithEnv(app.Environ(envContainer)),
 	); err != nil {
 		return nil, fmt.Errorf("failed to get text of file %s at ref %s: %w: %s", orig, ref, err, stderr.String())
 	}

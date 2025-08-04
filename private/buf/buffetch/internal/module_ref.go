@@ -17,8 +17,8 @@ package internal
 import (
 	"strings"
 
+	"buf.build/go/app"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/app"
 )
 
 var (

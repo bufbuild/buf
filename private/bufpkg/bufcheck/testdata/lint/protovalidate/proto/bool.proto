@@ -26,4 +26,9 @@ message BoolTest {
     (buf.validate.field).bool.const = true,
     (buf.validate.field).bool.example = false
   ];
+  bool valid_no_constraint_example = 6 [
+    (buf.validate.field).bool.example = true,
+    (buf.validate.field).bool.example = false
+  ];
+  bool invalid_example_type_mistmatch = 12 [(buf.validate.field).string.example = "true"];
 }

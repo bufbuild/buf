@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"io/fs"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 var (
@@ -30,7 +30,7 @@ var (
 
 // PluginKeyProvider provides PluginKeys for bufparse.Refs.
 type PluginKeyProvider interface {
-	// GetPluginKeysForPluginRefs gets the PluginKets for the given PluginRefs.
+	// GetPluginKeysForPluginRefs gets the PluginKeys for the given PluginRefs.
 	//
 	// Returned PluginKeys will be in the same order as the input PluginRefs.
 	//
@@ -74,7 +74,7 @@ func newStaticPluginKeyProvider(pluginKeys []PluginKey) (*staticPluginKeyProvide
 	var pluginKeysByFullName map[string]PluginKey
 	if len(pluginKeys) > 0 {
 		var err error
-		pluginKeysByFullName, err = slicesext.ToUniqueValuesMap(pluginKeys, func(pluginKey PluginKey) string {
+		pluginKeysByFullName, err = xslices.ToUniqueValuesMap(pluginKeys, func(pluginKey PluginKey) string {
 			return pluginKey.FullName().String()
 		})
 		if err != nil {

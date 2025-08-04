@@ -1,0 +1,182 @@
+-- google/protobuf/descriptor.proto --
+syntax = "proto2";
+package google.protobuf;
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Protobuf.Reflection";
+option go_package = "google.golang.org/protobuf/types/descriptorpb";
+option java_outer_classname = "DescriptorProtos";
+option java_package = "com.google.protobuf";
+option objc_class_prefix = "GPB";
+option optimize_for = SPEED;
+message FeatureSet {
+  optional FieldPresence field_presence = 1 [
+    edition_defaults = { value: "EXPLICIT", edition: EDITION_LEGACY },
+    edition_defaults = { value: "IMPLICIT", edition: EDITION_PROTO3 },
+    edition_defaults = { value: "EXPLICIT", edition: EDITION_2023 },
+    feature_support = { edition_introduced: EDITION_2023 },
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_FIELD,
+    targets = TARGET_TYPE_FILE
+  ];
+  optional EnumType enum_type = 2 [
+    edition_defaults = { value: "CLOSED", edition: EDITION_LEGACY },
+    edition_defaults = { value: "OPEN", edition: EDITION_PROTO3 },
+    feature_support = { edition_introduced: EDITION_2023 },
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_ENUM,
+    targets = TARGET_TYPE_FILE
+  ];
+  optional RepeatedFieldEncoding repeated_field_encoding = 3 [
+    edition_defaults = { value: "EXPANDED", edition: EDITION_LEGACY },
+    edition_defaults = { value: "PACKED", edition: EDITION_PROTO3 },
+    feature_support = { edition_introduced: EDITION_2023 },
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_FIELD,
+    targets = TARGET_TYPE_FILE
+  ];
+  optional Utf8Validation utf8_validation = 4 [
+    edition_defaults = { value: "NONE", edition: EDITION_LEGACY },
+    edition_defaults = { value: "VERIFY", edition: EDITION_PROTO3 },
+    feature_support = { edition_introduced: EDITION_2023 },
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_FIELD,
+    targets = TARGET_TYPE_FILE
+  ];
+  optional MessageEncoding message_encoding = 5 [
+    edition_defaults = { value: "LENGTH_PREFIXED", edition: EDITION_LEGACY },
+    feature_support = { edition_introduced: EDITION_2023 },
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_FIELD,
+    targets = TARGET_TYPE_FILE
+  ];
+  optional JsonFormat json_format = 6 [
+    edition_defaults = { value: "LEGACY_BEST_EFFORT", edition: EDITION_LEGACY },
+    edition_defaults = { value: "ALLOW", edition: EDITION_PROTO3 },
+    feature_support = { edition_introduced: EDITION_2023 },
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_MESSAGE,
+    targets = TARGET_TYPE_ENUM,
+    targets = TARGET_TYPE_FILE
+  ];
+  optional EnforceNamingStyle enforce_naming_style = 7 [
+    edition_defaults = { value: "STYLE_LEGACY", edition: EDITION_LEGACY },
+    edition_defaults = { value: "STYLE2024", edition: EDITION_2024 },
+    feature_support = { edition_introduced: EDITION_2024 },
+    retention = RETENTION_SOURCE,
+    targets = TARGET_TYPE_FILE,
+    targets = TARGET_TYPE_EXTENSION_RANGE,
+    targets = TARGET_TYPE_MESSAGE,
+    targets = TARGET_TYPE_FIELD,
+    targets = TARGET_TYPE_ONEOF,
+    targets = TARGET_TYPE_ENUM,
+    targets = TARGET_TYPE_ENUM_ENTRY,
+    targets = TARGET_TYPE_SERVICE,
+    targets = TARGET_TYPE_METHOD
+  ];
+  optional VisibilityFeature.DefaultSymbolVisibility default_symbol_visibility = 8 [
+    edition_defaults = { value: "EXPORT_ALL", edition: EDITION_LEGACY },
+    edition_defaults = { value: "EXPORT_TOP_LEVEL", edition: EDITION_2024 },
+    feature_support = { edition_introduced: EDITION_2024 },
+    retention = RETENTION_SOURCE,
+    targets = TARGET_TYPE_FILE
+  ];
+  message VisibilityFeature {
+    enum DefaultSymbolVisibility {
+      DEFAULT_SYMBOL_VISIBILITY_UNKNOWN = 0;
+      EXPORT_ALL = 1;
+      EXPORT_TOP_LEVEL = 2;
+      LOCAL_ALL = 3;
+      STRICT = 4;
+    }
+  }
+  enum EnforceNamingStyle {
+    ENFORCE_NAMING_STYLE_UNKNOWN = 0;
+    STYLE2024 = 1;
+    STYLE_LEGACY = 2;
+  }
+  enum EnumType {
+    ENUM_TYPE_UNKNOWN = 0;
+    OPEN = 1;
+    CLOSED = 2;
+  }
+  enum FieldPresence {
+    FIELD_PRESENCE_UNKNOWN = 0;
+    EXPLICIT = 1;
+    IMPLICIT = 2;
+    LEGACY_REQUIRED = 3;
+  }
+  enum JsonFormat {
+    JSON_FORMAT_UNKNOWN = 0;
+    ALLOW = 1;
+    LEGACY_BEST_EFFORT = 2;
+  }
+  enum MessageEncoding {
+    MESSAGE_ENCODING_UNKNOWN = 0;
+    LENGTH_PREFIXED = 1;
+    DELIMITED = 2;
+  }
+  enum RepeatedFieldEncoding {
+    REPEATED_FIELD_ENCODING_UNKNOWN = 0;
+    PACKED = 1;
+    EXPANDED = 2;
+  }
+  enum Utf8Validation {
+    UTF8_VALIDATION_UNKNOWN = 0;
+    VERIFY = 2;
+    NONE = 3;
+    reserved 1;
+  }
+  extensions 1000 to 9994 [
+    declaration = {
+      number: 1000,
+      full_name: ".pb.cpp",
+      type: ".pb.CppFeatures"
+    },
+    declaration = {
+      number: 1001,
+      full_name: ".pb.java",
+      type: ".pb.JavaFeatures"
+    },
+    declaration = {
+      number: 1002,
+      full_name: ".pb.go",
+      type: ".pb.GoFeatures"
+    },
+    declaration = {
+      number: 1003,
+      full_name: ".pb.python",
+      type: ".pb.PythonFeatures"
+    },
+    declaration = {
+      number: 9990,
+      full_name: ".pb.proto1",
+      type: ".pb.Proto1Features"
+    }
+  ];
+  extensions 9995 to 9999, 10000;
+  reserved 999;
+}
+message MessageOptions {
+  optional bool message_set_wire_format = 1 [default = false];
+  optional bool no_standard_descriptor_accessor = 2 [default = false];
+  optional bool deprecated = 3 [default = false];
+  optional bool map_entry = 7;
+  optional bool deprecated_legacy_json_field_conflicts = 11 [deprecated = true];
+  optional FeatureSet features = 12;
+  repeated UninterpretedOption uninterpreted_option = 999;
+  extensions 1000 to max;
+  reserved 4, 5, 6, 8, 9;
+}
+message UninterpretedOption {
+  repeated NamePart name = 2;
+  optional string identifier_value = 3;
+  optional uint64 positive_int_value = 4;
+  optional int64 negative_int_value = 5;
+  optional double double_value = 6;
+  optional bytes string_value = 7;
+  optional string aggregate_value = 8;
+  message NamePart {
+    required string name_part = 1;
+    required bool is_extension = 2;
+  }
+}

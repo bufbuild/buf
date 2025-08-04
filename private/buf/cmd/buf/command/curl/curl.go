@@ -27,19 +27,19 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"time"
 
+	"buf.build/go/app"
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xstrings"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufcurl"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
@@ -606,7 +606,7 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 			return fmt.Errorf(
 				"--%s value must be one of %s",
 				reflectProtocolFlagName,
-				stringutil.SliceToHumanStringOrQuoted(bufcurl.AllKnownReflectProtocolStrings),
+				xstrings.SliceToHumanStringOrQuoted(bufcurl.AllKnownReflectProtocolStrings),
 			)
 		}
 	}
@@ -1039,9 +1039,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		if err != nil {
 			return err
 		}
-		sort.Slice(serviceNames, func(i, j int) bool {
-			return serviceNames[i] < serviceNames[j]
-		})
+		slices.Sort(serviceNames)
 		for _, serviceName := range serviceNames {
 			if f.ListServices {
 				if _, err := fmt.Fprintf(container.Stdout(), "%s\n", serviceName); err != nil {
@@ -1055,12 +1053,10 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 				methods := serviceDescriptor.Methods()
 				length := methods.Len()
 				methodNames := make([]protoreflect.Name, length)
-				for i := 0; i < length; i++ {
+				for i := range length {
 					methodNames[i] = methods.Get(i).Name()
 				}
-				sort.Slice(methodNames, func(i, j int) bool {
-					return methodNames[i] < methodNames[j]
-				})
+				slices.Sort(methodNames)
 				for _, methodName := range methodNames {
 					if _, err := fmt.Fprintf(container.Stdout(), "%s/%s\n", serviceName, methodName); err != nil {
 						return err
@@ -1187,7 +1183,7 @@ func makeHTTP3RoundTripper(f *flags, authority string, printer verbose.Printer) 
 	roundTripper := &http3.Transport{
 		TLSClientConfig: tlsConfig,
 		QUICConfig:      quicCfg,
-		Dial: func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlyConnection, error) {
+		Dial: func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
 			printer.Printf("* Dialing (udp) %s...", addr)
 			udpAddr, err := net.ResolveUDPAddr("udp", addr)
 			if err != nil {

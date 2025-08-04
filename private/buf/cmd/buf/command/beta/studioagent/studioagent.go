@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"net"
 
+	"buf.build/go/app/appcmd"
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufstudioagent"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/cert/certclient"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpserver"
 	"github.com/spf13/pflag"
 )
@@ -183,7 +183,7 @@ func run(
 		container.Logger(),
 		flags.Origin,
 		clientTLSConfig,
-		slicesext.ToStructMap(flags.DisallowedHeaders),
+		xslices.ToStructMap(flags.DisallowedHeaders),
 		flags.ForwardHeaders,
 		flags.PrivateNetwork,
 	)

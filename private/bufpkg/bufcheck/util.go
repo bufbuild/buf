@@ -16,15 +16,15 @@ package bufcheck
 
 import (
 	descriptorv1 "buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go/buf/plugin/descriptor/v1"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 func imageToProtoFileDescriptors(image bufimage.Image) []*descriptorv1.FileDescriptor {
 	if image == nil {
 		return nil
 	}
-	return slicesext.Map(image.Files(), imageToProtoFileDescriptor)
+	return xslices.Map(image.Files(), imageToProtoFileDescriptor)
 }
 
 func imageToProtoFileDescriptor(imageFile bufimage.ImageFile) *descriptorv1.FileDescriptor {

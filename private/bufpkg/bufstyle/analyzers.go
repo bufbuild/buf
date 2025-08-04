@@ -29,7 +29,7 @@ func newAnalyzers() []*analysis.Analyzer {
 		{
 			Name: "PACKAGE_FILENAME",
 			Doc:  "Verifies that every package has a file with the same name as the package.",
-			Run: func(pass *analysis.Pass) (interface{}, error) {
+			Run: func(pass *analysis.Pass) (any, error) {
 				if len(pass.Files) == 0 {
 					// Nothing to do. We can't report the error anywhere because
 					// this package doesn't have any files.
@@ -63,7 +63,7 @@ func newAnalyzers() []*analysis.Analyzer {
 		{
 			Name: "NO_SYNC_POOL",
 			Doc:  "Verifies that sync.Pool is not used.",
-			Run: func(pass *analysis.Pass) (interface{}, error) {
+			Run: func(pass *analysis.Pass) (any, error) {
 				if typesInfo := pass.TypesInfo; typesInfo != nil {
 					for expr, typeAndValue := range pass.TypesInfo.Types {
 						if t := typeAndValue.Type; t != nil {
@@ -79,7 +79,7 @@ func newAnalyzers() []*analysis.Analyzer {
 		{
 			Name: "BEHAVIOUR",
 			Doc:  "Verifies that the word \"behaviour\" is not used in any comment.",
-			Run: func(pass *analysis.Pass) (interface{}, error) {
+			Run: func(pass *analysis.Pass) (any, error) {
 				for _, file := range pass.Files {
 					for _, commentGroup := range file.Comments {
 						for _, comment := range commentGroup.List {
@@ -95,7 +95,7 @@ func newAnalyzers() []*analysis.Analyzer {
 		{
 			Name: "FILEPATH_CASING",
 			Doc:  "Verifies filePath or FilePath is used, not filepath or Filepath.",
-			Run: func(pass *analysis.Pass) (interface{}, error) {
+			Run: func(pass *analysis.Pass) (any, error) {
 				if typesInfo := pass.TypesInfo; typesInfo != nil {
 					for _, object := range pass.TypesInfo.Defs {
 						if object != nil {

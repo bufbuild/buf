@@ -19,7 +19,7 @@ import (
 	"log/slog"
 	"sync/atomic"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
@@ -56,7 +56,7 @@ func newBaseProvider[K any, V any](
 }
 
 func (p *baseProvider[K, V]) getValuesForKeys(ctx context.Context, keys []K) ([]V, error) {
-	commitIDToIndexedKey, err := slicesext.ToUniqueIndexedValuesMap(
+	commitIDToIndexedKey, err := xslices.ToUniqueIndexedValuesMap(
 		keys,
 		p.keyToCommitID,
 	)
@@ -102,15 +102,15 @@ func (p *baseProvider[K, V]) getValuesForKeys(ctx context.Context, keys []K) ([]
 	p.keysRetrieved.Add(int64(len(keys)))
 	p.keysHit.Add(int64(len(foundValues)))
 
-	indexedValues, err := slicesext.MapError(
+	indexedValues, err := xslices.MapError(
 		append(foundValues, delegateValues...),
-		func(value V) (slicesext.Indexed[V], error) {
+		func(value V) (xslices.Indexed[V], error) {
 			commitID := p.valueToCommitID(value)
 			indexedKey, ok := commitIDToIndexedKey[commitID]
 			if !ok {
-				return slicesext.Indexed[V]{}, syserror.Newf("did not get value from store with commitID %q", uuidutil.ToDashless(commitID))
+				return xslices.Indexed[V]{}, syserror.Newf("did not get value from store with commitID %q", uuidutil.ToDashless(commitID))
 			}
-			return slicesext.Indexed[V]{
+			return xslices.Indexed[V]{
 				Value: value,
 				Index: indexedKey.Index,
 			}, nil
@@ -119,7 +119,7 @@ func (p *baseProvider[K, V]) getValuesForKeys(ctx context.Context, keys []K) ([]
 	if err != nil {
 		return nil, err
 	}
-	return slicesext.IndexedToSortedValues(indexedValues), nil
+	return xslices.IndexedToSortedValues(indexedValues), nil
 }
 
 func (p *baseProvider[K, V]) getKeysRetrieved() int {

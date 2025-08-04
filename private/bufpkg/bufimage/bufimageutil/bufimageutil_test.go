@@ -23,13 +23,12 @@ import (
 	"sort"
 	"testing"
 
+	"buf.build/go/app/appext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
-	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -483,6 +482,40 @@ func TestConsecutiveFilters(t *testing.T) {
 	})
 }
 
+func TestDependencies(t *testing.T) {
+	t.Parallel()
+	// Test referred file for options of imported types.
+	t.Run("FieldA", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/deps", "test.FieldA.txtar", WithIncludeTypes("test.FieldA"))
+	})
+	t.Run("EnumA", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/deps", "test.EnumA.txtar", WithIncludeTypes("test.EnumA"))
+	})
+	t.Run("PublicOrder", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/deps", "test.PublicOrder.txtar", WithIncludeTypes("test.PublicOrder"))
+	})
+	// Test an included type with implicitly excluded extensions fields.
+	t.Run("IncludeWithExcludeExtensions", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/deps", "test.IncludeWithExcludeExt.txtar", WithIncludeTypes("google.protobuf.MessageOptions"), WithExcludeTypes("a", "b", "c"), WithAllowIncludeOfImportedType())
+	})
+}
+
+func TestEmptyFiles(t *testing.T) {
+	t.Parallel()
+	t.Run("include_empty_file", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/empty", "empty.include.txtar", WithIncludeTypes("include"))
+	})
+	t.Run("exclude_empty_file", func(t *testing.T) {
+		t.Parallel()
+		runDiffTest(t, "testdata/empty", "empty.exclude.txtar", WithExcludeTypes("include"))
+	})
+}
+
 func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
 	if err != nil {
@@ -523,7 +556,7 @@ func runFilterImage(t *testing.T, image bufimage.Image, opts ...ImageFilterOptio
 	protoImage, err := bufimage.ImageToProtoImage(filteredImage)
 	require.NoError(t, err)
 	// Clone here as `bufimage.NewImageForProto` mutates protoImage.
-	protoImage, _ = proto.Clone(protoImage).(*imagev1.Image) // Safe to assert.
+	protoImage = proto.CloneOf(protoImage)
 	filteredImage, err = bufimage.NewImageForProto(protoImage)
 	require.NoError(t, err)
 
@@ -532,7 +565,7 @@ func runFilterImage(t *testing.T, image bufimage.Image, opts ...ImageFilterOptio
 	// So we serialize and then de-serialize, and use only the filtered results to parse extensions. That way, the result will omit custom options that aren't present in the filtered set (as they will be
 	// considered unrecognized fields).
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{
-		File: slicesext.Map(filteredImage.Files(), func(imageFile bufimage.ImageFile) *descriptorpb.FileDescriptorProto {
+		File: xslices.Map(filteredImage.Files(), func(imageFile bufimage.ImageFile) *descriptorpb.FileDescriptorProto {
 			return imageFile.FileDescriptorProto()
 		}),
 	}
@@ -729,8 +762,7 @@ func benchmarkFilterImage(b *testing.B, opts ...bufimage.BuildImageOption) {
 				b.StopTimer()
 				imageFiles := make([]bufimage.ImageFile, len(benchmarkCase.image.Files()))
 				for j, imageFile := range benchmarkCase.image.Files() {
-					clone, ok := proto.Clone(imageFile.FileDescriptorProto()).(*descriptorpb.FileDescriptorProto)
-					require.True(b, ok)
+					clone := proto.CloneOf(imageFile.FileDescriptorProto())
 					var err error
 					imageFiles[j], err = bufimage.NewImageFile(clone, nil, uuid.Nil, "", "", false, false, nil)
 					require.NoError(b, err)

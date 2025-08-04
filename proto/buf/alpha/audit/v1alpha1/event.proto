@@ -38,8 +38,9 @@ message Actor {
   string name = 3;
 }
 
-// ResourceType is the type of the resource that was affected by the audited
-// event.
+// ResourceType is the type of the resource that was affected by the audited event.
+//
+// [#next-free-field: 22]
 enum ResourceType {
   RESOURCE_TYPE_UNSPECIFIED = 0;
   RESOURCE_TYPE_USER = 1;
@@ -49,6 +50,10 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY = 4;
   RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
+  RESOURCE_TYPE_REPOSITORY_IDP_GROUP = 18;
+  RESOURCE_TYPE_POLICY = 17;
+  RESOURCE_TYPE_POLICY_COMMIT = 19;
+  RESOURCE_TYPE_POLICY_LABEL = 20;
   RESOURCE_TYPE_PLUGIN = 7;
   RESOURCE_TYPE_PLUGIN_COMMIT = 15;
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
@@ -58,6 +63,7 @@ enum ResourceType {
   RESOURCE_TYPE_SERVER = 13;
   RESOURCE_TYPE_DEVICE_AUTHORIZATION_GRANT = 14;
   RESOURCE_TYPE_PLUGIN_LABEL = 16;
+  RESOURCE_TYPE_SDK_PLUGIN_CONSTRAINT = 21;
 }
 
 // Resource is the affected resource by the audited event.
@@ -71,6 +77,8 @@ message Resource {
 }
 
 // EventType is the type of audited event.
+//
+// [#next-free-field: 74]
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
   EVENT_TYPE_ORGANIZATION_CREATED = 1;
@@ -80,6 +88,7 @@ enum EventType {
   EVENT_TYPE_ORGANIZATION_MEMBER_ROLES_CHANGED = 50;
   EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED = 5;
   EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED = 21;
+  EVENT_TYPE_ORGANIZATION_IDP_GROUP_UPDATED = 59;
   EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED = 22;
   EVENT_TYPE_REPOSITORY_CREATED = 6;
   EVENT_TYPE_REPOSITORY_DEPRECATED = 48;
@@ -88,11 +97,28 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_COMMIT_PUSHED = 8;
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ADDED = 9;
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLE_CHANGED = 10;
+  EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLES_CHANGED = 63;
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED = 11;
   EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
   EVENT_TYPE_REPOSITORY_DEFAULT_LABEL_NAME_CHANGED = 40;
+  EVENT_TYPE_REPOSITORY_IDP_GROUP_ADDED = 60;
+  EVENT_TYPE_REPOSITORY_IDP_GROUP_UPDATED = 61;
+  EVENT_TYPE_REPOSITORY_IDP_GROUP_REMOVED = 62;
+  EVENT_TYPE_POLICY_CREATED = 54;
+  EVENT_TYPE_POLICY_DELETED = 55;
+  EVENT_TYPE_POLICY_DEPRECATED = 56;
+  EVENT_TYPE_POLICY_UNDEPRECATED = 57;
+  EVENT_TYPE_POLICY_VISIBILITY_CHANGED = 58;
+  EVENT_TYPE_POLICY_COMMIT_PUSHED = 64;
+  EVENT_TYPE_POLICY_LABEL_CREATED = 65;
+  EVENT_TYPE_POLICY_LABEL_MOVED = 66;
+  EVENT_TYPE_POLICY_LABEL_ARCHIVED = 67;
+  EVENT_TYPE_POLICY_LABEL_UNARCHIVED = 68;
   EVENT_TYPE_PLUGIN_CREATED = 13;
   EVENT_TYPE_PLUGIN_DELETED = 14;
+  EVENT_TYPE_PLUGIN_DEPRECATED = 51;
+  EVENT_TYPE_PLUGIN_UNDEPRECATED = 52;
+  EVENT_TYPE_PLUGIN_VISIBILITY_CHANGED = 53;
   EVENT_TYPE_PLUGIN_COMMIT_PUSHED = 43;
   EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
   EVENT_TYPE_CURATED_PLUGIN_DELETED = 31;
@@ -123,6 +149,11 @@ enum EventType {
   EVENT_TYPE_PLUGIN_LABEL_MOVED = 45;
   EVENT_TYPE_PLUGIN_LABEL_ARCHIVED = 46;
   EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED = 47;
+  EVENT_TYPE_SERVER_REVIEW_FLOW_ENABLED = 69;
+  EVENT_TYPE_SERVER_REVIEW_FLOW_DISABLED = 70;
+  EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_CREATED = 71;
+  EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_UPDATED = 72;
+  EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_DELETED = 73;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -135,9 +166,11 @@ message EventMetadata {
   string trace_id = 3;
 }
 
-// Event is an audited action that happened in the BSR, with the information of
-// what happened, when it happened, who did it, which resource was affected, and
-// more contextual information on the event.
+// Event is an audited action that happened in the BSR, with the information of what happened, when
+// it happened, who did it, which resource was affected, and more contextual information on the
+// event.
+//
+// [#next-free-field: 80]
 message Event {
   // Unique id of the audited event.
   string event_id = 1;
@@ -166,11 +199,28 @@ message Event {
     PayloadRepositoryCommitPushed repository_commit_pushed = 14;
     PayloadRepositoryContributorAdded repository_contributor_added = 15;
     PayloadRepositoryContributorRoleChanged repository_contributor_role_changed = 16;
+    PayloadRepositoryContributorRolesChanged repository_contributor_roles_changed = 69;
     PayloadRepositoryContributorRemoved repository_contributor_removed = 17;
     PayloadRepositoryVisibilityChanged repository_visibility_changed = 18;
     PayloadRepositoryDefaultLabelNameChanged repository_default_label_name_changed = 46;
+    PayloadRepositoryIDPGroupAdded repository_idp_group_added = 66;
+    PayloadRepositoryIDPGroupUpdated repository_idp_group_updated = 67;
+    PayloadRepositoryIDPGroupRemoved repository_idp_group_removed = 68;
+    PayloadPolicyCreated policy_created = 60;
+    PayloadPolicyDeleted policy_deleted = 61;
+    PayloadPolicyDeprecated policy_deprecated = 62;
+    PayloadPolicyUndeprecated policy_undeprecated = 63;
+    PayloadPolicyVisibilityChanged policy_visibility_changed = 64;
+    PayloadPolicyCommitPushed policy_commit_pushed = 70;
+    PayloadPolicyLabelCreated policy_label_created = 71;
+    PayloadPolicyLabelMoved policy_label_moved = 72;
+    PayloadPolicyLabelArchived policy_label_archived = 73;
+    PayloadPolicyLabelUnarchived policy_label_unarchived = 74;
     PayloadPluginCreated plugin_created = 19;
     PayloadPluginDeleted plugin_deleted = 20;
+    PayloadPluginDeprecated plugin_deprecated = 57;
+    PayloadPluginUndeprecated plugin_undeprecated = 58;
+    PayloadPluginVisibilityChanged plugin_visibility_changed = 59;
     PayloadPluginCommitPushed plugin_commit_pushed = 49;
     PayloadUserCreated user_created = 21;
     PayloadUserDeactivated user_deactivated = 22;
@@ -179,6 +229,7 @@ message Event {
     PayloadUserLoggedOut user_logged_out = 25;
     PayloadCuratedPluginCreated curated_plugin_created = 26;
     PayloadOrganizationIDPGroupAdded idp_group_added = 27;
+    PayloadOrganizationIDPGroupUpdated idp_group_updated = 65;
     PayloadOrganizationIDPGroupRemoved idp_group_removed = 28;
     PayloadTokenCreated token_created = 29;
     PayloadTokenDeleted token_deleted = 30;
@@ -203,6 +254,11 @@ message Event {
     PayloadPluginLabelMoved plugin_label_moved = 51;
     PayloadPluginLabelArchived plugin_label_archived = 52;
     PayloadPluginLabelUnarchived plugin_label_unarchived = 53;
+    PayloadServerReviewFlowEnabled server_review_flow_enabled = 75;
+    PayloadServerReviewFlowDisabled server_review_flow_disabled = 76;
+    PayloadSDKPluginConstraintCreated sdk_plugin_constraint_created = 77;
+    PayloadSDKPluginConstraintUpdated sdk_plugin_constraint_updated = 78;
+    PayloadSDKPluginConstraintDeleted sdk_plugin_constraint_deleted = 79;
   }
 }
 
@@ -222,6 +278,7 @@ message PayloadOrganizationMemberAdded {
 }
 
 message PayloadOrganizationMemberRoleChanged {
+  // Deprecated, use PayloadOrganizationMemberRolesChanged instead.
   option deprecated = true;
 
   // organization_id is the id of the organization within which the role was changed.
@@ -271,6 +328,21 @@ message PayloadOrganizationIDPGroupAdded {
   string organization_id = 1;
   // organization_name is the name of the organization with the new IDP group.
   string organization_name = 2;
+  // role_override is the role override associated with the new IDP group.
+  buf.alpha.registry.v1alpha1.OrganizationRole role_override = 3;
+}
+
+message PayloadOrganizationIDPGroupUpdated {
+  // organization_id is the id of the organization with the updated IDP group.
+  string organization_id = 1;
+  // organization_name is the name of the organization with the updated IDP group.
+  string organization_name = 2;
+  // old_role_override is the role override associated with the IDP updated group. Only set if the
+  // role override was changed.
+  buf.alpha.registry.v1alpha1.OrganizationRole old_role_override = 3;
+  // new_role_override is the role override associated with the IDP updated group. Only set if the
+  // role override was changed.
+  buf.alpha.registry.v1alpha1.OrganizationRole new_role_override = 4;
 }
 
 message PayloadOrganizationIDPGroupRemoved {
@@ -278,6 +350,8 @@ message PayloadOrganizationIDPGroupRemoved {
   string organization_id = 1;
   // organization_name is the name of the organization with the removed IDP group.
   string organization_name = 2;
+  // role_override is the role override associated with the removed IDP group.
+  buf.alpha.registry.v1alpha1.OrganizationRole role_override = 3;
 }
 
 message PayloadRepositoryCreated {
@@ -354,6 +428,9 @@ message PayloadRepositoryContributorAdded {
 }
 
 message PayloadRepositoryContributorRoleChanged {
+  // Deprecated, use PayloadRepositoryContributorRolesChanged instead.
+  option deprecated = true;
+
   // owner_id is the id of the owner of the repository.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository.
@@ -366,6 +443,27 @@ message PayloadRepositoryContributorRoleChanged {
   buf.alpha.registry.v1alpha1.RepositoryRole old_role = 5;
   // new_role is the new role of the contributor whose role was changed.
   buf.alpha.registry.v1alpha1.RepositoryRole new_role = 6;
+}
+
+message PayloadRepositoryContributorRolesChanged {
+  message RepositoryRole {
+    // role is the role of the member.
+    buf.alpha.registry.v1alpha1.RepositoryRole role = 1;
+    // source is the source of the role granted to the member.
+    buf.alpha.registry.v1alpha1.RepositoryRoleSource source = 2;
+  }
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
+  // repository_id is the id of the repository within which the role was changed.
+  string repository_id = 3;
+  // repository_name is the name of the repository within which the role was changed.
+  string repository_name = 4;
+  // old_roles are the old roles of the contributor.
+  repeated RepositoryRole old_roles = 5;
+  // new_roles are the new roles of the contributor.
+  repeated RepositoryRole new_roles = 6;
 }
 
 message PayloadRepositoryContributorRemoved {
@@ -419,6 +517,97 @@ message PayloadRepositoryDefaultBranchChanged {
   string new_default_branch = 4;
 }
 
+message PayloadRepositoryIDPGroupAdded {
+  // repository_id is the id of the repository with the new IDP group.
+  string repository_id = 1;
+  // repository_name is the name of the repository with the new IDP group.
+  string repository_name = 2;
+  // role_override is the role override associated with the new IDP group.
+  buf.alpha.registry.v1alpha1.RepositoryRole role_override = 3;
+}
+
+message PayloadRepositoryIDPGroupUpdated {
+  // repository_id is the id of the repository with the updated IDP group.
+  string repository_id = 1;
+  // repository_name is the name of the repository with the updated IDP group.
+  string repository_name = 2;
+  // old_role_override is the role override associated with the IDP updated group. Only set if the
+  // role override was changed.
+  buf.alpha.registry.v1alpha1.RepositoryRole old_role_override = 3;
+  // new_role_override is the role override associated with the IDP updated group. Only set if the
+  // role override was changed.
+  buf.alpha.registry.v1alpha1.RepositoryRole new_role_override = 4;
+}
+
+message PayloadRepositoryIDPGroupRemoved {
+  // repository_id is the id of the repository with the removed IDP group.
+  string repository_id = 1;
+  // repository_name is the name of the repository with the removed IDP group.
+  string repository_name = 2;
+  // role_override is the role override associated with the removed IDP group.
+  buf.alpha.registry.v1alpha1.RepositoryRole role_override = 3;
+}
+
+message PayloadPolicyCreated {
+  // owner_id is the id of the owner of the policy.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy.
+  string owner_name = 2;
+  // visibility is the visibility of the policy.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+}
+
+message PayloadPolicyDeleted {
+  // owner_id is the id of the owner of the policy.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy.
+  string owner_name = 2;
+  // visibility is the visibility of the policy.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+}
+
+message PayloadPolicyDeprecated {
+  // owner_id is the id of the owner of the policy.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy.
+  string owner_name = 2;
+  // visibility is the visibility of the policy.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+}
+
+message PayloadPolicyUndeprecated {
+  // owner_id is the id of the owner of the policy.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy.
+  string owner_name = 2;
+  // visibility is the visibility of the policy.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+}
+
+message PayloadPolicyVisibilityChanged {
+  // owner_id is the id of the owner of the policy.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy.
+  string owner_name = 2;
+  // old_visibility is the old visibility of the policy.
+  buf.alpha.registry.v1alpha1.Visibility old_visibility = 4;
+  // new_visibility is the new visibility of the policy.
+  buf.alpha.registry.v1alpha1.Visibility new_visibility = 5;
+}
+
+message PayloadPolicyCommitPushed {
+  // owner_id is the id of the owner of the policy.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy.
+  string owner_name = 2;
+  // policy_id is the id of the policy within which the commit was created.
+  string policy_id = 3;
+  // policy_name is the name of the policy within which the commit was created.
+  string policy_name = 4;
+  // o1_digest is the o1 digest of the pushed policy commit.
+  string o1_digest = 5;
+}
+
 message PayloadPluginCreated {
   // owner_id is the id of the owner of the plugin.
   string owner_id = 1;
@@ -426,6 +615,8 @@ message PayloadPluginCreated {
   string owner_name = 2;
   // plugin_type is the type of the plugin.
   string plugin_type = 3;
+  // visibility is the visibility of the plugin.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 4;
 }
 
 message PayloadPluginDeleted {
@@ -435,6 +626,43 @@ message PayloadPluginDeleted {
   string owner_name = 2;
   // plugin_type is the type of the plugin.
   string plugin_type = 3;
+  // visibility is the visibility of the plugin.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 4;
+}
+
+message PayloadPluginDeprecated {
+  // owner_id is the id of the owner of the check plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the check plugin.
+  string owner_name = 2;
+  // plugin_type is the type of the plugin.
+  string plugin_type = 3;
+  // visibility is the visibility of the plugin.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 4;
+}
+
+message PayloadPluginUndeprecated {
+  // owner_id is the id of the owner of the check plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the check plugin.
+  string owner_name = 2;
+  // plugin_type is the type of the plugin.
+  string plugin_type = 3;
+  // visibility is the visibility of the plugin.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 4;
+}
+
+message PayloadPluginVisibilityChanged {
+  // owner_id is the id of the owner of the check plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the check plugin.
+  string owner_name = 2;
+  // plugin_type is the type of the plugin.
+  string plugin_type = 3;
+  // old_visibility is the old visibility of the plugin.
+  buf.alpha.registry.v1alpha1.Visibility old_visibility = 4;
+  // new_visibility is the new visibility of the plugin.
+  buf.alpha.registry.v1alpha1.Visibility new_visibility = 5;
 }
 
 message PayloadPluginCommitPushed {
@@ -582,6 +810,10 @@ message PayloadServerBreakingChangePolicyEnabled {
 
 message PayloadServerBreakingChangePolicyDisabled {}
 
+message PayloadServerReviewFlowEnabled {}
+
+message PayloadServerReviewFlowDisabled {}
+
 message PayloadServerUniquenessPolicyEnabled {}
 
 message PayloadServerUniquenessPolicyDisabled {}
@@ -643,4 +875,111 @@ message PayloadPluginLabelUnarchived {
   string plugin_id = 3;
   // plugin_name is the name of the plugin from which the label was unarchived.
   string plugin_name = 4;
+}
+
+message PayloadPolicyLabelCreated {
+  // owner_id is the id of the owner of the policy on which the label was created.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy on which the label was created.
+  string owner_name = 2;
+  // policy_id is the id of the policy on which the label was created.
+  string policy_id = 3;
+  // policy_name is the name of the policy from which the label was created.
+  string policy_name = 4;
+  // commit_id is the id of the commit on which the label was created.
+  string commit_id = 6;
+}
+
+message PayloadPolicyLabelMoved {
+  // owner_id is the id of the owner of the policy on which the label was moved.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy on which the label was moved.
+  string owner_name = 2;
+  // policy_id is the id of the policy on which the label was moved.
+  string policy_id = 3;
+  // policy_name is the name of the policy from which the label was moved.
+  string policy_name = 4;
+  // to_commit_id is the id of the commit on which the label was moved to.
+  string to_commit_id = 6;
+  // from_commit_id is the id of the commit on which the label was moved from.
+  string from_commit_id = 7;
+}
+
+message PayloadPolicyLabelArchived {
+  // owner_id is the id of the owner of the policy on which the label was archived.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy on which the label was archived.
+  string owner_name = 2;
+  // policy_id is the id of the policy on which the label was archived.
+  string policy_id = 3;
+  // policy_name is the name of the policy from which the label was archived.
+  string policy_name = 4;
+}
+
+message PayloadPolicyLabelUnarchived {
+  // owner_id is the id of the owner of the policy on which the label was unarchived.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the policy on which the label was unarchived.
+  string owner_name = 2;
+  // policy_id is the id of the policy on which the label was unarchived.
+  string policy_id = 3;
+  // policy_name is the name of the policy from which the label was unarchived.
+  string policy_name = 4;
+}
+
+message PayloadSDKPluginConstraintCreated {
+  // repository_owner_id is the id of the owner of the repository of the SDK constraint.
+  string repository_owner_id = 1;
+  // repository_owner_name is the name of the owner of the repository of the SDK constraint.
+  string repository_owner_name = 2;
+  // repository_id is the id of the repository of the SDK constraint.
+  string repository_id = 3;
+  // repository_name is the name of the repository of the SDK constraint.
+  string repository_name = 4;
+  // plugin_owner_id is the id of the owner of the plugin of the SDK constraint.
+  string plugin_owner_id = 5;
+  // plugin_owner_name is the name of the owner of the plugin of the SDK constraint.
+  string plugin_owner_name = 6;
+  // plugin_id is the id of the plugin of the SDK constraint.
+  string plugin_id = 7;
+  // plugin_name is the name of the plugin of the SDK constraint.
+  string plugin_name = 8;
+}
+
+message PayloadSDKPluginConstraintUpdated {
+  // repository_owner_id is the id of the owner of the repository of the SDK constraint.
+  string repository_owner_id = 1;
+  // repository_owner_name is the name of the owner of the repository of the SDK constraint.
+  string repository_owner_name = 2;
+  // repository_id is the id of the repository of the SDK constraint.
+  string repository_id = 3;
+  // repository_name is the name of the repository of the SDK constraint.
+  string repository_name = 4;
+  // plugin_owner_id is the id of the owner of the plugin of the SDK constraint.
+  string plugin_owner_id = 5;
+  // plugin_owner_name is the name of the owner of the plugin of the SDK constraint.
+  string plugin_owner_name = 6;
+  // plugin_id is the id of the plugin of the SDK constraint.
+  string plugin_id = 7;
+  // plugin_name is the name of the plugin of the SDK constraint.
+  string plugin_name = 8;
+}
+
+message PayloadSDKPluginConstraintDeleted {
+  // repository_owner_id is the id of the owner of the repository of the SDK constraint.
+  string repository_owner_id = 1;
+  // repository_owner_name is the name of the owner of the repository of the SDK constraint.
+  string repository_owner_name = 2;
+  // repository_id is the id of the repository of the SDK constraint.
+  string repository_id = 3;
+  // repository_name is the name of the repository of the SDK constraint.
+  string repository_name = 4;
+  // plugin_owner_id is the id of the owner of the plugin of the SDK constraint.
+  string plugin_owner_id = 5;
+  // plugin_owner_name is the name of the owner of the plugin of the SDK constraint.
+  string plugin_owner_name = 6;
+  // plugin_id is the id of the plugin of the SDK constraint.
+  string plugin_id = 7;
+  // plugin_name is the name of the plugin of the SDK constraint.
+  string plugin_name = 8;
 }

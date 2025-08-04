@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -324,7 +324,7 @@ func (g *Graph[Key, Value]) checkInit() error {
 }
 
 func (g *Graph[Key, Value]) getValuesForKeys(keys []Key) ([]Value, error) {
-	return slicesext.MapError(keys, g.getValueForKey)
+	return xslices.MapError(keys, g.getValueForKey)
 }
 
 func (g *Graph[Key, Value]) getValueForKey(key Key) (Value, error) {

@@ -1,0 +1,3 @@
+-- a.proto --
+syntax = "proto3";
+package include;

@@ -18,7 +18,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"google.golang.org/protobuf/reflect/protodesc"
 )
@@ -30,7 +30,7 @@ func newFiles[F InputFile](
 	inputFiles []F,
 	resolver protodesc.Resolver,
 ) ([]File, error) {
-	indexedInputFiles := slicesext.ToIndexed(inputFiles)
+	indexedInputFiles := xslices.ToIndexed(inputFiles)
 	if len(indexedInputFiles) == 0 {
 		return nil, nil
 	}
@@ -50,19 +50,19 @@ func newFiles[F InputFile](
 		}
 		return files, nil
 	}
-	chunks := slicesext.ToChunks(indexedInputFiles, chunkSize)
-	indexedFiles := make([]slicesext.Indexed[File], 0, len(indexedInputFiles))
+	chunks := xslices.ToChunks(indexedInputFiles, chunkSize)
+	indexedFiles := make([]xslices.Indexed[File], 0, len(indexedInputFiles))
 	jobs := make([]func(context.Context) error, len(chunks))
 	var lock sync.Mutex
 	for i, indexedInputFileChunk := range chunks {
 		jobs[i] = func(ctx context.Context) error {
-			iIndexedFiles := make([]slicesext.Indexed[File], 0, len(indexedInputFileChunk))
+			iIndexedFiles := make([]xslices.Indexed[File], 0, len(indexedInputFileChunk))
 			for _, indexedInputFile := range indexedInputFileChunk {
 				file, err := newFile(indexedInputFile.Value, resolver)
 				if err != nil {
 					return err
 				}
-				iIndexedFiles = append(iIndexedFiles, slicesext.Indexed[File]{Value: file, Index: indexedInputFile.Index})
+				iIndexedFiles = append(iIndexedFiles, xslices.Indexed[File]{Value: file, Index: indexedInputFile.Index})
 			}
 			lock.Lock()
 			indexedFiles = append(indexedFiles, iIndexedFiles...)
@@ -73,5 +73,5 @@ func newFiles[F InputFile](
 	if err := thread.Parallelize(ctx, jobs); err != nil {
 		return nil, err
 	}
-	return slicesext.IndexedToSortedValues(indexedFiles), nil
+	return xslices.IndexedToSortedValues(indexedFiles), nil
 }

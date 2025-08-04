@@ -98,7 +98,7 @@ func checkPageRequestHasToken(
 		pageTokenFieldName = pageTokenFieldNameOptionValue
 	}
 	fields := messageDescriptor.Fields()
-	for i := 0; i < fields.Len(); i++ {
+	for i := range fields.Len() {
 		fieldName := string(fields.Get(i).Name())
 		if fieldName == pageTokenFieldName {
 			return nil
@@ -148,7 +148,7 @@ func checkPageResponseHasToken(
 		pageTokenFieldName = pageTokenFieldNameOptionValue
 	}
 	fields := messageDescriptor.Fields()
-	for i := 0; i < fields.Len(); i++ {
+	for i := range fields.Len() {
 		fieldName := string(fields.Get(i).Name())
 		if fieldName == pageTokenFieldName {
 			return nil

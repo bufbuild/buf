@@ -21,12 +21,12 @@ import (
 	"testing"
 	"time"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/filelock"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -65,7 +65,7 @@ func TestCommitProviderForModuleKeyBasic(t *testing.T) {
 			"buf.build/foo/mod3",
 			"buf.build/foo/mod2",
 		},
-		slicesext.Map(
+		xslices.Map(
 			commits,
 			func(commit bufmodule.Commit) string {
 				return commit.ModuleKey().FullName().String()
@@ -88,7 +88,7 @@ func TestCommitProviderForModuleKeyBasic(t *testing.T) {
 			"buf.build/foo/mod1",
 			"buf.build/foo/mod2",
 		},
-		slicesext.Map(
+		xslices.Map(
 			commits,
 			func(commit bufmodule.Commit) string {
 				return commit.ModuleKey().FullName().String()
@@ -104,7 +104,7 @@ func TestCommitProviderForCommitKeyBasic(t *testing.T) {
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
 	logger := slogtestext.NewLogger(t)
-	commitKeys, err := slicesext.MapError(moduleKeys, bufmodule.ModuleKeyToCommitKey)
+	commitKeys, err := xslices.MapError(moduleKeys, bufmodule.ModuleKeyToCommitKey)
 	require.NoError(t, err)
 
 	cacheProvider := newCommitProvider(
@@ -130,7 +130,7 @@ func TestCommitProviderForCommitKeyBasic(t *testing.T) {
 			"buf.build/foo/mod3",
 			"buf.build/foo/mod2",
 		},
-		slicesext.Map(
+		xslices.Map(
 			commits,
 			func(commit bufmodule.Commit) string {
 				return commit.ModuleKey().FullName().String()
@@ -153,7 +153,7 @@ func TestCommitProviderForCommitKeyBasic(t *testing.T) {
 			"buf.build/foo/mod1",
 			"buf.build/foo/mod2",
 		},
-		slicesext.Map(
+		xslices.Map(
 			commits,
 			func(commit bufmodule.Commit) string {
 				return commit.ModuleKey().FullName().String()
@@ -193,7 +193,7 @@ func TestModuleDataProviderBasic(t *testing.T) {
 			"buf.build/foo/mod3",
 			"buf.build/foo/mod2",
 		},
-		slicesext.Map(
+		xslices.Map(
 			moduleDatas,
 			func(moduleData bufmodule.ModuleData) string {
 				return moduleData.ModuleKey().FullName().String()
@@ -216,7 +216,7 @@ func TestModuleDataProviderBasic(t *testing.T) {
 			"buf.build/foo/mod1",
 			"buf.build/foo/mod2",
 		},
-		slicesext.Map(
+		xslices.Map(
 			moduleDatas,
 			func(moduleData bufmodule.ModuleData) string {
 				return moduleData.ModuleKey().FullName().String()
@@ -233,9 +233,9 @@ func TestConcurrentCacheReadWrite(t *testing.T) {
 	cacheDir := filepath.Join(tempDir, "cache")
 	logger := slogtestext.NewLogger(t)
 
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		require.NoError(t, os.MkdirAll(cacheDir, 0755))
-		jobs, err := slicesext.MapError(
+		jobs, err := xslices.MapError(
 			[]int{0, 1, 2, 3, 4},
 			func(i int) (func(ctx context.Context) error, error) {
 				bucket, err := storageos.NewProvider().NewReadWriteBucket(cacheDir)

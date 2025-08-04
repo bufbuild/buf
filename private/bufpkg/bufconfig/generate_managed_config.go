@@ -20,9 +20,9 @@ import (
 	"strconv"
 	"strings"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 // GenerateManagedConfig is a managed mode configuration.
@@ -120,7 +120,7 @@ type ManagedOverrideRule interface {
 	// FieldOption returns the field option to disable managed mode for.
 	FieldOption() FieldOption
 	// Value returns the override value.
-	Value() interface{}
+	Value() any
 
 	isManagedOverrideRule()
 }
@@ -130,7 +130,7 @@ func NewManagedOverrideRuleForFileOption(
 	path string,
 	moduleFullName string,
 	fileOption FileOption,
-	value interface{},
+	value any,
 ) (ManagedOverrideRule, error) {
 	return newFileOptionManagedOverrideRule(
 		path,
@@ -146,7 +146,7 @@ func NewManagedOverrideRuleForFieldOption(
 	moduleFullName string,
 	fieldName string,
 	fieldOption FieldOption,
-	value interface{},
+	value any,
 ) (ManagedOverrideRule, error) {
 	return newFieldOptionManagedOverrideRule(
 		path,
@@ -572,14 +572,14 @@ type managedOverrideRule struct {
 	fieldName      string
 	fileOption     FileOption
 	fieldOption    FieldOption
-	value          interface{}
+	value          any
 }
 
 func newFileOptionManagedOverrideRule(
 	path string,
 	moduleFullName string,
 	fileOption FileOption,
-	value interface{},
+	value any,
 ) (*managedOverrideRule, error) {
 	// All valid file options have a parse func. This lookup implicitly validates the option.
 	parseOverrideValueFunc, ok := fileOptionToParseOverrideValueFunc[fileOption]
@@ -616,7 +616,7 @@ func newFieldOptionManagedOverrideRule(
 	moduleFullName string,
 	fieldName string,
 	fieldOption FieldOption,
-	value interface{},
+	value any,
 ) (ManagedOverrideRule, error) {
 	// All valid field options have a parse func. This lookup implicitly validates the option.
 	parseOverrideValueFunc, ok := fieldOptionToParseOverrideValueFunc[fieldOption]
@@ -669,7 +669,7 @@ func (m *managedOverrideRule) FieldOption() FieldOption {
 	return m.fieldOption
 }
 
-func (m *managedOverrideRule) Value() interface{} {
+func (m *managedOverrideRule) Value() any {
 	return m.value
 }
 
@@ -707,7 +707,7 @@ func disablesAndOverridesFromExceptAndOverrideV1(
 		disables = append(disables, disable)
 	}
 	// Sort by keys for deterministic order.
-	sortedFullNames := slicesext.MapKeysToSortedSlice(moduleFullNameToOverride)
+	sortedFullNames := xslices.MapKeysToSortedSlice(moduleFullNameToOverride)
 	for _, overrideFullName := range sortedFullNames {
 		if _, err := bufparse.ParseFullName(overrideFullName); err != nil {
 			return nil, nil, err
@@ -733,21 +733,21 @@ func overrideRulesForPerFileOverridesV1(
 	fileOptionToFilePathToOverride map[string]map[string]string,
 ) ([]ManagedOverrideRule, error) {
 	var overrideRules []ManagedOverrideRule
-	sortedFileOptionStrings := slicesext.MapKeysToSortedSlice(fileOptionToFilePathToOverride)
+	sortedFileOptionStrings := xslices.MapKeysToSortedSlice(fileOptionToFilePathToOverride)
 	for _, fileOptionString := range sortedFileOptionStrings {
 		fileOption, ok := stringToFileOption[strings.ToLower(fileOptionString)]
 		if !ok {
 			return nil, fmt.Errorf("%q is not a valid file option", fileOptionString)
 		}
 		filePathToOverride := fileOptionToFilePathToOverride[fileOptionString]
-		sortedFilePaths := slicesext.MapKeysToSortedSlice(filePathToOverride)
+		sortedFilePaths := xslices.MapKeysToSortedSlice(filePathToOverride)
 		for _, filePath := range sortedFilePaths {
 			err := validatePath(filePath)
 			if err != nil {
 				return nil, fmt.Errorf("invalid import path for override %s: %w", fileOptionString, err)
 			}
 			overrideString := filePathToOverride[filePath]
-			var overrideValue interface{} = overrideString
+			var overrideValue any = overrideString
 			switch fileOption {
 			case FileOptionCcEnableArenas, FileOptionJavaMultipleFiles, FileOptionJavaStringCheckUtf8:
 				overrideValue, err = strconv.ParseBool(overrideString)

@@ -15,6 +15,8 @@
 package connectclient
 
 import (
+	"slices"
+
 	"connectrpc.com/connect"
 )
 
@@ -70,7 +72,7 @@ type StubFactory[T any] func(connect.HTTPClient, string, ...connect.ClientOption
 
 // Make uses the given generated factory function to create a new connect client.
 func Make[T any](cfg *Config, address string, factory StubFactory[T]) T {
-	interceptors := append([]connect.Interceptor{}, cfg.interceptors...)
+	interceptors := slices.Clone(cfg.interceptors)
 	if cfg.authInterceptorProvider != nil {
 		interceptor := cfg.authInterceptorProvider(address)
 		interceptors = append(interceptors, interceptor)

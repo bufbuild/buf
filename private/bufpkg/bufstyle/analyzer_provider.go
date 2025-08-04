@@ -60,7 +60,7 @@ func (a *analyzerProvider) modifyAnalyzer(analyzer *analysis.Analyzer) {
 		return
 	}
 	oldRun := analyzer.Run
-	analyzer.Run = func(pass *analysis.Pass) (interface{}, error) {
+	analyzer.Run = func(pass *analysis.Pass) (any, error) {
 		oldReport := pass.Report
 		var reportErr error
 		pass.Report = func(diagnostic analysis.Diagnostic) {
