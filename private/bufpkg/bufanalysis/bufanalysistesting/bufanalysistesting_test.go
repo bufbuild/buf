@@ -138,7 +138,7 @@ path/to/file.proto(2,1) : error FOO : Hello. (buf-plugin-foo)
 	err = bufanalysis.PrintFileAnnotationSet(sb, bufanalysis.NewFileAnnotationSet(fileAnnotations...), "gitlab-code-quality")
 	require.NoError(t, err)
 	assert.Equal(t,
-		`[{"description":"Hello.","check_name":"FOO","fingerprint":"29ba6512a8d7b420f5fd605adf1f87a562e6575bbd99c00e1eed899691d7274c073e7a81a7fc057439b6b23cbfd51a8055d0d6eee528139dd82dd22514ad347a","location":{"path":"path/to/file.proto","positions":{"positions":{"line":1}}},"severity":"minor"},{"description":"Hello.","check_name":"FOO","fingerprint":"b8e8643330cef8c60cbd8c07b6c2f7ae742536513781ae45440c5e176c6a557b2ac460dd56e57477c68163a31dc740cf7e4a9dc9b4fa1f2746159b55615f273b","location":{"path":"path/to/file.proto","positions":{"positions":{"line":2}}},"severity":"minor"}]
+		`[{"description":"Hello.","check_name":"FOO","fingerprint":"7fa769d9df9f6db3b793316aa485c307df262ece452189a1c434e77480e9a6a26759f7616faf70c654639075b2fd170d3b66eef686ad402c72b550305883a7b7","location":{"path":"path/to/file.proto","positions":{"begin":{"line":1},"end":{"line":1}}},"severity":"minor"},{"description":"Hello.","check_name":"FOO","fingerprint":"60eab160b8308bb2c5fb823e200a54d58749513e2f2ad28447584f7223812f106a746ab7bf5fa5493e2e320163f86b46d098cb398f1795715617a825665e2a89","location":{"path":"path/to/file.proto","positions":{"begin":{"line":2,"column":1},"end":{"line":2,"column":1}}},"severity":"minor"}]
 `,
 		sb.String(),
 	)

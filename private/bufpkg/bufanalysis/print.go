@@ -60,20 +60,16 @@ func printAsGithubActions(writer io.Writer, fileAnnotations []FileAnnotation) er
 }
 
 func printAsGitLabCodeQuality(writer io.Writer, fileAnnotations []FileAnnotation) error {
-	report := make([]externalGitLabCodeQualityIssue, 0, len(fileAnnotations))
+	report := make([]*externalGitLabCodeQualityIssue, 0, len(fileAnnotations))
 	for _, f := range fileAnnotations {
 		if f == nil {
 			continue
 		}
-		fileAnnotationData, err := json.Marshal(newExternalFileAnnotation(f))
+		gitLabCodeQualityContentIssue, err := newExternalGitLabCodeQualityIssue(f)
 		if err != nil {
 			return err
 		}
-		hash, err := shake256.NewDigestForContent(bytes.NewReader(fileAnnotationData))
-		if err != nil {
-			return err
-		}
-		report = append(report, newExternalGitLabCodeQualityIssue(f, hash))
+		report = append(report, gitLabCodeQualityContentIssue)
 	}
 	return json.NewEncoder(writer).Encode(report)
 }
@@ -361,37 +357,53 @@ type externalGitLabCodeQualityIssueLocation struct {
 }
 
 type externalGitLabCodeQualityIssueLocationPositions struct {
-	Begin externalGitLabCodeQualityIssueLocationPositionsBegin `json:"positions,omitempty"`
+	Begin externalGitLabCodeQualityIssueLocationPosition `json:"begin,omitempty"`
+	End   externalGitLabCodeQualityIssueLocationPosition `json:"end,omitempty"`
 }
 
-type externalGitLabCodeQualityIssueLocationPositionsBegin struct {
-	Line int `json:"line,omitempty"`
+type externalGitLabCodeQualityIssueLocationPosition struct {
+	Line   int `json:"line,omitempty"`
+	Column int `json:"column,omitempty"`
 }
 
 // newExternalGitLabCodeQualityIssue returns an externalGitLabCodeQualityIssue for the
-// specified FileAnnotation and its digest.
-func newExternalGitLabCodeQualityIssue(
-	f FileAnnotation,
-	hash shake256.Digest,
-) externalGitLabCodeQualityIssue {
+// specified FileAnnotation.
+func newExternalGitLabCodeQualityIssue(f FileAnnotation) (*externalGitLabCodeQualityIssue, error) {
 	path := ""
 	if f.FileInfo() != nil {
 		// GitLab Code Quality Issues strictly require the path to be a relative path based on
 		// the repository. This will need to be enforced by the user.
 		path = f.FileInfo().ExternalPath()
 	}
-	return externalGitLabCodeQualityIssue{
+	gitLabCodeQualityIssue := externalGitLabCodeQualityIssue{
 		Description: f.Message(),
 		CheckName:   f.Type(),
-		Fingerprint: hex.EncodeToString(hash.Value()),
 		Location: externalGitLabCodeQualityIssueLocation{
 			Path: path,
 			Positions: externalGitLabCodeQualityIssueLocationPositions{
-				Begin: externalGitLabCodeQualityIssueLocationPositionsBegin{Line: f.StartLine()},
+				Begin: externalGitLabCodeQualityIssueLocationPosition{
+					Line:   f.StartLine(),
+					Column: f.StartColumn(),
+				},
+				End: externalGitLabCodeQualityIssueLocationPosition{
+					Line:   f.EndLine(),
+					Column: f.EndColumn(),
+				},
 			},
 		},
 		Severity: "minor",
 	}
+	gitLabCodeQualityIssueContent, err := json.Marshal(gitLabCodeQualityIssue)
+	if err != nil {
+		return nil, err
+	}
+	// We use the hash of the GitLab Code Quality issues content, minus the hash itself.
+	hash, err := shake256.NewDigestForContent(bytes.NewReader(gitLabCodeQualityIssueContent))
+	if err != nil {
+		return nil, err
+	}
+	gitLabCodeQualityIssue.Fingerprint = hex.EncodeToString(hash.Value())
+	return &gitLabCodeQualityIssue, nil
 }
 
 func printEachAnnotationOnNewLine(
