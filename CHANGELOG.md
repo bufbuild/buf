@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `gitlab-code-quality` error format to print errors in the GitLab Code Quality format
+  for `buf lint` and `buf breaking`.
 
 ## [v1.56.0] - 2025-07-31
 
@@ -15,8 +16,6 @@
   [protovalidate release notes](https://github.com/bufbuild/protovalidate/releases/tag/v0.14.0).
 - Fix `buf breaking --against-registry` to work with new modules that have no commits on the
   default branch.
-- Add `gitlab-code-quality` error format to print errors in the GitLab Code Quality format
-  for `buf lint` and `buf breaking`.
 
 ## [v1.55.1] - 2025-06-17
 
