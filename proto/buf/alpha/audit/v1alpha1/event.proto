@@ -40,7 +40,7 @@ message Actor {
 
 // ResourceType is the type of the resource that was affected by the audited event.
 //
-// [#next-free-field: 22]
+// [#next-free-field: 23]
 enum ResourceType {
   RESOURCE_TYPE_UNSPECIFIED = 0;
   RESOURCE_TYPE_USER = 1;
@@ -54,6 +54,7 @@ enum ResourceType {
   RESOURCE_TYPE_POLICY = 17;
   RESOURCE_TYPE_POLICY_COMMIT = 19;
   RESOURCE_TYPE_POLICY_LABEL = 20;
+  RESOURCE_TYPE_POLICY_ENFORCEMENT = 22;
   RESOURCE_TYPE_PLUGIN = 7;
   RESOURCE_TYPE_PLUGIN_COMMIT = 15;
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
@@ -78,7 +79,7 @@ message Resource {
 
 // EventType is the type of audited event.
 //
-// [#next-free-field: 74]
+// [#next-free-field: 78]
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
   EVENT_TYPE_ORGANIZATION_CREATED = 1;
