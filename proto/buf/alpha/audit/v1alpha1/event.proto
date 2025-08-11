@@ -1031,13 +1031,13 @@ message PayloadPolicyEnforcementCreated {
 }
 
 message PayloadPolicyEnforcementDeleted {
-  // scope is the scope to which the policy is enforced.
+  // scope is the scope to which the policy was enforced.
   PolicyEnforcementScope scope = 1;
-  // policy_id is the id of the policy that is enforced.
+  // policy_id is the id of the policy that was enforced.
   string policy_id = 2;
-  // policy_ref is the reference of the policy that is enforced.
+  // policy_ref is the reference of the policy that was enforced.
   string policy_ref = 3;
-  // include_targets are the include targets of the policy enforcement.
+  // include_targets were the include targets of the policy enforcement.
   repeated string include_targets = 4;
 }
 
