@@ -83,7 +83,7 @@ func (x ActorType) Number() protoreflect.EnumNumber {
 
 // ResourceType is the type of the resource that was affected by the audited event.
 //
-// [#next-free-field: 22]
+// [#next-free-field: 23]
 type ResourceType int32
 
 const (
@@ -99,6 +99,7 @@ const (
 	ResourceType_RESOURCE_TYPE_POLICY                     ResourceType = 17
 	ResourceType_RESOURCE_TYPE_POLICY_COMMIT              ResourceType = 19
 	ResourceType_RESOURCE_TYPE_POLICY_LABEL               ResourceType = 20
+	ResourceType_RESOURCE_TYPE_POLICY_ENFORCEMENT         ResourceType = 22
 	ResourceType_RESOURCE_TYPE_PLUGIN                     ResourceType = 7
 	ResourceType_RESOURCE_TYPE_PLUGIN_COMMIT              ResourceType = 15
 	ResourceType_RESOURCE_TYPE_CURATED_PLUGIN             ResourceType = 8
@@ -126,6 +127,7 @@ var (
 		17: "RESOURCE_TYPE_POLICY",
 		19: "RESOURCE_TYPE_POLICY_COMMIT",
 		20: "RESOURCE_TYPE_POLICY_LABEL",
+		22: "RESOURCE_TYPE_POLICY_ENFORCEMENT",
 		7:  "RESOURCE_TYPE_PLUGIN",
 		15: "RESOURCE_TYPE_PLUGIN_COMMIT",
 		8:  "RESOURCE_TYPE_CURATED_PLUGIN",
@@ -150,6 +152,7 @@ var (
 		"RESOURCE_TYPE_POLICY":                     17,
 		"RESOURCE_TYPE_POLICY_COMMIT":              19,
 		"RESOURCE_TYPE_POLICY_LABEL":               20,
+		"RESOURCE_TYPE_POLICY_ENFORCEMENT":         22,
 		"RESOURCE_TYPE_PLUGIN":                     7,
 		"RESOURCE_TYPE_PLUGIN_COMMIT":              15,
 		"RESOURCE_TYPE_CURATED_PLUGIN":             8,
@@ -187,7 +190,7 @@ func (x ResourceType) Number() protoreflect.EnumNumber {
 
 // EventType is the type of audited event.
 //
-// [#next-free-field: 74]
+// [#next-free-field: 78]
 type EventType int32
 
 const (
@@ -1498,10 +1501,10 @@ func (x *Event) GetPolicyEnforcementPolicyChanged() *PayloadPolicyEnforcementPol
 	return nil
 }
 
-func (x *Event) GetPolicyEnforcementIncludeTargetsChanged() *PayloadPolicyEnforcementIncludeTargetsChanged {
+func (x *Event) GetPolicyEnforcementTargetsChanged() *PayloadPolicyEnforcementTargetsChanged {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Payload.(*event_PolicyEnforcementIncludeTargetsChanged); ok {
-			return x.PolicyEnforcementIncludeTargetsChanged
+		if x, ok := x.xxx_hidden_Payload.(*event_PolicyEnforcementTargetsChanged); ok {
+			return x.PolicyEnforcementTargetsChanged
 		}
 	}
 	return nil
@@ -2141,12 +2144,12 @@ func (x *Event) SetPolicyEnforcementPolicyChanged(v *PayloadPolicyEnforcementPol
 	x.xxx_hidden_Payload = &event_PolicyEnforcementPolicyChanged{v}
 }
 
-func (x *Event) SetPolicyEnforcementIncludeTargetsChanged(v *PayloadPolicyEnforcementIncludeTargetsChanged) {
+func (x *Event) SetPolicyEnforcementTargetsChanged(v *PayloadPolicyEnforcementTargetsChanged) {
 	if v == nil {
 		x.xxx_hidden_Payload = nil
 		return
 	}
-	x.xxx_hidden_Payload = &event_PolicyEnforcementIncludeTargetsChanged{v}
+	x.xxx_hidden_Payload = &event_PolicyEnforcementTargetsChanged{v}
 }
 
 func (x *Event) HasActor() bool {
@@ -2794,11 +2797,11 @@ func (x *Event) HasPolicyEnforcementPolicyChanged() bool {
 	return ok
 }
 
-func (x *Event) HasPolicyEnforcementIncludeTargetsChanged() bool {
+func (x *Event) HasPolicyEnforcementTargetsChanged() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Payload.(*event_PolicyEnforcementIncludeTargetsChanged)
+	_, ok := x.xxx_hidden_Payload.(*event_PolicyEnforcementTargetsChanged)
 	return ok
 }
 
@@ -3280,8 +3283,8 @@ func (x *Event) ClearPolicyEnforcementPolicyChanged() {
 	}
 }
 
-func (x *Event) ClearPolicyEnforcementIncludeTargetsChanged() {
-	if _, ok := x.xxx_hidden_Payload.(*event_PolicyEnforcementIncludeTargetsChanged); ok {
+func (x *Event) ClearPolicyEnforcementTargetsChanged() {
+	if _, ok := x.xxx_hidden_Payload.(*event_PolicyEnforcementTargetsChanged); ok {
 		x.xxx_hidden_Payload = nil
 	}
 }
@@ -3363,7 +3366,7 @@ const Event_SdkPluginConstraintDeleted_case case_Event_Payload = 79
 const Event_PolicyEnforcementCreated_case case_Event_Payload = 80
 const Event_PolicyEnforcementDeleted_case case_Event_Payload = 81
 const Event_PolicyEnforcementPolicyChanged_case case_Event_Payload = 82
-const Event_PolicyEnforcementIncludeTargetsChanged_case case_Event_Payload = 83
+const Event_PolicyEnforcementTargetsChanged_case case_Event_Payload = 83
 
 func (x *Event) WhichPayload() case_Event_Payload {
 	if x == nil {
@@ -3522,8 +3525,8 @@ func (x *Event) WhichPayload() case_Event_Payload {
 		return Event_PolicyEnforcementDeleted_case
 	case *event_PolicyEnforcementPolicyChanged:
 		return Event_PolicyEnforcementPolicyChanged_case
-	case *event_PolicyEnforcementIncludeTargetsChanged:
-		return Event_PolicyEnforcementIncludeTargetsChanged_case
+	case *event_PolicyEnforcementTargetsChanged:
+		return Event_PolicyEnforcementTargetsChanged_case
 	default:
 		return Event_Payload_not_set_case
 	}
@@ -3607,25 +3610,25 @@ type Event_builder struct {
 	PayloadServerBreakingChangePolicyEnabled  *PayloadServerBreakingChangePolicyEnabled
 	PayloadServerBreakingChangePolicyDisabled *PayloadServerBreakingChangePolicyDisabled
 	// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
-	RepositoryDefaultBranchChanged         *PayloadRepositoryDefaultBranchChanged
-	PayloadServerUniquenessPolicyEnabled   *PayloadServerUniquenessPolicyEnabled
-	PayloadServerUniquenessPolicyDisabled  *PayloadServerUniquenessPolicyDisabled
-	UserAutoMergedFromNewIdp               *PayloadUserAutoMergedFromNewIdP
-	DeviceAuthorizationGrantApproved       *PayloadDeviceAuthorizationGrantApproved
-	DeviceAuthorizationGrantDenied         *PayloadDeviceAuthorizationGrantDenied
-	PluginLabelCreated                     *PayloadPluginLabelCreated
-	PluginLabelMoved                       *PayloadPluginLabelMoved
-	PluginLabelArchived                    *PayloadPluginLabelArchived
-	PluginLabelUnarchived                  *PayloadPluginLabelUnarchived
-	ServerReviewFlowEnabled                *PayloadServerReviewFlowEnabled
-	ServerReviewFlowDisabled               *PayloadServerReviewFlowDisabled
-	SdkPluginConstraintCreated             *PayloadSDKPluginConstraintCreated
-	SdkPluginConstraintUpdated             *PayloadSDKPluginConstraintUpdated
-	SdkPluginConstraintDeleted             *PayloadSDKPluginConstraintDeleted
-	PolicyEnforcementCreated               *PayloadPolicyEnforcementCreated
-	PolicyEnforcementDeleted               *PayloadPolicyEnforcementDeleted
-	PolicyEnforcementPolicyChanged         *PayloadPolicyEnforcementPolicyChanged
-	PolicyEnforcementIncludeTargetsChanged *PayloadPolicyEnforcementIncludeTargetsChanged
+	RepositoryDefaultBranchChanged        *PayloadRepositoryDefaultBranchChanged
+	PayloadServerUniquenessPolicyEnabled  *PayloadServerUniquenessPolicyEnabled
+	PayloadServerUniquenessPolicyDisabled *PayloadServerUniquenessPolicyDisabled
+	UserAutoMergedFromNewIdp              *PayloadUserAutoMergedFromNewIdP
+	DeviceAuthorizationGrantApproved      *PayloadDeviceAuthorizationGrantApproved
+	DeviceAuthorizationGrantDenied        *PayloadDeviceAuthorizationGrantDenied
+	PluginLabelCreated                    *PayloadPluginLabelCreated
+	PluginLabelMoved                      *PayloadPluginLabelMoved
+	PluginLabelArchived                   *PayloadPluginLabelArchived
+	PluginLabelUnarchived                 *PayloadPluginLabelUnarchived
+	ServerReviewFlowEnabled               *PayloadServerReviewFlowEnabled
+	ServerReviewFlowDisabled              *PayloadServerReviewFlowDisabled
+	SdkPluginConstraintCreated            *PayloadSDKPluginConstraintCreated
+	SdkPluginConstraintUpdated            *PayloadSDKPluginConstraintUpdated
+	SdkPluginConstraintDeleted            *PayloadSDKPluginConstraintDeleted
+	PolicyEnforcementCreated              *PayloadPolicyEnforcementCreated
+	PolicyEnforcementDeleted              *PayloadPolicyEnforcementDeleted
+	PolicyEnforcementPolicyChanged        *PayloadPolicyEnforcementPolicyChanged
+	PolicyEnforcementTargetsChanged       *PayloadPolicyEnforcementTargetsChanged
 	// -- end of xxx_hidden_Payload
 }
 
@@ -3867,8 +3870,8 @@ func (b0 Event_builder) Build() *Event {
 	if b.PolicyEnforcementPolicyChanged != nil {
 		x.xxx_hidden_Payload = &event_PolicyEnforcementPolicyChanged{b.PolicyEnforcementPolicyChanged}
 	}
-	if b.PolicyEnforcementIncludeTargetsChanged != nil {
-		x.xxx_hidden_Payload = &event_PolicyEnforcementIncludeTargetsChanged{b.PolicyEnforcementIncludeTargetsChanged}
+	if b.PolicyEnforcementTargetsChanged != nil {
+		x.xxx_hidden_Payload = &event_PolicyEnforcementTargetsChanged{b.PolicyEnforcementTargetsChanged}
 	}
 	return m0
 }
@@ -4193,8 +4196,8 @@ type event_PolicyEnforcementPolicyChanged struct {
 	PolicyEnforcementPolicyChanged *PayloadPolicyEnforcementPolicyChanged `protobuf:"bytes,82,opt,name=policy_enforcement_policy_changed,json=policyEnforcementPolicyChanged,proto3,oneof"`
 }
 
-type event_PolicyEnforcementIncludeTargetsChanged struct {
-	PolicyEnforcementIncludeTargetsChanged *PayloadPolicyEnforcementIncludeTargetsChanged `protobuf:"bytes,83,opt,name=policy_enforcement_include_targets_changed,json=policyEnforcementIncludeTargetsChanged,proto3,oneof"`
+type event_PolicyEnforcementTargetsChanged struct {
+	PolicyEnforcementTargetsChanged *PayloadPolicyEnforcementTargetsChanged `protobuf:"bytes,83,opt,name=policy_enforcement_targets_changed,json=policyEnforcementTargetsChanged,proto3,oneof"`
 }
 
 func (*event_OrganizationCreated) isEvent_Payload() {}
@@ -4349,7 +4352,7 @@ func (*event_PolicyEnforcementDeleted) isEvent_Payload() {}
 
 func (*event_PolicyEnforcementPolicyChanged) isEvent_Payload() {}
 
-func (*event_PolicyEnforcementIncludeTargetsChanged) isEvent_Payload() {}
+func (*event_PolicyEnforcementTargetsChanged) isEvent_Payload() {}
 
 type PayloadOrganizationCreated struct {
 	state         protoimpl.MessageState `protogen:"opaque.v1"`
@@ -11186,30 +11189,28 @@ func (b0 PayloadSDKPluginConstraintDeleted_builder) Build() *PayloadSDKPluginCon
 	return m0
 }
 
-type PayloadPolicyEnforcementCreated struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_EnforcementId  string                 `protobuf:"bytes,1,opt,name=enforcement_id,json=enforcementId,proto3"`
-	xxx_hidden_PolicyId       string                 `protobuf:"bytes,2,opt,name=policy_id,json=policyId,proto3"`
-	xxx_hidden_PolicyRef      string                 `protobuf:"bytes,3,opt,name=policy_ref,json=policyRef,proto3"`
-	xxx_hidden_IncludeTargets []string               `protobuf:"bytes,4,rep,name=include_targets,json=includeTargets,proto3"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+// PolicyEnforcementScope is the scope to which a policy enforcement applies.
+type PolicyEnforcementScope struct {
+	state            protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_Scope isPolicyEnforcementScope_Scope `protobuf_oneof:"scope"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
-func (x *PayloadPolicyEnforcementCreated) Reset() {
-	*x = PayloadPolicyEnforcementCreated{}
+func (x *PolicyEnforcementScope) Reset() {
+	*x = PolicyEnforcementScope{}
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PayloadPolicyEnforcementCreated) String() string {
+func (x *PolicyEnforcementScope) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PayloadPolicyEnforcementCreated) ProtoMessage() {}
+func (*PolicyEnforcementScope) ProtoMessage() {}
 
-func (x *PayloadPolicyEnforcementCreated) ProtoReflect() protoreflect.Message {
+func (x *PolicyEnforcementScope) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -11221,11 +11222,229 @@ func (x *PayloadPolicyEnforcementCreated) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *PayloadPolicyEnforcementCreated) GetEnforcementId() string {
+func (x *PolicyEnforcementScope) GetInstance() *PolicyEnforcementScope_PolicyEnforcementScopeInstance {
 	if x != nil {
-		return x.xxx_hidden_EnforcementId
+		if x, ok := x.xxx_hidden_Scope.(*policyEnforcementScope_Instance); ok {
+			return x.Instance
+		}
 	}
-	return ""
+	return nil
+}
+
+func (x *PolicyEnforcementScope) GetOwner() *PolicyEnforcementScope_PolicyEnforcementScopeOwner {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Scope.(*policyEnforcementScope_Owner); ok {
+			return x.Owner
+		}
+	}
+	return nil
+}
+
+func (x *PolicyEnforcementScope) GetRepository() *PolicyEnforcementScope_PolicyEnforcementScopeRepository {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Scope.(*policyEnforcementScope_Repository); ok {
+			return x.Repository
+		}
+	}
+	return nil
+}
+
+func (x *PolicyEnforcementScope) SetInstance(v *PolicyEnforcementScope_PolicyEnforcementScopeInstance) {
+	if v == nil {
+		x.xxx_hidden_Scope = nil
+		return
+	}
+	x.xxx_hidden_Scope = &policyEnforcementScope_Instance{v}
+}
+
+func (x *PolicyEnforcementScope) SetOwner(v *PolicyEnforcementScope_PolicyEnforcementScopeOwner) {
+	if v == nil {
+		x.xxx_hidden_Scope = nil
+		return
+	}
+	x.xxx_hidden_Scope = &policyEnforcementScope_Owner{v}
+}
+
+func (x *PolicyEnforcementScope) SetRepository(v *PolicyEnforcementScope_PolicyEnforcementScopeRepository) {
+	if v == nil {
+		x.xxx_hidden_Scope = nil
+		return
+	}
+	x.xxx_hidden_Scope = &policyEnforcementScope_Repository{v}
+}
+
+func (x *PolicyEnforcementScope) HasScope() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Scope != nil
+}
+
+func (x *PolicyEnforcementScope) HasInstance() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Scope.(*policyEnforcementScope_Instance)
+	return ok
+}
+
+func (x *PolicyEnforcementScope) HasOwner() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Scope.(*policyEnforcementScope_Owner)
+	return ok
+}
+
+func (x *PolicyEnforcementScope) HasRepository() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Scope.(*policyEnforcementScope_Repository)
+	return ok
+}
+
+func (x *PolicyEnforcementScope) ClearScope() {
+	x.xxx_hidden_Scope = nil
+}
+
+func (x *PolicyEnforcementScope) ClearInstance() {
+	if _, ok := x.xxx_hidden_Scope.(*policyEnforcementScope_Instance); ok {
+		x.xxx_hidden_Scope = nil
+	}
+}
+
+func (x *PolicyEnforcementScope) ClearOwner() {
+	if _, ok := x.xxx_hidden_Scope.(*policyEnforcementScope_Owner); ok {
+		x.xxx_hidden_Scope = nil
+	}
+}
+
+func (x *PolicyEnforcementScope) ClearRepository() {
+	if _, ok := x.xxx_hidden_Scope.(*policyEnforcementScope_Repository); ok {
+		x.xxx_hidden_Scope = nil
+	}
+}
+
+const PolicyEnforcementScope_Scope_not_set_case case_PolicyEnforcementScope_Scope = 0
+const PolicyEnforcementScope_Instance_case case_PolicyEnforcementScope_Scope = 1
+const PolicyEnforcementScope_Owner_case case_PolicyEnforcementScope_Scope = 2
+const PolicyEnforcementScope_Repository_case case_PolicyEnforcementScope_Scope = 3
+
+func (x *PolicyEnforcementScope) WhichScope() case_PolicyEnforcementScope_Scope {
+	if x == nil {
+		return PolicyEnforcementScope_Scope_not_set_case
+	}
+	switch x.xxx_hidden_Scope.(type) {
+	case *policyEnforcementScope_Instance:
+		return PolicyEnforcementScope_Instance_case
+	case *policyEnforcementScope_Owner:
+		return PolicyEnforcementScope_Owner_case
+	case *policyEnforcementScope_Repository:
+		return PolicyEnforcementScope_Repository_case
+	default:
+		return PolicyEnforcementScope_Scope_not_set_case
+	}
+}
+
+type PolicyEnforcementScope_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Fields of oneof xxx_hidden_Scope:
+	Instance   *PolicyEnforcementScope_PolicyEnforcementScopeInstance
+	Owner      *PolicyEnforcementScope_PolicyEnforcementScopeOwner
+	Repository *PolicyEnforcementScope_PolicyEnforcementScopeRepository
+	// -- end of xxx_hidden_Scope
+}
+
+func (b0 PolicyEnforcementScope_builder) Build() *PolicyEnforcementScope {
+	m0 := &PolicyEnforcementScope{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Instance != nil {
+		x.xxx_hidden_Scope = &policyEnforcementScope_Instance{b.Instance}
+	}
+	if b.Owner != nil {
+		x.xxx_hidden_Scope = &policyEnforcementScope_Owner{b.Owner}
+	}
+	if b.Repository != nil {
+		x.xxx_hidden_Scope = &policyEnforcementScope_Repository{b.Repository}
+	}
+	return m0
+}
+
+type case_PolicyEnforcementScope_Scope protoreflect.FieldNumber
+
+func (x case_PolicyEnforcementScope_Scope) String() string {
+	md := file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[77].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isPolicyEnforcementScope_Scope interface {
+	isPolicyEnforcementScope_Scope()
+}
+
+type policyEnforcementScope_Instance struct {
+	Instance *PolicyEnforcementScope_PolicyEnforcementScopeInstance `protobuf:"bytes,1,opt,name=instance,proto3,oneof"`
+}
+
+type policyEnforcementScope_Owner struct {
+	Owner *PolicyEnforcementScope_PolicyEnforcementScopeOwner `protobuf:"bytes,2,opt,name=owner,proto3,oneof"`
+}
+
+type policyEnforcementScope_Repository struct {
+	Repository *PolicyEnforcementScope_PolicyEnforcementScopeRepository `protobuf:"bytes,3,opt,name=repository,proto3,oneof"`
+}
+
+func (*policyEnforcementScope_Instance) isPolicyEnforcementScope_Scope() {}
+
+func (*policyEnforcementScope_Owner) isPolicyEnforcementScope_Scope() {}
+
+func (*policyEnforcementScope_Repository) isPolicyEnforcementScope_Scope() {}
+
+type PayloadPolicyEnforcementCreated struct {
+	state                     protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_Scope          *PolicyEnforcementScope `protobuf:"bytes,1,opt,name=scope,proto3"`
+	xxx_hidden_PolicyId       string                  `protobuf:"bytes,2,opt,name=policy_id,json=policyId,proto3"`
+	xxx_hidden_PolicyRef      string                  `protobuf:"bytes,3,opt,name=policy_ref,json=policyRef,proto3"`
+	xxx_hidden_IncludeTargets []string                `protobuf:"bytes,4,rep,name=include_targets,json=includeTargets,proto3"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
+}
+
+func (x *PayloadPolicyEnforcementCreated) Reset() {
+	*x = PayloadPolicyEnforcementCreated{}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[78]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PayloadPolicyEnforcementCreated) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PayloadPolicyEnforcementCreated) ProtoMessage() {}
+
+func (x *PayloadPolicyEnforcementCreated) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[78]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PayloadPolicyEnforcementCreated) GetScope() *PolicyEnforcementScope {
+	if x != nil {
+		return x.xxx_hidden_Scope
+	}
+	return nil
 }
 
 func (x *PayloadPolicyEnforcementCreated) GetPolicyId() string {
@@ -11249,8 +11468,8 @@ func (x *PayloadPolicyEnforcementCreated) GetIncludeTargets() []string {
 	return nil
 }
 
-func (x *PayloadPolicyEnforcementCreated) SetEnforcementId(v string) {
-	x.xxx_hidden_EnforcementId = v
+func (x *PayloadPolicyEnforcementCreated) SetScope(v *PolicyEnforcementScope) {
+	x.xxx_hidden_Scope = v
 }
 
 func (x *PayloadPolicyEnforcementCreated) SetPolicyId(v string) {
@@ -11265,11 +11484,22 @@ func (x *PayloadPolicyEnforcementCreated) SetIncludeTargets(v []string) {
 	x.xxx_hidden_IncludeTargets = v
 }
 
+func (x *PayloadPolicyEnforcementCreated) HasScope() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Scope != nil
+}
+
+func (x *PayloadPolicyEnforcementCreated) ClearScope() {
+	x.xxx_hidden_Scope = nil
+}
+
 type PayloadPolicyEnforcementCreated_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// enforcement_id is the id of the policy enforcement.
-	EnforcementId string
+	// scope is the scope to which the policy is enforced.
+	Scope *PolicyEnforcementScope
 	// policy_id is the id of the policy that is enforced.
 	PolicyId string
 	// policy_ref is the reference of the policy that is enforced.
@@ -11282,7 +11512,7 @@ func (b0 PayloadPolicyEnforcementCreated_builder) Build() *PayloadPolicyEnforcem
 	m0 := &PayloadPolicyEnforcementCreated{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_EnforcementId = b.EnforcementId
+	x.xxx_hidden_Scope = b.Scope
 	x.xxx_hidden_PolicyId = b.PolicyId
 	x.xxx_hidden_PolicyRef = b.PolicyRef
 	x.xxx_hidden_IncludeTargets = b.IncludeTargets
@@ -11290,15 +11520,18 @@ func (b0 PayloadPolicyEnforcementCreated_builder) Build() *PayloadPolicyEnforcem
 }
 
 type PayloadPolicyEnforcementDeleted struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_EnforcementId string                 `protobuf:"bytes,1,opt,name=enforcement_id,json=enforcementId,proto3"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state                     protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_Scope          *PolicyEnforcementScope `protobuf:"bytes,1,opt,name=scope,proto3"`
+	xxx_hidden_PolicyId       string                  `protobuf:"bytes,2,opt,name=policy_id,json=policyId,proto3"`
+	xxx_hidden_PolicyRef      string                  `protobuf:"bytes,3,opt,name=policy_ref,json=policyRef,proto3"`
+	xxx_hidden_IncludeTargets []string                `protobuf:"bytes,4,rep,name=include_targets,json=includeTargets,proto3"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *PayloadPolicyEnforcementDeleted) Reset() {
 	*x = PayloadPolicyEnforcementDeleted{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[78]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[79]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11310,7 +11543,7 @@ func (x *PayloadPolicyEnforcementDeleted) String() string {
 func (*PayloadPolicyEnforcementDeleted) ProtoMessage() {}
 
 func (x *PayloadPolicyEnforcementDeleted) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[78]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[79]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11321,46 +11554,99 @@ func (x *PayloadPolicyEnforcementDeleted) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *PayloadPolicyEnforcementDeleted) GetEnforcementId() string {
+func (x *PayloadPolicyEnforcementDeleted) GetScope() *PolicyEnforcementScope {
 	if x != nil {
-		return x.xxx_hidden_EnforcementId
+		return x.xxx_hidden_Scope
+	}
+	return nil
+}
+
+func (x *PayloadPolicyEnforcementDeleted) GetPolicyId() string {
+	if x != nil {
+		return x.xxx_hidden_PolicyId
 	}
 	return ""
 }
 
-func (x *PayloadPolicyEnforcementDeleted) SetEnforcementId(v string) {
-	x.xxx_hidden_EnforcementId = v
+func (x *PayloadPolicyEnforcementDeleted) GetPolicyRef() string {
+	if x != nil {
+		return x.xxx_hidden_PolicyRef
+	}
+	return ""
+}
+
+func (x *PayloadPolicyEnforcementDeleted) GetIncludeTargets() []string {
+	if x != nil {
+		return x.xxx_hidden_IncludeTargets
+	}
+	return nil
+}
+
+func (x *PayloadPolicyEnforcementDeleted) SetScope(v *PolicyEnforcementScope) {
+	x.xxx_hidden_Scope = v
+}
+
+func (x *PayloadPolicyEnforcementDeleted) SetPolicyId(v string) {
+	x.xxx_hidden_PolicyId = v
+}
+
+func (x *PayloadPolicyEnforcementDeleted) SetPolicyRef(v string) {
+	x.xxx_hidden_PolicyRef = v
+}
+
+func (x *PayloadPolicyEnforcementDeleted) SetIncludeTargets(v []string) {
+	x.xxx_hidden_IncludeTargets = v
+}
+
+func (x *PayloadPolicyEnforcementDeleted) HasScope() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Scope != nil
+}
+
+func (x *PayloadPolicyEnforcementDeleted) ClearScope() {
+	x.xxx_hidden_Scope = nil
 }
 
 type PayloadPolicyEnforcementDeleted_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// enforcement_id is the id of the policy enforcement.
-	EnforcementId string
+	// scope is the scope to which the policy was enforced.
+	Scope *PolicyEnforcementScope
+	// policy_id is the id of the policy that was enforced.
+	PolicyId string
+	// policy_ref is the reference of the policy that was enforced.
+	PolicyRef string
+	// include_targets were the include targets of the policy enforcement.
+	IncludeTargets []string
 }
 
 func (b0 PayloadPolicyEnforcementDeleted_builder) Build() *PayloadPolicyEnforcementDeleted {
 	m0 := &PayloadPolicyEnforcementDeleted{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_EnforcementId = b.EnforcementId
+	x.xxx_hidden_Scope = b.Scope
+	x.xxx_hidden_PolicyId = b.PolicyId
+	x.xxx_hidden_PolicyRef = b.PolicyRef
+	x.xxx_hidden_IncludeTargets = b.IncludeTargets
 	return m0
 }
 
 type PayloadPolicyEnforcementPolicyChanged struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_EnforcementId string                 `protobuf:"bytes,1,opt,name=enforcement_id,json=enforcementId,proto3"`
-	xxx_hidden_OldPolicyId   string                 `protobuf:"bytes,2,opt,name=old_policy_id,json=oldPolicyId,proto3"`
-	xxx_hidden_NewPolicyId   string                 `protobuf:"bytes,3,opt,name=new_policy_id,json=newPolicyId,proto3"`
-	xxx_hidden_OldPolicyRef  string                 `protobuf:"bytes,4,opt,name=old_policy_ref,json=oldPolicyRef,proto3"`
-	xxx_hidden_NewPolicyRef  string                 `protobuf:"bytes,5,opt,name=new_policy_ref,json=newPolicyRef,proto3"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state                   protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_Scope        *PolicyEnforcementScope `protobuf:"bytes,1,opt,name=scope,proto3"`
+	xxx_hidden_OldPolicyId  string                  `protobuf:"bytes,2,opt,name=old_policy_id,json=oldPolicyId,proto3"`
+	xxx_hidden_NewPolicyId  string                  `protobuf:"bytes,3,opt,name=new_policy_id,json=newPolicyId,proto3"`
+	xxx_hidden_OldPolicyRef string                  `protobuf:"bytes,4,opt,name=old_policy_ref,json=oldPolicyRef,proto3"`
+	xxx_hidden_NewPolicyRef string                  `protobuf:"bytes,5,opt,name=new_policy_ref,json=newPolicyRef,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *PayloadPolicyEnforcementPolicyChanged) Reset() {
 	*x = PayloadPolicyEnforcementPolicyChanged{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[79]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11372,7 +11658,7 @@ func (x *PayloadPolicyEnforcementPolicyChanged) String() string {
 func (*PayloadPolicyEnforcementPolicyChanged) ProtoMessage() {}
 
 func (x *PayloadPolicyEnforcementPolicyChanged) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[79]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11383,11 +11669,11 @@ func (x *PayloadPolicyEnforcementPolicyChanged) ProtoReflect() protoreflect.Mess
 	return mi.MessageOf(x)
 }
 
-func (x *PayloadPolicyEnforcementPolicyChanged) GetEnforcementId() string {
+func (x *PayloadPolicyEnforcementPolicyChanged) GetScope() *PolicyEnforcementScope {
 	if x != nil {
-		return x.xxx_hidden_EnforcementId
+		return x.xxx_hidden_Scope
 	}
-	return ""
+	return nil
 }
 
 func (x *PayloadPolicyEnforcementPolicyChanged) GetOldPolicyId() string {
@@ -11418,8 +11704,8 @@ func (x *PayloadPolicyEnforcementPolicyChanged) GetNewPolicyRef() string {
 	return ""
 }
 
-func (x *PayloadPolicyEnforcementPolicyChanged) SetEnforcementId(v string) {
-	x.xxx_hidden_EnforcementId = v
+func (x *PayloadPolicyEnforcementPolicyChanged) SetScope(v *PolicyEnforcementScope) {
+	x.xxx_hidden_Scope = v
 }
 
 func (x *PayloadPolicyEnforcementPolicyChanged) SetOldPolicyId(v string) {
@@ -11438,11 +11724,22 @@ func (x *PayloadPolicyEnforcementPolicyChanged) SetNewPolicyRef(v string) {
 	x.xxx_hidden_NewPolicyRef = v
 }
 
+func (x *PayloadPolicyEnforcementPolicyChanged) HasScope() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Scope != nil
+}
+
+func (x *PayloadPolicyEnforcementPolicyChanged) ClearScope() {
+	x.xxx_hidden_Scope = nil
+}
+
 type PayloadPolicyEnforcementPolicyChanged_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// enforcement_id is the id of the policy enforcement.
-	EnforcementId string
+	// scope is the scope to which the policy is enforced. An enforcement cannot change its scope.
+	Scope *PolicyEnforcementScope
 	// old_policy_id is the id of the old policy.
 	OldPolicyId string
 	// new_policy_id is the id of the new policy.
@@ -11457,7 +11754,7 @@ func (b0 PayloadPolicyEnforcementPolicyChanged_builder) Build() *PayloadPolicyEn
 	m0 := &PayloadPolicyEnforcementPolicyChanged{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_EnforcementId = b.EnforcementId
+	x.xxx_hidden_Scope = b.Scope
 	x.xxx_hidden_OldPolicyId = b.OldPolicyId
 	x.xxx_hidden_NewPolicyId = b.NewPolicyId
 	x.xxx_hidden_OldPolicyRef = b.OldPolicyRef
@@ -11465,30 +11762,30 @@ func (b0 PayloadPolicyEnforcementPolicyChanged_builder) Build() *PayloadPolicyEn
 	return m0
 }
 
-type PayloadPolicyEnforcementIncludeTargetsChanged struct {
-	state                        protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_EnforcementId     string                 `protobuf:"bytes,1,opt,name=enforcement_id,json=enforcementId,proto3"`
-	xxx_hidden_OldIncludeTargets []string               `protobuf:"bytes,2,rep,name=old_include_targets,json=oldIncludeTargets,proto3"`
-	xxx_hidden_NewIncludeTargets []string               `protobuf:"bytes,3,rep,name=new_include_targets,json=newIncludeTargets,proto3"`
+type PayloadPolicyEnforcementTargetsChanged struct {
+	state                        protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_Scope             *PolicyEnforcementScope `protobuf:"bytes,1,opt,name=scope,proto3"`
+	xxx_hidden_OldIncludeTargets []string                `protobuf:"bytes,2,rep,name=old_include_targets,json=oldIncludeTargets,proto3"`
+	xxx_hidden_NewIncludeTargets []string                `protobuf:"bytes,3,rep,name=new_include_targets,json=newIncludeTargets,proto3"`
 	unknownFields                protoimpl.UnknownFields
 	sizeCache                    protoimpl.SizeCache
 }
 
-func (x *PayloadPolicyEnforcementIncludeTargetsChanged) Reset() {
-	*x = PayloadPolicyEnforcementIncludeTargetsChanged{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[80]
+func (x *PayloadPolicyEnforcementTargetsChanged) Reset() {
+	*x = PayloadPolicyEnforcementTargetsChanged{}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[81]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PayloadPolicyEnforcementIncludeTargetsChanged) String() string {
+func (x *PayloadPolicyEnforcementTargetsChanged) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PayloadPolicyEnforcementIncludeTargetsChanged) ProtoMessage() {}
+func (*PayloadPolicyEnforcementTargetsChanged) ProtoMessage() {}
 
-func (x *PayloadPolicyEnforcementIncludeTargetsChanged) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[80]
+func (x *PayloadPolicyEnforcementTargetsChanged) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[81]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11499,55 +11796,66 @@ func (x *PayloadPolicyEnforcementIncludeTargetsChanged) ProtoReflect() protorefl
 	return mi.MessageOf(x)
 }
 
-func (x *PayloadPolicyEnforcementIncludeTargetsChanged) GetEnforcementId() string {
+func (x *PayloadPolicyEnforcementTargetsChanged) GetScope() *PolicyEnforcementScope {
 	if x != nil {
-		return x.xxx_hidden_EnforcementId
+		return x.xxx_hidden_Scope
 	}
-	return ""
+	return nil
 }
 
-func (x *PayloadPolicyEnforcementIncludeTargetsChanged) GetOldIncludeTargets() []string {
+func (x *PayloadPolicyEnforcementTargetsChanged) GetOldIncludeTargets() []string {
 	if x != nil {
 		return x.xxx_hidden_OldIncludeTargets
 	}
 	return nil
 }
 
-func (x *PayloadPolicyEnforcementIncludeTargetsChanged) GetNewIncludeTargets() []string {
+func (x *PayloadPolicyEnforcementTargetsChanged) GetNewIncludeTargets() []string {
 	if x != nil {
 		return x.xxx_hidden_NewIncludeTargets
 	}
 	return nil
 }
 
-func (x *PayloadPolicyEnforcementIncludeTargetsChanged) SetEnforcementId(v string) {
-	x.xxx_hidden_EnforcementId = v
+func (x *PayloadPolicyEnforcementTargetsChanged) SetScope(v *PolicyEnforcementScope) {
+	x.xxx_hidden_Scope = v
 }
 
-func (x *PayloadPolicyEnforcementIncludeTargetsChanged) SetOldIncludeTargets(v []string) {
+func (x *PayloadPolicyEnforcementTargetsChanged) SetOldIncludeTargets(v []string) {
 	x.xxx_hidden_OldIncludeTargets = v
 }
 
-func (x *PayloadPolicyEnforcementIncludeTargetsChanged) SetNewIncludeTargets(v []string) {
+func (x *PayloadPolicyEnforcementTargetsChanged) SetNewIncludeTargets(v []string) {
 	x.xxx_hidden_NewIncludeTargets = v
 }
 
-type PayloadPolicyEnforcementIncludeTargetsChanged_builder struct {
+func (x *PayloadPolicyEnforcementTargetsChanged) HasScope() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Scope != nil
+}
+
+func (x *PayloadPolicyEnforcementTargetsChanged) ClearScope() {
+	x.xxx_hidden_Scope = nil
+}
+
+type PayloadPolicyEnforcementTargetsChanged_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// enforcement_id is the id of the policy enforcement.
-	EnforcementId string
+	// scope is the scope to which the policy is enforced. An enforcement cannot change its scope.
+	Scope *PolicyEnforcementScope
 	// old_include_targets are the old include targets of the policy enforcement.
 	OldIncludeTargets []string
 	// new_include_targets are the new include targets of the policy enforcement.
 	NewIncludeTargets []string
 }
 
-func (b0 PayloadPolicyEnforcementIncludeTargetsChanged_builder) Build() *PayloadPolicyEnforcementIncludeTargetsChanged {
-	m0 := &PayloadPolicyEnforcementIncludeTargetsChanged{}
+func (b0 PayloadPolicyEnforcementTargetsChanged_builder) Build() *PayloadPolicyEnforcementTargetsChanged {
+	m0 := &PayloadPolicyEnforcementTargetsChanged{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_EnforcementId = b.EnforcementId
+	x.xxx_hidden_Scope = b.Scope
 	x.xxx_hidden_OldIncludeTargets = b.OldIncludeTargets
 	x.xxx_hidden_NewIncludeTargets = b.NewIncludeTargets
 	return m0
@@ -11563,7 +11871,7 @@ type PayloadOrganizationMemberRolesChanged_OrganizationRole struct {
 
 func (x *PayloadOrganizationMemberRolesChanged_OrganizationRole) Reset() {
 	*x = PayloadOrganizationMemberRolesChanged_OrganizationRole{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[81]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[82]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11575,7 +11883,7 @@ func (x *PayloadOrganizationMemberRolesChanged_OrganizationRole) String() string
 func (*PayloadOrganizationMemberRolesChanged_OrganizationRole) ProtoMessage() {}
 
 func (x *PayloadOrganizationMemberRolesChanged_OrganizationRole) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[81]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[82]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11636,7 +11944,7 @@ type PayloadRepositoryContributorRolesChanged_RepositoryRole struct {
 
 func (x *PayloadRepositoryContributorRolesChanged_RepositoryRole) Reset() {
 	*x = PayloadRepositoryContributorRolesChanged_RepositoryRole{}
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[82]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[83]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11648,7 +11956,7 @@ func (x *PayloadRepositoryContributorRolesChanged_RepositoryRole) String() strin
 func (*PayloadRepositoryContributorRolesChanged_RepositoryRole) ProtoMessage() {}
 
 func (x *PayloadRepositoryContributorRolesChanged_RepositoryRole) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[82]
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[83]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11699,6 +12007,225 @@ func (b0 PayloadRepositoryContributorRolesChanged_RepositoryRole_builder) Build(
 	return m0
 }
 
+type PolicyEnforcementScope_PolicyEnforcementScopeInstance struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeInstance) Reset() {
+	*x = PolicyEnforcementScope_PolicyEnforcementScopeInstance{}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[84]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeInstance) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PolicyEnforcementScope_PolicyEnforcementScopeInstance) ProtoMessage() {}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeInstance) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[84]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type PolicyEnforcementScope_PolicyEnforcementScopeInstance_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 PolicyEnforcementScope_PolicyEnforcementScopeInstance_builder) Build() *PolicyEnforcementScope_PolicyEnforcementScopeInstance {
+	m0 := &PolicyEnforcementScope_PolicyEnforcementScopeInstance{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
+type PolicyEnforcementScope_PolicyEnforcementScopeOwner struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_OwnerId   string                 `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3"`
+	xxx_hidden_OwnerName string                 `protobuf:"bytes,2,opt,name=owner_name,json=ownerName,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeOwner) Reset() {
+	*x = PolicyEnforcementScope_PolicyEnforcementScopeOwner{}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[85]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeOwner) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PolicyEnforcementScope_PolicyEnforcementScopeOwner) ProtoMessage() {}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeOwner) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[85]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeOwner) GetOwnerId() string {
+	if x != nil {
+		return x.xxx_hidden_OwnerId
+	}
+	return ""
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeOwner) GetOwnerName() string {
+	if x != nil {
+		return x.xxx_hidden_OwnerName
+	}
+	return ""
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeOwner) SetOwnerId(v string) {
+	x.xxx_hidden_OwnerId = v
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeOwner) SetOwnerName(v string) {
+	x.xxx_hidden_OwnerName = v
+}
+
+type PolicyEnforcementScope_PolicyEnforcementScopeOwner_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// owner_id is the id of the owner (organization or user).
+	OwnerId string
+	// owner_name is the name of the owner (organization or user).
+	OwnerName string
+}
+
+func (b0 PolicyEnforcementScope_PolicyEnforcementScopeOwner_builder) Build() *PolicyEnforcementScope_PolicyEnforcementScopeOwner {
+	m0 := &PolicyEnforcementScope_PolicyEnforcementScopeOwner{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_OwnerId = b.OwnerId
+	x.xxx_hidden_OwnerName = b.OwnerName
+	return m0
+}
+
+type PolicyEnforcementScope_PolicyEnforcementScopeRepository struct {
+	state                          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RepositoryOwnerId   string                 `protobuf:"bytes,1,opt,name=repository_owner_id,json=repositoryOwnerId,proto3"`
+	xxx_hidden_RepositoryOwnerName string                 `protobuf:"bytes,2,opt,name=repository_owner_name,json=repositoryOwnerName,proto3"`
+	xxx_hidden_RepositoryId        string                 `protobuf:"bytes,3,opt,name=repository_id,json=repositoryId,proto3"`
+	xxx_hidden_RepositoryName      string                 `protobuf:"bytes,4,opt,name=repository_name,json=repositoryName,proto3"`
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeRepository) Reset() {
+	*x = PolicyEnforcementScope_PolicyEnforcementScopeRepository{}
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[86]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeRepository) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PolicyEnforcementScope_PolicyEnforcementScopeRepository) ProtoMessage() {}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeRepository) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[86]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeRepository) GetRepositoryOwnerId() string {
+	if x != nil {
+		return x.xxx_hidden_RepositoryOwnerId
+	}
+	return ""
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeRepository) GetRepositoryOwnerName() string {
+	if x != nil {
+		return x.xxx_hidden_RepositoryOwnerName
+	}
+	return ""
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeRepository) GetRepositoryId() string {
+	if x != nil {
+		return x.xxx_hidden_RepositoryId
+	}
+	return ""
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeRepository) GetRepositoryName() string {
+	if x != nil {
+		return x.xxx_hidden_RepositoryName
+	}
+	return ""
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeRepository) SetRepositoryOwnerId(v string) {
+	x.xxx_hidden_RepositoryOwnerId = v
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeRepository) SetRepositoryOwnerName(v string) {
+	x.xxx_hidden_RepositoryOwnerName = v
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeRepository) SetRepositoryId(v string) {
+	x.xxx_hidden_RepositoryId = v
+}
+
+func (x *PolicyEnforcementScope_PolicyEnforcementScopeRepository) SetRepositoryName(v string) {
+	x.xxx_hidden_RepositoryName = v
+}
+
+type PolicyEnforcementScope_PolicyEnforcementScopeRepository_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// repository_owner_id is the id of the owner of the repository.
+	RepositoryOwnerId string
+	// repository_owner_name is the name of the owner of the repository.
+	RepositoryOwnerName string
+	// repository_id is the id of the repository.
+	RepositoryId string
+	// repository_name is the name of the repository.
+	RepositoryName string
+}
+
+func (b0 PolicyEnforcementScope_PolicyEnforcementScopeRepository_builder) Build() *PolicyEnforcementScope_PolicyEnforcementScopeRepository {
+	m0 := &PolicyEnforcementScope_PolicyEnforcementScopeRepository{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_RepositoryOwnerId = b.RepositoryOwnerId
+	x.xxx_hidden_RepositoryOwnerName = b.RepositoryOwnerName
+	x.xxx_hidden_RepositoryId = b.RepositoryId
+	x.xxx_hidden_RepositoryName = b.RepositoryName
+	return m0
+}
+
 var File_buf_alpha_audit_v1alpha1_event_proto protoreflect.FileDescriptor
 
 const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
@@ -11716,7 +12243,7 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\n" +
 	"user_agent\x18\x01 \x01(\tR\tuserAgent\x12\x0e\n" +
 	"\x02ip\x18\x02 \x01(\tR\x02ip\x12\x19\n" +
-	"\btrace_id\x18\x03 \x01(\tR\atraceId\"\xa3I\n" +
+	"\btrace_id\x18\x03 \x01(\tR\atraceId\"\x8dI\n" +
 	"\x05Event\x12\x19\n" +
 	"\bevent_id\x18\x01 \x01(\tR\aeventId\x127\n" +
 	"\x04type\x18\x02 \x01(\x0e2#.buf.alpha.audit.v1alpha1.EventTypeR\x04type\x125\n" +
@@ -11801,8 +12328,8 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\x1dsdk_plugin_constraint_deleted\x18O \x01(\v2;.buf.alpha.audit.v1alpha1.PayloadSDKPluginConstraintDeletedH\x00R\x1asdkPluginConstraintDeleted\x12y\n" +
 	"\x1apolicy_enforcement_created\x18P \x01(\v29.buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementCreatedH\x00R\x18policyEnforcementCreated\x12y\n" +
 	"\x1apolicy_enforcement_deleted\x18Q \x01(\v29.buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementDeletedH\x00R\x18policyEnforcementDeleted\x12\x8c\x01\n" +
-	"!policy_enforcement_policy_changed\x18R \x01(\v2?.buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementPolicyChangedH\x00R\x1epolicyEnforcementPolicyChanged\x12\xa5\x01\n" +
-	"*policy_enforcement_include_targets_changed\x18S \x01(\v2G.buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementIncludeTargetsChangedH\x00R&policyEnforcementIncludeTargetsChangedB\t\n" +
+	"!policy_enforcement_policy_changed\x18R \x01(\v2?.buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementPolicyChangedH\x00R\x1epolicyEnforcementPolicyChanged\x12\x8f\x01\n" +
+	"\"policy_enforcement_targets_changed\x18S \x01(\v2@.buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementTargetsChangedH\x00R\x1fpolicyEnforcementTargetsChangedB\t\n" +
 	"\apayload\"\x1c\n" +
 	"\x1aPayloadOrganizationCreated\"\x1c\n" +
 	"\x1aPayloadOrganizationDeleted\"\xa9\x02\n" +
@@ -12212,29 +12739,50 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\x11plugin_owner_name\x18\x06 \x01(\tR\x0fpluginOwnerName\x12\x1b\n" +
 	"\tplugin_id\x18\a \x01(\tR\bpluginId\x12\x1f\n" +
 	"\vplugin_name\x18\b \x01(\tR\n" +
-	"pluginName\"\xad\x01\n" +
-	"\x1fPayloadPolicyEnforcementCreated\x12%\n" +
-	"\x0eenforcement_id\x18\x01 \x01(\tR\renforcementId\x12\x1b\n" +
+	"pluginName\"\xbd\x05\n" +
+	"\x16PolicyEnforcementScope\x12m\n" +
+	"\binstance\x18\x01 \x01(\v2O.buf.alpha.audit.v1alpha1.PolicyEnforcementScope.PolicyEnforcementScopeInstanceH\x00R\binstance\x12d\n" +
+	"\x05owner\x18\x02 \x01(\v2L.buf.alpha.audit.v1alpha1.PolicyEnforcementScope.PolicyEnforcementScopeOwnerH\x00R\x05owner\x12s\n" +
+	"\n" +
+	"repository\x18\x03 \x01(\v2Q.buf.alpha.audit.v1alpha1.PolicyEnforcementScope.PolicyEnforcementScopeRepositoryH\x00R\n" +
+	"repository\x1a \n" +
+	"\x1ePolicyEnforcementScopeInstance\x1aW\n" +
+	"\x1bPolicyEnforcementScopeOwner\x12\x19\n" +
+	"\bowner_id\x18\x01 \x01(\tR\aownerId\x12\x1d\n" +
+	"\n" +
+	"owner_name\x18\x02 \x01(\tR\townerName\x1a\xd4\x01\n" +
+	" PolicyEnforcementScopeRepository\x12.\n" +
+	"\x13repository_owner_id\x18\x01 \x01(\tR\x11repositoryOwnerId\x122\n" +
+	"\x15repository_owner_name\x18\x02 \x01(\tR\x13repositoryOwnerName\x12#\n" +
+	"\rrepository_id\x18\x03 \x01(\tR\frepositoryId\x12'\n" +
+	"\x0frepository_name\x18\x04 \x01(\tR\x0erepositoryNameB\a\n" +
+	"\x05scope\"\xce\x01\n" +
+	"\x1fPayloadPolicyEnforcementCreated\x12F\n" +
+	"\x05scope\x18\x01 \x01(\v20.buf.alpha.audit.v1alpha1.PolicyEnforcementScopeR\x05scope\x12\x1b\n" +
 	"\tpolicy_id\x18\x02 \x01(\tR\bpolicyId\x12\x1d\n" +
 	"\n" +
 	"policy_ref\x18\x03 \x01(\tR\tpolicyRef\x12'\n" +
-	"\x0finclude_targets\x18\x04 \x03(\tR\x0eincludeTargets\"H\n" +
-	"\x1fPayloadPolicyEnforcementDeleted\x12%\n" +
-	"\x0eenforcement_id\x18\x01 \x01(\tR\renforcementId\"\xe2\x01\n" +
-	"%PayloadPolicyEnforcementPolicyChanged\x12%\n" +
-	"\x0eenforcement_id\x18\x01 \x01(\tR\renforcementId\x12\"\n" +
+	"\x0finclude_targets\x18\x04 \x03(\tR\x0eincludeTargets\"\xce\x01\n" +
+	"\x1fPayloadPolicyEnforcementDeleted\x12F\n" +
+	"\x05scope\x18\x01 \x01(\v20.buf.alpha.audit.v1alpha1.PolicyEnforcementScopeR\x05scope\x12\x1b\n" +
+	"\tpolicy_id\x18\x02 \x01(\tR\bpolicyId\x12\x1d\n" +
+	"\n" +
+	"policy_ref\x18\x03 \x01(\tR\tpolicyRef\x12'\n" +
+	"\x0finclude_targets\x18\x04 \x03(\tR\x0eincludeTargets\"\x83\x02\n" +
+	"%PayloadPolicyEnforcementPolicyChanged\x12F\n" +
+	"\x05scope\x18\x01 \x01(\v20.buf.alpha.audit.v1alpha1.PolicyEnforcementScopeR\x05scope\x12\"\n" +
 	"\rold_policy_id\x18\x02 \x01(\tR\voldPolicyId\x12\"\n" +
 	"\rnew_policy_id\x18\x03 \x01(\tR\vnewPolicyId\x12$\n" +
 	"\x0eold_policy_ref\x18\x04 \x01(\tR\foldPolicyRef\x12$\n" +
-	"\x0enew_policy_ref\x18\x05 \x01(\tR\fnewPolicyRef\"\xb6\x01\n" +
-	"-PayloadPolicyEnforcementIncludeTargetsChanged\x12%\n" +
-	"\x0eenforcement_id\x18\x01 \x01(\tR\renforcementId\x12.\n" +
+	"\x0enew_policy_ref\x18\x05 \x01(\tR\fnewPolicyRef\"\xd0\x01\n" +
+	"&PayloadPolicyEnforcementTargetsChanged\x12F\n" +
+	"\x05scope\x18\x01 \x01(\v20.buf.alpha.audit.v1alpha1.PolicyEnforcementScopeR\x05scope\x12.\n" +
 	"\x13old_include_targets\x18\x02 \x03(\tR\x11oldIncludeTargets\x12.\n" +
 	"\x13new_include_targets\x18\x03 \x03(\tR\x11newIncludeTargets*S\n" +
 	"\tActorType\x12\x1a\n" +
 	"\x16ACTOR_TYPE_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fACTOR_TYPE_USER\x10\x01\x12\x15\n" +
-	"\x11ACTOR_TYPE_SYSTEM\x10\x02*\xef\x05\n" +
+	"\x11ACTOR_TYPE_SYSTEM\x10\x02*\x95\x06\n" +
 	"\fResourceType\x12\x1d\n" +
 	"\x19RESOURCE_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12RESOURCE_TYPE_USER\x10\x01\x12\x1e\n" +
@@ -12247,7 +12795,8 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\"RESOURCE_TYPE_REPOSITORY_IDP_GROUP\x10\x12\x12\x18\n" +
 	"\x14RESOURCE_TYPE_POLICY\x10\x11\x12\x1f\n" +
 	"\x1bRESOURCE_TYPE_POLICY_COMMIT\x10\x13\x12\x1e\n" +
-	"\x1aRESOURCE_TYPE_POLICY_LABEL\x10\x14\x12\x18\n" +
+	"\x1aRESOURCE_TYPE_POLICY_LABEL\x10\x14\x12$\n" +
+	" RESOURCE_TYPE_POLICY_ENFORCEMENT\x10\x16\x12\x18\n" +
 	"\x14RESOURCE_TYPE_PLUGIN\x10\a\x12\x1f\n" +
 	"\x1bRESOURCE_TYPE_PLUGIN_COMMIT\x10\x0f\x12 \n" +
 	"\x1cRESOURCE_TYPE_CURATED_PLUGIN\x10\b\x12\x17\n" +
@@ -12343,7 +12892,7 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"EventProtoP\x01ZSgithub.com/bufbuild/buf/private/gen/proto/go/buf/alpha/audit/v1alpha1;auditv1alpha1\xa2\x02\x03BAA\xaa\x02\x18Buf.Alpha.Audit.V1alpha1\xca\x02\x18Buf\\Alpha\\Audit\\V1alpha1\xe2\x02$Buf\\Alpha\\Audit\\V1alpha1\\GPBMetadata\xea\x02\x1bBuf::Alpha::Audit::V1alpha1b\x06proto3"
 
 var file_buf_alpha_audit_v1alpha1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_buf_alpha_audit_v1alpha1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 83)
+var file_buf_alpha_audit_v1alpha1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 87)
 var file_buf_alpha_audit_v1alpha1_event_proto_goTypes = []any{
 	(ActorType)(0),                                                  // 0: buf.alpha.audit.v1alpha1.ActorType
 	(ResourceType)(0),                                               // 1: buf.alpha.audit.v1alpha1.ResourceType
@@ -12425,19 +12974,23 @@ var file_buf_alpha_audit_v1alpha1_event_proto_goTypes = []any{
 	(*PayloadSDKPluginConstraintCreated)(nil),                       // 77: buf.alpha.audit.v1alpha1.PayloadSDKPluginConstraintCreated
 	(*PayloadSDKPluginConstraintUpdated)(nil),                       // 78: buf.alpha.audit.v1alpha1.PayloadSDKPluginConstraintUpdated
 	(*PayloadSDKPluginConstraintDeleted)(nil),                       // 79: buf.alpha.audit.v1alpha1.PayloadSDKPluginConstraintDeleted
-	(*PayloadPolicyEnforcementCreated)(nil),                         // 80: buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementCreated
-	(*PayloadPolicyEnforcementDeleted)(nil),                         // 81: buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementDeleted
-	(*PayloadPolicyEnforcementPolicyChanged)(nil),                   // 82: buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementPolicyChanged
-	(*PayloadPolicyEnforcementIncludeTargetsChanged)(nil),           // 83: buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementIncludeTargetsChanged
-	(*PayloadOrganizationMemberRolesChanged_OrganizationRole)(nil),  // 84: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole
-	(*PayloadRepositoryContributorRolesChanged_RepositoryRole)(nil), // 85: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole
-	(*timestamppb.Timestamp)(nil),                                   // 86: google.protobuf.Timestamp
-	(v1alpha1.OrganizationRole)(0),                                  // 87: buf.alpha.registry.v1alpha1.OrganizationRole
-	(v1alpha1.OrganizationRoleSource)(0),                            // 88: buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	(v1alpha1.Visibility)(0),                                        // 89: buf.alpha.registry.v1alpha1.Visibility
-	(v1alpha1.RepositoryRole)(0),                                    // 90: buf.alpha.registry.v1alpha1.RepositoryRole
-	(v1alpha1.BreakingChangeCategory)(0),                            // 91: buf.alpha.registry.v1alpha1.BreakingChangeCategory
-	(v1alpha1.RepositoryRoleSource)(0),                              // 92: buf.alpha.registry.v1alpha1.RepositoryRoleSource
+	(*PolicyEnforcementScope)(nil),                                  // 80: buf.alpha.audit.v1alpha1.PolicyEnforcementScope
+	(*PayloadPolicyEnforcementCreated)(nil),                         // 81: buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementCreated
+	(*PayloadPolicyEnforcementDeleted)(nil),                         // 82: buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementDeleted
+	(*PayloadPolicyEnforcementPolicyChanged)(nil),                   // 83: buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementPolicyChanged
+	(*PayloadPolicyEnforcementTargetsChanged)(nil),                  // 84: buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementTargetsChanged
+	(*PayloadOrganizationMemberRolesChanged_OrganizationRole)(nil),  // 85: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole
+	(*PayloadRepositoryContributorRolesChanged_RepositoryRole)(nil), // 86: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole
+	(*PolicyEnforcementScope_PolicyEnforcementScopeInstance)(nil),   // 87: buf.alpha.audit.v1alpha1.PolicyEnforcementScope.PolicyEnforcementScopeInstance
+	(*PolicyEnforcementScope_PolicyEnforcementScopeOwner)(nil),      // 88: buf.alpha.audit.v1alpha1.PolicyEnforcementScope.PolicyEnforcementScopeOwner
+	(*PolicyEnforcementScope_PolicyEnforcementScopeRepository)(nil), // 89: buf.alpha.audit.v1alpha1.PolicyEnforcementScope.PolicyEnforcementScopeRepository
+	(*timestamppb.Timestamp)(nil),                                   // 90: google.protobuf.Timestamp
+	(v1alpha1.OrganizationRole)(0),                                  // 91: buf.alpha.registry.v1alpha1.OrganizationRole
+	(v1alpha1.OrganizationRoleSource)(0),                            // 92: buf.alpha.registry.v1alpha1.OrganizationRoleSource
+	(v1alpha1.Visibility)(0),                                        // 93: buf.alpha.registry.v1alpha1.Visibility
+	(v1alpha1.RepositoryRole)(0),                                    // 94: buf.alpha.registry.v1alpha1.RepositoryRole
+	(v1alpha1.BreakingChangeCategory)(0),                            // 95: buf.alpha.registry.v1alpha1.BreakingChangeCategory
+	(v1alpha1.RepositoryRoleSource)(0),                              // 96: buf.alpha.registry.v1alpha1.RepositoryRoleSource
 }
 var file_buf_alpha_audit_v1alpha1_event_proto_depIdxs = []int32{
 	0,   // 0: buf.alpha.audit.v1alpha1.Actor.type:type_name -> buf.alpha.audit.v1alpha1.ActorType
@@ -12445,7 +12998,7 @@ var file_buf_alpha_audit_v1alpha1_event_proto_depIdxs = []int32{
 	2,   // 2: buf.alpha.audit.v1alpha1.Event.type:type_name -> buf.alpha.audit.v1alpha1.EventType
 	3,   // 3: buf.alpha.audit.v1alpha1.Event.actor:type_name -> buf.alpha.audit.v1alpha1.Actor
 	4,   // 4: buf.alpha.audit.v1alpha1.Event.resource:type_name -> buf.alpha.audit.v1alpha1.Resource
-	86,  // 5: buf.alpha.audit.v1alpha1.Event.event_time:type_name -> google.protobuf.Timestamp
+	90,  // 5: buf.alpha.audit.v1alpha1.Event.event_time:type_name -> google.protobuf.Timestamp
 	5,   // 6: buf.alpha.audit.v1alpha1.Event.metadata:type_name -> buf.alpha.audit.v1alpha1.EventMetadata
 	7,   // 7: buf.alpha.audit.v1alpha1.Event.organization_created:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationCreated
 	8,   // 8: buf.alpha.audit.v1alpha1.Event.organization_deleted:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationDeleted
@@ -12520,64 +13073,71 @@ var file_buf_alpha_audit_v1alpha1_event_proto_depIdxs = []int32{
 	77,  // 77: buf.alpha.audit.v1alpha1.Event.sdk_plugin_constraint_created:type_name -> buf.alpha.audit.v1alpha1.PayloadSDKPluginConstraintCreated
 	78,  // 78: buf.alpha.audit.v1alpha1.Event.sdk_plugin_constraint_updated:type_name -> buf.alpha.audit.v1alpha1.PayloadSDKPluginConstraintUpdated
 	79,  // 79: buf.alpha.audit.v1alpha1.Event.sdk_plugin_constraint_deleted:type_name -> buf.alpha.audit.v1alpha1.PayloadSDKPluginConstraintDeleted
-	80,  // 80: buf.alpha.audit.v1alpha1.Event.policy_enforcement_created:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementCreated
-	81,  // 81: buf.alpha.audit.v1alpha1.Event.policy_enforcement_deleted:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementDeleted
-	82,  // 82: buf.alpha.audit.v1alpha1.Event.policy_enforcement_policy_changed:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementPolicyChanged
-	83,  // 83: buf.alpha.audit.v1alpha1.Event.policy_enforcement_include_targets_changed:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementIncludeTargetsChanged
-	87,  // 84: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberAdded.member_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	88,  // 85: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberAdded.member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	87,  // 86: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.old_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	87,  // 87: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.new_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	88,  // 88: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.old_member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	88,  // 89: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.new_member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	84,  // 90: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.old_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole
-	84,  // 91: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.new_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole
-	87,  // 92: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRemoved.member_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	88,  // 93: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRemoved.member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	87,  // 94: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupAdded.role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	87,  // 95: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupUpdated.old_role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	87,  // 96: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupUpdated.new_role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	87,  // 97: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupRemoved.role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	89,  // 98: buf.alpha.audit.v1alpha1.PayloadRepositoryCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	89,  // 99: buf.alpha.audit.v1alpha1.PayloadRepositoryDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	89,  // 100: buf.alpha.audit.v1alpha1.PayloadRepositoryDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	89,  // 101: buf.alpha.audit.v1alpha1.PayloadRepositoryUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	90,  // 102: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorAdded.contributor_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	90,  // 103: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRoleChanged.old_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	90,  // 104: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRoleChanged.new_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	85,  // 105: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.old_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole
-	85,  // 106: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.new_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole
-	90,  // 107: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRemoved.contributor_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	89,  // 108: buf.alpha.audit.v1alpha1.PayloadRepositoryVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	89,  // 109: buf.alpha.audit.v1alpha1.PayloadRepositoryVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	90,  // 110: buf.alpha.audit.v1alpha1.PayloadRepositoryIDPGroupAdded.role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	90,  // 111: buf.alpha.audit.v1alpha1.PayloadRepositoryIDPGroupUpdated.old_role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	90,  // 112: buf.alpha.audit.v1alpha1.PayloadRepositoryIDPGroupUpdated.new_role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	90,  // 113: buf.alpha.audit.v1alpha1.PayloadRepositoryIDPGroupRemoved.role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	89,  // 114: buf.alpha.audit.v1alpha1.PayloadPolicyCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	89,  // 115: buf.alpha.audit.v1alpha1.PayloadPolicyDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	89,  // 116: buf.alpha.audit.v1alpha1.PayloadPolicyDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	89,  // 117: buf.alpha.audit.v1alpha1.PayloadPolicyUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	89,  // 118: buf.alpha.audit.v1alpha1.PayloadPolicyVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	89,  // 119: buf.alpha.audit.v1alpha1.PayloadPolicyVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	89,  // 120: buf.alpha.audit.v1alpha1.PayloadPluginCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	89,  // 121: buf.alpha.audit.v1alpha1.PayloadPluginDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	89,  // 122: buf.alpha.audit.v1alpha1.PayloadPluginDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	89,  // 123: buf.alpha.audit.v1alpha1.PayloadPluginUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	89,  // 124: buf.alpha.audit.v1alpha1.PayloadPluginVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	89,  // 125: buf.alpha.audit.v1alpha1.PayloadPluginVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	86,  // 126: buf.alpha.audit.v1alpha1.PayloadTokenCreated.token_expiry_time:type_name -> google.protobuf.Timestamp
-	86,  // 127: buf.alpha.audit.v1alpha1.PayloadSCIMTokenCreated.token_expiry_time:type_name -> google.protobuf.Timestamp
-	91,  // 128: buf.alpha.audit.v1alpha1.PayloadServerBreakingChangePolicyEnabled.category:type_name -> buf.alpha.registry.v1alpha1.BreakingChangeCategory
-	87,  // 129: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	88,  // 130: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
-	90,  // 131: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole.role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	92,  // 132: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole.source:type_name -> buf.alpha.registry.v1alpha1.RepositoryRoleSource
-	133, // [133:133] is the sub-list for method output_type
-	133, // [133:133] is the sub-list for method input_type
-	133, // [133:133] is the sub-list for extension type_name
-	133, // [133:133] is the sub-list for extension extendee
-	0,   // [0:133] is the sub-list for field type_name
+	81,  // 80: buf.alpha.audit.v1alpha1.Event.policy_enforcement_created:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementCreated
+	82,  // 81: buf.alpha.audit.v1alpha1.Event.policy_enforcement_deleted:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementDeleted
+	83,  // 82: buf.alpha.audit.v1alpha1.Event.policy_enforcement_policy_changed:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementPolicyChanged
+	84,  // 83: buf.alpha.audit.v1alpha1.Event.policy_enforcement_targets_changed:type_name -> buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementTargetsChanged
+	91,  // 84: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberAdded.member_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	92,  // 85: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberAdded.member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
+	91,  // 86: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.old_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	91,  // 87: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.new_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	92,  // 88: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.old_member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
+	92,  // 89: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged.new_member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
+	85,  // 90: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.old_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole
+	85,  // 91: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.new_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole
+	91,  // 92: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRemoved.member_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	92,  // 93: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRemoved.member_role_source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
+	91,  // 94: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupAdded.role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	91,  // 95: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupUpdated.old_role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	91,  // 96: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupUpdated.new_role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	91,  // 97: buf.alpha.audit.v1alpha1.PayloadOrganizationIDPGroupRemoved.role_override:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	93,  // 98: buf.alpha.audit.v1alpha1.PayloadRepositoryCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	93,  // 99: buf.alpha.audit.v1alpha1.PayloadRepositoryDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	93,  // 100: buf.alpha.audit.v1alpha1.PayloadRepositoryDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	93,  // 101: buf.alpha.audit.v1alpha1.PayloadRepositoryUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	94,  // 102: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorAdded.contributor_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	94,  // 103: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRoleChanged.old_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	94,  // 104: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRoleChanged.new_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	86,  // 105: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.old_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole
+	86,  // 106: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.new_roles:type_name -> buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole
+	94,  // 107: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRemoved.contributor_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	93,  // 108: buf.alpha.audit.v1alpha1.PayloadRepositoryVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	93,  // 109: buf.alpha.audit.v1alpha1.PayloadRepositoryVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	94,  // 110: buf.alpha.audit.v1alpha1.PayloadRepositoryIDPGroupAdded.role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	94,  // 111: buf.alpha.audit.v1alpha1.PayloadRepositoryIDPGroupUpdated.old_role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	94,  // 112: buf.alpha.audit.v1alpha1.PayloadRepositoryIDPGroupUpdated.new_role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	94,  // 113: buf.alpha.audit.v1alpha1.PayloadRepositoryIDPGroupRemoved.role_override:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	93,  // 114: buf.alpha.audit.v1alpha1.PayloadPolicyCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	93,  // 115: buf.alpha.audit.v1alpha1.PayloadPolicyDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	93,  // 116: buf.alpha.audit.v1alpha1.PayloadPolicyDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	93,  // 117: buf.alpha.audit.v1alpha1.PayloadPolicyUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	93,  // 118: buf.alpha.audit.v1alpha1.PayloadPolicyVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	93,  // 119: buf.alpha.audit.v1alpha1.PayloadPolicyVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	93,  // 120: buf.alpha.audit.v1alpha1.PayloadPluginCreated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	93,  // 121: buf.alpha.audit.v1alpha1.PayloadPluginDeleted.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	93,  // 122: buf.alpha.audit.v1alpha1.PayloadPluginDeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	93,  // 123: buf.alpha.audit.v1alpha1.PayloadPluginUndeprecated.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	93,  // 124: buf.alpha.audit.v1alpha1.PayloadPluginVisibilityChanged.old_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	93,  // 125: buf.alpha.audit.v1alpha1.PayloadPluginVisibilityChanged.new_visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	90,  // 126: buf.alpha.audit.v1alpha1.PayloadTokenCreated.token_expiry_time:type_name -> google.protobuf.Timestamp
+	90,  // 127: buf.alpha.audit.v1alpha1.PayloadSCIMTokenCreated.token_expiry_time:type_name -> google.protobuf.Timestamp
+	95,  // 128: buf.alpha.audit.v1alpha1.PayloadServerBreakingChangePolicyEnabled.category:type_name -> buf.alpha.registry.v1alpha1.BreakingChangeCategory
+	87,  // 129: buf.alpha.audit.v1alpha1.PolicyEnforcementScope.instance:type_name -> buf.alpha.audit.v1alpha1.PolicyEnforcementScope.PolicyEnforcementScopeInstance
+	88,  // 130: buf.alpha.audit.v1alpha1.PolicyEnforcementScope.owner:type_name -> buf.alpha.audit.v1alpha1.PolicyEnforcementScope.PolicyEnforcementScopeOwner
+	89,  // 131: buf.alpha.audit.v1alpha1.PolicyEnforcementScope.repository:type_name -> buf.alpha.audit.v1alpha1.PolicyEnforcementScope.PolicyEnforcementScopeRepository
+	80,  // 132: buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementCreated.scope:type_name -> buf.alpha.audit.v1alpha1.PolicyEnforcementScope
+	80,  // 133: buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementDeleted.scope:type_name -> buf.alpha.audit.v1alpha1.PolicyEnforcementScope
+	80,  // 134: buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementPolicyChanged.scope:type_name -> buf.alpha.audit.v1alpha1.PolicyEnforcementScope
+	80,  // 135: buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementTargetsChanged.scope:type_name -> buf.alpha.audit.v1alpha1.PolicyEnforcementScope
+	91,  // 136: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	92,  // 137: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
+	94,  // 138: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole.role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	96,  // 139: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole.source:type_name -> buf.alpha.registry.v1alpha1.RepositoryRoleSource
+	140, // [140:140] is the sub-list for method output_type
+	140, // [140:140] is the sub-list for method input_type
+	140, // [140:140] is the sub-list for extension type_name
+	140, // [140:140] is the sub-list for extension extendee
+	0,   // [0:140] is the sub-list for field type_name
 }
 
 func init() { file_buf_alpha_audit_v1alpha1_event_proto_init() }
@@ -12662,16 +13222,21 @@ func file_buf_alpha_audit_v1alpha1_event_proto_init() {
 		(*event_PolicyEnforcementCreated)(nil),
 		(*event_PolicyEnforcementDeleted)(nil),
 		(*event_PolicyEnforcementPolicyChanged)(nil),
-		(*event_PolicyEnforcementIncludeTargetsChanged)(nil),
+		(*event_PolicyEnforcementTargetsChanged)(nil),
 	}
 	file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[58].OneofWrappers = []any{}
+	file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[77].OneofWrappers = []any{
+		(*policyEnforcementScope_Instance)(nil),
+		(*policyEnforcementScope_Owner)(nil),
+		(*policyEnforcementScope_Repository)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_buf_alpha_audit_v1alpha1_event_proto_rawDesc), len(file_buf_alpha_audit_v1alpha1_event_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   83,
+			NumMessages:   87,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
