@@ -993,9 +993,35 @@ message PayloadSDKPluginConstraintDeleted {
   string plugin_name = 8;
 }
 
+// PolicyEnforcementScope is the scope to which a policy enforcement applies.
+message PolicyEnforcementScope {
+  message PolicyEnforcementScopeInstance {}
+  message PolicyEnforcementScopeOwner {
+    // owner_id is the id of the owner (organization or user).
+    string owner_id = 1;
+    // owner_name is the name of the owner (organization or user).
+    string owner_name = 2;
+  }
+  message PolicyEnforcementScopeRepository {
+    // repository_owner_id is the id of the owner of the repository.
+    string repository_owner_id = 1;
+    // repository_owner_name is the name of the owner of the repository.
+    string repository_owner_name = 2;
+    // repository_id is the id of the repository.
+    string repository_id = 3;
+    // repository_name is the name of the repository.
+    string repository_name = 4;
+  }
+  oneof scope {
+    PolicyEnforcementScopeInstance instance = 1;
+    PolicyEnforcementScopeOwner owner = 2;
+    PolicyEnforcementScopeRepository repository = 3;
+  }
+}
+
 message PayloadPolicyEnforcementCreated {
-  // enforcement_id is the id of the policy enforcement.
-  string enforcement_id = 1;
+  // scope is the scope to which the policy is enforced.
+  PolicyEnforcementScope scope = 1;
   // policy_id is the id of the policy that is enforced.
   string policy_id = 2;
   // policy_ref is the reference of the policy that is enforced.
@@ -1005,13 +1031,19 @@ message PayloadPolicyEnforcementCreated {
 }
 
 message PayloadPolicyEnforcementDeleted {
-  // enforcement_id is the id of the policy enforcement.
-  string enforcement_id = 1;
+  // scope is the scope to which the policy is enforced.
+  PolicyEnforcementScope scope = 1;
+  // policy_id is the id of the policy that is enforced.
+  string policy_id = 2;
+  // policy_ref is the reference of the policy that is enforced.
+  string policy_ref = 3;
+  // include_targets are the include targets of the policy enforcement.
+  repeated string include_targets = 4;
 }
 
 message PayloadPolicyEnforcementPolicyChanged {
-  // enforcement_id is the id of the policy enforcement.
-  string enforcement_id = 1;
+  // scope is the scope to which the policy is enforced. An enforcement cannot change its scope.
+  PolicyEnforcementScope scope = 1;
   // old_policy_id is the id of the old policy.
   string old_policy_id = 2;
   // new_policy_id is the id of the new policy.
@@ -1023,8 +1055,8 @@ message PayloadPolicyEnforcementPolicyChanged {
 }
 
 message PayloadPolicyEnforcementIncludeTargetsChanged {
-  // enforcement_id is the id of the policy enforcement.
-  string enforcement_id = 1;
+  // scope is the scope to which the policy is enforced. An enforcement cannot change its scope.
+  PolicyEnforcementScope scope = 1;
   // old_include_targets are the old include targets of the policy enforcement.
   repeated string old_include_targets = 2;
   // new_include_targets are the new include targets of the policy enforcement.
