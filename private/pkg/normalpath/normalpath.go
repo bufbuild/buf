@@ -37,6 +37,8 @@ const (
 	Absolute PathType = 2
 
 	stringOSPathSeparator = string(os.PathSeparator)
+	// This has to be with "/" instead of os.PathSeparator as we use this on normalized paths
+	normalizedRelPathJumpContextPrefix = "../"
 )
 
 var (
@@ -105,28 +107,6 @@ func (e *Error) Unwrap() error {
 // If the path is "" or ".", this returns ".".
 func Normalize(path string) string {
 	return filepath.ToSlash(filepath.Clean(path))
-}
-
-// NormalizeAndValidate normalizes and validates the given path.
-//
-// This calls Normalize on the path.
-// Returns Error if the path is not relative or jumps context.
-// This can be used to validate that paths are valid to use with Buckets.
-// The error message is safe to pass to users.
-func NormalizeAndValidate(path string) (string, error) {
-	normalizedPath := Normalize(path)
-	unnormalizedPath := Unnormalize(normalizedPath)
-	// Paths cannot be absolute.
-	if filepath.IsAbs(unnormalizedPath) {
-		return "", NewError(path, errNotRelative)
-	}
-	// Use IsLocal to validate the path is relative and does not jump context.
-	//
-	// The string ".." is not matched against, see https://github.com/bufbuild/buf/issues/51
-	if !filepath.IsLocal(unnormalizedPath) {
-		return "", NewError(path, errOutsideContextDir)
-	}
-	return normalizedPath, nil
 }
 
 // NormalizeAndAbsolute normalizes the path and makes it absolute.
