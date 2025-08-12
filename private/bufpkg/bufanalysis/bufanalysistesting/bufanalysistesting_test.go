@@ -134,4 +134,12 @@ path/to/file.proto(2,1) : error FOO : Hello. (buf-plugin-foo)
 `,
 		sb.String(),
 	)
+	sb.Reset()
+	err = bufanalysis.PrintFileAnnotationSet(sb, bufanalysis.NewFileAnnotationSet(fileAnnotations...), "gitlab-code-quality")
+	require.NoError(t, err)
+	assert.Equal(t,
+		`[{"description":"Hello.","check_name":"FOO","fingerprint":"7fa769d9df9f6db3b793316aa485c307df262ece452189a1c434e77480e9a6a26759f7616faf70c654639075b2fd170d3b66eef686ad402c72b550305883a7b7","location":{"path":"path/to/file.proto","positions":{"begin":{"line":1},"end":{"line":1}}},"severity":"minor"},{"description":"Hello.","check_name":"FOO","fingerprint":"60eab160b8308bb2c5fb823e200a54d58749513e2f2ad28447584f7223812f106a746ab7bf5fa5493e2e320163f86b46d098cb398f1795715617a825665e2a89","location":{"path":"path/to/file.proto","positions":{"begin":{"line":2,"column":1},"end":{"line":2,"column":1}}},"severity":"minor"}]
+`,
+		sb.String(),
+	)
 }
