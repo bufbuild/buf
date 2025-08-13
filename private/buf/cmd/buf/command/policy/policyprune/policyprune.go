@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 )
 
@@ -89,12 +90,22 @@ func prune(
 	if err != nil {
 		return err
 	}
-	var prunedBufLockPolicyKeys []bufpolicy.PolicyKey
+	existingPolicyNameToRemotePluginKeys, err := workspaceDepManager.ExistingBufLockFilePolicyNameToRemotePluginKeys(ctx)
+	if err != nil {
+		return err
+	}
+	var (
+		prunedBufLockPolicyKeys                   []bufpolicy.PolicyKey
+		prunedBufLockPolicyNameToRemotePluginKeys = make(map[string][]bufplugin.PluginKey)
+	)
 	for _, existingRemotePolicyKey := range existingRemotePolicyKeys {
-		// Check if an existing plugin key from the buf.lock is configured in the buf.yaml.
-		if _, ok := bufYAMLRemotePolicyNames[existingRemotePolicyKey.FullName().String()]; ok {
+		// Check if an existing policy key from the buf.lock is configured in the buf.yaml.
+		policyFullNameString := existingRemotePolicyKey.FullName().String()
+		if _, ok := bufYAMLRemotePolicyNames[policyFullNameString]; ok {
 			// If yes, then we keep it for the updated buf.lock.
 			prunedBufLockPolicyKeys = append(prunedBufLockPolicyKeys, existingRemotePolicyKey)
+			existingRemotePluginKeys := existingPolicyNameToRemotePluginKeys[policyFullNameString]
+			prunedBufLockPolicyNameToRemotePluginKeys[policyFullNameString] = existingRemotePluginKeys
 		}
 	}
 	// We keep the existing dep module keys as-is.
@@ -106,9 +117,5 @@ func prune(
 	if err != nil {
 		return err
 	}
-	existingPolicyNameToRemotePolicyKeys, err := workspaceDepManager.ExistingBufLockFilePolicyNameToRemotePluginKeys(ctx)
-	if err != nil {
-		return err
-	}
-	return workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys, existingRemotePluginKeys, prunedBufLockPolicyKeys, existingPolicyNameToRemotePolicyKeys)
+	return workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys, existingRemotePluginKeys, prunedBufLockPolicyKeys, prunedBufLockPolicyNameToRemotePluginKeys)
 }
