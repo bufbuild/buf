@@ -56,6 +56,9 @@ func TestNormalizeAndValidate(t *testing.T) {
 
 	_, err = NormalizeAndValidate("../foo")
 	assert.Error(t, err)
+
+	_, err = NormalizeAndValidate("..")
+	assert.Error(t, err)
 }
 
 func TestNormalize(t *testing.T) {
