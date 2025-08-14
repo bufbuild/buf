@@ -67,6 +67,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/plugin/pluginprune"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/plugin/pluginupdate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/policy/policyprune"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/policy/policypush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/module/modulecommit/modulecommitaddlabel"
@@ -204,6 +205,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Hidden: true,
 				SubCommands: []*appcmd.Command{
 					policypush.NewCommand("push", builder),
+					policyprune.NewCommand("prune", builder),
 				},
 			},
 			{
