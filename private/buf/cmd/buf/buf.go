@@ -101,6 +101,18 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabellist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginlabel/pluginlabelunarchive"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/plugin/pluginsettings/pluginsettingsupdate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/policy/policycommit/policycommitaddlabel"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/policy/policycommit/policycommitinfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/policy/policycommit/policycommitlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/policy/policycommit/policycommitresolve"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/policy/policycreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/policy/policydelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/policy/policyinfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/policy/policylabel/policylabelarchive"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/policy/policylabel/policylabelinfo"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/policy/policylabel/policylabellist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/policy/policylabel/policylabelunarchive"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/policy/policysettings/policysettingsupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
@@ -333,6 +345,43 @@ func NewRootCommand(name string) *appcmd.Command {
 							plugincreate.NewCommand("create", builder),
 							plugininfo.NewCommand("info", builder),
 							plugindelete.NewCommand("delete", builder),
+						},
+					},
+					{
+						Use:    "policy",
+						Short:  "Manage BSR policies",
+						Hidden: true,
+						SubCommands: []*appcmd.Command{
+							{
+								Use:   "commit",
+								Short: "Manage a policy's commits",
+								SubCommands: []*appcmd.Command{
+									policycommitaddlabel.NewCommand("add-label", builder, ""),
+									policycommitinfo.NewCommand("info", builder, ""),
+									policycommitlist.NewCommand("list", builder, ""),
+									policycommitresolve.NewCommand("resolve", builder, ""),
+								},
+							},
+							{
+								Use:   "label",
+								Short: "Manage a policy's labels",
+								SubCommands: []*appcmd.Command{
+									policylabelarchive.NewCommand("archive", builder, ""),
+									policylabelinfo.NewCommand("info", builder, ""),
+									policylabellist.NewCommand("list", builder, ""),
+									policylabelunarchive.NewCommand("unarchive", builder, ""),
+								},
+							},
+							{
+								Use:   "settings",
+								Short: "Manage a policy's settings",
+								SubCommands: []*appcmd.Command{
+									policysettingsupdate.NewCommand("update", builder),
+								},
+							},
+							policycreate.NewCommand("create", builder),
+							policyinfo.NewCommand("info", builder),
+							policydelete.NewCommand("delete", builder),
 						},
 					},
 				},
