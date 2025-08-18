@@ -8,7 +8,7 @@ cd "${DIR}"
 GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
 # If the version in go.mod does not include the patch version, e.g. go 1.24, for the
 # .pre-commit-hook.yaml configuration, we'll need to add a 0.
-if [[ ! "${GO_VERSION}" =~ '^([0-9]+\.){2}([0-9]+)$' ]]; then
+if [[ ! "${GO_VERSION}" =~ ^([0-9]+\.){2}([0-9]+)$ ]]; then
   GO_VERSION="${GO_VERSION}.0"
 fi
 

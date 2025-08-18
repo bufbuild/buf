@@ -9,8 +9,8 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://jqlang.github.io/jq/download 20231213 checked 20240216
-JQ_VERSION ?= 1.7.1
+# https://jqlang.github.io/jq/download 20250701 checked 20250808
+JQ_VERSION ?= 1.8.1
 
 ifeq ($(UNAME_OS),Darwin)
 JQ_OS := macos
