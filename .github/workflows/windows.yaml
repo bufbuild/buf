@@ -22,7 +22,7 @@ jobs:
       - name: support-longpaths
         run: git config --system core.longpaths true
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: setup-go
         uses: actions/setup-go@v5
         with:

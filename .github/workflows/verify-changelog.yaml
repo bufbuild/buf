@@ -13,7 +13,7 @@ jobs:
     if: ${{ github.event_name == 'push' || startsWith(github.head_ref, 'release/') || startsWith(github.head_ref, 'next/')}}
     steps:
       - name: Checkout repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
