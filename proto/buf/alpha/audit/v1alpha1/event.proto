@@ -79,7 +79,7 @@ message Resource {
 
 // EventType is the type of audited event.
 //
-// [#next-free-field: 78]
+// [#next-free-field: 79]
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
   EVENT_TYPE_ORGANIZATION_CREATED = 1;
@@ -123,6 +123,7 @@ enum EventType {
   EVENT_TYPE_PLUGIN_COMMIT_PUSHED = 43;
   EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
   EVENT_TYPE_CURATED_PLUGIN_DELETED = 31;
+  EVENT_TYPE_CURATED_PLUGIN_STATUS_UPDATED = 78;
   EVENT_TYPE_USER_CREATED = 15;
   EVENT_TYPE_USER_DELETED = 16;
   EVENT_TYPE_USER_DEACTIVATED = 17;
@@ -175,7 +176,7 @@ message EventMetadata {
 // it happened, who did it, which resource was affected, and more contextual information on the
 // event.
 //
-// [#next-free-field: 84]
+// [#next-free-field: 85]
 message Event {
   // Unique id of the audited event.
   string event_id = 1;
@@ -247,6 +248,7 @@ message Event {
     PayloadRepositoryLabelArchived repository_label_archived = 44;
     PayloadRepositoryLabelUnarchived repository_label_unarchived = 45;
     PayloadCuratedPluginDeleted curated_plugin_deleted = 37;
+    PayloadCuratedPluginStatusUpdated curated_plugin_status_updated = 84;
     PayloadServerBreakingChangePolicyEnabled payload_server_breaking_change_policy_enabled = 38;
     PayloadServerBreakingChangePolicyDisabled payload_server_breaking_change_policy_disabled = 39;
     PayloadRepositoryDefaultBranchChanged repository_default_branch_changed = 40 [deprecated = true];
@@ -717,6 +719,15 @@ message PayloadCuratedPluginDeleted {
   string owner_id = 1;
   // owner_name is the name of the owner of the plugin.
   string owner_name = 2;
+}
+
+message PayloadCuratedPluginStatusUpdated {
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+  // new_status is the new status of the plugin.
+  string new_status = 3;
 }
 
 message PayloadTokenCreated {
