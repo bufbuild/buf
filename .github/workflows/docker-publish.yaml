@@ -33,7 +33,7 @@ jobs:
           fi
       - name: checkout
         id: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: refs/tags/v${{ github.event.inputs.version }}
       - name: setup-qemu
