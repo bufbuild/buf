@@ -32,11 +32,7 @@ endif
 endif
 ifeq ($(UNAME_OS),Linux)
 PROTOC_OS = linux
-ifeq ($(UNAME_ARCH),s390x)
-PROTOC_ARCH := s390_64
-else
 PROTOC_ARCH := $(UNAME_ARCH)
-endif
 endif
 
 PROTOC := $(CACHE_VERSIONS)/protoc/$(PROTOC_VERSION)
