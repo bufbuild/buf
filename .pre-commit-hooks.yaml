@@ -1,42 +1,42 @@
 - id: buf-generate
   name: buf generate
   language: golang
-  language_version: 1.24.0
+  language_version: 1.24.0.0
   entry: buf generate
   types: [proto]
   pass_filenames: false
 - id: buf-breaking
   name: buf breaking
   language: golang
-  language_version: 1.24.0
+  language_version: 1.24.0.0
   entry: buf breaking
   types: [proto]
   pass_filenames: false
 - id: buf-lint
   name: buf lint
   language: golang
-  language_version: 1.24.0
+  language_version: 1.24.0.0
   entry: buf lint
   types: [proto]
   pass_filenames: false
 - id: buf-format
   name: buf format
   language: golang
-  language_version: 1.24.0
+  language_version: 1.24.0.0
   entry: buf format -w --exit-code
   types: [proto]
   pass_filenames: false
 - id: buf-dep-update
   name: buf dep update
   language: golang
-  language_version: 1.24.0
+  language_version: 1.24.0.0
   entry: buf dep update
   files: '(buf\.lock|buf\.yaml)'
   pass_filenames: false
 - id: buf-dep-prune
   name: buf dep prune
   language: golang
-  language_version: 1.24.0
+  language_version: 1.24.0.0
   entry: buf dep prune
   files: '(buf\.lock|buf\.yaml)'
   pass_filenames: false
@@ -44,7 +44,7 @@
 - id: buf-mod-update
   name: buf mod update
   language: golang
-  language_version: 1.24.0
+  language_version: 1.24.0.0
   entry: buf mod update
   files: '(buf\.lock|buf\.yaml)'
   pass_filenames: false
@@ -52,7 +52,7 @@
 - id: buf-mod-prune
   name: buf mod prune
   language: golang
-  language_version: 1.24.0
+  language_version: 1.24.0.0
   entry: buf mod prune
   files: '(buf\.lock|buf\.yaml)'
   pass_filenames: false
