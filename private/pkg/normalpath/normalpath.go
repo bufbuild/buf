@@ -39,6 +39,8 @@ const (
 	stringOSPathSeparator = string(os.PathSeparator)
 	// This has to be with "/" instead of os.PathSeparator as we use this on normalized paths
 	normalizedRelPathJumpContextPrefix = "../"
+	// This path jumps context, it transverses up one directory.
+	normalizedRelPathJumpContextPath = ".."
 )
 
 var (

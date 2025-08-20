@@ -34,6 +34,12 @@ const (
 	//
 	// See https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-error-message.
 	FormatGithubActions
+	// FormatGitLabCodeQuality is the Code Qualiy report format for FileAnnotations.
+	//
+	// See https://docs.gitlab.com/ci/testing/code_quality/#code-quality-report-format
+	// GitLab Code Quality report must be a single JSON array of GitLab Code Quality Issues
+	// objects with the specified properties.
+	FormatGitLabCodeQuality
 )
 
 var (
@@ -46,6 +52,7 @@ var (
 		"msvs",
 		"junit",
 		"github-actions",
+		"gitlab-code-quality",
 	}
 	// AllFormatStringsWithAliases is all format strings with aliases.
 	//
@@ -57,23 +64,26 @@ var (
 		"msvs",
 		"junit",
 		"github-actions",
+		"gitlab-code-quality",
 	}
 
 	stringToFormat = map[string]Format{
 		"text": FormatText,
 		// alias for text
-		"gcc":            FormatText,
-		"json":           FormatJSON,
-		"msvs":           FormatMSVS,
-		"junit":          FormatJUnit,
-		"github-actions": FormatGithubActions,
+		"gcc":                 FormatText,
+		"json":                FormatJSON,
+		"msvs":                FormatMSVS,
+		"junit":               FormatJUnit,
+		"github-actions":      FormatGithubActions,
+		"gitlab-code-quality": FormatGitLabCodeQuality,
 	}
 	formatToString = map[Format]string{
-		FormatText:          "text",
-		FormatJSON:          "json",
-		FormatMSVS:          "msvs",
-		FormatJUnit:         "junit",
-		FormatGithubActions: "github-actions",
+		FormatText:              "text",
+		FormatJSON:              "json",
+		FormatMSVS:              "msvs",
+		FormatJUnit:             "junit",
+		FormatGithubActions:     "github-actions",
+		FormatGitLabCodeQuality: "gitlab-code-quality",
 	}
 )
 
@@ -225,6 +235,8 @@ func PrintFileAnnotationSet(writer io.Writer, fileAnnotationSet FileAnnotationSe
 		return printAsJUnit(writer, fileAnnotationSet.FileAnnotations())
 	case FormatGithubActions:
 		return printAsGithubActions(writer, fileAnnotationSet.FileAnnotations())
+	case FormatGitLabCodeQuality:
+		return printAsGitLabCodeQuality(writer, fileAnnotationSet.FileAnnotations())
 	default:
 		return fmt.Errorf("unknown FileAnnotation Format: %v", format)
 	}

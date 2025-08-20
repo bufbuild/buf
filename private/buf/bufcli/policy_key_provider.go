@@ -14,5 +14,23 @@
 
 package bufcli
 
-// Version is the CLI version of buf.
-const Version = "1.56.1-dev"
+import (
+	"buf.build/go/app/appext"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy/bufpolicyapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapipolicy"
+)
+
+// NewPolicyKeyProvider returns a new PolicyKeyProvider.
+func NewPolicyKeyProvider(container appext.Container) (bufpolicy.PolicyKeyProvider, error) {
+	clientConfig, err := NewConnectClientConfig(container)
+	if err != nil {
+		return nil, err
+	}
+	return bufpolicyapi.NewPolicyKeyProvider(
+		container.Logger(),
+		bufregistryapipolicy.NewClientProvider(
+			clientConfig,
+		),
+	), nil
+}

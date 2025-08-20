@@ -40,7 +40,7 @@ message Actor {
 
 // ResourceType is the type of the resource that was affected by the audited event.
 //
-// [#next-free-field: 22]
+// [#next-free-field: 23]
 enum ResourceType {
   RESOURCE_TYPE_UNSPECIFIED = 0;
   RESOURCE_TYPE_USER = 1;
@@ -54,6 +54,7 @@ enum ResourceType {
   RESOURCE_TYPE_POLICY = 17;
   RESOURCE_TYPE_POLICY_COMMIT = 19;
   RESOURCE_TYPE_POLICY_LABEL = 20;
+  RESOURCE_TYPE_POLICY_ENFORCEMENT = 22;
   RESOURCE_TYPE_PLUGIN = 7;
   RESOURCE_TYPE_PLUGIN_COMMIT = 15;
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
@@ -78,7 +79,7 @@ message Resource {
 
 // EventType is the type of audited event.
 //
-// [#next-free-field: 74]
+// [#next-free-field: 79]
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
   EVENT_TYPE_ORGANIZATION_CREATED = 1;
@@ -122,6 +123,7 @@ enum EventType {
   EVENT_TYPE_PLUGIN_COMMIT_PUSHED = 43;
   EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
   EVENT_TYPE_CURATED_PLUGIN_DELETED = 31;
+  EVENT_TYPE_CURATED_PLUGIN_STATUS_UPDATED = 78;
   EVENT_TYPE_USER_CREATED = 15;
   EVENT_TYPE_USER_DELETED = 16;
   EVENT_TYPE_USER_DEACTIVATED = 17;
@@ -154,6 +156,10 @@ enum EventType {
   EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_CREATED = 71;
   EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_UPDATED = 72;
   EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_DELETED = 73;
+  EVENT_TYPE_POLICY_ENFORCEMENT_CREATED = 74;
+  EVENT_TYPE_POLICY_ENFORCEMENT_DELETED = 75;
+  EVENT_TYPE_POLICY_ENFORCEMENT_POLICY_CHANGED = 76;
+  EVENT_TYPE_POLICY_ENFORCEMENT_TARGETS_CHANGED = 77;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -170,7 +176,7 @@ message EventMetadata {
 // it happened, who did it, which resource was affected, and more contextual information on the
 // event.
 //
-// [#next-free-field: 80]
+// [#next-free-field: 85]
 message Event {
   // Unique id of the audited event.
   string event_id = 1;
@@ -242,6 +248,7 @@ message Event {
     PayloadRepositoryLabelArchived repository_label_archived = 44;
     PayloadRepositoryLabelUnarchived repository_label_unarchived = 45;
     PayloadCuratedPluginDeleted curated_plugin_deleted = 37;
+    PayloadCuratedPluginStatusUpdated curated_plugin_status_updated = 84;
     PayloadServerBreakingChangePolicyEnabled payload_server_breaking_change_policy_enabled = 38;
     PayloadServerBreakingChangePolicyDisabled payload_server_breaking_change_policy_disabled = 39;
     PayloadRepositoryDefaultBranchChanged repository_default_branch_changed = 40 [deprecated = true];
@@ -259,6 +266,10 @@ message Event {
     PayloadSDKPluginConstraintCreated sdk_plugin_constraint_created = 77;
     PayloadSDKPluginConstraintUpdated sdk_plugin_constraint_updated = 78;
     PayloadSDKPluginConstraintDeleted sdk_plugin_constraint_deleted = 79;
+    PayloadPolicyEnforcementCreated policy_enforcement_created = 80;
+    PayloadPolicyEnforcementDeleted policy_enforcement_deleted = 81;
+    PayloadPolicyEnforcementPolicyChanged policy_enforcement_policy_changed = 82;
+    PayloadPolicyEnforcementTargetsChanged policy_enforcement_targets_changed = 83;
   }
 }
 
@@ -710,6 +721,15 @@ message PayloadCuratedPluginDeleted {
   string owner_name = 2;
 }
 
+message PayloadCuratedPluginStatusUpdated {
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+  // new_status is the new status of the plugin.
+  string new_status = 3;
+}
+
 message PayloadTokenCreated {
   // owner_id is the id of the owner of the token.
   string owner_id = 1;
@@ -982,4 +1002,74 @@ message PayloadSDKPluginConstraintDeleted {
   string plugin_id = 7;
   // plugin_name is the name of the plugin of the SDK constraint.
   string plugin_name = 8;
+}
+
+// PolicyEnforcementScope is the scope to which a policy enforcement applies.
+message PolicyEnforcementScope {
+  message PolicyEnforcementScopeInstance {}
+  message PolicyEnforcementScopeOwner {
+    // owner_id is the id of the owner (organization or user).
+    string owner_id = 1;
+    // owner_name is the name of the owner (organization or user).
+    string owner_name = 2;
+  }
+  message PolicyEnforcementScopeRepository {
+    // repository_owner_id is the id of the owner of the repository.
+    string repository_owner_id = 1;
+    // repository_owner_name is the name of the owner of the repository.
+    string repository_owner_name = 2;
+    // repository_id is the id of the repository.
+    string repository_id = 3;
+    // repository_name is the name of the repository.
+    string repository_name = 4;
+  }
+  oneof scope {
+    PolicyEnforcementScopeInstance instance = 1;
+    PolicyEnforcementScopeOwner owner = 2;
+    PolicyEnforcementScopeRepository repository = 3;
+  }
+}
+
+message PayloadPolicyEnforcementCreated {
+  // scope is the scope to which the policy is enforced.
+  PolicyEnforcementScope scope = 1;
+  // policy_id is the id of the policy that is enforced.
+  string policy_id = 2;
+  // policy_ref is the reference of the policy that is enforced.
+  string policy_ref = 3;
+  // include_targets are the include targets of the policy enforcement.
+  repeated string include_targets = 4;
+}
+
+message PayloadPolicyEnforcementDeleted {
+  // scope is the scope to which the policy was enforced.
+  PolicyEnforcementScope scope = 1;
+  // policy_id is the id of the policy that was enforced.
+  string policy_id = 2;
+  // policy_ref is the reference of the policy that was enforced.
+  string policy_ref = 3;
+  // include_targets were the include targets of the policy enforcement.
+  repeated string include_targets = 4;
+}
+
+message PayloadPolicyEnforcementPolicyChanged {
+  // scope is the scope to which the policy is enforced. An enforcement cannot change its scope.
+  PolicyEnforcementScope scope = 1;
+  // old_policy_id is the id of the old policy.
+  string old_policy_id = 2;
+  // new_policy_id is the id of the new policy.
+  string new_policy_id = 3;
+  // old_policy_ref is the reference of the old policy.
+  string old_policy_ref = 4;
+  // new_policy_ref is the reference of the new policy.
+  string new_policy_ref = 5;
+}
+
+message PayloadPolicyEnforcementTargetsChanged {
+  // scope is the scope to which the policy is enforced. An enforcement cannot change its scope.
+  PolicyEnforcementScope scope = 1;
+  // old_include_targets are the old include targets of the policy enforcement.
+  repeated string old_include_targets = 2;
+  // new_include_targets are the new include targets of the policy enforcement.
+  repeated string new_include_targets = 3;
 }

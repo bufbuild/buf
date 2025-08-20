@@ -82,6 +82,16 @@ type WorkspaceDepManager interface {
 	//
 	// Sorted.
 	ConfiguredRemotePluginRefs(ctx context.Context) ([]bufparse.Ref, error)
+	// ConfiguredRemotePolicyRefs returns the configured remote plugins of the Workspace as PolicyRefs.
+	//
+	// These come from buf.yaml files.
+	//
+	// The PolicyRefs in this list will be unique by FullName. If there are two PolicyRefs
+	// in the buf.yaml with the same FullName but different Refs, an error will be given
+	// at workspace constructions.
+	//
+	// Sorted.
+	ConfiguredRemotePolicyRefs(ctx context.Context) ([]bufparse.Ref, error)
 
 	isWorkspaceDepManager()
 }
@@ -188,6 +198,50 @@ func (w *workspaceDepManager) ConfiguredRemotePluginRefs(ctx context.Context) ([
 	return pluginRefs, nil
 }
 
+func (w *workspaceDepManager) ConfiguredRemotePolicyRefs(ctx context.Context) ([]bufparse.Ref, error) {
+	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, w.bucket, w.targetSubDirPath)
+	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
+	}
+	if bufYAMLFile == nil {
+		return nil, nil
+	}
+	switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
+	case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
+		if w.isV2 {
+			return nil, syserror.Newf("buf.yaml at %q did had version %v but expected v1beta1, v1", w.targetSubDirPath, fileVersion)
+		}
+		// Policys are not supported in versions less than v2.
+		return nil, nil
+	case bufconfig.FileVersionV2:
+		if !w.isV2 {
+			return nil, syserror.Newf("buf.yaml at %q did had version %v but expected v2", w.targetSubDirPath, fileVersion)
+		}
+	default:
+		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
+	}
+	policyRefs := xslices.Filter(
+		xslices.Map(
+			bufYAMLFile.PolicyConfigs(),
+			func(value bufconfig.PolicyConfig) bufparse.Ref {
+				return value.Ref()
+			},
+		),
+		func(value bufparse.Ref) bool {
+			return value != nil
+		},
+	)
+	sort.Slice(
+		policyRefs,
+		func(i int, j int) bool {
+			return policyRefs[i].FullName().String() < policyRefs[j].FullName().String()
+		},
+	)
+	return policyRefs, nil
+}
+
 func (w *workspaceDepManager) BufLockFileDigestType() bufmodule.DigestType {
 	if w.isV2 {
 		return bufmodule.DigestTypeB5
@@ -239,7 +293,7 @@ func (w *workspaceDepManager) ExistingBufLockFilePolicyNameToRemotePluginKeys(ct
 	return bufLockFile.PolicyNameToRemotePluginKeys(), nil
 }
 
-func (w *workspaceDepManager) UpdateBufLockFile(ctx context.Context, depModuleKeys []bufmodule.ModuleKey, remotePluginKeys []bufplugin.PluginKey, remotePolicyKeys []bufpolicy.PolicyKey, policyNameToRemotePolicyKeys map[string][]bufplugin.PluginKey) error {
+func (w *workspaceDepManager) UpdateBufLockFile(ctx context.Context, depModuleKeys []bufmodule.ModuleKey, remotePluginKeys []bufplugin.PluginKey, remotePolicyKeys []bufpolicy.PolicyKey, policyNameToRemotePluginKeys map[string][]bufplugin.PluginKey) error {
 	var bufLockFile bufconfig.BufLockFile
 	var err error
 	if w.isV2 {
@@ -248,7 +302,7 @@ func (w *workspaceDepManager) UpdateBufLockFile(ctx context.Context, depModuleKe
 			depModuleKeys,
 			remotePluginKeys,
 			remotePolicyKeys,
-			policyNameToRemotePolicyKeys,
+			policyNameToRemotePluginKeys,
 		)
 		if err != nil {
 			return err

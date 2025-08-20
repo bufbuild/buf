@@ -16,12 +16,15 @@ package bufanalysis
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"strconv"
 	"strings"
+
+	"github.com/bufbuild/buf/private/pkg/shake256"
 )
 
 func printAsText(writer io.Writer, fileAnnotations []FileAnnotation) error {
@@ -54,6 +57,21 @@ func printAsGithubActions(writer io.Writer, fileAnnotations []FileAnnotation) er
 		fileAnnotations,
 		printFileAnnotationAsGithubActions,
 	)
+}
+
+func printAsGitLabCodeQuality(writer io.Writer, fileAnnotations []FileAnnotation) error {
+	report := make([]*externalGitLabCodeQualityIssue, 0, len(fileAnnotations))
+	for _, f := range fileAnnotations {
+		if f == nil {
+			continue
+		}
+		gitLabCodeQualityContentIssue, err := newExternalGitLabCodeQualityIssue(f)
+		if err != nil {
+			return err
+		}
+		report = append(report, gitLabCodeQualityContentIssue)
+	}
+	return json.NewEncoder(writer).Encode(report)
 }
 
 func printAsJUnit(writer io.Writer, fileAnnotations []FileAnnotation) error {
@@ -303,6 +321,89 @@ func newExternalFileAnnotation(f FileAnnotation) externalFileAnnotation {
 		Plugin:      f.PluginName(),
 		Policy:      f.PolicyName(),
 	}
+}
+
+// externalGitLabCodeQualityIssue represents the GitLab Code Quality Report Issue structure
+// expected for the GitLab Code Quality Report output.
+//
+// https://docs.gitlab.com/ci/testing/code_quality/#code-quality-report-format
+// Note that all fields are required for GitLabCodeQualityIssues. If a field is missing,
+// for example, the path of a deleted file in breaking changes, no GitLab Code Quality violation
+// will be surfaced in the Code Quality Report.
+type externalGitLabCodeQualityIssue struct {
+	// Description is a human readable description of the code quality violation. This maps
+	// to the Message in FileAnnotation.
+	Description string `json:"description,omitempty"`
+	// CheckName is a human readable name of the check or rule. This maps to the Type in
+	// FileAnnotation.
+	CheckName string `json:"check_name,omitempty"`
+	// Fingerprint is a unique identifier for the specific code quality violation. This maps
+	// to a shake256 digest of the JSON FileAnnotation.
+	Fingerprint string `json:"fingerprint,omitempty"`
+	// Location is a location structure that represents the file location of the code quality
+	// violation.
+	Location externalGitLabCodeQualityIssueLocation `json:"location,omitempty"`
+	// Severity is the line location of the code quality violation. We use "minor" as the default.
+	Severity string `json:"severity,omitempty"`
+}
+
+type externalGitLabCodeQualityIssueLocation struct {
+	// Path is the relative file path of the code quality violation. This maps to the external
+	// path of the FileAnnotation.
+	Path string `json:"path,omitempty"`
+	// Positions is the line location of the code quality violation. This maps to StartLine
+	// of the FileAnnotation.
+	Positions externalGitLabCodeQualityIssueLocationPositions `json:"positions,omitempty"`
+}
+
+type externalGitLabCodeQualityIssueLocationPositions struct {
+	Begin externalGitLabCodeQualityIssueLocationPosition `json:"begin,omitempty"`
+	End   externalGitLabCodeQualityIssueLocationPosition `json:"end,omitempty"`
+}
+
+type externalGitLabCodeQualityIssueLocationPosition struct {
+	Line   int `json:"line,omitempty"`
+	Column int `json:"column,omitempty"`
+}
+
+// newExternalGitLabCodeQualityIssue returns an externalGitLabCodeQualityIssue for the
+// specified FileAnnotation.
+func newExternalGitLabCodeQualityIssue(f FileAnnotation) (*externalGitLabCodeQualityIssue, error) {
+	path := ""
+	if f.FileInfo() != nil {
+		// GitLab Code Quality Issues strictly require the path to be a relative path based on
+		// the repository. This will need to be enforced by the user.
+		path = f.FileInfo().ExternalPath()
+	}
+	gitLabCodeQualityIssue := externalGitLabCodeQualityIssue{
+		Description: f.Message(),
+		CheckName:   f.Type(),
+		Location: externalGitLabCodeQualityIssueLocation{
+			Path: path,
+			Positions: externalGitLabCodeQualityIssueLocationPositions{
+				Begin: externalGitLabCodeQualityIssueLocationPosition{
+					Line:   f.StartLine(),
+					Column: f.StartColumn(),
+				},
+				End: externalGitLabCodeQualityIssueLocationPosition{
+					Line:   f.EndLine(),
+					Column: f.EndColumn(),
+				},
+			},
+		},
+		Severity: "minor",
+	}
+	gitLabCodeQualityIssueContent, err := json.Marshal(gitLabCodeQualityIssue)
+	if err != nil {
+		return nil, err
+	}
+	// We use the hash of the GitLab Code Quality issues content, minus the hash itself.
+	hash, err := shake256.NewDigestForContent(bytes.NewReader(gitLabCodeQualityIssueContent))
+	if err != nil {
+		return nil, err
+	}
+	gitLabCodeQualityIssue.Fingerprint = hex.EncodeToString(hash.Value())
+	return &gitLabCodeQualityIssue, nil
 }
 
 func printEachAnnotationOnNewLine(
