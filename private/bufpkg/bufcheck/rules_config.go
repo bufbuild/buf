@@ -47,9 +47,9 @@ func rulesConfigForCheckConfig(
 	)
 }
 
-func logRulesConfig(logger *slog.Logger, rulesConfig *rulesConfig) {
+func logRulesConfig(logger *slog.Logger, rulesConfig *rulesConfig, hasPolicyConfigs bool) {
 	logger.Debug("rulesConfig", slog.Any("ruleIDs", rulesConfig.RuleIDs))
-	if len(rulesConfig.RuleIDs) == 0 {
+	if len(rulesConfig.RuleIDs) == 0 && !hasPolicyConfigs {
 		logger.Warn("No " + rulesConfig.RuleType.String() + " rules are configured.")
 	}
 	warnReferencedDeprecatedIDs(logger, rulesConfig)
