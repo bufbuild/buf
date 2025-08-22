@@ -28,6 +28,7 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
+	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
 	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -271,6 +272,18 @@ func NewPluginEntity(plugin *pluginv1beta1.Plugin, pluginFullName bufparse.FullN
 	}
 }
 
+// NewPolicyEntity returns a new plugin entity to print.
+func NewPolicyEntity(policy *policyv1beta1.Policy, policyFullName bufparse.FullName) Entity {
+	return outputPolicy{
+		ID:         policy.Id,
+		Remote:     policyFullName.Registry(),
+		Owner:      policyFullName.Owner(),
+		Name:       policyFullName.Name(),
+		FullName:   policyFullName.String(),
+		CreateTime: policy.CreateTime.AsTime(),
+	}
+}
+
 // NewUserEntity returns a new user entity to print.
 func NewUserEntity(user *registryv1alpha1.User) Entity {
 	return outputUser{
@@ -509,6 +522,19 @@ type outputPlugin struct {
 }
 
 func (m outputPlugin) fullName() string {
+	return m.FullName
+}
+
+type outputPolicy struct {
+	ID         string    `json:"id,omitempty"`
+	Remote     string    `json:"remote,omitempty"`
+	Owner      string    `json:"owner,omitempty"`
+	Name       string    `json:"name,omitempty"`
+	FullName   string    `json:"-" bufprint:"Name"`
+	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+}
+
+func (m outputPolicy) fullName() string {
 	return m.FullName
 }
 

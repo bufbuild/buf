@@ -21,6 +21,7 @@ import (
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
+	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
 	"buf.build/go/app"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/standard/xstrings"
@@ -319,6 +320,21 @@ func VisibilityFlagToPluginVisibilityAllowUnspecified(visibility string) (plugin
 	}
 }
 
+// VisibilityFlagToPolicyVisibilityAllowUnspecified parses the given string as a pluginv1.PolicyVisibility
+// where an empty string will be parsed as unspecified.
+func VisibilityFlagToPolicyVisibilityAllowUnspecified(visibility string) (policyv1beta1.PolicyVisibility, error) {
+	switch visibility {
+	case publicVisibility:
+		return policyv1beta1.PolicyVisibility_POLICY_VISIBILITY_PUBLIC, nil
+	case privateVisibility:
+		return policyv1beta1.PolicyVisibility_POLICY_VISIBILITY_PRIVATE, nil
+	case "":
+		return policyv1beta1.PolicyVisibility_POLICY_VISIBILITY_UNSPECIFIED, nil
+	default:
+		return 0, fmt.Errorf("invalid visibility: %s", visibility)
+	}
+}
+
 // ArchiveStatusFlagToModuleArchiveStatusFilter parses the given string as a modulev1.ListLabelsRequest_ArchiveFilter.
 func ArchiveStatusFlagToModuleArchiveStatusFilter(archiveStatus string) (modulev1.ListLabelsRequest_ArchiveFilter, error) {
 	switch archiveStatus {
@@ -342,6 +358,20 @@ func ArchiveStatusFlagToPluginArchiveStatusFilter(archiveStatus string) (pluginv
 		return pluginv1beta1.ListLabelsRequest_ARCHIVE_FILTER_UNARCHIVED_ONLY, nil
 	case allArchiveStatus:
 		return pluginv1beta1.ListLabelsRequest_ARCHIVE_FILTER_ALL, nil
+	default:
+		return 0, fmt.Errorf("invalid archive status: %s", archiveStatus)
+	}
+}
+
+// ArchiveStatusFlagToPolicyArchiveStatusFilter parses the given string as a pluginv1beta1.ListLabelsRequest_ArchiveFilter.
+func ArchiveStatusFlagToPolicyArchiveStatusFilter(archiveStatus string) (policyv1beta1.ListLabelsRequest_ArchiveFilter, error) {
+	switch archiveStatus {
+	case archivedArchiveStatus:
+		return policyv1beta1.ListLabelsRequest_ARCHIVE_FILTER_ARCHIVED_ONLY, nil
+	case unarchivedArchiveStatus:
+		return policyv1beta1.ListLabelsRequest_ARCHIVE_FILTER_UNARCHIVED_ONLY, nil
+	case allArchiveStatus:
+		return policyv1beta1.ListLabelsRequest_ARCHIVE_FILTER_ALL, nil
 	default:
 		return 0, fmt.Errorf("invalid archive status: %s", archiveStatus)
 	}
