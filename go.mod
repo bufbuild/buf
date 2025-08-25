@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.7-20250718181942-e35f9b667443.1
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.7-20250717185734-6c6e0d3c608e.1
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250721151928-2b7ae473b098.1
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250819211657-a3dd0d3ea69b.1
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.7-20250721151928-2b7ae473b098.1
 	buf.build/go/app v0.1.0
 	buf.build/go/bufplugin v0.9.0
