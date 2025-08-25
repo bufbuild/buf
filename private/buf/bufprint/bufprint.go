@@ -224,14 +224,19 @@ func NewLabelEntity(label interface {
 
 // NewCommitEntity returns a new commit entity to print. It takes a commit as
 // an interface to allow for modulev1.Commit and pluginv1beta1.Commit to be passed.
-func NewCommitEntity(commit interface {
-	GetId() string
-	GetCreateTime() *timestamppb.Timestamp
-}, moduleFullName bufparse.FullName) Entity {
+func NewCommitEntity(
+	commit interface {
+		GetId() string
+		GetCreateTime() *timestamppb.Timestamp
+	},
+	moduleFullName bufparse.FullName,
+	sourceControlURL string,
+) Entity {
 	return outputCommit{
-		Commit:         commit.GetId(),
-		CreateTime:     commit.GetCreateTime().AsTime(),
-		entityFullName: moduleFullName,
+		Commit:           commit.GetId(),
+		CreateTime:       commit.GetCreateTime().AsTime(),
+		SourceControlURL: sourceControlURL,
+		entityFullName:   moduleFullName,
 	}
 }
 
@@ -475,8 +480,9 @@ func (l outputLabel) fullName() string {
 }
 
 type outputCommit struct {
-	Commit     string    `json:"commit,omitempty" bufprint:"Commit"`
-	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+	Commit           string    `json:"commit,omitempty" bufprint:"Commit"`
+	CreateTime       time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+	SourceControlURL string    `json:"source_control_url,omitempty"`
 
 	entityFullName bufparse.FullName
 }

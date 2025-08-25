@@ -124,6 +124,6 @@ func run(
 	return bufprint.PrintEntity(
 		container.Stdout(),
 		format,
-		bufprint.NewCommitEntity(commits[0], moduleRef.FullName()),
+		bufprint.NewCommitEntity(commits[0], moduleRef.FullName(), commits[0].GetSourceControlUrl()),
 	)
 }

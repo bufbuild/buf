@@ -5,6 +5,7 @@
 - Update exclude types to remove unused options reducing the size of generated code.
 - Add `gitlab-code-quality` error format to print errors in the GitLab Code Quality format
   for `buf lint` and `buf breaking`.
+- Add `source_control_url` to `json` outputs for `buf registry {module, plugin} commit` commands.
 
 ## [v1.56.0] - 2025-07-31
 

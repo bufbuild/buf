@@ -123,6 +123,6 @@ func run(
 	return bufprint.PrintNames(
 		container.Stdout(),
 		format,
-		bufprint.NewCommitEntity(commit, pluginRef.FullName()),
+		bufprint.NewCommitEntity(commit, pluginRef.FullName(), commit.GetSourceControlUrl()),
 	)
 }
