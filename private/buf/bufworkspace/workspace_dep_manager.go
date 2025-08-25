@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy/bufpolicyconfig"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -92,6 +93,16 @@ type WorkspaceDepManager interface {
 	//
 	// Sorted.
 	ConfiguredRemotePolicyRefs(ctx context.Context) ([]bufparse.Ref, error)
+	// ConfiguredLocalPolicyNameToRemotePluginRefs returns the configured remote plugins for each local policy of the Workspace.
+	//
+	// These come from buf.yaml files and the local buf.policy.yaml files.
+	//
+	// The PluginRefs for each Policy will be unique by FullName. If there are two PluginRefs
+	// in the buf.yaml for a given Policy with the same FullName but different Refs, an error will be given
+	// at workspace constructions.
+	//
+	// PluginRefs are sorted for each Policy.
+	ConfiguredLocalPolicyNameToRemotePluginRefs(ctx context.Context) (map[string][]bufparse.Ref, error)
 
 	isWorkspaceDepManager()
 }
@@ -240,6 +251,62 @@ func (w *workspaceDepManager) ConfiguredRemotePolicyRefs(ctx context.Context) ([
 		},
 	)
 	return policyRefs, nil
+}
+
+func (w *workspaceDepManager) ConfiguredLocalPolicyNameToRemotePluginRefs(ctx context.Context) (map[string][]bufparse.Ref, error) {
+	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, w.bucket, w.targetSubDirPath)
+	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
+	}
+	if bufYAMLFile == nil {
+		return nil, nil
+	}
+	switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
+	case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
+		if w.isV2 {
+			return nil, syserror.Newf("buf.yaml at %q did had version %v but expected v1beta1, v1", w.targetSubDirPath, fileVersion)
+		}
+		// Policys are not supported in versions less than v2.
+		return nil, nil
+	case bufconfig.FileVersionV2:
+		if !w.isV2 {
+			return nil, syserror.Newf("buf.yaml at %q did had version %v but expected v2", w.targetSubDirPath, fileVersion)
+		}
+	default:
+		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
+	}
+	localPolicyNameToRemotePluginRefs := make(map[string][]bufparse.Ref)
+	for _, policyConfig := range bufYAMLFile.PolicyConfigs() {
+		if policyConfig.Ref() != nil {
+			continue // Only local policies refs are considered here.
+		}
+		localPolicyName := policyConfig.Name()
+		bufPolicyFile, err := bufpolicyconfig.GetBufPolicyYAMLFile(ctx, w.bucket, localPolicyName)
+		if err != nil {
+			return nil, err
+		}
+		pluginRefs := xslices.Filter(
+			xslices.Map(
+				bufPolicyFile.PluginConfigs(),
+				func(value bufpolicy.PluginConfig) bufparse.Ref {
+					return value.Ref()
+				},
+			),
+			func(value bufparse.Ref) bool {
+				return value != nil
+			},
+		)
+		sort.Slice(
+			pluginRefs,
+			func(i int, j int) bool {
+				return pluginRefs[i].FullName().String() < pluginRefs[j].FullName().String()
+			},
+		)
+		localPolicyNameToRemotePluginRefs[localPolicyName] = pluginRefs
+	}
+	return localPolicyNameToRemotePluginRefs, nil
 }
 
 func (w *workspaceDepManager) BufLockFileDigestType() bufmodule.DigestType {
