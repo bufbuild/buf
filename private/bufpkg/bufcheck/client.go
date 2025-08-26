@@ -17,8 +17,10 @@ package bufcheck
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"strings"
 
@@ -386,7 +388,7 @@ func (c *client) ConfiguredRules(
 	for _, option := range options {
 		option.applyToConfiguredRules(configuredRulesOptions)
 	}
-	allRules, allCategories, err := c.allRulesAndCategories(
+	rules, categories, err := c.allRulesAndCategories(
 		ctx,
 		checkConfig.FileVersion(),
 		configuredRulesOptions.pluginConfigs,
@@ -396,12 +398,45 @@ func (c *client) ConfiguredRules(
 	if err != nil {
 		return nil, err
 	}
-	rulesConfig, err := rulesConfigForCheckConfig(checkConfig, allRules, allCategories, ruleType, configuredRulesOptions.relatedCheckConfigs)
+	rulesConfig, err := rulesConfigForCheckConfig(checkConfig, rules, categories, ruleType, configuredRulesOptions.relatedCheckConfigs)
 	if err != nil {
 		return nil, err
 	}
+	allRules := rulesForRuleIDs(rules, rulesConfig.RuleIDs)
+	policies, err := c.getPolicies(ctx, configuredRulesOptions.policyConfigs)
+	if err != nil {
+		return nil, err
+	}
+	for index, policy := range policies {
+		policyConfig := configuredRulesOptions.policyConfigs[index]
+		pluginConfigs, err := policyToBufConfigPluginConfigs(policy)
+		if err != nil {
+			return nil, err
+		}
+		var policyCheckConfig bufconfig.CheckConfig
+		switch ruleType {
+		case check.RuleTypeLint:
+			policyCheckConfig, err = policyToBufConfigLintConfig(policy, policyConfig)
+		case check.RuleTypeBreaking:
+			policyCheckConfig, err = policyToBufConfigBreakingConfig(policy, policyConfig)
+		default:
+			return nil, fmt.Errorf("unknown RuleType: %v", ruleType)
+		}
+		if err != nil {
+			return nil, err
+		}
+		policyRules, policyCategories, err := c.allRulesAndCategories(ctx, policyCheckConfig.FileVersion(), pluginConfigs, policyConfig, false)
+		if err != nil {
+			return nil, err
+		}
+		policyRulesConfig, err := rulesConfigForCheckConfig(policyCheckConfig, policyRules, policyCategories, ruleType, nil)
+		if err != nil {
+			return nil, err
+		}
+		allRules = append(allRules, rulesForRuleIDs(policyRules, policyRulesConfig.RuleIDs)...)
+	}
 	logRulesConfig(c.logger, rulesConfig)
-	return rulesForRuleIDs(allRules, rulesConfig.RuleIDs), nil
+	return allRules, nil
 }
 
 func (c *client) AllRules(
@@ -419,6 +454,22 @@ func (c *client) AllRules(
 	rules, _, err := c.allRulesAndCategories(ctx, fileVersion, allRulesOptions.pluginConfigs, nil, false)
 	if err != nil {
 		return nil, err
+	}
+	policies, err := c.getPolicies(ctx, allRulesOptions.policyConfigs)
+	if err != nil {
+		return nil, err
+	}
+	for index, policy := range policies {
+		policyConfig := allRulesOptions.policyConfigs[index]
+		pluginConfigs, err := policyToBufConfigPluginConfigs(policy)
+		if err != nil {
+			return nil, err
+		}
+		policyRules, _, err := c.allRulesAndCategories(ctx, fileVersion, pluginConfigs, policyConfig, false)
+		if err != nil {
+			return nil, err
+		}
+		rules = append(rules, policyRules...)
 	}
 	return rulesForType(rules, ruleType), nil
 }
@@ -580,6 +631,12 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 		pluginRefs := xslices.IndexedToValues(indexedPluginRefs)
 		pluginKeys, err := pluginKeyProvider.GetPluginKeysForPluginRefs(ctx, pluginRefs, bufplugin.DigestTypeP1)
 		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				if policyConfig != nil {
+					return nil, fmt.Errorf("unable to resolve plugins for policy %q: %w", policyConfig.Name(), err)
+				}
+				return nil, fmt.Errorf("unable to resolve plugins: %w", err)
+			}
 			return nil, err
 		}
 		pluginDatas, err := pluginDataProvider.GetPluginDatasForPluginKeys(ctx, pluginKeys)

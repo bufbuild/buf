@@ -27,12 +27,14 @@ type rule struct {
 	check.Rule
 
 	pluginName string
+	policyName string
 }
 
-func newRule(checkRule check.Rule, pluginName string) *rule {
+func newRule(checkRule check.Rule, pluginName string, policyName string) *rule {
 	return &rule{
 		Rule:       checkRule,
 		pluginName: pluginName,
+		policyName: policyName,
 	}
 }
 
@@ -40,13 +42,16 @@ func (r *rule) BufcheckCategories() []Category {
 	return xslices.Map(
 		r.Rule.Categories(),
 		func(checkCategory check.Category) Category {
-			return newCategory(checkCategory, r.pluginName)
+			return newCategory(checkCategory, r.pluginName, r.policyName)
 		},
 	)
 }
 
 func (r *rule) PluginName() string {
 	return r.pluginName
+}
+func (r *rule) PolicyName() string {
+	return r.policyName
 }
 
 func (*rule) isRule()           {}
