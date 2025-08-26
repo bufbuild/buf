@@ -167,7 +167,7 @@ func run(
 			format,
 			"",
 			"",
-			[]bufprint.Entity{bufprint.NewCommitEntity(commit, policyRef.FullName())},
+			[]bufprint.Entity{bufprint.NewCommitEntity(commit, policyRef.FullName(), "")}, // No source control URL for policy commits
 		)
 	}
 	if resource.GetPolicy() != nil {
@@ -206,7 +206,7 @@ func run(
 			resp.Msg.NextPageToken,
 			nextPageCommand(container, flags, resp.Msg.NextPageToken),
 			xslices.Map(resp.Msg.Commits, func(commit *policyv1beta1.Commit) bufprint.Entity {
-				return bufprint.NewCommitEntity(commit, policyRef.FullName())
+				return bufprint.NewCommitEntity(commit, policyRef.FullName(), "") // No source control URL for policy commits
 			}),
 		)
 	}
@@ -258,7 +258,7 @@ func run(
 		resp.Msg.NextPageToken,
 		nextPageCommand(container, flags, resp.Msg.NextPageToken),
 		xslices.Map(commits, func(commit *policyv1beta1.Commit) bufprint.Entity {
-			return bufprint.NewCommitEntity(commit, policyRef.FullName())
+			return bufprint.NewCommitEntity(commit, policyRef.FullName(), "") // No source control URL for policy commits
 		}),
 	)
 }

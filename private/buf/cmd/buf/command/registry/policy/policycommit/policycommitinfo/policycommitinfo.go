@@ -124,6 +124,6 @@ func run(
 	return bufprint.PrintEntity(
 		container.Stdout(),
 		format,
-		bufprint.NewCommitEntity(commits[0], policyRef.FullName()),
+		bufprint.NewCommitEntity(commits[0], policyRef.FullName(), ""), // No source control URL for policy commits
 	)
 }
