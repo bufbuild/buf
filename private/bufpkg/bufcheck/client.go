@@ -413,6 +413,7 @@ func (c *client) ConfiguredRules(
 		if err != nil {
 			return nil, err
 		}
+		// Load the check config for the rule type.
 		var policyCheckConfig bufconfig.CheckConfig
 		switch ruleType {
 		case check.RuleTypeLint:
@@ -420,7 +421,7 @@ func (c *client) ConfiguredRules(
 		case check.RuleTypeBreaking:
 			policyCheckConfig, err = policyToBufConfigBreakingConfig(policy, policyConfig)
 		default:
-			return nil, fmt.Errorf("unknown RuleType: %v", ruleType)
+			return nil, fmt.Errorf("unknown check.RuleType: %v", ruleType)
 		}
 		if err != nil {
 			return nil, err
