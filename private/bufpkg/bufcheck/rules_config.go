@@ -47,13 +47,13 @@ func rulesConfigForCheckConfig(
 	)
 }
 
-func logRulesConfig(logger *slog.Logger, rulesConfig *rulesConfig, hasPolicyConfigs bool) {
+func logRulesConfig(logger *slog.Logger, configName string, rulesConfig *rulesConfig, hasPolicyConfigs bool) {
 	logger.Debug("rulesConfig", slog.Any("ruleIDs", rulesConfig.RuleIDs))
 	if len(rulesConfig.RuleIDs) == 0 && !hasPolicyConfigs {
-		logger.Warn("No " + rulesConfig.RuleType.String() + " rules are configured.")
+		logger.Warn("No " + rulesConfig.RuleType.String() + " rules are configured in " + configName + ".")
 	}
-	warnReferencedDeprecatedIDs(logger, rulesConfig)
-	warnUnusedPlugins(logger, rulesConfig)
+	warnReferencedDeprecatedIDs(logger, configName, rulesConfig)
+	warnUnusedPlugins(logger, configName, rulesConfig)
 }
 
 type rulesConfig struct {
@@ -344,28 +344,30 @@ func newRulesConfig(
 
 // *** JUST USED WITHIN THIS FILE ***
 
-func warnReferencedDeprecatedIDs(logger *slog.Logger, rulesConfig *rulesConfig) {
+func warnReferencedDeprecatedIDs(logger *slog.Logger, configName string, rulesConfig *rulesConfig) {
 	warnReferencedDeprecatedIDsForIDType(
 		logger,
+		configName,
 		rulesConfig.ReferencedDeprecatedRuleIDToReplacementIDs,
 		"Rule",
 		"rules",
 	)
 	warnReferencedDeprecatedIDsForIDType(
 		logger,
+		configName,
 		rulesConfig.ReferencedDeprecatedCategoryIDToReplacementIDs,
 		"Category",
 		"categories",
 	)
 }
 
-func warnUnusedPlugins(logger *slog.Logger, rulesConfig *rulesConfig) {
+func warnUnusedPlugins(logger *slog.Logger, configName string, rulesConfig *rulesConfig) {
 	if len(rulesConfig.UnusedPluginNameToRuleIDs) == 0 {
 		return
 	}
 	unusedPluginNames := xslices.MapKeysToSortedSlice(rulesConfig.UnusedPluginNameToRuleIDs)
 	var sb strings.Builder
-	_, _ = sb.WriteString("Your buf.yaml has plugins added which have no rules configured:\n\n")
+	_, _ = sb.WriteString("Your " + configName + " has plugins added which have no rules configured:\n\n")
 	for _, unusedPluginName := range unusedPluginNames {
 		_, _ = sb.WriteString("\t  - ")
 		_, _ = sb.WriteString(unusedPluginName)
@@ -390,6 +392,7 @@ func warnUnusedPlugins(logger *slog.Logger, rulesConfig *rulesConfig) {
 
 func warnReferencedDeprecatedIDsForIDType(
 	logger *slog.Logger,
+	configName string,
 	referencedDeprecatedIDToReplacementIDs map[string]map[string]struct{},
 	capitalizedIDType string,
 	pluralIDType string,
@@ -406,24 +409,26 @@ func warnReferencedDeprecatedIDsForIDType(
 		}
 		var specialCallout string
 		if deprecatedID == "DEFAULT" {
-			specialCallout = `
+			specialCallout = fmt.Sprintf(`
 
 	The concept of a default rule has been introduced. A default rule is a rule that will be run
-	if no rules are explicitly configured in your buf.yaml. Run buf config ls-lint-rules or
+	if no rules are explicitly configured in your %s. Run buf config ls-lint-rules or
 	buf config ls-breaking-rules to see which rules are defaults. With this introduction, having a category
 	also named DEFAULT is confusing, as while it happens that all the rules in the DEFAULT category
 	are also default rules, the name has become overloaded.
-`
+`, configName)
 		}
 		logger.Warn(
 			fmt.Sprintf(
-				"%s %s referenced in your buf.yaml is deprecated.%s%s\n\tAs with all buf changes, this change is backwards-compatible: %s will continue to work.\n\tWe recommend replacing %s in your buf.yaml, but no action is immediately necessary.",
+				"%s %s referenced in your %s is deprecated.%s%s\n\tAs with all buf changes, this change is backwards-compatible: %s will continue to work.\n\tWe recommend replacing %s in your %s, but no action is immediately necessary.",
 				capitalizedIDType,
 				deprecatedID,
+				configName,
 				replaceString,
 				specialCallout,
 				deprecatedID,
 				deprecatedID,
+				configName,
 			),
 		)
 	}
