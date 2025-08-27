@@ -257,6 +257,7 @@ func lsRun(
 		}
 		configuredRuleOptions := []bufcheck.ConfiguredRulesOption{
 			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+			bufcheck.WithPolicyConfigs(bufYAMLFile.PolicyConfigs()...),
 			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
 		}
 		rules, err = checkClient.ConfiguredRules(
@@ -271,6 +272,7 @@ func lsRun(
 	} else {
 		allRulesOptions := []bufcheck.AllRulesOption{
 			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+			bufcheck.WithPolicyConfigs(bufYAMLFile.PolicyConfigs()...),
 		}
 		rules, err = checkClient.AllRules(
 			ctx,
@@ -281,6 +283,11 @@ func lsRun(
 		if err != nil {
 			return err
 		}
+		// Filter policy rules to only those that come from plugins. Each policy rule
+		// will match the default buf.yaml configuration.
+		rules = xslices.Filter(rules, func(rule bufcheck.Rule) bool {
+			return rule.PolicyName() == "" || rule.PluginName() != ""
+		})
 	}
 	return bufcli.PrintRules(
 		container.Stdout(),

@@ -24,17 +24,23 @@ type category struct {
 	check.Category
 
 	pluginName string
+	policyName string
 }
 
-func newCategory(checkCategory check.Category, pluginName string) *category {
+func newCategory(checkCategory check.Category, pluginName string, policyName string) *category {
 	return &category{
 		Category:   checkCategory,
 		pluginName: pluginName,
+		policyName: policyName,
 	}
 }
 
 func (r *category) PluginName() string {
 	return r.pluginName
+}
+
+func (r *category) PolicyName() string {
+	return r.policyName
 }
 
 func (*category) isCategory()       {}
