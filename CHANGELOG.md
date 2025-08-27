@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.57.0] - 2025-08-27
 
 - Update exclude types to remove unused options reducing the size of generated code.
 - Add `gitlab-code-quality` error format to print errors in the GitLab Code Quality format
@@ -1402,7 +1402,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.56.0...HEAD
+[v1.57.0]: https://github.com/bufbuild/buf/compare/v1.56.0...v1.57.0
 [v1.56.0]: https://github.com/bufbuild/buf/compare/v1.55.1...v1.56.0
 [v1.55.1]: https://github.com/bufbuild/buf/compare/v1.55.0...v1.55.1
 [v1.55.0]: https://github.com/bufbuild/buf/compare/v1.54.0...v1.55.0
