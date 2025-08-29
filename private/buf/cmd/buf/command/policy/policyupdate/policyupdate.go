@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
@@ -103,6 +104,10 @@ func run(
 	if err != nil {
 		return err
 	}
+	configuredLocalPolicyNameToRemotePluginRefs, err := workspaceDepManager.ConfiguredLocalPolicyNameToRemotePluginRefs(ctx)
+	if err != nil {
+		return err
+	}
 	policyKeyProvider, err := bufcli.NewPolicyKeyProvider(container)
 	if err != nil {
 		return err
@@ -115,7 +120,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	configuredPolicyNameToRemotePluginKeys, err := getPolicyKeyPluginKeysForPolicyKeys(
+	configuredRemotePolicyNameToRemotePluginKeys, err := getPolicyKeyPluginKeysForPolicyKeys(
 		ctx,
 		container,
 		configuredRemotePolicyKeys,
@@ -123,13 +128,32 @@ func run(
 	if err != nil {
 		return err
 	}
+	configuredLocalPolicyNameToRemotePluginKeys, err := getPolicyPluginKeysForPolicyNames(
+		ctx,
+		container,
+		configuredLocalPolicyNameToRemotePluginRefs,
+	)
+	if err != nil {
+		return err
+	}
+	var configuredPolicyNameToRemotePluginKeys map[string][]bufplugin.PluginKey
+	if policyCount := len(configuredRemotePolicyNameToRemotePluginKeys) + len(configuredLocalPolicyNameToRemotePluginKeys); policyCount > 0 {
+		configuredPolicyNameToRemotePluginKeys = make(map[string][]bufplugin.PluginKey, policyCount)
+		maps.Copy(configuredPolicyNameToRemotePluginKeys, configuredRemotePolicyNameToRemotePluginKeys)
+		maps.Copy(configuredPolicyNameToRemotePluginKeys, configuredLocalPolicyNameToRemotePluginKeys)
+	}
 
 	// Store the existing buf.lock data.
 	existingRemotePolicyKeys, err := workspaceDepManager.ExistingBufLockFileRemotePolicyKeys(ctx)
 	if err != nil {
 		return err
 	}
-	if configuredRemotePolicyKeys == nil && existingRemotePolicyKeys == nil {
+	existingPolicyNameToRemotePluginKeys, err := workspaceDepManager.ExistingBufLockFilePolicyNameToRemotePluginKeys(ctx)
+	if err != nil {
+		return err
+	}
+	if len(configuredRemotePolicyKeys) == 0 && len(configuredPolicyNameToRemotePluginKeys) == 0 &&
+		len(existingRemotePolicyKeys) == 0 && len(existingPolicyNameToRemotePluginKeys) == 0 {
 		// No new configured remote plugins were found, and no existing buf.lock deps were found, so there
 		// is nothing to update, we can return here.
 		// This ensures we do not create an empty buf.lock when one did not exist in the first
@@ -146,11 +170,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	existingPolicyNameToRemotePluginKeys, err := workspaceDepManager.ExistingBufLockFilePolicyNameToRemotePluginKeys(ctx)
-	if err != nil {
-		return err
-	}
-
 	// We're about to edit the buf.lock file on disk. If we have a subsequent error,
 	// attempt to revert the buf.lock file.
 	//
@@ -176,6 +195,9 @@ func getPolicyKeyPluginKeysForPolicyKeys(
 	container appext.Container,
 	policyKeys []bufpolicy.PolicyKey,
 ) (map[string][]bufplugin.PluginKey, error) {
+	if len(policyKeys) == 0 {
+		return nil, nil
+	}
 	policyDataProvider, err := bufcli.NewPolicyDataProvider(container)
 	if err != nil {
 		return nil, err
@@ -214,6 +236,35 @@ func getPolicyKeyPluginKeysForPolicyKeys(
 			return nil, err
 		}
 		policyName := policyData.PolicyKey().FullName().String()
+		if len(remotePluginKeys) > 0 {
+			policyNameToRemotePluginKeys[policyName] = remotePluginKeys
+		}
+	}
+	return policyNameToRemotePluginKeys, nil
+}
+
+func getPolicyPluginKeysForPolicyNames(
+	ctx context.Context,
+	container appext.Container,
+	localPolicyNameToRemotePluginRefs map[string][]bufparse.Ref,
+) (map[string][]bufplugin.PluginKey, error) {
+	if len(localPolicyNameToRemotePluginRefs) == 0 {
+		return nil, nil
+	}
+	pluginKeyProvider, err := bufcli.NewPluginKeyProvider(container)
+	if err != nil {
+		return nil, err
+	}
+	policyNameToRemotePluginKeys := make(map[string][]bufplugin.PluginKey)
+	for policyName, pluginRefs := range localPolicyNameToRemotePluginRefs {
+		remotePluginKeys, err := pluginKeyProvider.GetPluginKeysForPluginRefs(
+			ctx,
+			pluginRefs,
+			bufplugin.DigestTypeP1,
+		)
+		if err != nil {
+			return nil, err
+		}
 		if len(remotePluginKeys) > 0 {
 			policyNameToRemotePluginKeys[policyName] = remotePluginKeys
 		}

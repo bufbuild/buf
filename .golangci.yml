@@ -392,6 +392,10 @@ linters:
           - staticcheck
         path: private/pkg/protoencoding/reparse_extensions_test.go
         text: 'SA1019:'
+      - linters:
+          - staticcheck
+        # We still need to strip the "weak" option from fields until it is fully deprecated
+        path: private/pkg/protoencoding/strip_legacy_options.go
       # Allow marshal and unmarshal functions in protoencoding only
       - linters:
           - forbidigo
@@ -431,6 +435,7 @@ linters:
         # to set the source path for the location, this operation should be safe.
         path: private/bufpkg/bufcheck/bufcheckserver/internal/buflintvalidate/predefined_rules.go
         text: 'G115:'
+
 issues:
   max-same-issues: 0
 formatters:

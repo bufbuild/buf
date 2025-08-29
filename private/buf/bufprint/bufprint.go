@@ -28,6 +28,7 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
+	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
 	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -223,14 +224,19 @@ func NewLabelEntity(label interface {
 
 // NewCommitEntity returns a new commit entity to print. It takes a commit as
 // an interface to allow for modulev1.Commit and pluginv1beta1.Commit to be passed.
-func NewCommitEntity(commit interface {
-	GetId() string
-	GetCreateTime() *timestamppb.Timestamp
-}, moduleFullName bufparse.FullName) Entity {
+func NewCommitEntity(
+	commit interface {
+		GetId() string
+		GetCreateTime() *timestamppb.Timestamp
+	},
+	moduleFullName bufparse.FullName,
+	sourceControlURL string,
+) Entity {
 	return outputCommit{
-		Commit:         commit.GetId(),
-		CreateTime:     commit.GetCreateTime().AsTime(),
-		entityFullName: moduleFullName,
+		Commit:           commit.GetId(),
+		CreateTime:       commit.GetCreateTime().AsTime(),
+		SourceControlURL: sourceControlURL,
+		entityFullName:   moduleFullName,
 	}
 }
 
@@ -268,6 +274,18 @@ func NewPluginEntity(plugin *pluginv1beta1.Plugin, pluginFullName bufparse.FullN
 		Name:       pluginFullName.Name(),
 		FullName:   pluginFullName.String(),
 		CreateTime: plugin.CreateTime.AsTime(),
+	}
+}
+
+// NewPolicyEntity returns a new plugin entity to print.
+func NewPolicyEntity(policy *policyv1beta1.Policy, policyFullName bufparse.FullName) Entity {
+	return outputPolicy{
+		ID:         policy.Id,
+		Remote:     policyFullName.Registry(),
+		Owner:      policyFullName.Owner(),
+		Name:       policyFullName.Name(),
+		FullName:   policyFullName.String(),
+		CreateTime: policy.CreateTime.AsTime(),
 	}
 }
 
@@ -462,8 +480,9 @@ func (l outputLabel) fullName() string {
 }
 
 type outputCommit struct {
-	Commit     string    `json:"commit,omitempty" bufprint:"Commit"`
-	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+	Commit           string    `json:"commit,omitempty" bufprint:"Commit"`
+	CreateTime       time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+	SourceControlURL string    `json:"source_control_url,omitempty"`
 
 	entityFullName bufparse.FullName
 }
@@ -509,6 +528,19 @@ type outputPlugin struct {
 }
 
 func (m outputPlugin) fullName() string {
+	return m.FullName
+}
+
+type outputPolicy struct {
+	ID         string    `json:"id,omitempty"`
+	Remote     string    `json:"remote,omitempty"`
+	Owner      string    `json:"owner,omitempty"`
+	Name       string    `json:"name,omitempty"`
+	FullName   string    `json:"-" bufprint:"Name"`
+	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+}
+
+func (m outputPolicy) fullName() string {
 	return m.FullName
 }
 

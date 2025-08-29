@@ -169,7 +169,7 @@ func run(
 			format,
 			"",
 			"",
-			[]bufprint.Entity{bufprint.NewCommitEntity(commit, moduleRef.FullName())},
+			[]bufprint.Entity{bufprint.NewCommitEntity(commit, moduleRef.FullName(), commit.GetSourceControlUrl())},
 		)
 	}
 	if resource.GetModule() != nil {
@@ -208,7 +208,7 @@ func run(
 			resp.Msg.NextPageToken,
 			nextPageCommand(container, flags, resp.Msg.NextPageToken),
 			xslices.Map(resp.Msg.Commits, func(commit *modulev1.Commit) bufprint.Entity {
-				return bufprint.NewCommitEntity(commit, moduleRef.FullName())
+				return bufprint.NewCommitEntity(commit, moduleRef.FullName(), commit.GetSourceControlUrl())
 			}),
 		)
 	}
@@ -261,7 +261,7 @@ func run(
 		resp.Msg.NextPageToken,
 		nextPageCommand(container, flags, resp.Msg.NextPageToken),
 		xslices.Map(commits, func(commit *modulev1.Commit) bufprint.Entity {
-			return bufprint.NewCommitEntity(commit, moduleRef.FullName())
+			return bufprint.NewCommitEntity(commit, moduleRef.FullName(), commit.GetSourceControlUrl())
 		}),
 	)
 }
