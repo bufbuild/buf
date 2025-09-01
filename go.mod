@@ -20,7 +20,7 @@ require (
 	github.com/docker/docker v28.3.3+incompatible
 	github.com/go-chi/chi/v5 v5.2.2
 	github.com/gofrs/flock v0.12.1
-	github.com/google/cel-go v0.26.0
+	github.com/google/cel-go v0.26.1
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-containerregistry v0.20.6
 	github.com/google/uuid v1.6.0
