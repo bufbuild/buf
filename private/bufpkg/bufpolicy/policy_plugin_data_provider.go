@@ -15,6 +15,11 @@
 package bufpolicy
 
 import (
+	"context"
+	"fmt"
+	"io/fs"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 )
 
@@ -68,5 +73,29 @@ func (s staticPolicyPluginDataProvider) GetPluginDataProviderForPolicy(policyNam
 	if pluginDataProvider, ok := s.policyNameToPluginDataProvider[policyName]; ok {
 		return pluginDataProvider
 	}
-	return bufplugin.NopPluginDataProvider
+	// Check if the policyName is a valid ref. If so, also check by full name.
+	// Remote policies are cached by full name in the buf.lock file.
+	if ref, err := bufparse.ParseRef(policyName); err == nil && ref.Ref() != "" {
+		if pluginDataProvider, ok := s.policyNameToPluginDataProvider[ref.FullName().String()]; ok {
+			return pluginDataProvider
+		}
+	}
+	return newNopPluginDataProviderForPolicy(policyName)
+}
+
+type nopPluginDataProviderForPolicy struct {
+	policyName string
+}
+
+func newNopPluginDataProviderForPolicy(policyName string) bufplugin.PluginDataProvider {
+	return &nopPluginDataProviderForPolicy{
+		policyName: policyName,
+	}
+}
+
+func (p *nopPluginDataProviderForPolicy) GetPluginDatasForPluginKeys(
+	context.Context,
+	[]bufplugin.PluginKey,
+) ([]bufplugin.PluginData, error) {
+	return nil, fmt.Errorf("no plugins configured for policy %q: %w", p.policyName, fs.ErrNotExist)
 }
