@@ -2,6 +2,8 @@ module github.com/bufbuild/buf
 
 go 1.24.0
 
+toolchain go1.24.6
+
 require (
 	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.8-20250718181942-e35f9b667443.1
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.8-20250717185734-6c6e0d3c608e.1
@@ -18,9 +20,9 @@ require (
 	github.com/bufbuild/protocompile v0.14.1
 	github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1
 	github.com/docker/docker v28.3.3+incompatible
-	github.com/go-chi/chi/v5 v5.2.2
+	github.com/go-chi/chi/v5 v5.2.3
 	github.com/gofrs/flock v0.12.1
-	github.com/google/cel-go v0.26.0
+	github.com/google/cel-go v0.26.1
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-containerregistry v0.20.6
 	github.com/google/uuid v1.6.0
@@ -33,8 +35,8 @@ require (
 	github.com/quic-go/quic-go v0.54.0
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.9.1
-	github.com/spf13/pflag v1.0.7
-	github.com/stretchr/testify v1.11.0
+	github.com/spf13/pflag v1.0.9
+	github.com/stretchr/testify v1.11.1
 	github.com/tetratelabs/wazero v1.9.0
 	go.lsp.dev/jsonrpc2 v0.10.0
 	go.lsp.dev/protocol v0.12.0
@@ -94,11 +96,11 @@ require (
 	github.com/vbatts/tar-split v0.12.1 // indirect
 	go.lsp.dev/pkg v0.0.0-20210717090340-384b27a52fb2 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.62.0 // indirect
-	go.opentelemetry.io/otel v1.37.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.37.0 // indirect
-	go.opentelemetry.io/otel/metric v1.37.0 // indirect
-	go.opentelemetry.io/otel/trace v1.37.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.63.0 // indirect
+	go.opentelemetry.io/otel v1.38.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.38.0 // indirect
+	go.opentelemetry.io/otel/metric v1.38.0 // indirect
+	go.opentelemetry.io/otel/trace v1.38.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.1 // indirect
 	go.uber.org/mock v0.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
