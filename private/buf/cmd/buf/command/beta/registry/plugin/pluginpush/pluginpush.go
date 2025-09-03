@@ -323,6 +323,10 @@ func run(
 				return fmt.Errorf("unable to fetch latest plugin after AlreadyExists error: %w", err)
 			}
 		}
+		// Ensure the image digest matches.
+		if latestPluginResp.Msg.GetPlugin().GetContainerImageDigest() != plugin.ContainerImageDigest() {
+			return fmt.Errorf("a plugin with the same name and version already exists, but with a different image digest (%s). If you want to push a new revision, please retry", latestPluginResp.Msg.GetPlugin().GetContainerImageDigest())
+		}
 		curatedPlugin = latestPluginResp.Msg.GetPlugin()
 	} else {
 		curatedPlugin = createPluginResp.Msg.GetConfiguration()
