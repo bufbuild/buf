@@ -200,7 +200,6 @@ func readBufPolicyYAMLFile(
 	if err := getUnmarshalStrict(allowJSON)(data, &externalBufPolicyYAMLFile); err != nil {
 		return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
 	}
-
 	var lintConfig bufpolicy.LintConfig
 	if !externalBufPolicyYAMLFile.Lint.isEmpty() {
 		lintConfig, err = getLintConfigForExternalLintV2(
@@ -295,7 +294,8 @@ func (el externalBufPolicyYAMLFileLintV2) isEmpty() bool {
 		!el.RPCAllowSameRequestResponse &&
 		!el.RPCAllowGoogleProtobufEmptyRequests &&
 		!el.RPCAllowGoogleProtobufEmptyResponses &&
-		el.ServiceSuffix == ""
+		el.ServiceSuffix == "" &&
+		!el.DisableBuiltin
 }
 
 // externalBufPolicyYAMLFileBreakingV2 represents breaking configuration within a v2 buf.policy.yaml file.
@@ -311,7 +311,8 @@ type externalBufPolicyYAMLFileBreakingV2 struct {
 func (eb externalBufPolicyYAMLFileBreakingV2) isEmpty() bool {
 	return len(eb.Use) == 0 &&
 		len(eb.Except) == 0 &&
-		!eb.IgnoreUnstablePackages
+		!eb.IgnoreUnstablePackages &&
+		!eb.DisableBuiltin
 }
 
 // externalBufPolicyYAMLFilePluginV2 represents a single plugin config in a v2 buf.yaml file.
@@ -329,6 +330,7 @@ func getLintConfigForExternalLintV2(externalLint externalBufPolicyYAMLFileLintV2
 		externalLint.RPCAllowGoogleProtobufEmptyRequests,
 		externalLint.RPCAllowGoogleProtobufEmptyResponses,
 		externalLint.ServiceSuffix,
+		externalLint.DisableBuiltin,
 	)
 }
 
@@ -351,6 +353,7 @@ func getBreakingConfigForExternalBreaking(externalBreaking externalBufPolicyYAML
 		externalBreaking.Use,
 		externalBreaking.Except,
 		externalBreaking.IgnoreUnstablePackages,
+		externalBreaking.DisableBuiltin,
 	)
 }
 
@@ -360,6 +363,7 @@ func getExternalBreakingForBreakingConfig(breakingConfig bufpolicy.BreakingConfi
 		Use:                    breakingConfig.UseIDsAndCategories(),
 		Except:                 breakingConfig.ExceptIDsAndCategories(),
 		IgnoreUnstablePackages: breakingConfig.IgnoreUnstablePackages(),
+		DisableBuiltin:         breakingConfig.DisableBuiltin(),
 	}
 }
 
@@ -474,6 +478,7 @@ func getDefaultLintConfigV2() (bufpolicy.LintConfig, error) {
 		false,
 		false,
 		"",
+		false,
 	)
 }
 
@@ -482,6 +487,7 @@ func getDefaultBreakingConfigV2() (bufpolicy.BreakingConfig, error) {
 	return bufpolicy.NewBreakingConfig(
 		nil,
 		nil,
+		false,
 		false,
 	)
 }
