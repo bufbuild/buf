@@ -72,6 +72,11 @@ type LintConfig interface {
 	// By default, this rule verifies that all service names are suffixed with `Service`, however
 	// this allows organizations to choose a different suffix.
 	ServiceSuffix() string
+	// DisableBuiltin says to disable the Rules and Categories builtin to the Buf CLI and only
+	// use plugins.
+	//
+	// This will make it as if these rules did not exist.
+	DisableBuiltin() bool
 
 	isLintConfig()
 }
@@ -91,6 +96,11 @@ type BreakingConfig interface {
 	//   - v\d+(alpha|beta)\d*
 	//   - v\d+p\d+(alpha|beta)\d*
 	IgnoreUnstablePackages() bool
+	// DisableBuiltin says to disable the Rules and Categories builtin to the Buf CLI and only
+	// use plugins.
+	//
+	// This will make it as if these rules did not exist.
+	DisableBuiltin() bool
 
 	isBreakingConfig()
 }
@@ -131,6 +141,7 @@ func NewLintConfig(
 	rpcAllowGoogleProtobufEmptyRequests bool,
 	rpcAllowGoogleProtobufEmptyResponses bool,
 	serviceSuffix string,
+	disableBuiltin bool,
 ) (LintConfig, error) {
 	return newLintConfig(
 		use,
@@ -140,6 +151,7 @@ func NewLintConfig(
 		rpcAllowGoogleProtobufEmptyRequests,
 		rpcAllowGoogleProtobufEmptyResponses,
 		serviceSuffix,
+		disableBuiltin,
 	)
 }
 
@@ -148,11 +160,13 @@ func NewBreakingConfig(
 	use []string,
 	except []string,
 	ignoreUnstablePackages bool,
+	disableBuiltin bool,
 ) (BreakingConfig, error) {
 	return newBreakingConfig(
 		use,
 		except,
 		ignoreUnstablePackages,
+		disableBuiltin,
 	)
 }
 
@@ -236,6 +250,7 @@ type lintConfig struct {
 	rpcAllowGoogleProtobufEmptyRequests  bool
 	rpcAllowGoogleProtobufEmptyResponses bool
 	serviceSuffix                        string
+	disableBuiltin                       bool
 }
 
 func newLintConfig(
@@ -246,6 +261,7 @@ func newLintConfig(
 	rpcAllowGoogleProtobufEmptyRequests bool,
 	rpcAllowGoogleProtobufEmptyResponses bool,
 	serviceSuffix string,
+	disableBuiltin bool,
 ) (*lintConfig, error) {
 	use = slices.Clone(use)
 	sort.Strings(use)
@@ -259,6 +275,7 @@ func newLintConfig(
 		rpcAllowGoogleProtobufEmptyRequests:  rpcAllowGoogleProtobufEmptyRequests,
 		rpcAllowGoogleProtobufEmptyResponses: rpcAllowGoogleProtobufEmptyResponses,
 		serviceSuffix:                        serviceSuffix,
+		disableBuiltin:                       disableBuiltin,
 	}, nil
 }
 
@@ -273,18 +290,21 @@ func (c *lintConfig) RPCAllowGoogleProtobufEmptyResponses() bool {
 	return c.rpcAllowGoogleProtobufEmptyResponses
 }
 func (c *lintConfig) ServiceSuffix() string { return c.serviceSuffix }
+func (c *lintConfig) DisableBuiltin() bool  { return c.disableBuiltin }
 func (c *lintConfig) isLintConfig()         {}
 
 type breakingConfig struct {
 	use                    []string
 	except                 []string
 	ignoreUnstablePackages bool
+	disableBuiltin         bool
 }
 
 func newBreakingConfig(
 	use []string,
 	except []string,
 	ignoreUnstablePackages bool,
+	disableBuiltin bool,
 ) (*breakingConfig, error) {
 	use = slices.Clone(use)
 	sort.Strings(use)
@@ -294,12 +314,14 @@ func newBreakingConfig(
 		use:                    use,
 		except:                 except,
 		ignoreUnstablePackages: ignoreUnstablePackages,
+		disableBuiltin:         disableBuiltin,
 	}, nil
 }
 
 func (c *breakingConfig) UseIDsAndCategories() []string    { return slices.Clone(c.use) }
 func (c *breakingConfig) ExceptIDsAndCategories() []string { return slices.Clone(c.except) }
 func (c *breakingConfig) IgnoreUnstablePackages() bool     { return c.ignoreUnstablePackages }
+func (c *breakingConfig) DisableBuiltin() bool             { return c.disableBuiltin }
 func (c *breakingConfig) isBreakingConfig()                {}
 
 type pluginConfig struct {
@@ -411,6 +433,7 @@ func unmarshalJSONPolicyConfig(registry string, data []byte) (PolicyConfig, erro
 		lintConfigV1Beta1.GetRpcAllowGoogleProtobufEmptyRequests(),
 		lintConfigV1Beta1.GetRpcAllowGoogleProtobufEmptyResponses(),
 		lintConfigV1Beta1.GetServiceSuffix(),
+		lintConfigV1Beta1.GetDisableBuiltin(),
 	)
 	if err != nil {
 		return nil, err
@@ -420,6 +443,7 @@ func unmarshalJSONPolicyConfig(registry string, data []byte) (PolicyConfig, erro
 		breakingConfigV1Beta1.GetUse(),
 		breakingConfigV1Beta1.GetExcept(),
 		breakingConfigV1Beta1.GetIgnoreUnstablePackages(),
+		breakingConfigV1Beta1.GetDisableBuiltin(),
 	)
 	if err != nil {
 		return nil, err

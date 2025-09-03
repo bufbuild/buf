@@ -285,6 +285,7 @@ type externalBufPolicyYAMLFileLintV2 struct {
 	RPCAllowGoogleProtobufEmptyRequests  bool   `json:"rpc_allow_google_protobuf_empty_requests,omitempty" yaml:"rpc_allow_google_protobuf_empty_requests,omitempty"`
 	RPCAllowGoogleProtobufEmptyResponses bool   `json:"rpc_allow_google_protobuf_empty_responses,omitempty" yaml:"rpc_allow_google_protobuf_empty_responses,omitempty"`
 	ServiceSuffix                        string `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
+	DisableBuiltin                       bool   `json:"disable_builtin,omitempty" yaml:"disable_builtin,omitempty"`
 }
 
 func (el externalBufPolicyYAMLFileLintV2) isEmpty() bool {
@@ -304,6 +305,7 @@ type externalBufPolicyYAMLFileBreakingV2 struct {
 	Use                    []string `json:"use,omitempty" yaml:"use,omitempty"`
 	Except                 []string `json:"except,omitempty" yaml:"except,omitempty"`
 	IgnoreUnstablePackages bool     `json:"ignore_unstable_packages,omitempty" yaml:"ignore_unstable_packages,omitempty"`
+	DisableBuiltin         bool     `json:"disable_builtin,omitempty" yaml:"disable_builtin,omitempty"`
 }
 
 func (eb externalBufPolicyYAMLFileBreakingV2) isEmpty() bool {
@@ -340,6 +342,7 @@ func getExternalLintForLintConfig(lintConfig bufpolicy.LintConfig) externalBufPo
 		RPCAllowGoogleProtobufEmptyRequests:  lintConfig.RPCAllowGoogleProtobufEmptyRequests(),
 		RPCAllowGoogleProtobufEmptyResponses: lintConfig.RPCAllowGoogleProtobufEmptyResponses(),
 		ServiceSuffix:                        lintConfig.ServiceSuffix(),
+		DisableBuiltin:                       lintConfig.DisableBuiltin(),
 	}
 }
 

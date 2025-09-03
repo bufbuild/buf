@@ -33,12 +33,14 @@ func TestO1Digest(t *testing.T) {
 		true,
 		true,
 		"serviceSuffix",
+		false,
 	)
 	require.NoError(t, err)
 	breakingConfig, err := newBreakingConfig(
 		[]string{"BREAKING_ID_1", "BREAKING_ID_2"},
 		nil,
 		true,
+		false,
 	)
 	require.NoError(t, err)
 	policyConfig, err := newPolicyConfig(lintConfig, breakingConfig, nil)
