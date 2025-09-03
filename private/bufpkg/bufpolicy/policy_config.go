@@ -362,6 +362,7 @@ func marshalPolicyConfigAsJSON(policyConfig PolicyConfig) ([]byte, error) {
 			RpcAllowGoogleProtobufEmptyRequests:  lintConfig.RPCAllowGoogleProtobufEmptyRequests(),
 			RpcAllowGoogleProtobufEmptyResponses: lintConfig.RPCAllowGoogleProtobufEmptyResponses(),
 			ServiceSuffix:                        lintConfig.ServiceSuffix(),
+			DisableBuiltin:                       lintConfig.DisableBuiltin(),
 		}
 	}
 	var breakingConfigV1Beta1 *policyV1Beta1PolicyConfig_BreakingConfig
@@ -370,6 +371,7 @@ func marshalPolicyConfigAsJSON(policyConfig PolicyConfig) ([]byte, error) {
 			Use:                    breakingConfig.UseIDsAndCategories(),
 			Except:                 breakingConfig.ExceptIDsAndCategories(),
 			IgnoreUnstablePackages: breakingConfig.IgnoreUnstablePackages(),
+			DisableBuiltin:         breakingConfig.DisableBuiltin(),
 		}
 	}
 	pluginConfigs, err := xslices.MapError(policyConfig.PluginConfigs(), func(pluginConfig PluginConfig) (*policyV1Beta1PolicyConfig_PluginConfig, error) {
@@ -499,6 +501,7 @@ type policyV1Beta1PolicyConfig_LintConfig struct {
 	RpcAllowGoogleProtobufEmptyRequests  bool     `json:"rpcAllowGoogleProtobufEmptyRequests,omitempty"`
 	RpcAllowGoogleProtobufEmptyResponses bool     `json:"rpcAllowGoogleProtobufEmptyResponses,omitempty"`
 	ServiceSuffix                        string   `json:"serviceSuffix,omitempty"`
+	DisableBuiltin                       bool     `json:"disableBuiltin,omitempty"`
 }
 
 // policyV1Beta1PolicyConfig_BreakingConfig is a stable JSON representation of the buf.registry.policy.v1beta1.PolicyConfig.BreakingConfig.
@@ -506,6 +509,7 @@ type policyV1Beta1PolicyConfig_BreakingConfig struct {
 	Use                    []string `json:"use,omitempty"`
 	Except                 []string `json:"except,omitempty"`
 	IgnoreUnstablePackages bool     `json:"ignoreUnstablePackages,omitempty"`
+	DisableBuiltin         bool     `json:"disableBuiltin,omitempty"`
 }
 
 // policyV1Beta1PolicyConfig_PluginConfig is a stable JSON representation of the buf.registry.policy.v1beta1.PolicyConfig.PluginConfig.
