@@ -307,6 +307,26 @@ func run(
 			slog.String("name", pluginConfig.Name.IdentityString()),
 			slog.String("digest", plugin.ContainerImageDigest()),
 		)
+		if latestPluginResp == nil {
+			latestPluginResp, err = service.GetLatestCuratedPlugin(
+				ctx,
+				connect.NewRequest(
+					registryv1alpha1.GetLatestCuratedPluginRequest_builder{
+						Owner:    pluginConfig.Name.Owner(),
+						Name:     pluginConfig.Name.Plugin(),
+						Version:  pluginConfig.PluginVersion,
+						Revision: 0, // get latest revision for the plugin version.
+					}.Build(),
+				),
+			)
+			if err != nil {
+				return fmt.Errorf("unable to fetch latest plugin after AlreadyExists error: %w", err)
+			}
+		}
+		// Ensure the image digest matches.
+		if latestPluginResp.Msg.GetPlugin().GetContainerImageDigest() != plugin.ContainerImageDigest() {
+			return fmt.Errorf("a plugin with the same name and version already exists, but with a different image digest (%s). If you want to push a new revision, please retry", latestPluginResp.Msg.GetPlugin().GetContainerImageDigest())
+		}
 		curatedPlugin = latestPluginResp.Msg.GetPlugin()
 	} else {
 		curatedPlugin = createPluginResp.Msg.GetConfiguration()
