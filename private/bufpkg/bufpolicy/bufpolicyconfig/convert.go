@@ -30,7 +30,7 @@ func LintConfigToBufConfig(lintConfig bufpolicy.LintConfig) (bufconfig.LintConfi
 		lintConfig.ExceptIDsAndCategories(),
 		nil,
 		nil,
-		false,
+		lintConfig.DisableBuiltin(),
 	)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func BreakingConfigToBufConfig(breakingConfig bufpolicy.BreakingConfig) (bufconf
 		breakingConfig.ExceptIDsAndCategories(),
 		nil,
 		nil,
-		false,
+		breakingConfig.DisableBuiltin(),
 	)
 	if err != nil {
 		return nil, err

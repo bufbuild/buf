@@ -31,8 +31,12 @@ func TestMarshalPolicyConfigAsJSON(t *testing.T) {
 	t.Parallel()
 
 	testRoundTripPolicyConfigAsJSON(t, &policyv1beta1.PolicyConfig{
-		Lint:     &policyv1beta1.PolicyConfig_LintConfig{},
-		Breaking: &policyv1beta1.PolicyConfig_BreakingConfig{},
+		Lint: &policyv1beta1.PolicyConfig_LintConfig{
+			DisableBuiltin: true,
+		},
+		Breaking: &policyv1beta1.PolicyConfig_BreakingConfig{
+			DisableBuiltin: true,
+		},
 	})
 	testRoundTripPolicyConfigAsJSON(t, &policyv1beta1.PolicyConfig{
 		Lint: &policyv1beta1.PolicyConfig_LintConfig{

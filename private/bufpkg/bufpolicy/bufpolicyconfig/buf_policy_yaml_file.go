@@ -200,7 +200,6 @@ func readBufPolicyYAMLFile(
 	if err := getUnmarshalStrict(allowJSON)(data, &externalBufPolicyYAMLFile); err != nil {
 		return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
 	}
-
 	var lintConfig bufpolicy.LintConfig
 	if !externalBufPolicyYAMLFile.Lint.isEmpty() {
 		lintConfig, err = getLintConfigForExternalLintV2(
@@ -285,6 +284,7 @@ type externalBufPolicyYAMLFileLintV2 struct {
 	RPCAllowGoogleProtobufEmptyRequests  bool   `json:"rpc_allow_google_protobuf_empty_requests,omitempty" yaml:"rpc_allow_google_protobuf_empty_requests,omitempty"`
 	RPCAllowGoogleProtobufEmptyResponses bool   `json:"rpc_allow_google_protobuf_empty_responses,omitempty" yaml:"rpc_allow_google_protobuf_empty_responses,omitempty"`
 	ServiceSuffix                        string `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
+	DisableBuiltin                       bool   `json:"disable_builtin,omitempty" yaml:"disable_builtin,omitempty"`
 }
 
 func (el externalBufPolicyYAMLFileLintV2) isEmpty() bool {
@@ -294,7 +294,8 @@ func (el externalBufPolicyYAMLFileLintV2) isEmpty() bool {
 		!el.RPCAllowSameRequestResponse &&
 		!el.RPCAllowGoogleProtobufEmptyRequests &&
 		!el.RPCAllowGoogleProtobufEmptyResponses &&
-		el.ServiceSuffix == ""
+		el.ServiceSuffix == "" &&
+		!el.DisableBuiltin
 }
 
 // externalBufPolicyYAMLFileBreakingV2 represents breaking configuration within a v2 buf.policy.yaml file.
@@ -304,12 +305,14 @@ type externalBufPolicyYAMLFileBreakingV2 struct {
 	Use                    []string `json:"use,omitempty" yaml:"use,omitempty"`
 	Except                 []string `json:"except,omitempty" yaml:"except,omitempty"`
 	IgnoreUnstablePackages bool     `json:"ignore_unstable_packages,omitempty" yaml:"ignore_unstable_packages,omitempty"`
+	DisableBuiltin         bool     `json:"disable_builtin,omitempty" yaml:"disable_builtin,omitempty"`
 }
 
 func (eb externalBufPolicyYAMLFileBreakingV2) isEmpty() bool {
 	return len(eb.Use) == 0 &&
 		len(eb.Except) == 0 &&
-		!eb.IgnoreUnstablePackages
+		!eb.IgnoreUnstablePackages &&
+		!eb.DisableBuiltin
 }
 
 // externalBufPolicyYAMLFilePluginV2 represents a single plugin config in a v2 buf.yaml file.
@@ -327,6 +330,7 @@ func getLintConfigForExternalLintV2(externalLint externalBufPolicyYAMLFileLintV2
 		externalLint.RPCAllowGoogleProtobufEmptyRequests,
 		externalLint.RPCAllowGoogleProtobufEmptyResponses,
 		externalLint.ServiceSuffix,
+		externalLint.DisableBuiltin,
 	)
 }
 
@@ -340,6 +344,7 @@ func getExternalLintForLintConfig(lintConfig bufpolicy.LintConfig) externalBufPo
 		RPCAllowGoogleProtobufEmptyRequests:  lintConfig.RPCAllowGoogleProtobufEmptyRequests(),
 		RPCAllowGoogleProtobufEmptyResponses: lintConfig.RPCAllowGoogleProtobufEmptyResponses(),
 		ServiceSuffix:                        lintConfig.ServiceSuffix(),
+		DisableBuiltin:                       lintConfig.DisableBuiltin(),
 	}
 }
 
@@ -348,6 +353,7 @@ func getBreakingConfigForExternalBreaking(externalBreaking externalBufPolicyYAML
 		externalBreaking.Use,
 		externalBreaking.Except,
 		externalBreaking.IgnoreUnstablePackages,
+		externalBreaking.DisableBuiltin,
 	)
 }
 
@@ -357,6 +363,7 @@ func getExternalBreakingForBreakingConfig(breakingConfig bufpolicy.BreakingConfi
 		Use:                    breakingConfig.UseIDsAndCategories(),
 		Except:                 breakingConfig.ExceptIDsAndCategories(),
 		IgnoreUnstablePackages: breakingConfig.IgnoreUnstablePackages(),
+		DisableBuiltin:         breakingConfig.DisableBuiltin(),
 	}
 }
 
@@ -471,6 +478,7 @@ func getDefaultLintConfigV2() (bufpolicy.LintConfig, error) {
 		false,
 		false,
 		"",
+		false,
 	)
 }
 
@@ -479,6 +487,7 @@ func getDefaultBreakingConfigV2() (bufpolicy.BreakingConfig, error) {
 	return bufpolicy.NewBreakingConfig(
 		nil,
 		nil,
+		false,
 		false,
 	)
 }

@@ -30,9 +30,17 @@ func TestReadWriteBufPolicyYAMLFileRoundTrip(t *testing.T) {
 		t,
 		// input
 		`version: v2
+lint:
+  disable_builtin: true
+breaking:
+  disable_builtin: true
 `,
 		// expected output
 		`version: v2
+lint:
+  disable_builtin: true
+breaking:
+  disable_builtin: true
 `,
 	)
 
