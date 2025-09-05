@@ -1621,6 +1621,18 @@ func newStaticPolicyPluginKeyProviderForPolicyConfigs(
 	policyConfigs []bufconfig.PolicyConfig,
 	policyNameToRemotePluginKeys map[string][]bufplugin.PluginKey,
 ) (bufpolicy.PolicyPluginKeyProvider, error) {
+	policyNames, err := xslices.ToUniqueValuesMap(policyConfigs, func(policyConfig bufconfig.PolicyConfig) string {
+		policyName := policyConfig.Name()
+		if policyConfig.Ref() != nil {
+			// Remote policies are required to be referenced by their full name.
+			// The buf.lock stores the name.
+			policyName = policyConfig.Ref().FullName().String()
+		}
+		return policyName
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate policy names in policy configs: %w", err)
+	}
 	// We do not validate that all remote PolicyConfig plugins are present in the buf.lock file.
 	// This would require loading the PolicyConfig data. Check is defered to the runtime.
 	for policyName, remotePluginKeys := range policyNameToRemotePluginKeys {
@@ -1629,6 +1641,9 @@ func newStaticPolicyPluginKeyProviderForPolicyConfigs(
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to validate remote PluginKeys for Policy %q: %w", policyName, err)
+		}
+		if _, ok := policyNames[policyName]; !ok {
+			return nil, fmt.Errorf("remote plugins configured for unknown policy %q", policyName)
 		}
 	}
 	return bufpolicy.NewStaticPolicyPluginKeyProvider(policyNameToRemotePluginKeys)
