@@ -1,0 +1,11 @@
+version: v2
+lint:
+  use:
+    - ENUM_NO_ALLOW_ALIAS
+    - PACKAGE_DIRECTORY_MATCH
+breaking:
+  use:
+    - ENUM_VALUE_NO_DELETE
+    - FIELD_SAME_JSTYPE
+policies:
+  - policy: testdata/policy_list_rules/policy.yaml
