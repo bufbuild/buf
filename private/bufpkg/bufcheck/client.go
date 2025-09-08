@@ -124,6 +124,7 @@ func (c *client) Lint(
 		lintOptions.pluginConfigs,
 		nil, // policyConfig.
 		lintOptions.relatedCheckConfigs,
+		len(lintOptions.policyConfigs) > 0, // hasPolicyConfigs.
 	)
 	if err != nil {
 		return err
@@ -150,7 +151,8 @@ func (c *client) Lint(
 			policyLintConfig,
 			pluginConfigs,
 			policyConfig,
-			nil, // relatedCheckConfigs.
+			nil,  // relatedCheckConfigs.
+			true, // hasPolicyConfigs.
 		)
 		if err != nil {
 			return err
@@ -177,6 +179,7 @@ func (c *client) lint(
 	pluginConfigs []bufconfig.PluginConfig,
 	policyConfig bufconfig.PolicyConfig,
 	relatedCheckConfigs []bufconfig.CheckConfig,
+	hasPolicyConfigs bool,
 ) ([]*annotation, error) {
 	if lintConfig.Disabled() {
 		return nil, nil
@@ -195,7 +198,11 @@ func (c *client) lint(
 	if err != nil {
 		return nil, err
 	}
-	logRulesConfig(c.logger, config.rulesConfig)
+	configName := bufconfig.DefaultBufYAMLFileName
+	if policyConfig != nil {
+		configName = policyConfig.Name()
+	}
+	logRulesConfig(c.logger, configName, config.rulesConfig, hasPolicyConfigs)
 	files, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
 	if err != nil {
 		// An Image may be invalid if it does not contain all of the required dependencies.
@@ -254,6 +261,7 @@ func (c *client) Breaking(
 		nil, // policyConfig.
 		breakingOptions.excludeImports,
 		breakingOptions.relatedCheckConfigs,
+		len(breakingOptions.policyConfigs) > 0, // hasPolicyConfigs.
 	)
 	if err != nil {
 		return err
@@ -282,7 +290,8 @@ func (c *client) Breaking(
 			pluginConfigs,
 			policyConfig,
 			breakingOptions.excludeImports,
-			nil, // relatedCheckConfigs.
+			nil,  // relatedCheckConfigs.
+			true, // hasPolicyConfigs.
 		)
 		if err != nil {
 			return err
@@ -311,6 +320,7 @@ func (c *client) breaking(
 	policyConfig bufconfig.PolicyConfig,
 	excludeImports bool,
 	relatedCheckConfigs []bufconfig.CheckConfig,
+	hasPolicyConfigs bool,
 ) ([]*annotation, error) {
 	if breakingConfig.Disabled() {
 		return nil, nil
@@ -335,7 +345,11 @@ func (c *client) breaking(
 	if err != nil {
 		return nil, err
 	}
-	logRulesConfig(c.logger, config.rulesConfig)
+	configName := bufconfig.DefaultBufYAMLFileName
+	if policyConfig != nil {
+		configName = policyConfig.Name()
+	}
+	logRulesConfig(c.logger, configName, config.rulesConfig, hasPolicyConfigs)
 	fileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
 	if err != nil {
 		// An Image may be invalid if it does not contain all of the required dependencies.
@@ -402,6 +416,7 @@ func (c *client) ConfiguredRules(
 	if err != nil {
 		return nil, err
 	}
+	logRulesConfig(c.logger, "", rulesConfig, len(configuredRulesOptions.policyConfigs) > 0)
 	allRules := rulesForRuleIDs(rules, rulesConfig.RuleIDs)
 	policies, err := c.getPolicies(ctx, configuredRulesOptions.policyConfigs)
 	if err != nil {
@@ -436,7 +451,6 @@ func (c *client) ConfiguredRules(
 		}
 		allRules = append(allRules, rulesForRuleIDs(policyRules, policyRulesConfig.RuleIDs)...)
 	}
-	logRulesConfig(c.logger, rulesConfig)
 	return allRules, nil
 }
 
