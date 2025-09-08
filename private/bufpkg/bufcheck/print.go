@@ -98,22 +98,29 @@ func printRulesJSON(writer io.Writer, rules []Rule, categoriesFunc func(Rule) []
 // Rules already sorted in correct order.
 // Rules already filtered for deprecated.
 func printRulesText(writer io.Writer, rules []Rule, categoriesFunc func(Rule) []check.Category) (retErr error) {
-	var defaultRules []Rule
-	pluginNameToRules := make(map[string][]Rule)
-	var pluginNames []string
-
-	for _, rule := range rules {
-		pluginName := rule.PluginName()
-		if pluginName == "" {
-			defaultRules = append(defaultRules, rule)
-		} else {
-			if _, ok := pluginNameToRules[pluginName]; !ok {
-				pluginNames = append(pluginNames, pluginName)
-			}
-			pluginNameToRules[pluginName] = append(pluginNameToRules[pluginName], rule)
-		}
+	type policyPluginKey struct {
+		pluginName string
+		policyName string
 	}
-	sort.Strings(pluginNames)
+	var policyPluginKeys []policyPluginKey
+	policyPluginKeyToRules := make(map[policyPluginKey][]Rule)
+	for _, rule := range rules {
+		key := policyPluginKey{
+			pluginName: rule.PluginName(),
+			policyName: rule.PolicyName(),
+		}
+		if _, ok := policyPluginKeyToRules[key]; !ok {
+			policyPluginKeys = append(policyPluginKeys, key)
+		}
+		policyPluginKeyToRules[key] = append(policyPluginKeyToRules[key], rule)
+	}
+	sort.Slice(policyPluginKeys, func(i int, j int) bool {
+		keyOne, keyTwo := policyPluginKeys[i], policyPluginKeys[j]
+		if keyOne.policyName == keyTwo.policyName {
+			return keyOne.pluginName < keyTwo.pluginName
+		}
+		return keyOne.policyName < keyTwo.policyName
+	})
 	longestRuleID := getLongestRuleID(rules)
 	longestRuleCategories := getLongestRuleCategories(rules, categoriesFunc)
 
@@ -122,29 +129,21 @@ func printRulesText(writer io.Writer, rules []Rule, categoriesFunc func(Rule) []
 		retErr = errors.Join(retErr, tabWriter.Flush())
 	}()
 	writer = tabWriter
-
-	havePrintedSection := false
-	if len(defaultRules) > 0 {
-		if err := printRulesTextSection(writer, defaultRules, categoriesFunc, "", havePrintedSection, longestRuleID, longestRuleCategories); err != nil {
-			return err
-		}
-		havePrintedSection = true
-	}
-	for _, pluginName := range pluginNames {
+	for index, key := range policyPluginKeys {
+		rules := policyPluginKeyToRules[key]
+		havePrintedSection := index > 0
 		if havePrintedSection {
 			if _, err := fmt.Fprintln(writer); err != nil {
 				return err
 			}
 		}
-		rules := pluginNameToRules[pluginName]
 		if len(rules) == 0 {
 			// This should never happen.
-			return syserror.Newf("no rules for plugin name %q", pluginName)
+			return syserror.Newf("no rules for plugin name %q", key.pluginName)
 		}
-		if err := printRulesTextSection(writer, rules, categoriesFunc, pluginName, havePrintedSection, longestRuleID, longestRuleCategories); err != nil {
+		if err := printRulesTextSection(writer, rules, categoriesFunc, key.policyName, key.pluginName, havePrintedSection, longestRuleID, longestRuleCategories); err != nil {
 			return err
 		}
-		havePrintedSection = true
 	}
 	return nil
 }
@@ -153,6 +152,7 @@ func printRulesTextSection(
 	writer io.Writer,
 	rules []Rule,
 	categoriesFunc func(Rule) []check.Category,
+	policyName string,
 	pluginName string,
 	havePrintedSection bool,
 	globallyLongestRuleID string,
@@ -160,8 +160,18 @@ func printRulesTextSection(
 ) error {
 	subLongestRuleID := getLongestRuleID(rules)
 	subLongestRuleCategories := getLongestRuleCategories(rules, categoriesFunc)
-	if pluginName != "" {
-		if _, err := fmt.Fprintf(writer, "%s\n\n", pluginName); err != nil {
+	if policyName != "" || pluginName != "" {
+		var builder strings.Builder
+		if policyName != "" {
+			_, _ = builder.WriteString(policyName)
+			if pluginName != "" {
+				_, _ = builder.WriteString(" ")
+			}
+		}
+		if pluginName != "" {
+			_, _ = builder.WriteString(pluginName)
+		}
+		if _, err := fmt.Fprintf(writer, "%s\n\n", builder.String()); err != nil {
 			return err
 		}
 	}
@@ -245,17 +255,17 @@ func cloneAndSortRulesForPrint(rules []Rule) []Rule {
 			// so we know the first category is a top-level category if present
 			one := rules[i]
 			two := rules[j]
+			// Sort non-policy rules before policy rules, then by policy name.
+			onePolicyName := one.PolicyName()
+			twoPolicyName := two.PolicyName()
+			if onePolicyName != twoPolicyName {
+				return onePolicyName < twoPolicyName
+			}
 			// Sort builtin rules before plugin rules, then plugin rules by plugin name.
 			onePluginName := one.PluginName()
 			twoPluginName := two.PluginName()
-			if onePluginName == "" && twoPluginName != "" {
-				return true
-			}
-			if onePluginName != "" && twoPluginName == "" {
-				return false
-			}
-			if compare := strings.Compare(onePluginName, twoPluginName); compare != 0 {
-				return compare < 0
+			if onePluginName != twoPluginName {
+				return onePluginName < twoPluginName
 			}
 			// Sort default rules before non-default.
 			if one.Default() && !two.Default() {
@@ -332,6 +342,7 @@ type externalRule struct {
 	Categories   []string `json:"categories" yaml:"categories"`
 	Default      bool     `json:"default" yaml:"default"`
 	Purpose      string   `json:"purpose" yaml:"purpose"`
+	Policy       string   `json:"policy,omitempty" yaml:"policy,omitempty"`
 	Plugin       string   `json:"plugin" yaml:"plugin"`
 	Deprecated   bool     `json:"deprecated" yaml:"deprecated"`
 	Replacements []string `json:"replacements" yaml:"replacements"`
@@ -346,6 +357,7 @@ func newExternalRule(
 		Categories:   xslices.Map(categoriesFunc(rule), check.Category.ID),
 		Default:      rule.Default(),
 		Purpose:      rule.Purpose(),
+		Policy:       rule.PolicyName(),
 		Plugin:       rule.PluginName(),
 		Deprecated:   rule.Deprecated(),
 		Replacements: rule.ReplacementIDs(),
