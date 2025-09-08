@@ -152,6 +152,7 @@ func getLintConfigForV1Beta1LintConfig(
 		lintConfigV1Beta1.GetRpcAllowGoogleProtobufEmptyRequests(),
 		lintConfigV1Beta1.GetRpcAllowGoogleProtobufEmptyResponses(),
 		lintConfigV1Beta1.GetServiceSuffix(),
+		lintConfigV1Beta1.GetDisableBuiltin(),
 	)
 }
 
@@ -162,6 +163,7 @@ func getBreakingConfigForV1Beta1BreakingConfig(
 		breakingConfigV1Beta1.GetUse(),
 		breakingConfigV1Beta1.GetExcept(),
 		breakingConfigV1Beta1.GetIgnoreUnstablePackages(),
+		breakingConfigV1Beta1.GetDisableBuiltin(),
 	)
 }
 

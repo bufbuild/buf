@@ -97,10 +97,7 @@ func (c *multiClient) Check(ctx context.Context, request check.Request) ([]*anno
 				defer xslog.DebugProfile(c.logger, slog.String("plugin", delegate.PluginName))()
 				delegateResponse, err := delegate.Client.Check(ctx, delegateRequest)
 				if err != nil {
-					if delegate.PluginName == "" {
-						return err
-					}
-					return fmt.Errorf("plugin %q failed: %w", delegate.PluginName, err)
+					return formatDelegateError(delegate, err)
 				}
 				annotations := xslices.Map(
 					delegateResponse.Annotations(),
@@ -155,14 +152,13 @@ func (c *multiClient) getRulesCategoriesAndChunkedIDs(ctx context.Context) (
 	for i, delegate := range c.checkClientSpecs {
 		delegateCheckRules, err := delegate.Client.ListRules(ctx)
 		if err != nil {
-			if delegate.PluginName == "" {
-				return nil, nil, nil, nil, err
-			}
-			return nil, nil, nil, nil, fmt.Errorf("plugin %q failed: %w", delegate.PluginName, err)
+			return nil, nil, nil, nil, formatDelegateError(delegate, err)
 		}
 		delegateRules := xslices.Map(
 			delegateCheckRules,
-			func(checkRule check.Rule) Rule { return newRule(checkRule, delegate.PluginName) },
+			func(checkRule check.Rule) Rule {
+				return newRule(checkRule, delegate.PluginName, delegate.PolicyName)
+			},
 		)
 		rules = append(rules, delegateRules...)
 		// Already sorted.
@@ -174,14 +170,13 @@ func (c *multiClient) getRulesCategoriesAndChunkedIDs(ctx context.Context) (
 	for i, delegate := range c.checkClientSpecs {
 		delegateCheckCategories, err := delegate.Client.ListCategories(ctx)
 		if err != nil {
-			if delegate.PluginName == "" {
-				return nil, nil, nil, nil, err
-			}
-			return nil, nil, nil, nil, fmt.Errorf("plugin %q failed: %w", delegate.PluginName, err)
+			return nil, nil, nil, nil, formatDelegateError(delegate, err)
 		}
 		delegateCategories := xslices.Map(
 			delegateCheckCategories,
-			func(checkCategory check.Category) Category { return newCategory(checkCategory, delegate.PluginName) },
+			func(checkCategory check.Category) Category {
+				return newCategory(checkCategory, delegate.PluginName, delegate.PolicyName)
+			},
 		)
 		categories = append(categories, delegateCategories...)
 		// Already sorted.
@@ -299,4 +294,20 @@ func (d *duplicateRuleOrCategoryError) duplicateIDs() []string {
 		return nil
 	}
 	return xslices.MapKeysToSortedSlice(d.duplicateIDToRuleOrCategories)
+}
+
+// formatDelegateError formats the error messages including plugin and policy information.
+func formatDelegateError(delegate *checkClientSpec, err error) error {
+	if delegate.PluginName == "" {
+		return err // Built-in rule, return error as-is
+	}
+	var errorMsg strings.Builder
+	errorMsg.WriteString("plugin ")
+	errorMsg.WriteString(fmt.Sprintf("%q", delegate.PluginName))
+	if delegate.PolicyName != "" {
+		errorMsg.WriteString(" from policy ")
+		errorMsg.WriteString(fmt.Sprintf("%q", delegate.PolicyName))
+	}
+	errorMsg.WriteString(" failed: ")
+	return fmt.Errorf("%s%w", errorMsg.String(), err)
 }

@@ -715,6 +715,23 @@ PACKAGE_NO_IMPORT_CYCLE                                              Checks that
 	)
 }
 
+func TestCheckPolicyConfigLsLintRulesConfigured(t *testing.T) {
+	t.Parallel()
+	expectedConfiguredOnlyStdout, err := os.ReadFile(filepath.Join("testdata", "policy_list_rules", "expected_ls_lint_rules_configured_only.txt"))
+	require.NoError(t, err)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		string(expectedConfiguredOnlyStdout),
+		"config",
+		"ls-lint-rules",
+		"--config",
+		filepath.Join("testdata", "policy_list_rules", "buf.yaml"),
+		"--configured-only",
+	)
+}
+
 func TestCheckLsLintRulesFromConfig(t *testing.T) {
 	t.Parallel()
 	testRunStdout(

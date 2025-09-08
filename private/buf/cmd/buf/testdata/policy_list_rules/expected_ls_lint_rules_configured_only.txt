@@ -1,0 +1,13 @@
+ID                       CATEGORIES                DEFAULT  PURPOSE
+PACKAGE_DIRECTORY_MATCH  MINIMAL, BASIC, STANDARD  *        Checks that all files are in a directory that matches their package name.
+ENUM_NO_ALLOW_ALIAS      BASIC, STANDARD           *        Checks that enums do not have the allow_alias option set.
+
+testdata/policy_list_rules/policy.yaml
+
+PACKAGE_DIRECTORY_MATCH  MINIMAL, BASIC, STANDARD  *        Checks that all files are in a directory that matches their package name.
+ENUM_NO_ALLOW_ALIAS      BASIC, STANDARD           *        Checks that enums do not have the allow_alias option set.
+
+testdata/policy_list_rules/policy.yaml buf-plugin-rpc-ext
+
+PAGE_REQUEST_HAS_TOKEN                             *        Checks that all pagination RPC requests has a page token set.
+PAGE_RESPONSE_HAS_TOKEN                            *        Checks that all pagination RPC responses has a page token set.

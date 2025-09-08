@@ -37,7 +37,7 @@ func policyToBufConfigLintConfig(
 		policyLintConfig.ExceptIDsAndCategories(),
 		bufYamlPolicyConfig.IgnorePaths(),
 		bufYamlPolicyConfig.IgnoreIDOrCategoryToPaths(),
-		false, // Builtin checks are not disabled in policy files.
+		policyLintConfig.DisableBuiltin(),
 	)
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func policyToBufConfigBreakingConfig(
 		policyBreakingConfig.ExceptIDsAndCategories(),
 		bufYamlPolicyConfig.IgnorePaths(),
 		bufYamlPolicyConfig.IgnoreIDOrCategoryToPaths(),
-		false, // Builtin checks are not disabled in policy files.
+		policyBreakingConfig.DisableBuiltin(),
 	)
 	if err != nil {
 		return nil, err

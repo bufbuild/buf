@@ -1372,6 +1372,16 @@ func TestRunLintPolicyEmpty(t *testing.T) {
 	)
 }
 
+func TestRunLintPolicyDisableBuiltin(t *testing.T) {
+	t.Parallel()
+	testLintWithOptions(
+		t,
+		"policy_disablebuiltin",
+		"",
+		nil,
+	)
+}
+
 func TestRunLintPolicyLocal(t *testing.T) {
 	t.Parallel()
 	testLintWithOptions(

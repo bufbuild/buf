@@ -1,0 +1,7 @@
+version: v2
+lint:
+  disable_builtin: true
+breaking:
+  disable_builtin: true
+policies:
+  - policy: buf.policydisablebuiltin.yaml
