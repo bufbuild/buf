@@ -19,12 +19,15 @@ package buflsp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"runtime/debug"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufformat"
-	"github.com/bufbuild/protocompile/ast"
+	"github.com/bufbuild/protocompile/experimental/ir"
+	"github.com/bufbuild/protocompile/parser"
+	"github.com/bufbuild/protocompile/reporter"
 	"go.lsp.dev/protocol"
 )
 
@@ -52,7 +55,7 @@ var (
 	semanticModifierLegend = []string{}
 )
 
-// server is an implementation of protocol.Server.
+// server is an implementation of [protocol.Server].
 //
 // This is a separate type from buflsp.lsp so that the dozens of handler methods for this
 // type are kept separate from the rest of the logic.
@@ -170,13 +173,16 @@ func (s *server) SetTrace(
 // Shutdown is sent by the client when it wants the server to shut down and exit.
 // The client will wait until Shutdown returns, and then call Exit.
 func (s *server) Shutdown(ctx context.Context) error {
+	s.lsp.shutdown = true
 	return nil
 }
 
 // Exit is a notification that the client has seen shutdown complete, and that the
 // server should now exit.
 func (s *server) Exit(ctx context.Context) error {
-	// TODO: return an error if Shutdown() has not been called yet.
+	if !s.lsp.shutdown {
+		return errors.New("shutdown was not called or not yet completed")
+	}
 
 	// Close the connection. This will let the server shut down gracefully once this
 	// notification is replied to.
@@ -197,7 +203,6 @@ func (s *server) DidChangeConfiguration(
 		}
 		return true
 	})
-
 	return nil
 }
 
@@ -209,14 +214,14 @@ func (s *server) DidOpen(
 	ctx context.Context,
 	params *protocol.DidOpenTextDocumentParams,
 ) error {
-	file := s.fileManager.Open(ctx, params.TextDocument.URI)
+	file := s.fileManager.Track(params.TextDocument.URI)
 	file.RefreshSettings(ctx)
 	file.Update(ctx, params.TextDocument.Version, params.TextDocument.Text)
 	file.Refresh(ctx)
 	return nil
 }
 
-// DidChange is called whenever the client opens a document. This is our signal to parse
+// DidChange is called whenever the client opens //a document. This is our signal to parse
 // the file.
 func (s *server) DidChange(
 	ctx context.Context,
@@ -250,6 +255,10 @@ func (s *server) DidSave(
 }
 
 // Formatting is called whenever the user explicitly requests formatting.
+//
+// NOTE: this still uses the current compiler since formatting is not yet implemented with
+// the new compiler. This will be ported over once that is ready. For now, we parse the file
+// on-demand for formatting.
 func (s *server) Formatting(
 	ctx context.Context,
 	params *protocol.DocumentFormattingParams,
@@ -259,36 +268,37 @@ func (s *server) Formatting(
 		// Format for a file we don't know about? Seems bad!
 		return nil, fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
 	}
-
-	// We check the diagnostics on the file, if there are any build errors, we do not want
-	// to format an invalid AST, so we skip formatting and return an error for logging.
-	errorCount := 0
-	for _, diagnostic := range file.diagnostics {
-		if diagnostic.Severity == protocol.DiagnosticSeverityError {
-			errorCount += 1
-		}
+	var errorsWithPos []reporter.ErrorWithPos
+	var warningErrorsWithPos []reporter.ErrorWithPos
+	handler := reporter.NewHandler(reporter.NewReporter(
+		func(errorWithPos reporter.ErrorWithPos) error {
+			errorsWithPos = append(errorsWithPos, errorWithPos)
+			return nil
+		},
+		func(errorWithPos reporter.ErrorWithPos) {
+			warningErrorsWithPos = append(warningErrorsWithPos, errorWithPos)
+		},
+	))
+	parsed, err := parser.Parse(file.uri.Filename(), strings.NewReader(file.text), handler)
+	if err == nil {
+		_, _ = parser.ResultFromAST(parsed, true, handler)
 	}
-	if errorCount > 0 {
-		return nil, fmt.Errorf("cannot format file %q, %v error(s) found", file.uri.Filename(), errorCount)
+	if len(errorsWithPos) > 0 {
+		return nil, fmt.Errorf("cannot format file %q, %v error(s) found", file.uri.Filename(), len(errorsWithPos))
 	}
-
 	// Currently we have no way to honor any of the parameters.
 	_ = params
-	if file.fileNode == nil {
+	if parsed == nil {
 		return nil, nil
 	}
-
 	var out strings.Builder
-	if err := bufformat.FormatFileNode(&out, file.fileNode); err != nil {
+	if err := bufformat.FormatFileNode(&out, parsed); err != nil {
 		return nil, err
 	}
-
 	newText := out.String()
-	// Avoid formatting the file if text has not changed.
 	if newText == file.text {
 		return nil, nil
 	}
-
 	// XXX: The current compiler does not expose a span for the full file. Instead of
 	// potentially undershooting the correct span (which can cause comments at the
 	// start and end of the file to be duplicated), we instead manually count up the
@@ -384,20 +394,9 @@ func (s *server) Definition(
 		return nil, nil
 	}
 
-	if imp, ok := symbol.kind.(*import_); ok {
-		// This is an import, we just want to jump to the file.
-		return []protocol.Location{{URI: imp.file.uri}}, nil
-	}
-
-	def, _ := symbol.Definition(ctx)
-	if def != nil {
-		return []protocol.Location{{
-			URI:   def.file.uri,
-			Range: def.Range(),
-		}}, nil
-	}
-
-	return nil, nil
+	return []protocol.Location{
+		symbol.Definition(),
+	}, nil
 }
 
 // SemanticTokensFull is called to render semantic token information on the client.
@@ -409,11 +408,9 @@ func (s *server) SemanticTokensFull(
 	if file == nil {
 		return nil, nil
 	}
-
 	progress := newProgressFromClient(s.lsp, &params.WorkDoneProgressParams)
 	progress.Begin(ctx, "Processing Tokens")
 	defer progress.Done(ctx)
-
 	// In the case where there are no symbols for the file, we return nil for SemanticTokensFull.
 	// This is based on the specification for the method textDocument/semanticTokens/full,
 	// the expected response is the union type `SemanticTokens | null`.
@@ -421,68 +418,64 @@ func (s *server) SemanticTokensFull(
 	if len(file.symbols) == 0 {
 		return nil, nil
 	}
-
 	var (
 		encoded           []uint32
 		prevLine, prevCol uint32
 	)
 	for i, symbol := range file.symbols {
 		progress.Report(ctx, fmt.Sprintf("%d/%d", i+1, len(file.symbols)), float64(i)/float64(len(file.symbols)))
-
 		var semanticType uint32
-
 		if symbol.isOption {
 			semanticType = semanticTypeDecorator
-		} else if def, defNode := symbol.Definition(ctx); def != nil {
-			switch defNode.(type) {
-			case *ast.FileNode:
-				continue
-			case *ast.MessageNode, *ast.GroupNode:
-				semanticType = semanticTypeStruct
-			case *ast.FieldNode, *ast.MapFieldNode, *ast.OneofNode:
-				semanticType = semanticTypeVariable
-			case *ast.EnumNode:
-				semanticType = semanticTypeEnum
-			case *ast.EnumValueNode:
-				semanticType = semanticTypeEnumMember
-			case *ast.ServiceNode:
-				semanticType = semanticTypeInterface
-			case *ast.RPCNode:
-				semanticType = semanticTypeMethod
-			}
-		} else if _, ok := symbol.kind.(*builtin); ok {
-			semanticType = semanticTypeType
 		} else {
-			continue
+			switch symbol.ir.Kind() {
+			case ir.SymbolKindMessage:
+				semanticType = semanticTypeStruct
+			case ir.SymbolKindEnum:
+				semanticType = semanticTypeEnum
+			case ir.SymbolKindField:
+				// For predeclared types, we set semanticType to semanticTypeType
+				if symbol.def.IsZero() {
+					semanticType = semanticTypeType
+				} else {
+					semanticType = semanticTypeVariable
+				}
+			case ir.SymbolKindEnumValue:
+				semanticType = semanticTypeEnumMember
+			case ir.SymbolKindExtension:
+				semanticType = semanticTypeVariable
+			case ir.SymbolKindService:
+				semanticType = semanticTypeInterface
+			case ir.SymbolKindMethod:
+				semanticType = semanticTypeMethod
+			default:
+				continue
+			}
 		}
-
 		// This fairly painful encoding is described in detail here:
 		// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_semanticTokens
-		start, end := symbol.info.Start(), symbol.info.End()
+		start, end := symbol.span.StartLoc(), symbol.span.EndLoc()
 		for i := start.Line; i <= end.Line; i++ {
 			newLine := uint32(i - 1)
 			var newCol uint32
 			if i == start.Line {
-				newCol = uint32(start.Col - 1)
+				newCol = uint32(start.Column - 1)
 				if prevLine == newLine {
 					newCol -= prevCol
 				}
 			}
-
-			symbolLen := uint32(end.Col - 1)
+			symbolLen := uint32(end.Column - 1)
 			if i == start.Line {
-				symbolLen -= uint32(start.Col - 1)
+				symbolLen -= uint32(start.Column - 1)
 			}
-
 			encoded = append(encoded, newLine-prevLine, newCol, symbolLen, semanticType, 0)
 			prevLine = newLine
 			if i == start.Line {
-				prevCol = uint32(start.Col - 1)
+				prevCol = uint32(start.Column - 1)
 			} else {
 				prevCol = 0
 			}
 		}
 	}
-
 	return &protocol.SemanticTokens{Data: encoded}, nil
 }
