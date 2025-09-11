@@ -30,7 +30,7 @@ jobs:
         with:
           token: ${{ steps.app_token.outputs.token }}
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.24.x'
       - name: Set up Git name and email
