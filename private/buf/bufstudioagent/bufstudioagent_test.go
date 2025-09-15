@@ -35,8 +35,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -275,16 +273,26 @@ func newTestConnectServer(t *testing.T, tls bool) *httptest.Server {
 		},
 		connect.WithCodec(&bufferCodec{name: "proto"}),
 	))
+	protocols := new(http.Protocols)
+	protocols.SetHTTP1(true)
+	server := httptest.NewUnstartedServer(mux)
+	server.Config.Protocols = protocols
 	if tls {
-		upstreamServerTLS := httptest.NewUnstartedServer(mux)
-		upstreamServerTLS.EnableHTTP2 = true
-		upstreamServerTLS.StartTLS()
+		protocols.SetHTTP2(true)
+		// Enable HTTP/2 for TLS configuration.
+		server.EnableHTTP2 = true
+		server.StartTLS()
+		server.TLS.RootCAs = server.Client().Transport.(*http.Transport).TLSClientConfig.RootCAs
+		// Add the server's certificate to its own trusted CA pool.
+		// This is needed because the server TSL config is used to configure clients.
 		certpool := x509.NewCertPool()
-		certpool.AddCert(upstreamServerTLS.Certificate())
-		upstreamServerTLS.TLS.RootCAs = certpool
-		return upstreamServerTLS
+		certpool.AddCert(server.Certificate())
+		server.TLS.RootCAs = certpool
+	} else {
+		protocols.SetUnencryptedHTTP2(true)
+		server.Start()
 	}
-	return httptest.NewServer(h2c.NewHandler(mux, &http2.Server{}))
+	return server
 }
 
 func protoMarshalBase64(t *testing.T, message proto.Message) []byte {
