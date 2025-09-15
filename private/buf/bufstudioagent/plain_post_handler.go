@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"net"
 	"net/http"
 	"net/textproto"
 	"net/url"
@@ -31,7 +30,6 @@ import (
 	"connectrpc.com/connect"
 	studiov1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"golang.org/x/net/http2"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -54,8 +52,7 @@ type plainPostHandler struct {
 	Logger              *slog.Logger
 	MaxMessageSizeBytes int64
 	B64Encoding         *base64.Encoding
-	TLSClient           *http.Client
-	H2CClient           *http.Client
+	Client              *http.Client
 	DisallowedHeaders   map[string]struct{}
 	ForwardHeaders      map[string]string
 }
@@ -74,25 +71,23 @@ func newPlainPostHandler(
 	for k, v := range forwardHeaders {
 		canonicalForwardHeaders[textproto.CanonicalMIMEHeaderKey(k)] = v
 	}
+	protocols := new(http.Protocols)
+	protocols.SetHTTP1(true)
+	protocols.SetHTTP2(true)
+	protocols.SetUnencryptedHTTP2(true)
+	transport := &http.Transport{
+		TLSClientConfig: tlsClientConfig,
+		Protocols:       protocols,
+	}
 	return &plainPostHandler{
 		B64Encoding:       base64.StdEncoding,
 		DisallowedHeaders: canonicalDisallowedHeaders,
 		ForwardHeaders:    canonicalForwardHeaders,
-		H2CClient: &http.Client{
-			Transport: &http2.Transport{
-				AllowHTTP: true,
-				DialTLS: func(netw, addr string, config *tls.Config) (net.Conn, error) {
-					return net.Dial(netw, addr)
-				},
-			},
+		Client: &http.Client{
+			Transport: transport,
 		},
 		Logger:              logger,
 		MaxMessageSizeBytes: MaxMessageSizeBytesDefault,
-		TLSClient: &http.Client{
-			Transport: &http2.Transport{
-				TLSClientConfig: tlsClientConfig,
-			},
-		},
 	}
 }
 
@@ -150,10 +145,8 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	var httpClient *http.Client
 	switch targetURL.Scheme {
-	case "http":
-		httpClient = i.H2CClient
-	case "https":
-		httpClient = i.TLSClient
+	case "http", "https":
+		httpClient = i.Client
 	default:
 		http.Error(w, fmt.Sprintf("must specify http or https url scheme, got %q", targetURL.Scheme), http.StatusBadRequest)
 		return
