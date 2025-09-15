@@ -1138,7 +1138,7 @@ func makeHTTPRoundTripper(f *flags, isSecure bool, authority string, printer ver
 		Proxy:             http.ProxyFromEnvironment,
 		DialContext:       dialFunc,
 		DialTLSContext:    dialTLSFunc,
-		ForceAttemptHTTP2: f.HTTP2PriorKnowledge,
+		ForceAttemptHTTP2: true,
 		MaxIdleConns:      1,
 		Protocols:         protocols,
 	}, nil
