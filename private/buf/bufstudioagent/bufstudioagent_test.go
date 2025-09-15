@@ -282,7 +282,6 @@ func newTestConnectServer(t *testing.T, tls bool) *httptest.Server {
 		// Enable HTTP/2 for TLS configuration.
 		server.EnableHTTP2 = true
 		server.StartTLS()
-		server.TLS.RootCAs = server.Client().Transport.(*http.Transport).TLSClientConfig.RootCAs
 		// Add the server's certificate to its own trusted CA pool.
 		// This is needed because the server TSL config is used to configure clients.
 		certpool := x509.NewCertPool()
