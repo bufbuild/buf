@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.57.1] - 2025-09-16
 
 - Minor bug fixes and dependency upgrades.
@@ -1406,6 +1410,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.57.1...HEAD
 [v1.57.1]: https://github.com/bufbuild/buf/compare/v1.57.0...v1.57.1
 [v1.57.0]: https://github.com/bufbuild/buf/compare/v1.56.0...v1.57.0
 [v1.56.0]: https://github.com/bufbuild/buf/compare/v1.55.1...v1.56.0
