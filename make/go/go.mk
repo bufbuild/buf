@@ -20,9 +20,9 @@ GO_TEST_WASM_BINS ?=
 # Settable
 GO_GET_PKGS ?=
 # Settable
-GO_MOD_VERSION ?= 1.22
+GO_MOD_VERSION ?= 1.24.0
 # Settable
-GO_MOD_TOOLCHAIN ?= 1.23.5
+GO_MOD_TOOLCHAIN ?=
 # Settable
 GO_ALL_REPO_PKGS ?= ./cmd/... ./internal/...
 # Settable
@@ -74,7 +74,9 @@ upgradegodeps:
 	rm -f go.mod go.sum
 	go mod init $(GO_MODULE)
 	go mod edit -go=$(GO_MOD_VERSION)
+ifneq ($(GO_MOD_TOOLCHAIN),)
 	go mod edit -toolchain=go$(GO_MOD_TOOLCHAIN)
+endif
 ifneq ($(GO_GET_PKGS),)
 	go get $(GO_GET_PKGS)
 endif
