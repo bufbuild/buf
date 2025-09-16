@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix buf curl for HTTP/2 services
 
 ## [v1.57.1] - 2025-09-16
 

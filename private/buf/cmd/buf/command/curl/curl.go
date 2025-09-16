@@ -1132,7 +1132,7 @@ func makeHTTPRoundTripper(f *flags, isSecure bool, authority string, printer ver
 	}
 	protocols := new(http.Protocols)
 	protocols.SetHTTP1(true)
-	protocols.SetHTTP2(f.HTTP2PriorKnowledge)
+	protocols.SetHTTP2(true)
 	protocols.SetUnencryptedHTTP2(f.HTTP2PriorKnowledge && !isSecure)
 	return &http.Transport{
 		Proxy:             http.ProxyFromEnvironment,
