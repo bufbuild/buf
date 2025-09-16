@@ -44,7 +44,6 @@ import (
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 	"github.com/spf13/pflag"
-	"golang.org/x/net/http2"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -1131,32 +1130,18 @@ func makeHTTPRoundTripper(f *flags, isSecure bool, authority string, printer ver
 			return tlsConn, nil
 		}
 	}
-
-	var transport http.RoundTripper
-	switch {
-	case f.HTTP2PriorKnowledge && isSecure:
-		transport = &http2.Transport{
-			DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
-				return dialTLSFunc(ctx, network, addr)
-			},
-		}
-	case f.HTTP2PriorKnowledge:
-		transport = &http2.Transport{
-			AllowHTTP: true,
-			DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
-				return dialFunc(ctx, network, addr)
-			},
-		}
-	default:
-		transport = &http.Transport{
-			Proxy:             http.ProxyFromEnvironment,
-			DialContext:       dialFunc,
-			DialTLSContext:    dialTLSFunc,
-			ForceAttemptHTTP2: true,
-			MaxIdleConns:      1,
-		}
-	}
-	return transport, nil
+	protocols := new(http.Protocols)
+	protocols.SetHTTP1(true)
+	protocols.SetHTTP2(f.HTTP2PriorKnowledge)
+	protocols.SetUnencryptedHTTP2(f.HTTP2PriorKnowledge && !isSecure)
+	return &http.Transport{
+		Proxy:             http.ProxyFromEnvironment,
+		DialContext:       dialFunc,
+		DialTLSContext:    dialTLSFunc,
+		ForceAttemptHTTP2: true,
+		MaxIdleConns:      1,
+		Protocols:         protocols,
+	}, nil
 }
 
 func makeHTTP3RoundTripper(f *flags, authority string, printer verbose.Printer) (http.RoundTripper, error) {

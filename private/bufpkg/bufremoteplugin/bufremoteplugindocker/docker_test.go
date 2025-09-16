@@ -43,8 +43,6 @@ import (
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 )
 
 const (
@@ -181,8 +179,6 @@ func buildDockerPlugin(t testing.TB, dockerfilePath string, pluginIdentity strin
 // dockerServer allows testing some failure flows by simulating the responses to Docker CLI commands.
 type dockerServer struct {
 	httpServer    *httptest.Server
-	h2Server      *http2.Server
-	h2Handler     http.Handler
 	t             testing.TB
 	versionPrefix string
 	pushErr       error
@@ -211,11 +207,14 @@ func newDockerServer(t testing.TB, version string) *dockerServer {
 			t.Fatalf("failed to encode response: %v", err)
 		}
 	})
-	dockerServer.h2Server = &http2.Server{}
-	dockerServer.h2Handler = h2c.NewHandler(mux, dockerServer.h2Server)
-	dockerServer.httpServer = httptest.NewUnstartedServer(dockerServer.h2Handler)
-	dockerServer.httpServer.Start()
-	t.Cleanup(dockerServer.httpServer.Close)
+	protocols := new(http.Protocols)
+	protocols.SetHTTP1(true)
+	protocols.SetUnencryptedHTTP2(true)
+	server := httptest.NewUnstartedServer(mux)
+	server.Config.Protocols = protocols
+	server.Start()
+	dockerServer.httpServer = server
+	t.Cleanup(server.Close)
 	return dockerServer
 }
 
