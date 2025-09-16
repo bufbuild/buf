@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.57.2] - 2025-09-16
 
 - Fix buf curl for HTTP/2 services
@@ -1410,6 +1414,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.57.2...HEAD
 [v1.57.2]: https://github.com/bufbuild/buf/compare/v1.57.1...v1.57.2
 [v1.57.1]: https://github.com/bufbuild/buf/compare/v1.57.0...v1.57.1
 [v1.57.0]: https://github.com/bufbuild/buf/compare/v1.56.0...v1.57.0
