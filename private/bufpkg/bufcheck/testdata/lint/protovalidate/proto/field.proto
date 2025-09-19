@@ -10,13 +10,13 @@ message FieldTest {
     (buf.validate.field).int32.lt = 1
   ];
   string valid_ignore_empty = 2 [
-    (buf.validate.field).ignore = IGNORE_IF_UNPOPULATED,
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
     (buf.validate.field).string.min_len = 5
   ];
   string invalid_required_and_ignore_empty = 3 [
     (buf.validate.field).string.min_len = 5,
     (buf.validate.field).required = true,
-    (buf.validate.field).ignore = IGNORE_IF_UNPOPULATED
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE
   ];
   // buf:lint:ignore PROTOVALIDATE
   int32 int32_validated_with_int64 = 4 [(buf.validate.field).int64.gt = 5];
