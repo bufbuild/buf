@@ -9,7 +9,7 @@ message ExtensionTest {
     (buf.validate.field).string.min_len = 3,
     (buf.validate.field).required = true
   ];
-  optional string valid_ignore_empty = 2 [
+  string valid_ignore_empty = 2 [
     (buf.validate.field).string.min_len = 3,
     (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE
   ];
@@ -24,9 +24,9 @@ message Extending {
       // required cannot be specified for extension
       (buf.validate.field).required = true
     ];
-    optional string invalid_ignore_empty = 14 [
+    string invalid_ignore_empty = 14 [
       (buf.validate.field).string.min_len = 3,
-      // ignore if unpopulated cannot be specified for extension
+      // ignore if zero value cannot be specified for extension
       (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE
     ];
   }
@@ -39,9 +39,9 @@ extend ExtensionTest {
     // required cannot be specified for extension
     (buf.validate.field).required = true
   ];
-  optional string invalid_ignore_empty = 24 [
+  string invalid_ignore_empty = 24 [
     (buf.validate.field).string.min_len = 3,
-    // ignore if unpopulated cannot be specified for extension
+    // ignore if zero value cannot be specified for extension
     (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE
   ];
 }
