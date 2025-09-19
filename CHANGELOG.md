@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Update `PROTOVALIDATE` lint rule to check `IGNORE_IF_ZERO_VALUE` on fields that track presence.
 
 ## [v1.57.2] - 2025-09-16
 

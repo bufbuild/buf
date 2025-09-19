@@ -215,7 +215,7 @@ func checkRulesForField(
 			adder.getFieldRuleName(requiredFieldNumber),
 		)
 	}
-	checkFieldFlags(adder, fieldRules)
+	checkFieldFlags(adder, fieldDescriptor, fieldRules)
 	if err := checkCELForField(
 		adder,
 		fieldRules,
@@ -296,6 +296,7 @@ func checkRulesForField(
 
 func checkFieldFlags(
 	adder *adder,
+	fieldDescriptor protoreflect.FieldDescriptor,
 	fieldRules *validate.FieldRules,
 ) {
 	var fieldCount int
@@ -324,6 +325,16 @@ func checkFieldFlags(
 			adder.getFieldRuleName(requiredFieldNumber),
 			adder.getFieldRuleName(ignoreFieldNumber),
 			validate.Ignore_IGNORE_IF_ZERO_VALUE,
+		)
+	}
+	if fieldRules.GetIgnore() == validate.Ignore_IGNORE_IF_ZERO_VALUE && fieldDescriptor.HasPresence() && !fieldDescriptor.IsExtension() {
+		adder.addForPathf(
+			[]int32{ignoreFieldNumber},
+			"Field %q has %s=%v and tracks presence. This is the same the default and the ignore option can be removed.",
+			adder.fieldName(),
+			adder.getFieldRuleName(ignoreFieldNumber),
+			validate.Ignore_IGNORE_IF_ZERO_VALUE,
+			adder.getFieldRuleName(),
 		)
 	}
 }
