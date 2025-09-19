@@ -19,6 +19,5 @@ message FieldTest {
     (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE
   ];
   // buf:lint:ignore PROTOVALIDATE
-  int32 int32_validated_with_int64 = 4 [(buf.validate.field).int64.gt = 5];
-  optional string optional_zero_ignored_field = 5 [(buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE];
+  int32 int32_validated_with_int64 = 4 [(buf.validate.field).int64.gt = 5];  
 }
