@@ -223,19 +223,8 @@ type PutOptions interface {
 	// returned WriteObjectCloser is written and closed (without an error).
 	// Any errors will cause the Put to be skipped (no path will be created).
 	Atomic() bool
-	// SuggestedDisableChunking says to suggest disable chunking entirely.
-	//
-	// If SuggestedChunkSize() > 0, this will always be false.
-	//
-	// This is a suggestion, implementations may choose to ignore this option.
-	SuggestedDisableChunking() bool
-	// SuggestedChunkSize sets the given size in bytes as a suggested chunk
-	// size to use by the Bucket implementation for this Put call.
-	// Some implementations of Put allow multi-part upload, and allow customizing the
-	// chunk size of each part upload, or even disabling multi-part upload.
-	//
-	// This is a suggestion, implementations may choose to ignore this option.
-	SuggestedChunkSize() int
+	// The size in bytes of the object to put, if known.
+	ContentLength() *int
 
 	isPutOptions()
 }
@@ -254,21 +243,18 @@ func NewPutOptions(options []PutOption) PutOptions {
 // PutOption is an option passed when putting an object in a bucket.
 type PutOption func(*putOptions)
 
-// PutWithSuggestedChunkSize sets the given size in bytes as a suggested chunk
-// size to use by the Bucket implementation for this Put call.
-// Some implementations of Put allow multi-part upload, and allow customizing the
-// chunk size of each part upload, or even disabling multi-part upload.
+// PutWithContentLength informs the store implementation what's the size in
+// bytes of the object to put. This is useful for some implementations to decide
+// on chunking or buffering.
 //
-// Setting a suggestedChunkSize of 0 says to suggest disable chunking
+// It's recommended to pass this value if you know it, but it's not required.
 // Negative values will be ignored.
-//
-// This is a suggestion, implementations may choose to ignore this option.
-func PutWithSuggestedChunkSize(suggestedChunkSize int) PutOption {
+func PutWithContentLength(contentLength int) PutOption {
 	return func(putOptions *putOptions) {
-		if suggestedChunkSize < 0 {
+		if contentLength < 0 {
 			return
 		}
-		putOptions.suggestedChunkSize = &suggestedChunkSize
+		putOptions.contentLength = &contentLength
 	}
 }
 
@@ -311,8 +297,8 @@ func (nopReadWriteBucketCloser) Close() error {
 }
 
 type putOptions struct {
-	atomic             bool
-	suggestedChunkSize *int
+	atomic        bool
+	contentLength *int
 }
 
 func newPutOptions() *putOptions {
@@ -323,15 +309,8 @@ func (p *putOptions) Atomic() bool {
 	return p.atomic
 }
 
-func (p *putOptions) SuggestedDisableChunking() bool {
-	return p.suggestedChunkSize != nil && *p.suggestedChunkSize == 0
-}
-
-func (p *putOptions) SuggestedChunkSize() int {
-	if p.suggestedChunkSize == nil {
-		return 0
-	}
-	return *p.suggestedChunkSize
+func (p *putOptions) ContentLength() *int {
+	return p.contentLength
 }
 
 func (*putOptions) isPutOptions() {}
