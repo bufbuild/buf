@@ -1,0 +1,13 @@
+version: v2
+lint:
+  use:
+    - ENUM_NO_ALLOW_ALIAS
+    - PACKAGE_DIRECTORY_MATCH
+    - PAGE_REQUEST_HAS_TOKEN
+    - PAGE_RESPONSE_HAS_TOKEN
+breaking:
+  use:
+    - ENUM_VALUE_NO_DELETE
+    - FIELD_SAME_JSTYPE
+plugins:
+  - plugin: buf-plugin-rpc-ext

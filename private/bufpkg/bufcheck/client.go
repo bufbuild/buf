@@ -17,8 +17,10 @@ package bufcheck
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"strings"
 
@@ -122,6 +124,7 @@ func (c *client) Lint(
 		lintOptions.pluginConfigs,
 		nil, // policyConfig.
 		lintOptions.relatedCheckConfigs,
+		len(lintOptions.policyConfigs) > 0, // hasPolicyConfigs.
 	)
 	if err != nil {
 		return err
@@ -148,7 +151,8 @@ func (c *client) Lint(
 			policyLintConfig,
 			pluginConfigs,
 			policyConfig,
-			nil, // relatedCheckConfigs.
+			nil,  // relatedCheckConfigs.
+			true, // hasPolicyConfigs.
 		)
 		if err != nil {
 			return err
@@ -175,6 +179,7 @@ func (c *client) lint(
 	pluginConfigs []bufconfig.PluginConfig,
 	policyConfig bufconfig.PolicyConfig,
 	relatedCheckConfigs []bufconfig.CheckConfig,
+	hasPolicyConfigs bool,
 ) ([]*annotation, error) {
 	if lintConfig.Disabled() {
 		return nil, nil
@@ -193,7 +198,11 @@ func (c *client) lint(
 	if err != nil {
 		return nil, err
 	}
-	logRulesConfig(c.logger, config.rulesConfig)
+	configName := bufconfig.DefaultBufYAMLFileName
+	if policyConfig != nil {
+		configName = policyConfig.Name()
+	}
+	logRulesConfig(c.logger, configName, config.rulesConfig, hasPolicyConfigs)
 	files, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
 	if err != nil {
 		// An Image may be invalid if it does not contain all of the required dependencies.
@@ -252,6 +261,7 @@ func (c *client) Breaking(
 		nil, // policyConfig.
 		breakingOptions.excludeImports,
 		breakingOptions.relatedCheckConfigs,
+		len(breakingOptions.policyConfigs) > 0, // hasPolicyConfigs.
 	)
 	if err != nil {
 		return err
@@ -280,7 +290,8 @@ func (c *client) Breaking(
 			pluginConfigs,
 			policyConfig,
 			breakingOptions.excludeImports,
-			nil, // relatedCheckConfigs.
+			nil,  // relatedCheckConfigs.
+			true, // hasPolicyConfigs.
 		)
 		if err != nil {
 			return err
@@ -309,6 +320,7 @@ func (c *client) breaking(
 	policyConfig bufconfig.PolicyConfig,
 	excludeImports bool,
 	relatedCheckConfigs []bufconfig.CheckConfig,
+	hasPolicyConfigs bool,
 ) ([]*annotation, error) {
 	if breakingConfig.Disabled() {
 		return nil, nil
@@ -333,7 +345,11 @@ func (c *client) breaking(
 	if err != nil {
 		return nil, err
 	}
-	logRulesConfig(c.logger, config.rulesConfig)
+	configName := bufconfig.DefaultBufYAMLFileName
+	if policyConfig != nil {
+		configName = policyConfig.Name()
+	}
+	logRulesConfig(c.logger, configName, config.rulesConfig, hasPolicyConfigs)
 	fileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
 	if err != nil {
 		// An Image may be invalid if it does not contain all of the required dependencies.
@@ -386,7 +402,7 @@ func (c *client) ConfiguredRules(
 	for _, option := range options {
 		option.applyToConfiguredRules(configuredRulesOptions)
 	}
-	allRules, allCategories, err := c.allRulesAndCategories(
+	rules, categories, err := c.allRulesAndCategories(
 		ctx,
 		checkConfig.FileVersion(),
 		configuredRulesOptions.pluginConfigs,
@@ -396,12 +412,46 @@ func (c *client) ConfiguredRules(
 	if err != nil {
 		return nil, err
 	}
-	rulesConfig, err := rulesConfigForCheckConfig(checkConfig, allRules, allCategories, ruleType, configuredRulesOptions.relatedCheckConfigs)
+	rulesConfig, err := rulesConfigForCheckConfig(checkConfig, rules, categories, ruleType, configuredRulesOptions.relatedCheckConfigs)
 	if err != nil {
 		return nil, err
 	}
-	logRulesConfig(c.logger, rulesConfig)
-	return rulesForRuleIDs(allRules, rulesConfig.RuleIDs), nil
+	logRulesConfig(c.logger, "", rulesConfig, len(configuredRulesOptions.policyConfigs) > 0)
+	allRules := rulesForRuleIDs(rules, rulesConfig.RuleIDs)
+	policies, err := c.getPolicies(ctx, configuredRulesOptions.policyConfigs)
+	if err != nil {
+		return nil, err
+	}
+	for index, policy := range policies {
+		policyConfig := configuredRulesOptions.policyConfigs[index]
+		pluginConfigs, err := policyToBufConfigPluginConfigs(policy)
+		if err != nil {
+			return nil, err
+		}
+		// Load the check config for the rule type.
+		var policyCheckConfig bufconfig.CheckConfig
+		switch ruleType {
+		case check.RuleTypeLint:
+			policyCheckConfig, err = policyToBufConfigLintConfig(policy, policyConfig)
+		case check.RuleTypeBreaking:
+			policyCheckConfig, err = policyToBufConfigBreakingConfig(policy, policyConfig)
+		default:
+			return nil, fmt.Errorf("unknown check.RuleType: %v", ruleType)
+		}
+		if err != nil {
+			return nil, err
+		}
+		policyRules, policyCategories, err := c.allRulesAndCategories(ctx, policyCheckConfig.FileVersion(), pluginConfigs, policyConfig, false)
+		if err != nil {
+			return nil, err
+		}
+		policyRulesConfig, err := rulesConfigForCheckConfig(policyCheckConfig, policyRules, policyCategories, ruleType, nil)
+		if err != nil {
+			return nil, err
+		}
+		allRules = append(allRules, rulesForRuleIDs(policyRules, policyRulesConfig.RuleIDs)...)
+	}
+	return allRules, nil
 }
 
 func (c *client) AllRules(
@@ -419,6 +469,22 @@ func (c *client) AllRules(
 	rules, _, err := c.allRulesAndCategories(ctx, fileVersion, allRulesOptions.pluginConfigs, nil, false)
 	if err != nil {
 		return nil, err
+	}
+	policies, err := c.getPolicies(ctx, allRulesOptions.policyConfigs)
+	if err != nil {
+		return nil, err
+	}
+	for index, policy := range policies {
+		policyConfig := allRulesOptions.policyConfigs[index]
+		pluginConfigs, err := policyToBufConfigPluginConfigs(policy)
+		if err != nil {
+			return nil, err
+		}
+		policyRules, _, err := c.allRulesAndCategories(ctx, fileVersion, pluginConfigs, policyConfig, false)
+		if err != nil {
+			return nil, err
+		}
+		rules = append(rules, policyRules...)
 	}
 	return rulesForType(rules, ruleType), nil
 }
@@ -580,6 +646,12 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 		pluginRefs := xslices.IndexedToValues(indexedPluginRefs)
 		pluginKeys, err := pluginKeyProvider.GetPluginKeysForPluginRefs(ctx, pluginRefs, bufplugin.DigestTypeP1)
 		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				if policyConfig != nil {
+					return nil, fmt.Errorf("unable to resolve plugins for policy %q: %w", policyConfig.Name(), err)
+				}
+				return nil, fmt.Errorf("unable to resolve plugins: %w", err)
+			}
 			return nil, err
 		}
 		pluginDatas, err := pluginDataProvider.GetPluginDatasForPluginKeys(ctx, pluginKeys)

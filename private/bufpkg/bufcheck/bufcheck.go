@@ -74,6 +74,12 @@ type Rule interface {
 	//
 	// Will be empty for Rules based on builtin plugins.
 	PluginName() string
+	// PolicyName returns the name of the policy that contains this Rule, if any.
+	//
+	// Names are freeform.
+	//
+	// Will be empty for Rules not based on policies.
+	PolicyName() string
 
 	isRule()
 	isRuleOrCategory()
@@ -91,6 +97,12 @@ type Category interface {
 	//
 	// Will be empty for Categorys based on builtin plugins.
 	PluginName() string
+	// PolicyName returns the name of the policy that contains this Category, if any.
+	//
+	// Names are freeform.
+	//
+	// Will be empty for Categorys not based on policies.
+	PolicyName() string
 
 	isCategory()
 	isRuleOrCategory()

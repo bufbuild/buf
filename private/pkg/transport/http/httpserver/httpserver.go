@@ -23,8 +23,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -33,7 +31,7 @@ const (
 	DefaultShutdownTimeout = 10 * time.Second
 	// DefaultReadHeaderTimeout is the default read header timeout.
 	DefaultReadHeaderTimeout = 30 * time.Second
-	// DefaultIdleTimeout is the amount of time an HTTP/2 connection can be idle.
+	// DefaultIdleTimeout is the amount of time a connection can be idle.
 	DefaultIdleTimeout = 3 * time.Minute
 )
 
@@ -115,16 +113,17 @@ func Run(
 	for _, option := range options {
 		option(s)
 	}
+	protocols := new(http.Protocols)
+	protocols.SetHTTP1(true)
+	protocols.SetHTTP2(true)
+	protocols.SetUnencryptedHTTP2(!s.disableH2C)
 	httpServer := &http.Server{
 		Handler:           handler,
 		ReadHeaderTimeout: s.readHeaderTimeout,
 		ErrorLog:          slog.NewLogLogger(logger.Handler(), slog.LevelError),
 		TLSConfig:         s.tlsConfig,
-	}
-	if s.tlsConfig == nil && !s.disableH2C {
-		httpServer.Handler = h2c.NewHandler(handler, &http2.Server{
-			IdleTimeout: DefaultIdleTimeout,
-		})
+		Protocols:         protocols,
+		IdleTimeout:       DefaultIdleTimeout,
 	}
 	if s.walkFunc != nil {
 		routes, ok := handler.(chi.Routes)

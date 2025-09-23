@@ -257,6 +257,7 @@ func lsRun(
 		}
 		configuredRuleOptions := []bufcheck.ConfiguredRulesOption{
 			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+			bufcheck.WithPolicyConfigs(bufYAMLFile.PolicyConfigs()...),
 			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
 		}
 		rules, err = checkClient.ConfiguredRules(
@@ -271,6 +272,7 @@ func lsRun(
 	} else {
 		allRulesOptions := []bufcheck.AllRulesOption{
 			bufcheck.WithPluginConfigs(bufYAMLFile.PluginConfigs()...),
+			bufcheck.WithPolicyConfigs(bufYAMLFile.PolicyConfigs()...),
 		}
 		rules, err = checkClient.AllRules(
 			ctx,
