@@ -50,6 +50,8 @@ type symbol struct {
 	def     ast.DeclDef
 	span    report.Span
 
+	// isReference indicates whether this symbol is a reference to another type
+	isReference bool
 	// isTag indicates whether this symbol represents a field/enum value tag.
 	isTag bool
 	// isImport indicates whether this symbol represents an import statement.
@@ -63,7 +65,7 @@ func (s *symbol) Range() protocol.Range {
 	return reportSpanToProtocolRange(s.span)
 }
 
-// Definition returns the span of the definition of the symbol.
+// Definition returns the location of the definition of the symbol.
 func (s *symbol) Definition() protocol.Location {
 	if s.isImport {
 		return protocol.Location{
@@ -79,6 +81,63 @@ func (s *symbol) Definition() protocol.Location {
 		URI:   s.defFile.uri,
 		Range: reportSpanToProtocolRange(span),
 	}
+}
+
+// References returns the locations of the valid references of the symbol.
+func (s *symbol) References(ctx context.Context) []protocol.Location {
+	if s.ir.Kind() != ir.SymbolKindMessage && s.ir.Kind() != ir.SymbolKindEnum {
+		// Not a definition, no references to spelunk for
+		return []protocol.Location{protocol.Location{
+			URI:   s.defFile.uri,
+			Range: s.Range(),
+		}}
+	}
+	// TODO: check this assumption -- we assume all defs have a file set
+	// TODO: check this assumption -- we should assume the file is open because we're looking
+	// for references for the symbol?
+	found := searchSymbolDefs(s, s.defFile)
+	for _, file := range s.defFile.importToFile {
+		// TODO: this is a hack, just for testing
+		if file.IsWKT() {
+			continue
+		}
+		// TODO: this is as bit of an issue, since `Refresh` is not the most performant.
+		// But we do actually want all symbols for the files.
+		// There is an on-going discussion regarding how we should handle this.
+		if file.symbols == nil {
+			file.Refresh(ctx)
+		}
+		found = append(found, searchSymbolDefs(s, file)...)
+	}
+	return found
+}
+
+// searchSymbolDefs checks the definition of each symbol to see if it matches the target
+// symbol. The target symbol is assumed to be a definition symbol.
+func searchSymbolDefs(target *symbol, file *file) []protocol.Location {
+	var found []protocol.Location
+	for _, symbol := range file.symbols {
+		if symbol.isReference {
+			if symbol.def.Name().AsPredeclared() != predeclared.Unknown {
+				// This is a predeclared type, we can skip it
+				continue
+			}
+			if sameName(symbol.def.Name(), target.def.Name()) {
+				found = append(found, protocol.Location{
+					URI:   file.uri,
+					Range: symbol.Range(),
+				})
+			}
+		}
+	}
+	return found
+}
+
+func sameName(a, b ast.Path) bool {
+	return a.Span().StartLoc().Line == b.Span().StartLoc().Line &&
+		a.Span().StartLoc().Column == b.Span().StartLoc().Column &&
+		a.Span().EndLoc().Line == b.Span().EndLoc().Line &&
+		a.Span().EndLoc().Column == b.Span().EndLoc().Column
 }
 
 // LogValue provides the log value for a symbol.

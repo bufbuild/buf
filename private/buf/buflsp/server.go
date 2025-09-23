@@ -124,6 +124,9 @@ func (s *server) Initialize(
 			DefinitionProvider: &protocol.DefinitionOptions{
 				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
 			},
+			ReferencesProvider: &protocol.ReferenceOptions{
+				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
+			},
 			DocumentFormattingProvider: true,
 			HoverProvider:              true,
 			SemanticTokensProvider: &SemanticTokensOptions{
@@ -397,6 +400,27 @@ func (s *server) Definition(
 	return []protocol.Location{
 		symbol.Definition(),
 	}, nil
+}
+
+// References is the entry point for find references.
+func (s *server) References(
+	ctx context.Context,
+	params *protocol.ReferenceParams,
+) ([]protocol.Location, error) {
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, nil
+	}
+	progress := newProgressFromClient(s.lsp, &params.WorkDoneProgressParams)
+	progress.Begin(ctx, "Searching")
+	defer progress.Done(ctx)
+
+	symbol := file.SymbolAt(ctx, params.Position)
+	if symbol == nil {
+		return nil, nil
+	}
+
+	return symbol.References(ctx), nil
 }
 
 // SemanticTokensFull is called to render semantic token information on the client.

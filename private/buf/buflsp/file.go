@@ -316,7 +316,6 @@ func (f *file) RefreshWorkspace(ctx context.Context) {
 		return
 	}
 	f.workspace = workspace
-
 	var module bufmodule.Module
 	for _, mod := range workspace.Modules() {
 		// We do not care about this error, so we discard it.
@@ -779,10 +778,11 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) []*symbol {
 			defFile = f
 		}
 		symbols = append(symbols, &symbol{
-			ir:      irSymbol,
-			defFile: defFile,
-			def:     irSymbol.AsMember().Element().AST(),
-			span:    field.AsField().Type.Span(),
+			ir:          irSymbol,
+			defFile:     defFile,
+			def:         irSymbol.AsMember().Element().AST(),
+			span:        field.AsField().Type.Span(),
+			isReference: true,
 		})
 		symbols = append(symbols, &symbol{
 			ir:      irSymbol,
