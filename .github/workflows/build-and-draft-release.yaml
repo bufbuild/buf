@@ -20,7 +20,7 @@ jobs:
           VERSION="${{ github.event.inputs.version || github.head_ref}}"
           echo "VERSION=${VERSION##*/v}" >> $GITHUB_ENV
       - name: Get GitHub app token
-        uses: actions/create-github-app-token@a8d616148505b5069dccd32f177bb87d7f39123b # v2.1.1
+        uses: actions/create-github-app-token@67018539274d69449ef7c02e8e71183d1719ab42 # v2.1.4
         id: app_token
         with:
           app-id: ${{ env.APP_ID }}
