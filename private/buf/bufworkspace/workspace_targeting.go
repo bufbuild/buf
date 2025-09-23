@@ -593,41 +593,8 @@ func getMappedModuleBucketAndModuleTargeting(
 			// https://github.com/bufbuild/buf/issues/113
 			storage.MatchPathExt(".proto"),
 		}
-		if len(excludes) != 0 {
-			var notOrMatchers []storage.Matcher
-			for _, exclude := range excludes {
-				notOrMatchers = append(
-					notOrMatchers,
-					storage.MatchPathContained(exclude),
-				)
-			}
-			matchers = append(
-				matchers,
-				storage.MatchNot(
-					storage.MatchOr(
-						notOrMatchers...,
-					),
-				),
-			)
-		}
-		// An includes with length 0 adds no filter to the proto files.
-		if len(includes) > 0 {
-			var orMatchers []storage.Matcher
-			for _, include := range includes {
-				orMatchers = append(
-					orMatchers,
-					storage.MatchPathContained(include),
-				)
-			}
-			matchers = append(
-				matchers,
-				storage.MatchOr(
-					orMatchers...,
-				),
-			)
-		}
-		rootBuckets = append(
-			rootBuckets,
+		// Use PrefixFilterReadBucket to optimize filtering on large file sets.
+		filteredBucket, err := storage.PrefixFilterReadBucket(
 			storage.FilterReadBucket(
 				storage.MapReadBucket(
 					moduleBucket,
@@ -635,7 +602,13 @@ func getMappedModuleBucketAndModuleTargeting(
 				),
 				matchers...,
 			),
+			includes,
+			excludes,
 		)
+		if err != nil {
+			return nil, nil, err
+		}
+		rootBuckets = append(rootBuckets, filteredBucket)
 	}
 	docStorageReadBucket, err := bufmodule.GetDocStorageReadBucket(ctx, moduleBucket)
 	if err != nil {
