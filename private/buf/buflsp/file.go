@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"os"
 	"slices"
@@ -30,6 +31,7 @@ import (
 
 	"buf.build/go/standard/xio"
 	"buf.build/go/standard/xlog/xslog"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
@@ -38,9 +40,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/protocompile/ast"
-	"github.com/bufbuild/protocompile/parser"
-	"github.com/bufbuild/protocompile/reporter"
+	"github.com/bufbuild/protocompile/experimental/incremental"
+	"github.com/bufbuild/protocompile/experimental/incremental/queries"
+	"github.com/bufbuild/protocompile/experimental/ir"
+	"github.com/bufbuild/protocompile/experimental/seq"
+	"github.com/bufbuild/protocompile/experimental/source"
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
 )
@@ -72,21 +76,13 @@ type file struct {
 	againstStrategy againstStrategy
 	againstGitRef   string
 
-	objectInfo             storage.ObjectInfo
-	importablePathToObject map[string]storage.ObjectInfo
+	objectInfo   storage.ObjectInfo
+	importToFile map[string]*file
 
-	fileNode            *ast.FileNode
-	packageNode         *ast.PackageNode
-	diagnostics         []protocol.Diagnostic
-	importToFile        map[string]*file
+	ir                  ir.File
 	symbols             []*symbol
+	diagnostics         []protocol.Diagnostic
 	image, againstImage bufimage.Image
-}
-
-// IsWKT returns whether this file corresponds to a well-known type.
-func (f *file) IsWKT() bool {
-	_, ok := f.objectInfo.(wktObjectInfo)
-	return ok
 }
 
 // IsLocal returns whether this is a local file, i.e. a file that the editor
@@ -99,35 +95,29 @@ func (f *file) IsLocal() bool {
 	return f.objectInfo.LocalPath() == f.objectInfo.ExternalPath()
 }
 
+// IsWKT returns whether this file corresponds to a well-known type.
+func (f *file) IsWKT() bool {
+	_, ok := f.objectInfo.(wktObjectInfo)
+	return ok
+}
+
 // Manager returns the file manager that owns this file.
 func (f *file) Manager() *fileManager {
 	return f.lsp.fileManager
-}
-
-// Package returns the package of this file, if known.
-func (f *file) Package() []string {
-	if f.packageNode == nil {
-		return nil
-	}
-
-	return strings.Split(string(f.packageNode.Name.AsIdentifier()), ".")
 }
 
 // Reset clears all bookkeeping information on this file.
 func (f *file) Reset(ctx context.Context) {
 	f.lsp.logger.Debug(fmt.Sprintf("resetting file %v", f.uri))
 
-	f.fileNode = nil
-	f.packageNode = nil
+	f.ir = ir.File{}
 	f.diagnostics = nil
-	f.importablePathToObject = nil
-	f.importToFile = nil
 	f.symbols = nil
 	f.image = nil
-
 	for _, imported := range f.importToFile {
 		imported.Close(ctx)
 	}
+	f.importToFile = nil
 }
 
 // Close marks a file as closed.
@@ -135,7 +125,7 @@ func (f *file) Reset(ctx context.Context) {
 // This will not necessarily evict the file, since there may be more than one user
 // for this file.
 func (f *file) Close(ctx context.Context) {
-	f.lsp.fileManager.Close(ctx, f.uri)
+	f.Manager().Close(ctx, f.uri)
 	if f.checkWork != nil {
 		close(f.checkWork)
 		f.checkWork = nil
@@ -275,8 +265,6 @@ func getSetting[T, U any](f *file, settings []any, name string, index int, parse
 }
 
 // Refresh rebuilds all of a file's internal book-keeping.
-//
-// If deep is set, this will also load imports and refresh those, too.
 func (f *file) Refresh(ctx context.Context) {
 	var progress *progress
 	if f.IsOpenInEditor() {
@@ -286,19 +274,19 @@ func (f *file) Refresh(ctx context.Context) {
 	}
 	progress.Begin(ctx, "Indexing")
 
-	progress.Report(ctx, "Parsing AST", 1.0/6)
-	f.RefreshAST(ctx)
+	progress.Report(ctx, "Setting workspace", 1.0/5)
+	f.RefreshWorkspace(ctx)
 
-	progress.Report(ctx, "Indexing Imports", 2.0/6)
+	progress.Report(ctx, "Indexing imports", 2.0/5)
 	f.IndexImports(ctx)
 
-	progress.Report(ctx, "Detecting Buf Module", 3.0/6)
-	f.FindModule(ctx)
+	progress.Report(ctx, "Parsing IR", 3.0/4)
+	f.RefreshIR(ctx)
 
-	progress.Report(ctx, "Running Checks", 4.0/6)
+	progress.Report(ctx, "Running Checks", 4.0/5)
 	f.RunChecks(ctx)
 
-	progress.Report(ctx, "Indexing Symbols", 5.0/6)
+	progress.Report(ctx, "Indexing Symbols", 5.0/5)
 	f.IndexSymbols(ctx)
 
 	progress.Done(ctx)
@@ -307,6 +295,183 @@ func (f *file) Refresh(ctx context.Context) {
 	// if we have zero diagnostics, so that the client correctly ticks over from
 	// n > 0 diagnostics to 0 diagnostics.
 	f.PublishDiagnostics(ctx)
+}
+
+// RefreshWorkspace builds the workspace for the current file and sets the workspace it.
+//
+// The Buf workspace provides the sources for the compiler to work with.
+func (f *file) RefreshWorkspace(ctx context.Context) {
+	f.lsp.logger.Debug(
+		"getting workspace",
+		slog.String("file", f.uri.Filename()),
+		slog.Int("version", int(f.version)),
+	)
+	workspace, err := f.lsp.controller.GetWorkspace(ctx, f.uri.Filename())
+	if err != nil {
+		f.lsp.logger.Error(
+			"could not load workspace",
+			slog.String("uri", string(f.uri)),
+			xslog.ErrorAttr(err),
+		)
+		return
+	}
+	f.workspace = workspace
+
+	var module bufmodule.Module
+	for _, mod := range workspace.Modules() {
+		// We do not care about this error, so we discard it.
+		_ = mod.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
+			if fileInfo.LocalPath() == f.uri.Filename() {
+				module = mod
+			}
+			return nil
+		})
+		if module != nil {
+			break
+		}
+	}
+	if module == nil {
+		f.lsp.logger.Warn("could not find module", slog.String("file", f.uri.Filename()))
+	}
+	f.module = module
+
+	checkClient, err := f.lsp.controller.GetCheckClientForWorkspace(ctx, workspace, f.lsp.wasmRuntime)
+	if err != nil {
+		f.lsp.logger.Warn("could not get check client", xslog.ErrorAttr(err))
+	}
+	f.checkClient = checkClient
+}
+
+// IndexImports keeps track of the importable files.
+//
+// This operation requires RefreshWorkspace.
+func (f *file) IndexImports(ctx context.Context) {
+	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))
+	if f.importToFile != nil {
+		return
+	}
+	importables, err := f.findImportable(ctx)
+	if err != nil {
+		f.lsp.logger.Error(
+			"failed to get importable files",
+			slog.String("file", f.uri.Filename()),
+		)
+	}
+	f.importToFile = make(map[string]*file)
+	for _, importable := range importables {
+		if importable.ExternalPath() == f.uri.Filename() {
+			f.objectInfo = importable
+			if err := f.ReadFromDisk(ctx); err != nil {
+				f.lsp.logger.Error(
+					"failed to read contents for file",
+					xslog.ErrorAttr(err),
+					slog.String("file", importable.Path()),
+				)
+			}
+			continue
+		}
+		importableFile := f.Manager().Track(uri.File(importable.LocalPath()))
+		if importableFile.objectInfo == nil {
+			importableFile.objectInfo = importable
+		}
+		if err := importableFile.ReadFromDisk(ctx); err != nil {
+			f.lsp.logger.Error(
+				"failed to read contents for file",
+				xslog.ErrorAttr(err),
+				slog.String("file", importable.Path()),
+			)
+		}
+		f.importToFile[importableFile.objectInfo.Path()] = importableFile
+	}
+}
+
+// findImportable finds all files that can potentially be imported by the proto file, f.
+//
+// Note that this performs no validation on these files, because those files might be open in the
+// editor and might contain invalid syntax at the moment. We only want to get their paths and nothing
+// more.
+//
+// This operation requires RefreshWorkspace.
+func (f *file) findImportable(ctx context.Context) ([]storage.ObjectInfo, error) {
+	// This does not use Controller.GetImportableImageFileInfos because that function does
+	// not specify which of the files it returns are well-known types. We can use heuristics
+	// based on the path to try and guess which files are well-known types, but this can be
+	// fragile. Instead we explicitly walk the well-known types bucket instead.
+	//
+	// We track the imports in a map to dedup by import path.
+	imports := make(map[string]storage.ObjectInfo)
+	for _, module := range f.workspace.Modules() {
+		if err := module.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
+			if fileInfo.FileType() != bufmodule.FileTypeProto {
+				return nil
+			}
+			imports[fileInfo.Path()] = fileInfo
+			return nil
+		}); err != nil {
+			return nil, err
+		}
+	}
+	if err := f.lsp.wktBucket.Walk(ctx, "", func(objectInfo storage.ObjectInfo) error {
+		imports[objectInfo.Path()] = wktObjectInfo{objectInfo}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return xslices.MapValuesToSlice(imports), nil
+}
+
+// RefreshIR queries for the IR of the file and provides diagnostics from the query if necessary.
+//
+// This operation requires IndexImports..
+func (f *file) RefreshIR(ctx context.Context) {
+	f.lsp.logger.Info(
+		"parsing IR for file",
+		slog.String("uri", string(f.uri)),
+		slog.Int("version", int(f.version)),
+	)
+	openerMap := map[string]string{
+		f.objectInfo.Path(): f.text,
+	}
+	for path, file := range f.importToFile {
+		openerMap[path] = file.text
+	}
+	opener := source.NewMap(openerMap)
+	results, report, err := incremental.Run(
+		ctx,
+		f.lsp.queryExecutor,
+		queries.IR{
+			Opener:  opener,
+			Path:    f.objectInfo.Path(),
+			Session: new(ir.Session),
+		},
+	)
+	if err != nil {
+		f.lsp.logger.Error(
+			"failed to parse IR for file",
+			slog.String("uri", string(f.uri)),
+			slog.Int("version", int(f.version)),
+			xslog.ErrorAttr(err),
+		)
+		return
+	}
+	if len(results) > 0 {
+		f.ir = results[0].Value
+	}
+	diagnostics, err := xslices.MapError(
+		report.Diagnostics,
+		reportDiagnosticToProtocolDiagnostic,
+	)
+	if err != nil {
+		f.lsp.logger.Error(
+			"failed to parse report diagnostics",
+			xslog.ErrorAttr(err),
+		)
+	}
+	f.diagnostics = diagnostics
+	f.lsp.logger.Debug(
+		fmt.Sprintf("got %v diagnostic(s)", len(f.diagnostics)),
+		slog.Any("diagnostics", f.diagnostics),
+	)
 }
 
 // RunChecks initiates background checks (lint and breaking) on this file and
@@ -321,6 +486,8 @@ func (f *file) Refresh(ctx context.Context) {
 // Checks are debounce (with the delay defined by checkRefreshPeriod) to avoid
 // overwhelming the client with expensive checks. If the file is not open in the
 // editor, checks are skipped. Diagnostics are published after checks are run.
+//
+// This operation requires IndexImports..
 func (f *file) RunChecks(ctx context.Context) {
 	// If we have not yet started a goroutine to run checks, start one.
 	// This goroutine will run checks in the background and publish diagnostics.
@@ -361,265 +528,16 @@ func (f *file) RunChecks(ctx context.Context) {
 	}
 }
 
-// RefreshAST reparses the file and generates diagnostics if necessary.
-//
-// Returns whether a reparse was necessary.
-func (f *file) RefreshAST(ctx context.Context) bool {
-	// NOTE: We intentionally do not use var report report here, because we need
-	// report to be non-nil when empty; this is because if it is nil, when calling
-	// PublishDiagnostics() below it will be serialized as JSON null.
-	report := report{}
-	handler := reporter.NewHandler(&report)
-
-	f.lsp.logger.Info(fmt.Sprintf("parsing AST for %v, %v", f.uri, f.version))
-	parsed, err := parser.Parse(f.uri.Filename(), strings.NewReader(f.text), handler)
-	if err == nil {
-		// Throw away the error. It doesn't contain anything not in the diagnostic array.
-		_, _ = parser.ResultFromAST(parsed, true, handler)
-	}
-
-	f.fileNode = parsed
-	f.diagnostics = report.diagnostics
-	f.lsp.logger.Debug(fmt.Sprintf("got %v diagnostic(s)", len(f.diagnostics)))
-
-	// Search for a potential package node.
-	if f.fileNode != nil {
-		for _, decl := range f.fileNode.Decls {
-			if pkg, ok := decl.(*ast.PackageNode); ok {
-				f.packageNode = pkg
-				break
-			}
-		}
-	}
-
-	return true
-}
-
-// PublishDiagnostics publishes all of this file's diagnostics to the LSP client.
-func (f *file) PublishDiagnostics(ctx context.Context) {
-	if !f.IsOpenInEditor() {
-		// If the file does get opened by the editor, the server will call
-		// Refresh() and this function will retry sending diagnostics. Which is
-		// to say: returning here does not result in stale diagnostics on the
-		// client.
-		return
-	}
-
-	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
-
-	// NOTE: We need to avoid sending a JSON null here, so we replace it with
-	// a non-nil empty slice when the diagnostics slice is nil.
-	diagnostics := f.diagnostics
-	if f.diagnostics == nil {
-		diagnostics = []protocol.Diagnostic{}
-	}
-
-	// Publish the diagnostics. This error is automatically logged by the LSP framework.
-	_ = f.lsp.client.PublishDiagnostics(ctx, &protocol.PublishDiagnosticsParams{
-		URI: f.uri,
-		// NOTE: For some reason, Version is int32 in the document struct, but uint32 here.
-		// This seems like a bug in the LSP protocol package.
-		Version:     uint32(f.version),
-		Diagnostics: diagnostics,
-	})
-}
-
-// FindModule finds the Buf module for this file.
-func (f *file) FindModule(ctx context.Context) {
-	workspace, err := f.lsp.controller.GetWorkspace(ctx, f.uri.Filename())
-	if err != nil {
-		f.lsp.logger.Warn("could not load workspace", slog.String("uri", string(f.uri)), xslog.ErrorAttr(err))
-		return
-	}
-
-	// Get the check client for this workspace.
-	checkClient, err := f.lsp.controller.GetCheckClientForWorkspace(ctx, workspace, f.lsp.wasmRuntime)
-	if err != nil {
-		f.lsp.logger.Warn("could not get check client", xslog.ErrorAttr(err))
-		return
-	}
-
-	// Figure out which module this file belongs to.
-	var module bufmodule.Module
-	for _, mod := range workspace.Modules() {
-		// We do not care about this error, so we discard it.
-		_ = mod.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
-			if fileInfo.LocalPath() == f.uri.Filename() {
-				module = mod
-			}
-			return nil
-		})
-		if module != nil {
-			break
-		}
-	}
-	if module == nil {
-		f.lsp.logger.Warn(fmt.Sprintf("could not find module for %q", f.uri))
-	}
-
-	// Determine if this is the WKT module. We do so by checking if this module contains
-	// descriptor.proto.
-	file, err := module.GetFile(ctx, descriptorPath)
-	if err == nil {
-		defer file.Close()
-	}
-
-	f.workspace = workspace
-	f.module = module
-	f.checkClient = checkClient
-}
-
-// IndexImports finds URIs for all of the files imported by this file.
-func (f *file) IndexImports(ctx context.Context) {
-	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
-
-	if f.fileNode == nil || f.importToFile != nil {
-		return
-	}
-
-	importable, err := findImportable(ctx, f.uri, f.lsp)
-	if err != nil {
-		f.lsp.logger.Warn(fmt.Sprintf("could not compute importable files for %s: %s", f.uri, err))
-		if f.importablePathToObject == nil {
-			return
-		}
-	} else if f.importablePathToObject == nil {
-		f.importablePathToObject = importable
-	}
-
-	// Find the FileInfo for this path. The crazy thing is that it may appear in importable
-	// multiple times, with different path lengths! We want to pick the one with the longest path
-	// length.
-	for _, fileInfo := range importable {
-		if fileInfo.LocalPath() == f.uri.Filename() {
-			if f.objectInfo != nil && len(f.objectInfo.Path()) > len(fileInfo.Path()) {
-				continue
-			}
-			f.objectInfo = fileInfo
-		}
-	}
-
-	f.importToFile = make(map[string]*file)
-	for _, decl := range f.fileNode.Decls {
-		node, ok := decl.(*ast.ImportNode)
-		if !ok {
-			continue
-		}
-
-		// If this is an external file, it will be in the cache and therefore
-		// finding imports via lsp.findImportable() will not work correctly:
-		// the bucket for the workspace found for a dependency will have
-		// truncated paths, and those workspace files will appear to be
-		// local rather than external.
-		//
-		// Thus, we search for name and all of its path suffixes. This is not
-		// ideal but is our only option in this case.
-		var fileInfo storage.ObjectInfo
-		var pathWasTruncated bool
-		name := node.Name.AsString()
-		for {
-			fileInfo, ok = importable[name]
-			if ok {
-				break
-			}
-
-			idx := strings.Index(name, "/")
-			if idx == -1 {
-				break
-			}
-
-			name = name[idx+1:]
-			pathWasTruncated = true
-		}
-		if fileInfo == nil {
-			f.lsp.logger.Warn(fmt.Sprintf("could not find URI for import %q", node.Name.AsString()))
-			continue
-		}
-		if pathWasTruncated && !strings.HasSuffix(fileInfo.LocalPath(), node.Name.AsString()) {
-			// Verify that the file we found, with a potentially too-short path, does in fact have
-			// the "correct" full path as a prefix. E.g., suppose we import a/b/c.proto. We find
-			// c.proto in importable. Now, we look at the full local path, which we expect to be of
-			// the form /home/blah/.cache/blah/a/b/c.proto or similar. If it does not contain
-			// a/b/c.proto as a suffix, we didn't find our file.
-			f.lsp.logger.Warn(fmt.Sprintf("could not find URI for import %q, but found same-suffix path %q", node.Name.AsString(), fileInfo.LocalPath()))
-			continue
-		}
-
-		f.lsp.logger.Debug(
-			"mapped import -> path",
-			slog.String("import", name),
-			slog.String("path", fileInfo.LocalPath()),
-		)
-
-		var imported *file
-		if fileInfo.LocalPath() == f.uri.Filename() {
-			imported = f
-		} else {
-			imported = f.Manager().Open(ctx, uri.File(fileInfo.LocalPath()))
-		}
-
-		imported.objectInfo = fileInfo
-		f.importToFile[node.Name.AsString()] = imported
-	}
-
-	// descriptor.proto is always implicitly imported.
-	if _, ok := f.importToFile[descriptorPath]; !ok {
-		descriptorFile := importable[descriptorPath]
-		descriptorURI := uri.File(descriptorFile.LocalPath())
-		if f.uri == descriptorURI {
-			f.importToFile[descriptorPath] = f
-		} else {
-			imported := f.Manager().Open(ctx, descriptorURI)
-			imported.objectInfo = descriptorFile
-			f.importToFile[descriptorPath] = imported
-		}
-	}
-
-	// FIXME: This algorithm is not correct: it does not account for `import public`.
-	fileImports := f.importToFile
-
-	for _, file := range fileImports {
-		if err := file.ReadFromDisk(ctx); err != nil {
-			file.lsp.logger.Warn(fmt.Sprintf("could not load import import %q from disk: %s",
-				file.uri, err.Error()))
-			continue
-		}
-
-		// Parse the imported file and find all symbols in it, but do not
-		// index symbols in the import's imports, otherwise we will recursively
-		// index the universe and that would be quite slow.
-
-		if f.fileNode != nil {
-			file.RefreshAST(ctx)
-		}
-		file.IndexSymbols(ctx)
-	}
-}
-
 // newFileOpener returns a fileOpener for the context of this file.
 //
 // May return nil, if insufficient information is present to open the file.
 func (f *file) newFileOpener() fileOpener {
-	if f.importablePathToObject == nil {
-		return nil
-	}
-
 	return func(path string) (io.ReadCloser, error) {
-		var newURI protocol.URI
-		fileInfo, ok := f.importablePathToObject[path]
-		if ok {
-			newURI = uri.File(fileInfo.LocalPath())
-		} else {
-			newURI = uri.File(path)
+		file := f.importToFile[path]
+		if file == nil {
+			return nil, fmt.Errorf("%s: %w", path, fs.ErrNotExist)
 		}
-
-		if file := f.Manager().Get(newURI); file != nil {
-			return xio.CompositeReadCloser(strings.NewReader(file.text), xio.NopCloser), nil
-		} else if !ok {
-			return nil, os.ErrNotExist
-		}
-
-		return os.Open(fileInfo.LocalPath())
+		return xio.CompositeReadCloser(strings.NewReader(file.text), xio.NopCloser), nil
 	}
 }
 
@@ -630,7 +548,7 @@ func (f *file) newFileOpener() fileOpener {
 // May return nil, if there is insufficient information to build an --against
 // file.
 func (f *file) newAgainstFileOpener(ctx context.Context) fileOpener {
-	if !f.IsLocal() || f.importablePathToObject == nil {
+	if !f.IsLocal() {
 		return nil
 	}
 
@@ -639,11 +557,10 @@ func (f *file) newAgainstFileOpener(ctx context.Context) fileOpener {
 	}
 
 	return func(path string) (io.ReadCloser, error) {
-		fileInfo, ok := f.importablePathToObject[path]
-		if !ok {
-			return nil, fmt.Errorf("failed to resolve import: %s", path)
+		file := f.importToFile[path]
+		if file == nil {
+			return nil, fmt.Errorf("%s: %w", path, fs.ErrNotExist)
 		}
-
 		var (
 			data []byte
 			err  error
@@ -652,13 +569,13 @@ func (f *file) newAgainstFileOpener(ctx context.Context) fileOpener {
 			data, err = git.ReadFileAtRef(
 				ctx,
 				f.lsp.container,
-				fileInfo.LocalPath(),
+				file.objectInfo.LocalPath(),
 				f.againstGitRef,
 			)
 		}
 
 		if data == nil || errors.Is(err, git.ErrInvalidGitCheckout) {
-			return os.Open(fileInfo.LocalPath())
+			return os.Open(file.objectInfo.LocalPath())
 		}
 
 		return xio.CompositeReadCloser(bytes.NewReader(data), xio.NopCloser), err
@@ -668,7 +585,7 @@ func (f *file) newAgainstFileOpener(ctx context.Context) fileOpener {
 // BuildImages builds Buf Images for this file, to be used with linting
 // routines.
 //
-// This operation requires IndexImports().
+// This operation requires IndexImports.
 func (f *file) BuildImages(ctx context.Context) {
 	if f.objectInfo == nil {
 		return
@@ -699,7 +616,7 @@ func (f *file) BuildImages(ctx context.Context) {
 
 // RunLints runs linting on this file. Returns whether any lints failed.
 //
-// This operation requires BuildImage().
+// This operation requires BuildImage.
 func (f *file) RunLints(ctx context.Context) bool {
 	if f.IsWKT() {
 		// Well-known types are not linted.
@@ -727,7 +644,7 @@ func (f *file) RunLints(ctx context.Context) bool {
 
 // RunBreaking runs breaking lints on this file. Returns whether any lints failed.
 //
-// This operation requires BuildImage().
+// This operation requires BuildImage.
 func (f *file) RunBreaking(ctx context.Context) bool {
 	if f.IsWKT() {
 		// Well-known types are not linted.
@@ -792,36 +709,187 @@ func (f *file) appendLintErrors(source string, err error) bool {
 	return true
 }
 
-// IndexSymbols processes the AST of a file and generates symbols for each symbol in
+// IndexSymbols processes the IR of a file and generates symbols for each symbol in
 // the document.
+//
+// This operation requires RefreshIR.
 func (f *file) IndexSymbols(ctx context.Context) {
 	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
-	// Throw away all the old symbols. Unlike other indexing functions, we rebuild
-	// symbols unconditionally. This is because if this file depends on a file
-	// that has since been modified, we may need to update references.
+	// Throw away all the old symbols and rebuild symbols unconditionally. This is because if
+	// this file depends on a file that has since been modified, we may need to update references.
 	f.symbols = nil
 
-	// Generate new symbols.
-	walker := newWalker(f)
-	walker.Walk(f.fileNode, f.fileNode)
-	f.symbols = walker.symbols
+	for i := range f.ir.Symbols().Len() {
+		// We only index the symbols for this file, the IR provides all imported symbols as well
+		symbol := f.ir.Symbols().At(i)
+		if symbol.File().Path() != f.objectInfo.Path() {
+			continue
+		}
+		f.symbols = append(f.symbols, f.irToSymbols(symbol)...)
+	}
+
+	// We also process all the declared imports in a file as symbols
+	f.symbols = append(f.symbols, xslices.Map(seq.ToSlice(f.ir.Imports()), f.importToSymbol)...)
 
 	// Finally, sort the symbols in position order, with shorter symbols sorting smaller.
 	slices.SortFunc(f.symbols, func(s1, s2 *symbol) int {
-		diff := s1.info.Start().Offset - s2.info.Start().Offset
+		diff := s1.span.StartLoc().Offset - s2.span.StartLoc().Offset
 		if diff == 0 {
-			return s1.info.End().Offset - s2.info.End().Offset
+			return s1.span.EndLoc().Offset - s2.span.EndLoc().Offset
 		}
 		return diff
 	})
 
-	symbols := f.symbols
-	for _, symbol := range symbols {
-		symbol.ResolveCrossFile(ctx)
-	}
-
 	f.lsp.logger.DebugContext(ctx, fmt.Sprintf("symbol indexing complete %s", f.uri))
+}
+
+// irToSymbols takes the [ir.Symbol] and returns the corresponding symbols used by the LSP.
+//
+// For messages and enums, we return a symbol for the name.
+// For fields, we return symbols for the type, name, and tag.
+// For enum values, we return symbols for the name and tag.
+// For extensions, we return a symbol for the extendee.
+func (f *file) irToSymbols(irSymbol ir.Symbol) []*symbol {
+	var symbols []*symbol
+	switch irSymbol.Kind() {
+	case ir.SymbolKindMessage:
+		def := irSymbol.AsType().AST()
+		symbols = append(symbols, &symbol{
+			ir:      irSymbol,
+			defFile: f,
+			def:     def,
+			span:    def.AsMessage().Name.Span(),
+		})
+		symbols = append(symbols, f.optionsToSymbols(irSymbol.AsType().Options())...)
+	case ir.SymbolKindEnum:
+		def := irSymbol.AsType().AST()
+		symbols = append(symbols, &symbol{
+			ir:      irSymbol,
+			defFile: f,
+			def:     def,
+			span:    def.AsEnum().Name.Span(),
+		})
+		symbols = append(symbols, f.optionsToSymbols(irSymbol.AsType().Options())...)
+	case ir.SymbolKindField:
+		field := irSymbol.AsMember().AST()
+		defFile := f.importToFile[irSymbol.AsMember().Element().AST().Span().Path()]
+		if defFile == nil {
+			// If no span, this is likely a built-in type, so we set the file to the current file.
+			defFile = f
+		}
+		symbols = append(symbols, &symbol{
+			ir:      irSymbol,
+			defFile: defFile,
+			def:     irSymbol.AsMember().Element().AST(),
+			span:    field.AsField().Type.Span(),
+		})
+		symbols = append(symbols, &symbol{
+			ir:      irSymbol,
+			defFile: f,
+			def:     field,
+			span:    field.AsField().Name.Span(),
+		})
+		symbols = append(symbols, &symbol{
+			ir:      irSymbol,
+			defFile: f,
+			def:     field,
+			span:    field.AsField().Tag.Span(),
+			isTag:   true,
+		})
+		symbols = append(symbols, f.optionsToSymbols(irSymbol.AsMember().Options())...)
+	case ir.SymbolKindEnumValue:
+		enumValue := irSymbol.AsMember().AST()
+		symbols = append(symbols, &symbol{
+			ir:      irSymbol,
+			defFile: f,
+			def:     enumValue,
+			span:    enumValue.AsEnumValue().Name.Span(),
+		})
+		symbols = append(symbols, &symbol{
+			ir:      irSymbol,
+			defFile: f,
+			def:     enumValue,
+			span:    enumValue.AsEnumValue().Tag.Span(),
+			isTag:   true,
+		})
+		symbols = append(symbols, f.optionsToSymbols(irSymbol.AsMember().Options())...)
+	case ir.SymbolKindExtension:
+		symbols = append(symbols, &symbol{
+			ir:      irSymbol,
+			defFile: f.importToFile[irSymbol.AsMember().Container().AST().Span().Path()],
+			def:     irSymbol.AsMember().Container().AST(),
+			span:    irSymbol.AsMember().AST().AsExtend().Extendee.Span(),
+		})
+		symbols = append(symbols, f.optionsToSymbols(irSymbol.AsMember().Options())...)
+	case ir.SymbolKindOneof:
+		symbols = append(symbols, &symbol{
+			ir:      irSymbol,
+			defFile: f,
+			def:     irSymbol.AsOneof().AST(),
+			span:    irSymbol.AsOneof().AST().AsOneof().Name.Span(),
+		})
+		symbols = append(symbols, f.optionsToSymbols(irSymbol.AsOneof().Options())...)
+	case ir.SymbolKindService:
+		symbols = append(symbols, &symbol{
+			ir:      irSymbol,
+			defFile: f,
+			def:     irSymbol.AsService().AST(),
+			span:    irSymbol.AsService().AST().AsService().Name.Span(),
+		})
+		symbols = append(symbols, f.optionsToSymbols(irSymbol.AsService().Options())...)
+	case ir.SymbolKindMethod:
+		method := irSymbol.AsMethod()
+		symbols = append(symbols, &symbol{
+			ir:      irSymbol,
+			defFile: f,
+			def:     method.AST(),
+			span:    method.AST().AsMethod().Name.Span(),
+		})
+		input, _ := method.Input()
+		symbols = append(symbols, &symbol{
+			ir:      irSymbol,
+			defFile: f.importToFile[input.AST().Span().Path()],
+			def:     input.AST(),
+			span:    method.AST().AsMethod().Signature.Inputs().Span(),
+		})
+		output, _ := method.Output()
+		symbols = append(symbols, &symbol{
+			ir:      irSymbol,
+			defFile: f.importToFile[output.AST().Span().Path()],
+			def:     output.AST(),
+			span:    method.AST().AsMethod().Signature.Outputs().Span(),
+		})
+		symbols = append(symbols, f.optionsToSymbols(irSymbol.AsMethod().Options())...)
+	}
+	return symbols
+}
+
+// importToSymbol takes an [ir.Import] and returns a symbol for it.
+func (f *file) importToSymbol(imp ir.Import) *symbol {
+	return &symbol{
+		defFile:  f.importToFile[imp.File.Path()],
+		span:     imp.Decl.Span(),
+		isImport: true,
+	}
+}
+
+// optionsToSymbols takes the options [ir.MessageValue] and returns symbols for them.
+// For options, we return symbols for all nested types and values.
+func (f *file) optionsToSymbols(options ir.MessageValue) []*symbol {
+	var symbols []*symbol
+	// TODO: solve panic in protocompile
+	// for option := range options.Fields() {
+	// 	for element := range seq.Values(option.Elements()) {
+	// 		symbols = append(symbols, &symbol{
+	// 			defFile:  f.importToFile[element.Type().AST().Span().Path()],
+	// 			def:      element.Type().AST(),
+	// 			span:     element.AST().Span(),
+	// 			isOption: true,
+	// 		})
+	// 	}
+	// }
+	return symbols
 }
 
 // SymbolAt finds a symbol in this file at the given cursor position, if one exists.
@@ -838,10 +906,8 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 		}
 		idx--
 	}
-
 	symbol := f.symbols[idx]
 	f.lsp.logger.DebugContext(ctx, "found symbol", slog.Any("symbol", symbol))
-
 	// Check that cursor is before the end of the symbol.
 	if comparePositions(symbol.Range().End, cursor) <= 0 {
 		return nil
@@ -850,65 +916,36 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 	return symbol
 }
 
-// findImportable finds all files that can potentially be imported by the proto file at
-// uri. This returns a map from potential Protobuf import path to the URI of the file it would import.
-//
-// Note that this performs no validation on these files, because those files might be open in the
-// editor and might contain invalid syntax at the moment. We only want to get their paths and nothing
-// more.
-func findImportable(
-	ctx context.Context,
-	uri protocol.URI,
-	lsp *lsp,
-) (map[string]storage.ObjectInfo, error) {
-	// This does not use Controller.GetImportableImageFileInfos because:
-	//
-	// 1. That function throws away Module/ModuleSet information, because it
-	//    converts the module contents into ImageFileInfos.
-	//
-	// 2. That function does not specify which of the files it returns are
-	//    well-known imports. Previously, we were making an educated guess about
-	//    which files were well-known, but this resulted in subtle classification
-	//    bugs.
-	//
-	// Doing the file walk here manually helps us retain some control over what
-	// data is discarded.
-	workspace, err := lsp.controller.GetWorkspace(ctx, uri.Filename())
-	if err != nil {
-		return nil, err
+// PublishDiagnostics publishes all of this file's diagnostics to the LSP client.
+func (f *file) PublishDiagnostics(ctx context.Context) {
+	if !f.IsOpenInEditor() {
+		// If the file does get opened by the editor, the server will call
+		// Refresh() and this function will retry sending diagnostics. Which is
+		// to say: returning here does not result in stale diagnostics on the
+		// client.
+		return
 	}
 
-	imports := make(map[string]storage.ObjectInfo)
-	for _, module := range workspace.Modules() {
-		err = module.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
-			if fileInfo.FileType() != bufmodule.FileTypeProto {
-				return nil
-			}
+	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
-			imports[fileInfo.Path()] = fileInfo
-
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
+	// NOTE: We need to avoid sending a JSON null here, so we replace it with
+	// a non-nil empty slice when the diagnostics slice is nil.
+	diagnostics := f.diagnostics
+	if f.diagnostics == nil {
+		diagnostics = []protocol.Diagnostic{}
 	}
 
-	err = lsp.wktBucket.Walk(ctx, "", func(object storage.ObjectInfo) error {
-		imports[object.Path()] = wktObjectInfo{object}
-		return nil
+	// Publish the diagnostics. This error is automatically logged by the LSP framework.
+	_ = f.lsp.client.PublishDiagnostics(ctx, &protocol.PublishDiagnosticsParams{
+		URI: f.uri,
+		// NOTE: For some reason, Version is int32 in the document struct, but uint32 here.
+		// This seems like a bug in the LSP protocol package.
+		Version:     uint32(f.version),
+		Diagnostics: diagnostics,
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	lsp.logger.Debug(fmt.Sprintf("found imports for %q: %#v", uri, imports))
-
-	return imports, nil
 }
 
-// wktObjectInfo is a concrete type to help us identify WKTs among the
-// importable files.
+// wktObjectInfo is a concrete type to help us identify WKTs among the importable files.
 type wktObjectInfo struct {
 	storage.ObjectInfo
 }

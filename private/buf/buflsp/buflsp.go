@@ -15,6 +15,7 @@
 // Package buflsp implements a language server for Protobuf.
 //
 // The main entry-point of this package is the Serve() function, which creates a new LSP server.
+
 package buflsp
 
 import (
@@ -28,8 +29,8 @@ import (
 	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/wasm"
+	"github.com/bufbuild/protocompile/experimental/incremental"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
 	"go.uber.org/zap"
@@ -45,19 +46,8 @@ func Serve(
 	controller bufctl.Controller,
 	wasmRuntime wasm.Runtime,
 	stream jsonrpc2.Stream,
+	queryExecutor *incremental.Executor,
 ) (jsonrpc2.Conn, error) {
-	// The LSP protocol deals with absolute filesystem paths. This requires us to
-	// bypass the bucket API completely, so we create a bucket pointing at the filesystem
-	// root.
-	bucketProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	bucket, err := bucketProvider.NewReadWriteBucket(
-		"/", // TODO: This is not correct for Windows.
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	if err != nil {
-		return nil, err
-	}
-
 	conn := jsonrpc2.NewConn(stream)
 	lsp := &lsp{
 		conn: conn,
@@ -65,12 +55,12 @@ func Serve(
 			&connWrapper{Conn: conn, logger: container.Logger()},
 			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
-		container:   container,
-		logger:      container.Logger(),
-		controller:  controller,
-		wasmRuntime: wasmRuntime,
-		rootBucket:  bucket,
-		wktBucket:   wktBucket,
+		container:     container,
+		logger:        container.Logger(),
+		controller:    controller,
+		wasmRuntime:   wasmRuntime,
+		wktBucket:     wktBucket,
+		queryExecutor: queryExecutor,
 	}
 	lsp.fileManager = newFileManager(lsp)
 	off := protocol.TraceOff
@@ -94,13 +84,13 @@ type lsp struct {
 	client    protocol.Client
 	container appext.Container
 
-	logger      *slog.Logger
-	controller  bufctl.Controller
-	wasmRuntime wasm.Runtime
-	rootBucket  storage.ReadBucket
-	fileManager *fileManager
-
-	wktBucket storage.ReadBucket
+	logger        *slog.Logger
+	controller    bufctl.Controller
+	wasmRuntime   wasm.Runtime
+	fileManager   *fileManager
+	queryExecutor *incremental.Executor
+	wktBucket     storage.ReadBucket
+	shutdown      bool
 
 	lock sync.Mutex
 
