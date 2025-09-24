@@ -46,17 +46,44 @@ import (
 type symbol struct {
 	ir ir.Symbol
 
-	defFile *file
-	def     ast.DeclDef
-	span    report.Span
+	file *file
+	def  *symbol
+	span report.Span
+	kind kind
 
-	// isTag indicates whether this symbol represents a field/enum value tag.
-	isTag bool
-	// isImport indicates whether this symbol represents an import statement.
-	isImport bool
 	// isOption indicates whether this symbol represents an option.
 	isOption bool
 }
+
+// kind is used to track the symbol kind and lets us resolve definitions to their symbol.
+type kind interface {
+	isSymbolKind()
+}
+
+type referenceable struct {
+	ast        ast.DeclDef
+	references []*symbol
+}
+
+type reference struct {
+	def ast.DeclDef
+}
+
+type static struct {
+	ast ast.DeclDef
+}
+
+type imported struct {
+	file *file
+}
+
+type tag struct{}
+
+func (*referenceable) isSymbolKind() {}
+func (*reference) isSymbolKind()     {}
+func (*static) isSymbolKind()        {}
+func (*imported) isSymbolKind()      {}
+func (*tag) isSymbolKind()           {}
 
 // Range constructs an LSP protocol code range for this symbol.
 func (s *symbol) Range() protocol.Range {
@@ -65,19 +92,22 @@ func (s *symbol) Range() protocol.Range {
 
 // Definition returns the span of the definition of the symbol.
 func (s *symbol) Definition() protocol.Location {
-	if s.isImport {
+	if imported, ok := s.kind.(*imported); ok {
 		return protocol.Location{
-			URI: s.defFile.uri,
+			URI: imported.file.uri,
 		}
 	}
-	span := s.def.Span()
-	if span.IsZero() {
-		// If no definition span is present, jump to the current span of the symbol itself.
-		span = s.span
+	if s.def.span.IsZero() {
+		// The definition does not have a span, so we just jump to the span of the symbol itself
+		// as a fallback.
+		return protocol.Location{
+			URI:   s.file.uri,
+			Range: s.Range(),
+		}
 	}
 	return protocol.Location{
-		URI:   s.defFile.uri,
-		Range: reportSpanToProtocolRange(span),
+		URI:   s.def.file.uri,
+		Range: s.def.Range(),
 	}
 }
 
@@ -91,15 +121,15 @@ func (s *symbol) LogValue() slog.Value {
 	}
 	attrs := []slog.Attr{
 		slog.String("file", s.span.Path()),
-		slog.Bool("is_tag", s.isTag),
 		slog.Any("start", loc(s.span.StartLoc())),
 		slog.Any("end", loc(s.span.EndLoc())),
 	}
-	if !s.isImport {
-		attrs = append(attrs, slog.String("def", s.def.Name().Canonicalized()))
-	}
-	if s.defFile != nil {
-		attrs = append(attrs, slog.String("def_file", s.defFile.uri.Filename()))
+	if imported, ok := s.kind.(*imported); ok {
+		attrs = append(attrs, slog.String("imported", imported.file.uri.Filename()))
+	} else {
+		attrs = append(attrs, slog.String("def_file", s.def.file.uri.Filename()))
+		attrs = append(attrs, slog.Any("def_start", loc(s.def.span.StartLoc())))
+		attrs = append(attrs, slog.Any("def_end", loc(s.def.span.EndLoc())))
 	}
 	return slog.GroupValue(attrs...)
 }
@@ -111,11 +141,13 @@ func (s *symbol) LogValue() slog.Value {
 func (s *symbol) FormatDocs(ctx context.Context) string {
 	missingDocs := "<missing docs>"
 	var tooltip strings.Builder
-	switch {
-	case s.isImport && s.defFile != nil:
+	var def ast.DeclDef
+	switch s.kind.(type) {
+	case *imported:
+		imported := s.kind.(*imported)
 		// Provide a preview of the imported file.
-		return fmt.Sprintf("```proto\n%s\n```", s.defFile.text)
-	case s.isTag:
+		return fmt.Sprintf("```proto\n%s\n```", imported.file.text)
+	case *tag:
 		plural := func(i int) string {
 			if i == 1 {
 				return ""
@@ -171,22 +203,30 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 			}
 			return doc
 		}
-	default:
-		var docs string
-		if s.def.IsZero() {
-			// Check for docs for predeclared types
-			comments, ok := builtinDocs[s.ir.AsMember().TypeAST().AsPath().AsPredeclared().String()]
-			if ok {
-				docs = strings.Join(comments, "\n")
-			}
-		} else {
-			docs = getCommentsFromDef(s.def)
+	case *referenceable:
+		referenceable := s.kind.(*referenceable)
+		def = referenceable.ast
+	case *static:
+		static := s.kind.(*static)
+		def = static.ast
+	case *reference:
+		reference := s.kind.(*reference)
+		def = reference.def
+	}
+	var docs string
+	if def.Span().IsZero() {
+		// Check for docs for predeclared types
+		comments, ok := builtinDocs[def.Type().AsPath().AsPredeclared().String()]
+		if ok {
+			docs = strings.Join(comments, "\n")
 		}
-		if docs != "" {
-			fmt.Fprintln(&tooltip, docs)
-		} else {
-			fmt.Fprintln(&tooltip, missingDocs)
-		}
+	} else {
+		docs = getCommentsFromDef(def)
+	}
+	if docs != "" {
+		fmt.Fprintln(&tooltip, docs)
+	} else {
+		fmt.Fprintln(&tooltip, missingDocs)
 	}
 	return tooltip.String()
 }

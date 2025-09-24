@@ -342,7 +342,7 @@ func (f *file) RefreshWorkspace(ctx context.Context) {
 	f.checkClient = checkClient
 }
 
-// IndexImports keeps track of the importable files.
+// IndexImports keeps track of importable files.
 //
 // This operation requires RefreshWorkspace.
 func (f *file) IndexImports(ctx context.Context) {
@@ -420,15 +420,17 @@ func (f *file) findImportable(ctx context.Context) ([]storage.ObjectInfo, error)
 	return xslices.MapValuesToSlice(imports), nil
 }
 
-// RefreshIR queries for the IR of the file and provides diagnostics from the query if necessary.
+// RefreshIR queries for the IR of the file and the IR of each import file.
+// Diagnostics from the compiler are returned when applicable.
 //
-// This operation requires IndexImports..
+// This operation requires IndexImports.
 func (f *file) RefreshIR(ctx context.Context) {
 	f.lsp.logger.Info(
 		"parsing IR for file",
 		slog.String("uri", string(f.uri)),
 		slog.Int("version", int(f.version)),
 	)
+
 	openerMap := map[string]string{
 		f.objectInfo.Path(): f.text,
 	}
@@ -436,6 +438,21 @@ func (f *file) RefreshIR(ctx context.Context) {
 		openerMap[path] = file.text
 	}
 	opener := source.NewMap(openerMap)
+
+	// TODO: what do we do with the diagnostics of each of the import files? Ignore them?
+	for path := range openerMap {
+		file, ok := f.importToFile[path]
+		if !ok {
+			file = f
+		}
+		file.queryForIR(ctx, opener)
+	}
+}
+
+func (f *file) queryForIR(
+	ctx context.Context,
+	opener source.Opener,
+) {
 	results, report, err := incremental.Run(
 		ctx,
 		f.lsp.queryExecutor,
@@ -713,6 +730,8 @@ func (f *file) appendLintErrors(source string, err error) bool {
 // the document.
 //
 // This operation requires RefreshIR.
+//
+// TODO: OPTIONS
 func (f *file) IndexSymbols(ctx context.Context) {
 	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
@@ -720,17 +739,62 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	// this file depends on a file that has since been modified, we may need to update references.
 	f.symbols = nil
 
-	for i := range f.ir.Symbols().Len() {
-		// We only index the symbols for this file, the IR provides all imported symbols as well
-		symbol := f.ir.Symbols().At(i)
-		if symbol.File().Path() != f.objectInfo.Path() {
-			continue
-		}
-		f.symbols = append(f.symbols, f.irToSymbols(symbol)...)
+	// Process all imports as symbols
+	f.symbols = xslices.Map(seq.ToSlice(f.ir.Imports()), f.importToSymbol)
+
+	var resolved, unresolved []*symbol
+	fileResolved, fileUnresolved := f.indexSymbols()
+	resolved = append(resolved, fileResolved...)
+	f.symbols = append(f.symbols, fileResolved...)
+	unresolved = append(unresolved, fileUnresolved...)
+	f.symbols = append(f.symbols, fileUnresolved...)
+
+	for _, file := range f.importToFile {
+		fileResolved, fileUnresolved := file.indexSymbols()
+		resolved = append(resolved, fileResolved...)
+		unresolved = append(unresolved, fileUnresolved...)
 	}
 
-	// We also process all the declared imports in a file as symbols
-	f.symbols = append(f.symbols, xslices.Map(seq.ToSlice(f.ir.Imports()), f.importToSymbol)...)
+	// Create an index of file path -> canon paths -> referenceable symbols for easier searching?
+	defIndex := make(map[string]map[string]*symbol)
+	for _, sym := range resolved {
+		def, ok := sym.kind.(*referenceable)
+		if !ok {
+			continue
+		}
+		fileIndex, ok := defIndex[sym.span.Path()]
+		if !ok {
+			fileIndex = make(map[string]*symbol)
+			defIndex[sym.span.Path()] = fileIndex
+		}
+		fileIndex[def.ast.Name().Canonicalized()] = sym
+	}
+
+	// Resolve all unresolved symbols
+	for _, sym := range unresolved {
+		ref, ok := sym.kind.(*reference)
+		if !ok {
+			// This shouldn't happen, we continue for now
+			continue
+		}
+		fileIndex, ok := defIndex[ref.def.Span().Path()]
+		if !ok {
+			// This shouldn't happen, we continue for now
+			continue
+		}
+		def, ok := fileIndex[ref.def.Name().Canonicalized()]
+		if !ok {
+			// This shouldn't happen, we continue for now
+			continue
+		}
+		sym.def = def
+		referenceable, ok := def.kind.(*referenceable)
+		if !ok {
+			// This shouldn't happen, we continue for now
+			continue
+		}
+		referenceable.references = append(referenceable.references, sym)
+	}
 
 	// Finally, sort the symbols in position order, with shorter symbols sorting smaller.
 	slices.SortFunc(f.symbols, func(s1, s2 *symbol) int {
@@ -744,152 +808,165 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	f.lsp.logger.DebugContext(ctx, fmt.Sprintf("symbol indexing complete %s", f.uri))
 }
 
-// irToSymbols takes the [ir.Symbol] and returns the corresponding symbols used by the LSP.
+// indexSymbols takes the IR [ir.File] for each [file] and returns all the file symbols in
+// two slices:
+//   - The first slice contains definition symbols that are ready to go
+//   - The second slice contains reference symbols need to be resolved
 //
-// For messages and enums, we return a symbol for the name.
-// For fields, we return symbols for the type, name, and tag.
-// For enum values, we return symbols for the name and tag.
-// For extensions, we return a symbol for the extendee.
-func (f *file) irToSymbols(irSymbol ir.Symbol) []*symbol {
-	var symbols []*symbol
+// For unresolved symbols, we need to track the definition we're attempting to resolve.
+func (f *file) indexSymbols() ([]*symbol, []*symbol) {
+	var resolved, unresolved []*symbol
+	for i := range f.ir.Symbols().Len() {
+		// We only index the symbols for this file.
+		symbol := f.ir.Symbols().At(i)
+		if symbol.File().Path() != f.objectInfo.Path() {
+			continue
+		}
+		resolvedSyms, unresolvedSyms := f.irToSymbols(symbol)
+		resolved = append(resolved, resolvedSyms...)
+		unresolved = append(unresolved, unresolvedSyms...)
+	}
+	return resolved, unresolved
+}
+
+// irToSymbols takes the [ir.Symbol] and returns the corresponding symbols used by the LSP
+// in two slices:
+//   - The first slice contains resolved symbols that are ready to go
+//   - The second slice contains symbols that resolution for their defs
+//
+// TODO: OPTIONS
+func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
+	var resolved, unresolved []*symbol
 	switch irSymbol.Kind() {
 	case ir.SymbolKindMessage:
-		def := irSymbol.AsType().AST()
-		symbols = append(symbols, &symbol{
-			ir:      irSymbol,
-			defFile: f,
-			def:     def,
-			span:    def.AsMessage().Name.Span(),
-		})
-		symbols = append(symbols, f.optionsToSymbols(irSymbol.AsType().Options())...)
-	case ir.SymbolKindEnum:
-		def := irSymbol.AsType().AST()
-		symbols = append(symbols, &symbol{
-			ir:      irSymbol,
-			defFile: f,
-			def:     def,
-			span:    def.AsEnum().Name.Span(),
-		})
-		symbols = append(symbols, f.optionsToSymbols(irSymbol.AsType().Options())...)
-	case ir.SymbolKindField:
-		field := irSymbol.AsMember().AST()
-		defFile := f.importToFile[irSymbol.AsMember().Element().AST().Span().Path()]
-		if defFile == nil {
-			// If no span, this is likely a built-in type, so we set the file to the current file.
-			defFile = f
+		msg := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsType().AST().AsMessage().Name.Span(),
+			kind: &referenceable{
+				ast: irSymbol.AsType().AST(),
+			},
 		}
-		symbols = append(symbols, &symbol{
-			ir:      irSymbol,
-			defFile: defFile,
-			def:     irSymbol.AsMember().Element().AST(),
-			span:    field.AsField().Type.Span(),
-		})
-		symbols = append(symbols, &symbol{
-			ir:      irSymbol,
-			defFile: f,
-			def:     field,
-			span:    field.AsField().Name.Span(),
-		})
-		symbols = append(symbols, &symbol{
-			ir:      irSymbol,
-			defFile: f,
-			def:     field,
-			span:    field.AsField().Tag.Span(),
-			isTag:   true,
-		})
-		symbols = append(symbols, f.optionsToSymbols(irSymbol.AsMember().Options())...)
-	case ir.SymbolKindEnumValue:
-		enumValue := irSymbol.AsMember().AST()
-		symbols = append(symbols, &symbol{
-			ir:      irSymbol,
-			defFile: f,
-			def:     enumValue,
-			span:    enumValue.AsEnumValue().Name.Span(),
-		})
-		symbols = append(symbols, &symbol{
-			ir:      irSymbol,
-			defFile: f,
-			def:     enumValue,
-			span:    enumValue.AsEnumValue().Tag.Span(),
-			isTag:   true,
-		})
-		symbols = append(symbols, f.optionsToSymbols(irSymbol.AsMember().Options())...)
+		msg.def = msg
+		resolved = append(resolved, msg)
+	case ir.SymbolKindEnum:
+		enum := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsType().AST().AsEnum().Name.Span(),
+			kind: &referenceable{
+				ast: irSymbol.AsType().AST(),
+			},
+		}
+		enum.def = enum
+		resolved = append(resolved, enum)
+	case ir.SymbolKindField:
+		typ := &symbol{
+			ir:   irSymbol,
+			span: irSymbol.AsMember().TypeAST().Span(),
+			kind: &reference{
+				def: irSymbol.AsMember().Element().AST(),
+			},
+		}
+		// Need to resolve the def
+		unresolved = append(unresolved, typ)
+
+		field := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsMember().AST().AsField().Name.Span(),
+			kind: &referenceable{
+				ast: irSymbol.AsMember().AST(),
+			},
+		}
+		field.def = field
+		resolved = append(resolved, field)
+
+		tag := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsMember().AST().AsField().Tag.Span(),
+			kind: &tag{},
+		}
+		tag.def = tag
+		resolved = append(resolved, tag)
 	case ir.SymbolKindExtension:
-		symbols = append(symbols, &symbol{
-			ir:      irSymbol,
-			defFile: f.importToFile[irSymbol.AsMember().Container().AST().Span().Path()],
-			def:     irSymbol.AsMember().Container().AST(),
-			span:    irSymbol.AsMember().AST().AsExtend().Extendee.Span(),
-		})
-		symbols = append(symbols, f.optionsToSymbols(irSymbol.AsMember().Options())...)
+		// TODO: we should figure out if we need to do any resolution here.
+		ext := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsMember().AST().AsExtend().Extendee.Span(),
+			kind: &static{
+				ast: irSymbol.AsMember().AST(),
+			},
+		}
+		resolved = append(resolved, ext)
 	case ir.SymbolKindOneof:
-		symbols = append(symbols, &symbol{
-			ir:      irSymbol,
-			defFile: f,
-			def:     irSymbol.AsOneof().AST(),
-			span:    irSymbol.AsOneof().AST().AsOneof().Name.Span(),
-		})
-		symbols = append(symbols, f.optionsToSymbols(irSymbol.AsOneof().Options())...)
+		oneof := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsOneof().AST().AsOneof().Name.Span(),
+			kind: &referenceable{
+				ast: irSymbol.AsOneof().AST(),
+			},
+		}
+		oneof.def = oneof
+		resolved = append(resolved, oneof)
 	case ir.SymbolKindService:
-		symbols = append(symbols, &symbol{
-			ir:      irSymbol,
-			defFile: f,
-			def:     irSymbol.AsService().AST(),
-			span:    irSymbol.AsService().AST().AsService().Name.Span(),
-		})
-		symbols = append(symbols, f.optionsToSymbols(irSymbol.AsService().Options())...)
+		service := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsService().AST().AsService().Name.Span(),
+			kind: &static{
+				ast: irSymbol.AsService().AST(),
+			},
+		}
+		service.def = service
+		resolved = append(resolved, service)
 	case ir.SymbolKindMethod:
-		method := irSymbol.AsMethod()
-		symbols = append(symbols, &symbol{
-			ir:      irSymbol,
-			defFile: f,
-			def:     method.AST(),
-			span:    method.AST().AsMethod().Name.Span(),
-		})
-		input, _ := method.Input()
-		symbols = append(symbols, &symbol{
-			ir:      irSymbol,
-			defFile: f.importToFile[input.AST().Span().Path()],
-			def:     input.AST(),
-			span:    method.AST().AsMethod().Signature.Inputs().Span(),
-		})
-		output, _ := method.Output()
-		symbols = append(symbols, &symbol{
-			ir:      irSymbol,
-			defFile: f.importToFile[output.AST().Span().Path()],
-			def:     output.AST(),
-			span:    method.AST().AsMethod().Signature.Outputs().Span(),
-		})
-		symbols = append(symbols, f.optionsToSymbols(irSymbol.AsMethod().Options())...)
+		method := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsMethod().AST().AsMethod().Name.Span(),
+			kind: &static{
+				ast: irSymbol.AsMethod().AST(),
+			},
+		}
+		method.def = method
+		resolved = append(resolved, method)
+
+		input, _ := irSymbol.AsMethod().Input()
+		inputSym := &symbol{
+			ir:   irSymbol,
+			span: irSymbol.AsMethod().AST().AsMethod().Signature.Inputs().Span(),
+			kind: &reference{
+				def: input.AST(),
+			},
+		}
+		unresolved = append(unresolved, inputSym)
+
+		output, _ := irSymbol.AsMethod().Output()
+		outputSym := &symbol{
+			ir:   irSymbol,
+			span: irSymbol.AsMethod().AST().AsMethod().Signature.Outputs().Span(),
+			kind: &reference{
+				def: output.AST(),
+			},
+		}
+		unresolved = append(unresolved, outputSym)
 	}
-	return symbols
+	return resolved, unresolved
 }
 
 // importToSymbol takes an [ir.Import] and returns a symbol for it.
 func (f *file) importToSymbol(imp ir.Import) *symbol {
 	return &symbol{
-		defFile:  f.importToFile[imp.File.Path()],
-		span:     imp.Decl.Span(),
-		isImport: true,
+		file: f,
+		span: imp.Decl.Span(),
+		kind: &imported{
+			file: f.importToFile[imp.File.Path()],
+		},
 	}
-}
-
-// optionsToSymbols takes the options [ir.MessageValue] and returns symbols for them.
-// For options, we return symbols for all nested types and values.
-func (f *file) optionsToSymbols(options ir.MessageValue) []*symbol {
-	var symbols []*symbol
-	// TODO: solve panic in protocompile
-	// for option := range options.Fields() {
-	// 	for element := range seq.Values(option.Elements()) {
-	// 		symbols = append(symbols, &symbol{
-	// 			defFile:  f.importToFile[element.Type().AST().Span().Path()],
-	// 			def:      element.Type().AST(),
-	// 			span:     element.AST().Span(),
-	// 			isOption: true,
-	// 		})
-	// 	}
-	// }
-	return symbols
 }
 
 // SymbolAt finds a symbol in this file at the given cursor position, if one exists.

@@ -435,7 +435,7 @@ func (s *server) SemanticTokensFull(
 				semanticType = semanticTypeEnum
 			case ir.SymbolKindField:
 				// For predeclared types, we set semanticType to semanticTypeType
-				if symbol.def.IsZero() {
+				if symbol.def.span.IsZero() {
 					semanticType = semanticTypeType
 				} else {
 					semanticType = semanticTypeVariable
