@@ -40,9 +40,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
 	"github.com/bufbuild/protocompile/experimental/incremental"
 	"github.com/bufbuild/protocompile/experimental/incremental/queries"
 	"github.com/bufbuild/protocompile/experimental/ir"
+	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/seq"
 	"github.com/bufbuild/protocompile/experimental/source"
 	"go.lsp.dev/protocol"
@@ -79,10 +81,11 @@ type file struct {
 	objectInfo   storage.ObjectInfo
 	importToFile map[string]*file
 
-	ir                  ir.File
-	symbols             []*symbol
-	diagnostics         []protocol.Diagnostic
-	image, againstImage bufimage.Image
+	ir                   ir.File
+	referenceableSymbols map[string]*symbol
+	symbols              []*symbol
+	diagnostics          []protocol.Diagnostic
+	image, againstImage  bufimage.Image
 }
 
 // IsLocal returns whether this is a local file, i.e. a file that the editor
@@ -283,11 +286,11 @@ func (f *file) Refresh(ctx context.Context) {
 	progress.Report(ctx, "Parsing IR", 3.0/4)
 	f.RefreshIR(ctx)
 
-	progress.Report(ctx, "Running Checks", 4.0/5)
-	f.RunChecks(ctx)
-
-	progress.Report(ctx, "Indexing Symbols", 5.0/5)
+	progress.Report(ctx, "Indexing Symbols", 4.0/5)
 	f.IndexSymbols(ctx)
+
+	progress.Report(ctx, "Running Checks", 5.0/5)
+	f.RunChecks(ctx)
 
 	progress.Done(ctx)
 
@@ -438,14 +441,11 @@ func (f *file) RefreshIR(ctx context.Context) {
 		openerMap[path] = file.text
 	}
 	opener := source.NewMap(openerMap)
+	f.queryForIR(ctx, opener)
 
-	// TODO: what do we do with the diagnostics of each of the import files? Ignore them?
-	for path := range openerMap {
-		file, ok := f.importToFile[path]
-		if !ok {
-			file = f
-		}
+	for _, file := range f.importToFile {
 		file.queryForIR(ctx, opener)
+		file.IndexSymbols(ctx)
 	}
 }
 
@@ -453,6 +453,9 @@ func (f *file) queryForIR(
 	ctx context.Context,
 	opener source.Opener,
 ) {
+	if !f.ir.IsZero() {
+		return
+	}
 	results, report, err := incremental.Run(
 		ctx,
 		f.lsp.queryExecutor,
@@ -489,6 +492,352 @@ func (f *file) queryForIR(
 		fmt.Sprintf("got %v diagnostic(s)", len(f.diagnostics)),
 		slog.Any("diagnostics", f.diagnostics),
 	)
+}
+
+// IndexSymbols processes the IR of a file and generates symbols for each symbol in
+// the document.
+//
+// This operation requires RefreshIR.
+func (f *file) IndexSymbols(ctx context.Context) {
+	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
+
+	// Throw away all the old symbols and rebuild symbols unconditionally. This is because if
+	// this file depends on a file that has since been modified, we may need to update references.
+	f.symbols = nil
+	f.referenceableSymbols = make(map[string]*symbol)
+
+	// Process all imports as symbols
+	f.symbols = xslices.Map(seq.ToSlice(f.ir.Imports()), f.importToSymbol)
+
+	resolved, unresolved := f.indexSymbols()
+	f.symbols = append(f.symbols, resolved...)
+	f.symbols = append(f.symbols, unresolved...)
+
+	// Index all referenceable symbols
+	for _, sym := range resolved {
+		def, ok := sym.kind.(*referenceable)
+		if !ok {
+			continue
+		}
+		f.referenceableSymbols[def.ast.Name().Canonicalized()] = sym
+	}
+
+	// Resolve all unresolved symbols
+	for _, sym := range unresolved {
+		ref, ok := sym.kind.(*reference)
+		if !ok {
+			// This shouldn't happen, logging a warning
+			f.lsp.logger.Warn(
+				"found unresolved non-reference symbol",
+				slog.String("file", f.uri.Filename()),
+				slog.Any("symbol", sym),
+			)
+			continue
+		}
+		file, ok := f.importToFile[ref.def.Span().Path()]
+		if !ok {
+			// Check current file
+			if ref.def.Span().Path() != f.objectInfo.Path() {
+				// This can happen if this references a predeclared type or if the file we are
+				// checking has not indexed imports.
+				continue
+			}
+			file = f
+		}
+		def, ok := file.referenceableSymbols[ref.def.Name().Canonicalized()]
+		if !ok {
+			// This shouldn't happen, logging a warning
+			f.lsp.logger.Warn(
+				"found unresolveable reference symbol",
+				slog.String("file", f.uri.Filename()),
+				slog.Any("symbol", sym),
+			)
+			continue
+		}
+		sym.def = def
+		referenceable, ok := def.kind.(*referenceable)
+		if !ok {
+			// This shouldn't happen, logging a warning
+			f.lsp.logger.Warn(
+				"found non-referenceable symbol in index",
+				slog.String("file", f.uri.Filename()),
+				slog.Any("symbol", def),
+			)
+			continue
+		}
+		referenceable.references = append(referenceable.references, sym)
+	}
+
+	// Finally, sort the symbols in position order, with shorter symbols sorting smaller.
+	slices.SortFunc(f.symbols, func(s1, s2 *symbol) int {
+		diff := s1.span.StartLoc().Offset - s2.span.StartLoc().Offset
+		if diff == 0 {
+			return s1.span.EndLoc().Offset - s2.span.EndLoc().Offset
+		}
+		return diff
+	})
+
+	f.lsp.logger.DebugContext(ctx, fmt.Sprintf("symbol indexing complete %s", f.uri))
+}
+
+// indexSymbols takes the IR [ir.File] for each [file] and returns all the file symbols in
+// two slices:
+//   - The first slice contains definition symbols that are ready to go
+//   - The second slice contains reference symbols need to be resolved
+//
+// For unresolved symbols, we need to track the definition we're attempting to resolve.
+func (f *file) indexSymbols() ([]*symbol, []*symbol) {
+	var resolved, unresolved []*symbol
+	for i := range f.ir.Symbols().Len() {
+		// We only index the symbols for this file.
+		symbol := f.ir.Symbols().At(i)
+		if symbol.File().Path() != f.objectInfo.Path() {
+			continue
+		}
+		resolvedSyms, unresolvedSyms := f.irToSymbols(symbol)
+		resolved = append(resolved, resolvedSyms...)
+		unresolved = append(unresolved, unresolvedSyms...)
+	}
+	return resolved, unresolved
+}
+
+// irToSymbols takes the [ir.Symbol] and returns the corresponding symbols used by the LSP
+// in two slices:
+//   - The first slice contains resolved symbols that are ready to go
+//   - The second slice contains symbols that resolution for their defs
+func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
+	var resolved, unresolved []*symbol
+	switch irSymbol.Kind() {
+	case ir.SymbolKindMessage:
+		msg := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsType().AST().AsMessage().Name.Span(),
+			kind: &referenceable{
+				ast: irSymbol.AsType().AST(),
+			},
+		}
+		msg.def = msg
+		resolved = append(resolved, msg)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsType().Options(), report.Span{})...)
+	case ir.SymbolKindEnum:
+		enum := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsType().AST().AsEnum().Name.Span(),
+			kind: &referenceable{
+				ast: irSymbol.AsType().AST(),
+			},
+		}
+		enum.def = enum
+		resolved = append(resolved, enum)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsType().Options(), report.Span{})...)
+	case ir.SymbolKindEnumValue:
+		name := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsMember().AST().AsEnumValue().Name.Span(),
+			kind: &static{
+				ast: irSymbol.AsMember().AST(),
+			},
+		}
+		name.def = name
+		resolved = append(resolved, name)
+
+		tag := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsMember().AST().AsEnumValue().Tag.Span(),
+			kind: &tag{},
+		}
+		tag.def = tag
+		resolved = append(resolved, tag)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options(), report.Span{})...)
+	case ir.SymbolKindField:
+		typ := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsMember().TypeAST().Span(),
+		}
+		kind, needsResolution := getKindForMember(irSymbol.AsMember())
+		typ.kind = kind
+		if needsResolution {
+			unresolved = append(unresolved, typ)
+		} else {
+			resolved = append(resolved, typ)
+		}
+
+		field := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsMember().AST().AsField().Name.Span(),
+			kind: &referenceable{
+				ast: irSymbol.AsMember().AST(),
+			},
+		}
+		field.def = field
+		resolved = append(resolved, field)
+
+		tag := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsMember().AST().AsField().Tag.Span(),
+			kind: &tag{},
+		}
+		tag.def = tag
+		resolved = append(resolved, tag)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options(), report.Span{})...)
+	case ir.SymbolKindExtension:
+		// TODO: we should figure out if we need to do any resolution here.
+		ext := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsMember().AST().AsExtend().Extendee.Span(),
+			kind: &static{
+				ast: irSymbol.AsMember().AST(),
+			},
+		}
+		resolved = append(resolved, ext)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options(), report.Span{})...)
+	case ir.SymbolKindOneof:
+		oneof := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsOneof().AST().AsOneof().Name.Span(),
+			kind: &referenceable{
+				ast: irSymbol.AsOneof().AST(),
+			},
+		}
+		oneof.def = oneof
+		resolved = append(resolved, oneof)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsOneof().Options(), report.Span{})...)
+	case ir.SymbolKindService:
+		service := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsService().AST().AsService().Name.Span(),
+			kind: &static{
+				ast: irSymbol.AsService().AST(),
+			},
+		}
+		service.def = service
+		resolved = append(resolved, service)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsService().Options(), report.Span{})...)
+	case ir.SymbolKindMethod:
+		method := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsMethod().AST().AsMethod().Name.Span(),
+			kind: &static{
+				ast: irSymbol.AsMethod().AST(),
+			},
+		}
+		method.def = method
+		resolved = append(resolved, method)
+
+		input, _ := irSymbol.AsMethod().Input()
+		inputSym := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsMethod().AST().AsMethod().Signature.Inputs().Span(),
+			kind: &reference{
+				def: input.AST(), // Only messages can be method inputs and outputs
+			},
+		}
+		unresolved = append(unresolved, inputSym)
+
+		output, _ := irSymbol.AsMethod().Output()
+		outputSym := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: irSymbol.AsMethod().AST().AsMethod().Signature.Outputs().Span(),
+			kind: &reference{
+				def: output.AST(), // Only messages can be method inputs and outputs
+			},
+		}
+		unresolved = append(unresolved, outputSym)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMethod().Options(), report.Span{})...)
+	}
+	return resolved, unresolved
+}
+
+// getKindForMember takes a [ir.Member] and returns the symbol kind and whether or not the
+// symbol is currently resolved.
+func getKindForMember(member ir.Member) (kind, bool) {
+	if member.TypeAST().AsPath().AsPredeclared() != predeclared.Unknown {
+		return &builtin{
+			predeclared: member.TypeAST().AsPath().AsPredeclared(),
+		}, false
+	}
+	return &reference{
+		def: member.Element().AST(),
+	}, true
+}
+
+// importToSymbol takes an [ir.Import] and returns a symbol for it.
+func (f *file) importToSymbol(imp ir.Import) *symbol {
+	return &symbol{
+		file: f,
+		span: imp.Decl.Span(),
+		kind: &imported{
+			file: f.importToFile[imp.File.Path()],
+		},
+	}
+}
+
+func (f *file) messageToSymbols(msg ir.MessageValue, prefix report.Span) []*symbol {
+	var symbols []*symbol
+	for field := range msg.Fields() {
+		if field.AST().IsZero() {
+			continue
+		}
+		for element := range seq.Values(field.Elements()) {
+			span := element.Value().MessageKeys().At(element.ValueNodeIndex()).Span()
+			// We only want the subset of the option path that applies specifically to this element,
+			// and we trim the prefix.
+			if !prefix.IsZero() {
+				span.Start = prefix.End
+			}
+			elem := &symbol{
+				// NOTE: no [ir.Symbol] for option elements
+				file: f,
+				span: span,
+				kind: &reference{
+					def: element.Field().AST(),
+				},
+				isOption: true,
+			}
+			symbols = append(symbols, elem)
+			if !element.AsMessage().IsZero() {
+				symbols = append(symbols, f.messageToSymbols(element.AsMessage(), span)...)
+			}
+		}
+	}
+	return symbols
+}
+
+// SymbolAt finds a symbol in this file at the given cursor position, if one exists.
+//
+// Returns nil if no symbol is found.
+func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
+	// Binary search for the symbol whose start is before or equal to cursor.
+	idx, found := slices.BinarySearchFunc(f.symbols, cursor, func(sym *symbol, cursor protocol.Position) int {
+		return comparePositions(sym.Range().Start, cursor)
+	})
+	if !found {
+		if idx == 0 {
+			return nil
+		}
+		idx--
+	}
+	symbol := f.symbols[idx]
+	f.lsp.logger.DebugContext(ctx, "found symbol", slog.Any("symbol", symbol))
+	// Check that cursor is before the end of the symbol.
+	if comparePositions(symbol.Range().End, cursor) <= 0 {
+		return nil
+	}
+
+	return symbol
 }
 
 // RunChecks initiates background checks (lint and breaking) on this file and
@@ -734,273 +1083,6 @@ func (f *file) appendLintErrors(source string, err error) bool {
 	}
 
 	return true
-}
-
-// IndexSymbols processes the IR of a file and generates symbols for each symbol in
-// the document.
-//
-// This operation requires RefreshIR.
-//
-// TODO: OPTIONS
-func (f *file) IndexSymbols(ctx context.Context) {
-	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
-
-	// Throw away all the old symbols and rebuild symbols unconditionally. This is because if
-	// this file depends on a file that has since been modified, we may need to update references.
-	f.symbols = nil
-
-	// Process all imports as symbols
-	f.symbols = xslices.Map(seq.ToSlice(f.ir.Imports()), f.importToSymbol)
-
-	var resolved, unresolved []*symbol
-	fileResolved, fileUnresolved := f.indexSymbols()
-	resolved = append(resolved, fileResolved...)
-	f.symbols = append(f.symbols, fileResolved...)
-	unresolved = append(unresolved, fileUnresolved...)
-	f.symbols = append(f.symbols, fileUnresolved...)
-
-	for _, file := range f.importToFile {
-		fileResolved, fileUnresolved := file.indexSymbols()
-		resolved = append(resolved, fileResolved...)
-		unresolved = append(unresolved, fileUnresolved...)
-	}
-
-	// Create an index of file path -> canon paths -> referenceable symbols for easier searching?
-	defIndex := make(map[string]map[string]*symbol)
-	for _, sym := range resolved {
-		def, ok := sym.kind.(*referenceable)
-		if !ok {
-			continue
-		}
-		fileIndex, ok := defIndex[sym.span.Path()]
-		if !ok {
-			fileIndex = make(map[string]*symbol)
-			defIndex[sym.span.Path()] = fileIndex
-		}
-		fileIndex[def.ast.Name().Canonicalized()] = sym
-	}
-
-	// Resolve all unresolved symbols
-	for _, sym := range unresolved {
-		ref, ok := sym.kind.(*reference)
-		if !ok {
-			// This shouldn't happen, we continue for now
-			continue
-		}
-		fileIndex, ok := defIndex[ref.def.Span().Path()]
-		if !ok {
-			// This shouldn't happen, we continue for now
-			continue
-		}
-		def, ok := fileIndex[ref.def.Name().Canonicalized()]
-		if !ok {
-			// This shouldn't happen, we continue for now
-			continue
-		}
-		sym.def = def
-		referenceable, ok := def.kind.(*referenceable)
-		if !ok {
-			// This shouldn't happen, we continue for now
-			continue
-		}
-		referenceable.references = append(referenceable.references, sym)
-	}
-
-	// Finally, sort the symbols in position order, with shorter symbols sorting smaller.
-	slices.SortFunc(f.symbols, func(s1, s2 *symbol) int {
-		diff := s1.span.StartLoc().Offset - s2.span.StartLoc().Offset
-		if diff == 0 {
-			return s1.span.EndLoc().Offset - s2.span.EndLoc().Offset
-		}
-		return diff
-	})
-
-	f.lsp.logger.DebugContext(ctx, fmt.Sprintf("symbol indexing complete %s", f.uri))
-}
-
-// indexSymbols takes the IR [ir.File] for each [file] and returns all the file symbols in
-// two slices:
-//   - The first slice contains definition symbols that are ready to go
-//   - The second slice contains reference symbols need to be resolved
-//
-// For unresolved symbols, we need to track the definition we're attempting to resolve.
-func (f *file) indexSymbols() ([]*symbol, []*symbol) {
-	var resolved, unresolved []*symbol
-	for i := range f.ir.Symbols().Len() {
-		// We only index the symbols for this file.
-		symbol := f.ir.Symbols().At(i)
-		if symbol.File().Path() != f.objectInfo.Path() {
-			continue
-		}
-		resolvedSyms, unresolvedSyms := f.irToSymbols(symbol)
-		resolved = append(resolved, resolvedSyms...)
-		unresolved = append(unresolved, unresolvedSyms...)
-	}
-	return resolved, unresolved
-}
-
-// irToSymbols takes the [ir.Symbol] and returns the corresponding symbols used by the LSP
-// in two slices:
-//   - The first slice contains resolved symbols that are ready to go
-//   - The second slice contains symbols that resolution for their defs
-//
-// TODO: OPTIONS
-func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
-	var resolved, unresolved []*symbol
-	switch irSymbol.Kind() {
-	case ir.SymbolKindMessage:
-		msg := &symbol{
-			ir:   irSymbol,
-			file: f,
-			span: irSymbol.AsType().AST().AsMessage().Name.Span(),
-			kind: &referenceable{
-				ast: irSymbol.AsType().AST(),
-			},
-		}
-		msg.def = msg
-		resolved = append(resolved, msg)
-	case ir.SymbolKindEnum:
-		enum := &symbol{
-			ir:   irSymbol,
-			file: f,
-			span: irSymbol.AsType().AST().AsEnum().Name.Span(),
-			kind: &referenceable{
-				ast: irSymbol.AsType().AST(),
-			},
-		}
-		enum.def = enum
-		resolved = append(resolved, enum)
-	case ir.SymbolKindField:
-		typ := &symbol{
-			ir:   irSymbol,
-			span: irSymbol.AsMember().TypeAST().Span(),
-			kind: &reference{
-				def: irSymbol.AsMember().Element().AST(),
-			},
-		}
-		// Need to resolve the def
-		unresolved = append(unresolved, typ)
-
-		field := &symbol{
-			ir:   irSymbol,
-			file: f,
-			span: irSymbol.AsMember().AST().AsField().Name.Span(),
-			kind: &referenceable{
-				ast: irSymbol.AsMember().AST(),
-			},
-		}
-		field.def = field
-		resolved = append(resolved, field)
-
-		tag := &symbol{
-			ir:   irSymbol,
-			file: f,
-			span: irSymbol.AsMember().AST().AsField().Tag.Span(),
-			kind: &tag{},
-		}
-		tag.def = tag
-		resolved = append(resolved, tag)
-	case ir.SymbolKindExtension:
-		// TODO: we should figure out if we need to do any resolution here.
-		ext := &symbol{
-			ir:   irSymbol,
-			file: f,
-			span: irSymbol.AsMember().AST().AsExtend().Extendee.Span(),
-			kind: &static{
-				ast: irSymbol.AsMember().AST(),
-			},
-		}
-		resolved = append(resolved, ext)
-	case ir.SymbolKindOneof:
-		oneof := &symbol{
-			ir:   irSymbol,
-			file: f,
-			span: irSymbol.AsOneof().AST().AsOneof().Name.Span(),
-			kind: &referenceable{
-				ast: irSymbol.AsOneof().AST(),
-			},
-		}
-		oneof.def = oneof
-		resolved = append(resolved, oneof)
-	case ir.SymbolKindService:
-		service := &symbol{
-			ir:   irSymbol,
-			file: f,
-			span: irSymbol.AsService().AST().AsService().Name.Span(),
-			kind: &static{
-				ast: irSymbol.AsService().AST(),
-			},
-		}
-		service.def = service
-		resolved = append(resolved, service)
-	case ir.SymbolKindMethod:
-		method := &symbol{
-			ir:   irSymbol,
-			file: f,
-			span: irSymbol.AsMethod().AST().AsMethod().Name.Span(),
-			kind: &static{
-				ast: irSymbol.AsMethod().AST(),
-			},
-		}
-		method.def = method
-		resolved = append(resolved, method)
-
-		input, _ := irSymbol.AsMethod().Input()
-		inputSym := &symbol{
-			ir:   irSymbol,
-			span: irSymbol.AsMethod().AST().AsMethod().Signature.Inputs().Span(),
-			kind: &reference{
-				def: input.AST(),
-			},
-		}
-		unresolved = append(unresolved, inputSym)
-
-		output, _ := irSymbol.AsMethod().Output()
-		outputSym := &symbol{
-			ir:   irSymbol,
-			span: irSymbol.AsMethod().AST().AsMethod().Signature.Outputs().Span(),
-			kind: &reference{
-				def: output.AST(),
-			},
-		}
-		unresolved = append(unresolved, outputSym)
-	}
-	return resolved, unresolved
-}
-
-// importToSymbol takes an [ir.Import] and returns a symbol for it.
-func (f *file) importToSymbol(imp ir.Import) *symbol {
-	return &symbol{
-		file: f,
-		span: imp.Decl.Span(),
-		kind: &imported{
-			file: f.importToFile[imp.File.Path()],
-		},
-	}
-}
-
-// SymbolAt finds a symbol in this file at the given cursor position, if one exists.
-//
-// Returns nil if no symbol is found.
-func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
-	// Binary search for the symbol whose start is before or equal to cursor.
-	idx, found := slices.BinarySearchFunc(f.symbols, cursor, func(sym *symbol, cursor protocol.Position) int {
-		return comparePositions(sym.Range().Start, cursor)
-	})
-	if !found {
-		if idx == 0 {
-			return nil
-		}
-		idx--
-	}
-	symbol := f.symbols[idx]
-	f.lsp.logger.DebugContext(ctx, "found symbol", slog.Any("symbol", symbol))
-	// Check that cursor is before the end of the symbol.
-	if comparePositions(symbol.Range().End, cursor) <= 0 {
-		return nil
-	}
-
-	return symbol
 }
 
 // PublishDiagnostics publishes all of this file's diagnostics to the LSP client.

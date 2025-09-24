@@ -17,7 +17,7 @@ require (
 	buf.build/go/standard v0.1.0
 	connectrpc.com/connect v1.18.1
 	connectrpc.com/otelconnect v0.8.0
-	github.com/bufbuild/protocompile v0.14.2-0.20250923125448-c373f2b09c4e
+	github.com/bufbuild/protocompile v0.14.2-0.20250929233522-8a2229dc51b9
 	github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1
 	github.com/docker/docker v28.4.0+incompatible
 	github.com/go-chi/chi/v5 v5.2.3
@@ -53,13 +53,13 @@ require (
 )
 
 require (
+	buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go v1.36.9-20250109164928-1da0de137947.1 // indirect
 	buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.9-20241007202033-cf42259fcbfc.1 // indirect
 	buf.build/go/interrupt v1.1.0 // indirect
 	cel.dev/expr v0.24.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
-	github.com/bits-and-blooms/bitset v1.24.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect

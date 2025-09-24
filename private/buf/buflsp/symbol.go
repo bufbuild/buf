@@ -39,8 +39,8 @@ import (
 
 // symbol represents a named symbol inside of a [file].
 //
-// For each symbol, we keep track of the location [report.Span] of the actual symbol and
-// the location [report.Span] and file [*file] of the definition.
+// For each symbol, we keep track of the location [report.Span] and file [*file] of the
+// actual symbol and the definition symbol, if available.
 //
 // We also keep track of metadata for documentation rendering.
 type symbol struct {
@@ -77,17 +77,29 @@ type imported struct {
 	file *file
 }
 
+type builtin struct {
+	predeclared predeclared.Name
+}
+
 type tag struct{}
 
 func (*referenceable) isSymbolKind() {}
 func (*reference) isSymbolKind()     {}
 func (*static) isSymbolKind()        {}
 func (*imported) isSymbolKind()      {}
+func (*builtin) isSymbolKind()       {}
 func (*tag) isSymbolKind()           {}
 
 // Range constructs an LSP protocol code range for this symbol.
 func (s *symbol) Range() protocol.Range {
 	return reportSpanToProtocolRange(s.span)
+}
+
+// IsTypePredeclared checks if the symbol's type is a predeclared type. Predeclared type will
+// not have a resolved definition symbol and the underlying type AST will be predeclared.
+func (s *symbol) IsBuiltIn() bool {
+	_, ok := s.kind.(*builtin)
+	return ok
 }
 
 // Definition returns the span of the definition of the symbol.
@@ -97,7 +109,7 @@ func (s *symbol) Definition() protocol.Location {
 			URI: imported.file.uri,
 		}
 	}
-	if s.def.span.IsZero() {
+	if s.def == nil {
 		// The definition does not have a span, so we just jump to the span of the symbol itself
 		// as a fallback.
 		return protocol.Location{
@@ -111,6 +123,7 @@ func (s *symbol) Definition() protocol.Location {
 	}
 }
 
+// TODO: make this less ugly
 // LogValue provides the log value for a symbol.
 func (s *symbol) LogValue() slog.Value {
 	loc := func(loc report.Location) slog.Value {
@@ -126,7 +139,7 @@ func (s *symbol) LogValue() slog.Value {
 	}
 	if imported, ok := s.kind.(*imported); ok {
 		attrs = append(attrs, slog.String("imported", imported.file.uri.Filename()))
-	} else {
+	} else if s.def != nil {
 		attrs = append(attrs, slog.String("def_file", s.def.file.uri.Filename()))
 		attrs = append(attrs, slog.Any("def_start", loc(s.def.span.StartLoc())))
 		attrs = append(attrs, slog.Any("def_end", loc(s.def.span.EndLoc())))
@@ -203,6 +216,13 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 			}
 			return doc
 		}
+	case *builtin:
+		builtin := s.kind.(*builtin)
+		comments, ok := builtinDocs[builtin.predeclared.String()]
+		if ok {
+			return strings.Join(comments, "\n")
+		}
+		return missingDocs
 	case *referenceable:
 		referenceable := s.kind.(*referenceable)
 		def = referenceable.ast
@@ -213,16 +233,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 		reference := s.kind.(*reference)
 		def = reference.def
 	}
-	var docs string
-	if def.Span().IsZero() {
-		// Check for docs for predeclared types
-		comments, ok := builtinDocs[def.Type().AsPath().AsPredeclared().String()]
-		if ok {
-			docs = strings.Join(comments, "\n")
-		}
-	} else {
-		docs = getCommentsFromDef(def)
-	}
+	docs := getCommentsFromDef(def)
 	if docs != "" {
 		fmt.Fprintln(&tooltip, docs)
 	} else {
