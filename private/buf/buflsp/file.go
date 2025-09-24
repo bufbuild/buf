@@ -550,7 +550,12 @@ func (f *file) RunChecks(ctx context.Context) {
 // May return nil, if insufficient information is present to open the file.
 func (f *file) newFileOpener() fileOpener {
 	return func(path string) (io.ReadCloser, error) {
-		file := f.importToFile[path]
+		var file *file
+		if f.objectInfo.Path() == path {
+			file = f
+		} else {
+			file = f.importToFile[path]
+		}
 		if file == nil {
 			return nil, fmt.Errorf("%s: %w", path, fs.ErrNotExist)
 		}
@@ -574,7 +579,12 @@ func (f *file) newAgainstFileOpener(ctx context.Context) fileOpener {
 	}
 
 	return func(path string) (io.ReadCloser, error) {
-		file := f.importToFile[path]
+		var file *file
+		if f.objectInfo.Path() == path {
+			file = f
+		} else {
+			file = f.importToFile[path]
+		}
 		if file == nil {
 			return nil, fmt.Errorf("%s: %w", path, fs.ErrNotExist)
 		}
