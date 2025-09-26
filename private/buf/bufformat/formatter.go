@@ -894,9 +894,13 @@ func (f *formatter) writeField(fieldNode *ast.FieldNode) {
 	f.Space()
 	f.writeInline(fieldNode.Name)
 	f.Space()
-	f.writeInline(fieldNode.Equals)
-	f.Space()
-	f.writeInline(fieldNode.Tag)
+	if fieldNode.Equals != nil {
+		f.writeInline(fieldNode.Equals)
+		f.Space()
+	}
+	if fieldNode.Tag != nil {
+		f.writeInline(fieldNode.Tag)
+	}
 	if fieldNode.Options != nil {
 		f.Space()
 		f.writeNode(fieldNode.Options)
