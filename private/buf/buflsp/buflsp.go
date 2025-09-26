@@ -51,7 +51,7 @@ func Serve(
 	// root.
 	bucketProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	bucket, err := bucketProvider.NewReadWriteBucket(
-		"/", // TODO: This is not correct for Windows.
+		"/",
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {

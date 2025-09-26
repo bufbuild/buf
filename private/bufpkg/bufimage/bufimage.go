@@ -279,7 +279,27 @@ func BuildImage(
 	for _, option := range options {
 		option(buildImageOptions)
 	}
-	return buildImage(
+	// TODO: this has been switched.
+	return buildImageExperimental(
+		ctx,
+		logger,
+		moduleReadBucket,
+		buildImageOptions.excludeSourceCodeInfo,
+		buildImageOptions.noParallelism,
+	)
+}
+
+func BuildImageExperimental(
+	ctx context.Context,
+	logger *slog.Logger,
+	moduleReadBucket bufmodule.ModuleReadBucket,
+	options ...BuildImageOption,
+) (Image, error) {
+	buildImageOptions := newBuildImageOptions()
+	for _, option := range options {
+		option(buildImageOptions)
+	}
+	return buildImageExperimental(
 		ctx,
 		logger,
 		moduleReadBucket,
