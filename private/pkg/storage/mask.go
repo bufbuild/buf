@@ -120,22 +120,18 @@ func (r *maskReadBucketCloser) Walk(ctx context.Context, prefix string, f func(O
 		// No include prefixes, so walk normally.
 		return r.delegate.Walk(ctx, prefix, walkFunc)
 	}
-	prefixIsChildOfInclude := false
+	// Find all include prefixes under the requests root prefix.
 	var effectivePrefixes []string
 	for _, includePrefix := range r.includePrefixes {
 		isParent := normalpath.EqualsOrContainsPath(includePrefix, prefix, normalpath.Relative)
 		if isParent {
-			prefixIsChildOfInclude = true
-			break
+			// The requested prefix is under an include prefix, so walk normally.
+			return r.delegate.Walk(ctx, prefix, walkFunc)
 		}
 		isChild := normalpath.EqualsOrContainsPath(prefix, includePrefix, normalpath.Relative)
 		if isChild {
 			effectivePrefixes = append(effectivePrefixes, includePrefix)
 		}
-	}
-	if prefixIsChildOfInclude {
-		// The requested prefix is under an include prefix, so walk normally.
-		return r.delegate.Walk(ctx, prefix, walkFunc)
 	}
 	// Walk each effective prefix that is a child of the requested prefix.
 	// The effective prefixes are sorted and compacted on creation of the Bucket,
