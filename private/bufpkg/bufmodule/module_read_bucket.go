@@ -399,7 +399,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 		return fn(fileInfo)
 	}
 
-	// If we have target paths, we do not want to walk to whole bucket.
+	// If we have target paths, we do not want to walk the whole bucket.
 	// For example, we do --path path/to/file.proto for googleapis, we don't want to
 	// walk all of googleapis to find the single file.
 	//
