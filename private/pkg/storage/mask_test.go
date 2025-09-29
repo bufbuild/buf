@@ -247,7 +247,7 @@ func TestMaskReadBucket_WalkOptimization(t *testing.T) {
 		delegate,
 		[]string{},
 		"",
-		[]string{"."},
+		[]string{""},
 	)
 	// Should walk only include prefixes
 	testMaskReadBucket_WalkOptimization(

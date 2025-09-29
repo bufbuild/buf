@@ -27,6 +27,7 @@ import (
 //
 // If includePrefixes is empty, all paths are included (no prefix filtering on walk).
 // If excludePrefixes is provided, those paths are excluded from results.
+// If both includePrefixes and excludePrefixes are empty, the original ReadBucket is returned.
 func MaskReadBucket(readBucket ReadBucket, includePrefixes, excludePrefixes []string) (ReadBucket, error) {
 	if len(includePrefixes) == 0 && len(excludePrefixes) == 0 {
 		return readBucket, nil
@@ -39,6 +40,7 @@ func MaskReadBucket(readBucket ReadBucket, includePrefixes, excludePrefixes []st
 //
 // If includePrefixes is empty, all paths are included (no prefix filtering on walk).
 // If excludePrefixes is provided, those paths are excluded from results.
+// If both includePrefixes and excludePrefixes are empty, the original ReadBucketCloser is returned.
 func MaskReadBucketCloser(readBucketCloser ReadBucketCloser, includePrefixes, excludePrefixes []string) (ReadBucketCloser, error) {
 	if len(includePrefixes) == 0 && len(excludePrefixes) == 0 {
 		return readBucketCloser, nil
