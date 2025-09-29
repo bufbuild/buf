@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Update `PROTOVALIDATE` lint rule to check `IGNORE_IF_ZERO_VALUE` on fields that track presence.
+- Fix `buf format` on fields with missing field number tags.
 - Optimize `include` and `exclude` path handling for workspaces to avoid unnecessary file system
   operations. This change can result in a performance improvement for large workspaces.
 
