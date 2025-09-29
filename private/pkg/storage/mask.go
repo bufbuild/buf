@@ -22,36 +22,42 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
-// PrefixFilterReadBucket creates a ReadBucket that filters using include and exclude prefixes,
+// MaskReadBucket creates a ReadBucket that masks the include and exclude prefixes,
 // with optimized walking that only traverses include prefixes.
 //
 // If includePrefixes is empty, all paths are included (no prefix filtering on walk).
 // If excludePrefixes is provided, those paths are excluded from results.
-func PrefixFilterReadBucket(readBucket ReadBucket, includePrefixes, excludePrefixes []string) (ReadBucket, error) {
-	return newPrefixFilterReadBucketCloser(readBucket, nil, includePrefixes, excludePrefixes)
+func MaskReadBucket(readBucket ReadBucket, includePrefixes, excludePrefixes []string) (ReadBucket, error) {
+	if len(includePrefixes) == 0 && len(excludePrefixes) == 0 {
+		return readBucket, nil
+	}
+	return newMaskReadBucketCloser(readBucket, nil, includePrefixes, excludePrefixes)
 }
 
-// PrefixFilterReadBucketCloser creates a ReadBucketCloser that filters using include and exclude prefixes,
+// MaskReadBucketCloser creates a ReadBucketCloser that masks using include and exclude prefixes,
 // with optimized walking that only traverses include prefixes.
 //
 // If includePrefixes is empty, all paths are included (no prefix filtering on walk).
 // If excludePrefixes is provided, those paths are excluded from results.
-func PrefixFilterReadBucketCloser(readBucketCloser ReadBucketCloser, includePrefixes, excludePrefixes []string) (ReadBucketCloser, error) {
-	return newPrefixFilterReadBucketCloser(readBucketCloser, readBucketCloser.Close, includePrefixes, excludePrefixes)
+func MaskReadBucketCloser(readBucketCloser ReadBucketCloser, includePrefixes, excludePrefixes []string) (ReadBucketCloser, error) {
+	if len(includePrefixes) == 0 && len(excludePrefixes) == 0 {
+		return readBucketCloser, nil
+	}
+	return newMaskReadBucketCloser(readBucketCloser, readBucketCloser.Close, includePrefixes, excludePrefixes)
 }
 
-type prefixFilterReadBucketCloser struct {
+type maskReadBucketCloser struct {
 	delegate        ReadBucket
 	closeFunc       func() error
 	includePrefixes []string
 	excludePrefixes []string
 }
 
-func newPrefixFilterReadBucketCloser(
+func newMaskReadBucketCloser(
 	delegate ReadBucket,
 	closeFunc func() error,
 	includePrefixes, excludePrefixes []string,
-) (*prefixFilterReadBucketCloser, error) {
+) (*maskReadBucketCloser, error) {
 	normalizedIncludes, err := normalizeValidateAndCompactPrefixes(includePrefixes)
 	if err != nil {
 		return nil, err
@@ -60,7 +66,7 @@ func newPrefixFilterReadBucketCloser(
 	if err != nil {
 		return nil, err
 	}
-	return &prefixFilterReadBucketCloser{
+	return &maskReadBucketCloser{
 		delegate:        delegate,
 		closeFunc:       closeFunc,
 		includePrefixes: normalizedIncludes,
@@ -68,7 +74,7 @@ func newPrefixFilterReadBucketCloser(
 	}, nil
 }
 
-func (r *prefixFilterReadBucketCloser) Get(ctx context.Context, path string) (ReadObjectCloser, error) {
+func (r *maskReadBucketCloser) Get(ctx context.Context, path string) (ReadObjectCloser, error) {
 	path, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
 		return nil, err
@@ -79,7 +85,7 @@ func (r *prefixFilterReadBucketCloser) Get(ctx context.Context, path string) (Re
 	return r.delegate.Get(ctx, path)
 }
 
-func (r *prefixFilterReadBucketCloser) Stat(ctx context.Context, path string) (ObjectInfo, error) {
+func (r *maskReadBucketCloser) Stat(ctx context.Context, path string) (ObjectInfo, error) {
 	path, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
 		return nil, err
@@ -90,7 +96,7 @@ func (r *prefixFilterReadBucketCloser) Stat(ctx context.Context, path string) (O
 	return r.delegate.Stat(ctx, path)
 }
 
-func (r *prefixFilterReadBucketCloser) Walk(ctx context.Context, prefix string, f func(ObjectInfo) error) error {
+func (r *maskReadBucketCloser) Walk(ctx context.Context, prefix string, f func(ObjectInfo) error) error {
 	prefix, err := normalpath.NormalizeAndValidate(prefix)
 	if err != nil {
 		return err
@@ -140,7 +146,7 @@ func (r *prefixFilterReadBucketCloser) Walk(ctx context.Context, prefix string, 
 	return nil
 }
 
-func (r *prefixFilterReadBucketCloser) Close() error {
+func (r *maskReadBucketCloser) Close() error {
 	if r.closeFunc != nil {
 		return r.closeFunc()
 	}
@@ -148,7 +154,7 @@ func (r *prefixFilterReadBucketCloser) Close() error {
 }
 
 // matchPath checks if a path matches the include/exclude criteria
-func (r *prefixFilterReadBucketCloser) matchPath(path string) bool {
+func (r *maskReadBucketCloser) matchPath(path string) bool {
 	// Check excludes first (if any exclude matches, reject the path)
 	for _, excludePrefix := range r.excludePrefixes {
 		// Check if the exclude prefix contains the path (path is under exclude prefix)

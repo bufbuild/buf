@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPrefixFilterReadBucket(t *testing.T) {
+func TestMaskReadBucket(t *testing.T) {
 	t.Parallel()
 
 	// Create a test bucket with various files
@@ -54,7 +54,7 @@ func TestPrefixFilterReadBucket(t *testing.T) {
 		require.NoError(t, writeObjectCloser.Close())
 	}
 	// When no filters specified, all files should be returned
-	testPrefixFilterReadBucket(
+	testMaskReadBucket(
 		t,
 		delegate,
 		testFiles,
@@ -64,7 +64,7 @@ func TestPrefixFilterReadBucket(t *testing.T) {
 		xslices.MapKeysToSlice(testFiles),
 	)
 	// Only files under proto/ should be returned
-	testPrefixFilterReadBucket(
+	testMaskReadBucket(
 		t,
 		delegate,
 		testFiles,
@@ -74,7 +74,7 @@ func TestPrefixFilterReadBucket(t *testing.T) {
 		[]string{"proto/internal/log.proto", "proto/v1/admin.proto", "proto/v1/user.proto", "proto/v2/admin.proto", "proto/v2/user.proto"},
 	)
 	// Proto files should be included except those in internal/
-	testPrefixFilterReadBucket(
+	testMaskReadBucket(
 		t,
 		delegate,
 		testFiles,
@@ -84,7 +84,7 @@ func TestPrefixFilterReadBucket(t *testing.T) {
 		[]string{"proto/v1/admin.proto", "proto/v1/user.proto", "proto/v2/admin.proto", "proto/v2/user.proto"},
 	)
 	// Only files from proto/v1/ and api/v2/ should be returned
-	testPrefixFilterReadBucket(
+	testMaskReadBucket(
 		t,
 		delegate,
 		testFiles,
@@ -94,7 +94,7 @@ func TestPrefixFilterReadBucket(t *testing.T) {
 		[]string{"api/v2/service.proto", "proto/v1/admin.proto", "proto/v1/user.proto"},
 	)
 	// All files except node_modules should be returned
-	testPrefixFilterReadBucket(
+	testMaskReadBucket(
 		t,
 		delegate,
 		testFiles,
@@ -107,7 +107,7 @@ func TestPrefixFilterReadBucket(t *testing.T) {
 		),
 	)
 	// Walking proto/v1 with include filters should only return proto/v1 files
-	testPrefixFilterReadBucket(
+	testMaskReadBucket(
 		t,
 		delegate,
 		testFiles,
@@ -117,7 +117,7 @@ func TestPrefixFilterReadBucket(t *testing.T) {
 		[]string{"proto/v1/admin.proto", "proto/v1/user.proto"},
 	)
 	// Walking proto with specific includes should only return matching files
-	testPrefixFilterReadBucket(
+	testMaskReadBucket(
 		t,
 		delegate,
 		testFiles,
@@ -127,7 +127,7 @@ func TestPrefixFilterReadBucket(t *testing.T) {
 		[]string{"proto/v1/admin.proto", "proto/v1/user.proto", "proto/v2/admin.proto", "proto/v2/user.proto"},
 	)
 	// Walking src with proto includes should return no files
-	testPrefixFilterReadBucket(
+	testMaskReadBucket(
 		t,
 		delegate,
 		testFiles,
@@ -137,7 +137,7 @@ func TestPrefixFilterReadBucket(t *testing.T) {
 		nil,
 	)
 	// Walking proto/v1 with proto include should return proto/v1 files
-	testPrefixFilterReadBucket(
+	testMaskReadBucket(
 		t,
 		delegate,
 		testFiles,
@@ -148,16 +148,16 @@ func TestPrefixFilterReadBucket(t *testing.T) {
 	)
 }
 
-func TestPrefixFilterReadBucket_InvalidPrefixes(t *testing.T) {
+func TestMaskReadBucket_InvalidPrefixes(t *testing.T) {
 	t.Parallel()
 	readWriteBucket := storagemem.NewReadWriteBucket()
-	_, err := storage.PrefixFilterReadBucket(readWriteBucket, []string{"../invalid"}, []string{})
+	_, err := storage.MaskReadBucket(readWriteBucket, []string{"../invalid"}, []string{})
 	assert.Error(t, err, "Should error on invalid include prefix")
-	_, err = storage.PrefixFilterReadBucket(readWriteBucket, []string{}, []string{"../invalid"})
+	_, err = storage.MaskReadBucket(readWriteBucket, []string{}, []string{"../invalid"})
 	assert.Error(t, err, "Should error on invalid exclude prefix")
 }
 
-func TestPrefixFilterReadBucket_PrefixCompaction(t *testing.T) {
+func TestMaskReadBucket_PrefixCompaction(t *testing.T) {
 	t.Parallel()
 
 	// Test that redundant child prefixes are removed
@@ -181,7 +181,7 @@ func TestPrefixFilterReadBucket_PrefixCompaction(t *testing.T) {
 	}
 
 	// Test redundant includes: ["foo", "foo/v1", "foo/v1/v2"] should become just ["foo"]
-	filteredBucket, err := storage.PrefixFilterReadBucket(
+	filteredBucket, err := storage.MaskReadBucket(
 		readWriteBucket,
 		[]string{"foo", "foo/v1", "foo/v1/v2"},
 		[]string{},
@@ -202,7 +202,7 @@ func TestPrefixFilterReadBucket_PrefixCompaction(t *testing.T) {
 	assert.Equal(t, expectedFiles, actualFiles, "Should include all files under foo prefix")
 
 	// Test mixed includes: ["foo", "bar", "foo/v1"] should become ["foo", "bar"]
-	filteredBucket2, err := storage.PrefixFilterReadBucket(
+	filteredBucket2, err := storage.MaskReadBucket(
 		readWriteBucket,
 		[]string{"foo", "bar", "foo/v1"},
 		[]string{},
@@ -222,7 +222,7 @@ func TestPrefixFilterReadBucket_PrefixCompaction(t *testing.T) {
 	assert.Equal(t, expectedFiles2, actualFiles2, "Should include all files under foo and bar prefixes")
 }
 
-func TestPrefixFilterReadBucket_WalkOptimization(t *testing.T) {
+func TestMaskReadBucket_WalkOptimization(t *testing.T) {
 	t.Parallel()
 
 	// Add some test files
@@ -242,7 +242,7 @@ func TestPrefixFilterReadBucket_WalkOptimization(t *testing.T) {
 		require.NoError(t, writeObjectCloser.Close())
 	}
 	// Should walk with original prefix when no includes
-	testPrefixFilterReadBucket_WalkOptimization(
+	testMaskReadBucket_WalkOptimization(
 		t,
 		delegate,
 		[]string{},
@@ -250,7 +250,7 @@ func TestPrefixFilterReadBucket_WalkOptimization(t *testing.T) {
 		[]string{"."},
 	)
 	// Should walk only include prefixes
-	testPrefixFilterReadBucket_WalkOptimization(
+	testMaskReadBucket_WalkOptimization(
 		t,
 		delegate,
 		[]string{"proto/v1", "proto/v2"},
@@ -258,7 +258,7 @@ func TestPrefixFilterReadBucket_WalkOptimization(t *testing.T) {
 		[]string{"proto/v1", "proto/v2"},
 	)
 	// Should walk only the matching include prefix
-	testPrefixFilterReadBucket_WalkOptimization(
+	testMaskReadBucket_WalkOptimization(
 		t,
 		delegate,
 		[]string{"proto/v1", "proto/v2"},
@@ -266,7 +266,7 @@ func TestPrefixFilterReadBucket_WalkOptimization(t *testing.T) {
 		[]string{"proto/v1"},
 	)
 	// Should narrow to include prefixes under walk prefix
-	testPrefixFilterReadBucket_WalkOptimization(
+	testMaskReadBucket_WalkOptimization(
 		t,
 		delegate,
 		[]string{"proto/v1", "proto/v2"},
@@ -275,7 +275,7 @@ func TestPrefixFilterReadBucket_WalkOptimization(t *testing.T) {
 	)
 }
 
-func testPrefixFilterReadBucket(
+func testMaskReadBucket(
 	t *testing.T,
 	delegate storage.ReadWriteBucket,
 	testFiles map[string]string,
@@ -287,7 +287,7 @@ func testPrefixFilterReadBucket(
 	ctx := t.Context()
 
 	// Create prefix filter bucket
-	filteredBucket, err := storage.PrefixFilterReadBucket(delegate, includePrefixes, excludePrefixes)
+	filteredBucket, err := storage.MaskReadBucket(delegate, includePrefixes, excludePrefixes)
 	require.NoError(t, err)
 
 	// Test Walk operation
@@ -348,14 +348,14 @@ func testPrefixFilterReadBucket(
 	}
 }
 
-func testPrefixFilterReadBucket_WalkOptimization(t *testing.T,
+func testMaskReadBucket_WalkOptimization(t *testing.T,
 	bucket storage.ReadWriteBucket,
 	includePrefixes []string,
 	walkPrefix string,
 	expectedWalkCalls []string,
 ) {
 	trackingBucket := &walkTrackingBucket{delegate: bucket}
-	filteredBucket, err := storage.PrefixFilterReadBucket(trackingBucket, includePrefixes, []string{})
+	filteredBucket, err := storage.MaskReadBucket(trackingBucket, includePrefixes, []string{})
 	require.NoError(t, err)
 	err = filteredBucket.Walk(t.Context(), walkPrefix, func(storage.ObjectInfo) error {
 		return nil

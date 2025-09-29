@@ -593,8 +593,8 @@ func getMappedModuleBucketAndModuleTargeting(
 			// https://github.com/bufbuild/buf/issues/113
 			storage.MatchPathExt(".proto"),
 		}
-		// Use PrefixFilterReadBucket to optimize filtering on large file sets.
-		filteredBucket, err := storage.PrefixFilterReadBucket(
+		// Use MaskReadBucket over FilterReadBucket to optimize filtering on large file sets.
+		filteredBucket, err := storage.MaskReadBucket(
 			storage.FilterReadBucket(
 				storage.MapReadBucket(
 					moduleBucket,
