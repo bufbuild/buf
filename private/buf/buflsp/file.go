@@ -83,6 +83,7 @@ type file struct {
 
 	ir                   ir.File
 	referenceableSymbols map[string]*symbol
+	referenceSymbols     []*symbol
 	symbols              []*symbol
 	diagnostics          []protocol.Diagnostic
 	image, againstImage  bufimage.Image
@@ -504,6 +505,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	// Throw away all the old symbols and rebuild symbols unconditionally. This is because if
 	// this file depends on a file that has since been modified, we may need to update references.
 	f.symbols = nil
+	f.referenceSymbols = nil
 	f.referenceableSymbols = make(map[string]*symbol)
 
 	// Process all imports as symbols
@@ -512,6 +514,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	resolved, unresolved := f.indexSymbols()
 	f.symbols = append(f.symbols, resolved...)
 	f.symbols = append(f.symbols, unresolved...)
+	f.referenceSymbols = append(f.referenceSymbols, unresolved...)
 
 	// Index all referenceable symbols
 	for _, sym := range resolved {
@@ -522,7 +525,9 @@ func (f *file) IndexSymbols(ctx context.Context) {
 		f.referenceableSymbols[def.ast.Name().Canonicalized()] = sym
 	}
 
-	// Resolve all unresolved symbols
+	// TODO: this could us a refactor, probably.
+
+	// Resolve all unresolved symbols from this file
 	for _, sym := range unresolved {
 		ref, ok := sym.kind.(*reference)
 		if !ok {
@@ -546,12 +551,8 @@ func (f *file) IndexSymbols(ctx context.Context) {
 		}
 		def, ok := file.referenceableSymbols[ref.def.Name().Canonicalized()]
 		if !ok {
-			// This shouldn't happen, logging a warning
-			f.lsp.logger.Warn(
-				"found unresolveable reference symbol",
-				slog.String("file", f.uri.Filename()),
-				slog.Any("symbol", sym),
-			)
+			// This could happen in the case where we are in the cache for example, and we do not
+			// have access to a buildable workspace.
 			continue
 		}
 		sym.def = def
@@ -566,6 +567,47 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			continue
 		}
 		referenceable.references = append(referenceable.references, sym)
+	}
+
+	// Resolve all references outside of this file to symbols in this file
+	for _, file := range f.importToFile {
+		for _, sym := range file.referenceSymbols {
+			ref, ok := sym.kind.(*reference)
+			if !ok {
+				// This shouldn't happen, logging a warning
+				f.lsp.logger.Warn(
+					"found unresolved non-reference symbol",
+					slog.String("file", f.uri.Filename()),
+					slog.Any("symbol", sym),
+				)
+				continue
+			}
+			if ref.def.Span().Path() != f.objectInfo.Path() {
+				continue
+			}
+			def, ok := f.referenceableSymbols[ref.def.Name().Canonicalized()]
+			if !ok {
+				// This shouldn't happen, if a symbol is pointing at this file, all definitions
+				// should be resolved, logging a warning
+				f.lsp.logger.Warn(
+					"found reference to unknown symbol",
+					slog.String("file", f.uri.Filename()),
+					slog.Any("reference", sym),
+				)
+				continue
+			}
+			referenceable, ok := def.kind.(*referenceable)
+			if !ok {
+				// This shouldn't happen, logging a warning
+				f.lsp.logger.Warn(
+					"found non-referenceable symbol in index",
+					slog.String("file", f.uri.Filename()),
+					slog.Any("symbol", def),
+				)
+				continue
+			}
+			referenceable.references = append(referenceable.references, sym)
+		}
 	}
 
 	// Finally, sort the symbols in position order, with shorter symbols sorting smaller.

@@ -27,6 +27,7 @@ import (
 	"slices"
 	"strings"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
 	"github.com/bufbuild/protocompile/experimental/ir"
@@ -95,14 +96,14 @@ func (s *symbol) Range() protocol.Range {
 	return reportSpanToProtocolRange(s.span)
 }
 
-// IsTypePredeclared checks if the symbol's type is a predeclared type. Predeclared type will
+// IsBuiltIn checks if the symbol's type is a predeclared type. Predeclared type will
 // not have a resolved definition symbol and the underlying type AST will be predeclared.
 func (s *symbol) IsBuiltIn() bool {
 	_, ok := s.kind.(*builtin)
 	return ok
 }
 
-// Definition returns the span of the definition of the symbol.
+// Definition returns the location of the definition of the symbol.
 func (s *symbol) Definition() protocol.Location {
 	if imported, ok := s.kind.(*imported); ok {
 		return protocol.Location{
@@ -123,7 +124,24 @@ func (s *symbol) Definition() protocol.Location {
 	}
 }
 
-// TODO: make this less ugly
+// References returns the locations of references to the symbol, if applicable. Otherwise,
+// it just returns the location of the symbol itself.
+func (s *symbol) References() []protocol.Location {
+	referenceable, ok := s.kind.(*referenceable)
+	if !ok {
+		return []protocol.Location{{
+			URI:   s.file.uri,
+			Range: s.Range(),
+		}}
+	}
+	return xslices.Map(referenceable.references, func(sym *symbol) protocol.Location {
+		return protocol.Location{
+			URI:   sym.file.uri,
+			Range: sym.Range(),
+		}
+	})
+}
+
 // LogValue provides the log value for a symbol.
 func (s *symbol) LogValue() slog.Value {
 	loc := func(loc report.Location) slog.Value {

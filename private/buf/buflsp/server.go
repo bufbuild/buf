@@ -126,6 +126,9 @@ func (s *server) Initialize(
 			},
 			DocumentFormattingProvider: true,
 			HoverProvider:              true,
+			ReferencesProvider: &protocol.ReferenceOptions{
+				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
+			},
 			SemanticTokensProvider: &SemanticTokensOptions{
 				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
 				Legend: SemanticTokensLegend{
@@ -397,6 +400,25 @@ func (s *server) Definition(
 	return []protocol.Location{
 		symbol.Definition(),
 	}, nil
+}
+
+func (s *server) References(
+	ctx context.Context,
+	params *protocol.ReferenceParams,
+) ([]protocol.Location, error) {
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, nil
+	}
+	progress := newProgressFromClient(s.lsp, &params.WorkDoneProgressParams)
+	progress.Begin(ctx, "Searching")
+	defer progress.Done(ctx)
+
+	symbol := file.SymbolAt(ctx, params.Position)
+	if symbol == nil {
+		return nil, nil
+	}
+	return symbol.References(), nil
 }
 
 // SemanticTokensFull is called to render semantic token information on the client.
