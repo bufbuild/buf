@@ -175,7 +175,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 	var def ast.DeclDef
 	switch s.kind.(type) {
 	case *imported:
-		imported := s.kind.(*imported)
+		imported, _ := s.kind.(*imported)
 		// Provide a preview of the imported file.
 		return fmt.Sprintf("```proto\n%s\n```", imported.file.text)
 	case *tag:
@@ -235,20 +235,20 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 			return doc
 		}
 	case *builtin:
-		builtin := s.kind.(*builtin)
+		builtin, _ := s.kind.(*builtin)
 		comments, ok := builtinDocs[builtin.predeclared.String()]
 		if ok {
 			return strings.Join(comments, "\n")
 		}
 		return missingDocs
 	case *referenceable:
-		referenceable := s.kind.(*referenceable)
+		referenceable, _ := s.kind.(*referenceable)
 		def = referenceable.ast
 	case *static:
-		static := s.kind.(*static)
+		static, _ := s.kind.(*static)
 		def = static.ast
 	case *reference:
-		reference := s.kind.(*reference)
+		reference, _ := s.kind.(*reference)
 		def = reference.def
 	}
 	docs := getCommentsFromDef(def)
