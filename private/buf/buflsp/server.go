@@ -402,6 +402,7 @@ func (s *server) Definition(
 	}, nil
 }
 
+// References is the entry point for get-all-references.
 func (s *server) References(
 	ctx context.Context,
 	params *protocol.ReferenceParams,
