@@ -274,6 +274,9 @@ func protowireTypeForPredeclared(name predeclared.Name) protowire.Type {
 }
 
 func getCommentsFromDef(def ast.DeclDef) string {
+	if def.IsZero() {
+		return ""
+	}
 	var comments []string
 	// We drop the other side of "Around" because we only care about the beginning -- we're
 	// traversing backwards for leading comemnts only.
