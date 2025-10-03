@@ -284,7 +284,7 @@ func (f *file) Refresh(ctx context.Context) {
 	progress.Report(ctx, "Indexing imports", 2.0/5)
 	f.IndexImports(ctx)
 
-	progress.Report(ctx, "Parsing IR", 3.0/4)
+	progress.Report(ctx, "Parsing IR", 3.0/5)
 	f.RefreshIR(ctx)
 
 	progress.Report(ctx, "Indexing Symbols", 4.0/5)
@@ -501,6 +501,10 @@ func (f *file) queryForIR(
 // This operation requires RefreshIR.
 func (f *file) IndexSymbols(ctx context.Context) {
 	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
+	// We cannot index symbols without the IR, so we keep the symbols as-is.
+	if f.ir.IsZero() {
+		return
+	}
 
 	// Throw away all the old symbols and rebuild symbols unconditionally. This is because if
 	// this file depends on a file that has since been modified, we may need to update references.
