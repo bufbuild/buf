@@ -35,16 +35,16 @@ func newFileManager(lsp *lsp) *fileManager {
 	return &fileManager{lsp: lsp}
 }
 
-// Open finds a file with the given URI, or creates one.
+// Track attempts to find the file at the given URI string. If the file has not been seen
+// before, a new entry for the file is created.
 //
 // This will increment the file's refcount.
-func (fm *fileManager) Open(ctx context.Context, uri protocol.URI) *file {
+func (fm *fileManager) Track(uri protocol.URI) *file {
 	file, found := fm.uriToFile.Insert(uri)
 	if !found {
 		file.lsp = fm.lsp
 		file.uri = uri
 	}
-
 	return file
 }
 
