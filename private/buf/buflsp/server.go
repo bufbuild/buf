@@ -121,6 +121,10 @@ func (s *server) Initialize(
 					IncludeText: false,
 				},
 			},
+			CompletionProvider: &protocol.CompletionOptions{
+				ResolveProvider:   true,
+				TriggerCharacters: []string{" "},
+			},
 			DefinitionProvider: &protocol.DefinitionOptions{
 				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
 			},
@@ -420,6 +424,28 @@ func (s *server) References(
 		return nil, nil
 	}
 	return symbol.References(), nil
+}
+
+// Completion is the entry point for code completion.
+func (s *server) Completion(
+	ctx context.Context,
+	params *protocol.CompletionParams,
+) (*protocol.CompletionList, error) {
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, nil
+	}
+	return &protocol.CompletionList{
+		Items: getCompletionItems(ctx, file, params.Position),
+	}, nil
+}
+
+// CompletionResolve is the entry point for resolving a completion item.
+func (s *server) CompletionResolve(
+	ctx context.Context,
+	params *protocol.CompletionItem,
+) (*protocol.CompletionItem, error) {
+	return resolveCompletionItem(ctx, params)
 }
 
 // SemanticTokensFull is called to render semantic token information on the client.

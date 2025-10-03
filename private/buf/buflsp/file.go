@@ -284,7 +284,7 @@ func (f *file) Refresh(ctx context.Context) {
 	progress.Report(ctx, "Indexing imports", 2.0/5)
 	f.IndexImports(ctx)
 
-	progress.Report(ctx, "Parsing IR", 3.0/5)
+	progress.Report(ctx, "Parsing AST and IR", 3.0/5)
 	f.RefreshIR(ctx)
 
 	progress.Report(ctx, "Indexing Symbols", 4.0/5)
@@ -438,45 +438,33 @@ func (f *file) RefreshIR(ctx context.Context) {
 	openerMap := map[string]string{
 		f.objectInfo.Path(): f.text,
 	}
+	files := []*file{f}
 	for path, file := range f.importToFile {
 		openerMap[path] = file.text
+		files = append(files, file)
 	}
 	opener := source.NewMap(openerMap)
-	f.queryForIR(ctx, opener)
-
-	for _, file := range f.importToFile {
-		file.queryForIR(ctx, opener)
-		file.IndexSymbols(ctx)
-	}
-}
-
-func (f *file) queryForIR(
-	ctx context.Context,
-	opener source.Opener,
-) {
-	if !f.ir.IsZero() {
-		return
-	}
+	queries := xslices.Map(files, func(file *file) queries.IR {
+		return queries.IR{
+			Opener:  opener,
+			Path:    file.objectInfo.Path(),
+			Session: new(ir.Session),
+		}
+	})
 	results, report, err := incremental.Run(
 		ctx,
 		f.lsp.queryExecutor,
-		queries.IR{
-			Opener:  opener,
-			Path:    f.objectInfo.Path(),
-			Session: new(ir.Session),
-		},
+		queries...,
 	)
 	if err != nil {
 		f.lsp.logger.Error(
-			"failed to parse IR for file",
-			slog.String("uri", string(f.uri)),
-			slog.Int("version", int(f.version)),
+			"failed to parse IR(s)",
 			xslog.ErrorAttr(err),
 		)
 		return
 	}
-	if len(results) > 0 {
-		f.ir = results[0].Value
+	for i, file := range files {
+		file.ir = results[i]
 	}
 	diagnostics, err := xslices.MapError(
 		report.Diagnostics,
@@ -488,11 +476,7 @@ func (f *file) queryForIR(
 			xslog.ErrorAttr(err),
 		)
 	}
-	f.diagnostics = diagnostics
-	f.lsp.logger.Debug(
-		fmt.Sprintf("got %v diagnostic(s) for %s", len(f.diagnostics), f.uri.Filename()),
-		slog.Any("diagnostics", f.diagnostics),
-	)
+	f.diagnostics = append(f.diagnostics, diagnostics...)
 }
 
 // IndexSymbols processes the IR of a file and generates symbols for each symbol in
@@ -502,6 +486,11 @@ func (f *file) queryForIR(
 func (f *file) IndexSymbols(ctx context.Context) {
 	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 	// We cannot index symbols without the IR, so we keep the symbols as-is.
+	if f.ir.IsZero() {
+		return
+	}
+
+	// If there is no IR, we cannot index the symbols.
 	if f.ir.IsZero() {
 		return
 	}
@@ -877,11 +866,11 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 		idx--
 	}
 	symbol := f.symbols[idx]
-	f.lsp.logger.DebugContext(ctx, "found symbol", slog.Any("symbol", symbol))
 	// Check that cursor is before the end of the symbol.
 	if comparePositions(symbol.Range().End, cursor) <= 0 {
 		return nil
 	}
+	f.lsp.logger.DebugContext(ctx, "found symbol", slog.Any("symbol", symbol))
 
 	return symbol
 }

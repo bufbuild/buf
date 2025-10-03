@@ -279,7 +279,7 @@ func getCommentsFromDef(def ast.DeclDef) string {
 	}
 	var comments []string
 	// We drop the other side of "Around" because we only care about the beginning -- we're
-	// traversing backwards for leading comemnts only.
+	// traversing backwards for leading comments only.
 	_, start := def.Context().Stream().Around(def.Span().StartLoc().Offset)
 	cursor := token.NewCursorAt(start)
 	t := cursor.PrevSkippable()
