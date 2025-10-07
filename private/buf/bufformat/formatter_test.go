@@ -34,6 +34,7 @@ func TestFormatter(t *testing.T) {
 	testFormatEditions(t)
 	testFormatProto2(t)
 	testFormatProto3(t)
+	testFormatNoSyntax(t)
 }
 
 func testFormatCustomOptions(t *testing.T) {
@@ -66,6 +67,10 @@ func testFormatProto3(t *testing.T) {
 	testFormatNoDiff(t, "testdata/proto3/oneof/v1")
 	testFormatNoDiff(t, "testdata/proto3/range/v1")
 	testFormatNoDiff(t, "testdata/proto3/service/v1")
+}
+
+func testFormatNoSyntax(t *testing.T) {
+	testFormatNoDiff(t, "testdata/nosyntax")
 }
 
 func testFormatNoDiff(t *testing.T, path string) {
