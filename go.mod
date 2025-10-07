@@ -2,24 +2,22 @@ module github.com/bufbuild/buf
 
 go 1.24.0
 
-toolchain go1.24.7
-
 require (
 	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.9-20250718181942-e35f9b667443.1
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.9-20250912141014-52f32327d4b0.1
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.18.1-20250916194234-6faf13f82951.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.9-20250916194234-6faf13f82951.1
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.0-20250924144421-cb55f06efbd2.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.9-20250924144421-cb55f06efbd2.1
 	buf.build/go/app v0.1.0
 	buf.build/go/bufplugin v0.9.0
 	buf.build/go/protovalidate v1.0.0
 	buf.build/go/protoyaml v0.6.0
 	buf.build/go/spdx v0.2.0
 	buf.build/go/standard v0.1.0
-	connectrpc.com/connect v1.18.1
+	connectrpc.com/connect v1.19.1
 	connectrpc.com/otelconnect v0.8.0
 	github.com/bufbuild/protocompile v0.14.2-0.20251007204229-8d1d10d7e2c2
 	github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1
-	github.com/docker/docker v28.4.0+incompatible
+	github.com/docker/docker v28.5.0+incompatible
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/gofrs/flock v0.12.1
 	github.com/google/cel-go v0.26.1
@@ -32,7 +30,7 @@ require (
 	github.com/klauspost/pgzip v1.2.6
 	github.com/mattn/go-colorable v0.1.14
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
-	github.com/quic-go/quic-go v0.54.0
+	github.com/quic-go/quic-go v0.55.0
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/pflag v1.0.10
@@ -47,7 +45,7 @@ require (
 	golang.org/x/sync v0.17.0
 	golang.org/x/term v0.35.0
 	golang.org/x/tools v0.37.0
-	google.golang.org/protobuf v1.36.9
+	google.golang.org/protobuf v1.36.10
 	gopkg.in/yaml.v3 v3.0.1
 	pluginrpc.com/pluginrpc v0.5.0
 )
@@ -67,9 +65,9 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/cli v28.4.0+incompatible // indirect
+	github.com/docker/cli v28.5.0+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
-	github.com/docker/docker-credential-helpers v0.9.3 // indirect
+	github.com/docker/docker-credential-helpers v0.9.4 // indirect
 	github.com/docker/go-connections v0.6.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -90,7 +88,7 @@ require (
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/segmentio/asm v1.2.0 // indirect
+	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/segmentio/encoding v0.5.3 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stoewer/go-strcase v1.3.1 // indirect
@@ -104,13 +102,12 @@ require (
 	go.opentelemetry.io/otel/metric v1.38.0 // indirect
 	go.opentelemetry.io/otel/trace v1.38.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.8.0 // indirect
-	go.uber.org/mock v0.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/exp v0.0.0-20250911091902-df9299821621 // indirect
-	golang.org/x/net v0.44.0 // indirect
+	golang.org/x/exp v0.0.0-20251002181428-27f1f14c8bb9 // indirect
+	golang.org/x/net v0.45.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250908214217-97024824d090 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250825161204-c5933d9347a5 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250825161204-c5933d9347a5 // indirect
 	google.golang.org/grpc v1.75.0 // indirect
 )
