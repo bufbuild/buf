@@ -279,7 +279,15 @@ func BuildImage(
 	for _, option := range options {
 		option(buildImageOptions)
 	}
-	return buildImage(
+	// TODO: this is the patch to experimental builds.
+	//return buildImage(
+	//	ctx,
+	//	logger,
+	//	moduleReadBucket,
+	//	buildImageOptions.excludeSourceCodeInfo,
+	//	buildImageOptions.noParallelism,
+	//)
+	return buildImageExperimental(
 		ctx,
 		logger,
 		moduleReadBucket,
