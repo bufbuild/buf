@@ -1,0 +1,13 @@
+
+
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/descriptor.proto";
+
+
+import "google/protobuf/any.proto";
+
+option java_package = "com.foo.bar";
+
+
+

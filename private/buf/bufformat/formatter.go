@@ -252,15 +252,22 @@ func (f *formatter) writeFileHeader() {
 		// There aren't any header values, so we can return early.
 		return
 	}
+	// We use a sentinel value to track which node was written first (since a proto file
+	// without a syntax is valid). This is then used to ensure that we do not preserve
+	// unnecessary leading whitespace for the first node written.
+	first := true
 	editionNode := f.fileNode.Edition
 	if editionNode != nil {
 		f.writeEdition(editionNode)
+		first = false
 	}
 	if syntaxNode := f.fileNode.Syntax; syntaxNode != nil && editionNode == nil {
 		f.writeSyntax(syntaxNode)
+		first = false
 	}
 	if packageNode != nil {
-		f.writePackage(packageNode)
+		f.writePackage(packageNode, first)
+		first = false
 	}
 	sort.Slice(importNodes, func(i, j int) bool {
 		iName := importNodes[i].Name.AsString()
@@ -297,7 +304,8 @@ func (f *formatter) writeFileHeader() {
 			continue
 		}
 
-		f.writeImport(importNode, i > 0)
+		f.writeImport(importNode, i > 0, first)
+		first = false
 	}
 	sort.Slice(optionNodes, func(i, j int) bool {
 		// The default options (e.g. cc_enable_arenas) should always
@@ -320,7 +328,8 @@ func (f *formatter) writeFileHeader() {
 		if i == 0 && f.previousNode != nil && !f.leadingCommentsContainBlankLine(optionNode) {
 			f.P("")
 		}
-		f.writeFileOption(optionNode, i > 0)
+		f.writeFileOption(optionNode, i > 0, first)
+		first = false
 	}
 }
 
@@ -349,7 +358,10 @@ func (f *formatter) writeFileTypes() {
 //
 //	syntax = "proto3";
 func (f *formatter) writeSyntax(syntaxNode *ast.SyntaxNode) {
-	f.writeStart(syntaxNode.Keyword)
+	// If this is the first node, we want to ignore leading whitespace, unless there are
+	// leading comments.
+	info := f.nodeInfo(syntaxNode)
+	f.writeStart(syntaxNode.Keyword, info.LeadingComments().Len() == 0)
 	f.Space()
 	f.writeInline(syntaxNode.Equals)
 	f.Space()
@@ -363,7 +375,10 @@ func (f *formatter) writeSyntax(syntaxNode *ast.SyntaxNode) {
 //
 //	edition = "2023";
 func (f *formatter) writeEdition(editionNode *ast.EditionNode) {
-	f.writeStart(editionNode.Keyword)
+	// If this is the first node, we want to ignore leading whitespace, unless there are
+	// leading comments.
+	info := f.nodeInfo(editionNode)
+	f.writeStart(editionNode.Keyword, info.LeadingComments().Len() == 0)
 	f.Space()
 	f.writeInline(editionNode.Equals)
 	f.Space()
@@ -376,8 +391,11 @@ func (f *formatter) writeEdition(editionNode *ast.EditionNode) {
 // For example,
 //
 //	package acme.weather.v1;
-func (f *formatter) writePackage(packageNode *ast.PackageNode) {
-	f.writeStart(packageNode.Keyword)
+func (f *formatter) writePackage(packageNode *ast.PackageNode, first bool) {
+	// If this is the first node, we want to ignore leading whitespace, unless there are
+	// leading comments.
+	info := f.nodeInfo(packageNode)
+	f.writeStart(packageNode.Keyword, first && info.LeadingComments().Len() == 0)
 	f.Space()
 	f.writeInline(packageNode.Name)
 	f.writeLineEnd(packageNode.Semicolon)
@@ -388,8 +406,10 @@ func (f *formatter) writePackage(packageNode *ast.PackageNode) {
 // For example,
 //
 //	import "google/protobuf/descriptor.proto";
-func (f *formatter) writeImport(importNode *ast.ImportNode, forceCompact bool) {
-	f.writeStartMaybeCompact(importNode.Keyword, forceCompact)
+func (f *formatter) writeImport(importNode *ast.ImportNode, forceCompact, first bool) {
+	// If this is the first node, we want to ignore leading whitespace, unless there are
+	// leading comments.
+	f.writeStartMaybeCompact(importNode.Keyword, forceCompact, first && !f.importHasComment(importNode))
 	f.Space()
 	// We don't want to write the "public" and "weak" nodes
 	// if they aren't defined. One could be set, but never both.
@@ -408,8 +428,11 @@ func (f *formatter) writeImport(importNode *ast.ImportNode, forceCompact bool) {
 // writeFileOption writes a file option. This function is slightly
 // different than f.writeOption because file options are sorted at
 // the top of the file, and leading comments are adjusted accordingly.
-func (f *formatter) writeFileOption(optionNode *ast.OptionNode, forceCompact bool) {
-	f.writeStartMaybeCompact(optionNode.Keyword, forceCompact)
+func (f *formatter) writeFileOption(optionNode *ast.OptionNode, forceCompact, first bool) {
+	// If this is the first node, we want to ignore leading whitespace, unless there are
+	// leading comments.
+	info := f.nodeInfo(optionNode)
+	f.writeStartMaybeCompact(optionNode.Keyword, forceCompact, first && info.LeadingComments().Len() == 0)
 	f.Space()
 	f.writeNode(optionNode.Name)
 	f.Space()
@@ -481,11 +504,11 @@ func (f *formatter) writeLastCompactOption(optionNode *ast.OptionNode) {
 func (f *formatter) writeOptionPrefix(optionNode *ast.OptionNode) {
 	if optionNode.Keyword != nil {
 		// Compact options don't have the keyword.
-		f.writeStart(optionNode.Keyword)
+		f.writeStart(optionNode.Keyword, false)
 		f.Space()
 		f.writeNode(optionNode.Name)
 	} else {
-		f.writeStart(optionNode.Name)
+		f.writeStart(optionNode.Name, false)
 	}
 	f.Space()
 	f.writeInline(optionNode.Equals)
@@ -562,7 +585,7 @@ func (f *formatter) writeMessage(messageNode *ast.MessageNode) {
 			}
 		}
 	}
-	f.writeStart(messageNode.Keyword)
+	f.writeStart(messageNode.Keyword, false)
 	f.Space()
 	f.writeInline(messageNode.Name)
 	f.Space()
@@ -791,14 +814,14 @@ func (f *formatter) writeMessageFieldPrefix(messageFieldNode *ast.MessageFieldNo
 	// normally formatted in-line (i.e. as option name components).
 	fieldReferenceNode := messageFieldNode.Name
 	if fieldReferenceNode.Open != nil {
-		f.writeStart(fieldReferenceNode.Open)
+		f.writeStart(fieldReferenceNode.Open, false)
 		if fieldReferenceNode.URLPrefix != nil {
 			f.writeInline(fieldReferenceNode.URLPrefix)
 			f.writeInline(fieldReferenceNode.Slash)
 		}
 		f.writeInline(fieldReferenceNode.Name)
 	} else {
-		f.writeStart(fieldReferenceNode.Name)
+		f.writeStart(fieldReferenceNode.Name, false)
 	}
 	if fieldReferenceNode.Close != nil {
 		f.writeInline(fieldReferenceNode.Close)
@@ -833,7 +856,7 @@ func (f *formatter) writeEnum(enumNode *ast.EnumNode) {
 			}
 		}
 	}
-	f.writeStart(enumNode.Keyword)
+	f.writeStart(enumNode.Keyword, false)
 	f.Space()
 	f.writeInline(enumNode.Name)
 	f.Space()
@@ -853,7 +876,7 @@ func (f *formatter) writeEnum(enumNode *ast.EnumNode) {
 //	  deprecated = true
 //	];
 func (f *formatter) writeEnumValue(enumValueNode *ast.EnumValueNode) {
-	f.writeStart(enumValueNode.Name)
+	f.writeStart(enumValueNode.Name, false)
 	f.Space()
 	f.writeInline(enumValueNode.Equals)
 	f.Space()
@@ -879,7 +902,7 @@ func (f *formatter) writeField(fieldNode *ast.FieldNode) {
 	// a label might not be defined, but it has the leading comments attached
 	// to it.
 	if fieldNode.Label.KeywordNode != nil {
-		f.writeStart(fieldNode.Label)
+		f.writeStart(fieldNode.Label, false)
 		f.Space()
 		f.writeInline(fieldNode.FldType)
 	} else {
@@ -888,7 +911,7 @@ func (f *formatter) writeField(fieldNode *ast.FieldNode) {
 		if compoundIdentNode, ok := fieldNode.FldType.(*ast.CompoundIdentNode); ok {
 			f.writeCompoundIdentForFieldName(compoundIdentNode)
 		} else {
-			f.writeStart(fieldNode.FldType)
+			f.writeStart(fieldNode.FldType, false)
 		}
 	}
 	f.Space()
@@ -926,7 +949,7 @@ func (f *formatter) writeMapField(mapFieldNode *ast.MapFieldNode) {
 
 // writeMapType writes a map type (e.g. 'map<string, string>').
 func (f *formatter) writeMapType(mapTypeNode *ast.MapTypeNode) {
-	f.writeStart(mapTypeNode.Keyword)
+	f.writeStart(mapTypeNode.Keyword, false)
 	f.writeInline(mapTypeNode.OpenAngle)
 	f.writeInline(mapTypeNode.KeyType)
 	f.writeInline(mapTypeNode.Comma)
@@ -962,7 +985,7 @@ func (f *formatter) writeExtend(extendNode *ast.ExtendNode) {
 			}
 		}
 	}
-	f.writeStart(extendNode.Keyword)
+	f.writeStart(extendNode.Keyword, false)
 	f.Space()
 	f.writeInline(extendNode.Extendee)
 	f.Space()
@@ -990,7 +1013,7 @@ func (f *formatter) writeService(serviceNode *ast.ServiceNode) {
 			}
 		}
 	}
-	f.writeStart(serviceNode.Keyword)
+	f.writeStart(serviceNode.Keyword, false)
 	f.Space()
 	f.writeInline(serviceNode.Name)
 	f.Space()
@@ -1018,7 +1041,7 @@ func (f *formatter) writeRPC(rpcNode *ast.RPCNode) {
 			}
 		}
 	}
-	f.writeStart(rpcNode.Keyword)
+	f.writeStart(rpcNode.Keyword, false)
 	f.Space()
 	f.writeInline(rpcNode.Name)
 	f.writeInline(rpcNode.Input)
@@ -1073,7 +1096,7 @@ func (f *formatter) writeOneOf(oneOfNode *ast.OneofNode) {
 			}
 		}
 	}
-	f.writeStart(oneOfNode.Keyword)
+	f.writeStart(oneOfNode.Keyword, false)
 	f.Space()
 	f.writeInline(oneOfNode.Name)
 	f.Space()
@@ -1108,13 +1131,13 @@ func (f *formatter) writeGroup(groupNode *ast.GroupNode) {
 	// a label might not be defined, but it has the leading comments attached
 	// to it.
 	if groupNode.Label.KeywordNode != nil {
-		f.writeStart(groupNode.Label)
+		f.writeStart(groupNode.Label, false)
 		f.Space()
 		f.writeInline(groupNode.Keyword)
 	} else {
 		// If a label was not written, the multiline comments will be
 		// attached to the keyword.
-		f.writeStart(groupNode.Keyword)
+		f.writeStart(groupNode.Keyword, false)
 	}
 	f.Space()
 	f.writeInline(groupNode.Name)
@@ -1142,7 +1165,7 @@ func (f *formatter) writeGroup(groupNode *ast.GroupNode) {
 //	  deprecated = true
 //	];
 func (f *formatter) writeExtensionRange(extensionRangeNode *ast.ExtensionRangeNode) {
-	f.writeStart(extensionRangeNode.Keyword)
+	f.writeStart(extensionRangeNode.Keyword, false)
 	f.Space()
 	for i := range extensionRangeNode.Ranges {
 		if i > 0 {
@@ -1165,7 +1188,7 @@ func (f *formatter) writeExtensionRange(extensionRangeNode *ast.ExtensionRangeNo
 //
 //	reserved 5-10, 100 to max;
 func (f *formatter) writeReserved(reservedNode *ast.ReservedNode) {
-	f.writeStart(reservedNode.Keyword)
+	f.writeStart(reservedNode.Keyword, false)
 	// Either names or ranges will be set, but never both.
 	elements := make([]ast.Node, 0, len(reservedNode.Names)+len(reservedNode.Ranges))
 	switch {
@@ -1345,7 +1368,7 @@ func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) {
 					f.writeLineElement(arrayLiteralNode.Elements[i])
 					return
 				}
-				f.writeStart(arrayLiteralNode.Elements[i])
+				f.writeStart(arrayLiteralNode.Elements[i], false)
 				f.writeLineEnd(arrayLiteralNode.Commas[i])
 			}
 		}
@@ -1515,11 +1538,11 @@ func (f *formatter) writeCompoundIdent(compoundIdentNode *ast.CompoundIdentNode)
 //	}
 func (f *formatter) writeCompoundIdentForFieldName(compoundIdentNode *ast.CompoundIdentNode) {
 	if compoundIdentNode.LeadingDot != nil {
-		f.writeStart(compoundIdentNode.LeadingDot)
+		f.writeStart(compoundIdentNode.LeadingDot, false)
 	}
 	for i := range compoundIdentNode.Components {
 		if i == 0 && compoundIdentNode.LeadingDot == nil {
-			f.writeStart(compoundIdentNode.Components[i])
+			f.writeStart(compoundIdentNode.Components[i], false)
 			continue
 		}
 		if i > 0 {
@@ -1560,7 +1583,7 @@ func (f *formatter) writeCompoundStringLiteral(
 	for i, child := range compoundStringLiteralNode.Children() {
 		if hasTrailingPunctuation && i == len(compoundStringLiteralNode.Children())-1 {
 			// inline because there may be a subsequent comma or punctuation from enclosing element
-			f.writeStart(child)
+			f.writeStart(child, false)
 			break
 		}
 		f.writeLineElement(child)
@@ -1599,7 +1622,7 @@ func (f *formatter) writeCompoundStringLiteralForArray(
 ) {
 	for i, child := range compoundStringLiteralNode.Children() {
 		if !lastElement && i == len(compoundStringLiteralNode.Children())-1 {
-			f.writeStart(child)
+			f.writeStart(child, false)
 			return
 		}
 		f.writeLineElement(child)
@@ -1626,7 +1649,7 @@ func (f *formatter) writeSignedFloatLiteralForArray(
 	signedFloatLiteralNode *ast.SignedFloatLiteralNode,
 	lastElement bool,
 ) {
-	f.writeStart(signedFloatLiteralNode.Sign)
+	f.writeStart(signedFloatLiteralNode.Sign, false)
 	if lastElement {
 		f.writeLineEnd(signedFloatLiteralNode.Float)
 		return
@@ -1671,7 +1694,7 @@ func (f *formatter) writeNegativeIntLiteralForArray(
 	negativeIntLiteralNode *ast.NegativeIntLiteralNode,
 	lastElement bool,
 ) {
-	f.writeStart(negativeIntLiteralNode.Minus)
+	f.writeStart(negativeIntLiteralNode.Minus, false)
 	if lastElement {
 		f.writeLineEnd(negativeIntLiteralNode.Uint)
 		return
@@ -1734,7 +1757,9 @@ func (f *formatter) writeNode(node ast.Node) {
 	case *ast.IdentNode:
 		f.writeIdent(element)
 	case *ast.ImportNode:
-		f.writeImport(element, false)
+		// Make no assumptions on node ordering, set first == false to always preserve leading
+		// whitespace.
+		f.writeImport(element, false, false)
 	case *ast.KeywordNode:
 		f.writeKeyword(element)
 	case *ast.MapFieldNode:
@@ -1756,7 +1781,9 @@ func (f *formatter) writeNode(node ast.Node) {
 	case *ast.OptionNameNode:
 		f.writeOptionName(element)
 	case *ast.PackageNode:
-		f.writePackage(element)
+		// Make no assumptions on node ordering, set first == false to always preserve leading
+		// whitespace.
+		f.writePackage(element, false)
 	case *ast.RangeNode:
 		f.writeRange(element)
 	case *ast.ReservedNode:
@@ -1818,17 +1845,26 @@ func (f *formatter) writeNode(node ast.Node) {
 // Note that this is one of the most complex component of the formatter - it
 // controls how each node should be separated from one another and preserves
 // newlines in the original source.
-func (f *formatter) writeStart(node ast.Node) {
-	f.writeStartMaybeCompact(node, false)
+func (f *formatter) writeStart(node ast.Node, ignoreLeadingWhitespace bool) {
+	f.writeStartMaybeCompact(node, false, ignoreLeadingWhitespace)
 }
 
-func (f *formatter) writeStartMaybeCompact(node ast.Node, forceCompact bool) {
+func (f *formatter) writeStartMaybeCompact(
+	node ast.Node,
+	forceCompact bool,
+	ignoreLeadingWhitespace bool,
+) {
 	defer f.SetPreviousNode(node)
 	info := f.nodeInfo(node)
 	var (
 		nodeNewlineCount = newlineCount(info.LeadingWhitespace())
 		compact          = forceCompact || isOpenBrace(f.previousNode)
 	)
+	if ignoreLeadingWhitespace {
+		// If we are asked to ignore leading whitespace, then we forcibly set nodeNewlineCount
+		// to 0, effectively ignoring the leading whitespace line count.
+		nodeNewlineCount = 0
+	}
 	if length := info.LeadingComments().Len(); length > 0 {
 		// If leading comments are defined, the whitespace we care about
 		// is attached to the first comment.
