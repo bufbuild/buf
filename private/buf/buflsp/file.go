@@ -490,7 +490,7 @@ func (f *file) queryForIR(
 	}
 	f.diagnostics = diagnostics
 	f.lsp.logger.Debug(
-		fmt.Sprintf("got %v diagnostic(s)", len(f.diagnostics)),
+		fmt.Sprintf("got %v diagnostic(s) for %s", len(f.diagnostics), f.uri.Filename()),
 		slog.Any("diagnostics", f.diagnostics),
 	)
 }
@@ -834,11 +834,11 @@ func (f *file) importToSymbol(imp ir.Import) *symbol {
 func (f *file) messageToSymbols(msg ir.MessageValue, prefix report.Span) []*symbol {
 	var symbols []*symbol
 	for field := range msg.Fields() {
-		if field.AST().IsZero() {
+		if field.ValueAST().IsZero() {
 			continue
 		}
 		for element := range seq.Values(field.Elements()) {
-			span := element.Value().MessageKeys().At(element.ValueNodeIndex()).Span()
+			span := element.Value().KeyASTs().At(element.ValueNodeIndex()).Span()
 			// We only want the subset of the option path that applies specifically to this element,
 			// and we trim the prefix.
 			if !prefix.IsZero() {
