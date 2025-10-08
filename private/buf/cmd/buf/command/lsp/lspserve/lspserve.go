@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package lsp defines the entry-point for the Buf LSP within the CLI.
+// Package lspserve defines the entry-point for the Buf LSP within the CLI.
 //
 // The actual implementation of the LSP lives under private/buf/buflsp
-package lsp
+package lspserve
 
 import (
 	"context"
@@ -40,12 +40,19 @@ const (
 )
 
 // NewCommand constructs the CLI command for executing the LSP.
-func NewCommand(name string, builder appext.Builder) *appcmd.Command {
+func NewCommand(
+	name string,
+	builder appext.Builder,
+	deprecated string,
+	hidden bool,
+) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name,
-		Short: "Start the language server",
-		Args:  appcmd.NoArgs,
+		Use:        name,
+		Short:      "Start the language server",
+		Args:       appcmd.NoArgs,
+		Deprecated: deprecated,
+		Hidden:     hidden,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)

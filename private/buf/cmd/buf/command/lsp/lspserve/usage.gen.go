@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package lsp
+package lspserve
 
 import _ "github.com/bufbuild/buf/private/usage"

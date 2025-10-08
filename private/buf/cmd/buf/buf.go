@@ -36,7 +36,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/bufpluginv1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/bufpluginv1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/bufpluginv2"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/lsp"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
 	betaplugindelete "github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
 	betapluginpush "github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginpush"
@@ -61,6 +60,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsp/lspserve"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
@@ -179,6 +179,13 @@ func NewRootCommand(name string) *appcmd.Command {
 					configlslintrules.NewCommand("ls-lint-rules", builder),
 					configlsbreakingrules.NewCommand("ls-breaking-rules", builder),
 					configlsmodules.NewCommand("ls-modules", builder),
+				},
+			},
+			{
+				Use:   "lsp",
+				Short: "Work with Buf Language Server",
+				SubCommands: []*appcmd.Command{
+					lspserve.NewCommand("serve", builder, ``, false),
 				},
 			},
 			{
@@ -390,7 +397,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "beta",
 				Short: "Beta commands. Unstable and likely to change",
 				SubCommands: []*appcmd.Command{
-					lsp.NewCommand("lsp", builder),
+					lspserve.NewCommand("lsp", builder, deprecatedMessage("buf beta lsp", "buf lsp serve"), true),
 					price.NewCommand("price", builder),
 					bufpluginv1beta1.NewCommand("buf-plugin-v1beta1", builder),
 					bufpluginv1.NewCommand("buf-plugin-v1", builder),
