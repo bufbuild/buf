@@ -79,7 +79,7 @@ message Resource {
 
 // EventType is the type of audited event.
 //
-// [#next-free-field: 79]
+// [#next-free-field: 80]
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
   EVENT_TYPE_ORGANIZATION_CREATED = 1;
@@ -139,6 +139,7 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_LABEL_MOVED = 30;
   EVENT_TYPE_REPOSITORY_LABEL_ARCHIVED = 38;
   EVENT_TYPE_REPOSITORY_LABEL_UNARCHIVED = 39;
+  EVENT_TYPE_REPOSITORY_LABEL_ENFORCEMENT_IGNORES_CHANGED = 79;
   EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_ENABLED = 32;
   EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_DISABLED = 33;
   EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED = 34 [deprecated = true];
@@ -176,7 +177,7 @@ message EventMetadata {
 // it happened, who did it, which resource was affected, and more contextual information on the
 // event.
 //
-// [#next-free-field: 85]
+// [#next-free-field: 86]
 message Event {
   // Unique id of the audited event.
   string event_id = 1;
@@ -247,6 +248,7 @@ message Event {
     PayloadRepositoryLabelMoved repository_label_moved = 36;
     PayloadRepositoryLabelArchived repository_label_archived = 44;
     PayloadRepositoryLabelUnarchived repository_label_unarchived = 45;
+    PayloadRepositoryLabelEnforcementIgnoresChanged repository_label_enforcement_ignores_changed = 85;
     PayloadCuratedPluginDeleted curated_plugin_deleted = 37;
     PayloadCuratedPluginStatusUpdated curated_plugin_status_updated = 84;
     PayloadServerBreakingChangePolicyEnabled payload_server_breaking_change_policy_enabled = 38;
@@ -819,6 +821,33 @@ message PayloadRepositoryLabelUnarchived {
   string repository_id = 3;
   // repository_name is the name of the repository from which the label was unarchived.
   string repository_name = 4;
+}
+
+message PayloadRepositoryLabelEnforcementIgnoresChanged {
+  // IgnoreEntry is an entry of the ignore configuration applied to the repository label, for a
+  // specific enforcement id.
+  message IgnoreEntry {
+    // The ignored rule or category id.
+    //
+    // If empty, this is an `ignore` entry. If populated, this is an `ignore_only` entry.
+    string rule_or_category_id = 1;
+    // The ignored file or directory paths.
+    repeated string paths = 2;
+  }
+  // owner_id is the id of the repository owner.
+  string owner_id = 1;
+  // owner_name is the name of the repository owner.
+  string owner_name = 2;
+  // repository_id is the id of the repository.
+  string repository_id = 3;
+  // repository_name is the name of the repository.
+  string repository_name = 4;
+  // enforcement_id is the id of the enforcement.
+  string enforcement_id = 5;
+  // old ignore entries configured for the repository label and the enforcement.
+  repeated IgnoreEntry old_ignore_entries = 6;
+  // new ignore entries configured for the repository label and the enforcement.
+  repeated IgnoreEntry new_ignore_entries = 7;
 }
 
 message PayloadServerBreakingChangePolicyEnabled {
