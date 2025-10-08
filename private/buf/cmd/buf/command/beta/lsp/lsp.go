@@ -29,6 +29,7 @@ import (
 	"buf.build/go/standard/xio"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buflsp"
+	"github.com/bufbuild/protocompile/experimental/incremental"
 	"github.com/spf13/pflag"
 	"go.lsp.dev/jsonrpc2"
 )
@@ -108,7 +109,15 @@ func run(
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
 
-	conn, err := buflsp.Serve(ctx, wktBucket, container, controller, wasmRuntime, jsonrpc2.NewStream(transport))
+	conn, err := buflsp.Serve(
+		ctx,
+		wktBucket,
+		container,
+		controller,
+		wasmRuntime,
+		jsonrpc2.NewStream(transport),
+		incremental.New(),
+	)
 	if err != nil {
 		return err
 	}
