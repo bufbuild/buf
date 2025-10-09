@@ -342,11 +342,11 @@ func reportSpanToProtocolRange(span report.Span) protocol.Range {
 	return protocol.Range{
 		Start: protocol.Position{
 			Line:      uint32(span.StartLoc().Line) - 1,
-			Character: uint32(span.StartLoc().Column) - 1,
+			Character: uint32(column(span.File, span.StartLoc())),
 		},
 		End: protocol.Position{
 			Line:      uint32(span.EndLoc().Line) - 1,
-			Character: uint32(span.EndLoc().Column) - 1,
+			Character: uint32(column(span.File, span.EndLoc())),
 		},
 	}
 }

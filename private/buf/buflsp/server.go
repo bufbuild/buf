@@ -441,6 +441,8 @@ func (s *server) SemanticTokensFull(
 	if len(file.symbols) == 0 {
 		return nil, nil
 	}
+	// This fairly painful encoding is described in detail here:
+	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_semanticTokens
 	var (
 		encoded           []uint32
 		prevLine, prevCol uint32
@@ -475,26 +477,28 @@ func (s *server) SemanticTokensFull(
 				continue
 			}
 		}
-		// This fairly painful encoding is described in detail here:
-		// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_semanticTokens
+
 		start, end := symbol.span.StartLoc(), symbol.span.EndLoc()
+		startCol, endCol := column(symbol.span.File, start), column(symbol.span.File, end)
+
 		for i := start.Line; i <= end.Line; i++ {
+
 			newLine := uint32(i - 1)
 			var newCol uint32
 			if i == start.Line {
-				newCol = uint32(start.Column - 1)
+				newCol = uint32(startCol)
 				if prevLine == newLine {
 					newCol -= prevCol
 				}
 			}
-			symbolLen := uint32(end.Column - 1)
+			symbolLen := uint32(endCol)
 			if i == start.Line {
-				symbolLen -= uint32(start.Column - 1)
+				symbolLen -= uint32(startCol)
 			}
 			encoded = append(encoded, newLine-prevLine, newCol, symbolLen, semanticType, 0)
 			prevLine = newLine
 			if i == start.Line {
-				prevCol = uint32(start.Column - 1)
+				prevCol = uint32(startCol)
 			} else {
 				prevCol = 0
 			}

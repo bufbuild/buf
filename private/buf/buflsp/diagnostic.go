@@ -54,11 +54,11 @@ func reportDiagnosticToProtocolDiagnostic(
 		diagnostic.Range = protocol.Range{
 			Start: protocol.Position{
 				Line:      uint32(reportDiagnostic.Primary().StartLoc().Line - 1),
-				Character: uint32(reportDiagnostic.Primary().StartLoc().Column - 1),
+				Character: uint32(column(reportDiagnostic.Primary().File, reportDiagnostic.Primary().StartLoc())),
 			},
 			End: protocol.Position{
 				Line:      uint32(reportDiagnostic.Primary().EndLoc().Line - 1),
-				Character: uint32(reportDiagnostic.Primary().EndLoc().Column - 1),
+				Character: uint32(column(reportDiagnostic.Primary().File, reportDiagnostic.Primary().EndLoc())),
 			},
 		}
 	}
@@ -78,4 +78,23 @@ func reportDiagnosticToProtocolDiagnostic(
 		diagnostic.Data = string(bytes)
 	}
 	return diagnostic, nil
+}
+
+// This is a custom helper function for converting column measurements to the LSP protocol.
+// This is needed because the LSP treats tabs as a single character and expects the client
+// to handle custom tabstops. However, when [report.Location] is calculated based on the
+// byte offset, it accounts for tabs based on a default tabstop width of 4.
+//
+// This needs to be used everywhere we deal with location columns.
+func column(file *report.File, location report.Location) int {
+	var count int
+	var b strings.Builder
+	for line := range strings.Lines(file.Text()) {
+		if count == location.Line-1 {
+			break
+		}
+		b.WriteString(line)
+		count++
+	}
+	return len(string([]byte(file.Text())[b.Len():location.Offset]))
 }
