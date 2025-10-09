@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.58.0] - 2025-10-09
 
 - Update `PROTOVALIDATE` lint rule to check `IGNORE_IF_ZERO_VALUE` on fields that track presence.
@@ -1418,6 +1422,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.58.0...HEAD
 [v1.58.0]: https://github.com/bufbuild/buf/compare/v1.57.2...v1.58.0
 [v1.57.2]: https://github.com/bufbuild/buf/compare/v1.57.1...v1.57.2
 [v1.57.1]: https://github.com/bufbuild/buf/compare/v1.57.0...v1.57.1
