@@ -6,10 +6,11 @@
 - Fix `buf format` on fields with missing field number tags.
 - Optimize `include` and `exclude` path handling for workspaces to avoid unnecessary file system
   operations. This change can result in a performance improvement for large workspaces.
+- Fix buf curl for insecure HTTP/1 services.
 
 ## [v1.57.2] - 2025-09-16
 
-- Fix buf curl for HTTP/2 services
+- Fix buf curl for HTTP/2 services.
 
 ## [v1.57.1] - 2025-09-16
 
