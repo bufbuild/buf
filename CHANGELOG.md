@@ -1,15 +1,16 @@
 # Changelog
 
-## [Unreleased]
+## [v1.58.0] - 2025-10-09
 
 - Update `PROTOVALIDATE` lint rule to check `IGNORE_IF_ZERO_VALUE` on fields that track presence.
 - Fix `buf format` on fields with missing field number tags.
 - Optimize `include` and `exclude` path handling for workspaces to avoid unnecessary file system
   operations. This change can result in a performance improvement for large workspaces.
+- Fix buf curl for HTTP/2 services with ` --http2-prior-knowledge` flag set.
 
 ## [v1.57.2] - 2025-09-16
 
-- Fix buf curl for HTTP/2 services
+- Fix buf curl for HTTP/2 services.
 
 ## [v1.57.1] - 2025-09-16
 
@@ -1417,7 +1418,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.57.2...HEAD
+[v1.58.0]: https://github.com/bufbuild/buf/compare/v1.57.2...v1.58.0
 [v1.57.2]: https://github.com/bufbuild/buf/compare/v1.57.1...v1.57.2
 [v1.57.1]: https://github.com/bufbuild/buf/compare/v1.57.0...v1.57.1
 [v1.57.0]: https://github.com/bufbuild/buf/compare/v1.56.0...v1.57.0
