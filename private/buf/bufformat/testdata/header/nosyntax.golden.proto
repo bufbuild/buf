@@ -1,0 +1,3 @@
+package buf.alpha.audit.v1alpha1;
+
+import "google/protobuf/descriptor.proto";
