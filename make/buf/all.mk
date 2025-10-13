@@ -128,21 +128,30 @@ bufgeneratedeps:: $(PROTOC_GEN_GO) $(PROTOC_GEN_CONNECT_GO)
 bufgeneratecleango:
 	rm -rf private/gen/proto
 
-.PHONY: bufgeneratecleanbuflinttestdata
-bufgeneratecleanbuflinttestdata:
+.PHONY: bufgeneratecleantestdata
+bufgeneratecleantestdata:
+	rm -rf cmd/buf/testdata/check_plugins/current/vendor/protovalidate
+	rm -rf cmd/buf/testdata/check_plugins/previous/vendor/protovalidate
 	rm -rf private/bufpkg/bufcheck/testdata/lint/protovalidate/vendor/protovalidate
+	rm -rf private/bufpkg/bufcheck/testdata/lint/protovalidate_predefines/vendor/protovalidate
 
 bufgenerateclean:: \
 	bufgeneratecleango \
-	bufgeneratecleanbuflinttestdata
+	bufgeneratecleantestdata
 
 .PHONY: bufgeneratego
 bufgeneratego:
 	$(BUF_BIN) generate --template data/template/buf.go.gen.yaml
 	$(BUF_BIN) generate --template data/template/buf.go-client.gen.yaml
 
-.PHONY: bufgeneratebuflinttestdata
-bufgeneratebuflinttestdata:
+.PHONY: bufgeneratetestdata
+bufgeneratetestdata:
+	$(BUF_BIN) export \
+		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
+		--output cmd/buf/testdata/check_plugins/current/vendor/protovalidate
+	$(BUF_BIN) export \
+		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
+		--output cmd/buf/testdata/check_plugins/previous/vendor/protovalidate
 	$(BUF_BIN) export \
 		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
 		--output private/bufpkg/bufcheck/testdata/lint/protovalidate/vendor/protovalidate
@@ -152,7 +161,7 @@ bufgeneratebuflinttestdata:
 
 bufgeneratesteps:: \
 	bufgeneratego \
-	bufgeneratebuflinttestdata
+	bufgeneratetestdata
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)
