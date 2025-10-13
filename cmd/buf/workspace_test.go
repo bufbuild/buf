@@ -1746,7 +1746,7 @@ func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string
 	stderr := bytes.NewBuffer(nil)
 	appcmdtesting.Run(
 		t,
-		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		func(use string) *appcmd.Command { return newRootCommand(use) },
 		appcmdtesting.WithExpectedExitCode(0),
 		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
 		appcmdtesting.WithStdout(stdout),

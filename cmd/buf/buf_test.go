@@ -3184,7 +3184,7 @@ testdata/check_plugins/current/proto/common/v1/common.proto:8:5:Field name "comm
 		func() {
 			appcmdtesting.Run(
 				t,
-				NewRootCommand,
+				newRootCommand,
 				appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
 				appcmdtesting.WithExpectedExitCode(1),
 				appcmdtesting.WithExpectedStderrPartials(
@@ -4603,7 +4603,7 @@ func testModInit(t *testing.T, expectedData string, document bool, name string, 
 func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
 	appcmdtesting.Run(
 		t,
-		NewRootCommand,
+		newRootCommand,
 		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
 		appcmdtesting.WithStdin(stdin),
 		appcmdtesting.WithExpectedExitCode(expectedExitCode),
@@ -4615,7 +4615,7 @@ func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expected
 func testRunStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderr string, args ...string) {
 	appcmdtesting.Run(
 		t,
-		NewRootCommand,
+		newRootCommand,
 		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
 		appcmdtesting.WithStdin(stdin),
 		appcmdtesting.WithExpectedExitCode(expectedExitCode),
@@ -4627,7 +4627,7 @@ func testRunStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expected
 func testRunStdoutStderrNoWarn(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, expectedStderr string, args ...string) {
 	appcmdtesting.Run(
 		t,
-		NewRootCommand,
+		newRootCommand,
 		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
 		appcmdtesting.WithStdin(stdin),
 		appcmdtesting.WithExpectedExitCode(expectedExitCode),
@@ -4646,7 +4646,7 @@ func testRunStdoutStderrNoWarn(t *testing.T, stdin io.Reader, expectedExitCode i
 func testRunStderrContainsNoWarn(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderrPartials []string, args ...string) {
 	appcmdtesting.Run(
 		t,
-		NewRootCommand,
+		newRootCommand,
 		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
 		appcmdtesting.WithStdin(stdin),
 		appcmdtesting.WithExpectedExitCode(expectedExitCode),
@@ -4684,7 +4684,7 @@ func testRun(
 ) {
 	appcmdtesting.Run(
 		t,
-		NewRootCommand,
+		newRootCommand,
 		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
 		appcmdtesting.WithStdin(stdin),
 		appcmdtesting.WithStdout(stdout),
@@ -4698,7 +4698,7 @@ func getRuleIDsFromLsBreaking(t *testing.T, fileVersion string, useIDs []string,
 	stdout := bytes.NewBuffer(nil)
 	appcmdtesting.Run(
 		t,
-		NewRootCommand,
+		newRootCommand,
 		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
 		appcmdtesting.WithStdout(stdout),
 		appcmdtesting.WithExpectedExitCode(0),
@@ -4754,7 +4754,7 @@ func testLsRuleOutputJSON(
 	}
 	appcmdtesting.Run(
 		t,
-		NewRootCommand,
+		newRootCommand,
 		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
 		appcmdtesting.WithStdout(stdout),
 		appcmdtesting.WithStderr(stderr),

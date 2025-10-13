@@ -69,7 +69,7 @@ func TestValidImportFromCorruptedCacheFile(t *testing.T) {
 
 	appcmdtesting.Run(
 		t,
-		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		func(use string) *appcmd.Command { return newRootCommand(use) },
 		appcmdtesting.WithExpectedExitCode(1),
 		appcmdtesting.WithExpectedStderr(appFailureError(digestMismatchError).Error()),
 		appcmdtesting.WithEnv(
@@ -106,7 +106,7 @@ func TestValidImportFromCorruptedCacheDep(t *testing.T) {
 
 	appcmdtesting.Run(
 		t,
-		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		func(use string) *appcmd.Command { return newRootCommand(use) },
 		appcmdtesting.WithExpectedExitCode(1),
 		appcmdtesting.WithExpectedStderr(appFailureError(digestMismatchError).Error()),
 		appcmdtesting.WithEnv(
@@ -216,7 +216,7 @@ func TestGraphNoWarningsValidImportFromWorkspaceNamedModules(t *testing.T) {
 func testRunStderrWithCache(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderr string, args ...string) {
 	appcmdtesting.Run(
 		t,
-		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		func(use string) *appcmd.Command { return newRootCommand(use) },
 		appcmdtesting.WithExpectedExitCode(expectedExitCode),
 		appcmdtesting.WithExpectedStderr(expectedStderr),
 		appcmdtesting.WithEnv(
@@ -234,7 +234,7 @@ func testRunStderrWithCache(t *testing.T, stdin io.Reader, expectedExitCode int,
 func testRunStderrContainsWithCache(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderrPartials []string, args ...string) {
 	appcmdtesting.Run(
 		t,
-		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		func(use string) *appcmd.Command { return newRootCommand(use) },
 		appcmdtesting.WithExpectedExitCode(expectedExitCode),
 		appcmdtesting.WithExpectedStderrPartials(expectedStderrPartials...),
 		appcmdtesting.WithEnv(

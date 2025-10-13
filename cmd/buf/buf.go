@@ -128,15 +128,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Main is the entrypoint to the buf CLI.
-func Main(name string) {
-	appcmd.Main(context.Background(), NewRootCommand(name))
+func main() {
+	appcmd.Main(context.Background(), newRootCommand("buf"))
 }
 
-// NewRootCommand returns a new root command.
-//
-// This is public for use in testing.
-func NewRootCommand(name string) *appcmd.Command {
+func newRootCommand(name string) *appcmd.Command {
 	builder := appext.NewBuilder(
 		name,
 		appext.BuilderWithTimeout(120*time.Second),
