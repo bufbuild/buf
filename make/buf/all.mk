@@ -65,6 +65,7 @@ include make/go/dep_protoc_gen_go.mk
 include make/go/dep_protoc_gen_connect_go.mk
 include make/go/go.mk
 include make/go/docker.mk
+include make/go/license_header.mk
 include make/go/buf.mk
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
@@ -100,21 +101,6 @@ bufworkspacebuflocks: installbuf-digest installbuf-new-commit-id
 	bash private/buf/bufworkspace/testdata/basic/scripts/fakebuflock.bash
 
 prepostgenerate:: bufworkspacebuflocks
-
-.PHONY: licenseheader
-licenseheader: installlicense-header installgit-ls-files-unstaged
-	@echo license-header \
-		--license-type "$(LICENSE_HEADER_LICENSE_TYPE)" \
-		--copyright-holder "$(LICENSE_HEADER_COPYRIGHT_HOLDER)" \
-		--year-range "$(LICENSE_HEADER_YEAR_RANGE)" \
-		ALL_FILES
-	@license-header \
-		--license-type "$(LICENSE_HEADER_LICENSE_TYPE)" \
-		--copyright-holder "$(LICENSE_HEADER_COPYRIGHT_HOLDER)" \
-		--year-range "$(LICENSE_HEADER_YEAR_RANGE)" \
-		$(shell git-ls-files-unstaged | grep -v $(patsubst %,-e %,$(sort $(LICENSE_HEADER_IGNORES))))
-
-licensegenerate:: licenseheader
 
 .PHONY: privateusage
 privateusage:
