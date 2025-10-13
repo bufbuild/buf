@@ -2,8 +2,6 @@ module github.com/bufbuild/buf
 
 go 1.24.0
 
-toolchain go1.24.7
-
 require (
 	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.9-20250718181942-e35f9b667443.1
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.9-20250912141014-52f32327d4b0.1
