@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Generated. DO NOT EDIT.
+
 package main
 
-import breaking "github.com/bufbuild/buf/private/buf/cmd/protoc-gen-buf-breaking"
-
-func main() {
-	breaking.Main()
-}
+import _ "github.com/bufbuild/buf/private/usage"

@@ -14,7 +14,7 @@
 
 //go:build windows
 
-package buf
+package main
 
 import (
 	"path/filepath"

@@ -14,7 +14,7 @@
 
 //go:build aix || darwin || dragonfly || freebsd || (js && wasm) || linux || netbsd || openbsd || solaris
 
-package buf
+package main
 
 import (
 	"path/filepath"

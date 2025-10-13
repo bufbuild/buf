@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buf
+package main
 
 import (
 	"context"
@@ -27,8 +27,6 @@ import (
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/alpha/protoc"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/alpha/registry/token/tokenget"
@@ -120,6 +118,8 @@ import (
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/sdk/version"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/whoami"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/stats"
+	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufcobra"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"

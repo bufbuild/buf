@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package breaking
+package main
 
 import (
 	"bytes"
@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -34,12 +33,11 @@ import (
 )
 
 const (
-	appName        = "protoc-gen-buf-breaking"
+	appName        = "protoc-gen-buf-lint"
 	defaultTimeout = 10 * time.Second
 )
 
-// Main is the main.
-func Main() {
+func main() {
 	protoplugin.Main(
 		protoplugin.HandlerFunc(handle),
 		// An `EmptyResolver` is passed to protoplugin for unmarshalling instead of defaulting to
@@ -65,10 +63,6 @@ func handle(
 	); err != nil {
 		return err
 	}
-	if externalConfig.AgainstInput == "" {
-		// this is actually checked as part of ReadImageEnv but just in case
-		return errors.New(`"against_input" is required`)
-	}
 	container, err := bufcli.NewAppextContainerForPluginEnv(
 		pluginEnv,
 		appName,
@@ -84,31 +78,11 @@ func handle(
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	var targetPaths []string
-	if externalConfig.LimitToInputFiles {
-		targetPaths = request.CodeGeneratorRequest().GetFileToGenerate()
-	}
-	controller, err := bufcli.NewController(
-		container,
-		bufctl.WithFileAnnotationErrorFormat(externalConfig.ErrorFormat),
-	)
-	if err != nil {
-		return err
-	}
-	againstImage, err := controller.GetImage(
-		ctx,
-		externalConfig.AgainstInput,
-		// limit to the input files if specified
-		bufctl.WithTargetPaths(targetPaths, nil),
-	)
-	if err != nil {
-		return err
-	}
-	var breakingOptions []bufcheck.BreakingOption
-	if externalConfig.ExcludeImports {
-		breakingOptions = append(breakingOptions, bufcheck.BreakingWithExcludeImports())
-	}
-	image, err := bufimage.NewImageForCodeGeneratorRequest(request.CodeGeneratorRequest())
+	// With the "buf lint" command, we build the image and then the linter can report
+	// unused imports that the compiler reports. But with a plugin, we get descriptors
+	// that are already built and no access to any possible associated compiler warnings.
+	// So we have to analyze the files to compute the unused imports.
+	image, err := bufimage.NewImageForCodeGeneratorRequest(request.CodeGeneratorRequest(), bufimage.WithUnusedImportsComputation())
 	if err != nil {
 		return err
 	}
@@ -140,28 +114,33 @@ func handle(
 	if err != nil {
 		return err
 	}
-	if len(pluginConfigs) > 0 {
-		breakingOptions = append(breakingOptions, bufcheck.WithPluginConfigs(pluginConfigs...))
+	if err := client.Lint(
+		ctx,
+		moduleConfig.LintConfig(),
+		image,
+		bufcheck.WithPluginConfigs(pluginConfigs...),
 		// We add all check configs (both lint and breaking) across all configured modules in buf.yaml
 		// as related configs to check if plugins have rules configured.
-		breakingOptions = append(breakingOptions, bufcheck.WithRelatedCheckConfigs(allCheckConfigs...))
-	}
-	if err := client.Breaking(
-		ctx,
-		moduleConfig.BreakingConfig(),
-		image,
-		againstImage,
-		breakingOptions...,
+		bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
 	); err != nil {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet
 		if errors.As(err, &fileAnnotationSet) {
 			buffer := bytes.NewBuffer(nil)
-			if err := bufanalysis.PrintFileAnnotationSet(
-				buffer,
-				fileAnnotationSet,
-				externalConfig.ErrorFormat,
-			); err != nil {
-				return err
+			if externalConfig.ErrorFormat == "config-ignore-yaml" {
+				if err := bufcli.PrintFileAnnotationSetLintConfigIgnoreYAMLV1(
+					buffer,
+					fileAnnotationSet,
+				); err != nil {
+					return err
+				}
+			} else {
+				if err := bufanalysis.PrintFileAnnotationSet(
+					buffer,
+					fileAnnotationSet,
+					externalConfig.ErrorFormat,
+				); err != nil {
+					return err
+				}
 			}
 			responseWriter.AddError(strings.TrimSpace(buffer.String()))
 			return nil
@@ -172,16 +151,11 @@ func handle(
 }
 
 type externalConfig struct {
-	AgainstInput string `json:"against_input,omitempty" yaml:"against_input,omitempty"`
-	// This was never actually used, but we keep it around for we can do unmarshal strict without breaking anyone.
-	AgainstInputConfig json.RawMessage   `json:"against_input_config,omitempty" yaml:"against_input_config,omitempty"`
-	InputConfig        json.RawMessage   `json:"input_config,omitempty" yaml:"input_config,omitempty"`
-	Module             string            `json:"module,omitempty" yaml:"module,omitempty"`
-	LimitToInputFiles  bool              `json:"limit_to_input_files,omitempty" yaml:"limit_to_input_files,omitempty"`
-	ExcludeImports     bool              `json:"exclude_imports,omitempty" yaml:"exclude_imports,omitempty"`
-	LogLevel           string            `json:"log_level,omitempty" yaml:"log_level,omitempty"`
-	LogFormat          string            `json:"log_format,omitempty" yaml:"log_format,omitempty"`
-	ErrorFormat        string            `json:"error_format,omitempty" yaml:"error_format,omitempty"`
-	Timeout            time.Duration     `json:"timeout,omitempty" yaml:"timeout,omitempty"`
-	PluginOverrides    map[string]string `json:"plugin_overrides,omitempty" yaml:"plugin_overrides,omitempty"`
+	InputConfig     json.RawMessage   `json:"input_config,omitempty" yaml:"input_config,omitempty"`
+	Module          string            `json:"module,omitempty" yaml:"module,omitempty"`
+	LogLevel        string            `json:"log_level,omitempty" yaml:"log_level,omitempty"`
+	LogFormat       string            `json:"log_format,omitempty" yaml:"log_format,omitempty"`
+	ErrorFormat     string            `json:"error_format,omitempty" yaml:"error_format,omitempty"`
+	Timeout         time.Duration     `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	PluginOverrides map[string]string `json:"plugin_overrides,omitempty" yaml:"plugin_overrides,omitempty"`
 }
