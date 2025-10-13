@@ -23,12 +23,12 @@ jobs:
         with:
           go-version: '1.24.x'
       - name: initialize
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           # Limit analysis to Go for now.
           # Available languages: https://docs.github.com/en/code-security/secure-coding/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#changing-the-languages-that-are-analyzed
           languages: go
       - name: autobuild
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v4
       - name: analyze
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
