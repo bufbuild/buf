@@ -23,7 +23,6 @@ import (
 
 	"buf.build/go/app"
 	"buf.build/go/app/appext"
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/bufbuild/protoplugin"
@@ -47,7 +46,7 @@ func GetModuleConfigAndPluginConfigsForProtocPlugin(
 	module string,
 	pluginPathOverrides map[string]string,
 ) (bufconfig.ModuleConfig, []bufconfig.PluginConfig, []bufconfig.CheckConfig, error) {
-	bufYAMLFile, err := bufcli.GetBufYAMLFileForDirPathOrOverride(
+	bufYAMLFile, err := GetBufYAMLFileForDirPathOrOverride(
 		ctx,
 		".",
 		configOverride,

@@ -29,6 +29,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Test if workspaces work when buf is executed in a sub-directory specified
+// in the workspace.
+
 func TestWorkspaceSubDirectory(t *testing.T) {
 	// Execute buf within a workspace directory.
 	t.Parallel()
