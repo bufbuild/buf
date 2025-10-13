@@ -10,10 +10,10 @@ cmd/protoc-gen-buf-breaking/protoc-gen-buf-breaking
 cmd/protoc-gen-buf-lint/protoc-gen-buf-lint
 private/buf/buftesting/cache/
 private/buf/bufwkt/cmd/wkt-go-data/wkt-go-data
-private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
-private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
-private/buf/cmd/buf/command/alpha/protoc/test.txt
-private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml/protoc-gen-top-level-type-names-yaml
+cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
+cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
+cmd/buf/internal/command/alpha/protoc/test.txt
+cmd/buf/internal/command/generate/internal/protoc-gen-top-level-type-names-yaml/protoc-gen-top-level-type-names-yaml
 private/buf/cmd/buf/testdata/imports/cache/v3/modulelocks/
 private/buf/cmd/buf/testdata/imports/corrupted_cache_dep/v3/modulelocks/
 private/buf/cmd/buf/testdata/imports/corrupted_cache_file/v3/modulelocks/

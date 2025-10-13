@@ -18,7 +18,7 @@ import (
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"buf.build/go/bufplugin/check"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
+	"github.com/bufbuild/buf/cmd/buf/internal/command/mod/internal"
 )
 
 // NewCommand returns a new Command.

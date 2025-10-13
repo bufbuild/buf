@@ -25,7 +25,7 @@ import (
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/dep/internal"
+	"github.com/bufbuild/buf/cmd/buf/internal/command/dep/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"

@@ -32,9 +32,9 @@ import (
 	"buf.build/go/app/appcmd/appcmdtesting"
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/standard/xslices"
+	"github.com/bufbuild/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -49,7 +49,7 @@ import (
 )
 
 var (
-	convertTestDataDir = filepath.Join("command", "convert", "testdata", "convert")
+	convertTestDataDir = filepath.Join("internal", "command", "convert", "testdata", "convert")
 	// ordered, contains non-default
 	builtinLintRulesV2 = []*outputCheckRule{
 		{ID: "DIRECTORY_SAME_PACKAGE", Categories: []string{"MINIMAL", "BASIC", "STANDARD"}, Default: true, Purpose: "Checks that all files in a given directory are in the same package."},
@@ -576,18 +576,18 @@ func TestFailCheckBreaking1(t *testing.T) {
 		nil,
 		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
-		../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
-		../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
-		../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
-		../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
-		../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
+		../../private/bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
+		../../private/bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
+		../../private/bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
+		../../private/bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
+		../../private/bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
 		`),
 		"", // stderr should be empty
 		"breaking",
 		// can't bother right now to filepath.Join this
-		"../../../bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete",
+		"../../private/bufpkg/bufcheck/testdata/breaking/current/breaking_field_no_delete",
 		"--against",
-		"../../../bufpkg/bufcheck/testdata/breaking/previous/breaking_field_no_delete",
+		"../../private/bufpkg/bufcheck/testdata/breaking/previous/breaking_field_no_delete",
 	)
 }
 
@@ -3217,7 +3217,7 @@ testdata/check_plugins/current/proto/common/v1/common.proto:8:5:Field name "comm
 func TestBreakingWithPaths(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
-	testRunStdout(t, nil, 0, ``, "build", filepath.Join("command", "generate", "testdata", "paths"), "-o", filepath.Join(tempDir, "previous.binpb"))
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("internal", "command", "generate", "testdata", "paths"), "-o", filepath.Join(tempDir, "previous.binpb"))
 	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "-o", filepath.Join(tempDir, "current.binpb"))
 	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
 	require.NoError(t, err)

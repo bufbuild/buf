@@ -17,7 +17,7 @@ package bufpluginv1beta1
 import (
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/internal"
+	"github.com/bufbuild/buf/cmd/buf/internal/command/beta/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufcheckserver"
 )
 

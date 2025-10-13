@@ -15,9 +15,9 @@ GO_BINS := $(GO_BINS) \
 	private/pkg/storage/cmd/storage-go-data \
 	private/pkg/licenseheader/cmd/license-header
 GO_TEST_BINS := $(GO_TEST_BINS) \
-	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
-	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
-	private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml \
+	cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
+	cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
+	cmd/buf/internal/command/generate/internal/protoc-gen-top-level-type-names-yaml \
 	private/bufpkg/bufcheck/internal/cmd/buf-plugin-panic \
 	private/bufpkg/bufcheck/internal/cmd/buf-plugin-suffix \
 	private/bufpkg/bufcheck/internal/cmd/buf-plugin-protovalidate-ext \
@@ -33,7 +33,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	.ctrlp \
 	.idea/ \
 	.vscode/ \
-	private/buf/cmd/buf/command/alpha/protoc/test.txt \
+	cmd/buf/internal/command/alpha/protoc/test.txt \
 	private/bufpkg/buftesting/cache/ \
 	private/buf/buftesting/cache/ \
 	private/pkg/storage/storageos/tmp/ \
