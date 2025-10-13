@@ -170,6 +170,11 @@ linters:
         text: missing the call to method parallel
       - linters:
           - paralleltest
+        # We use chdir in these tests.
+        path: private/buf/cmd/buf/workspace_subdir_test.go
+        text: missing the call to method parallel
+      - linters:
+          - paralleltest
         # TestWorkspaceArchiveDir, TestWorkspaceWithInvalidArchivePathFail
         # and TestWorkspaceWithInvalidArchiveAbsolutePathFail cannot run in parallel
         # because they all call createZipFromDir on the same path, writing to the same file.
