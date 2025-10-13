@@ -44,6 +44,7 @@ LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2025
 LICENSE_HEADER_IGNORES := \/testdata enterprise
+BANDEPS_CONFIG := data/bandeps/bandeps.yaml
 PROTOVALIDATE_VERSION := v1.0.0
 # Comment out to use released buf
 #BUF_GO_INSTALL_PATH := ./cmd/buf
@@ -66,6 +67,7 @@ include make/go/dep_protoc_gen_connect_go.mk
 include make/go/go.mk
 include make/go/docker.mk
 include make/go/license_header.mk
+include make/go/bandeps.mk
 include make/go/buf.mk
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
@@ -76,12 +78,6 @@ bufstyle: installbufstyle
 	@bufstyle $(shell go list $(GOPKGS) | grep -v \/gen\/)
 
 postlint:: bufstyle
-
-.PHONY: bandeps
-bandeps: installbandeps
-	bandeps -f data/bandeps/bandeps.yaml
-
-postlonglint:: bandeps
 
 .PHONY: godata
 godata: installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC)

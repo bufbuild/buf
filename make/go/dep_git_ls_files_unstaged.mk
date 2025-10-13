@@ -14,7 +14,7 @@ GIT_LS_FILES_UNSTAGED_VERSION ?= $(BUF_VERSION)
 
 GIT_LS_FILES_UNSTAGED := $(CACHE_VERSIONS)/git-ls-files-unstaged/$(GIT_LS_FILES_UNSTAGED_VERSION)
 $(GIT_LS_FILES_UNSTAGED):
-	@rm -f $(CACHE_BIN)/licnese-header
+	@rm -f $(CACHE_BIN)/git-ls-files-unstaged
 	GOBIN=$(CACHE_BIN) go install github.com/bufbuild/buf/private/pkg/git/cmd/git-ls-files-unstaged@$(GIT_LS_FILES_UNSTAGED_VERSION)
 	@rm -rf $(dir $(GIT_LS_FILES_UNSTAGED))
 	@mkdir -p $(dir $(GIT_LS_FILES_UNSTAGED))
