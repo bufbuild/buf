@@ -19,8 +19,8 @@ import (
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/dep/internal"
+	"github.com/bufbuild/buf/private/buf/bufcli"
 )
 
 // NewCommand returns a new prune Command.
