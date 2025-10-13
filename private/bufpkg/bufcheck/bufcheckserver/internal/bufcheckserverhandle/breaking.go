@@ -57,7 +57,7 @@ func handleBreakingEnumNoDelete(
 			if err != nil {
 				return err
 			}
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				location,
 				previousEnum.Location(),
 				descriptor.File().Path(),
@@ -92,7 +92,7 @@ func handleBreakingExtensionNoDelete(
 			if err != nil {
 				return err
 			}
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				location,
 				previousExtension.Location(),
 				descriptor.File().Path(),
@@ -154,7 +154,7 @@ func handleBreakingMessageNoDelete(
 	for previousNestedName, previousMessage := range previousNestedNameToMessage {
 		if _, ok := nestedNameToMessage[previousNestedName]; !ok {
 			descriptor, location := getDescriptorAndLocationForDeletedMessage(file, nestedNameToMessage, previousNestedName)
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				location,
 				previousMessage.Location(),
 				descriptor.File().Path(),
@@ -185,7 +185,7 @@ func handleBreakingServiceNoDelete(
 	}
 	for previousName, previousService := range previousNameToService {
 		if _, ok := nameToService[previousName]; !ok {
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				nil, // Deleted service does not have an input location
 				previousService.Location(),
 				file.Path(),
@@ -219,7 +219,7 @@ func handleBreakingEnumSameType(
 		if descriptor.IsClosed() {
 			previousState, currentState = currentState, previousState
 		}
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			withBackupLocation(enum.Features().EnumTypeLocation(), enum.Location()),
 			withBackupLocation(previousEnum.Features().EnumTypeLocation(), previousEnum.Location()),
 			enum.File().Path(),
@@ -324,7 +324,7 @@ func checkEnumValueNoDeleteWithRules(
 					}
 					suffix = fmt.Sprintf(` without reserving the name%s %s`, nameSuffix, xstrings.JoinSliceQuoted(getSortedEnumValueNames(previousNameToEnumValue), ", "))
 				}
-				responseWriter.AddProtosourceAnnotation(
+				responseWriter.AddProtosourceAnnotationf(
 					enum.Location(),
 					previousEnum.Location(),
 					previousEnum.File().Path(),
@@ -466,7 +466,7 @@ func checkFieldNoDeleteWithRules(
 				// Description will start with capital letter; lower-case it
 				// to better fit in this message.
 				description = strings.ToLower(description[:1]) + description[1:]
-				responseWriter.AddProtosourceAnnotation(
+				responseWriter.AddProtosourceAnnotationf(
 					message.Location(),
 					previousMessage.Location(),
 					message.File().Path(),
@@ -520,7 +520,7 @@ func handleBreakingFieldSameCardinality(
 	previousCardinality := getCardinality(previousDescriptor)
 	currentCardinality := getCardinality(descriptor)
 	if previousCardinality != currentCardinality {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			field.Location(),
 			previousField.Location(),
 			field.File().Path(),
@@ -582,7 +582,7 @@ func handleBreakingFieldSameCppStringType(
 		} else {
 			currentType = stringType
 		}
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			withBackupLocation(field.CTypeLocation(), fieldCppStringTypeLocation(field), field.Location()),
 			withBackupLocation(previousField.CTypeLocation(), fieldCppStringTypeLocation(previousField), previousField.Location()),
 			field.File().Path(),
@@ -625,7 +625,7 @@ func handleBreakingFieldSameJavaUTF8Validation(
 		return err
 	}
 	if previousValidation != validation {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			withBackupLocation(field.File().JavaStringCheckUtf8Location(), fieldJavaUTF8ValidationLocation(field), field.Location()),
 			withBackupLocation(previousField.File().JavaStringCheckUtf8Location(), fieldJavaUTF8ValidationLocation(previousField), previousField.Location()),
 			field.File().Path(),
@@ -652,7 +652,7 @@ func handleBreakingFieldSameJSType(
 		return nil
 	}
 	if previousField.JSType() != field.JSType() {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			withBackupLocation(field.JSTypeLocation(), field.Location()),
 			withBackupLocation(previousField.JSTypeLocation(), previousField.Location()),
 			field.File().Path(),
@@ -866,7 +866,7 @@ func addEnumGroupMessageFieldChangedTypeName(
 	previousField bufprotosource.Field,
 	field bufprotosource.Field,
 ) {
-	responseWriter.AddProtosourceAnnotation(
+	responseWriter.AddProtosourceAnnotationf(
 		field.TypeNameLocation(),
 		previousField.TypeNameLocation(),
 		field.File().Path(),
@@ -906,7 +906,7 @@ func addFieldChangedType(
 	default:
 		previousFieldLocation = previousField.TypeLocation()
 	}
-	responseWriter.AddProtosourceAnnotation(
+	responseWriter.AddProtosourceAnnotationf(
 		fieldLocation,
 		previousFieldLocation,
 		field.File().Path(),
@@ -953,7 +953,7 @@ func handleBreakingFieldSameUTF8Validation(
 	}
 	utf8Validation := descriptorpb.FeatureSet_Utf8Validation(val.Enum())
 	if previousUTF8Validation != utf8Validation {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			withBackupLocation(field.Features().UTF8ValidationLocation(), field.Location()),
 			withBackupLocation(previousField.Features().UTF8ValidationLocation(), previousField.Location()),
 			field.File().Path(),
@@ -1344,7 +1344,7 @@ func checkFileSameValue(
 	name string,
 ) error {
 	if previousValue != value {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			location,
 			previousLocation,
 			file.Path(),
@@ -1369,7 +1369,7 @@ func handleBreakingMessageNoRemoveStandardDescriptorAccessor(
 	previous := strconv.FormatBool(previousMessage.NoStandardDescriptorAccessor())
 	current := strconv.FormatBool(message.NoStandardDescriptorAccessor())
 	if previous == "false" && current == "true" {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			message.NoStandardDescriptorAccessorLocation(),
 			previousMessage.NoStandardDescriptorAccessorLocation(),
 			message.File().Path(),
@@ -1411,7 +1411,7 @@ func handleBreakingOneofNoDelete(
 				// kind of change via field presence check.
 				continue
 			}
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				message.Location(),
 				previousMessage.Location(),
 				message.File().Path(),
@@ -1442,7 +1442,7 @@ func handleBreakingRPCNoDelete(
 	}
 	for previousName := range previousNameToMethod {
 		if _, ok := nameToMethod[previousName]; !ok {
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				service.Location(),
 				previousService.Location(),
 				service.File().Path(),
@@ -1487,7 +1487,7 @@ func handleBreakingEnumSameJSONFormat(
 	}
 	jsonFormat := descriptorpb.FeatureSet_JsonFormat(val.Enum())
 	if previousJSONFormat == descriptorpb.FeatureSet_ALLOW && jsonFormat != descriptorpb.FeatureSet_ALLOW {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			withBackupLocation(enum.Features().JSONFormatLocation(), enum.Location()),
 			withBackupLocation(previousEnum.Features().JSONFormatLocation(), previousEnum.Location()),
 			enum.File().Path(),
@@ -1527,7 +1527,7 @@ func handleBreakingEnumValueSameName(
 			if previousEnumValue, ok := previousNameToEnumValue[enumName]; ok {
 				previousEnumValueNumberLocation = previousEnumValue.NumberLocation()
 			}
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				enumValue.NumberLocation(),
 				previousEnumValueNumberLocation,
 				enumValue.File().Path(),
@@ -1557,7 +1557,7 @@ func handleBreakingFieldSameJSONName(
 		return nil
 	}
 	if previousField.JSONName() != field.JSONName() {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			withBackupLocation(field.JSONNameLocation(), field.Location()),
 			withBackupLocation(previousField.JSONNameLocation(), previousField.Location()),
 			field.File().Path(),
@@ -1588,7 +1588,7 @@ func handleBreakingFieldSameName(
 		name = field.Name()
 	}
 	if previousName != name {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			field.NameLocation(),
 			previousField.NameLocation(),
 			field.File().Path(),
@@ -1633,7 +1633,7 @@ func handleBreakingMessageSameJSONFormat(
 	}
 	jsonFormat := descriptorpb.FeatureSet_JsonFormat(val.Enum())
 	if previousJSONFormat == descriptorpb.FeatureSet_ALLOW && jsonFormat != descriptorpb.FeatureSet_ALLOW {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			withBackupLocation(message.Features().JSONFormatLocation(), message.Location()),
 			withBackupLocation(previousMessage.Features().JSONFormatLocation(), previousMessage.Location()),
 			message.File().Path(),
@@ -1673,7 +1673,7 @@ func handleBreakingFieldSameDefault(
 		return nil
 	}
 	if !defaultsEqual(previousDefault, currentDefault) {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			withBackupLocation(field.DefaultLocation(), field.Location()),
 			withBackupLocation(previousField.DefaultLocation(), previousField.Location()),
 			field.File().Path(),
@@ -1732,7 +1732,7 @@ func handleBreakingFieldSameOneof(
 	}
 	if previousInsideOneof && insideOneof {
 		if previousOneof.Name() != oneof.Name() {
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				field.Location(),
 				previousField.Location(),
 				field.File().Path(),
@@ -1751,7 +1751,7 @@ func handleBreakingFieldSameOneof(
 		previous = "outside"
 		current = "inside"
 	}
-	responseWriter.AddProtosourceAnnotation(
+	responseWriter.AddProtosourceAnnotationf(
 		field.Location(),
 		previousField.Location(),
 		field.File().Path(),
@@ -1789,7 +1789,7 @@ func handleBreakingMessageSameRequiredFields(
 	for previousNumber := range previousNumberToRequiredField {
 		if _, ok := numberToRequiredField[previousNumber]; !ok {
 			// we attach the error to the message as the field no longer exists
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				message.Location(),
 				previousMessage.Location(),
 				message.File().Path(),
@@ -1802,7 +1802,7 @@ func handleBreakingMessageSameRequiredFields(
 	for number, requiredField := range numberToRequiredField {
 		if _, ok := previousNumberToRequiredField[number]; !ok {
 			// we attach the error to the added required field
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				requiredField.Location(),
 				nil,
 				requiredField.File().Path(),
@@ -1838,7 +1838,7 @@ func handleBreakingReservedEnumNoDelete(
 	valueToReservedName := bufprotosource.ValueToReservedName(enum)
 	for previousValue := range previousValueToReservedName {
 		if _, ok := valueToReservedName[previousValue]; !ok {
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				enum.Location(),
 				previousEnum.Location(),
 				enum.File().Path(),
@@ -1874,7 +1874,7 @@ func handleBreakingReservedMessageNoDelete(
 	valueToReservedName := bufprotosource.ValueToReservedName(message)
 	for previousValue := range previousValueToReservedName {
 		if _, ok := valueToReservedName[previousValue]; !ok {
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				message.Location(),
 				previousMessage.Location(),
 				message.File().Path(),
@@ -1903,7 +1903,7 @@ func handleBreakingRPCSameClientStreaming(
 			previous = "unary"
 			current = "streaming"
 		}
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			method.Location(),
 			previousMethod.Location(),
 			method.File().Path(),
@@ -1929,7 +1929,7 @@ func handleBreakingRPCSameIdempotencyLevel(
 	previous := previousMethod.IdempotencyLevel()
 	current := method.IdempotencyLevel()
 	if previous != current {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			method.IdempotencyLevelLocation(),
 			previousMethod.IdempotencyLevelLocation(),
 			method.File().Path(),
@@ -1953,7 +1953,7 @@ func handleBreakingRPCSameRequestType(
 	previousMethod bufprotosource.Method,
 ) error {
 	if previousMethod.InputTypeName() != method.InputTypeName() {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			method.InputTypeLocation(),
 			previousMethod.InputTypeLocation(),
 			method.File().Path(),
@@ -1977,7 +1977,7 @@ func handleBreakingRPCSameResponseType(
 	previousMethod bufprotosource.Method,
 ) error {
 	if previousMethod.OutputTypeName() != method.OutputTypeName() {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			method.OutputTypeLocation(),
 			previousMethod.OutputTypeLocation(),
 			method.File().Path(),
@@ -2007,7 +2007,7 @@ func handleBreakingRPCSameServerStreaming(
 			previous = "unary"
 			current = "streaming"
 		}
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			method.Location(),
 			previousMethod.Location(),
 			method.File().Path(),
@@ -2067,7 +2067,7 @@ func handleBreakingPackageEnumNoDelete(
 						// ignore_unstable_packages is set, this will be triggered if the
 						// previous enum was in an unstable package.
 					}
-					responseWriter.AddProtosourceAnnotation(
+					responseWriter.AddProtosourceAnnotationf(
 						location,
 						previousEnum.Location(),
 						filePath,
@@ -2128,7 +2128,7 @@ func handleBreakingPackageExtensionNoDelete(
 						// ignore_unstable_packages is set, this will be triggered if the
 						// previous enum was in an unstable package.
 					}
-					responseWriter.AddProtosourceAnnotation(
+					responseWriter.AddProtosourceAnnotationf(
 						location,
 						previousExtension.Location(),
 						filePath,
@@ -2186,7 +2186,7 @@ func handleBreakingPackageMessageNoDelete(
 						// ignore_unstable_packages is set, this will be triggered if the
 						// previous message was in an unstable package.
 					}
-					responseWriter.AddProtosourceAnnotation(
+					responseWriter.AddProtosourceAnnotationf(
 						location,
 						previousMessage.Location(),
 						filePath,
@@ -2295,7 +2295,7 @@ func handleBreakingPackageServiceNoDelete(
 						// previous service was in an unstable package.
 						// TODO: find the service and print that this moved?
 					}
-					responseWriter.AddProtosourceAnnotation(
+					responseWriter.AddProtosourceAnnotationf(
 						nil,
 						previousService.Location(),
 						filePath,
@@ -2340,7 +2340,7 @@ func handleBreakingFieldWireJSONCompatibleCardinality(
 	previousCardinality := getCardinality(previousDescriptor)
 	currentCardinality := getCardinality(descriptor)
 	if cardinalityToWireJSONCompatibilityGroup[previousCardinality] != cardinalityToWireJSONCompatibilityGroup[currentCardinality] {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			field.Location(),
 			previousField.Location(),
 			field.File().Path(),
@@ -2383,7 +2383,7 @@ func handleBreakingFieldWireCompatibleCardinality(
 	previousCardinality := getCardinality(previousDescriptor)
 	currentCardinality := getCardinality(descriptor)
 	if cardinalityToWireCompatibilityGroup[previousCardinality] != cardinalityToWireCompatibilityGroup[currentCardinality] {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			field.Location(),
 			previousField.Location(),
 			field.File().Path(),

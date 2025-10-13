@@ -23,7 +23,7 @@ import (
 type ResponseWriter interface {
 	check.ResponseWriter
 
-	// AddProtosourceAnnotation adds a [check.Annotation] for the specified [bufprotosource.Location]s.
+	// AddProtosourceAnnotationf adds a [check.Annotation] for the specified [bufprotosource.Location]s.
 	//
 	// If location is non-nil, it is used to populate the annotation's source code information,
 	// and inputFileName is ignored. If location is nil and inputFileName is provided, the
@@ -31,7 +31,7 @@ type ResponseWriter interface {
 	// againstLocation is optional and may be nil.
 	//
 	// The format string and args are used to construct the annotation message.
-	AddProtosourceAnnotation(
+	AddProtosourceAnnotationf(
 		location bufprotosource.Location,
 		againstLocation bufprotosource.Location,
 		inputFileName string,
@@ -50,7 +50,7 @@ func newResponseWriter(checkResponseWriter check.ResponseWriter) *responseWriter
 	}
 }
 
-func (w *responseWriter) AddProtosourceAnnotation(
+func (w *responseWriter) AddProtosourceAnnotationf(
 	location bufprotosource.Location,
 	againstLocation bufprotosource.Location,
 	inputFileName string,

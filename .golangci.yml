@@ -106,6 +106,38 @@ linters:
         # code review.
         text: 'QF1001'
       - linters:
+          - paralleltest
+        # We use chdir in these tests.
+        path: cmd/buf/workspace_subdir_test.go
+        text: missing the call to method parallel
+      - linters:
+          - paralleltest
+        # TestWorkspaceArchiveDir, TestWorkspaceWithInvalidArchivePathFail
+        # and TestWorkspaceWithInvalidArchiveAbsolutePathFail cannot run in parallel
+        # because they all call createZipFromDir on the same path, writing to the same file.
+        path: cmd/buf/workspace_test.go
+        text: missing the call to method parallel
+      - linters:
+          - paralleltest
+        # This test shouldn't run in parallel as it needs osext.Getwd.
+        path: cmd/buf/internal/command/config/configmigrate/configmigrate_test.go
+        text: missing the call to method parallel
+      - linters:
+          - forbidigo
+        # This is a legacy usage of os.Getwd we're not bothering to port yet.
+        path: cmd/buf/internal/command/alpha/protoc/protoc_test.go
+        text: os.Getwd
+      - linters:
+          - dogsled
+        # One function call doesn't care about most of the returned destructured values. The
+        # dogsled linter complains about it. (Value of this linter is unclear...)
+        path: cmd/buf/internal/command/curl/curl.go
+      - linters:
+          - forbidigo
+        # This is a legacy usage of os.Getwd we're not bothering to port yet.
+        path: cmd/buf/internal/command/generate/generate_test.go
+        text: os.Getwd
+      - linters:
           - exhaustruct
         # We didn't turn on exhaustruct historically, but we really want to make sure it is turned on
         # for this file, as we do conversion between v1beta1 and v1 registry-proto types.
@@ -168,33 +200,6 @@ linters:
         # makes this test flaky.
         path: private/buf/bufstudioagent/bufstudioagent_test.go
         text: missing the call to method parallel
-      - linters:
-          - paralleltest
-        # TestWorkspaceArchiveDir, TestWorkspaceWithInvalidArchivePathFail
-        # and TestWorkspaceWithInvalidArchiveAbsolutePathFail cannot run in parallel
-        # because they all call createZipFromDir on the same path, writing to the same file.
-        path: private/buf/cmd/buf/workspace_test.go
-        text: missing the call to method parallel
-      - linters:
-          - paralleltest
-        # This test shouldn't run in parallel as it needs osext.Getwd.
-        path: private/buf/cmd/buf/command/config/configmigrate/configmigrate_test.go
-        text: missing the call to method parallel
-      - linters:
-          - forbidigo
-        # This is a legacy usage of os.Getwd we're not bothering to port yet.
-        path: private/buf/cmd/buf/command/alpha/protoc/protoc_test.go
-        text: os.Getwd
-      - linters:
-          - dogsled
-        # One function call doesn't care about most of the returned destructured values. The
-        # dogsled linter complains about it. (Value of this linter is unclear...)
-        path: private/buf/cmd/buf/command/curl/curl.go
-      - linters:
-          - forbidigo
-        # This is a legacy usage of os.Getwd we're not bothering to port yet.
-        path: private/buf/cmd/buf/command/generate/generate_test.go
-        text: os.Getwd
       - linters:
           - gochecknoinits
         # we actually want to use this init to create a protovalidate.Validator
@@ -330,7 +335,7 @@ linters:
       - linters:
           - paralleltest
         # The LsModules tests call chdir and cannot be parallelized.
-        path: private/buf/cmd/buf/buf_test.go
+        path: cmd/buf/buf_test.go
         text: LsModules
       - linters:
           - gosec
