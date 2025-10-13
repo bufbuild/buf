@@ -193,6 +193,12 @@ install$(notdir $(1)):
 	go install ./$(1)
 
 install:: install$(notdir $(1))
+
+.PHONY: lint$(notdir $(1))
+lint$(notdir $(1)):
+	bash $(MAKEGO)/scripts/checkcmdpackage.bash ./$(1)
+
+postlint:: lint$(notdir $(1))
 endef
 
 $(foreach gobin,$(sort $(GO_BINS)),$(eval $(call gobinfunc,$(gobin))))
