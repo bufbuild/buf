@@ -24,7 +24,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/buf/cmd/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -70,7 +69,7 @@ func handle(
 		// this is actually checked as part of ReadImageEnv but just in case
 		return errors.New(`"against_input" is required`)
 	}
-	container, err := internal.NewAppextContainerForPluginEnv(
+	container, err := bufcli.NewAppextContainerForPluginEnv(
 		pluginEnv,
 		appName,
 		externalConfig.LogLevel,
@@ -132,7 +131,7 @@ func handle(
 	if err != nil {
 		return err
 	}
-	moduleConfig, pluginConfigs, allCheckConfigs, err := internal.GetModuleConfigAndPluginConfigsForProtocPlugin(
+	moduleConfig, pluginConfigs, allCheckConfigs, err := bufcli.GetModuleConfigAndPluginConfigsForProtocPlugin(
 		ctx,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
 		externalConfig.Module,

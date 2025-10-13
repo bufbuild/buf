@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/cmd/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -65,7 +64,7 @@ func handle(
 	); err != nil {
 		return err
 	}
-	container, err := internal.NewAppextContainerForPluginEnv(
+	container, err := bufcli.NewAppextContainerForPluginEnv(
 		pluginEnv,
 		appName,
 		externalConfig.LogLevel,
@@ -107,7 +106,7 @@ func handle(
 	if err != nil {
 		return err
 	}
-	moduleConfig, pluginConfigs, allCheckConfigs, err := internal.GetModuleConfigAndPluginConfigsForProtocPlugin(
+	moduleConfig, pluginConfigs, allCheckConfigs, err := bufcli.GetModuleConfigAndPluginConfigsForProtocPlugin(
 		ctx,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
 		externalConfig.Module,
