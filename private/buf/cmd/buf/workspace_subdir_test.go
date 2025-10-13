@@ -193,20 +193,20 @@ func TestWorkspaceWithProtoFileRef(t *testing.T) {
 		t,
 		nil,
 		0,
-		filepath.FromSlash("../../../../testdata/workspace/success/protofileref/another/foo/foo.proto"),
+		filepath.FromSlash("../../../../workspace/success/protofileref/another/foo/foo.proto"),
 		``,
 		"ls-files",
-		filepath.Join("..", "..", "..", "..", "testdata", "workspace", "success", "protofileref", "another", "foo", "foo.proto"),
+		filepath.Join("..", "..", "..", "..", "workspace", "success", "protofileref", "another", "foo", "foo.proto"),
 	)
 	testRunStdout(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
-		../../../../testdata/workspace/success/protofileref/another/foo/foo.proto:3:1:Package name "foo" should be suffixed with a correctly formed version, such as "foo.v1".
+		../../../../workspace/success/protofileref/another/foo/foo.proto:3:1:Package name "foo" should be suffixed with a correctly formed version, such as "foo.v1".
 		`),
 		"lint",
-		filepath.Join("..", "..", "..", "..", "testdata", "workspace", "success", "protofileref", "another", "foo", "foo.proto"),
+		filepath.Join("..", "..", "..", "..", "workspace", "success", "protofileref", "another", "foo", "foo.proto"),
 	)
 }
 
