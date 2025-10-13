@@ -12,20 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package workspacetest
+package buf
 
 import (
 	"fmt"
-	"io"
+	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
-	"buf.build/go/app/appcmd"
-	"buf.build/go/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/buf/cmd/buf"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/osext"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,8 +31,9 @@ import (
 // in the workspace.
 
 func TestWorkspaceSubDirectory(t *testing.T) {
+	// Cannot run in parallel since we chdir
+	defer chdirToSubDir(t, "testdata/workspace_subdir/other/proto/subdir")()
 	// Execute buf within a workspace directory.
-	t.Parallel()
 	wd, err := osext.Getwd()
 	require.NoError(t, err)
 	parentDirectory := filepath.Join(wd, "..")
@@ -173,9 +172,10 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 }
 
 func TestWorkspaceOverlapSubDirectory(t *testing.T) {
+	// Cannot run in parallel since we chdir
+	defer chdirToSubDir(t, "testdata/workspace_subdir/other/proto/subdir")()
 	// Specify an overlapping input in a sub-directory.
-	t.Parallel()
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -187,8 +187,9 @@ func TestWorkspaceOverlapSubDirectory(t *testing.T) {
 }
 
 func TestWorkspaceWithProtoFileRef(t *testing.T) {
-	t.Parallel()
-	testRunStdoutStderr(
+	// Cannot run in parallel since we chdir
+	defer chdirToSubDir(t, "testdata/workspace_subdir/other/proto/subdir")()
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		0,
@@ -209,43 +210,20 @@ func TestWorkspaceWithProtoFileRef(t *testing.T) {
 	)
 }
 
-func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
-	appcmdtesting.Run(
-		t,
-		func(use string) *appcmd.Command { return buf.NewRootCommand(use) },
-		appcmdtesting.WithExpectedExitCode(expectedExitCode),
-		appcmdtesting.WithExpectedStdout(expectedStdout),
-		appcmdtesting.WithEnv(
-			func(use string) map[string]string {
-				return map[string]string{
-					useEnvVar(use, "CACHE_DIR"): t.TempDir(),
-				}
-			},
-		),
-		appcmdtesting.WithStdin(stdin),
-		appcmdtesting.WithArgs(args...),
-	)
-}
-
-func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, expectedStderr string, args ...string) {
-	appcmdtesting.Run(
-		t,
-		func(use string) *appcmd.Command { return buf.NewRootCommand(use) },
-		appcmdtesting.WithExpectedExitCode(expectedExitCode),
-		appcmdtesting.WithExpectedStdout(expectedStdout),
-		appcmdtesting.WithExpectedStderr(expectedStderr),
-		appcmdtesting.WithEnv(
-			func(use string) map[string]string {
-				return map[string]string{
-					useEnvVar(use, "CACHE_DIR"): t.TempDir(),
-				}
-			},
-		),
-		appcmdtesting.WithStdin(stdin),
-		appcmdtesting.WithArgs(args...),
-	)
-}
-
-func useEnvVar(use string, suffix string) string {
-	return strings.ToUpper(use) + "_" + suffix
+// Change the the subdirectory and then return a function to undo the chdir.
+//
+// Using this prevents tests being able to be run in parallel
+func chdirToSubDir(t *testing.T, relSubDirPath string) func() {
+	pwd, err := osext.Getwd()
+	require.NoError(t, err)
+	subDirPath := normalpath.Unnormalize(normalpath.Join(pwd, relSubDirPath))
+	require.NoError(t, os.MkdirAll(subDirPath, os.ModePerm))
+	require.NoError(t, osext.Chdir(subDirPath))
+	return func() {
+		r := recover()
+		assert.NoError(t, osext.Chdir(pwd))
+		if r != nil {
+			panic(r)
+		}
+	}
 }
