@@ -9,8 +9,8 @@ $(call _assert_var,CACHE_BIN)
 $(call _assert_var,BUF_VERSION)
 
 # Settable
-# https://github.com/bufbuild/bufprivateusage-go/commits
-BUFPRIVATEUSAGE_VERSION ?= 24cf84be7d9226831aee62a0f9307fec77d7ba46
+# https://github.com/bufbuild/bufprivateusage-go/releases
+BUFPRIVATEUSAGE_VERSION ?= v0.1.0
 
 BUFPRIVATEUSAGE := $(CACHE_VERSIONS)/bufprivateusage/$(BUFPRIVATEUSAGE_VERSION)
 $(BUFPRIVATEUSAGE):

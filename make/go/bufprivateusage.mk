@@ -10,7 +10,7 @@ BUFPRIVATEUSAGE_PKGS ?=
 ifneq ($(BUFPRIVATEUSAGE_PKGS),)
 .PHONY: bufprivateusage
 bufprivateusage: $(BUFPRIVATEUSAGE)
-	bufprivateusage $(BUFPRIVATEUSAGE_GO_PKGS)
+	bufprivateusage $(BUFPRIVATEUSAGE_PKGS)
 
-postprepostgenerate:: privateusage
+postprepostgenerate:: bufprivateusage
 endif

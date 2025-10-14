@@ -13,7 +13,7 @@ GO_BINS := $(GO_BINS) \
 	private/pkg/git/cmd/git-ls-files-unstaged \
 	private/pkg/storage/cmd/ddiff \
 	private/pkg/storage/cmd/storage-go-data \
-	private/pkg/licenseheader/cmd/license-header \
+	private/pkg/licenseheader/cmd/license-header
 GO_TEST_BINS := $(GO_TEST_BINS) \
 	cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
 	cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
