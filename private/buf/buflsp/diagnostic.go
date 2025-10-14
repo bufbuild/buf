@@ -24,6 +24,11 @@ import (
 	"go.lsp.dev/protocol"
 )
 
+// UTF-16 is the default per LSP spec. Position encoding negotiation is not yet
+// supported by the go.lsp.dev/protocol library.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#position
+const positionalEncoding = report.UTF16Length
+
 // diagnosticData is a structure to hold the [report.Diagnostic] notes, help, and debug
 // messages, to marshal into JSON for the [protocol.Diagnostic].Data field.
 type diagnosticData struct {
@@ -50,15 +55,17 @@ func reportDiagnosticToProtocolDiagnostic(
 		Severity: reportLevelToDiagnosticSeverity[reportDiagnostic.Level()],
 		Message:  reportDiagnostic.Message(),
 	}
-	if !reportDiagnostic.Primary().IsZero() {
+	if primary := reportDiagnostic.Primary(); !primary.IsZero() {
+		startLocation := primary.Location(primary.Start, positionalEncoding)
+		endLocation := primary.Location(primary.End, positionalEncoding)
 		diagnostic.Range = protocol.Range{
 			Start: protocol.Position{
-				Line:      uint32(reportDiagnostic.Primary().StartLoc().Line - 1),
-				Character: uint32(column(reportDiagnostic.Primary().File, reportDiagnostic.Primary().StartLoc())),
+				Line:      uint32(startLocation.Line - 1),
+				Character: uint32(startLocation.Column - 1),
 			},
 			End: protocol.Position{
-				Line:      uint32(reportDiagnostic.Primary().EndLoc().Line - 1),
-				Character: uint32(column(reportDiagnostic.Primary().File, reportDiagnostic.Primary().EndLoc())),
+				Line:      uint32(endLocation.Line - 1),
+				Character: uint32(endLocation.Column - 1),
 			},
 		}
 	}
@@ -78,23 +85,4 @@ func reportDiagnosticToProtocolDiagnostic(
 		diagnostic.Data = string(bytes)
 	}
 	return diagnostic, nil
-}
-
-// This is a custom helper function for converting column measurements to the LSP protocol.
-// This is needed because the LSP treats tabs as a single character and expects the client
-// to handle custom tabstops. However, when [report.Location] is calculated based on the
-// byte offset, it accounts for tabs based on a default tabstop width of 4.
-//
-// This needs to be used everywhere we deal with location columns.
-func column(file *report.File, location report.Location) int {
-	var count int
-	var b strings.Builder
-	for line := range strings.Lines(file.Text()) {
-		if count == location.Line-1 {
-			break
-		}
-		b.WriteString(line)
-		count++
-	}
-	return len(string([]byte(file.Text())[b.Len():location.Offset]))
 }

@@ -478,27 +478,26 @@ func (s *server) SemanticTokensFull(
 			}
 		}
 
-		start, end := symbol.span.StartLoc(), symbol.span.EndLoc()
-		startCol, endCol := column(symbol.span.File, start), column(symbol.span.File, end)
+		startLocation := symbol.span.Location(symbol.span.Start, positionalEncoding)
+		endLocation := symbol.span.Location(symbol.span.End, positionalEncoding)
 
-		for i := start.Line; i <= end.Line; i++ {
-
+		for i := startLocation.Line; i <= endLocation.Line; i++ {
 			newLine := uint32(i - 1)
 			var newCol uint32
-			if i == start.Line {
-				newCol = uint32(startCol)
+			if i == startLocation.Line {
+				newCol = uint32(startLocation.Column)
 				if prevLine == newLine {
 					newCol -= prevCol
 				}
 			}
-			symbolLen := uint32(endCol)
-			if i == start.Line {
-				symbolLen -= uint32(startCol)
+			symbolLen := uint32(endLocation.Column)
+			if i == startLocation.Line {
+				symbolLen -= uint32(startLocation.Column)
 			}
 			encoded = append(encoded, newLine-prevLine, newCol, symbolLen, semanticType, 0)
 			prevLine = newLine
-			if i == start.Line {
-				prevCol = uint32(startCol)
+			if i == startLocation.Line {
+				prevCol = uint32(startLocation.Column)
 			} else {
 				prevCol = 0
 			}
