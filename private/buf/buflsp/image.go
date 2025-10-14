@@ -184,18 +184,17 @@ func newDiagnostic(err reporter.ErrorWithPos, isWarning bool) protocol.Diagnosti
 		Character: uint32(err.GetPosition().Col - 1),
 	}
 
-	diagnostic := protocol.Diagnostic{
+	severity := protocol.DiagnosticSeverityError
+	if isWarning {
+		severity = protocol.DiagnosticSeverityWarning
+	}
+
+	return protocol.Diagnostic{
 		// TODO: The compiler currently does not record spans for diagnostics. This is
 		// essentially a bug that will result in worse diagnostics until fixed.
 		Range:    protocol.Range{Start: pos, End: pos},
-		Severity: protocol.DiagnosticSeverityError,
+		Severity: severity,
 		Message:  err.Unwrap().Error(),
 		Source:   serverName,
 	}
-
-	if isWarning {
-		diagnostic.Severity = protocol.DiagnosticSeverityWarning
-	}
-
-	return diagnostic
 }
