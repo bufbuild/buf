@@ -9,6 +9,7 @@ require (
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.10-20250924144421-cb55f06efbd2.1
 	buf.build/go/app v0.1.0
 	buf.build/go/bufplugin v0.9.0
+	buf.build/go/bufprivateusage v0.1.0
 	buf.build/go/protovalidate v1.0.0
 	buf.build/go/protoyaml v0.6.0
 	buf.build/go/spdx v0.2.0

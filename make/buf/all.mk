@@ -45,6 +45,7 @@ LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2025
 LICENSE_HEADER_IGNORES := \/testdata enterprise
 BANDEPS_CONFIG := data/bandeps/bandeps.yaml
+BUFPRIVATEUSAGE_PKGS := ./private/...
 PROTOVALIDATE_VERSION := v1.0.0
 # Comment out to use released buf
 #BUF_GO_INSTALL_PATH := ./cmd/buf
@@ -68,6 +69,7 @@ include make/go/go.mk
 include make/go/docker.mk
 include make/go/license_header.mk
 include make/go/bandeps.mk
+include make/go/bufprivateusage.mk
 include make/go/buf.mk
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
@@ -97,12 +99,6 @@ bufworkspacebuflocks: installbuf-digest installbuf-new-commit-id
 	bash private/buf/bufworkspace/testdata/basic/scripts/fakebuflock.bash
 
 prepostgenerate:: bufworkspacebuflocks
-
-.PHONY: privateusage
-privateusage:
-	bash make/buf/scripts/privateusage.bash
-
-postprepostgenerate:: privateusage
 
 bufgeneratedeps:: $(PROTOC_GEN_GO) $(PROTOC_GEN_CONNECT_GO)
 
