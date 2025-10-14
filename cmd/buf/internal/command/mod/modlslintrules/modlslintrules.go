@@ -14,16 +14,12 @@
 
 package modlslintrules
 
-<<<<<<<< HEAD:private/buf/cmd/buf/command/lsp/lspserve/usage.gen.go
-package lspserve
-========
 import (
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"buf.build/go/bufplugin/check"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/mod/internal"
 )
->>>>>>>> main:cmd/buf/internal/command/mod/modlslintrules/modlslintrules.go
 
 // NewCommand returns a new Command.
 func NewCommand(
