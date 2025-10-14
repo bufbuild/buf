@@ -9,6 +9,7 @@ require (
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.10-20250924144421-cb55f06efbd2.1
 	buf.build/go/app v0.1.0
 	buf.build/go/bufplugin v0.9.0
+	buf.build/go/bufprivateusage v0.1.0
 	buf.build/go/protovalidate v1.0.0
 	buf.build/go/protoyaml v0.6.0
 	buf.build/go/spdx v0.2.0
@@ -52,7 +53,6 @@ require (
 
 require (
 	buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.10-20241007202033-cf42259fcbfc.1 // indirect
-	buf.build/go/bufprivateusage v0.1.0 // indirect
 	buf.build/go/interrupt v1.1.0 // indirect
 	cel.dev/expr v0.24.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
