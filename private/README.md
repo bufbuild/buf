@@ -11,4 +11,4 @@ There's a strict dependency graph imposed at this level:
 - `private/bufpkg` packages can import from `private/pkg` packages, but not `cmd` or `private/bufpkg` packages.
 - `private/pkg` packages can only import from other `private/pkg` packages.
 
-That is, the ordering is strictly `cmd -> private-buf -> private/bufpkg -> private/pkg`. This is enforced by linting tools.
+That is, the ordering is strictly `cmd -> private/buf -> private/bufpkg -> private/pkg`. This is enforced by linting tools.
