@@ -16,4 +16,4 @@
 
 package storagetesting
 
-import _ "github.com/bufbuild/buf/private/usage"
+import _ "buf.build/go/bufprivateusage"

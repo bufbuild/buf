@@ -149,7 +149,7 @@ func handleLintCommentNamedDescriptor(
 		return err
 	}
 	if !validLeadingComment(commentExcludes, location.LeadingComments()) {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			location,
 			nil,
 			namedDescriptor.File().Path(),
@@ -189,7 +189,7 @@ func handleLintDirectorySamePackage(
 			messagePrefix = fmt.Sprintf("Multiple packages %q", strings.Join(xslices.MapKeysToSortedSlice(pkgMap), ","))
 		}
 		for _, file := range dirFiles {
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				file.PackageLocation(),
 				nil,
 				file.Path(),
@@ -211,7 +211,7 @@ func handleLintEnumNoAllowAlias(
 	enum bufprotosource.Enum,
 ) error {
 	if enum.AllowAlias() {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			enum.AllowAliasLocation(),
 			nil,
 			enum.File().Path(),
@@ -233,7 +233,7 @@ func handleLintEnumPascalCase(
 	name := enum.Name()
 	expectedName := xstrings.ToPascalCase(name)
 	if name != expectedName {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			enum.NameLocation(),
 			nil,
 			enum.File().Path(),
@@ -256,7 +256,7 @@ func handleLintEnumFirstValueZero(
 	if values := enum.Values(); len(values) > 0 {
 		if firstEnumValue := values[0]; firstEnumValue.Number() != 0 {
 			// proto3 compilation references the number
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				firstEnumValue.NumberLocation(),
 				nil,
 				firstEnumValue.File().Path(),
@@ -279,7 +279,7 @@ func handleLintEnumValuePrefix(
 	name := enumValue.Name()
 	expectedPrefix := fieldToUpperSnakeCase(enumValue.Enum().Name()) + "_"
 	if !strings.HasPrefix(name, expectedPrefix) {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			enumValue.NameLocation(),
 			nil,
 			enumValue.File().Path(),
@@ -302,7 +302,7 @@ func handleLintEnumValueUpperSnakeCase(
 	name := enumValue.Name()
 	expectedName := fieldToUpperSnakeCase(name)
 	if name != expectedName {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			enumValue.NameLocation(),
 			nil,
 			enumValue.File().Path(),
@@ -332,7 +332,7 @@ func handleLintEnumZeroValueSuffix(
 	}
 	name := enumValue.Name()
 	if !strings.HasSuffix(name, suffix) {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			enumValue.NameLocation(),
 			nil,
 			enumValue.File().Path(),
@@ -360,7 +360,7 @@ func handleLintFieldLowerSnakeCase(
 	name := field.Name()
 	expectedName := fieldToLowerSnakeCase(name)
 	if name != expectedName {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			field.NameLocation(),
 			nil,
 			field.File().Path(),
@@ -382,7 +382,7 @@ func handleLintFieldNoDescriptor(
 ) error {
 	name := field.Name()
 	if strings.ToLower(strings.Trim(name, "_")) == "descriptor" {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			field.NameLocation(),
 			nil,
 			field.File().Path(),
@@ -409,7 +409,7 @@ func handleLintFieldNotRequired(
 	// field is set to required using special "features" options, instead of the
 	// label on the descriptor proto.
 	if fieldDescriptor.Cardinality() == protoreflect.Required {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			field.NameLocation(),
 			nil,
 			field.File().Path(),
@@ -434,7 +434,7 @@ func handleLintFileLowerSnakeCase(
 	baseWithoutExt := strings.TrimSuffix(base, ext)
 	expectedBaseWithoutExt := xstrings.ToLowerSnakeCase(baseWithoutExt)
 	if baseWithoutExt != expectedBaseWithoutExt {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			nil,
 			nil,
 			filename,
@@ -457,7 +457,7 @@ func handleLintImportNoPublic(
 	fileImport bufprotosource.FileImport,
 ) error {
 	if fileImport.IsPublic() {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			fileImport.Location(),
 			nil,
 			fileImport.File().Path(),
@@ -477,7 +477,7 @@ func handleLintImportUsed(
 	fileImport bufprotosource.FileImport,
 ) error {
 	if fileImport.IsUnused() {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			fileImport.Location(),
 			nil,
 			fileImport.File().Path(),
@@ -503,7 +503,7 @@ func handleLintMessagePascalCase(
 	name := message.Name()
 	expectedName := xstrings.ToPascalCase(name)
 	if name != expectedName {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			message.NameLocation(),
 			nil,
 			message.File().Path(),
@@ -533,7 +533,7 @@ func handleLintOneofLowerSnakeCase(
 				return nil
 			}
 		}
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			oneof.NameLocation(),
 			nil,
 			oneof.File().Path(),
@@ -579,7 +579,7 @@ func handleLintPackageDirectoryMatch(
 	// need to check case where in root relative directory and no package defined
 	// this should be valid although if SENSIBLE is turned on this will be invalid
 	if dirPath != expectedDirPath {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			file.PackageLocation(),
 			nil,
 			file.Path(),
@@ -610,7 +610,7 @@ func handleLintPackageLowerSnakeCase(
 	}
 	expectedPkg := strings.Join(split, ".")
 	if pkg != expectedPkg {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			file.PackageLocation(),
 			nil,
 			file.Path(),
@@ -680,7 +680,7 @@ func handleLintPackageNoImportCycle(
 					if fileImport.File().IsImport() {
 						continue
 					}
-					responseWriter.AddProtosourceAnnotation(
+					responseWriter.AddProtosourceAnnotationf(
 						fileImport.Location(),
 						nil,
 						fileImport.File().Path(),
@@ -710,7 +710,7 @@ func handleLintPackageSameDirectory(
 	if len(dirMap) > 1 {
 		dirs := xslices.MapKeysToSortedSlice(dirMap)
 		for _, file := range pkgFiles {
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				file.PackageLocation(),
 				nil,
 				file.Path(),
@@ -891,7 +891,7 @@ func handleLintPackageSameOptionValue(
 					name,
 				)
 			}
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				getFileOptionLocation(file),
 				nil,
 				file.Path(),
@@ -915,7 +915,7 @@ func handleLintPackageVersionSuffix(
 		return nil
 	}
 	if _, ok := protoversion.NewPackageVersionForPackage(pkg); !ok {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			file.PackageLocation(),
 			nil,
 			file.Path(),
@@ -947,7 +947,7 @@ func handleLintProtovalidate(
 		format string,
 		args ...any,
 	) {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			location,
 			nil,
 			descriptor.File().Path(),
@@ -1009,7 +1009,7 @@ func handleLintRPCNoClientStreaming(
 	method bufprotosource.Method,
 ) error {
 	if method.ClientStreaming() {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			method.Location(),
 			nil,
 			method.File().Path(),
@@ -1029,7 +1029,7 @@ func handleLintRPCNoServerStreaming(
 	method bufprotosource.Method,
 ) error {
 	if method.ServerStreaming() {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			method.Location(),
 			nil,
 			method.File().Path(),
@@ -1051,7 +1051,7 @@ func handleLintRPCPascalCase(
 	name := method.Name()
 	expectedName := xstrings.ToPascalCase(name)
 	if name != expectedName {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			method.NameLocation(),
 			nil,
 			method.File().Path(),
@@ -1095,7 +1095,7 @@ func handleLintRPCRequestResponseUnique(
 			if method.InputTypeName() == method.OutputTypeName() {
 				// if we allow both empty requests and responses, we do not want to add a FileAnnotation
 				if !(method.InputTypeName() == "google.protobuf.Empty" && allowGoogleProtobufEmptyRequests && allowGoogleProtobufEmptyResponses) {
-					responseWriter.AddProtosourceAnnotation(
+					responseWriter.AddProtosourceAnnotationf(
 						method.Location(),
 						nil,
 						method.File().Path(),
@@ -1144,7 +1144,7 @@ func handleLintRPCRequestResponseUnique(
 				}
 				if !allowGoogleProtobufEmptyRequests && len(requestMethods) > 1 {
 					for _, method := range requestMethods {
-						responseWriter.AddProtosourceAnnotation(
+						responseWriter.AddProtosourceAnnotationf(
 							method.Location(),
 							nil,
 							method.File().Path(),
@@ -1155,7 +1155,7 @@ func handleLintRPCRequestResponseUnique(
 				}
 				if !allowGoogleProtobufEmptyResponses && len(responseMethods) > 1 {
 					for _, method := range responseMethods {
-						responseWriter.AddProtosourceAnnotation(
+						responseWriter.AddProtosourceAnnotationf(
 							method.Location(),
 							nil,
 							method.File().Path(),
@@ -1168,7 +1168,7 @@ func handleLintRPCRequestResponseUnique(
 		} else {
 			// else, we have a duplicate usage of requestResponseType, add an FileAnnotation to each method
 			for _, method := range fullNameToMethod {
-				responseWriter.AddProtosourceAnnotation(
+				responseWriter.AddProtosourceAnnotationf(
 					method.Location(),
 					nil,
 					method.File().Path(),
@@ -1208,7 +1208,7 @@ func handleLintRPCRequestStandardName(
 	expectedName1 := xstrings.ToPascalCase(method.Name()) + "Request"
 	expectedName2 := xstrings.ToPascalCase(service.Name()) + expectedName1
 	if name != expectedName1 && name != expectedName2 {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			method.InputTypeLocation(),
 			nil,
 			method.File().Path(),
@@ -1249,7 +1249,7 @@ func handleLintRPCResponseStandardName(
 	expectedName1 := xstrings.ToPascalCase(method.Name()) + "Response"
 	expectedName2 := xstrings.ToPascalCase(service.Name()) + expectedName1
 	if name != expectedName1 && name != expectedName2 {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			method.OutputTypeLocation(),
 			nil,
 			method.File().Path(),
@@ -1273,7 +1273,7 @@ func handleLintServicePascalCase(
 	name := service.Name()
 	expectedName := xstrings.ToPascalCase(name)
 	if name != expectedName {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			service.NameLocation(),
 			nil,
 			service.File().Path(),
@@ -1299,7 +1299,7 @@ func handleLintServiceSuffix(
 	}
 	name := service.Name()
 	if !strings.HasSuffix(name, suffix) {
-		responseWriter.AddProtosourceAnnotation(
+		responseWriter.AddProtosourceAnnotationf(
 			service.NameLocation(),
 			nil,
 			service.File().Path(),
@@ -1341,7 +1341,7 @@ func handleLintStablePackageNoImportUnstable(
 					continue
 				}
 				if importedFilePackageVersion.StabilityLevel() != protoversion.StabilityLevelStable {
-					responseWriter.AddProtosourceAnnotation(
+					responseWriter.AddProtosourceAnnotationf(
 						fileImport.Location(),
 						nil,
 						fileImport.File().Path(),

@@ -15,9 +15,9 @@ GO_BINS := $(GO_BINS) \
 	private/pkg/storage/cmd/storage-go-data \
 	private/pkg/licenseheader/cmd/license-header
 GO_TEST_BINS := $(GO_TEST_BINS) \
-	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
-	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
-	private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml \
+	cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
+	cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
+	cmd/buf/internal/command/generate/internal/protoc-gen-top-level-type-names-yaml \
 	private/bufpkg/bufcheck/internal/cmd/buf-plugin-panic \
 	private/bufpkg/bufcheck/internal/cmd/buf-plugin-suffix \
 	private/bufpkg/bufcheck/internal/cmd/buf-plugin-protovalidate-ext \
@@ -33,7 +33,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	.ctrlp \
 	.idea/ \
 	.vscode/ \
-	private/buf/cmd/buf/command/alpha/protoc/test.txt \
+	cmd/buf/internal/command/alpha/protoc/test.txt \
 	private/bufpkg/buftesting/cache/ \
 	private/buf/buftesting/cache/ \
 	private/pkg/storage/storageos/tmp/ \
@@ -44,6 +44,8 @@ LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2025
 LICENSE_HEADER_IGNORES := \/testdata enterprise
+BANDEPS_CONFIG := data/bandeps/bandeps.yaml
+BUFPRIVATEUSAGE_PKGS := ./private/...
 PROTOVALIDATE_VERSION := v1.0.0
 # Comment out to use released buf
 #BUF_GO_INSTALL_PATH := ./cmd/buf
@@ -65,6 +67,9 @@ include make/go/dep_protoc_gen_go.mk
 include make/go/dep_protoc_gen_connect_go.mk
 include make/go/go.mk
 include make/go/docker.mk
+include make/go/license_header.mk
+include make/go/bandeps.mk
+include make/go/bufprivateusage.mk
 include make/go/buf.mk
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
@@ -75,12 +80,6 @@ bufstyle: installbufstyle
 	@bufstyle $(shell go list $(GOPKGS) | grep -v \/gen\/)
 
 postlint:: bufstyle
-
-.PHONY: bandeps
-bandeps: installbandeps
-	bandeps -f data/bandeps/bandeps.yaml
-
-postlonglint:: bandeps
 
 .PHONY: godata
 godata: installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC)
@@ -101,48 +100,36 @@ bufworkspacebuflocks: installbuf-digest installbuf-new-commit-id
 
 prepostgenerate:: bufworkspacebuflocks
 
-.PHONY: licenseheader
-licenseheader: installlicense-header installgit-ls-files-unstaged
-	@echo license-header \
-		--license-type "$(LICENSE_HEADER_LICENSE_TYPE)" \
-		--copyright-holder "$(LICENSE_HEADER_COPYRIGHT_HOLDER)" \
-		--year-range "$(LICENSE_HEADER_YEAR_RANGE)" \
-		ALL_FILES
-	@license-header \
-		--license-type "$(LICENSE_HEADER_LICENSE_TYPE)" \
-		--copyright-holder "$(LICENSE_HEADER_COPYRIGHT_HOLDER)" \
-		--year-range "$(LICENSE_HEADER_YEAR_RANGE)" \
-		$(shell git-ls-files-unstaged | grep -v $(patsubst %,-e %,$(sort $(LICENSE_HEADER_IGNORES))))
-
-licensegenerate:: licenseheader
-
-.PHONY: privateusage
-privateusage:
-	bash make/buf/scripts/privateusage.bash
-
-postprepostgenerate:: privateusage
-
 bufgeneratedeps:: $(PROTOC_GEN_GO) $(PROTOC_GEN_CONNECT_GO)
 
 .PHONY: bufgeneratecleango
 bufgeneratecleango:
 	rm -rf private/gen/proto
 
-.PHONY: bufgeneratecleanbuflinttestdata
-bufgeneratecleanbuflinttestdata:
+.PHONY: bufgeneratecleantestdata
+bufgeneratecleantestdata:
+	rm -rf cmd/buf/testdata/check_plugins/current/vendor/protovalidate
+	rm -rf cmd/buf/testdata/check_plugins/previous/vendor/protovalidate
 	rm -rf private/bufpkg/bufcheck/testdata/lint/protovalidate/vendor/protovalidate
+	rm -rf private/bufpkg/bufcheck/testdata/lint/protovalidate_predefines/vendor/protovalidate
 
 bufgenerateclean:: \
 	bufgeneratecleango \
-	bufgeneratecleanbuflinttestdata
+	bufgeneratecleantestdata
 
 .PHONY: bufgeneratego
 bufgeneratego:
 	$(BUF_BIN) generate --template data/template/buf.go.gen.yaml
 	$(BUF_BIN) generate --template data/template/buf.go-client.gen.yaml
 
-.PHONY: bufgeneratebuflinttestdata
-bufgeneratebuflinttestdata:
+.PHONY: bufgeneratetestdata
+bufgeneratetestdata:
+	$(BUF_BIN) export \
+		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
+		--output cmd/buf/testdata/check_plugins/current/vendor/protovalidate
+	$(BUF_BIN) export \
+		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
+		--output cmd/buf/testdata/check_plugins/previous/vendor/protovalidate
 	$(BUF_BIN) export \
 		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
 		--output private/bufpkg/bufcheck/testdata/lint/protovalidate/vendor/protovalidate
@@ -152,7 +139,7 @@ bufgeneratebuflinttestdata:
 
 bufgeneratesteps:: \
 	bufgeneratego \
-	bufgeneratebuflinttestdata
+	bufgeneratetestdata
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)

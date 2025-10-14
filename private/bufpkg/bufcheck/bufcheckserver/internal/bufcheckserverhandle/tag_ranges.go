@@ -55,7 +55,7 @@ func checkTagRanges[R bufprotosource.TagRange](
 			}
 			previousString := bufprotosource.TagRangeString(previousRange)
 			removedString := missingRangesString(maxTag, missingRanges)
-			responseWriter.AddProtosourceAnnotation(
+			responseWriter.AddProtosourceAnnotationf(
 				element.Location(),
 				previousElement.Location(),
 				element.File().Path(),
