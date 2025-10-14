@@ -444,7 +444,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 		files = append(files, file)
 	}
 	opener := source.NewMap(openerMap)
-	queries := xslices.Map(files, func(file *file) queries.IR {
+	queries := xslices.Map(files, func(file *file) incremental.Query[ir.File] {
 		return queries.IR{
 			Opener:  opener,
 			Path:    file.objectInfo.Path(),
@@ -464,7 +464,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 		return
 	}
 	for i, file := range files {
-		file.ir = results[i]
+		file.ir = results[i].Value
 	}
 	diagnostics, err := xslices.MapError(
 		report.Diagnostics,
