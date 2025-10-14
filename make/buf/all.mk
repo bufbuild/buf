@@ -69,6 +69,7 @@ include make/go/go.mk
 include make/go/docker.mk
 include make/go/license_header.mk
 include make/go/bandeps.mk
+include make/go/bufprivateusage.mk
 include make/go/buf.mk
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
@@ -98,14 +99,6 @@ bufworkspacebuflocks: installbuf-digest installbuf-new-commit-id
 	bash private/buf/bufworkspace/testdata/basic/scripts/fakebuflock.bash
 
 prepostgenerate:: bufworkspacebuflocks
-
-.PHONY: privateusage
-privateusage: installbufprivateusage
-	bash make/buf/scripts/privateusage.bash
-	rm private/usage/usage.gen.go
-	rm private/usage/cmd/bufprivateusage/usage.gen.go
-
-postprepostgenerate:: privateusage
 
 bufgeneratedeps:: $(PROTOC_GEN_GO) $(PROTOC_GEN_CONNECT_GO)
 
