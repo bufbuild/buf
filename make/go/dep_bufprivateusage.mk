@@ -10,7 +10,7 @@ $(call _assert_var,BUF_VERSION)
 
 # Settable
 # https://github.com/bufbuild/bufprivateusage-go/commits
-BUFPRIVATEUSAGE_VERSION ?= main
+BUFPRIVATEUSAGE_VERSION ?= 29b5f038437afe5c664ada1362b35f4b0afc25ed
 
 BUFPRIVATEUSAGE := $(CACHE_VERSIONS)/bufprivateusage/$(BUFPRIVATEUSAGE_VERSION)
 $(BUFPRIVATEUSAGE):
