@@ -13,7 +13,8 @@ GO_BINS := $(GO_BINS) \
 	private/pkg/git/cmd/git-ls-files-unstaged \
 	private/pkg/storage/cmd/ddiff \
 	private/pkg/storage/cmd/storage-go-data \
-	private/pkg/licenseheader/cmd/license-header
+	private/pkg/licenseheader/cmd/license-header \
+	private/usage/cmd/bufprivateusage
 GO_TEST_BINS := $(GO_TEST_BINS) \
 	cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
 	cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
@@ -99,8 +100,10 @@ bufworkspacebuflocks: installbuf-digest installbuf-new-commit-id
 prepostgenerate:: bufworkspacebuflocks
 
 .PHONY: privateusage
-privateusage:
+privateusage: installbufprivateusage
 	bash make/buf/scripts/privateusage.bash
+	rm private/usage/usage.gen.go
+	rm private/usage/cmd/bufprivateusage/usage.gen.go
 
 postprepostgenerate:: privateusage
 
