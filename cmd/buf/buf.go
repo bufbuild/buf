@@ -181,7 +181,7 @@ func newRootCommand(name string) *appcmd.Command {
 				Use:   "lsp",
 				Short: "Work with Buf Language Server",
 				SubCommands: []*appcmd.Command{
-					lspserve.NewCommand("serve", builder, ``, false),
+					lspserve.NewCommand("serve", builder, ``, false, false),
 				},
 			},
 			{
@@ -393,7 +393,7 @@ func newRootCommand(name string) *appcmd.Command {
 				Use:   "beta",
 				Short: "Beta commands. Unstable and likely to change",
 				SubCommands: []*appcmd.Command{
-					lspserve.NewCommand("lsp", builder, deprecatedMessage("buf beta lsp", "buf lsp serve"), true),
+					lspserve.NewCommand("lsp", builder, deprecatedMessage("buf lsp serve", "buf beta lsp"), true, true),
 					price.NewCommand("price", builder),
 					bufpluginv1beta1.NewCommand("buf-plugin-v1beta1", builder),
 					bufpluginv1.NewCommand("buf-plugin-v1", builder),

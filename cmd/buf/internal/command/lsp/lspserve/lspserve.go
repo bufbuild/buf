@@ -45,6 +45,7 @@ func NewCommand(
 	builder appext.Builder,
 	deprecated string,
 	hidden bool,
+	beta bool,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -55,6 +56,9 @@ func NewCommand(
 		Hidden:     hidden,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
+				if beta {
+					bufcli.WarnBetaCommand(ctx, container)
+				}
 				return run(ctx, container, flags)
 			},
 		),
@@ -87,8 +91,6 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) (retErr error) {
-	bufcli.WarnBetaCommand(ctx, container)
-
 	transport, err := dial(container, flags)
 	if err != nil {
 		return err
