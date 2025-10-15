@@ -79,7 +79,7 @@ message Resource {
 
 // EventType is the type of audited event.
 //
-// [#next-free-field: 80]
+// [#next-free-field: 82]
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
   EVENT_TYPE_ORGANIZATION_CREATED = 1;
@@ -91,6 +91,7 @@ enum EventType {
   EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED = 21;
   EVENT_TYPE_ORGANIZATION_IDP_GROUP_UPDATED = 59;
   EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED = 22;
+  EVENT_TYPE_ORGANIZATION_RESOURCE_VISIBILITY_CONTROLS_CHANGED = 81;
   EVENT_TYPE_REPOSITORY_CREATED = 6;
   EVENT_TYPE_REPOSITORY_DEPRECATED = 48;
   EVENT_TYPE_REPOSITORY_UNDEPRECATED = 49;
@@ -145,6 +146,7 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED = 34 [deprecated = true];
   EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED = 35;
   EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED = 36;
+  EVENT_TYPE_SERVER_RESOURCE_VISIBILITY_CONTROLS_CHANGED = 80;
   EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP = 37;
   EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_APPROVED = 41;
   EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_DENIED = 42;
@@ -177,7 +179,7 @@ message EventMetadata {
 // it happened, who did it, which resource was affected, and more contextual information on the
 // event.
 //
-// [#next-free-field: 86]
+// [#next-free-field: 88]
 message Event {
   // Unique id of the audited event.
   string event_id = 1;
@@ -199,6 +201,7 @@ message Event {
     PayloadOrganizationMemberRoleChanged organization_member_role_changed = 10;
     PayloadOrganizationMemberRolesChanged organization_member_roles_changed = 56;
     PayloadOrganizationMemberRemoved organization_member_removed = 11;
+    PayloadOrganizationResourceVisibilityControlsChanged payload_organization_resource_visibility_controls_changed = 87;
     PayloadRepositoryCreated repository_created = 12;
     PayloadRepositoryDeprecated repository_deprecated = 54;
     PayloadRepositoryUndeprecated repository_undeprecated = 55;
@@ -256,6 +259,7 @@ message Event {
     PayloadRepositoryDefaultBranchChanged repository_default_branch_changed = 40 [deprecated = true];
     PayloadServerUniquenessPolicyEnabled payload_server_uniqueness_policy_enabled = 41;
     PayloadServerUniquenessPolicyDisabled payload_server_uniqueness_policy_disabled = 42;
+    PayloadServerResourceVisibilityControlsChanged payload_server_resource_visibility_controls_changed = 86;
     PayloadUserAutoMergedFromNewIdP user_auto_merged_from_new_idp = 43;
     PayloadDeviceAuthorizationGrantApproved device_authorization_grant_approved = 47;
     PayloadDeviceAuthorizationGrantDenied device_authorization_grant_denied = 48;
@@ -1101,4 +1105,39 @@ message PayloadPolicyEnforcementTargetsChanged {
   repeated string old_include_targets = 2;
   // new_include_targets are the new include targets of the policy enforcement.
   repeated string new_include_targets = 3;
+}
+
+message ResourceVisibilityControl {
+  // Possible visibility that a resource can have.
+  enum Visibility {
+    VISIBILITY_UNSPECIFIED = 0;
+    VISIBILITY_PUBLIC = 1;
+    VISIBILITY_PRIVATE = 2;
+  }
+  // The visibility that is being controlled.
+  Visibility visibility = 1;
+  // Strict defines if the controlled visibility behaves like a restriction or a default value.
+  bool strict = 2;
+}
+
+message PayloadServerResourceVisibilityControlsChanged {
+  // The resource type that had its visibility controls changed.
+  ResourceType resource_type = 1;
+  // The old visibility control for resources of that type under the server instance. If not
+  // present, then this visibility control was just created.
+  optional ResourceVisibilityControl old_visibility_control = 2;
+  // The new visibility control for resources of that type under the server instance. If not
+  // present, then this visibility control was just deleted.
+  optional ResourceVisibilityControl new_visibility_control = 3;
+}
+
+message PayloadOrganizationResourceVisibilityControlsChanged {
+  // The resource type that had its visibility controls changed.
+  ResourceType resource_type = 1;
+  // The old visibility control for resources of that type under the organization. If not present,
+  // then this visibility control was just created.
+  optional ResourceVisibilityControl old_visibility_control = 2;
+  // The new visibility control for resources of that type under the organization. If not present,
+  // then this visibility control was just deleted.
+  optional ResourceVisibilityControl new_visibility_control = 3;
 }
