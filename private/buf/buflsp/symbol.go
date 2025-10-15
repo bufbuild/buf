@@ -329,7 +329,7 @@ func commentToMarkdown(comment string) string {
 	return strings.TrimSuffix(strings.TrimPrefix(comment, "/*"), "*/")
 }
 
-// compareRanges compares two ranges for lexicographic ordering.
+// comparePositions compares two ranges for lexicographic ordering.
 func comparePositions(a, b protocol.Position) int {
 	diff := int(a.Line) - int(b.Line)
 	if diff == 0 {

@@ -529,7 +529,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 		f.referenceableSymbols[def.ast.Name().Canonicalized()] = sym
 	}
 
-	// TODO: this could us a refactor, probably.
+	// TODO: this could use a refactor, probably.
 
 	// Resolve all unresolved symbols from this file
 	for _, sym := range unresolved {
