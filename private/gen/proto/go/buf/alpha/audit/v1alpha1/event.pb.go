@@ -199,56 +199,56 @@ const (
 	EventType_EVENT_TYPE_ORGANIZATION_DELETED      EventType = 2
 	EventType_EVENT_TYPE_ORGANIZATION_MEMBER_ADDED EventType = 3
 	// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
-	EventType_EVENT_TYPE_ORGANIZATION_MEMBER_ROLE_CHANGED                  EventType = 4
-	EventType_EVENT_TYPE_ORGANIZATION_MEMBER_ROLES_CHANGED                 EventType = 50
-	EventType_EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED                       EventType = 5
-	EventType_EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED                      EventType = 21
-	EventType_EVENT_TYPE_ORGANIZATION_IDP_GROUP_UPDATED                    EventType = 59
-	EventType_EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED                    EventType = 22
-	EventType_EVENT_TYPE_ORGANIZATION_RESOURCE_VISIBILITY_CONTROLS_CHANGED EventType = 81
-	EventType_EVENT_TYPE_REPOSITORY_CREATED                                EventType = 6
-	EventType_EVENT_TYPE_REPOSITORY_DEPRECATED                             EventType = 48
-	EventType_EVENT_TYPE_REPOSITORY_UNDEPRECATED                           EventType = 49
-	EventType_EVENT_TYPE_REPOSITORY_DELETED                                EventType = 7
-	EventType_EVENT_TYPE_REPOSITORY_COMMIT_PUSHED                          EventType = 8
-	EventType_EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ADDED                      EventType = 9
-	EventType_EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLE_CHANGED               EventType = 10
-	EventType_EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLES_CHANGED              EventType = 63
-	EventType_EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED                    EventType = 11
-	EventType_EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED                     EventType = 12
-	EventType_EVENT_TYPE_REPOSITORY_DEFAULT_LABEL_NAME_CHANGED             EventType = 40
-	EventType_EVENT_TYPE_REPOSITORY_IDP_GROUP_ADDED                        EventType = 60
-	EventType_EVENT_TYPE_REPOSITORY_IDP_GROUP_UPDATED                      EventType = 61
-	EventType_EVENT_TYPE_REPOSITORY_IDP_GROUP_REMOVED                      EventType = 62
-	EventType_EVENT_TYPE_POLICY_CREATED                                    EventType = 54
-	EventType_EVENT_TYPE_POLICY_DELETED                                    EventType = 55
-	EventType_EVENT_TYPE_POLICY_DEPRECATED                                 EventType = 56
-	EventType_EVENT_TYPE_POLICY_UNDEPRECATED                               EventType = 57
-	EventType_EVENT_TYPE_POLICY_VISIBILITY_CHANGED                         EventType = 58
-	EventType_EVENT_TYPE_POLICY_COMMIT_PUSHED                              EventType = 64
-	EventType_EVENT_TYPE_POLICY_LABEL_CREATED                              EventType = 65
-	EventType_EVENT_TYPE_POLICY_LABEL_MOVED                                EventType = 66
-	EventType_EVENT_TYPE_POLICY_LABEL_ARCHIVED                             EventType = 67
-	EventType_EVENT_TYPE_POLICY_LABEL_UNARCHIVED                           EventType = 68
-	EventType_EVENT_TYPE_PLUGIN_CREATED                                    EventType = 13
-	EventType_EVENT_TYPE_PLUGIN_DELETED                                    EventType = 14
-	EventType_EVENT_TYPE_PLUGIN_DEPRECATED                                 EventType = 51
-	EventType_EVENT_TYPE_PLUGIN_UNDEPRECATED                               EventType = 52
-	EventType_EVENT_TYPE_PLUGIN_VISIBILITY_CHANGED                         EventType = 53
-	EventType_EVENT_TYPE_PLUGIN_COMMIT_PUSHED                              EventType = 43
-	EventType_EVENT_TYPE_CURATED_PLUGIN_CREATED                            EventType = 20
-	EventType_EVENT_TYPE_CURATED_PLUGIN_DELETED                            EventType = 31
-	EventType_EVENT_TYPE_CURATED_PLUGIN_STATUS_UPDATED                     EventType = 78
-	EventType_EVENT_TYPE_USER_CREATED                                      EventType = 15
-	EventType_EVENT_TYPE_USER_DELETED                                      EventType = 16
-	EventType_EVENT_TYPE_USER_DEACTIVATED                                  EventType = 17
-	EventType_EVENT_TYPE_USER_LOGGED_IN                                    EventType = 18
-	EventType_EVENT_TYPE_USER_LOGGED_OUT                                   EventType = 19
-	EventType_EVENT_TYPE_TOKEN_CREATED                                     EventType = 23
-	EventType_EVENT_TYPE_TOKEN_DELETED                                     EventType = 24
-	EventType_EVENT_TYPE_USER_REACTIVATED                                  EventType = 25
-	EventType_EVENT_TYPE_SCIM_TOKEN_CREATED                                EventType = 26
-	EventType_EVENT_TYPE_SCIM_TOKEN_DELETED                                EventType = 27
+	EventType_EVENT_TYPE_ORGANIZATION_MEMBER_ROLE_CHANGED                 EventType = 4
+	EventType_EVENT_TYPE_ORGANIZATION_MEMBER_ROLES_CHANGED                EventType = 50
+	EventType_EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED                      EventType = 5
+	EventType_EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED                     EventType = 21
+	EventType_EVENT_TYPE_ORGANIZATION_IDP_GROUP_UPDATED                   EventType = 59
+	EventType_EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED                   EventType = 22
+	EventType_EVENT_TYPE_ORGANIZATION_RESOURCE_VISIBILITY_CONTROL_CHANGED EventType = 81
+	EventType_EVENT_TYPE_REPOSITORY_CREATED                               EventType = 6
+	EventType_EVENT_TYPE_REPOSITORY_DEPRECATED                            EventType = 48
+	EventType_EVENT_TYPE_REPOSITORY_UNDEPRECATED                          EventType = 49
+	EventType_EVENT_TYPE_REPOSITORY_DELETED                               EventType = 7
+	EventType_EVENT_TYPE_REPOSITORY_COMMIT_PUSHED                         EventType = 8
+	EventType_EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ADDED                     EventType = 9
+	EventType_EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLE_CHANGED              EventType = 10
+	EventType_EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLES_CHANGED             EventType = 63
+	EventType_EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED                   EventType = 11
+	EventType_EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED                    EventType = 12
+	EventType_EVENT_TYPE_REPOSITORY_DEFAULT_LABEL_NAME_CHANGED            EventType = 40
+	EventType_EVENT_TYPE_REPOSITORY_IDP_GROUP_ADDED                       EventType = 60
+	EventType_EVENT_TYPE_REPOSITORY_IDP_GROUP_UPDATED                     EventType = 61
+	EventType_EVENT_TYPE_REPOSITORY_IDP_GROUP_REMOVED                     EventType = 62
+	EventType_EVENT_TYPE_POLICY_CREATED                                   EventType = 54
+	EventType_EVENT_TYPE_POLICY_DELETED                                   EventType = 55
+	EventType_EVENT_TYPE_POLICY_DEPRECATED                                EventType = 56
+	EventType_EVENT_TYPE_POLICY_UNDEPRECATED                              EventType = 57
+	EventType_EVENT_TYPE_POLICY_VISIBILITY_CHANGED                        EventType = 58
+	EventType_EVENT_TYPE_POLICY_COMMIT_PUSHED                             EventType = 64
+	EventType_EVENT_TYPE_POLICY_LABEL_CREATED                             EventType = 65
+	EventType_EVENT_TYPE_POLICY_LABEL_MOVED                               EventType = 66
+	EventType_EVENT_TYPE_POLICY_LABEL_ARCHIVED                            EventType = 67
+	EventType_EVENT_TYPE_POLICY_LABEL_UNARCHIVED                          EventType = 68
+	EventType_EVENT_TYPE_PLUGIN_CREATED                                   EventType = 13
+	EventType_EVENT_TYPE_PLUGIN_DELETED                                   EventType = 14
+	EventType_EVENT_TYPE_PLUGIN_DEPRECATED                                EventType = 51
+	EventType_EVENT_TYPE_PLUGIN_UNDEPRECATED                              EventType = 52
+	EventType_EVENT_TYPE_PLUGIN_VISIBILITY_CHANGED                        EventType = 53
+	EventType_EVENT_TYPE_PLUGIN_COMMIT_PUSHED                             EventType = 43
+	EventType_EVENT_TYPE_CURATED_PLUGIN_CREATED                           EventType = 20
+	EventType_EVENT_TYPE_CURATED_PLUGIN_DELETED                           EventType = 31
+	EventType_EVENT_TYPE_CURATED_PLUGIN_STATUS_UPDATED                    EventType = 78
+	EventType_EVENT_TYPE_USER_CREATED                                     EventType = 15
+	EventType_EVENT_TYPE_USER_DELETED                                     EventType = 16
+	EventType_EVENT_TYPE_USER_DEACTIVATED                                 EventType = 17
+	EventType_EVENT_TYPE_USER_LOGGED_IN                                   EventType = 18
+	EventType_EVENT_TYPE_USER_LOGGED_OUT                                  EventType = 19
+	EventType_EVENT_TYPE_TOKEN_CREATED                                    EventType = 23
+	EventType_EVENT_TYPE_TOKEN_DELETED                                    EventType = 24
+	EventType_EVENT_TYPE_USER_REACTIVATED                                 EventType = 25
+	EventType_EVENT_TYPE_SCIM_TOKEN_CREATED                               EventType = 26
+	EventType_EVENT_TYPE_SCIM_TOKEN_DELETED                               EventType = 27
 	// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
 	EventType_EVENT_TYPE_REPOSITORY_COMMIT_DELETED                    EventType = 28
 	EventType_EVENT_TYPE_REPOSITORY_LABEL_CREATED                     EventType = 29
@@ -259,26 +259,26 @@ const (
 	EventType_EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_ENABLED        EventType = 32
 	EventType_EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_DISABLED       EventType = 33
 	// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
-	EventType_EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED           EventType = 34
-	EventType_EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED            EventType = 35
-	EventType_EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED           EventType = 36
-	EventType_EVENT_TYPE_SERVER_RESOURCE_VISIBILITY_CONTROLS_CHANGED EventType = 80
-	EventType_EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP               EventType = 37
-	EventType_EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_APPROVED         EventType = 41
-	EventType_EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_DENIED           EventType = 42
-	EventType_EVENT_TYPE_PLUGIN_LABEL_CREATED                        EventType = 44
-	EventType_EVENT_TYPE_PLUGIN_LABEL_MOVED                          EventType = 45
-	EventType_EVENT_TYPE_PLUGIN_LABEL_ARCHIVED                       EventType = 46
-	EventType_EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED                     EventType = 47
-	EventType_EVENT_TYPE_SERVER_REVIEW_FLOW_ENABLED                  EventType = 69
-	EventType_EVENT_TYPE_SERVER_REVIEW_FLOW_DISABLED                 EventType = 70
-	EventType_EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_CREATED               EventType = 71
-	EventType_EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_UPDATED               EventType = 72
-	EventType_EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_DELETED               EventType = 73
-	EventType_EVENT_TYPE_POLICY_ENFORCEMENT_CREATED                  EventType = 74
-	EventType_EVENT_TYPE_POLICY_ENFORCEMENT_DELETED                  EventType = 75
-	EventType_EVENT_TYPE_POLICY_ENFORCEMENT_POLICY_CHANGED           EventType = 76
-	EventType_EVENT_TYPE_POLICY_ENFORCEMENT_TARGETS_CHANGED          EventType = 77
+	EventType_EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED          EventType = 34
+	EventType_EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED           EventType = 35
+	EventType_EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED          EventType = 36
+	EventType_EVENT_TYPE_SERVER_RESOURCE_VISIBILITY_CONTROL_CHANGED EventType = 80
+	EventType_EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP              EventType = 37
+	EventType_EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_APPROVED        EventType = 41
+	EventType_EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_DENIED          EventType = 42
+	EventType_EVENT_TYPE_PLUGIN_LABEL_CREATED                       EventType = 44
+	EventType_EVENT_TYPE_PLUGIN_LABEL_MOVED                         EventType = 45
+	EventType_EVENT_TYPE_PLUGIN_LABEL_ARCHIVED                      EventType = 46
+	EventType_EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED                    EventType = 47
+	EventType_EVENT_TYPE_SERVER_REVIEW_FLOW_ENABLED                 EventType = 69
+	EventType_EVENT_TYPE_SERVER_REVIEW_FLOW_DISABLED                EventType = 70
+	EventType_EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_CREATED              EventType = 71
+	EventType_EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_UPDATED              EventType = 72
+	EventType_EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_DELETED              EventType = 73
+	EventType_EVENT_TYPE_POLICY_ENFORCEMENT_CREATED                 EventType = 74
+	EventType_EVENT_TYPE_POLICY_ENFORCEMENT_DELETED                 EventType = 75
+	EventType_EVENT_TYPE_POLICY_ENFORCEMENT_POLICY_CHANGED          EventType = 76
+	EventType_EVENT_TYPE_POLICY_ENFORCEMENT_TARGETS_CHANGED         EventType = 77
 )
 
 // Enum value maps for EventType.
@@ -294,7 +294,7 @@ var (
 		21: "EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED",
 		59: "EVENT_TYPE_ORGANIZATION_IDP_GROUP_UPDATED",
 		22: "EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED",
-		81: "EVENT_TYPE_ORGANIZATION_RESOURCE_VISIBILITY_CONTROLS_CHANGED",
+		81: "EVENT_TYPE_ORGANIZATION_RESOURCE_VISIBILITY_CONTROL_CHANGED",
 		6:  "EVENT_TYPE_REPOSITORY_CREATED",
 		48: "EVENT_TYPE_REPOSITORY_DEPRECATED",
 		49: "EVENT_TYPE_REPOSITORY_UNDEPRECATED",
@@ -349,7 +349,7 @@ var (
 		34: "EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED",
 		35: "EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED",
 		36: "EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED",
-		80: "EVENT_TYPE_SERVER_RESOURCE_VISIBILITY_CONTROLS_CHANGED",
+		80: "EVENT_TYPE_SERVER_RESOURCE_VISIBILITY_CONTROL_CHANGED",
 		37: "EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP",
 		41: "EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_APPROVED",
 		42: "EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_DENIED",
@@ -368,88 +368,88 @@ var (
 		77: "EVENT_TYPE_POLICY_ENFORCEMENT_TARGETS_CHANGED",
 	}
 	EventType_value = map[string]int32{
-		"EVENT_TYPE_UNSPECIFIED":                                       0,
-		"EVENT_TYPE_ORGANIZATION_CREATED":                              1,
-		"EVENT_TYPE_ORGANIZATION_DELETED":                              2,
-		"EVENT_TYPE_ORGANIZATION_MEMBER_ADDED":                         3,
-		"EVENT_TYPE_ORGANIZATION_MEMBER_ROLE_CHANGED":                  4,
-		"EVENT_TYPE_ORGANIZATION_MEMBER_ROLES_CHANGED":                 50,
-		"EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED":                       5,
-		"EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED":                      21,
-		"EVENT_TYPE_ORGANIZATION_IDP_GROUP_UPDATED":                    59,
-		"EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED":                    22,
-		"EVENT_TYPE_ORGANIZATION_RESOURCE_VISIBILITY_CONTROLS_CHANGED": 81,
-		"EVENT_TYPE_REPOSITORY_CREATED":                                6,
-		"EVENT_TYPE_REPOSITORY_DEPRECATED":                             48,
-		"EVENT_TYPE_REPOSITORY_UNDEPRECATED":                           49,
-		"EVENT_TYPE_REPOSITORY_DELETED":                                7,
-		"EVENT_TYPE_REPOSITORY_COMMIT_PUSHED":                          8,
-		"EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ADDED":                      9,
-		"EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLE_CHANGED":               10,
-		"EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLES_CHANGED":              63,
-		"EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED":                    11,
-		"EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED":                     12,
-		"EVENT_TYPE_REPOSITORY_DEFAULT_LABEL_NAME_CHANGED":             40,
-		"EVENT_TYPE_REPOSITORY_IDP_GROUP_ADDED":                        60,
-		"EVENT_TYPE_REPOSITORY_IDP_GROUP_UPDATED":                      61,
-		"EVENT_TYPE_REPOSITORY_IDP_GROUP_REMOVED":                      62,
-		"EVENT_TYPE_POLICY_CREATED":                                    54,
-		"EVENT_TYPE_POLICY_DELETED":                                    55,
-		"EVENT_TYPE_POLICY_DEPRECATED":                                 56,
-		"EVENT_TYPE_POLICY_UNDEPRECATED":                               57,
-		"EVENT_TYPE_POLICY_VISIBILITY_CHANGED":                         58,
-		"EVENT_TYPE_POLICY_COMMIT_PUSHED":                              64,
-		"EVENT_TYPE_POLICY_LABEL_CREATED":                              65,
-		"EVENT_TYPE_POLICY_LABEL_MOVED":                                66,
-		"EVENT_TYPE_POLICY_LABEL_ARCHIVED":                             67,
-		"EVENT_TYPE_POLICY_LABEL_UNARCHIVED":                           68,
-		"EVENT_TYPE_PLUGIN_CREATED":                                    13,
-		"EVENT_TYPE_PLUGIN_DELETED":                                    14,
-		"EVENT_TYPE_PLUGIN_DEPRECATED":                                 51,
-		"EVENT_TYPE_PLUGIN_UNDEPRECATED":                               52,
-		"EVENT_TYPE_PLUGIN_VISIBILITY_CHANGED":                         53,
-		"EVENT_TYPE_PLUGIN_COMMIT_PUSHED":                              43,
-		"EVENT_TYPE_CURATED_PLUGIN_CREATED":                            20,
-		"EVENT_TYPE_CURATED_PLUGIN_DELETED":                            31,
-		"EVENT_TYPE_CURATED_PLUGIN_STATUS_UPDATED":                     78,
-		"EVENT_TYPE_USER_CREATED":                                      15,
-		"EVENT_TYPE_USER_DELETED":                                      16,
-		"EVENT_TYPE_USER_DEACTIVATED":                                  17,
-		"EVENT_TYPE_USER_LOGGED_IN":                                    18,
-		"EVENT_TYPE_USER_LOGGED_OUT":                                   19,
-		"EVENT_TYPE_TOKEN_CREATED":                                     23,
-		"EVENT_TYPE_TOKEN_DELETED":                                     24,
-		"EVENT_TYPE_USER_REACTIVATED":                                  25,
-		"EVENT_TYPE_SCIM_TOKEN_CREATED":                                26,
-		"EVENT_TYPE_SCIM_TOKEN_DELETED":                                27,
-		"EVENT_TYPE_REPOSITORY_COMMIT_DELETED":                         28,
-		"EVENT_TYPE_REPOSITORY_LABEL_CREATED":                          29,
-		"EVENT_TYPE_REPOSITORY_LABEL_MOVED":                            30,
-		"EVENT_TYPE_REPOSITORY_LABEL_ARCHIVED":                         38,
-		"EVENT_TYPE_REPOSITORY_LABEL_UNARCHIVED":                       39,
-		"EVENT_TYPE_REPOSITORY_LABEL_ENFORCEMENT_IGNORES_CHANGED":      79,
-		"EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_ENABLED":             32,
-		"EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_DISABLED":            33,
-		"EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED":                 34,
-		"EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED":                  35,
-		"EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED":                 36,
-		"EVENT_TYPE_SERVER_RESOURCE_VISIBILITY_CONTROLS_CHANGED":       80,
-		"EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP":                     37,
-		"EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_APPROVED":               41,
-		"EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_DENIED":                 42,
-		"EVENT_TYPE_PLUGIN_LABEL_CREATED":                              44,
-		"EVENT_TYPE_PLUGIN_LABEL_MOVED":                                45,
-		"EVENT_TYPE_PLUGIN_LABEL_ARCHIVED":                             46,
-		"EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED":                           47,
-		"EVENT_TYPE_SERVER_REVIEW_FLOW_ENABLED":                        69,
-		"EVENT_TYPE_SERVER_REVIEW_FLOW_DISABLED":                       70,
-		"EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_CREATED":                     71,
-		"EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_UPDATED":                     72,
-		"EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_DELETED":                     73,
-		"EVENT_TYPE_POLICY_ENFORCEMENT_CREATED":                        74,
-		"EVENT_TYPE_POLICY_ENFORCEMENT_DELETED":                        75,
-		"EVENT_TYPE_POLICY_ENFORCEMENT_POLICY_CHANGED":                 76,
-		"EVENT_TYPE_POLICY_ENFORCEMENT_TARGETS_CHANGED":                77,
+		"EVENT_TYPE_UNSPECIFIED":                                      0,
+		"EVENT_TYPE_ORGANIZATION_CREATED":                             1,
+		"EVENT_TYPE_ORGANIZATION_DELETED":                             2,
+		"EVENT_TYPE_ORGANIZATION_MEMBER_ADDED":                        3,
+		"EVENT_TYPE_ORGANIZATION_MEMBER_ROLE_CHANGED":                 4,
+		"EVENT_TYPE_ORGANIZATION_MEMBER_ROLES_CHANGED":                50,
+		"EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED":                      5,
+		"EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED":                     21,
+		"EVENT_TYPE_ORGANIZATION_IDP_GROUP_UPDATED":                   59,
+		"EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED":                   22,
+		"EVENT_TYPE_ORGANIZATION_RESOURCE_VISIBILITY_CONTROL_CHANGED": 81,
+		"EVENT_TYPE_REPOSITORY_CREATED":                               6,
+		"EVENT_TYPE_REPOSITORY_DEPRECATED":                            48,
+		"EVENT_TYPE_REPOSITORY_UNDEPRECATED":                          49,
+		"EVENT_TYPE_REPOSITORY_DELETED":                               7,
+		"EVENT_TYPE_REPOSITORY_COMMIT_PUSHED":                         8,
+		"EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ADDED":                     9,
+		"EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLE_CHANGED":              10,
+		"EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLES_CHANGED":             63,
+		"EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED":                   11,
+		"EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED":                    12,
+		"EVENT_TYPE_REPOSITORY_DEFAULT_LABEL_NAME_CHANGED":            40,
+		"EVENT_TYPE_REPOSITORY_IDP_GROUP_ADDED":                       60,
+		"EVENT_TYPE_REPOSITORY_IDP_GROUP_UPDATED":                     61,
+		"EVENT_TYPE_REPOSITORY_IDP_GROUP_REMOVED":                     62,
+		"EVENT_TYPE_POLICY_CREATED":                                   54,
+		"EVENT_TYPE_POLICY_DELETED":                                   55,
+		"EVENT_TYPE_POLICY_DEPRECATED":                                56,
+		"EVENT_TYPE_POLICY_UNDEPRECATED":                              57,
+		"EVENT_TYPE_POLICY_VISIBILITY_CHANGED":                        58,
+		"EVENT_TYPE_POLICY_COMMIT_PUSHED":                             64,
+		"EVENT_TYPE_POLICY_LABEL_CREATED":                             65,
+		"EVENT_TYPE_POLICY_LABEL_MOVED":                               66,
+		"EVENT_TYPE_POLICY_LABEL_ARCHIVED":                            67,
+		"EVENT_TYPE_POLICY_LABEL_UNARCHIVED":                          68,
+		"EVENT_TYPE_PLUGIN_CREATED":                                   13,
+		"EVENT_TYPE_PLUGIN_DELETED":                                   14,
+		"EVENT_TYPE_PLUGIN_DEPRECATED":                                51,
+		"EVENT_TYPE_PLUGIN_UNDEPRECATED":                              52,
+		"EVENT_TYPE_PLUGIN_VISIBILITY_CHANGED":                        53,
+		"EVENT_TYPE_PLUGIN_COMMIT_PUSHED":                             43,
+		"EVENT_TYPE_CURATED_PLUGIN_CREATED":                           20,
+		"EVENT_TYPE_CURATED_PLUGIN_DELETED":                           31,
+		"EVENT_TYPE_CURATED_PLUGIN_STATUS_UPDATED":                    78,
+		"EVENT_TYPE_USER_CREATED":                                     15,
+		"EVENT_TYPE_USER_DELETED":                                     16,
+		"EVENT_TYPE_USER_DEACTIVATED":                                 17,
+		"EVENT_TYPE_USER_LOGGED_IN":                                   18,
+		"EVENT_TYPE_USER_LOGGED_OUT":                                  19,
+		"EVENT_TYPE_TOKEN_CREATED":                                    23,
+		"EVENT_TYPE_TOKEN_DELETED":                                    24,
+		"EVENT_TYPE_USER_REACTIVATED":                                 25,
+		"EVENT_TYPE_SCIM_TOKEN_CREATED":                               26,
+		"EVENT_TYPE_SCIM_TOKEN_DELETED":                               27,
+		"EVENT_TYPE_REPOSITORY_COMMIT_DELETED":                        28,
+		"EVENT_TYPE_REPOSITORY_LABEL_CREATED":                         29,
+		"EVENT_TYPE_REPOSITORY_LABEL_MOVED":                           30,
+		"EVENT_TYPE_REPOSITORY_LABEL_ARCHIVED":                        38,
+		"EVENT_TYPE_REPOSITORY_LABEL_UNARCHIVED":                      39,
+		"EVENT_TYPE_REPOSITORY_LABEL_ENFORCEMENT_IGNORES_CHANGED":     79,
+		"EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_ENABLED":            32,
+		"EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_DISABLED":           33,
+		"EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED":                34,
+		"EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED":                 35,
+		"EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED":                36,
+		"EVENT_TYPE_SERVER_RESOURCE_VISIBILITY_CONTROL_CHANGED":       80,
+		"EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP":                    37,
+		"EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_APPROVED":              41,
+		"EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_DENIED":                42,
+		"EVENT_TYPE_PLUGIN_LABEL_CREATED":                             44,
+		"EVENT_TYPE_PLUGIN_LABEL_MOVED":                               45,
+		"EVENT_TYPE_PLUGIN_LABEL_ARCHIVED":                            46,
+		"EVENT_TYPE_PLUGIN_LABEL_UNARCHIVED":                          47,
+		"EVENT_TYPE_SERVER_REVIEW_FLOW_ENABLED":                       69,
+		"EVENT_TYPE_SERVER_REVIEW_FLOW_DISABLED":                      70,
+		"EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_CREATED":                    71,
+		"EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_UPDATED":                    72,
+		"EVENT_TYPE_SDK_PLUGIN_CONSTRAINT_DELETED":                    73,
+		"EVENT_TYPE_POLICY_ENFORCEMENT_CREATED":                       74,
+		"EVENT_TYPE_POLICY_ENFORCEMENT_DELETED":                       75,
+		"EVENT_TYPE_POLICY_ENFORCEMENT_POLICY_CHANGED":                76,
+		"EVENT_TYPE_POLICY_ENFORCEMENT_TARGETS_CHANGED":               77,
 	}
 )
 
@@ -926,10 +926,10 @@ func (x *Event) GetOrganizationMemberRemoved() *PayloadOrganizationMemberRemoved
 	return nil
 }
 
-func (x *Event) GetPayloadOrganizationResourceVisibilityControlsChanged() *PayloadOrganizationResourceVisibilityControlsChanged {
+func (x *Event) GetPayloadOrganizationResourceVisibilityControlChanged() *PayloadOrganizationResourceVisibilityControlChanged {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Payload.(*event_PayloadOrganizationResourceVisibilityControlsChanged); ok {
-			return x.PayloadOrganizationResourceVisibilityControlsChanged
+		if x, ok := x.xxx_hidden_Payload.(*event_PayloadOrganizationResourceVisibilityControlChanged); ok {
+			return x.PayloadOrganizationResourceVisibilityControlChanged
 		}
 	}
 	return nil
@@ -1450,10 +1450,10 @@ func (x *Event) GetPayloadServerUniquenessPolicyDisabled() *PayloadServerUniquen
 	return nil
 }
 
-func (x *Event) GetPayloadServerResourceVisibilityControlsChanged() *PayloadServerResourceVisibilityControlsChanged {
+func (x *Event) GetPayloadServerResourceVisibilityControlChanged() *PayloadServerResourceVisibilityControlChanged {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Payload.(*event_PayloadServerResourceVisibilityControlsChanged); ok {
-			return x.PayloadServerResourceVisibilityControlsChanged
+		if x, ok := x.xxx_hidden_Payload.(*event_PayloadServerResourceVisibilityControlChanged); ok {
+			return x.PayloadServerResourceVisibilityControlChanged
 		}
 	}
 	return nil
@@ -1675,12 +1675,12 @@ func (x *Event) SetOrganizationMemberRemoved(v *PayloadOrganizationMemberRemoved
 	x.xxx_hidden_Payload = &event_OrganizationMemberRemoved{v}
 }
 
-func (x *Event) SetPayloadOrganizationResourceVisibilityControlsChanged(v *PayloadOrganizationResourceVisibilityControlsChanged) {
+func (x *Event) SetPayloadOrganizationResourceVisibilityControlChanged(v *PayloadOrganizationResourceVisibilityControlChanged) {
 	if v == nil {
 		x.xxx_hidden_Payload = nil
 		return
 	}
-	x.xxx_hidden_Payload = &event_PayloadOrganizationResourceVisibilityControlsChanged{v}
+	x.xxx_hidden_Payload = &event_PayloadOrganizationResourceVisibilityControlChanged{v}
 }
 
 func (x *Event) SetRepositoryCreated(v *PayloadRepositoryCreated) {
@@ -2141,12 +2141,12 @@ func (x *Event) SetPayloadServerUniquenessPolicyDisabled(v *PayloadServerUniquen
 	x.xxx_hidden_Payload = &event_PayloadServerUniquenessPolicyDisabled{v}
 }
 
-func (x *Event) SetPayloadServerResourceVisibilityControlsChanged(v *PayloadServerResourceVisibilityControlsChanged) {
+func (x *Event) SetPayloadServerResourceVisibilityControlChanged(v *PayloadServerResourceVisibilityControlChanged) {
 	if v == nil {
 		x.xxx_hidden_Payload = nil
 		return
 	}
-	x.xxx_hidden_Payload = &event_PayloadServerResourceVisibilityControlsChanged{v}
+	x.xxx_hidden_Payload = &event_PayloadServerResourceVisibilityControlChanged{v}
 }
 
 func (x *Event) SetUserAutoMergedFromNewIdp(v *PayloadUserAutoMergedFromNewIdP) {
@@ -2360,11 +2360,11 @@ func (x *Event) HasOrganizationMemberRemoved() bool {
 	return ok
 }
 
-func (x *Event) HasPayloadOrganizationResourceVisibilityControlsChanged() bool {
+func (x *Event) HasPayloadOrganizationResourceVisibilityControlChanged() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Payload.(*event_PayloadOrganizationResourceVisibilityControlsChanged)
+	_, ok := x.xxx_hidden_Payload.(*event_PayloadOrganizationResourceVisibilityControlChanged)
 	return ok
 }
 
@@ -2826,11 +2826,11 @@ func (x *Event) HasPayloadServerUniquenessPolicyDisabled() bool {
 	return ok
 }
 
-func (x *Event) HasPayloadServerResourceVisibilityControlsChanged() bool {
+func (x *Event) HasPayloadServerResourceVisibilityControlChanged() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Payload.(*event_PayloadServerResourceVisibilityControlsChanged)
+	_, ok := x.xxx_hidden_Payload.(*event_PayloadServerResourceVisibilityControlChanged)
 	return ok
 }
 
@@ -3018,8 +3018,8 @@ func (x *Event) ClearOrganizationMemberRemoved() {
 	}
 }
 
-func (x *Event) ClearPayloadOrganizationResourceVisibilityControlsChanged() {
-	if _, ok := x.xxx_hidden_Payload.(*event_PayloadOrganizationResourceVisibilityControlsChanged); ok {
+func (x *Event) ClearPayloadOrganizationResourceVisibilityControlChanged() {
+	if _, ok := x.xxx_hidden_Payload.(*event_PayloadOrganizationResourceVisibilityControlChanged); ok {
 		x.xxx_hidden_Payload = nil
 	}
 }
@@ -3368,8 +3368,8 @@ func (x *Event) ClearPayloadServerUniquenessPolicyDisabled() {
 	}
 }
 
-func (x *Event) ClearPayloadServerResourceVisibilityControlsChanged() {
-	if _, ok := x.xxx_hidden_Payload.(*event_PayloadServerResourceVisibilityControlsChanged); ok {
+func (x *Event) ClearPayloadServerResourceVisibilityControlChanged() {
+	if _, ok := x.xxx_hidden_Payload.(*event_PayloadServerResourceVisibilityControlChanged); ok {
 		x.xxx_hidden_Payload = nil
 	}
 }
@@ -3477,7 +3477,7 @@ const Event_OrganizationMemberAdded_case case_Event_Payload = 9
 const Event_OrganizationMemberRoleChanged_case case_Event_Payload = 10
 const Event_OrganizationMemberRolesChanged_case case_Event_Payload = 56
 const Event_OrganizationMemberRemoved_case case_Event_Payload = 11
-const Event_PayloadOrganizationResourceVisibilityControlsChanged_case case_Event_Payload = 87
+const Event_PayloadOrganizationResourceVisibilityControlChanged_case case_Event_Payload = 87
 const Event_RepositoryCreated_case case_Event_Payload = 12
 const Event_RepositoryDeprecated_case case_Event_Payload = 54
 const Event_RepositoryUndeprecated_case case_Event_Payload = 55
@@ -3535,7 +3535,7 @@ const Event_PayloadServerBreakingChangePolicyDisabled_case case_Event_Payload = 
 const Event_RepositoryDefaultBranchChanged_case case_Event_Payload = 40
 const Event_PayloadServerUniquenessPolicyEnabled_case case_Event_Payload = 41
 const Event_PayloadServerUniquenessPolicyDisabled_case case_Event_Payload = 42
-const Event_PayloadServerResourceVisibilityControlsChanged_case case_Event_Payload = 86
+const Event_PayloadServerResourceVisibilityControlChanged_case case_Event_Payload = 86
 const Event_UserAutoMergedFromNewIdp_case case_Event_Payload = 43
 const Event_DeviceAuthorizationGrantApproved_case case_Event_Payload = 47
 const Event_DeviceAuthorizationGrantDenied_case case_Event_Payload = 48
@@ -3570,8 +3570,8 @@ func (x *Event) WhichPayload() case_Event_Payload {
 		return Event_OrganizationMemberRolesChanged_case
 	case *event_OrganizationMemberRemoved:
 		return Event_OrganizationMemberRemoved_case
-	case *event_PayloadOrganizationResourceVisibilityControlsChanged:
-		return Event_PayloadOrganizationResourceVisibilityControlsChanged_case
+	case *event_PayloadOrganizationResourceVisibilityControlChanged:
+		return Event_PayloadOrganizationResourceVisibilityControlChanged_case
 	case *event_RepositoryCreated:
 		return Event_RepositoryCreated_case
 	case *event_RepositoryDeprecated:
@@ -3686,8 +3686,8 @@ func (x *Event) WhichPayload() case_Event_Payload {
 		return Event_PayloadServerUniquenessPolicyEnabled_case
 	case *event_PayloadServerUniquenessPolicyDisabled:
 		return Event_PayloadServerUniquenessPolicyDisabled_case
-	case *event_PayloadServerResourceVisibilityControlsChanged:
-		return Event_PayloadServerResourceVisibilityControlsChanged_case
+	case *event_PayloadServerResourceVisibilityControlChanged:
+		return Event_PayloadServerResourceVisibilityControlChanged_case
 	case *event_UserAutoMergedFromNewIdp:
 		return Event_UserAutoMergedFromNewIdp_case
 	case *event_DeviceAuthorizationGrantApproved:
@@ -3743,57 +3743,57 @@ type Event_builder struct {
 	// Payload of the audited event. It specifies additional context on the event.
 
 	// Fields of oneof xxx_hidden_Payload:
-	OrganizationCreated                                  *PayloadOrganizationCreated
-	OrganizationDeleted                                  *PayloadOrganizationDeleted
-	OrganizationMemberAdded                              *PayloadOrganizationMemberAdded
-	OrganizationMemberRoleChanged                        *PayloadOrganizationMemberRoleChanged
-	OrganizationMemberRolesChanged                       *PayloadOrganizationMemberRolesChanged
-	OrganizationMemberRemoved                            *PayloadOrganizationMemberRemoved
-	PayloadOrganizationResourceVisibilityControlsChanged *PayloadOrganizationResourceVisibilityControlsChanged
-	RepositoryCreated                                    *PayloadRepositoryCreated
-	RepositoryDeprecated                                 *PayloadRepositoryDeprecated
-	RepositoryUndeprecated                               *PayloadRepositoryUndeprecated
-	RepositoryDeleted                                    *PayloadRepositoryDeleted
-	RepositoryCommitPushed                               *PayloadRepositoryCommitPushed
-	RepositoryContributorAdded                           *PayloadRepositoryContributorAdded
-	RepositoryContributorRoleChanged                     *PayloadRepositoryContributorRoleChanged
-	RepositoryContributorRolesChanged                    *PayloadRepositoryContributorRolesChanged
-	RepositoryContributorRemoved                         *PayloadRepositoryContributorRemoved
-	RepositoryVisibilityChanged                          *PayloadRepositoryVisibilityChanged
-	RepositoryDefaultLabelNameChanged                    *PayloadRepositoryDefaultLabelNameChanged
-	RepositoryIdpGroupAdded                              *PayloadRepositoryIDPGroupAdded
-	RepositoryIdpGroupUpdated                            *PayloadRepositoryIDPGroupUpdated
-	RepositoryIdpGroupRemoved                            *PayloadRepositoryIDPGroupRemoved
-	PolicyCreated                                        *PayloadPolicyCreated
-	PolicyDeleted                                        *PayloadPolicyDeleted
-	PolicyDeprecated                                     *PayloadPolicyDeprecated
-	PolicyUndeprecated                                   *PayloadPolicyUndeprecated
-	PolicyVisibilityChanged                              *PayloadPolicyVisibilityChanged
-	PolicyCommitPushed                                   *PayloadPolicyCommitPushed
-	PolicyLabelCreated                                   *PayloadPolicyLabelCreated
-	PolicyLabelMoved                                     *PayloadPolicyLabelMoved
-	PolicyLabelArchived                                  *PayloadPolicyLabelArchived
-	PolicyLabelUnarchived                                *PayloadPolicyLabelUnarchived
-	PluginCreated                                        *PayloadPluginCreated
-	PluginDeleted                                        *PayloadPluginDeleted
-	PluginDeprecated                                     *PayloadPluginDeprecated
-	PluginUndeprecated                                   *PayloadPluginUndeprecated
-	PluginVisibilityChanged                              *PayloadPluginVisibilityChanged
-	PluginCommitPushed                                   *PayloadPluginCommitPushed
-	UserCreated                                          *PayloadUserCreated
-	UserDeactivated                                      *PayloadUserDeactivated
-	UserDeleted                                          *PayloadUserDeleted
-	UserLoggedIn                                         *PayloadUserLoggedIn
-	UserLoggedOut                                        *PayloadUserLoggedOut
-	CuratedPluginCreated                                 *PayloadCuratedPluginCreated
-	IdpGroupAdded                                        *PayloadOrganizationIDPGroupAdded
-	IdpGroupUpdated                                      *PayloadOrganizationIDPGroupUpdated
-	IdpGroupRemoved                                      *PayloadOrganizationIDPGroupRemoved
-	TokenCreated                                         *PayloadTokenCreated
-	TokenDeleted                                         *PayloadTokenDeleted
-	UserReactivated                                      *PayloadUserReactivated
-	ScimTokenCreated                                     *PayloadSCIMTokenCreated
-	ScimTokenDeleted                                     *PayloadSCIMTokenDeleted
+	OrganizationCreated                                 *PayloadOrganizationCreated
+	OrganizationDeleted                                 *PayloadOrganizationDeleted
+	OrganizationMemberAdded                             *PayloadOrganizationMemberAdded
+	OrganizationMemberRoleChanged                       *PayloadOrganizationMemberRoleChanged
+	OrganizationMemberRolesChanged                      *PayloadOrganizationMemberRolesChanged
+	OrganizationMemberRemoved                           *PayloadOrganizationMemberRemoved
+	PayloadOrganizationResourceVisibilityControlChanged *PayloadOrganizationResourceVisibilityControlChanged
+	RepositoryCreated                                   *PayloadRepositoryCreated
+	RepositoryDeprecated                                *PayloadRepositoryDeprecated
+	RepositoryUndeprecated                              *PayloadRepositoryUndeprecated
+	RepositoryDeleted                                   *PayloadRepositoryDeleted
+	RepositoryCommitPushed                              *PayloadRepositoryCommitPushed
+	RepositoryContributorAdded                          *PayloadRepositoryContributorAdded
+	RepositoryContributorRoleChanged                    *PayloadRepositoryContributorRoleChanged
+	RepositoryContributorRolesChanged                   *PayloadRepositoryContributorRolesChanged
+	RepositoryContributorRemoved                        *PayloadRepositoryContributorRemoved
+	RepositoryVisibilityChanged                         *PayloadRepositoryVisibilityChanged
+	RepositoryDefaultLabelNameChanged                   *PayloadRepositoryDefaultLabelNameChanged
+	RepositoryIdpGroupAdded                             *PayloadRepositoryIDPGroupAdded
+	RepositoryIdpGroupUpdated                           *PayloadRepositoryIDPGroupUpdated
+	RepositoryIdpGroupRemoved                           *PayloadRepositoryIDPGroupRemoved
+	PolicyCreated                                       *PayloadPolicyCreated
+	PolicyDeleted                                       *PayloadPolicyDeleted
+	PolicyDeprecated                                    *PayloadPolicyDeprecated
+	PolicyUndeprecated                                  *PayloadPolicyUndeprecated
+	PolicyVisibilityChanged                             *PayloadPolicyVisibilityChanged
+	PolicyCommitPushed                                  *PayloadPolicyCommitPushed
+	PolicyLabelCreated                                  *PayloadPolicyLabelCreated
+	PolicyLabelMoved                                    *PayloadPolicyLabelMoved
+	PolicyLabelArchived                                 *PayloadPolicyLabelArchived
+	PolicyLabelUnarchived                               *PayloadPolicyLabelUnarchived
+	PluginCreated                                       *PayloadPluginCreated
+	PluginDeleted                                       *PayloadPluginDeleted
+	PluginDeprecated                                    *PayloadPluginDeprecated
+	PluginUndeprecated                                  *PayloadPluginUndeprecated
+	PluginVisibilityChanged                             *PayloadPluginVisibilityChanged
+	PluginCommitPushed                                  *PayloadPluginCommitPushed
+	UserCreated                                         *PayloadUserCreated
+	UserDeactivated                                     *PayloadUserDeactivated
+	UserDeleted                                         *PayloadUserDeleted
+	UserLoggedIn                                        *PayloadUserLoggedIn
+	UserLoggedOut                                       *PayloadUserLoggedOut
+	CuratedPluginCreated                                *PayloadCuratedPluginCreated
+	IdpGroupAdded                                       *PayloadOrganizationIDPGroupAdded
+	IdpGroupUpdated                                     *PayloadOrganizationIDPGroupUpdated
+	IdpGroupRemoved                                     *PayloadOrganizationIDPGroupRemoved
+	TokenCreated                                        *PayloadTokenCreated
+	TokenDeleted                                        *PayloadTokenDeleted
+	UserReactivated                                     *PayloadUserReactivated
+	ScimTokenCreated                                    *PayloadSCIMTokenCreated
+	ScimTokenDeleted                                    *PayloadSCIMTokenDeleted
 	// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
 	RepositoryCommitDeleted                   *PayloadRepositoryCommitDeleted
 	RepositoryLabelCreated                    *PayloadRepositoryLabelCreated
@@ -3806,26 +3806,26 @@ type Event_builder struct {
 	PayloadServerBreakingChangePolicyEnabled  *PayloadServerBreakingChangePolicyEnabled
 	PayloadServerBreakingChangePolicyDisabled *PayloadServerBreakingChangePolicyDisabled
 	// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
-	RepositoryDefaultBranchChanged                 *PayloadRepositoryDefaultBranchChanged
-	PayloadServerUniquenessPolicyEnabled           *PayloadServerUniquenessPolicyEnabled
-	PayloadServerUniquenessPolicyDisabled          *PayloadServerUniquenessPolicyDisabled
-	PayloadServerResourceVisibilityControlsChanged *PayloadServerResourceVisibilityControlsChanged
-	UserAutoMergedFromNewIdp                       *PayloadUserAutoMergedFromNewIdP
-	DeviceAuthorizationGrantApproved               *PayloadDeviceAuthorizationGrantApproved
-	DeviceAuthorizationGrantDenied                 *PayloadDeviceAuthorizationGrantDenied
-	PluginLabelCreated                             *PayloadPluginLabelCreated
-	PluginLabelMoved                               *PayloadPluginLabelMoved
-	PluginLabelArchived                            *PayloadPluginLabelArchived
-	PluginLabelUnarchived                          *PayloadPluginLabelUnarchived
-	ServerReviewFlowEnabled                        *PayloadServerReviewFlowEnabled
-	ServerReviewFlowDisabled                       *PayloadServerReviewFlowDisabled
-	SdkPluginConstraintCreated                     *PayloadSDKPluginConstraintCreated
-	SdkPluginConstraintUpdated                     *PayloadSDKPluginConstraintUpdated
-	SdkPluginConstraintDeleted                     *PayloadSDKPluginConstraintDeleted
-	PolicyEnforcementCreated                       *PayloadPolicyEnforcementCreated
-	PolicyEnforcementDeleted                       *PayloadPolicyEnforcementDeleted
-	PolicyEnforcementPolicyChanged                 *PayloadPolicyEnforcementPolicyChanged
-	PolicyEnforcementTargetsChanged                *PayloadPolicyEnforcementTargetsChanged
+	RepositoryDefaultBranchChanged                *PayloadRepositoryDefaultBranchChanged
+	PayloadServerUniquenessPolicyEnabled          *PayloadServerUniquenessPolicyEnabled
+	PayloadServerUniquenessPolicyDisabled         *PayloadServerUniquenessPolicyDisabled
+	PayloadServerResourceVisibilityControlChanged *PayloadServerResourceVisibilityControlChanged
+	UserAutoMergedFromNewIdp                      *PayloadUserAutoMergedFromNewIdP
+	DeviceAuthorizationGrantApproved              *PayloadDeviceAuthorizationGrantApproved
+	DeviceAuthorizationGrantDenied                *PayloadDeviceAuthorizationGrantDenied
+	PluginLabelCreated                            *PayloadPluginLabelCreated
+	PluginLabelMoved                              *PayloadPluginLabelMoved
+	PluginLabelArchived                           *PayloadPluginLabelArchived
+	PluginLabelUnarchived                         *PayloadPluginLabelUnarchived
+	ServerReviewFlowEnabled                       *PayloadServerReviewFlowEnabled
+	ServerReviewFlowDisabled                      *PayloadServerReviewFlowDisabled
+	SdkPluginConstraintCreated                    *PayloadSDKPluginConstraintCreated
+	SdkPluginConstraintUpdated                    *PayloadSDKPluginConstraintUpdated
+	SdkPluginConstraintDeleted                    *PayloadSDKPluginConstraintDeleted
+	PolicyEnforcementCreated                      *PayloadPolicyEnforcementCreated
+	PolicyEnforcementDeleted                      *PayloadPolicyEnforcementDeleted
+	PolicyEnforcementPolicyChanged                *PayloadPolicyEnforcementPolicyChanged
+	PolicyEnforcementTargetsChanged               *PayloadPolicyEnforcementTargetsChanged
 	// -- end of xxx_hidden_Payload
 }
 
@@ -3857,8 +3857,8 @@ func (b0 Event_builder) Build() *Event {
 	if b.OrganizationMemberRemoved != nil {
 		x.xxx_hidden_Payload = &event_OrganizationMemberRemoved{b.OrganizationMemberRemoved}
 	}
-	if b.PayloadOrganizationResourceVisibilityControlsChanged != nil {
-		x.xxx_hidden_Payload = &event_PayloadOrganizationResourceVisibilityControlsChanged{b.PayloadOrganizationResourceVisibilityControlsChanged}
+	if b.PayloadOrganizationResourceVisibilityControlChanged != nil {
+		x.xxx_hidden_Payload = &event_PayloadOrganizationResourceVisibilityControlChanged{b.PayloadOrganizationResourceVisibilityControlChanged}
 	}
 	if b.RepositoryCreated != nil {
 		x.xxx_hidden_Payload = &event_RepositoryCreated{b.RepositoryCreated}
@@ -4031,8 +4031,8 @@ func (b0 Event_builder) Build() *Event {
 	if b.PayloadServerUniquenessPolicyDisabled != nil {
 		x.xxx_hidden_Payload = &event_PayloadServerUniquenessPolicyDisabled{b.PayloadServerUniquenessPolicyDisabled}
 	}
-	if b.PayloadServerResourceVisibilityControlsChanged != nil {
-		x.xxx_hidden_Payload = &event_PayloadServerResourceVisibilityControlsChanged{b.PayloadServerResourceVisibilityControlsChanged}
+	if b.PayloadServerResourceVisibilityControlChanged != nil {
+		x.xxx_hidden_Payload = &event_PayloadServerResourceVisibilityControlChanged{b.PayloadServerResourceVisibilityControlChanged}
 	}
 	if b.UserAutoMergedFromNewIdp != nil {
 		x.xxx_hidden_Payload = &event_UserAutoMergedFromNewIdp{b.UserAutoMergedFromNewIdp}
@@ -4123,8 +4123,8 @@ type event_OrganizationMemberRemoved struct {
 	OrganizationMemberRemoved *PayloadOrganizationMemberRemoved `protobuf:"bytes,11,opt,name=organization_member_removed,json=organizationMemberRemoved,proto3,oneof"`
 }
 
-type event_PayloadOrganizationResourceVisibilityControlsChanged struct {
-	PayloadOrganizationResourceVisibilityControlsChanged *PayloadOrganizationResourceVisibilityControlsChanged `protobuf:"bytes,87,opt,name=payload_organization_resource_visibility_controls_changed,json=payloadOrganizationResourceVisibilityControlsChanged,proto3,oneof"`
+type event_PayloadOrganizationResourceVisibilityControlChanged struct {
+	PayloadOrganizationResourceVisibilityControlChanged *PayloadOrganizationResourceVisibilityControlChanged `protobuf:"bytes,87,opt,name=payload_organization_resource_visibility_control_changed,json=payloadOrganizationResourceVisibilityControlChanged,proto3,oneof"`
 }
 
 type event_RepositoryCreated struct {
@@ -4357,8 +4357,8 @@ type event_PayloadServerUniquenessPolicyDisabled struct {
 	PayloadServerUniquenessPolicyDisabled *PayloadServerUniquenessPolicyDisabled `protobuf:"bytes,42,opt,name=payload_server_uniqueness_policy_disabled,json=payloadServerUniquenessPolicyDisabled,proto3,oneof"`
 }
 
-type event_PayloadServerResourceVisibilityControlsChanged struct {
-	PayloadServerResourceVisibilityControlsChanged *PayloadServerResourceVisibilityControlsChanged `protobuf:"bytes,86,opt,name=payload_server_resource_visibility_controls_changed,json=payloadServerResourceVisibilityControlsChanged,proto3,oneof"`
+type event_PayloadServerResourceVisibilityControlChanged struct {
+	PayloadServerResourceVisibilityControlChanged *PayloadServerResourceVisibilityControlChanged `protobuf:"bytes,86,opt,name=payload_server_resource_visibility_control_changed,json=payloadServerResourceVisibilityControlChanged,proto3,oneof"`
 }
 
 type event_UserAutoMergedFromNewIdp struct {
@@ -4437,7 +4437,7 @@ func (*event_OrganizationMemberRolesChanged) isEvent_Payload() {}
 
 func (*event_OrganizationMemberRemoved) isEvent_Payload() {}
 
-func (*event_PayloadOrganizationResourceVisibilityControlsChanged) isEvent_Payload() {}
+func (*event_PayloadOrganizationResourceVisibilityControlChanged) isEvent_Payload() {}
 
 func (*event_RepositoryCreated) isEvent_Payload() {}
 
@@ -4553,7 +4553,7 @@ func (*event_PayloadServerUniquenessPolicyEnabled) isEvent_Payload() {}
 
 func (*event_PayloadServerUniquenessPolicyDisabled) isEvent_Payload() {}
 
-func (*event_PayloadServerResourceVisibilityControlsChanged) isEvent_Payload() {}
+func (*event_PayloadServerResourceVisibilityControlChanged) isEvent_Payload() {}
 
 func (*event_UserAutoMergedFromNewIdp) isEvent_Payload() {}
 
@@ -12407,7 +12407,7 @@ func (b0 ResourceVisibilityControl_builder) Build() *ResourceVisibilityControl {
 	return m0
 }
 
-type PayloadServerResourceVisibilityControlsChanged struct {
+type PayloadServerResourceVisibilityControlChanged struct {
 	state                           protoimpl.MessageState     `protogen:"opaque.v1"`
 	xxx_hidden_ResourceType         ResourceType               `protobuf:"varint,1,opt,name=resource_type,json=resourceType,proto3,enum=buf.alpha.audit.v1alpha1.ResourceType"`
 	xxx_hidden_OldVisibilityControl *ResourceVisibilityControl `protobuf:"bytes,2,opt,name=old_visibility_control,json=oldVisibilityControl,proto3,oneof"`
@@ -12416,20 +12416,20 @@ type PayloadServerResourceVisibilityControlsChanged struct {
 	sizeCache                       protoimpl.SizeCache
 }
 
-func (x *PayloadServerResourceVisibilityControlsChanged) Reset() {
-	*x = PayloadServerResourceVisibilityControlsChanged{}
+func (x *PayloadServerResourceVisibilityControlChanged) Reset() {
+	*x = PayloadServerResourceVisibilityControlChanged{}
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[85]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PayloadServerResourceVisibilityControlsChanged) String() string {
+func (x *PayloadServerResourceVisibilityControlChanged) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PayloadServerResourceVisibilityControlsChanged) ProtoMessage() {}
+func (*PayloadServerResourceVisibilityControlChanged) ProtoMessage() {}
 
-func (x *PayloadServerResourceVisibilityControlsChanged) ProtoReflect() protoreflect.Message {
+func (x *PayloadServerResourceVisibilityControlChanged) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[85]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -12441,65 +12441,65 @@ func (x *PayloadServerResourceVisibilityControlsChanged) ProtoReflect() protoref
 	return mi.MessageOf(x)
 }
 
-func (x *PayloadServerResourceVisibilityControlsChanged) GetResourceType() ResourceType {
+func (x *PayloadServerResourceVisibilityControlChanged) GetResourceType() ResourceType {
 	if x != nil {
 		return x.xxx_hidden_ResourceType
 	}
 	return ResourceType_RESOURCE_TYPE_UNSPECIFIED
 }
 
-func (x *PayloadServerResourceVisibilityControlsChanged) GetOldVisibilityControl() *ResourceVisibilityControl {
+func (x *PayloadServerResourceVisibilityControlChanged) GetOldVisibilityControl() *ResourceVisibilityControl {
 	if x != nil {
 		return x.xxx_hidden_OldVisibilityControl
 	}
 	return nil
 }
 
-func (x *PayloadServerResourceVisibilityControlsChanged) GetNewVisibilityControl() *ResourceVisibilityControl {
+func (x *PayloadServerResourceVisibilityControlChanged) GetNewVisibilityControl() *ResourceVisibilityControl {
 	if x != nil {
 		return x.xxx_hidden_NewVisibilityControl
 	}
 	return nil
 }
 
-func (x *PayloadServerResourceVisibilityControlsChanged) SetResourceType(v ResourceType) {
+func (x *PayloadServerResourceVisibilityControlChanged) SetResourceType(v ResourceType) {
 	x.xxx_hidden_ResourceType = v
 }
 
-func (x *PayloadServerResourceVisibilityControlsChanged) SetOldVisibilityControl(v *ResourceVisibilityControl) {
+func (x *PayloadServerResourceVisibilityControlChanged) SetOldVisibilityControl(v *ResourceVisibilityControl) {
 	x.xxx_hidden_OldVisibilityControl = v
 }
 
-func (x *PayloadServerResourceVisibilityControlsChanged) SetNewVisibilityControl(v *ResourceVisibilityControl) {
+func (x *PayloadServerResourceVisibilityControlChanged) SetNewVisibilityControl(v *ResourceVisibilityControl) {
 	x.xxx_hidden_NewVisibilityControl = v
 }
 
-func (x *PayloadServerResourceVisibilityControlsChanged) HasOldVisibilityControl() bool {
+func (x *PayloadServerResourceVisibilityControlChanged) HasOldVisibilityControl() bool {
 	if x == nil {
 		return false
 	}
 	return x.xxx_hidden_OldVisibilityControl != nil
 }
 
-func (x *PayloadServerResourceVisibilityControlsChanged) HasNewVisibilityControl() bool {
+func (x *PayloadServerResourceVisibilityControlChanged) HasNewVisibilityControl() bool {
 	if x == nil {
 		return false
 	}
 	return x.xxx_hidden_NewVisibilityControl != nil
 }
 
-func (x *PayloadServerResourceVisibilityControlsChanged) ClearOldVisibilityControl() {
+func (x *PayloadServerResourceVisibilityControlChanged) ClearOldVisibilityControl() {
 	x.xxx_hidden_OldVisibilityControl = nil
 }
 
-func (x *PayloadServerResourceVisibilityControlsChanged) ClearNewVisibilityControl() {
+func (x *PayloadServerResourceVisibilityControlChanged) ClearNewVisibilityControl() {
 	x.xxx_hidden_NewVisibilityControl = nil
 }
 
-type PayloadServerResourceVisibilityControlsChanged_builder struct {
+type PayloadServerResourceVisibilityControlChanged_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// The resource type that had its visibility controls changed.
+	// The resource type that had its visibility control changed.
 	ResourceType ResourceType
 	// The old visibility control for resources of that type under the server instance. If not
 	// present, then this visibility control was just created.
@@ -12509,8 +12509,8 @@ type PayloadServerResourceVisibilityControlsChanged_builder struct {
 	NewVisibilityControl *ResourceVisibilityControl
 }
 
-func (b0 PayloadServerResourceVisibilityControlsChanged_builder) Build() *PayloadServerResourceVisibilityControlsChanged {
-	m0 := &PayloadServerResourceVisibilityControlsChanged{}
+func (b0 PayloadServerResourceVisibilityControlChanged_builder) Build() *PayloadServerResourceVisibilityControlChanged {
+	m0 := &PayloadServerResourceVisibilityControlChanged{}
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_ResourceType = b.ResourceType
@@ -12519,7 +12519,7 @@ func (b0 PayloadServerResourceVisibilityControlsChanged_builder) Build() *Payloa
 	return m0
 }
 
-type PayloadOrganizationResourceVisibilityControlsChanged struct {
+type PayloadOrganizationResourceVisibilityControlChanged struct {
 	state                           protoimpl.MessageState     `protogen:"opaque.v1"`
 	xxx_hidden_ResourceType         ResourceType               `protobuf:"varint,1,opt,name=resource_type,json=resourceType,proto3,enum=buf.alpha.audit.v1alpha1.ResourceType"`
 	xxx_hidden_OldVisibilityControl *ResourceVisibilityControl `protobuf:"bytes,2,opt,name=old_visibility_control,json=oldVisibilityControl,proto3,oneof"`
@@ -12528,20 +12528,20 @@ type PayloadOrganizationResourceVisibilityControlsChanged struct {
 	sizeCache                       protoimpl.SizeCache
 }
 
-func (x *PayloadOrganizationResourceVisibilityControlsChanged) Reset() {
-	*x = PayloadOrganizationResourceVisibilityControlsChanged{}
+func (x *PayloadOrganizationResourceVisibilityControlChanged) Reset() {
+	*x = PayloadOrganizationResourceVisibilityControlChanged{}
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[86]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PayloadOrganizationResourceVisibilityControlsChanged) String() string {
+func (x *PayloadOrganizationResourceVisibilityControlChanged) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PayloadOrganizationResourceVisibilityControlsChanged) ProtoMessage() {}
+func (*PayloadOrganizationResourceVisibilityControlChanged) ProtoMessage() {}
 
-func (x *PayloadOrganizationResourceVisibilityControlsChanged) ProtoReflect() protoreflect.Message {
+func (x *PayloadOrganizationResourceVisibilityControlChanged) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_audit_v1alpha1_event_proto_msgTypes[86]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -12553,65 +12553,65 @@ func (x *PayloadOrganizationResourceVisibilityControlsChanged) ProtoReflect() pr
 	return mi.MessageOf(x)
 }
 
-func (x *PayloadOrganizationResourceVisibilityControlsChanged) GetResourceType() ResourceType {
+func (x *PayloadOrganizationResourceVisibilityControlChanged) GetResourceType() ResourceType {
 	if x != nil {
 		return x.xxx_hidden_ResourceType
 	}
 	return ResourceType_RESOURCE_TYPE_UNSPECIFIED
 }
 
-func (x *PayloadOrganizationResourceVisibilityControlsChanged) GetOldVisibilityControl() *ResourceVisibilityControl {
+func (x *PayloadOrganizationResourceVisibilityControlChanged) GetOldVisibilityControl() *ResourceVisibilityControl {
 	if x != nil {
 		return x.xxx_hidden_OldVisibilityControl
 	}
 	return nil
 }
 
-func (x *PayloadOrganizationResourceVisibilityControlsChanged) GetNewVisibilityControl() *ResourceVisibilityControl {
+func (x *PayloadOrganizationResourceVisibilityControlChanged) GetNewVisibilityControl() *ResourceVisibilityControl {
 	if x != nil {
 		return x.xxx_hidden_NewVisibilityControl
 	}
 	return nil
 }
 
-func (x *PayloadOrganizationResourceVisibilityControlsChanged) SetResourceType(v ResourceType) {
+func (x *PayloadOrganizationResourceVisibilityControlChanged) SetResourceType(v ResourceType) {
 	x.xxx_hidden_ResourceType = v
 }
 
-func (x *PayloadOrganizationResourceVisibilityControlsChanged) SetOldVisibilityControl(v *ResourceVisibilityControl) {
+func (x *PayloadOrganizationResourceVisibilityControlChanged) SetOldVisibilityControl(v *ResourceVisibilityControl) {
 	x.xxx_hidden_OldVisibilityControl = v
 }
 
-func (x *PayloadOrganizationResourceVisibilityControlsChanged) SetNewVisibilityControl(v *ResourceVisibilityControl) {
+func (x *PayloadOrganizationResourceVisibilityControlChanged) SetNewVisibilityControl(v *ResourceVisibilityControl) {
 	x.xxx_hidden_NewVisibilityControl = v
 }
 
-func (x *PayloadOrganizationResourceVisibilityControlsChanged) HasOldVisibilityControl() bool {
+func (x *PayloadOrganizationResourceVisibilityControlChanged) HasOldVisibilityControl() bool {
 	if x == nil {
 		return false
 	}
 	return x.xxx_hidden_OldVisibilityControl != nil
 }
 
-func (x *PayloadOrganizationResourceVisibilityControlsChanged) HasNewVisibilityControl() bool {
+func (x *PayloadOrganizationResourceVisibilityControlChanged) HasNewVisibilityControl() bool {
 	if x == nil {
 		return false
 	}
 	return x.xxx_hidden_NewVisibilityControl != nil
 }
 
-func (x *PayloadOrganizationResourceVisibilityControlsChanged) ClearOldVisibilityControl() {
+func (x *PayloadOrganizationResourceVisibilityControlChanged) ClearOldVisibilityControl() {
 	x.xxx_hidden_OldVisibilityControl = nil
 }
 
-func (x *PayloadOrganizationResourceVisibilityControlsChanged) ClearNewVisibilityControl() {
+func (x *PayloadOrganizationResourceVisibilityControlChanged) ClearNewVisibilityControl() {
 	x.xxx_hidden_NewVisibilityControl = nil
 }
 
-type PayloadOrganizationResourceVisibilityControlsChanged_builder struct {
+type PayloadOrganizationResourceVisibilityControlChanged_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// The resource type that had its visibility controls changed.
+	// The resource type that had its visibility control changed.
 	ResourceType ResourceType
 	// The old visibility control for resources of that type under the organization. If not present,
 	// then this visibility control was just created.
@@ -12621,8 +12621,8 @@ type PayloadOrganizationResourceVisibilityControlsChanged_builder struct {
 	NewVisibilityControl *ResourceVisibilityControl
 }
 
-func (b0 PayloadOrganizationResourceVisibilityControlsChanged_builder) Build() *PayloadOrganizationResourceVisibilityControlsChanged {
-	m0 := &PayloadOrganizationResourceVisibilityControlsChanged{}
+func (b0 PayloadOrganizationResourceVisibilityControlChanged_builder) Build() *PayloadOrganizationResourceVisibilityControlChanged {
+	m0 := &PayloadOrganizationResourceVisibilityControlChanged{}
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_ResourceType = b.ResourceType
@@ -13090,7 +13090,7 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\n" +
 	"user_agent\x18\x01 \x01(\tR\tuserAgent\x12\x0e\n" +
 	"\x02ip\x18\x02 \x01(\tR\x02ip\x12\x19\n" +
-	"\btrace_id\x18\x03 \x01(\tR\atraceId\"\xc4N\n" +
+	"\btrace_id\x18\x03 \x01(\tR\atraceId\"\xbeN\n" +
 	"\x05Event\x12\x19\n" +
 	"\bevent_id\x18\x01 \x01(\tR\aeventId\x127\n" +
 	"\x04type\x18\x02 \x01(\x0e2#.buf.alpha.audit.v1alpha1.EventTypeR\x04type\x125\n" +
@@ -13105,8 +13105,8 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	" organization_member_role_changed\x18\n" +
 	" \x01(\v2>.buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChangedH\x00R\x1dorganizationMemberRoleChanged\x12\x8c\x01\n" +
 	"!organization_member_roles_changed\x188 \x01(\v2?.buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChangedH\x00R\x1eorganizationMemberRolesChanged\x12|\n" +
-	"\x1borganization_member_removed\x18\v \x01(\v2:.buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRemovedH\x00R\x19organizationMemberRemoved\x12\xc9\x01\n" +
-	"9payload_organization_resource_visibility_controls_changed\x18W \x01(\v2N.buf.alpha.audit.v1alpha1.PayloadOrganizationResourceVisibilityControlsChangedH\x00R4payloadOrganizationResourceVisibilityControlsChanged\x12c\n" +
+	"\x1borganization_member_removed\x18\v \x01(\v2:.buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRemovedH\x00R\x19organizationMemberRemoved\x12\xc6\x01\n" +
+	"8payload_organization_resource_visibility_control_changed\x18W \x01(\v2M.buf.alpha.audit.v1alpha1.PayloadOrganizationResourceVisibilityControlChangedH\x00R3payloadOrganizationResourceVisibilityControlChanged\x12c\n" +
 	"\x12repository_created\x18\f \x01(\v22.buf.alpha.audit.v1alpha1.PayloadRepositoryCreatedH\x00R\x11repositoryCreated\x12l\n" +
 	"\x15repository_deprecated\x186 \x01(\v25.buf.alpha.audit.v1alpha1.PayloadRepositoryDeprecatedH\x00R\x14repositoryDeprecated\x12r\n" +
 	"\x17repository_undeprecated\x187 \x01(\v27.buf.alpha.audit.v1alpha1.PayloadRepositoryUndeprecatedH\x00R\x16repositoryUndeprecated\x12c\n" +
@@ -13163,8 +13163,8 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	".payload_server_breaking_change_policy_disabled\x18' \x01(\v2C.buf.alpha.audit.v1alpha1.PayloadServerBreakingChangePolicyDisabledH\x00R)payloadServerBreakingChangePolicyDisabled\x12\x90\x01\n" +
 	"!repository_default_branch_changed\x18( \x01(\v2?.buf.alpha.audit.v1alpha1.PayloadRepositoryDefaultBranchChangedB\x02\x18\x01H\x00R\x1erepositoryDefaultBranchChanged\x12\x98\x01\n" +
 	"(payload_server_uniqueness_policy_enabled\x18) \x01(\v2>.buf.alpha.audit.v1alpha1.PayloadServerUniquenessPolicyEnabledH\x00R$payloadServerUniquenessPolicyEnabled\x12\x9b\x01\n" +
-	")payload_server_uniqueness_policy_disabled\x18* \x01(\v2?.buf.alpha.audit.v1alpha1.PayloadServerUniquenessPolicyDisabledH\x00R%payloadServerUniquenessPolicyDisabled\x12\xb7\x01\n" +
-	"3payload_server_resource_visibility_controls_changed\x18V \x01(\v2H.buf.alpha.audit.v1alpha1.PayloadServerResourceVisibilityControlsChangedH\x00R.payloadServerResourceVisibilityControlsChanged\x12|\n" +
+	")payload_server_uniqueness_policy_disabled\x18* \x01(\v2?.buf.alpha.audit.v1alpha1.PayloadServerUniquenessPolicyDisabledH\x00R%payloadServerUniquenessPolicyDisabled\x12\xb4\x01\n" +
+	"2payload_server_resource_visibility_control_changed\x18V \x01(\v2G.buf.alpha.audit.v1alpha1.PayloadServerResourceVisibilityControlChangedH\x00R-payloadServerResourceVisibilityControlChanged\x12|\n" +
 	"\x1duser_auto_merged_from_new_idp\x18+ \x01(\v29.buf.alpha.audit.v1alpha1.PayloadUserAutoMergedFromNewIdPH\x00R\x18userAutoMergedFromNewIdp\x12\x92\x01\n" +
 	"#device_authorization_grant_approved\x18/ \x01(\v2A.buf.alpha.audit.v1alpha1.PayloadDeviceAuthorizationGrantApprovedH\x00R deviceAuthorizationGrantApproved\x12\x8c\x01\n" +
 	"!device_authorization_grant_denied\x180 \x01(\v2?.buf.alpha.audit.v1alpha1.PayloadDeviceAuthorizationGrantDeniedH\x00R\x1edeviceAuthorizationGrantDenied\x12g\n" +
@@ -13657,14 +13657,14 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"Visibility\x12\x1a\n" +
 	"\x16VISIBILITY_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11VISIBILITY_PUBLIC\x10\x01\x12\x16\n" +
-	"\x12VISIBILITY_PRIVATE\x10\x02\"\x93\x03\n" +
-	".PayloadServerResourceVisibilityControlsChanged\x12K\n" +
+	"\x12VISIBILITY_PRIVATE\x10\x02\"\x92\x03\n" +
+	"-PayloadServerResourceVisibilityControlChanged\x12K\n" +
 	"\rresource_type\x18\x01 \x01(\x0e2&.buf.alpha.audit.v1alpha1.ResourceTypeR\fresourceType\x12n\n" +
 	"\x16old_visibility_control\x18\x02 \x01(\v23.buf.alpha.audit.v1alpha1.ResourceVisibilityControlH\x00R\x14oldVisibilityControl\x88\x01\x01\x12n\n" +
 	"\x16new_visibility_control\x18\x03 \x01(\v23.buf.alpha.audit.v1alpha1.ResourceVisibilityControlH\x01R\x14newVisibilityControl\x88\x01\x01B\x19\n" +
 	"\x17_old_visibility_controlB\x19\n" +
-	"\x17_new_visibility_control\"\x99\x03\n" +
-	"4PayloadOrganizationResourceVisibilityControlsChanged\x12K\n" +
+	"\x17_new_visibility_control\"\x98\x03\n" +
+	"3PayloadOrganizationResourceVisibilityControlChanged\x12K\n" +
 	"\rresource_type\x18\x01 \x01(\x0e2&.buf.alpha.audit.v1alpha1.ResourceTypeR\fresourceType\x12n\n" +
 	"\x16old_visibility_control\x18\x02 \x01(\v23.buf.alpha.audit.v1alpha1.ResourceVisibilityControlH\x00R\x14oldVisibilityControl\x88\x01\x01\x12n\n" +
 	"\x16new_visibility_control\x18\x03 \x01(\v23.buf.alpha.audit.v1alpha1.ResourceVisibilityControlH\x01R\x14newVisibilityControl\x88\x01\x01B\x19\n" +
@@ -13698,7 +13698,7 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\x14RESOURCE_TYPE_SERVER\x10\r\x12,\n" +
 	"(RESOURCE_TYPE_DEVICE_AUTHORIZATION_GRANT\x10\x0e\x12\x1e\n" +
 	"\x1aRESOURCE_TYPE_PLUGIN_LABEL\x10\x10\x12'\n" +
-	"#RESOURCE_TYPE_SDK_PLUGIN_CONSTRAINT\x10\x15*\xf4\x1a\n" +
+	"#RESOURCE_TYPE_SDK_PLUGIN_CONSTRAINT\x10\x15*\xf2\x1a\n" +
 	"\tEventType\x12\x1a\n" +
 	"\x16EVENT_TYPE_UNSPECIFIED\x10\x00\x12#\n" +
 	"\x1fEVENT_TYPE_ORGANIZATION_CREATED\x10\x01\x12#\n" +
@@ -13709,8 +13709,8 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"&EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED\x10\x05\x12+\n" +
 	"'EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED\x10\x15\x12-\n" +
 	")EVENT_TYPE_ORGANIZATION_IDP_GROUP_UPDATED\x10;\x12-\n" +
-	")EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED\x10\x16\x12@\n" +
-	"<EVENT_TYPE_ORGANIZATION_RESOURCE_VISIBILITY_CONTROLS_CHANGED\x10Q\x12!\n" +
+	")EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED\x10\x16\x12?\n" +
+	";EVENT_TYPE_ORGANIZATION_RESOURCE_VISIBILITY_CONTROL_CHANGED\x10Q\x12!\n" +
 	"\x1dEVENT_TYPE_REPOSITORY_CREATED\x10\x06\x12$\n" +
 	" EVENT_TYPE_REPOSITORY_DEPRECATED\x100\x12&\n" +
 	"\"EVENT_TYPE_REPOSITORY_UNDEPRECATED\x101\x12!\n" +
@@ -13765,8 +13765,8 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"1EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_DISABLED\x10!\x124\n" +
 	",EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED\x10\"\x1a\x02\b\x01\x12/\n" +
 	"+EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED\x10#\x120\n" +
-	",EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED\x10$\x12:\n" +
-	"6EVENT_TYPE_SERVER_RESOURCE_VISIBILITY_CONTROLS_CHANGED\x10P\x12,\n" +
+	",EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED\x10$\x129\n" +
+	"5EVENT_TYPE_SERVER_RESOURCE_VISIBILITY_CONTROL_CHANGED\x10P\x12,\n" +
 	"(EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP\x10%\x122\n" +
 	".EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_APPROVED\x10)\x120\n" +
 	",EVENT_TYPE_DEVICE_AUTHORIZATION_GRANT_DENIED\x10*\x12#\n" +
@@ -13878,8 +13878,8 @@ var file_buf_alpha_audit_v1alpha1_event_proto_goTypes = []any{
 	(*PayloadPolicyEnforcementPolicyChanged)(nil),                       // 86: buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementPolicyChanged
 	(*PayloadPolicyEnforcementTargetsChanged)(nil),                      // 87: buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementTargetsChanged
 	(*ResourceVisibilityControl)(nil),                                   // 88: buf.alpha.audit.v1alpha1.ResourceVisibilityControl
-	(*PayloadServerResourceVisibilityControlsChanged)(nil),              // 89: buf.alpha.audit.v1alpha1.PayloadServerResourceVisibilityControlsChanged
-	(*PayloadOrganizationResourceVisibilityControlsChanged)(nil),        // 90: buf.alpha.audit.v1alpha1.PayloadOrganizationResourceVisibilityControlsChanged
+	(*PayloadServerResourceVisibilityControlChanged)(nil),               // 89: buf.alpha.audit.v1alpha1.PayloadServerResourceVisibilityControlChanged
+	(*PayloadOrganizationResourceVisibilityControlChanged)(nil),         // 90: buf.alpha.audit.v1alpha1.PayloadOrganizationResourceVisibilityControlChanged
 	(*PayloadOrganizationMemberRolesChanged_OrganizationRole)(nil),      // 91: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole
 	(*PayloadRepositoryContributorRolesChanged_RepositoryRole)(nil),     // 92: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole
 	(*PayloadRepositoryLabelEnforcementIgnoresChanged_IgnoreEntry)(nil), // 93: buf.alpha.audit.v1alpha1.PayloadRepositoryLabelEnforcementIgnoresChanged.IgnoreEntry
@@ -13908,7 +13908,7 @@ var file_buf_alpha_audit_v1alpha1_event_proto_depIdxs = []int32{
 	11,  // 10: buf.alpha.audit.v1alpha1.Event.organization_member_role_changed:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRoleChanged
 	12,  // 11: buf.alpha.audit.v1alpha1.Event.organization_member_roles_changed:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged
 	13,  // 12: buf.alpha.audit.v1alpha1.Event.organization_member_removed:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRemoved
-	90,  // 13: buf.alpha.audit.v1alpha1.Event.payload_organization_resource_visibility_controls_changed:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationResourceVisibilityControlsChanged
+	90,  // 13: buf.alpha.audit.v1alpha1.Event.payload_organization_resource_visibility_control_changed:type_name -> buf.alpha.audit.v1alpha1.PayloadOrganizationResourceVisibilityControlChanged
 	17,  // 14: buf.alpha.audit.v1alpha1.Event.repository_created:type_name -> buf.alpha.audit.v1alpha1.PayloadRepositoryCreated
 	19,  // 15: buf.alpha.audit.v1alpha1.Event.repository_deprecated:type_name -> buf.alpha.audit.v1alpha1.PayloadRepositoryDeprecated
 	20,  // 16: buf.alpha.audit.v1alpha1.Event.repository_undeprecated:type_name -> buf.alpha.audit.v1alpha1.PayloadRepositoryUndeprecated
@@ -13966,7 +13966,7 @@ var file_buf_alpha_audit_v1alpha1_event_proto_depIdxs = []int32{
 	28,  // 68: buf.alpha.audit.v1alpha1.Event.repository_default_branch_changed:type_name -> buf.alpha.audit.v1alpha1.PayloadRepositoryDefaultBranchChanged
 	68,  // 69: buf.alpha.audit.v1alpha1.Event.payload_server_uniqueness_policy_enabled:type_name -> buf.alpha.audit.v1alpha1.PayloadServerUniquenessPolicyEnabled
 	69,  // 70: buf.alpha.audit.v1alpha1.Event.payload_server_uniqueness_policy_disabled:type_name -> buf.alpha.audit.v1alpha1.PayloadServerUniquenessPolicyDisabled
-	89,  // 71: buf.alpha.audit.v1alpha1.Event.payload_server_resource_visibility_controls_changed:type_name -> buf.alpha.audit.v1alpha1.PayloadServerResourceVisibilityControlsChanged
+	89,  // 71: buf.alpha.audit.v1alpha1.Event.payload_server_resource_visibility_control_changed:type_name -> buf.alpha.audit.v1alpha1.PayloadServerResourceVisibilityControlChanged
 	50,  // 72: buf.alpha.audit.v1alpha1.Event.user_auto_merged_from_new_idp:type_name -> buf.alpha.audit.v1alpha1.PayloadUserAutoMergedFromNewIdP
 	70,  // 73: buf.alpha.audit.v1alpha1.Event.device_authorization_grant_approved:type_name -> buf.alpha.audit.v1alpha1.PayloadDeviceAuthorizationGrantApproved
 	71,  // 74: buf.alpha.audit.v1alpha1.Event.device_authorization_grant_denied:type_name -> buf.alpha.audit.v1alpha1.PayloadDeviceAuthorizationGrantDenied
@@ -14038,12 +14038,12 @@ var file_buf_alpha_audit_v1alpha1_event_proto_depIdxs = []int32{
 	83,  // 140: buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementPolicyChanged.scope:type_name -> buf.alpha.audit.v1alpha1.PolicyEnforcementScope
 	83,  // 141: buf.alpha.audit.v1alpha1.PayloadPolicyEnforcementTargetsChanged.scope:type_name -> buf.alpha.audit.v1alpha1.PolicyEnforcementScope
 	3,   // 142: buf.alpha.audit.v1alpha1.ResourceVisibilityControl.visibility:type_name -> buf.alpha.audit.v1alpha1.ResourceVisibilityControl.Visibility
-	1,   // 143: buf.alpha.audit.v1alpha1.PayloadServerResourceVisibilityControlsChanged.resource_type:type_name -> buf.alpha.audit.v1alpha1.ResourceType
-	88,  // 144: buf.alpha.audit.v1alpha1.PayloadServerResourceVisibilityControlsChanged.old_visibility_control:type_name -> buf.alpha.audit.v1alpha1.ResourceVisibilityControl
-	88,  // 145: buf.alpha.audit.v1alpha1.PayloadServerResourceVisibilityControlsChanged.new_visibility_control:type_name -> buf.alpha.audit.v1alpha1.ResourceVisibilityControl
-	1,   // 146: buf.alpha.audit.v1alpha1.PayloadOrganizationResourceVisibilityControlsChanged.resource_type:type_name -> buf.alpha.audit.v1alpha1.ResourceType
-	88,  // 147: buf.alpha.audit.v1alpha1.PayloadOrganizationResourceVisibilityControlsChanged.old_visibility_control:type_name -> buf.alpha.audit.v1alpha1.ResourceVisibilityControl
-	88,  // 148: buf.alpha.audit.v1alpha1.PayloadOrganizationResourceVisibilityControlsChanged.new_visibility_control:type_name -> buf.alpha.audit.v1alpha1.ResourceVisibilityControl
+	1,   // 143: buf.alpha.audit.v1alpha1.PayloadServerResourceVisibilityControlChanged.resource_type:type_name -> buf.alpha.audit.v1alpha1.ResourceType
+	88,  // 144: buf.alpha.audit.v1alpha1.PayloadServerResourceVisibilityControlChanged.old_visibility_control:type_name -> buf.alpha.audit.v1alpha1.ResourceVisibilityControl
+	88,  // 145: buf.alpha.audit.v1alpha1.PayloadServerResourceVisibilityControlChanged.new_visibility_control:type_name -> buf.alpha.audit.v1alpha1.ResourceVisibilityControl
+	1,   // 146: buf.alpha.audit.v1alpha1.PayloadOrganizationResourceVisibilityControlChanged.resource_type:type_name -> buf.alpha.audit.v1alpha1.ResourceType
+	88,  // 147: buf.alpha.audit.v1alpha1.PayloadOrganizationResourceVisibilityControlChanged.old_visibility_control:type_name -> buf.alpha.audit.v1alpha1.ResourceVisibilityControl
+	88,  // 148: buf.alpha.audit.v1alpha1.PayloadOrganizationResourceVisibilityControlChanged.new_visibility_control:type_name -> buf.alpha.audit.v1alpha1.ResourceVisibilityControl
 	98,  // 149: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
 	99,  // 150: buf.alpha.audit.v1alpha1.PayloadOrganizationMemberRolesChanged.OrganizationRole.source:type_name -> buf.alpha.registry.v1alpha1.OrganizationRoleSource
 	101, // 151: buf.alpha.audit.v1alpha1.PayloadRepositoryContributorRolesChanged.RepositoryRole.role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
@@ -14067,7 +14067,7 @@ func file_buf_alpha_audit_v1alpha1_event_proto_init() {
 		(*event_OrganizationMemberRoleChanged)(nil),
 		(*event_OrganizationMemberRolesChanged)(nil),
 		(*event_OrganizationMemberRemoved)(nil),
-		(*event_PayloadOrganizationResourceVisibilityControlsChanged)(nil),
+		(*event_PayloadOrganizationResourceVisibilityControlChanged)(nil),
 		(*event_RepositoryCreated)(nil),
 		(*event_RepositoryDeprecated)(nil),
 		(*event_RepositoryUndeprecated)(nil),
@@ -14125,7 +14125,7 @@ func file_buf_alpha_audit_v1alpha1_event_proto_init() {
 		(*event_RepositoryDefaultBranchChanged)(nil),
 		(*event_PayloadServerUniquenessPolicyEnabled)(nil),
 		(*event_PayloadServerUniquenessPolicyDisabled)(nil),
-		(*event_PayloadServerResourceVisibilityControlsChanged)(nil),
+		(*event_PayloadServerResourceVisibilityControlChanged)(nil),
 		(*event_UserAutoMergedFromNewIdp)(nil),
 		(*event_DeviceAuthorizationGrantApproved)(nil),
 		(*event_DeviceAuthorizationGrantDenied)(nil),
