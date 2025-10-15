@@ -438,33 +438,24 @@ func (f *file) RefreshIR(ctx context.Context) {
 	openerMap := map[string]string{
 		f.objectInfo.Path(): f.text,
 	}
+	files := []*file{f}
 	for path, file := range f.importToFile {
 		openerMap[path] = file.text
+		files = append(files, file)
 	}
 	opener := source.NewMap(openerMap)
-	f.queryForIR(ctx, opener)
-
-	for _, file := range f.importToFile {
-		file.queryForIR(ctx, opener)
-		file.IndexSymbols(ctx)
-	}
-}
-
-func (f *file) queryForIR(
-	ctx context.Context,
-	opener source.Opener,
-) {
-	if !f.ir.IsZero() {
-		return
-	}
+	session := new(ir.Session)
+	queries := xslices.Map(files, func(file *file) incremental.Query[ir.File] {
+		return queries.IR{
+			Opener:  opener,
+			Path:    file.objectInfo.Path(),
+			Session: session,
+		}
+	})
 	results, report, err := incremental.Run(
 		ctx,
 		f.lsp.queryExecutor,
-		queries.IR{
-			Opener:  opener,
-			Path:    f.objectInfo.Path(),
-			Session: new(ir.Session),
-		},
+		queries...,
 	)
 	if err != nil {
 		f.lsp.logger.Error(
@@ -475,8 +466,8 @@ func (f *file) queryForIR(
 		)
 		return
 	}
-	if len(results) > 0 {
-		f.ir = results[0].Value
+	for i, file := range files {
+		file.ir = results[i].Value
 	}
 	diagnostics, err := xslices.MapError(
 		report.Diagnostics,
