@@ -201,7 +201,7 @@ message Event {
     PayloadOrganizationMemberRoleChanged organization_member_role_changed = 10;
     PayloadOrganizationMemberRolesChanged organization_member_roles_changed = 56;
     PayloadOrganizationMemberRemoved organization_member_removed = 11;
-    PayloadOrganizationResourceVisibilityControlChanged payload_organization_resource_visibility_control_changed = 87;
+    PayloadOrganizationResourceVisibilityControlChanged organization_resource_visibility_control_changed = 87;
     PayloadRepositoryCreated repository_created = 12;
     PayloadRepositoryDeprecated repository_deprecated = 54;
     PayloadRepositoryUndeprecated repository_undeprecated = 55;
@@ -259,7 +259,7 @@ message Event {
     PayloadRepositoryDefaultBranchChanged repository_default_branch_changed = 40 [deprecated = true];
     PayloadServerUniquenessPolicyEnabled payload_server_uniqueness_policy_enabled = 41;
     PayloadServerUniquenessPolicyDisabled payload_server_uniqueness_policy_disabled = 42;
-    PayloadServerResourceVisibilityControlChanged payload_server_resource_visibility_control_changed = 86;
+    PayloadServerResourceVisibilityControlChanged server_resource_visibility_control_changed = 86;
     PayloadUserAutoMergedFromNewIdP user_auto_merged_from_new_idp = 43;
     PayloadDeviceAuthorizationGrantApproved device_authorization_grant_approved = 47;
     PayloadDeviceAuthorizationGrantDenied device_authorization_grant_denied = 48;
