@@ -224,7 +224,7 @@ func (s *server) DidOpen(
 	return nil
 }
 
-// DidChange is called whenever the client opens //a document. This is our signal to parse
+// DidChange is called whenever the client opens a document. This is our signal to parse
 // the file.
 func (s *server) DidChange(
 	ctx context.Context,
