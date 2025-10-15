@@ -1110,15 +1110,19 @@ func (f *file) appendLintErrors(source string, err error) bool {
 	}
 
 	for _, annotation := range annotations.FileAnnotations() {
+		// Convert 1-indexed byte-based line/column to byte offset.
+		startOffset := f.lineColumnToByteOffset(annotation.StartLine(), annotation.StartColumn())
+		endOffset := f.lineColumnToByteOffset(annotation.EndLine(), annotation.EndColumn())
+
 		f.diagnostics = append(f.diagnostics, protocol.Diagnostic{
 			Range: protocol.Range{
 				Start: protocol.Position{
-					Line:      uint32(annotation.StartLine()) - 1,
-					Character: uint32(annotation.StartColumn()) - 1,
+					Line:      uint32(annotation.StartLine() - 1),
+					Character: uint32(byteOffsetToUTF16Column(f.text, startOffset)),
 				},
 				End: protocol.Position{
-					Line:      uint32(annotation.EndLine()) - 1,
-					Character: uint32(annotation.EndColumn()) - 1,
+					Line:      uint32(annotation.EndLine() - 1),
+					Character: uint32(byteOffsetToUTF16Column(f.text, endOffset)),
 				},
 			},
 			Code:     annotation.Type(),
@@ -1129,6 +1133,25 @@ func (f *file) appendLintErrors(source string, err error) bool {
 	}
 
 	return true
+}
+
+// lineColumnToByteOffset converts a 1-indexed line and 1-indexed byte-based column to a byte offset in the file.
+func (f *file) lineColumnToByteOffset(line, col int) int {
+	currentLine := 1
+	byteOffset := 0
+
+	// Find the start of the target line.
+	for i := 0; i < len(f.text) && currentLine < line; i++ {
+		if f.text[i] == '\n' {
+			currentLine++
+			byteOffset = i + 1
+		}
+	}
+
+	// Add the column offset (col is 1-indexed, so subtract 1).
+	byteOffset += col - 1
+
+	return byteOffset
 }
 
 // PublishDiagnostics publishes all of this file's diagnostics to the LSP client.

@@ -19,6 +19,7 @@ package buflsp
 import (
 	"encoding/json"
 	"strings"
+	"unicode/utf16"
 
 	"github.com/bufbuild/protocompile/experimental/report"
 	"go.lsp.dev/protocol"
@@ -85,4 +86,26 @@ func reportDiagnosticToProtocolDiagnostic(
 		diagnostic.Data = string(bytes)
 	}
 	return diagnostic, nil
+}
+
+// byteOffsetToUTF16Column converts a byte offset in text to a 0-based UTF-16 column.
+// This is needed when converting positions from the old protocompile API or bufanalysis
+// which use byte offsets, to LSP positions which use UTF-16 code units.
+func byteOffsetToUTF16Column(text string, byteOffset int) int {
+	// Find the start of the line containing the byte offset.
+	lineStart := strings.LastIndex(text[:byteOffset], "\n")
+	if lineStart == -1 {
+		lineStart = 0
+	} else {
+		lineStart++ // Skip the newline character.
+	}
+
+	// Count UTF-16 code units from line start to byte offset.
+	utf16Col := 0
+	line := text[lineStart:byteOffset]
+	for _, r := range line {
+		utf16Col += utf16.RuneLen(r)
+	}
+
+	return utf16Col
 }
