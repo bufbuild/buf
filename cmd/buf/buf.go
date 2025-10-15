@@ -34,7 +34,6 @@ import (
 	"github.com/bufbuild/buf/cmd/buf/internal/command/beta/bufpluginv1"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/beta/bufpluginv1beta1"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/beta/bufpluginv2"
-	"github.com/bufbuild/buf/cmd/buf/internal/command/beta/lsp"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/beta/price"
 	betaplugindelete "github.com/bufbuild/buf/cmd/buf/internal/command/beta/registry/plugin/plugindelete"
 	betapluginpush "github.com/bufbuild/buf/cmd/buf/internal/command/beta/registry/plugin/pluginpush"
@@ -59,6 +58,7 @@ import (
 	"github.com/bufbuild/buf/cmd/buf/internal/command/generate"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/lint"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/lsfiles"
+	"github.com/bufbuild/buf/cmd/buf/internal/command/lsp/lspserve"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/mod/modlsbreakingrules"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/mod/modlslintrules"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/mod/modopen"
@@ -175,6 +175,13 @@ func newRootCommand(name string) *appcmd.Command {
 					configlslintrules.NewCommand("ls-lint-rules", builder),
 					configlsbreakingrules.NewCommand("ls-breaking-rules", builder),
 					configlsmodules.NewCommand("ls-modules", builder),
+				},
+			},
+			{
+				Use:   "lsp",
+				Short: "Work with Buf Language Server",
+				SubCommands: []*appcmd.Command{
+					lspserve.NewCommand("serve", builder, ``, false, false),
 				},
 			},
 			{
@@ -386,7 +393,7 @@ func newRootCommand(name string) *appcmd.Command {
 				Use:   "beta",
 				Short: "Beta commands. Unstable and likely to change",
 				SubCommands: []*appcmd.Command{
-					lsp.NewCommand("lsp", builder),
+					lspserve.NewCommand("lsp", builder, deprecatedMessage("buf lsp serve", "buf beta lsp"), true, true),
 					price.NewCommand("price", builder),
 					bufpluginv1beta1.NewCommand("buf-plugin-v1beta1", builder),
 					bufpluginv1.NewCommand("buf-plugin-v1", builder),

@@ -21,10 +21,13 @@ import (
 	"log/slog"
 
 	"buf.build/go/standard/xlog/xslog"
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
+	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/protoutil"
+	"github.com/bufbuild/protocompile/reporter"
 	"github.com/google/uuid"
 	"go.lsp.dev/protocol"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -48,21 +51,52 @@ func buildImage(
 	logger *slog.Logger,
 	opener fileOpener,
 ) (bufimage.Image, []protocol.Diagnostic) {
-	var report report
+	var errorsWithPos []reporter.ErrorWithPos
+	var warningErrorsWithPos []reporter.ErrorWithPos
 	var symbols linker.Symbols
 	compiler := protocompile.Compiler{
 		SourceInfoMode: protocompile.SourceInfoExtraOptionLocations,
 		Resolver:       &protocompile.SourceResolver{Accessor: opener},
 		Symbols:        &symbols,
-		Reporter:       &report,
+		Reporter: reporter.NewReporter(
+			func(errorWithPos reporter.ErrorWithPos) error {
+				errorsWithPos = append(errorsWithPos, errorWithPos)
+				return nil
+			},
+			func(warningErrorWithPos reporter.ErrorWithPos) {
+				warningErrorsWithPos = append(warningErrorsWithPos, warningErrorWithPos)
+			},
+		),
 	}
 
+	var diagnostics []protocol.Diagnostic
 	compiled, err := compiler.Compile(ctx, path)
 	if err != nil {
 		logger.Warn("error building image", slog.String("path", path), xslog.ErrorAttr(err))
+		if len(errorsWithPos) > 0 {
+			diagnostics = xslices.Map(errorsWithPos, func(errorWithPos reporter.ErrorWithPos) protocol.Diagnostic {
+				return newDiagnostic(errorWithPos, false)
+			})
+		}
 	}
 	if compiled[0] == nil {
-		return nil, report.diagnostics
+		return nil, nil
+	}
+
+	syntaxMissing := make(map[string]bool)
+	pathToUnusedImports := make(map[string]map[string]bool)
+	for _, warningErrorWithPos := range warningErrorsWithPos {
+		if warningErrorWithPos.Unwrap() == parser.ErrNoSyntax {
+			syntaxMissing[warningErrorWithPos.GetPosition().Filename] = true
+		} else if unusedImport, ok := warningErrorWithPos.Unwrap().(linker.ErrorUnusedImport); ok {
+			path := warningErrorWithPos.GetPosition().Filename
+			unused, ok := pathToUnusedImports[path]
+			if !ok {
+				unused = map[string]bool{}
+				pathToUnusedImports[path] = unused
+			}
+			unused[unusedImport.UnusedImport()] = true
+		}
 	}
 
 	var imageFiles []bufimage.ImageFile
@@ -78,7 +112,7 @@ func buildImage(
 		}
 		seen[descriptor.Path()] = true
 
-		unused, ok := report.pathToUnusedImports[descriptor.Path()]
+		unused, ok := pathToUnusedImports[descriptor.Path()]
 		var unusedIndices []int32
 		if ok {
 			unusedIndices = make([]int32, 0, len(unused))
@@ -115,7 +149,7 @@ func buildImage(
 			"",
 			descriptor.Path(),
 			descriptor.Path() != path,
-			report.syntaxMissing[descriptor.Path()],
+			syntaxMissing[descriptor.Path()],
 			unusedIndices,
 		)
 		if err != nil {
@@ -128,14 +162,39 @@ func buildImage(
 
 	if err != nil {
 		logger.Warn("could not build image", slog.String("path", path), xslog.ErrorAttr(err))
-		return nil, report.diagnostics
+		return nil, diagnostics
 	}
 
 	image, err := bufimage.NewImage(imageFiles)
 	if err != nil {
 		logger.Warn("could not build image", slog.String("path", path), xslog.ErrorAttr(err))
-		return nil, report.diagnostics
+		return nil, diagnostics
 	}
 
-	return image, report.diagnostics
+	return image, diagnostics
+}
+
+// newDiagnostic converts a protocompile error into a diagnostic.
+//
+// Unfortunately, protocompile's errors are currently too meagre to provide full code
+// spans; that will require a fix in the compiler.
+func newDiagnostic(err reporter.ErrorWithPos, isWarning bool) protocol.Diagnostic {
+	pos := protocol.Position{
+		Line:      uint32(err.GetPosition().Line - 1),
+		Character: uint32(err.GetPosition().Col - 1),
+	}
+
+	severity := protocol.DiagnosticSeverityError
+	if isWarning {
+		severity = protocol.DiagnosticSeverityWarning
+	}
+
+	return protocol.Diagnostic{
+		// TODO: The compiler currently does not record spans for diagnostics. This is
+		// essentially a bug that will result in worse diagnostics until fixed.
+		Range:    protocol.Range{Start: pos, End: pos},
+		Severity: severity,
+		Message:  err.Unwrap().Error(),
+		Source:   serverName,
+	}
 }

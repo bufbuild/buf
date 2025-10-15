@@ -161,6 +161,11 @@ linters:
       - linters:
           - gosec
         # G115 checks for use of truncating conversions.
+        path: private/buf/buflsp/diagnostic.go
+        text: 'G115:'
+      - linters:
+          - gosec
+        # G115 checks for use of truncating conversions.
         path: private/buf/buflsp/image.go
         text: 'G115:'
       - linters:

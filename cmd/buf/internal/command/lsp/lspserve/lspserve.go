@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package lsp defines the entry-point for the Buf LSP within the CLI.
+// Package lspserve defines the entry-point for the Buf LSP within the CLI.
 //
 // The actual implementation of the LSP lives under private/buf/buflsp
-package lsp
+package lspserve
 
 import (
 	"context"
@@ -29,6 +29,7 @@ import (
 	"buf.build/go/standard/xio"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buflsp"
+	"github.com/bufbuild/protocompile/experimental/incremental"
 	"github.com/spf13/pflag"
 	"go.lsp.dev/jsonrpc2"
 )
@@ -39,14 +40,25 @@ const (
 )
 
 // NewCommand constructs the CLI command for executing the LSP.
-func NewCommand(name string, builder appext.Builder) *appcmd.Command {
+func NewCommand(
+	name string,
+	builder appext.Builder,
+	deprecated string,
+	hidden bool,
+	beta bool,
+) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name,
-		Short: "Start the language server",
-		Args:  appcmd.NoArgs,
+		Use:        name,
+		Short:      "Start the language server",
+		Args:       appcmd.NoArgs,
+		Deprecated: deprecated,
+		Hidden:     hidden,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
+				if beta {
+					bufcli.WarnBetaCommand(ctx, container)
+				}
 				return run(ctx, container, flags)
 			},
 		),
@@ -79,8 +91,6 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) (retErr error) {
-	bufcli.WarnBetaCommand(ctx, container)
-
 	transport, err := dial(container, flags)
 	if err != nil {
 		return err
@@ -108,7 +118,15 @@ func run(
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
 
-	conn, err := buflsp.Serve(ctx, wktBucket, container, controller, wasmRuntime, jsonrpc2.NewStream(transport))
+	conn, err := buflsp.Serve(
+		ctx,
+		wktBucket,
+		container,
+		controller,
+		wasmRuntime,
+		jsonrpc2.NewStream(transport),
+		incremental.New(),
+	)
 	if err != nil {
 		return err
 	}
