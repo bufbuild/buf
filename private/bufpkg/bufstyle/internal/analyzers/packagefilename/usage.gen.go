@@ -12,23 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package analyzerstesting
+// Generated. DO NOT EDIT.
 
-import (
-	"os"
-	"path/filepath"
-	"testing"
+package packagefilename
 
-	"github.com/stretchr/testify/require"
-	"golang.org/x/tools/go/analysis"
-	"golang.org/x/tools/go/analysis/analysistest"
-)
-
-// Run runs the tests.
-//
-// It expects tests to be in "testdata/src/p" relative to the Go package the tests are being run in.
-func Run(t *testing.T, analyzer *analysis.Analyzer) {
-	pwd, err := os.Getwd()
-	require.NoError(t, err)
-	analysistest.Run(t, filepath.Join(pwd, "testdata"), analyzer, "p")
-}
+import _ "buf.build/go/bufprivateusage"
