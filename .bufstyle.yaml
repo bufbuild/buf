@@ -1,0 +1,4 @@
+version: v1
+ignore:
+  PACKAGE_FILENAME:
+    - private/gen

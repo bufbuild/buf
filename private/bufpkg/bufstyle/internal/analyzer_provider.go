@@ -74,7 +74,7 @@ func (a *analyzerProvider) modifyAnalyzer(analyzer *analysis.Analyzer) {
 				oldReport(diagnostic)
 				return
 			}
-			relFilePaths, ok := a.ignoreAnalyzerNameToRelFilePaths[analyzer.Name]
+			ignoreRelFilePaths, ok := a.ignoreAnalyzerNameToRelFilePaths[analyzer.Name]
 			if !ok {
 				oldReport(diagnostic)
 				return
@@ -95,13 +95,29 @@ func (a *analyzerProvider) modifyAnalyzer(analyzer *analysis.Analyzer) {
 				reportErr = errors.Join(reportErr, err)
 				return
 			}
-			if _, ok := relFilePaths[relFilePath]; !ok {
-				oldReport(diagnostic)
+			for ignoreRelFilePath := range ignoreRelFilePaths {
+				if equalsOrContainsRelPath(ignoreRelFilePath, relFilePath) {
+					return
+				}
 			}
+			oldReport(diagnostic)
 		}
 		if reportErr != nil {
 			return nil, reportErr
 		}
 		return oldRun(pass)
 	}
+}
+
+// equalsOrContainsRelPath returns true if the value is equal to or contains the path.
+func equalsOrContainsRelPath(value string, path string) bool {
+	if value == "." {
+		return true
+	}
+	for curPath := path; curPath != "."; curPath = filepath.Dir(curPath) {
+		if value == curPath {
+			return true
+		}
+	}
+	return false
 }
