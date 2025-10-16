@@ -19,6 +19,7 @@ package buflsp
 import (
 	"context"
 	"log/slog"
+	"strings"
 	"unicode/utf16"
 
 	"buf.build/go/standard/xslices"
@@ -38,7 +39,8 @@ func getCompletionItems(
 ) []protocol.CompletionItem {
 	if file.ir.AST().IsZero() {
 		// No AST available, return empty completions.
-		file.lsp.logger.Debug(
+		file.lsp.logger.DebugContext(
+			ctx,
 			"no AST found for completion",
 			slog.String("file", file.uri.Filename()),
 		)
@@ -48,15 +50,20 @@ func getCompletionItems(
 	// Convert LSP position (UTF-16 code units) to byte offset.
 	offset := protocolPositionToOffset(file.text, position)
 
+	// Extract any identifier prefix before the cursor (e.g., "buf.validate.").
+	prefix := extractIdentifierPrefix(file.text, offset)
+
 	// Find the smallest AST declaration containing this offset.
 	decl := getDeclForPosition(file.ir.AST().DeclBody, offset)
 
-	file.lsp.logger.Debug(
+	file.lsp.logger.DebugContext(
+		ctx,
 		"decl for completion",
 		slog.String("decl_kind", decl.Kind().String()),
 		slog.Any("decl_span_start", decl.Span().StartLoc()),
 		slog.Any("decl_span_end", decl.Span().EndLoc()),
 		slog.Int("cursor_offset", offset),
+		slog.String("prefix", prefix),
 	)
 
 	// Check if cursor is in a name position (where unique identifiers are defined).
@@ -67,7 +74,45 @@ func getCompletionItems(
 	}
 
 	// Return context-aware completions based on the declaration type.
-	return completionItemsForDecl(file, decl)
+	return completionItemsForDecl(file, decl, prefix)
+}
+
+// extractIdentifierPrefix extracts the identifier prefix before the cursor.
+// This includes qualified names with dots (e.g., "buf.validate.").
+// Returns empty string if no valid prefix is found.
+func extractIdentifierPrefix(text string, offset int) string {
+	if offset <= 0 || offset > len(text) {
+		return ""
+	}
+
+	// Walk backwards from the cursor position.
+	start := offset
+	for start > 0 {
+		// Get the byte before current position.
+		b := text[start-1]
+
+		// Check if it's a valid identifier character.
+		// Valid: letters, digits, underscore, dot
+		if isIdentifierChar(b) {
+			start--
+			continue
+		}
+
+		// Hit a non-identifier character, stop.
+		break
+	}
+
+	return text[start:offset]
+}
+
+// isIdentifierChar checks if a byte is a valid identifier character.
+// Valid characters: a-z, A-Z, 0-9, _, .
+func isIdentifierChar(b byte) bool {
+	return (b >= 'a' && b <= 'z') ||
+		(b >= 'A' && b <= 'Z') ||
+		(b >= '0' && b <= '9') ||
+		b == '_' ||
+		b == '.'
 }
 
 // isInNamePosition checks if the cursor offset is in a position where a unique identifier
@@ -93,9 +138,20 @@ func isInNamePosition(decl ast.DeclAny, offset int) bool {
 		switch def.Classify() {
 		case ast.DefKindField:
 			field := def.AsField()
+			// Check if cursor is within the field name span.
 			if !field.Name.IsZero() {
 				nameSpan := field.Name.Span()
 				if offset >= nameSpan.Start && offset <= nameSpan.End {
+					return true
+				}
+			}
+			// Check if cursor is after the type (where the field name should be).
+			// This handles the case where the user has typed the type but not yet
+			// the field name (e.g., "buf.validate.Rule _").
+			if !field.Type.IsZero() {
+				typeSpan := field.Type.Span()
+				// If cursor is after the type ends, we're in the field name position.
+				if offset > typeSpan.End {
 					return true
 				}
 			}
@@ -130,7 +186,7 @@ func isInNamePosition(decl ast.DeclAny, offset int) bool {
 }
 
 // completionItemsForDecl returns completion items based on the AST declaration at the cursor.
-func completionItemsForDecl(file *file, decl ast.DeclAny) []protocol.CompletionItem {
+func completionItemsForDecl(file *file, decl ast.DeclAny, prefix string) []protocol.CompletionItem {
 	if decl.IsZero() {
 		// No declaration found, return top-level keywords.
 		return topLevelCompletionItems()
@@ -139,7 +195,7 @@ func completionItemsForDecl(file *file, decl ast.DeclAny) []protocol.CompletionI
 	// Return context-specific completions based on declaration type.
 	switch decl.Kind() {
 	case ast.DeclKindDef:
-		return completionItemsForDef(file, decl.AsDef())
+		return completionItemsForDef(file, decl.AsDef(), prefix)
 	case ast.DeclKindSyntax:
 		// Inside syntax declaration - could suggest syntax values.
 		return nil
@@ -156,11 +212,11 @@ func completionItemsForDecl(file *file, decl ast.DeclAny) []protocol.CompletionI
 }
 
 // completionItemsForDef returns completion items for definition declarations (message, enum, service, etc.).
-func completionItemsForDef(file *file, def ast.DeclDef) []protocol.CompletionItem {
+func completionItemsForDef(file *file, def ast.DeclDef, prefix string) []protocol.CompletionItem {
 	switch def.Classify() {
 	case ast.DefKindMessage:
 		// Inside a message - suggest field keywords, types, and nested declarations.
-		return completionItemsForMessage(file)
+		return completionItemsForMessage(file, prefix)
 	case ast.DefKindService:
 		// Inside a service - suggest rpc and option keywords.
 		return completionItemsForService()
@@ -176,7 +232,7 @@ func completionItemsForDef(file *file, def ast.DeclDef) []protocol.CompletionIte
 }
 
 // completionItemsForMessage returns completion items for inside a message definition.
-func completionItemsForMessage(file *file) []protocol.CompletionItem {
+func completionItemsForMessage(file *file, prefix string) []protocol.CompletionItem {
 	// Keywords for message body.
 	messageKeywords := []keyword.Keyword{
 		keyword.Message,
@@ -198,7 +254,7 @@ func completionItemsForMessage(file *file) []protocol.CompletionItem {
 	items = append(items, predeclaredTypeCompletionItems()...)
 
 	// Add referenceable types (messages, enums) from this file and imports.
-	items = append(items, referenceableTypeCompletionItems(file)...)
+	items = append(items, referenceableTypeCompletionItems(file, prefix)...)
 
 	return items
 }
@@ -255,33 +311,90 @@ func predeclaredTypeCompletionItems() []protocol.CompletionItem {
 }
 
 // referenceableTypeCompletionItems returns completion items for user-defined types (messages, enums).
-func referenceableTypeCompletionItems(file *file) []protocol.CompletionItem {
+// The prefix parameter filters types and determines what to insert (suffix after prefix).
+func referenceableTypeCompletionItems(file *file, prefix string) []protocol.CompletionItem {
 	var items []protocol.CompletionItem
 
 	// Add types from the current file.
 	for _, symbol := range file.referenceableSymbols {
-		if symbol.ir.Kind().IsType() {
-			items = append(items, protocol.CompletionItem{
-				Label: symbol.ir.FullName().Name(),
-				Kind:  protocol.CompletionItemKindTypeParameter,
-			})
+		if !symbol.ir.Kind().IsType() {
+			continue
 		}
+
+		// For same-file types, use short name.
+		fullName := string(symbol.ir.FullName())
+		shortName := symbol.ir.FullName().Name()
+
+		// Filter by prefix if provided.
+		if prefix != "" {
+			// Check if full name or short name matches the prefix.
+			if !strings.HasPrefix(fullName, prefix) && !strings.HasPrefix(shortName, prefix) {
+				continue
+			}
+		}
+
+		// Determine label and insert text.
+		label := shortName
+		insertText := shortName
+		if prefix != "" {
+			// If user typed a prefix, show full context but insert only suffix.
+			if strings.HasPrefix(fullName, prefix) {
+				label = fullName
+				insertText = strings.TrimPrefix(fullName, prefix)
+			} else if strings.HasPrefix(shortName, prefix) {
+				insertText = strings.TrimPrefix(shortName, prefix)
+			}
+		}
+
+		items = append(items, protocol.CompletionItem{
+			Label:      label,
+			InsertText: insertText,
+			Kind:       protocol.CompletionItemKindTypeParameter,
+		})
 	}
 
 	// Add types from imported files.
 	for _, imported := range file.importToFile {
 		for _, symbol := range imported.referenceableSymbols {
-			if symbol.ir.Kind().IsType() {
-				// Use full name if from a different package.
-				label := symbol.ir.FullName().Name()
-				if imported.ir.Package() != file.ir.Package() {
-					label = string(symbol.ir.FullName())
-				}
-				items = append(items, protocol.CompletionItem{
-					Label: label,
-					Kind:  protocol.CompletionItemKindTypeParameter,
-				})
+			if !symbol.ir.Kind().IsType() {
+				continue
 			}
+
+			fullName := string(symbol.ir.FullName())
+			shortName := symbol.ir.FullName().Name()
+
+			// Filter by prefix if provided.
+			if prefix != "" {
+				// Check if full name or short name matches the prefix.
+				if !strings.HasPrefix(fullName, prefix) && !strings.HasPrefix(shortName, prefix) {
+					continue
+				}
+			}
+
+			// Determine label and insert text based on package.
+			label := shortName
+			insertText := shortName
+			if imported.ir.Package() != file.ir.Package() {
+				// Different package - use fully qualified name.
+				label = fullName
+				insertText = fullName
+			}
+
+			// If user typed a prefix, adjust insert text to be just the suffix.
+			if prefix != "" {
+				if strings.HasPrefix(fullName, prefix) {
+					label = fullName
+					insertText = strings.TrimPrefix(fullName, prefix)
+				} else if strings.HasPrefix(shortName, prefix) {
+					insertText = strings.TrimPrefix(shortName, prefix)
+				}
+			}
+
+			items = append(items, protocol.CompletionItem{
+				Label:      label,
+				InsertText: insertText,
+				Kind:       protocol.CompletionItemKindTypeParameter,
+			})
 		}
 	}
 
