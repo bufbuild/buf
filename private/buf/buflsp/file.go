@@ -616,9 +616,9 @@ func (f *file) IndexSymbols(ctx context.Context) {
 
 	// Finally, sort the symbols in position order, with shorter symbols sorting smaller.
 	slices.SortFunc(f.symbols, func(s1, s2 *symbol) int {
-		diff := s1.span.StartLoc().Offset - s2.span.StartLoc().Offset
+		diff := s1.span.Start - s2.span.Start
 		if diff == 0 {
-			return s1.span.EndLoc().Offset - s2.span.EndLoc().Offset
+			return s1.span.End - s2.span.End
 		}
 		return diff
 	})
