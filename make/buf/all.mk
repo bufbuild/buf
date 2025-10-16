@@ -69,6 +69,7 @@ include make/go/docker.mk
 include make/go/license_header.mk
 include make/go/bandeps.mk
 include make/go/bufprivateusage.mk
+include make/go/bufstyle.mk
 include make/go/buf.mk
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
