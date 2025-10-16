@@ -170,8 +170,6 @@ func (s *symbol) LogValue() slog.Value {
 //
 // Returns the empty string if no docs are available.
 func (s *symbol) FormatDocs(ctx context.Context) string {
-	missingDocs := "<missing docs>"
-	var tooltip strings.Builder
 	var def ast.DeclDef
 	switch s.kind.(type) {
 	case *imported:
@@ -240,7 +238,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 		if ok {
 			return strings.Join(comments, "\n")
 		}
-		return missingDocs
+		return ""
 	case *referenceable:
 		referenceable, _ := s.kind.(*referenceable)
 		def = referenceable.ast
@@ -251,13 +249,61 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 		reference, _ := s.kind.(*reference)
 		def = reference.def
 	}
+	var tooltip strings.Builder
 	docs := getCommentsFromDef(def)
 	if docs != "" {
 		fmt.Fprintln(&tooltip, docs)
-	} else {
-		fmt.Fprintln(&tooltip, missingDocs)
 	}
 	return tooltip.String()
+}
+
+// GetSymbolInformat returns the protocol symbol information for the symbol.
+func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
+	if s.ir.IsZero() {
+		return protocol.SymbolInformation{}
+	}
+
+	fullName := s.ir.FullName()
+	name := fullName.Name()
+	if name == "" {
+		return protocol.SymbolInformation{}
+	}
+	parentFullName := fullName.Parent()
+	containerName := string(parentFullName)
+
+	location := protocol.Location{
+		URI:   s.file.uri,
+		Range: s.Range(),
+	}
+
+	// Determine the symbol kind for LSP.
+	var kind protocol.SymbolKind
+	switch s.ir.Kind() {
+	case ir.SymbolKindMessage:
+		kind = protocol.SymbolKindClass // Messages are like classes
+	case ir.SymbolKindEnum:
+		kind = protocol.SymbolKindEnum
+	case ir.SymbolKindEnumValue:
+		kind = protocol.SymbolKindEnumMember
+	case ir.SymbolKindField:
+		kind = protocol.SymbolKindField
+	case ir.SymbolKindExtension:
+		kind = protocol.SymbolKindField
+	case ir.SymbolKindOneof:
+		kind = protocol.SymbolKindClass // Oneof are like classes
+	case ir.SymbolKindService:
+		kind = protocol.SymbolKindInterface // Services are like interfaces
+	case ir.SymbolKindMethod:
+		kind = protocol.SymbolKindMethod
+	default:
+		kind = protocol.SymbolKindVariable
+	}
+	return protocol.SymbolInformation{
+		Name:          name,
+		Kind:          kind,
+		Location:      location,
+		ContainerName: containerName,
+	}
 }
 
 func protowireTypeForPredeclared(name predeclared.Name) protowire.Type {
@@ -280,7 +326,7 @@ func getCommentsFromDef(def ast.DeclDef) string {
 	var comments []string
 	// We drop the other side of "Around" because we only care about the beginning -- we're
 	// traversing backwards for leading comemnts only.
-	_, start := def.Context().Stream().Around(def.Span().StartLoc().Offset)
+	_, start := def.Context().Stream().Around(def.Span().Start)
 	cursor := token.NewCursorAt(start)
 	t := cursor.PrevSkippable()
 	for !t.IsZero() {

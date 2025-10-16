@@ -8,7 +8,6 @@ GO_BINS := $(GO_BINS) \
 	private/bufpkg/bufmodule/bufmoduleapi/cmd/buf-legacyfederation-go-data \
 	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest \
 	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-new-commit-id \
-	private/bufpkg/bufstyle/cmd/bufstyle \
 	private/pkg/bandeps/cmd/bandeps \
 	private/pkg/git/cmd/git-ls-files-unstaged \
 	private/pkg/storage/cmd/ddiff \
@@ -44,7 +43,7 @@ LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2025
 LICENSE_HEADER_IGNORES := \/testdata enterprise
-BANDEPS_CONFIG := data/bandeps/bandeps.yaml
+BANDEPS_CONFIG := etc/bandeps/bandeps.yaml
 BUFPRIVATEUSAGE_PKGS := ./private/...
 PROTOVALIDATE_VERSION := v1.0.0
 # Comment out to use released buf
@@ -70,16 +69,10 @@ include make/go/docker.mk
 include make/go/license_header.mk
 include make/go/bandeps.mk
 include make/go/bufprivateusage.mk
+include make/go/bufstyle.mk
 include make/go/buf.mk
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
-
-.PHONY: bufstyle
-bufstyle: installbufstyle
-	@echo bufstyle NON_GEN_GOPKGS
-	@bufstyle $(shell go list $(GOPKGS) | grep -v \/gen\/)
-
-postlint:: bufstyle
 
 .PHONY: godata
 godata: installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC)
@@ -119,8 +112,8 @@ bufgenerateclean:: \
 
 .PHONY: bufgeneratego
 bufgeneratego:
-	$(BUF_BIN) generate --template data/template/buf.go.gen.yaml
-	$(BUF_BIN) generate --template data/template/buf.go-client.gen.yaml
+	$(BUF_BIN) generate --template etc/template/buf.go.gen.yaml
+	$(BUF_BIN) generate --template etc/template/buf.go-client.gen.yaml
 
 .PHONY: bufgeneratetestdata
 bufgeneratetestdata:
@@ -183,14 +176,6 @@ endif
 bufimageutilupdateexpectations:
 	# You may need to run this after updating protoc versions
 	BUFBUILD_BUF_BUFIMAGEUTIL_SHOULD_UPDATE_EXPECTATIONS=1 go test -parallel 1 ./private/bufpkg/bufimage/bufimageutil
-
-.PHONY: newtodos
-newtodos:
-	@bash make/buf/scripts/newtodos.bash | grep -v FUTURE
-
-.PHONY: newtodofiles
-newtodofiles:
-	@bash make/buf/scripts/newtodos.bash | grep -v FUTURE | cut -f 1 -d : | sort | uniq
 
 .PHONY: checkandupdateprecommithooks
 checkandupdateprecommithooks:

@@ -38,4 +38,4 @@ jobs:
             ${{ runner.os }}-buf-windows-
       - name: test
         shell: bash
-        run: ./windows/test.bash
+        run: ./etc/windows/test.bash
