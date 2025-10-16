@@ -839,11 +839,6 @@ func (f *file) messageToSymbols(msg ir.MessageValue, prefix report.Span) []*symb
 		}
 		for element := range seq.Values(field.Elements()) {
 			span := element.Value().KeyASTs().At(element.ValueNodeIndex()).Span()
-			// We only want the subset of the option path that applies specifically to this element,
-			// and we trim the prefix.
-			if !prefix.IsZero() {
-				span.Start = prefix.End
-			}
 			elem := &symbol{
 				// NOTE: no [ir.Symbol] for option elements
 				file: f,
@@ -878,8 +873,8 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 	}
 	symbol := f.symbols[idx]
 	f.lsp.logger.DebugContext(ctx, "found symbol", slog.Any("symbol", symbol))
-	// Check that cursor is before the end of the symbol.
-	if comparePositions(symbol.Range().End, cursor) <= 0 {
+	// Check that cursor is before the end of the symbol. Range is half-open [Start, End).
+	if comparePositions(symbol.Range().End, cursor) < 0 {
 		return nil
 	}
 
