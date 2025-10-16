@@ -27,9 +27,13 @@ import (
 // Run runs the tests.
 //
 // It expects tests to be in "testdata/src/p" relative to the Go package the tests are being run in.
-func Run(t *testing.T, analyzer *analysis.Analyzer) {
+func Run(t *testing.T, analyzers []*analysis.Analyzer) {
 	t.Parallel()
 	pwd, err := osext.Getwd()
 	require.NoError(t, err)
-	analysistest.Run(t, filepath.Join(pwd, "testdata"), analyzer, "p")
+	all := &analysis.Analyzer{
+		Name:     "all",
+		Requires: analyzers,
+	}
+	analysistest.Run(t, filepath.Join(pwd, "testdata"), all, "p")
 }

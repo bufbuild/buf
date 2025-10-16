@@ -15,6 +15,8 @@
 package casing
 
 import (
+	"fmt"
+	"go/token"
 	"go/types"
 	"strings"
 
@@ -22,34 +24,38 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-var badToGood = map[string]string{
-	"dirname": "dirName",
-	"Dirname": "DirName",
-	"dirpath": "dirPath",
-	"Dirpath": "DirPath",
-	//"filename": "fileName",
-	//"Filename": "FileName",
-	"filepath": "filePath",
-	"Filepath": "FilePath",
+// New returns a new set of Analyzers.
+func New() []*analysis.Analyzer {
+	return []*analysis.Analyzer{
+		newFor("DIRNAME_LOWER", "dirname", "dirName"),
+		newFor("DIRNAME_UPPER", "Dirname", "DirName"),
+		newFor("DIRPATH_LOWER", "dirpath", "dirPath"),
+		newFor("DIRPATH_UPPER", "Dirpath", "DirPath"),
+		//newFor("FILENAME_LOWER", "filename", "fileName"),
+		//newFor("FILENAME_UPPER", "Filename", "FileName"),
+		newFor("FILEPATH_LOWER", "filepath", "filePath"),
+		newFor("FILEPATH_UPPER", "Filepath", "FilePath"),
+	}
 }
 
-// New returns a new Analyzer.
-func New() *analysis.Analyzer {
+func newFor(name string, good string, bad string) *analysis.Analyzer {
 	return &analysis.Analyzer{
-		Name: "CASING",
-		Doc:  "Verifies proper casing for specific words.",
+		Name: name,
+		Doc:  fmt.Sprintf("Verifies that %q is used instead of %q.", good, bad),
 		Run: func(pass *analysis.Pass) (any, error) {
 			return nil, util.ForEachObject(
 				pass,
 				func(object types.Object) error {
-					for bad, good := range badToGood {
-						if strings.Contains(object.Name(), bad) {
-							pass.Reportf(object.Pos(), `Use %q instead of %q`, good, bad)
-						}
-					}
+					check(pass, object.Pos(), object.Name(), good, bad)
 					return nil
 				},
 			)
 		},
+	}
+}
+
+func check(pass *analysis.Pass, pos token.Pos, text string, good string, bad string) {
+	if strings.Contains(strings.ToLower(text), bad) {
+		pass.Reportf(pos, `Use  %q instead of %q`, good, bad)
 	}
 }

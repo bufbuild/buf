@@ -15,6 +15,8 @@
 package analyzers
 
 import (
+	"slices"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufstyle/internal/analyzers/america"
 	"github.com/bufbuild/buf/private/bufpkg/bufstyle/internal/analyzers/casing"
 	"github.com/bufbuild/buf/private/bufpkg/bufstyle/internal/analyzers/packagefilename"
@@ -26,7 +28,7 @@ import (
 //
 // We don't store this as a global because we modify these.
 func New() []*analysis.Analyzer {
-	return append(
+	return slices.Concat(
 		america.New(),
 		casing.New(),
 		packagefilename.New(),

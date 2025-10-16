@@ -22,40 +22,42 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-// New returns a new Analyzer.
-func New() *analysis.Analyzer {
-	return &analysis.Analyzer{
-		Name: "PACKAGE_FILENAME",
-		Doc:  "Verifies that every package has a file with the same name as the package.",
-		Run: func(pass *analysis.Pass) (any, error) {
-			if len(pass.Files) == 0 {
-				// Nothing to do. We can't report the error anywhere because
-				// this package doesn't have any files.
+// New returns a new set of Analyzers.
+func New() []*analysis.Analyzer {
+	return []*analysis.Analyzer{
+		{
+			Name: "PACKAGE_FILENAME",
+			Doc:  "Verifies that every package has a file with the same name as the package.",
+			Run: func(pass *analysis.Pass) (any, error) {
+				if len(pass.Files) == 0 {
+					// Nothing to do. We can't report the error anywhere because
+					// this package doesn't have any files.
+					return nil, nil
+				}
+				packageName := pass.Pkg.Name()
+				if strings.HasSuffix(packageName, "_test") {
+					// Ignore test packages.
+					return nil, nil
+				}
+				var found bool
+				pass.Fset.Iterate(
+					func(file *token.File) bool {
+						filename := filepath.Base(file.Name())
+						if strings.TrimSuffix(filename, ".go") == packageName {
+							found = true
+							return false
+						}
+						return true
+					},
+				)
+				if !found {
+					// The package is guaranteed to have at least one
+					// file with a package declaration, so we report the failure there.
+					// We checked that len(pass.Files) > 0 above.
+					pass.Reportf(pass.Files[0].Package, "Package %q does not have a %s.go", packageName, packageName)
+				}
 				return nil, nil
-			}
-			packageName := pass.Pkg.Name()
-			if strings.HasSuffix(packageName, "_test") {
-				// Ignore test packages.
-				return nil, nil
-			}
-			var found bool
-			pass.Fset.Iterate(
-				func(file *token.File) bool {
-					filename := filepath.Base(file.Name())
-					if strings.TrimSuffix(filename, ".go") == packageName {
-						found = true
-						return false
-					}
-					return true
-				},
-			)
-			if !found {
-				// The package is guaranteed to have at least one
-				// file with a package declaration, so we report the failure there.
-				// We checked that len(pass.Files) > 0 above.
-				pass.Reportf(pass.Files[0].Package, "Package %q does not have a %s.go", packageName, packageName)
-			}
-			return nil, nil
+			},
 		},
 	}
 }

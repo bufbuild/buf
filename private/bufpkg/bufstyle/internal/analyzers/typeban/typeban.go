@@ -22,22 +22,24 @@ var bannedTypes = map[string]struct{}{
 	"sync.Pool": {},
 }
 
-// New returns a new Analyzer.
-func New() *analysis.Analyzer {
-	return &analysis.Analyzer{
-		Name: "TYPE_BAN",
-		Doc:  "Verifies that specific types are not used.",
-		Run: func(pass *analysis.Pass) (any, error) {
-			if typesInfo := pass.TypesInfo; typesInfo != nil {
-				for expr, typeAndValue := range pass.TypesInfo.Types {
-					if t := typeAndValue.Type; t != nil {
-						if value, ok := bannedTypes[t.String()]; ok {
-							pass.Reportf(expr.Pos(), "%s cannot be used", value)
+// New returns a new set of Analyzers.
+func New() []*analysis.Analyzer {
+	return []*analysis.Analyzer{
+		{
+			Name: "TYPE_BAN",
+			Doc:  "Verifies that specific types are not used.",
+			Run: func(pass *analysis.Pass) (any, error) {
+				if typesInfo := pass.TypesInfo; typesInfo != nil {
+					for expr, typeAndValue := range pass.TypesInfo.Types {
+						if t := typeAndValue.Type; t != nil {
+							if value, ok := bannedTypes[t.String()]; ok {
+								pass.Reportf(expr.Pos(), "%s cannot be used", value)
+							}
 						}
 					}
 				}
-			}
-			return nil, nil
+				return nil, nil
+			},
 		},
 	}
 }

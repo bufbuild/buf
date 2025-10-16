@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufstyle
+package internal
 
 import (
 	"errors"
@@ -24,6 +24,7 @@ import (
 
 type analyzerProvider struct {
 	absRootDirPath                   string
+	disableAnalyzerNames             map[string]struct{}
 	ignoreAnalyzerNameToRelFilePaths map[string]map[string]struct{}
 }
 
@@ -37,6 +38,7 @@ func newAnalyzerProvider(rootDirPath string, options ...AnalyzerProviderOption) 
 	}
 	analyzerProvider := &analyzerProvider{
 		absRootDirPath:                   absRootDirPath,
+		disableAnalyzerNames:             make(map[string]struct{}),
 		ignoreAnalyzerNameToRelFilePaths: make(map[string]map[string]struct{}),
 	}
 	for _, option := range options {
@@ -65,6 +67,9 @@ func (a *analyzerProvider) modifyAnalyzer(analyzer *analysis.Analyzer) {
 		oldReport := pass.Report
 		var reportErr error
 		pass.Report = func(diagnostic analysis.Diagnostic) {
+			if _, ok := a.disableAnalyzerNames[analyzer.Name]; ok {
+				return
+			}
 			if pass.Fset == nil {
 				oldReport(diagnostic)
 				return
