@@ -30,7 +30,7 @@ import (
 func New() []*analysis.Analyzer {
 	return []*analysis.Analyzer{
 		newFor("BEHAVIOUR", "behavior", "behaviour"),
-		//newFor("FAVOURITE", "favorite", "favourite"),
+		newFor("FAVOURITE", "favorite", "favourite"),
 	}
 }
 
