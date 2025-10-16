@@ -257,6 +257,55 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 	return tooltip.String()
 }
 
+// GetSymbolInformat returns the protocol symbol information for the symbol.
+func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
+	if s.ir.IsZero() {
+		return protocol.SymbolInformation{}
+	}
+
+	fullName := s.ir.FullName()
+	name := fullName.Name()
+	if name == "" {
+		return protocol.SymbolInformation{}
+	}
+	parentFullName := fullName.Parent()
+	containerName := string(parentFullName)
+
+	location := protocol.Location{
+		URI:   s.file.uri,
+		Range: s.Range(),
+	}
+
+	// Determine the symbol kind for LSP.
+	var kind protocol.SymbolKind
+	switch s.ir.Kind() {
+	case ir.SymbolKindMessage:
+		kind = protocol.SymbolKindClass // Messages are like classes
+	case ir.SymbolKindEnum:
+		kind = protocol.SymbolKindEnum
+	case ir.SymbolKindEnumValue:
+		kind = protocol.SymbolKindEnumMember
+	case ir.SymbolKindField:
+		kind = protocol.SymbolKindField
+	case ir.SymbolKindExtension:
+		kind = protocol.SymbolKindField
+	case ir.SymbolKindOneof:
+		kind = protocol.SymbolKindClass // Oneof are like classes
+	case ir.SymbolKindService:
+		kind = protocol.SymbolKindInterface // Services are like interfaces
+	case ir.SymbolKindMethod:
+		kind = protocol.SymbolKindMethod
+	default:
+		kind = protocol.SymbolKindVariable
+	}
+	return protocol.SymbolInformation{
+		Name:          name,
+		Kind:          kind,
+		Location:      location,
+		ContainerName: containerName,
+	}
+}
+
 func protowireTypeForPredeclared(name predeclared.Name) protowire.Type {
 	switch name {
 	case predeclared.Bool, predeclared.Int32, predeclared.Int64, predeclared.UInt32,
