@@ -170,8 +170,6 @@ func (s *symbol) LogValue() slog.Value {
 //
 // Returns the empty string if no docs are available.
 func (s *symbol) FormatDocs(ctx context.Context) string {
-	missingDocs := "<missing docs>"
-	var tooltip strings.Builder
 	var def ast.DeclDef
 	switch s.kind.(type) {
 	case *imported:
@@ -240,7 +238,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 		if ok {
 			return strings.Join(comments, "\n")
 		}
-		return missingDocs
+		return ""
 	case *referenceable:
 		referenceable, _ := s.kind.(*referenceable)
 		def = referenceable.ast
@@ -251,11 +249,10 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 		reference, _ := s.kind.(*reference)
 		def = reference.def
 	}
+	var tooltip strings.Builder
 	docs := getCommentsFromDef(def)
 	if docs != "" {
 		fmt.Fprintln(&tooltip, docs)
-	} else {
-		fmt.Fprintln(&tooltip, missingDocs)
 	}
 	return tooltip.String()
 }
