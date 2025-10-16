@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"runtime/debug"
+	"slices"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufformat"
@@ -137,6 +138,7 @@ func (s *server) Initialize(
 				},
 				Full: true,
 			},
+			WorkspaceSymbolProvider: true,
 		},
 		ServerInfo: info,
 	}, nil
@@ -504,4 +506,50 @@ func (s *server) SemanticTokensFull(
 		}
 	}
 	return &protocol.SemanticTokens{Data: encoded}, nil
+}
+
+// Symbols is the entry point for workspace-wide symbol search.
+func (s *server) Symbols(
+	ctx context.Context,
+	params *protocol.WorkspaceSymbolParams,
+) ([]protocol.SymbolInformation, error) {
+	const maxResults = 1000 // Limit results to avoid overwhelming clients
+	query := strings.ToLower(params.Query)
+
+	var results []protocol.SymbolInformation
+	s.fileManager.uriToFile.Range(func(uri protocol.URI, file *file) bool {
+		if file.ir.IsZero() {
+			s.lsp.logger.DebugContext(ctx, fmt.Sprintf("workspace symbol: skipping file without IR: %s", uri))
+			return true
+		}
+
+		// Search through all symbols in this file.
+		for _, sym := range file.symbols {
+			if sym.ir.IsZero() {
+				continue
+			}
+			symbolInfo := sym.GetSymbolInformation()
+			if symbolInfo.Name == "" {
+				continue // Symbol information not supported for this symbol.
+			}
+
+			// Filter by query (case-insensitive substring match)
+			if query != "" && !strings.Contains(strings.ToLower(symbolInfo.Name), query) {
+				continue
+			}
+			results = append(results, symbolInfo)
+			if len(results) >= maxResults {
+				return false // Stop iteration
+			}
+		}
+		return true
+	})
+
+	slices.SortFunc(results, func(a, b protocol.SymbolInformation) int {
+		if a.Name != b.Name {
+			return strings.Compare(a.Name, b.Name)
+		}
+		return strings.Compare(a.ContainerName, b.ContainerName)
+	})
+	return results, nil
 }
