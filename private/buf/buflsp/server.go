@@ -485,19 +485,19 @@ func (s *server) SemanticTokensFull(
 			newLine := uint32(i - 1)
 			var newCol uint32
 			if i == startLocation.Line {
-				newCol = uint32(startLocation.Column)
+				newCol = uint32(startLocation.Column - 1)
 				if prevLine == newLine {
 					newCol -= prevCol
 				}
 			}
-			symbolLen := uint32(endLocation.Column)
+			symbolLen := uint32(endLocation.Column - 1)
 			if i == startLocation.Line {
-				symbolLen -= uint32(startLocation.Column)
+				symbolLen -= uint32(startLocation.Column - 1)
 			}
 			encoded = append(encoded, newLine-prevLine, newCol, symbolLen, semanticType, 0)
 			prevLine = newLine
 			if i == startLocation.Line {
-				prevCol = uint32(startLocation.Column)
+				prevCol = uint32(startLocation.Column - 1)
 			} else {
 				prevCol = 0
 			}
