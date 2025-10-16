@@ -59,8 +59,74 @@ func getCompletionItems(
 		slog.Int("cursor_offset", offset),
 	)
 
+	// Check if cursor is in a name position (where unique identifiers are defined).
+	// We should not provide completions for names.
+	if isInNamePosition(decl, offset) {
+		file.lsp.logger.Debug("cursor in name position, skipping completions")
+		return nil
+	}
+
 	// Return context-aware completions based on the declaration type.
 	return completionItemsForDecl(file, decl)
+}
+
+// isInNamePosition checks if the cursor offset is in a position where a unique identifier
+// is being defined (like a message name, field name, etc.). We should not provide completions
+// for these positions.
+func isInNamePosition(decl ast.DeclAny, offset int) bool {
+	if decl.IsZero() {
+		return false
+	}
+
+	switch decl.Kind() {
+	case ast.DeclKindDef:
+		def := decl.AsDef()
+		// Check if cursor is in the name of the definition.
+		if !def.Name().IsZero() {
+			nameSpan := def.Name().Span()
+			if offset >= nameSpan.Start && offset <= nameSpan.End {
+				return true
+			}
+		}
+
+		// For fields, also check the field name (not the type).
+		switch def.Classify() {
+		case ast.DefKindField:
+			field := def.AsField()
+			if !field.Name.IsZero() {
+				nameSpan := field.Name.Span()
+				if offset >= nameSpan.Start && offset <= nameSpan.End {
+					return true
+				}
+			}
+		case ast.DefKindEnumValue:
+			enumValue := def.AsEnumValue()
+			if !enumValue.Name.IsZero() {
+				nameSpan := enumValue.Name.Span()
+				if offset >= nameSpan.Start && offset <= nameSpan.End {
+					return true
+				}
+			}
+		case ast.DefKindMethod:
+			method := def.AsMethod()
+			if !method.Name.IsZero() {
+				nameSpan := method.Name.Span()
+				if offset >= nameSpan.Start && offset <= nameSpan.End {
+					return true
+				}
+			}
+		}
+
+	case ast.DeclKindSyntax:
+		// Cursor in syntax declaration - likely in the syntax value, not a good place for completions.
+		return true
+
+	case ast.DeclKindPackage:
+		// Cursor in package declaration - package name is unique.
+		return true
+	}
+
+	return false
 }
 
 // completionItemsForDecl returns completion items based on the AST declaration at the cursor.
@@ -70,9 +136,156 @@ func completionItemsForDecl(file *file, decl ast.DeclAny) []protocol.CompletionI
 		return topLevelCompletionItems()
 	}
 
-	// TODO: Add more context-specific completions based on decl.Kind()
-	// For now, just return top-level keywords as a starting point.
-	return topLevelCompletionItems()
+	// Return context-specific completions based on declaration type.
+	switch decl.Kind() {
+	case ast.DeclKindDef:
+		return completionItemsForDef(file, decl.AsDef())
+	case ast.DeclKindSyntax:
+		// Inside syntax declaration - could suggest syntax values.
+		return nil
+	case ast.DeclKindPackage:
+		// Inside package declaration - could suggest package name based on path.
+		return nil
+	case ast.DeclKindImport:
+		// Inside import declaration - could suggest importable files.
+		return completionItemsForImport(file)
+	default:
+		// For other declaration types, fall back to top-level keywords.
+		return topLevelCompletionItems()
+	}
+}
+
+// completionItemsForDef returns completion items for definition declarations (message, enum, service, etc.).
+func completionItemsForDef(file *file, def ast.DeclDef) []protocol.CompletionItem {
+	switch def.Classify() {
+	case ast.DefKindMessage:
+		// Inside a message - suggest field keywords, types, and nested declarations.
+		return completionItemsForMessage(file)
+	case ast.DefKindService:
+		// Inside a service - suggest rpc and option keywords.
+		return completionItemsForService()
+	case ast.DefKindEnum:
+		// Inside an enum - suggest option keyword.
+		return []protocol.CompletionItem{
+			keywordToCompletionItem(keyword.Option),
+		}
+	default:
+		// For other definitions, return top-level keywords.
+		return topLevelCompletionItems()
+	}
+}
+
+// completionItemsForMessage returns completion items for inside a message definition.
+func completionItemsForMessage(file *file) []protocol.CompletionItem {
+	// Keywords for message body.
+	messageKeywords := []keyword.Keyword{
+		keyword.Message,
+		keyword.Enum,
+		keyword.Option,
+		keyword.Oneof,
+		keyword.Extensions,
+		keyword.Reserved,
+		keyword.Extend,
+		// Field keywords
+		keyword.Repeated,
+		keyword.Optional,
+		keyword.Required,
+	}
+
+	items := xslices.Map(messageKeywords, keywordToCompletionItem)
+
+	// Add predeclared types (primitives).
+	items = append(items, predeclaredTypeCompletionItems()...)
+
+	// Add referenceable types (messages, enums) from this file and imports.
+	items = append(items, referenceableTypeCompletionItems(file)...)
+
+	return items
+}
+
+// completionItemsForService returns completion items for inside a service definition.
+func completionItemsForService() []protocol.CompletionItem {
+	serviceKeywords := []keyword.Keyword{
+		keyword.RPC,
+		keyword.Option,
+	}
+	return xslices.Map(serviceKeywords, keywordToCompletionItem)
+}
+
+// completionItemsForImport returns completion items for import declarations.
+func completionItemsForImport(file *file) []protocol.CompletionItem {
+	// Suggest importable file paths.
+	paths := xslices.MapKeysToSlice(file.importToFile)
+	items := make([]protocol.CompletionItem, 0, len(paths))
+	for _, path := range paths {
+		items = append(items, protocol.CompletionItem{
+			Label: path,
+			Kind:  protocol.CompletionItemKindFile,
+		})
+	}
+	return items
+}
+
+// predeclaredTypeCompletionItems returns completion items for predeclared (primitive) types.
+func predeclaredTypeCompletionItems() []protocol.CompletionItem {
+	predeclaredTypes := []keyword.Keyword{
+		keyword.Int32,
+		keyword.Int64,
+		keyword.UInt32,
+		keyword.UInt64,
+		keyword.SInt32,
+		keyword.SInt64,
+		keyword.Fixed32,
+		keyword.Fixed64,
+		keyword.SFixed32,
+		keyword.SFixed64,
+		keyword.Float,
+		keyword.Double,
+		keyword.Bool,
+		keyword.String,
+		keyword.Bytes,
+	}
+
+	return xslices.Map(predeclaredTypes, func(kw keyword.Keyword) protocol.CompletionItem {
+		return protocol.CompletionItem{
+			Label: kw.String(),
+			Kind:  protocol.CompletionItemKindTypeParameter,
+		}
+	})
+}
+
+// referenceableTypeCompletionItems returns completion items for user-defined types (messages, enums).
+func referenceableTypeCompletionItems(file *file) []protocol.CompletionItem {
+	var items []protocol.CompletionItem
+
+	// Add types from the current file.
+	for _, symbol := range file.referenceableSymbols {
+		if symbol.ir.Kind().IsType() {
+			items = append(items, protocol.CompletionItem{
+				Label: symbol.ir.FullName().Name(),
+				Kind:  protocol.CompletionItemKindTypeParameter,
+			})
+		}
+	}
+
+	// Add types from imported files.
+	for _, imported := range file.importToFile {
+		for _, symbol := range imported.referenceableSymbols {
+			if symbol.ir.Kind().IsType() {
+				// Use full name if from a different package.
+				label := symbol.ir.FullName().Name()
+				if imported.ir.Package() != file.ir.Package() {
+					label = string(symbol.ir.FullName())
+				}
+				items = append(items, protocol.CompletionItem{
+					Label: label,
+					Kind:  protocol.CompletionItemKindTypeParameter,
+				})
+			}
+		}
+	}
+
+	return items
 }
 
 // topLevelCompletionItems returns completion items for top-level proto keywords.
