@@ -10,7 +10,7 @@ $(call _assert_var,BUF_VERSION)
 
 # Settable
 # https://github.com/bufbuild/bufstyle-go/releases
-BUFSTYLE_VERSION ?= v0.1.0
+BUFSTYLE_VERSION ?= v0.2.0
 
 BUFSTYLE := $(CACHE_VERSIONS)/bufstyle/$(BUFSTYLE_VERSION)
 $(BUFSTYLE):
