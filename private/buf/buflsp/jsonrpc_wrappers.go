@@ -72,7 +72,7 @@ func (c *connWrapper) Call(
 			xslog.ErrorAttr(err),
 		)
 	} else {
-		c.logger.Warn(
+		c.logger.Debug(
 			"call returned",
 			slog.String("method", method),
 			slog.Any("result", result),

@@ -12,17 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufstyle
+package internal
 
 import (
 	"errors"
 	"path/filepath"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufstyle/internal/analyzers"
 	"golang.org/x/tools/go/analysis"
 )
 
 type analyzerProvider struct {
 	absRootDirPath                   string
+	disableAnalyzerNames             map[string]struct{}
 	ignoreAnalyzerNameToRelFilePaths map[string]map[string]struct{}
 }
 
@@ -36,6 +38,7 @@ func newAnalyzerProvider(rootDirPath string, options ...AnalyzerProviderOption) 
 	}
 	analyzerProvider := &analyzerProvider{
 		absRootDirPath:                   absRootDirPath,
+		disableAnalyzerNames:             make(map[string]struct{}),
 		ignoreAnalyzerNameToRelFilePaths: make(map[string]map[string]struct{}),
 	}
 	for _, option := range options {
@@ -45,7 +48,7 @@ func newAnalyzerProvider(rootDirPath string, options ...AnalyzerProviderOption) 
 }
 
 func (a *analyzerProvider) Analyzers() []*analysis.Analyzer {
-	analyzers := newAnalyzers()
+	analyzers := analyzers.New()
 	for _, analyzer := range analyzers {
 		a.modifyAnalyzer(analyzer)
 		for _, requireAnalyzer := range analyzer.Requires {
@@ -64,6 +67,9 @@ func (a *analyzerProvider) modifyAnalyzer(analyzer *analysis.Analyzer) {
 		oldReport := pass.Report
 		var reportErr error
 		pass.Report = func(diagnostic analysis.Diagnostic) {
+			if _, ok := a.disableAnalyzerNames[analyzer.Name]; ok {
+				return
+			}
 			if pass.Fset == nil {
 				oldReport(diagnostic)
 				return

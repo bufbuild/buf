@@ -44,7 +44,6 @@ import (
 	"github.com/bufbuild/protocompile/experimental/incremental"
 	"github.com/bufbuild/protocompile/experimental/incremental/queries"
 	"github.com/bufbuild/protocompile/experimental/ir"
-	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/seq"
 	"github.com/bufbuild/protocompile/experimental/source"
 	"go.lsp.dev/protocol"
@@ -444,33 +443,24 @@ func (f *file) RefreshIR(ctx context.Context) {
 	openerMap := map[string]string{
 		f.objectInfo.Path(): f.file.Text(),
 	}
+	files := []*file{f}
 	for path, file := range f.importToFile {
 		openerMap[path] = file.file.Text()
+		files = append(files, file)
 	}
 	opener := source.NewMap(openerMap)
-	f.queryForIR(ctx, opener)
-
-	for _, file := range f.importToFile {
-		file.queryForIR(ctx, opener)
-		file.IndexSymbols(ctx)
-	}
-}
-
-func (f *file) queryForIR(
-	ctx context.Context,
-	opener source.Opener,
-) {
-	if !f.ir.IsZero() {
-		return
-	}
+	session := new(ir.Session)
+	queries := xslices.Map(files, func(file *file) incremental.Query[ir.File] {
+		return queries.IR{
+			Opener:  opener,
+			Path:    file.objectInfo.Path(),
+			Session: session,
+		}
+	})
 	results, report, err := incremental.Run(
 		ctx,
 		f.lsp.queryExecutor,
-		queries.IR{
-			Opener:  opener,
-			Path:    f.objectInfo.Path(),
-			Session: new(ir.Session),
-		},
+		queries...,
 	)
 	if err != nil {
 		f.lsp.logger.Error(
@@ -481,8 +471,8 @@ func (f *file) queryForIR(
 		)
 		return
 	}
-	if len(results) > 0 {
-		f.ir = results[0].Value
+	for i, file := range files {
+		file.ir = results[i].Value
 	}
 	diagnostics, err := xslices.MapError(
 		report.Diagnostics,
@@ -622,9 +612,9 @@ func (f *file) IndexSymbols(ctx context.Context) {
 
 	// Finally, sort the symbols in position order, with shorter symbols sorting smaller.
 	slices.SortFunc(f.symbols, func(s1, s2 *symbol) int {
-		diff := s1.span.StartLoc().Offset - s2.span.StartLoc().Offset
+		diff := s1.span.Start - s2.span.Start
 		if diff == 0 {
-			return s1.span.EndLoc().Offset - s2.span.EndLoc().Offset
+			return s1.span.End - s2.span.End
 		}
 		return diff
 	})
@@ -671,7 +661,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		msg.def = msg
 		resolved = append(resolved, msg)
-		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsType().Options(), report.Span{})...)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsType().Options())...)
 	case ir.SymbolKindEnum:
 		enum := &symbol{
 			ir:   irSymbol,
@@ -683,7 +673,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		enum.def = enum
 		resolved = append(resolved, enum)
-		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsType().Options(), report.Span{})...)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsType().Options())...)
 	case ir.SymbolKindEnumValue:
 		name := &symbol{
 			ir:   irSymbol,
@@ -704,7 +694,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		tag.def = tag
 		resolved = append(resolved, tag)
-		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options(), report.Span{})...)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options())...)
 	case ir.SymbolKindField:
 		typ := &symbol{
 			ir:   irSymbol,
@@ -738,7 +728,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		tag.def = tag
 		resolved = append(resolved, tag)
-		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options(), report.Span{})...)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options())...)
 	case ir.SymbolKindExtension:
 		// TODO: we should figure out if we need to do any resolution here.
 		ext := &symbol{
@@ -750,7 +740,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 			},
 		}
 		resolved = append(resolved, ext)
-		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options(), report.Span{})...)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options())...)
 	case ir.SymbolKindOneof:
 		oneof := &symbol{
 			ir:   irSymbol,
@@ -762,7 +752,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		oneof.def = oneof
 		resolved = append(resolved, oneof)
-		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsOneof().Options(), report.Span{})...)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsOneof().Options())...)
 	case ir.SymbolKindService:
 		service := &symbol{
 			ir:   irSymbol,
@@ -774,7 +764,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		service.def = service
 		resolved = append(resolved, service)
-		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsService().Options(), report.Span{})...)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsService().Options())...)
 	case ir.SymbolKindMethod:
 		method := &symbol{
 			ir:   irSymbol,
@@ -808,7 +798,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 			},
 		}
 		unresolved = append(unresolved, outputSym)
-		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMethod().Options(), report.Span{})...)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMethod().Options())...)
 	}
 	return resolved, unresolved
 }
@@ -837,7 +827,7 @@ func (f *file) importToSymbol(imp ir.Import) *symbol {
 	}
 }
 
-func (f *file) messageToSymbols(msg ir.MessageValue, prefix report.Span) []*symbol {
+func (f *file) messageToSymbols(msg ir.MessageValue) []*symbol {
 	var symbols []*symbol
 	for field := range msg.Fields() {
 		if field.ValueAST().IsZero() {
@@ -845,11 +835,6 @@ func (f *file) messageToSymbols(msg ir.MessageValue, prefix report.Span) []*symb
 		}
 		for element := range seq.Values(field.Elements()) {
 			span := element.Value().KeyASTs().At(element.ValueNodeIndex()).Span()
-			// We only want the subset of the option path that applies specifically to this element,
-			// and we trim the prefix.
-			if !prefix.IsZero() {
-				span.Start = prefix.End
-			}
 			elem := &symbol{
 				// NOTE: no [ir.Symbol] for option elements
 				file: f,
@@ -861,7 +846,7 @@ func (f *file) messageToSymbols(msg ir.MessageValue, prefix report.Span) []*symb
 			}
 			symbols = append(symbols, elem)
 			if !element.AsMessage().IsZero() {
-				symbols = append(symbols, f.messageToSymbols(element.AsMessage(), span)...)
+				symbols = append(symbols, f.messageToSymbols(element.AsMessage())...)
 			}
 		}
 	}
@@ -884,8 +869,8 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 	}
 	symbol := f.symbols[idx]
 	f.lsp.logger.DebugContext(ctx, "found symbol", slog.Any("symbol", symbol))
-	// Check that cursor is before the end of the symbol.
-	if comparePositions(symbol.Range().End, cursor) <= 0 {
+	// Check that cursor is before the end of the symbol. Range is half-open [Start, End).
+	if comparePositions(symbol.Range().End, cursor) < 0 {
 		return nil
 	}
 

@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package bufstyle
+package america
 
 import _ "buf.build/go/bufprivateusage"

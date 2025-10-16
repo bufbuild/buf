@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"runtime/debug"
+	"slices"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufformat"
@@ -137,6 +138,7 @@ func (s *server) Initialize(
 				},
 				Full: true,
 			},
+			WorkspaceSymbolProvider: true,
 		},
 		ServerInfo: info,
 	}, nil
@@ -485,23 +487,68 @@ func (s *server) SemanticTokensFull(
 			newLine := uint32(i - 1)
 			var newCol uint32
 			if i == startLocation.Line {
-				newCol = uint32(startLocation.Column)
+				newCol = uint32(startLocation.Column - 1)
 				if prevLine == newLine {
 					newCol -= prevCol
 				}
 			}
-			symbolLen := uint32(endLocation.Column)
+			symbolLen := uint32(endLocation.Column - 1)
 			if i == startLocation.Line {
-				symbolLen -= uint32(startLocation.Column)
+				symbolLen -= uint32(startLocation.Column - 1)
 			}
 			encoded = append(encoded, newLine-prevLine, newCol, symbolLen, semanticType, 0)
 			prevLine = newLine
 			if i == startLocation.Line {
-				prevCol = uint32(startLocation.Column)
+				prevCol = uint32(startLocation.Column - 1)
 			} else {
 				prevCol = 0
 			}
 		}
 	}
 	return &protocol.SemanticTokens{Data: encoded}, nil
+}
+
+// Symbols is the entry point for workspace-wide symbol search.
+func (s *server) Symbols(
+	ctx context.Context,
+	params *protocol.WorkspaceSymbolParams,
+) ([]protocol.SymbolInformation, error) {
+	const maxResults = 1000 // Limit results to avoid overwhelming clients
+	query := strings.ToLower(params.Query)
+
+	var results []protocol.SymbolInformation
+	for uri, file := range s.fileManager.uriToFile.Range {
+		if file.ir.IsZero() {
+			s.lsp.logger.DebugContext(ctx, fmt.Sprintf("workspace symbol: skipping file without IR: %s", uri))
+			continue
+		}
+
+		// Search through all symbols in this file.
+		for _, sym := range file.symbols {
+			if sym.ir.IsZero() {
+				continue
+			}
+			symbolInfo := sym.GetSymbolInformation()
+			if symbolInfo.Name == "" {
+				continue // Symbol information not supported for this symbol.
+			}
+
+			// Filter by query (case-insensitive substring match)
+			if query != "" && !strings.Contains(strings.ToLower(symbolInfo.Name), query) {
+				continue
+			}
+			results = append(results, symbolInfo)
+			if len(results) >= maxResults {
+				break
+			}
+		}
+	}
+
+	slices.SortFunc(results, func(a, b protocol.SymbolInformation) int {
+		if a.Name != b.Name {
+			return strings.Compare(a.Name, b.Name)
+		}
+		return strings.Compare(a.ContainerName, b.ContainerName)
+	})
+	return results, nil
 }
