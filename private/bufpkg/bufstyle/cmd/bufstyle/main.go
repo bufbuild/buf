@@ -15,13 +15,13 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufstyle"
-	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/osext"
 	"golang.org/x/tools/go/analysis/multichecker"
+	"gopkg.in/yaml.v3"
 )
 
 var externalConfigPath = ".bufstyle.yaml"
@@ -55,11 +55,7 @@ func newAnalyzerProvider() (bufstyle.AnalyzerProvider, error) {
 			)
 		}
 	}
-	rootDirPath, err := osext.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	return bufstyle.NewAnalyzerProvider(rootDirPath, analyzerProviderOptions...)
+	return bufstyle.NewAnalyzerProvider(".", analyzerProviderOptions...)
 }
 
 func readExternalConfig() (bufstyle.ExternalConfig, error) {
@@ -71,8 +67,10 @@ func readExternalConfig() (bufstyle.ExternalConfig, error) {
 		}
 		return externalConfig, err
 	}
-	if err := encoding.UnmarshalYAMLStrict(data, &externalConfig); err != nil {
-		return externalConfig, err
+	yamlDecoder := yaml.NewDecoder(bytes.NewReader(data))
+	yamlDecoder.KnownFields(true)
+	if err := yamlDecoder.Decode(&externalConfig); err != nil {
+		return externalConfig, fmt.Errorf("could not unmarshal as YAML: %v", err)
 	}
 	return externalConfig, nil
 }

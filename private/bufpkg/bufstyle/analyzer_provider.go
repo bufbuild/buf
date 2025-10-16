@@ -18,6 +18,7 @@ import (
 	"errors"
 	"path/filepath"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufstyle/internal/analyzers"
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -45,7 +46,7 @@ func newAnalyzerProvider(rootDirPath string, options ...AnalyzerProviderOption) 
 }
 
 func (a *analyzerProvider) Analyzers() []*analysis.Analyzer {
-	analyzers := newAnalyzers()
+	analyzers := analyzers.New()
 	for _, analyzer := range analyzers {
 		a.modifyAnalyzer(analyzer)
 		for _, requireAnalyzer := range analyzer.Requires {
