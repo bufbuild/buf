@@ -21,5 +21,6 @@ import (
 )
 
 func TestAll(t *testing.T) {
+	t.Parallel()
 	analyzerstesting.Run(t, New())
 }
