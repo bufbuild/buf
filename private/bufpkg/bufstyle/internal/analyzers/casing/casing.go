@@ -55,7 +55,25 @@ func newFor(name string, good string, bad string) *analysis.Analyzer {
 }
 
 func check(pass *analysis.Pass, pos token.Pos, text string, good string, bad string) {
-	if strings.Contains(strings.ToLower(text), bad) {
-		pass.Reportf(pos, `Use  %q instead of %q`, good, bad)
+	if strings.Contains(text, bad) {
+		pass.Report(
+			analysis.Diagnostic{
+				Pos:     pos,
+				End:     token.Pos(int(pos) + len(bad)),
+				Message: fmt.Sprintf(`Use %q instead of %q`, good, bad),
+				SuggestedFixes: []analysis.SuggestedFix{
+					{
+						Message: fmt.Sprintf("Replace %q with %q", bad, good),
+						TextEdits: []analysis.TextEdit{
+							{
+								Pos:     pos,
+								End:     token.Pos(int(pos) + len(bad)),
+								NewText: []byte(good),
+							},
+						},
+					},
+				},
+			},
+		)
 	}
 }

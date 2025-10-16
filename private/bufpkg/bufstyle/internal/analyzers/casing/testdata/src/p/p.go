@@ -17,4 +17,20 @@ func foo() {
 	_ = dirPath
 	dirpath := "" // want `Use "dirPath" instead of "dirpath"`
 	_ = dirpath
+	FileName := ""
+	_ = FileName
+	Filename := "" // want `Use "FileName" instead of "Filename"`
+	_ = Filename
+	FilePath := ""
+	_ = FilePath
+	Filepath := "" // want `Use "FilePath" instead of "Filepath"`
+	_ = Filepath
+	DirName := ""
+	_ = DirName
+	Dirname := "" // want `Use "DirName" instead of "Dirname"`
+	_ = Dirname
+	DirPath := ""
+	_ = DirPath
+	Dirpath := "" // want `Use "DirPath" instead of "Dirpath"`
+	_ = Dirpath
 }
