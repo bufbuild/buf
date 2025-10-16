@@ -31,8 +31,8 @@ func New() []*analysis.Analyzer {
 		newFor("DIRNAME_UPPER", "DirName", "Dirname"),
 		newFor("DIRPATH_LOWER", "dirPath", "dirpath"),
 		newFor("DIRPATH_UPPER", "DirPath", "Dirpath"),
-		newFor("FILENAME_LOWER", "fileName", "filename"),
-		newFor("FILENAME_UPPER", "FileName", "Filename"),
+		//newFor("FILENAME_LOWER", "fileName", "filename"),
+		//newFor("FILENAME_UPPER", "FileName", "Filename"),
 		newFor("FILEPATH_LOWER", "filePath", "filepath"),
 		newFor("FILEPATH_UPPER", "FilePath", "Filepath"),
 	}

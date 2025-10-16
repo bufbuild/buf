@@ -60,19 +60,21 @@ func newFor(name string, good string, bad string) *analysis.Analyzer {
 }
 
 func check(pass *analysis.Pass, pos token.Pos, text string, good string, bad string) {
-	if strings.Contains(strings.ToLower(text), bad) {
+	if index := strings.Index(text, bad); index != -1 {
+		badPos := token.Pos(int(pos) + index)
+		endPos := token.Pos(int(badPos) + len(bad))
 		pass.Report(
 			analysis.Diagnostic{
-				Pos:     pos,
-				End:     token.Pos(int(pos) + len(bad)),
+				Pos:     badPos,
+				End:     endPos,
 				Message: fmt.Sprintf(`It is spelled %q not %q`, good, bad),
 				SuggestedFixes: []analysis.SuggestedFix{
 					{
 						Message: fmt.Sprintf("Replace %q with %q", bad, good),
 						TextEdits: []analysis.TextEdit{
 							{
-								Pos:     pos,
-								End:     token.Pos(int(pos) + len(bad)),
+								Pos:     badPos,
+								End:     endPos,
 								NewText: []byte(good),
 							},
 						},
