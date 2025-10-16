@@ -16,6 +16,7 @@ package america
 
 import (
 	"errors"
+	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -25,29 +26,31 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-var badToGood = map[string]string{
-	"behaviour": "behavior",
-	"favourite": "favorite",
+// New returns a new set of Analyzers.
+func New() []*analysis.Analyzer {
+	return []*analysis.Analyzer{
+		newFor("BEHAVIOUR", "behavior", "behaviour"),
+		//newFor("FAVOURITE", "favorite", "favourite"),
+	}
 }
 
-// New returns a new Analyzer.
-func New() *analysis.Analyzer {
+func newFor(name string, good string, bad string) *analysis.Analyzer {
 	return &analysis.Analyzer{
-		Name: "AMERICA",
-		Doc:  "Verifies that the UK English is not used in any comment.",
+		Name: name,
+		Doc:  fmt.Sprintf("Verifies that %q is used instead of %q.", good, bad),
 		Run: func(pass *analysis.Pass) (any, error) {
 			return nil, errors.Join(
 				util.ForEachComment(
 					pass,
 					func(comment *ast.Comment) error {
-						check(pass, comment.Slash, comment.Text)
+						check(pass, comment.Slash, comment.Text, good, bad)
 						return nil
 					},
 				),
 				util.ForEachObject(
 					pass,
 					func(object types.Object) error {
-						check(pass, object.Pos(), object.Name())
+						check(pass, object.Pos(), object.Name(), good, bad)
 						return nil
 					},
 				),
@@ -56,10 +59,8 @@ func New() *analysis.Analyzer {
 	}
 }
 
-func check(pass *analysis.Pass, pos token.Pos, text string) {
-	for bad, good := range badToGood {
-		if strings.Contains(strings.ToLower(text), bad) {
-			pass.Reportf(pos, `It is spelled %q not %q`, good, bad)
-		}
+func check(pass *analysis.Pass, pos token.Pos, text string, good string, bad string) {
+	if strings.Contains(strings.ToLower(text), bad) {
+		pass.Reportf(pos, `It is spelled %q not %q`, good, bad)
 	}
 }

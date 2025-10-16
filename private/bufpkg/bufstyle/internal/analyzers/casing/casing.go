@@ -23,12 +23,12 @@ import (
 )
 
 var badToGood = map[string]string{
-	"dirname":  "dirName",
-	"Dirname":  "DirName",
-	"dirpath":  "dirPath",
-	"Dirpath":  "DirPath",
-	"filename": "fileName",
-	"Filename": "FileName",
+	"dirname": "dirName",
+	"Dirname": "DirName",
+	"dirpath": "dirPath",
+	"Dirpath": "DirPath",
+	//"filename": "fileName",
+	//"Filename": "FileName",
 	"filepath": "filePath",
 	"Filepath": "FilePath",
 }

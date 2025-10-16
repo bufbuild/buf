@@ -12,10 +12,10 @@ import (
 //
 // We don't store this as a global because we modify these.
 func New() []*analysis.Analyzer {
-	return []*analysis.Analyzer{
+	return append(
 		america.New(),
 		casing.New(),
 		packagefilename.New(),
 		typeban.New(),
-	}
+	)
 }
