@@ -27,14 +27,14 @@ import (
 // New returns a new set of Analyzers.
 func New() []*analysis.Analyzer {
 	return []*analysis.Analyzer{
-		newFor("DIRNAME_LOWER", "dirname", "dirName"),
-		newFor("DIRNAME_UPPER", "Dirname", "DirName"),
-		newFor("DIRPATH_LOWER", "dirpath", "dirPath"),
-		newFor("DIRPATH_UPPER", "Dirpath", "DirPath"),
-		//newFor("FILENAME_LOWER", "filename", "fileName"),
-		//newFor("FILENAME_UPPER", "Filename", "FileName"),
-		newFor("FILEPATH_LOWER", "filepath", "filePath"),
-		newFor("FILEPATH_UPPER", "Filepath", "FilePath"),
+		newFor("DIRNAME_LOWER", "dirName", "dirname"),
+		newFor("DIRNAME_UPPER", "DirName", "Dirname"),
+		newFor("DIRPATH_LOWER", "dirPath", "dirpath"),
+		newFor("DIRPATH_UPPER", "DirPath", "Dirpath"),
+		//newFor("FILENAME_LOWER", "fileName", "filename"),
+		//newFor("FILENAME_UPPER", "FileName", "Filename"),
+		newFor("FILEPATH_LOWER", "filePath", "filepath"),
+		newFor("FILEPATH_UPPER", "FilePath", "Filepath"),
 	}
 }
 
@@ -63,7 +63,7 @@ func check(pass *analysis.Pass, pos token.Pos, text string, good string, bad str
 				Message: fmt.Sprintf(`Use %q instead of %q`, good, bad),
 				SuggestedFixes: []analysis.SuggestedFix{
 					{
-						Message: fmt.Sprintf("Replace %q with %q", bad, good),
+						Message: fmt.Sprintf("Replace %q with %q", good, bad),
 						TextEdits: []analysis.TextEdit{
 							{
 								Pos:     pos,

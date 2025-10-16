@@ -28,12 +28,19 @@ import (
 //
 // It expects tests to be in "testdata/src/p" relative to the Go package the tests are being run in.
 func Run(t *testing.T, analyzers []*analysis.Analyzer) {
-	t.Parallel()
 	pwd, err := osext.Getwd()
 	require.NoError(t, err)
 	all := &analysis.Analyzer{
-		Name:     "all",
-		Requires: analyzers,
+		Name: "all",
+		Doc:  "all",
+		Run: func(pass *analysis.Pass) (any, error) {
+			for _, analyzer := range analyzers {
+				if _, err := analyzer.Run(pass); err != nil {
+					return nil, err
+				}
+			}
+			return nil, nil
+		},
 	}
 	analysistest.Run(t, filepath.Join(pwd, "testdata"), all, "p")
 }

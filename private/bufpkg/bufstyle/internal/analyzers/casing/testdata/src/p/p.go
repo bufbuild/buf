@@ -1,10 +1,10 @@
 package p
 
 func foo() {
-	fileName := ""
-	_ = fileName
-	filename := "" // want `Use "fileName" instead of "filename"`
-	_ = filename
+	//fileName := ""
+	//_ = fileName
+	//filename := "" // `Use "fileName" instead of "filename"`
+	//_ = filename
 	filePath := ""
 	_ = filePath
 	filepath := "" // want `Use "filePath" instead of "filepath"`
@@ -17,10 +17,10 @@ func foo() {
 	_ = dirPath
 	dirpath := "" // want `Use "dirPath" instead of "dirpath"`
 	_ = dirpath
-	FileName := ""
-	_ = FileName
-	Filename := "" // want `Use "FileName" instead of "Filename"`
-	_ = Filename
+	//FileName := ""
+	//_ = FileName
+	//Filename := "" // `Use "FileName" instead of "Filename"`
+	//_ = Filename
 	FilePath := ""
 	_ = FilePath
 	Filepath := "" // want `Use "FilePath" instead of "Filepath"`
