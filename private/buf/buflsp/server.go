@@ -282,7 +282,7 @@ func (s *server) Formatting(
 			warningErrorsWithPos = append(warningErrorsWithPos, errorWithPos)
 		},
 	))
-	parsed, err := parser.Parse(file.uri.Filename(), strings.NewReader(file.text), handler)
+	parsed, err := parser.Parse(file.uri.Filename(), strings.NewReader(file.file.Text()), handler)
 	if err == nil {
 		_, _ = parser.ResultFromAST(parsed, true, handler)
 	}
@@ -299,7 +299,7 @@ func (s *server) Formatting(
 		return nil, err
 	}
 	newText := out.String()
-	if newText == file.text {
+	if newText == file.file.Text() {
 		return nil, nil
 	}
 	// XXX: The current compiler does not expose a span for the full file. Instead of
@@ -308,14 +308,14 @@ func (s *server) Formatting(
 	// number of lines in the file. This is comparatively cheap, compared to sending the
 	// entire file over a domain socket.
 	var lastLine, lastLineStart int
-	for i := range len(file.text) {
+	for i := range len(file.file.Text()) {
 		// NOTE: we are iterating over bytes, not runes.
-		if file.text[i] == '\n' {
+		if file.file.Text()[i] == '\n' {
 			lastLine++
 			lastLineStart = i + 1 // Skip the \n.
 		}
 	}
-	lastChar := len(file.text[lastLineStart:]) - 1 // Bytes, not runes!
+	lastChar := len(file.file.Text()[lastLineStart:]) - 1 // Bytes, not runes!
 	return []protocol.TextEdit{
 		{
 			Range: protocol.Range{

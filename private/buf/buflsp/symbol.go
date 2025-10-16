@@ -177,7 +177,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 	case *imported:
 		imported, _ := s.kind.(*imported)
 		// Provide a preview of the imported file.
-		return fmt.Sprintf("```proto\n%s\n```", imported.file.text)
+		return fmt.Sprintf("```proto\n%s\n```", imported.file.file.Text())
 	case *tag:
 		plural := func(i int) string {
 			if i == 1 {

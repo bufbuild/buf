@@ -24,6 +24,7 @@ import (
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/protocompile"
+	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/protoutil"
@@ -185,11 +186,15 @@ func newDiagnostic(err reporter.ErrorWithPos, isWarning bool, opener fileOpener,
 	// Fallback to byte-based column (will be wrong for non-ASCII).
 	utf16Col := err.GetPosition().Col - 1
 
+	// TODO: this is a temporary workaround for old diagnostic errors.
+	// When using the new compiler these conversions will be already handled.
 	if rc, openErr := opener(filename); openErr == nil {
 		defer rc.Close()
-		data, readErr := io.ReadAll(rc)
+		text, readErr := readAllAsString(rc)
 		if readErr == nil {
-			utf16Col = byteOffsetToUTF16Column(string(data), position.Offset)
+			file := report.NewFile(filename, text)
+			loc := file.Location(position.Offset, positionalEncoding)
+			utf16Col = loc.Column - 1
 		} else {
 			logger.Warn(
 				"failed to read file for diagnostic position encoding",

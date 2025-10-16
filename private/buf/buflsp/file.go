@@ -64,7 +64,7 @@ type file struct {
 	uri       protocol.URI
 	checkWork chan<- struct{}
 
-	text string
+	file *report.File
 	// Version is an opaque version identifier given to us by the LSP client. This
 	// is used in the protocol to disambiguate which version of a file e.g. publishing
 	// diagnostics or symbols an operating refers to.
@@ -154,13 +154,19 @@ func (f *file) ReadFromDisk(ctx context.Context) (err error) {
 		return nil
 	}
 
-	data, err := os.ReadFile(f.uri.Filename())
+	reader, err := os.Open(f.uri.Filename())
+	if err != nil {
+		return fmt.Errorf("could not open file %q from disk: %w", f.uri, err)
+	}
+	defer reader.Close()
+	text, err := readAllAsString(reader)
 	if err != nil {
 		return fmt.Errorf("could not read file %q from disk: %w", f.uri, err)
 	}
 
 	f.version = -1
-	f.text = string(data)
+	f.file = report.NewFile(f.objectInfo.Path(), text)
+	f.hasText = true
 	return nil
 }
 
@@ -171,7 +177,7 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 
 	f.lsp.logger.Info(fmt.Sprintf("new file version: %v, %v -> %v", f.uri, f.version, version))
 	f.version = version
-	f.text = text
+	f.file = report.NewFile(f.objectInfo.Path(), text)
 	f.hasText = true
 }
 
@@ -436,10 +442,10 @@ func (f *file) RefreshIR(ctx context.Context) {
 	)
 
 	openerMap := map[string]string{
-		f.objectInfo.Path(): f.text,
+		f.objectInfo.Path(): f.file.Text(),
 	}
 	for path, file := range f.importToFile {
-		openerMap[path] = file.text
+		openerMap[path] = file.file.Text()
 	}
 	opener := source.NewMap(openerMap)
 	f.queryForIR(ctx, opener)
@@ -954,7 +960,7 @@ func (f *file) newFileOpener() fileOpener {
 		if file == nil {
 			return nil, fmt.Errorf("%s: %w", path, fs.ErrNotExist)
 		}
-		return xio.CompositeReadCloser(strings.NewReader(file.text), xio.NopCloser), nil
+		return xio.CompositeReadCloser(strings.NewReader(file.file.Text()), xio.NopCloser), nil
 	}
 }
 
@@ -1113,16 +1119,18 @@ func (f *file) appendLintErrors(source string, err error) bool {
 		// Convert 1-indexed byte-based line/column to byte offset.
 		startOffset := f.lineColumnToByteOffset(annotation.StartLine(), annotation.StartColumn())
 		endOffset := f.lineColumnToByteOffset(annotation.EndLine(), annotation.EndColumn())
+		startLoc := f.file.Location(startOffset, positionalEncoding)
+		endLoc := f.file.Location(endOffset, positionalEncoding)
 
 		f.diagnostics = append(f.diagnostics, protocol.Diagnostic{
 			Range: protocol.Range{
 				Start: protocol.Position{
 					Line:      uint32(annotation.StartLine() - 1),
-					Character: uint32(byteOffsetToUTF16Column(f.text, startOffset)),
+					Character: uint32(startLoc.Column - 1),
 				},
 				End: protocol.Position{
 					Line:      uint32(annotation.EndLine() - 1),
-					Character: uint32(byteOffsetToUTF16Column(f.text, endOffset)),
+					Character: uint32(endLoc.Column - 1),
 				},
 			},
 			Code:     annotation.Type(),
@@ -1141,8 +1149,9 @@ func (f *file) lineColumnToByteOffset(line, col int) int {
 	byteOffset := 0
 
 	// Find the start of the target line.
-	for i := 0; i < len(f.text) && currentLine < line; i++ {
-		if f.text[i] == '\n' {
+	text := f.file.Text()
+	for i := 0; i < len(text) && currentLine < line; i++ {
+		if text[i] == '\n' {
 			currentLine++
 			byteOffset = i + 1
 		}
@@ -1150,7 +1159,6 @@ func (f *file) lineColumnToByteOffset(line, col int) int {
 
 	// Add the column offset (col is 1-indexed, so subtract 1).
 	byteOffset += col - 1
-
 	return byteOffset
 }
 
@@ -1186,4 +1194,12 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 // wktObjectInfo is a concrete type to help us identify WKTs among the importable files.
 type wktObjectInfo struct {
 	storage.ObjectInfo
+}
+
+func readAllAsString(reader io.Reader) (string, error) {
+	var builder strings.Builder
+	if _, err := io.Copy(&builder, reader); err != nil {
+		return "", err
+	}
+	return builder.String(), nil
 }
