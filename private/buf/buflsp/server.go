@@ -517,10 +517,10 @@ func (s *server) Symbols(
 	query := strings.ToLower(params.Query)
 
 	var results []protocol.SymbolInformation
-	s.fileManager.uriToFile.Range(func(uri protocol.URI, file *file) bool {
+	for uri, file := range s.fileManager.uriToFile.Range {
 		if file.ir.IsZero() {
 			s.lsp.logger.DebugContext(ctx, fmt.Sprintf("workspace symbol: skipping file without IR: %s", uri))
-			return true
+			continue
 		}
 
 		// Search through all symbols in this file.
@@ -539,11 +539,10 @@ func (s *server) Symbols(
 			}
 			results = append(results, symbolInfo)
 			if len(results) >= maxResults {
-				return false // Stop iteration
+				break
 			}
 		}
-		return true
-	})
+	}
 
 	slices.SortFunc(results, func(a, b protocol.SymbolInformation) int {
 		if a.Name != b.Name {

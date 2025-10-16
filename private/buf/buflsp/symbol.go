@@ -290,7 +290,7 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 	case ir.SymbolKindExtension:
 		kind = protocol.SymbolKindField
 	case ir.SymbolKindOneof:
-		kind = protocol.SymbolKindField
+		kind = protocol.SymbolKindClass // Oneof are like classes
 	case ir.SymbolKindService:
 		kind = protocol.SymbolKindInterface // Services are like interfaces
 	case ir.SymbolKindMethod:
