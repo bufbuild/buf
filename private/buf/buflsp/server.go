@@ -123,6 +123,10 @@ func (s *server) Initialize(
 					IncludeText: false,
 				},
 			},
+			CompletionProvider: &protocol.CompletionOptions{
+				ResolveProvider:   true,
+				TriggerCharacters: []string{" ", ".", "("},
+			},
 			DefinitionProvider: &protocol.DefinitionOptions{
 				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
 			},
@@ -285,7 +289,7 @@ func (s *server) Formatting(
 			warningErrorsWithPos = append(warningErrorsWithPos, errorWithPos)
 		},
 	))
-	parsed, err := parser.Parse(file.uri.Filename(), strings.NewReader(file.text), handler)
+	parsed, err := parser.Parse(file.uri.Filename(), strings.NewReader(file.file.Text()), handler)
 	if err == nil {
 		_, _ = parser.ResultFromAST(parsed, true, handler)
 	}
@@ -302,14 +306,14 @@ func (s *server) Formatting(
 		return nil, err
 	}
 	newText := out.String()
-	if newText == file.text {
+	if newText == file.file.Text() {
 		return nil, nil
 	}
 
 	// Calculate the end location for the file range.
-	endLine := strings.Count(file.text, "\n")
+	endLine := strings.Count(file.file.Text(), "\n")
 	endCharacter := 0
-	for _, char := range file.text[strings.LastIndexByte(file.text, '\n')+1:] {
+	for _, char := range file.file.Text()[strings.LastIndexByte(file.file.Text(), '\n')+1:] {
 		endCharacter += utf16.RuneLen(char)
 	}
 	return []protocol.TextEdit{
@@ -416,6 +420,27 @@ func (s *server) References(
 		return nil, nil
 	}
 	return symbol.References(), nil
+}
+
+// Completion is the entry point for code completion.
+func (s *server) Completion(
+	ctx context.Context,
+	params *protocol.CompletionParams,
+) (*protocol.CompletionList, error) {
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, nil
+	}
+	items := getCompletionItems(ctx, file, params.Position)
+	return &protocol.CompletionList{Items: items}, nil
+}
+
+// CompletionResolve is the entry point for resolving additional details for a completion item.
+func (s *server) CompletionResolve(
+	ctx context.Context,
+	params *protocol.CompletionItem,
+) (*protocol.CompletionItem, error) {
+	return resolveCompletionItem(ctx, params)
 }
 
 // SemanticTokensFull is called to render semantic token information on the client.

@@ -175,7 +175,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 	case *imported:
 		imported, _ := s.kind.(*imported)
 		// Provide a preview of the imported file.
-		return fmt.Sprintf("```proto\n%s\n```", imported.file.text)
+		return fmt.Sprintf("```proto\n%s\n```", imported.file.file.Text())
 	case *tag:
 		plural := func(i int) string {
 			if i == 1 {
@@ -375,7 +375,7 @@ func commentToMarkdown(comment string) string {
 	return strings.TrimSuffix(strings.TrimPrefix(comment, "/*"), "*/")
 }
 
-// comparePositions compares two ranges for lexicographic ordering.
+// comparePositions compares two positions for lexicographic ordering.
 func comparePositions(a, b protocol.Position) int {
 	diff := int(a.Line) - int(b.Line)
 	if diff == 0 {
@@ -384,9 +384,24 @@ func comparePositions(a, b protocol.Position) int {
 	return diff
 }
 
+// positionInRange returns 0 if a position is within the range, else returns -1 before or 1 after.
+func positionInRange(position protocol.Position, within protocol.Range) int {
+	if comparePositions(position, within.Start) < 0 {
+		return -1
+	}
+	if comparePositions(position, within.End) > 0 {
+		return 1
+	}
+	return 0
+}
+
 func reportSpanToProtocolRange(span report.Span) protocol.Range {
 	startLocation := span.File.Location(span.Start, positionalEncoding)
 	endLocation := span.File.Location(span.End, positionalEncoding)
+	return reportLocationsToProtocolRange(startLocation, endLocation)
+}
+
+func reportLocationsToProtocolRange(startLocation, endLocation report.Location) protocol.Range {
 	return protocol.Range{
 		Start: protocol.Position{
 			Line:      uint32(startLocation.Line - 1),

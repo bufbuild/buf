@@ -44,6 +44,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/incremental"
 	"github.com/bufbuild/protocompile/experimental/incremental/queries"
 	"github.com/bufbuild/protocompile/experimental/ir"
+	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/seq"
 	"github.com/bufbuild/protocompile/experimental/source"
 	"go.lsp.dev/protocol"
@@ -63,7 +64,7 @@ type file struct {
 	uri       protocol.URI
 	checkWork chan<- struct{}
 
-	text string
+	file *report.File
 	// Version is an opaque version identifier given to us by the LSP client. This
 	// is used in the protocol to disambiguate which version of a file e.g. publishing
 	// diagnostics or symbols an operating refers to.
@@ -153,13 +154,19 @@ func (f *file) ReadFromDisk(ctx context.Context) (err error) {
 		return nil
 	}
 
-	data, err := os.ReadFile(f.uri.Filename())
+	reader, err := os.Open(f.uri.Filename())
+	if err != nil {
+		return fmt.Errorf("could not open file %q from disk: %w", f.uri, err)
+	}
+	defer reader.Close()
+	text, err := readAllAsString(reader)
 	if err != nil {
 		return fmt.Errorf("could not read file %q from disk: %w", f.uri, err)
 	}
 
 	f.version = -1
-	f.text = string(data)
+	f.file = report.NewFile(f.objectInfo.Path(), text)
+	f.hasText = true
 	return nil
 }
 
@@ -170,7 +177,7 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 
 	f.lsp.logger.Info(fmt.Sprintf("new file version: %v, %v -> %v", f.uri, f.version, version))
 	f.version = version
-	f.text = text
+	f.file = report.NewFile(f.objectInfo.Path(), text)
 	f.hasText = true
 }
 
@@ -435,11 +442,11 @@ func (f *file) RefreshIR(ctx context.Context) {
 	)
 
 	openerMap := map[string]string{
-		f.objectInfo.Path(): f.text,
+		f.objectInfo.Path(): f.file.Text(),
 	}
 	files := []*file{f}
 	for path, file := range f.importToFile {
-		openerMap[path] = file.text
+		openerMap[path] = file.file.Text()
 		files = append(files, file)
 	}
 	opener := source.NewMap(openerMap)
@@ -939,7 +946,7 @@ func (f *file) newFileOpener() fileOpener {
 		if file == nil {
 			return nil, fmt.Errorf("%s: %w", path, fs.ErrNotExist)
 		}
-		return xio.CompositeReadCloser(strings.NewReader(file.text), xio.NopCloser), nil
+		return xio.CompositeReadCloser(strings.NewReader(file.file.Text()), xio.NopCloser), nil
 	}
 }
 
@@ -1095,24 +1102,18 @@ func (f *file) appendLintErrors(source string, err error) bool {
 	}
 
 	for _, annotation := range annotations.FileAnnotations() {
+		// Convert 1-indexed byte-based line/column to byte offset.
+		startLocation := f.file.InverseLocation(annotation.StartLine(), annotation.StartColumn(), positionalEncoding)
+		endLocation := f.file.InverseLocation(annotation.EndLine(), annotation.EndColumn(), positionalEncoding)
+		protocolRange := reportLocationsToProtocolRange(startLocation, endLocation)
 		f.diagnostics = append(f.diagnostics, protocol.Diagnostic{
-			Range: protocol.Range{
-				Start: protocol.Position{
-					Line:      uint32(annotation.StartLine()) - 1,
-					Character: uint32(annotation.StartColumn()) - 1,
-				},
-				End: protocol.Position{
-					Line:      uint32(annotation.EndLine()) - 1,
-					Character: uint32(annotation.EndColumn()) - 1,
-				},
-			},
+			Range:    protocolRange,
 			Code:     annotation.Type(),
 			Severity: protocol.DiagnosticSeverityWarning,
 			Source:   source,
 			Message:  annotation.Message(),
 		})
 	}
-
 	return true
 }
 
@@ -1148,4 +1149,12 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 // wktObjectInfo is a concrete type to help us identify WKTs among the importable files.
 type wktObjectInfo struct {
 	storage.ObjectInfo
+}
+
+func readAllAsString(reader io.Reader) (string, error) {
+	var builder strings.Builder
+	if _, err := io.Copy(&builder, reader); err != nil {
+		return "", err
+	}
+	return builder.String(), nil
 }
