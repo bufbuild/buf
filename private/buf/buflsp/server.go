@@ -306,15 +306,11 @@ func (s *server) Formatting(
 		return nil, nil
 	}
 
-	// Calculate the end location for the protocols file range.
-	text := file.text
-	endLine := strings.Count(text, "\n")
-	if lastNewlineIdx := strings.LastIndexByte(text, '\n'); lastNewlineIdx >= 0 {
-		text = text[lastNewlineIdx+1:]
-	}
-	endColumn := 0
-	for _, char := range text {
-		endColumn += utf16.RuneLen(char)
+	// Calculate the end location for the file range.
+	endLine := strings.Count(file.text, "\n")
+	endCharacter := 0
+	for _, char := range file.text[strings.LastIndexByte(file.text, '\n')+1:] {
+		endCharacter += utf16.RuneLen(char)
 	}
 	return []protocol.TextEdit{
 		{
@@ -325,7 +321,7 @@ func (s *server) Formatting(
 				},
 				End: protocol.Position{
 					Line:      uint32(endLine),
-					Character: uint32(endColumn),
+					Character: uint32(endCharacter),
 				},
 			},
 			NewText: newText,
