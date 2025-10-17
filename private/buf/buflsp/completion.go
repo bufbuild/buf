@@ -49,9 +49,7 @@ func getCompletionItems(
 		return nil
 	}
 
-	// Find the smallest AST declaration containing this offset.
 	decl := getDeclForPosition(file.ir.AST().DeclBody, position)
-
 	file.lsp.logger.DebugContext(
 		ctx,
 		"decl for completion",
@@ -72,7 +70,7 @@ func getCompletionItems(
 func completionItemsForDecl(file *file, decl ast.DeclAny, prefix string) []protocol.CompletionItem {
 	if decl.IsZero() {
 		// No declaration found, return top-level keywords.
-		return topLevelCompletionItems()
+		return slices.Collect(topLevelCompletionItems())
 	}
 
 	// Return context-specific completions based on declaration type.
@@ -87,7 +85,7 @@ func completionItemsForDecl(file *file, decl ast.DeclAny, prefix string) []proto
 		return completionItemsForImport(file)
 	default:
 		// For other declaration types, fall back to top-level keywords.
-		return topLevelCompletionItems()
+		return slices.Collect(topLevelCompletionItems())
 	}
 }
 
@@ -151,7 +149,7 @@ func completionItemsForDef(file *file, def ast.DeclDef, prefix string) []protoco
 		}
 	default:
 		// TODO: limit where we return keywords.
-		return topLevelCompletionItems()
+		return slices.Collect(topLevelCompletionItems())
 	}
 }
 
@@ -175,10 +173,10 @@ func completionItemsForMessage(file *file, prefix string) []protocol.CompletionI
 	items := xslices.Map(messageKeywords, keywordToCompletionItem)
 
 	// Add predeclared types (primitives).
-	items = append(items, predeclaredTypeCompletionItems()...)
+	items = slices.AppendSeq(items, predeclaredTypeCompletionItems())
 
 	// Add referenceable types (messages, enums) from this file and imports.
-	items = append(items, referenceableTypeCompletionItems(file, prefix)...)
+	items = slices.AppendSeq(items, referenceableTypeCompletionItems(file, prefix))
 
 	return items
 }
@@ -210,138 +208,78 @@ func completionItemsForImport(file *file) []protocol.CompletionItem {
 }
 
 // predeclaredTypeCompletionItems returns completion items for predeclared (primitive) types.
-func predeclaredTypeCompletionItems() []protocol.CompletionItem {
-	predeclaredTypes := []keyword.Keyword{
-		keyword.Int32,
-		keyword.Int64,
-		keyword.UInt32,
-		keyword.UInt64,
-		keyword.SInt32,
-		keyword.SInt64,
-		keyword.Fixed32,
-		keyword.Fixed64,
-		keyword.SFixed32,
-		keyword.SFixed64,
-		keyword.Float,
-		keyword.Double,
-		keyword.Bool,
-		keyword.String,
-		keyword.Bytes,
-	}
-	return xslices.Map(predeclaredTypes, func(kw keyword.Keyword) protocol.CompletionItem {
+func predeclaredTypeCompletionItems() iter.Seq[protocol.CompletionItem] {
+	keywordToType := func(kw keyword.Keyword) protocol.CompletionItem {
 		return protocol.CompletionItem{
 			Label: kw.String(),
 			Kind:  protocol.CompletionItemKindTypeParameter,
 		}
-	})
+	}
+	return func(yield func(protocol.CompletionItem) bool) {
+		_ = yield(keywordToType(keyword.Int32)) &&
+			yield(keywordToType(keyword.Int64)) &&
+			yield(keywordToType(keyword.UInt32)) &&
+			yield(keywordToType(keyword.UInt64)) &&
+			yield(keywordToType(keyword.SInt32)) &&
+			yield(keywordToType(keyword.SInt64)) &&
+			yield(keywordToType(keyword.Fixed32)) &&
+			yield(keywordToType(keyword.Fixed64)) &&
+			yield(keywordToType(keyword.SFixed32)) &&
+			yield(keywordToType(keyword.SFixed64)) &&
+			yield(keywordToType(keyword.Float)) &&
+			yield(keywordToType(keyword.Double)) &&
+			yield(keywordToType(keyword.Bool)) &&
+			yield(keywordToType(keyword.String)) &&
+			yield(keywordToType(keyword.Bytes))
+	}
 }
 
 // referenceableTypeCompletionItems returns completion items for user-defined types (messages, enums).
-// The prefix parameter filters types and determines what to insert (suffix after prefix).
-func referenceableTypeCompletionItems(file *file, prefix string) []protocol.CompletionItem {
-	var items []protocol.CompletionItem
-
-	// Add types from the current file.
-	for _, symbol := range file.referenceableSymbols {
-		if !symbol.ir.Kind().IsType() {
-			continue
-		}
-
-		// For same-file types, use short name.
-		fullName := string(symbol.ir.FullName())
-		shortName := symbol.ir.FullName().Name()
-
-		// Filter by prefix if provided.
-		if prefix != "" {
-			// Check if full name or short name matches the prefix.
-			if !strings.HasPrefix(fullName, prefix) && !strings.HasPrefix(shortName, prefix) {
-				continue
-			}
-		}
-
-		// Determine label and insert text.
-		label := shortName
-		insertText := shortName
-		if prefix != "" {
-			// If user typed a prefix, show full context but insert only suffix.
-			if strings.HasPrefix(fullName, prefix) {
-				label = fullName
-				insertText = strings.TrimPrefix(fullName, prefix)
-			} else if strings.HasPrefix(shortName, prefix) {
-				insertText = strings.TrimPrefix(shortName, prefix)
-			}
-		}
-
-		items = append(items, protocol.CompletionItem{
-			Label:      label,
-			InsertText: insertText,
-			Kind:       protocol.CompletionItemKindTypeParameter,
-		})
-	}
-
-	// Add types from imported files.
-	for _, imported := range file.importToFile {
-		for _, symbol := range imported.referenceableSymbols {
-			if !symbol.ir.Kind().IsType() {
-				continue
-			}
-
-			fullName := string(symbol.ir.FullName())
-			shortName := symbol.ir.FullName().Name()
-
-			// Filter by prefix if provided.
-			if prefix != "" {
-				// Check if full name or short name matches the prefix.
-				if !strings.HasPrefix(fullName, prefix) && !strings.HasPrefix(shortName, prefix) {
+func referenceableTypeCompletionItems(current *file, _ string) iter.Seq[protocol.CompletionItem] {
+	fileSymobolTypesIter := func(yield func(*file, *symbol) bool) {
+		for _, imported := range current.importToFile {
+			for _, symbol := range imported.referenceableSymbols {
+				if !symbol.ir.Kind().IsType() {
 					continue
 				}
-			}
-
-			// Determine label and insert text based on package.
-			label := shortName
-			insertText := shortName
-			if imported.ir.Package() != file.ir.Package() {
-				// Different package - use fully qualified name.
-				label = fullName
-				insertText = fullName
-			}
-
-			// If user typed a prefix, adjust insert text to be just the suffix.
-			if prefix != "" {
-				if strings.HasPrefix(fullName, prefix) {
-					label = fullName
-					insertText = strings.TrimPrefix(fullName, prefix)
-				} else if strings.HasPrefix(shortName, prefix) {
-					insertText = strings.TrimPrefix(shortName, prefix)
+				if !yield(imported, symbol) {
+					return
 				}
 			}
-
-			items = append(items, protocol.CompletionItem{
-				Label:      label,
-				InsertText: insertText,
-				Kind:       protocol.CompletionItemKindTypeParameter,
-			})
 		}
 	}
-
-	return items
+	return func(yield func(protocol.CompletionItem) bool) {
+		for file, symbol := range fileSymobolTypesIter {
+			var label string
+			if file.ir.Package() == current.ir.Package() {
+				label = symbol.ir.FullName().Name()
+			} else {
+				label = string(symbol.ir.FullName())
+			}
+			item := protocol.CompletionItem{
+				Label: label,
+				Kind:  protocol.CompletionItemKindTypeParameter,
+			}
+			if !yield(item) {
+				return
+			}
+		}
+	}
 }
 
 // topLevelCompletionItems returns completion items for top-level proto keywords.
-func topLevelCompletionItems() []protocol.CompletionItem {
-	keywords := []keyword.Keyword{
-		keyword.Syntax,
-		keyword.Edition,
-		keyword.Import,
-		keyword.Package,
-		keyword.Message,
-		keyword.Service,
-		keyword.Option,
-		keyword.Enum,
-		keyword.Extend,
+func topLevelCompletionItems() iter.Seq[protocol.CompletionItem] {
+	return func(yield func(protocol.CompletionItem) bool) {
+		_ = yield(keywordToCompletionItem(keyword.Syntax)) &&
+			yield(keywordToCompletionItem(keyword.Edition)) &&
+			yield(keywordToCompletionItem(keyword.Import)) &&
+			yield(keywordToCompletionItem(keyword.Package)) &&
+			yield(keywordToCompletionItem(keyword.Message)) &&
+			yield(keywordToCompletionItem(keyword.Service)) &&
+			yield(keywordToCompletionItem(keyword.Option)) &&
+			yield(keywordToCompletionItem(keyword.Enum)) &&
+			yield(keywordToCompletionItem(keyword.Extend))
 	}
-
-	return xslices.Map(keywords, keywordToCompletionItem)
 }
 
 // keywordToCompletionItem converts a keyword to a completion item.
