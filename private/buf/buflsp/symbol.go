@@ -387,6 +387,10 @@ func comparePositions(a, b protocol.Position) int {
 func reportSpanToProtocolRange(span report.Span) protocol.Range {
 	startLocation := span.File.Location(span.Start, positionalEncoding)
 	endLocation := span.File.Location(span.End, positionalEncoding)
+	return reportLocationsToProtocolRange(startLocation, endLocation)
+}
+
+func reportLocationsToProtocolRange(startLocation, endLocation report.Location) protocol.Range {
 	return protocol.Range{
 		Start: protocol.Position{
 			Line:      uint32(startLocation.Line - 1),
