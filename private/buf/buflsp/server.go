@@ -320,8 +320,8 @@ func (s *server) Formatting(
 		{
 			Range: protocol.Range{
 				Start: protocol.Position{
-					Line:      uint32(0),
-					Character: uint32(0),
+					Line:      0,
+					Character: 0,
 				},
 				End: protocol.Position{
 					Line:      uint32(endLine),
