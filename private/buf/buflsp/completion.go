@@ -18,13 +18,18 @@ package buflsp
 
 import (
 	"context"
+	"iter"
 	"log/slog"
+	"slices"
 	"strings"
 	"unicode/utf16"
 
 	"buf.build/go/standard/xslices"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/protocompile/experimental/ast"
+	"github.com/bufbuild/protocompile/experimental/ast/syntax"
 	"github.com/bufbuild/protocompile/experimental/seq"
+	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
 	"go.lsp.dev/protocol"
 )
@@ -38,7 +43,6 @@ func getCompletionItems(
 	position protocol.Position,
 ) []protocol.CompletionItem {
 	if file.ir.AST().IsZero() {
-		// No AST available, return empty completions.
 		file.lsp.logger.DebugContext(
 			ctx,
 			"no AST found for completion",
@@ -51,7 +55,8 @@ func getCompletionItems(
 	offset := protocolPositionToOffset(file.text, position)
 
 	// Extract any identifier prefix before the cursor (e.g., "buf.validate.").
-	prefix := extractIdentifierPrefix(file.text, offset)
+	// Uses the token stream to correctly handle all identifier types and grammar.
+	prefix := extractIdentifierPrefixFromTokens(file, offset)
 
 	// Find the smallest AST declaration containing this offset.
 	decl := getDeclForPosition(file.ir.AST().DeclBody, offset)
@@ -77,42 +82,83 @@ func getCompletionItems(
 	return completionItemsForDecl(file, decl, prefix)
 }
 
-// extractIdentifierPrefix extracts the identifier prefix before the cursor.
-// This includes qualified names with dots (e.g., "buf.validate.").
+// extractIdentifierPrefixFromTokens extracts the identifier prefix before the cursor
+// by querying the token stream. This correctly handles:
+// - Multi-part paths like "buf.validate."
+// - Paths with whitespace like "buf. validate"
+// - Parenthesized extension paths like "(buf.validate.field).rule"
+// - Stopping at keywords like "repeated .foo.Bar" (returns ".foo.Bar", not including "repeated")
 // Returns empty string if no valid prefix is found.
-func extractIdentifierPrefix(text string, offset int) string {
-	if offset <= 0 || offset > len(text) {
+func extractIdentifierPrefixFromTokens(file *file, offset int) string {
+	// Check if we have AST available
+	if file.ir.AST().IsZero() {
 		return ""
 	}
 
-	// Walk backwards from the cursor position.
-	start := offset
-	for start > 0 {
-		// Get the byte before current position.
-		b := text[start-1]
-
-		// Check if it's a valid identifier character.
-		// Valid: letters, digits, underscore, dot
-		if isIdentifierChar(b) {
-			start--
-			continue
-		}
-
-		// Hit a non-identifier character, stop.
-		break
+	stream := file.ir.AST().Context().Stream()
+	if stream == nil {
+		return ""
 	}
 
-	return text[start:offset]
-}
+	// Get the token before the cursor position
+	before, _ := stream.Around(offset)
+	if before.IsZero() {
+		return ""
+	}
 
-// isIdentifierChar checks if a byte is a valid identifier character.
-// Valid characters: a-z, A-Z, 0-9, _, .
-func isIdentifierChar(b byte) bool {
-	return (b >= 'a' && b <= 'z') ||
-		(b >= 'A' && b <= 'Z') ||
-		(b >= '0' && b <= '9') ||
-		b == '_' ||
-		b == '.'
+	// Collect tokens that form the path prefix, walking backwards
+	var tokens []token.Token
+	current := before
+
+	for !current.IsZero() {
+		kind := current.Kind()
+
+		// Check if this is a keyword - if so, stop here
+		if current.Keyword() != keyword.Unknown {
+			break
+		}
+
+		// Check what kind of token this is
+		switch kind {
+		case token.Ident:
+			// This is an identifier, include it
+			tokens = append(tokens, current)
+		case token.Punct:
+			text := current.Text()
+			// Only include dots and parentheses (for extension paths)
+			if text == "." || text == "(" || text == ")" {
+				tokens = append(tokens, current)
+			} else {
+				// Hit other punctuation, stop
+				goto done
+			}
+		default:
+			// Hit something else (number, string, etc.), stop
+			goto done
+		}
+
+		// Move to previous token
+		current = current.Prev()
+	}
+
+done:
+	// If no tokens collected, return empty string
+	if len(tokens) == 0 {
+		return ""
+	}
+
+	// Reverse tokens since we collected them backwards
+	for i := 0; i < len(tokens)/2; i++ {
+		tokens[i], tokens[len(tokens)-1-i] = tokens[len(tokens)-1-i], tokens[i]
+	}
+
+	// Reconstruct the prefix by concatenating token texts
+	var prefix strings.Builder
+	for _, tok := range tokens {
+		prefix.WriteString(tok.Text())
+	}
+
+	return prefix.String()
 }
 
 // isInNamePosition checks if the cursor offset is in a position where a unique identifier
@@ -172,16 +218,7 @@ func isInNamePosition(decl ast.DeclAny, offset int) bool {
 				}
 			}
 		}
-
-	case ast.DeclKindSyntax:
-		// Cursor in syntax declaration - likely in the syntax value, not a good place for completions.
-		return true
-
-	case ast.DeclKindPackage:
-		// Cursor in package declaration - package name is unique.
-		return true
 	}
-
 	return false
 }
 
@@ -197,13 +234,10 @@ func completionItemsForDecl(file *file, decl ast.DeclAny, prefix string) []proto
 	case ast.DeclKindDef:
 		return completionItemsForDef(file, decl.AsDef(), prefix)
 	case ast.DeclKindSyntax:
-		// Inside syntax declaration - could suggest syntax values.
-		return nil
+		return completionItemsForSyntax(file, decl.AsSyntax(), prefix)
 	case ast.DeclKindPackage:
-		// Inside package declaration - could suggest package name based on path.
-		return nil
+		return completionItemsForPackage(file, decl.AsPackage(), prefix)
 	case ast.DeclKindImport:
-		// Inside import declaration - could suggest importable files.
 		return completionItemsForImport(file)
 	default:
 		// For other declaration types, fall back to top-level keywords.
@@ -211,22 +245,66 @@ func completionItemsForDecl(file *file, decl ast.DeclAny, prefix string) []proto
 	}
 }
 
+// completionItemsForSyntax returns the completion items for the files syntax.
+func completionItemsForSyntax(file *file, syntaxDecl ast.DeclSyntax, _ string) []protocol.CompletionItem {
+	var prefix string
+	if syntaxDecl.KeywordToken().IsZero() {
+		if syntaxDecl.IsEdition() {
+			prefix += "edition"
+		} else {
+			prefix += "syntax"
+		}
+	}
+	if syntaxDecl.Equals().IsZero() {
+		prefix += "= "
+	}
+	var syntaxes iter.Seq[syntax.Syntax]
+	if syntaxDecl.IsEdition() {
+		syntaxes = syntax.Editions()
+	} else {
+		syntaxes = func(yield func(syntax.Syntax) bool) {
+			_ = yield(syntax.Proto2) &&
+				yield(syntax.Proto3)
+		}
+	}
+	var items []protocol.CompletionItem
+	for syntax := range syntaxes {
+		items = append(items, protocol.CompletionItem{
+			Label: prefix + "\"" + syntax.String() + "\";",
+			Kind:  protocol.CompletionItemKindValue,
+		})
+	}
+	return items
+}
+
+// completionItemsForPackage returns the completion items for the package name.
+//
+// Suggest the package name based on the filepath.
+func completionItemsForPackage(file *file, syntaxPackage ast.DeclPackage, _ string) []protocol.CompletionItem {
+	components := normalpath.Components(file.objectInfo.Path())
+	suggested := components[:len(components)-1] // Strip the filename.
+	if len(suggested) == 0 {
+		return nil // File is at root, return no suggestions.
+	}
+	return []protocol.CompletionItem{{
+		Label: strings.Join(suggested, ".") + ";",
+		Kind:  protocol.CompletionItemKindSnippet,
+	}}
+}
+
 // completionItemsForDef returns completion items for definition declarations (message, enum, service, etc.).
 func completionItemsForDef(file *file, def ast.DeclDef, prefix string) []protocol.CompletionItem {
 	switch def.Classify() {
 	case ast.DefKindMessage:
-		// Inside a message - suggest field keywords, types, and nested declarations.
 		return completionItemsForMessage(file, prefix)
 	case ast.DefKindService:
-		// Inside a service - suggest rpc and option keywords.
 		return completionItemsForService()
 	case ast.DefKindEnum:
-		// Inside an enum - suggest option keyword.
 		return []protocol.CompletionItem{
 			keywordToCompletionItem(keyword.Option),
 		}
 	default:
-		// For other definitions, return top-level keywords.
+		// TODO: limit where we return keywords.
 		return topLevelCompletionItems()
 	}
 }
@@ -269,16 +347,19 @@ func completionItemsForService() []protocol.CompletionItem {
 }
 
 // completionItemsForImport returns completion items for import declarations.
+//
+// Suggest all importable files.
 func completionItemsForImport(file *file) []protocol.CompletionItem {
-	// Suggest importable file paths.
-	paths := xslices.MapKeysToSlice(file.importToFile)
-	items := make([]protocol.CompletionItem, 0, len(paths))
-	for _, path := range paths {
+	items := make([]protocol.CompletionItem, 0, len(file.importToFile))
+	for importPath := range file.importToFile {
 		items = append(items, protocol.CompletionItem{
-			Label: path,
+			Label: " \"" + importPath + "\";",
 			Kind:  protocol.CompletionItemKindFile,
 		})
 	}
+	slices.SortFunc(items, func(a, b protocol.CompletionItem) int {
+		return strings.Compare(strings.ToLower(a.Label), strings.ToLower(b.Label))
+	})
 	return items
 }
 
@@ -301,7 +382,6 @@ func predeclaredTypeCompletionItems() []protocol.CompletionItem {
 		keyword.String,
 		keyword.Bytes,
 	}
-
 	return xslices.Map(predeclaredTypes, func(kw keyword.Keyword) protocol.CompletionItem {
 		return protocol.CompletionItem{
 			Label: kw.String(),
@@ -489,7 +569,6 @@ func findSmallestDecl(body ast.DeclBody, offset int) ast.DeclAny {
 		if decl.IsZero() {
 			continue
 		}
-
 		span := decl.Span()
 		if span.IsZero() {
 			continue
