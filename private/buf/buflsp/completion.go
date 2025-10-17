@@ -23,7 +23,6 @@ import (
 	"slices"
 	"strings"
 
-	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/syntax"
@@ -92,13 +91,6 @@ func completionItemsForDecl(file *file, decl ast.DeclAny, prefix string) []proto
 // completionItemsForSyntax returns the completion items for the files syntax.
 func completionItemsForSyntax(file *file, syntaxDecl ast.DeclSyntax, _ string) []protocol.CompletionItem {
 	var prefix string
-	if syntaxDecl.KeywordToken().IsZero() {
-		if syntaxDecl.IsEdition() {
-			prefix += "edition"
-		} else {
-			prefix += "syntax"
-		}
-	}
 	if syntaxDecl.Equals().IsZero() {
 		prefix += "= "
 	}
@@ -155,39 +147,32 @@ func completionItemsForDef(file *file, def ast.DeclDef, prefix string) []protoco
 
 // completionItemsForMessage returns completion items for inside a message definition.
 func completionItemsForMessage(file *file, prefix string) []protocol.CompletionItem {
-	// Keywords for message body.
-	messageKeywords := []keyword.Keyword{
-		keyword.Message,
-		keyword.Enum,
-		keyword.Option,
-		keyword.Oneof,
-		keyword.Extensions,
-		keyword.Reserved,
-		keyword.Extend,
-		// Field keywords
-		keyword.Repeated,
-		keyword.Optional,
-		keyword.Required,
+	items := []protocol.CompletionItem{
+		keywordToCompletionItem(keyword.Message),
+		keywordToCompletionItem(keyword.Enum),
+		keywordToCompletionItem(keyword.Option),
+		keywordToCompletionItem(keyword.Oneof),
+		keywordToCompletionItem(keyword.Extensions),
+		keywordToCompletionItem(keyword.Reserved),
+		keywordToCompletionItem(keyword.Extend),
+		// Field keyword
+		keywordToCompletionItem(keyword.Repeated),
+		keywordToCompletionItem(keyword.Optional),
+		keywordToCompletionItem(keyword.Required),
 	}
-
-	items := xslices.Map(messageKeywords, keywordToCompletionItem)
-
 	// Add predeclared types (primitives).
 	items = slices.AppendSeq(items, predeclaredTypeCompletionItems())
-
 	// Add referenceable types (messages, enums) from this file and imports.
 	items = slices.AppendSeq(items, referenceableTypeCompletionItems(file, prefix))
-
 	return items
 }
 
 // completionItemsForService returns completion items for inside a service definition.
 func completionItemsForService() []protocol.CompletionItem {
-	serviceKeywords := []keyword.Keyword{
-		keyword.RPC,
-		keyword.Option,
+	return []protocol.CompletionItem{
+		keywordToCompletionItem(keyword.RPC),
+		keywordToCompletionItem(keyword.Option),
 	}
-	return xslices.Map(serviceKeywords, keywordToCompletionItem)
 }
 
 // completionItemsForImport returns completion items for import declarations.
