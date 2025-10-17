@@ -18,6 +18,7 @@ package buflsp
 
 import (
 	"context"
+	"fmt"
 	"iter"
 	"log/slog"
 	"slices"
@@ -122,7 +123,7 @@ func completionItemsForSyntax(ctx context.Context, file *file, syntaxDecl ast.De
 	var items []protocol.CompletionItem
 	for syntax := range syntaxes {
 		items = append(items, protocol.CompletionItem{
-			Label: prefix + "\"" + syntax.String() + "\";",
+			Label: fmt.Sprintf("%s%q;", prefix, syntax),
 			Kind:  protocol.CompletionItemKindValue,
 		})
 	}
