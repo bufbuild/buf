@@ -305,30 +305,29 @@ func (s *server) Formatting(
 	if newText == file.text {
 		return nil, nil
 	}
-	// Calculate the range to edit as the whole file from the AST.
-	if file.ir.AST().IsZero() {
-		return nil, nil // Unable to accurately calculate range without AST.
-	}
-	fileSpan := file.ir.AST().Span()
-	startLocation := fileSpan.File.Location(0, positionalEncoding)
-	endLocation := fileSpan.File.Location(fileSpan.End, positionalEncoding)
 
-	// Extend the end location to cover any trailing whitespace after the AST.
-	remainingText := file.text[fileSpan.End:]
-	newlineCount := strings.Count(remainingText, "\n")
-	endLocation.Line += newlineCount
-	if lastNewlineIdx := strings.LastIndexByte(remainingText, '\n'); lastNewlineIdx >= 0 {
-		remainingText = remainingText[lastNewlineIdx+1:]
-		endLocation.Column = 1 // Reset to column 1 after newline.
+	// Calculate the end location for the protocols file range.
+	text := file.text
+	endLine := strings.Count(text, "\n")
+	if lastNewlineIdx := strings.LastIndexByte(text, '\n'); lastNewlineIdx >= 0 {
+		text = text[lastNewlineIdx+1:]
 	}
-	for _, char := range remainingText {
-		endLocation.Column += utf16.RuneLen(char) // Should only be spaces.
+	endColumn := 0
+	for _, char := range text {
+		endColumn += utf16.RuneLen(char)
 	}
-
-	fileRange := reportLocationsToProtocolRange(startLocation, endLocation)
 	return []protocol.TextEdit{
 		{
-			Range:   fileRange,
+			Range: protocol.Range{
+				Start: protocol.Position{
+					Line:      uint32(0),
+					Character: uint32(0),
+				},
+				End: protocol.Position{
+					Line:      uint32(endLine),
+					Character: uint32(endColumn),
+				},
+			},
 			NewText: newText,
 		},
 	}, nil
