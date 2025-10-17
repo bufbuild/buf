@@ -24,6 +24,7 @@ import (
 	"runtime/debug"
 	"slices"
 	"strings"
+	"unicode/utf16"
 
 	"github.com/bufbuild/buf/private/buf/bufformat"
 	"github.com/bufbuild/protocompile/experimental/ir"
@@ -304,20 +305,13 @@ func (s *server) Formatting(
 	if newText == file.text {
 		return nil, nil
 	}
-	// XXX: The current compiler does not expose a span for the full file. Instead of
-	// potentially undershooting the correct span (which can cause comments at the
-	// start and end of the file to be duplicated), we instead manually count up the
-	// number of lines in the file. This is comparatively cheap, compared to sending the
-	// entire file over a domain socket.
-	var lastLine, lastLineStart int
-	for i := range len(file.text) {
-		// NOTE: we are iterating over bytes, not runes.
-		if file.text[i] == '\n' {
-			lastLine++
-			lastLineStart = i + 1 // Skip the \n.
-		}
+
+	// Calculate the end location for the file range.
+	endLine := strings.Count(file.text, "\n")
+	endCharacter := 0
+	for _, char := range file.text[strings.LastIndexByte(file.text, '\n')+1:] {
+		endCharacter += utf16.RuneLen(char)
 	}
-	lastChar := len(file.text[lastLineStart:]) - 1 // Bytes, not runes!
 	return []protocol.TextEdit{
 		{
 			Range: protocol.Range{
@@ -326,8 +320,8 @@ func (s *server) Formatting(
 					Character: 0,
 				},
 				End: protocol.Position{
-					Line:      uint32(lastLine),
-					Character: uint32(lastChar),
+					Line:      uint32(endLine),
+					Character: uint32(endCharacter),
 				},
 			},
 			NewText: newText,
