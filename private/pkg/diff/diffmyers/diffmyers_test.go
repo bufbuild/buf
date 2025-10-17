@@ -201,6 +201,32 @@ The door of all subtleties!
 		)
 		testPrint(t, lao, tzu, edits, "lao-tzu")
 	})
+
+	t.Run("first-line-prefix", func(t *testing.T) {
+		t.Parallel()
+		from := "syntax = \"proto3\";\n\npackage test;\n\nmessage Foo {\n  string field1 = 1;\n  string field2 = 2;\n  string field3 = 3;\n  string field4 = 4;\n  string field5 = 5;\n}\n"
+		to := "syntax = \"proto3\";\n\npackage test;\n\nmessage Foo {\n  string field1 = 1;\n  string field2 = 2;\n  string field3 = 3;\n  string field4 = 4;\n  int32 field5 = 5;\n}\n"
+		expectedFirstLineOfOutput := " syntax = \"proto3\";"
+		fromLines := splitLines(from)
+		toLines := splitLines(to)
+		edits := diffmyers.Diff(
+			fromLines,
+			toLines,
+		)
+		diff, err := diffmyers.Print(
+			fromLines,
+			toLines,
+			edits,
+		)
+		require.NoError(t, err)
+		firstLineEnd := bytes.Index(diff, []byte("\n"))
+
+		firstLine := diff[:firstLineEnd]
+		actualFirstLine := string(firstLine)
+		require.Equal(t, expectedFirstLineOfOutput, actualFirstLine,
+			"First line of diff output should match expected format (single space prefix, no double space)")
+		testPrint(t, from, to, edits, "first-line-prefix")
+	})
 }
 
 func testPrint(t *testing.T, from, to string, edits []diffmyers.Edit, golden string) {

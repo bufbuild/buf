@@ -1,0 +1,13 @@
+ syntax = "proto3";
+ 
+ package test;
+ 
+ message Foo {
+   string field1 = 1;
+   string field2 = 2;
+   string field3 = 3;
+   string field4 = 4;
+@@ -10,1 +10,1 @@
+-  string field5 = 5;
++  int32 field5 = 5;
+ }
