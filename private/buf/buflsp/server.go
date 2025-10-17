@@ -438,9 +438,7 @@ func (s *server) Completion(
 		return nil, nil
 	}
 	items := getCompletionItems(ctx, file, params.Position)
-	return &protocol.CompletionList{
-		Items: items,
-	}, nil
+	return &protocol.CompletionList{Items: items}, nil
 }
 
 // CompletionResolve is the entry point for resolving additional details for a completion item.
