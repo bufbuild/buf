@@ -24,6 +24,7 @@ import (
 	"runtime/debug"
 	"slices"
 	"strings"
+	"unicode/utf16"
 
 	"github.com/bufbuild/buf/private/buf/bufformat"
 	"github.com/bufbuild/protocompile/experimental/ir"
@@ -304,32 +305,30 @@ func (s *server) Formatting(
 	if newText == file.text {
 		return nil, nil
 	}
-	// XXX: The current compiler does not expose a span for the full file. Instead of
-	// potentially undershooting the correct span (which can cause comments at the
-	// start and end of the file to be duplicated), we instead manually count up the
-	// number of lines in the file. This is comparatively cheap, compared to sending the
-	// entire file over a domain socket.
-	var lastLine, lastLineStart int
-	for i := range len(file.text) {
-		// NOTE: we are iterating over bytes, not runes.
-		if file.text[i] == '\n' {
-			lastLine++
-			lastLineStart = i + 1 // Skip the \n.
-		}
+	// Calculate the range to edit as the whole file from the AST.
+	if file.ir.AST().IsZero() {
+		return nil, nil // Unable to accurately calculate range without AST.
 	}
-	lastChar := len(file.text[lastLineStart:]) - 1 // Bytes, not runes!
+	fileSpan := file.ir.AST().Span()
+	startLocation := fileSpan.File.Location(0, positionalEncoding)
+	endLocation := fileSpan.File.Location(fileSpan.End, positionalEncoding)
+
+	// Extend the end location to cover any trailing whitespace after the AST.
+	remainingText := file.text[fileSpan.End:]
+	newlineCount := strings.Count(remainingText, "\n")
+	endLocation.Line += newlineCount
+	if lastNewlineIdx := strings.LastIndexByte(remainingText, '\n'); lastNewlineIdx >= 0 {
+		remainingText = remainingText[lastNewlineIdx+1:]
+		endLocation.Column = 1 // Reset to column 1 after newline.
+	}
+	for _, char := range remainingText {
+		endLocation.Column += utf16.RuneLen(char) // Should only be spaces.
+	}
+
+	fileRange := reportLocationsToProtocolRange(startLocation, endLocation)
 	return []protocol.TextEdit{
 		{
-			Range: protocol.Range{
-				Start: protocol.Position{
-					Line:      0,
-					Character: 0,
-				},
-				End: protocol.Position{
-					Line:      uint32(lastLine),
-					Character: uint32(lastChar),
-				},
-			},
+			Range:   fileRange,
 			NewText: newText,
 		},
 	}, nil
