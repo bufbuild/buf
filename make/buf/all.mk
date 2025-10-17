@@ -8,7 +8,6 @@ GO_BINS := $(GO_BINS) \
 	private/bufpkg/bufmodule/bufmoduleapi/cmd/buf-legacyfederation-go-data \
 	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest \
 	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-new-commit-id \
-	private/bufpkg/bufstyle/cmd/bufstyle \
 	private/pkg/bandeps/cmd/bandeps \
 	private/pkg/git/cmd/git-ls-files-unstaged \
 	private/pkg/storage/cmd/ddiff \
@@ -70,16 +69,10 @@ include make/go/docker.mk
 include make/go/license_header.mk
 include make/go/bandeps.mk
 include make/go/bufprivateusage.mk
+include make/go/bufstyle.mk
 include make/go/buf.mk
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
-
-.PHONY: bufstyle
-bufstyle: installbufstyle
-	@echo bufstyle NON_GEN_GOPKGS
-	@bufstyle $(shell go list $(GOPKGS) | grep -v \/gen\/)
-
-postlint:: bufstyle
 
 .PHONY: godata
 godata: installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC)
