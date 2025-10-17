@@ -22,14 +22,12 @@ import (
 	"log/slog"
 	"slices"
 	"strings"
-	"unicode/utf16"
 
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/syntax"
 	"github.com/bufbuild/protocompile/experimental/seq"
-	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
 	"go.lsp.dev/protocol"
 )
@@ -51,13 +49,6 @@ func getCompletionItems(
 		return nil
 	}
 
-	// Convert LSP position (UTF-16 code units) to byte offset.
-	offset := protocolPositionToOffset(file.text, position)
-
-	// Extract any identifier prefix before the cursor (e.g., "buf.validate.").
-	// Uses the token stream to correctly handle all identifier types and grammar.
-	prefix := extractIdentifierPrefixFromTokens(file, offset)
-
 	// Find the smallest AST declaration containing this offset.
 	decl := getDeclForPosition(file.ir.AST().DeclBody, position)
 
@@ -67,159 +58,14 @@ func getCompletionItems(
 		slog.String("decl_kind", decl.Kind().String()),
 		slog.Any("decl_span_start", decl.Span().StartLoc()),
 		slog.Any("decl_span_end", decl.Span().EndLoc()),
-		slog.Int("cursor_offset", offset),
-		slog.String("prefix", prefix),
+		//slog.Int("cursor_offset", offset),
+		//slog.String("prefix", prefix),
 	)
 
-	// Check if cursor is in a name position (where unique identifiers are defined).
-	// We should not provide completions for names.
-	if isInNamePosition(decl, offset) {
-		file.lsp.logger.Debug("cursor in name position, skipping completions")
-		return nil
-	}
+	prefix := ""
 
 	// Return context-aware completions based on the declaration type.
 	return completionItemsForDecl(file, decl, prefix)
-}
-
-// extractIdentifierPrefixFromTokens extracts the identifier prefix before the cursor
-// by querying the token stream. This correctly handles:
-// - Multi-part paths like "buf.validate."
-// - Paths with whitespace like "buf. validate"
-// - Parenthesized extension paths like "(buf.validate.field).rule"
-// - Stopping at keywords like "repeated .foo.Bar" (returns ".foo.Bar", not including "repeated")
-// Returns empty string if no valid prefix is found.
-func extractIdentifierPrefixFromTokens(file *file, offset int) string {
-	// Check if we have AST available
-	if file.ir.AST().IsZero() {
-		return ""
-	}
-
-	stream := file.ir.AST().Context().Stream()
-	if stream == nil {
-		return ""
-	}
-
-	// Get the token before the cursor position
-	before, _ := stream.Around(offset)
-	if before.IsZero() {
-		return ""
-	}
-
-	// Collect tokens that form the path prefix, walking backwards
-	var tokens []token.Token
-	current := before
-
-	for !current.IsZero() {
-		kind := current.Kind()
-
-		// Check if this is a keyword - if so, stop here
-		if current.Keyword() != keyword.Unknown {
-			break
-		}
-
-		// Check what kind of token this is
-		switch kind {
-		case token.Ident:
-			// This is an identifier, include it
-			tokens = append(tokens, current)
-		case token.Punct:
-			text := current.Text()
-			// Only include dots and parentheses (for extension paths)
-			if text == "." || text == "(" || text == ")" {
-				tokens = append(tokens, current)
-			} else {
-				// Hit other punctuation, stop
-				goto done
-			}
-		default:
-			// Hit something else (number, string, etc.), stop
-			goto done
-		}
-
-		// Move to previous token
-		current = current.Prev()
-	}
-
-done:
-	// If no tokens collected, return empty string
-	if len(tokens) == 0 {
-		return ""
-	}
-
-	// Reverse tokens since we collected them backwards
-	for i := 0; i < len(tokens)/2; i++ {
-		tokens[i], tokens[len(tokens)-1-i] = tokens[len(tokens)-1-i], tokens[i]
-	}
-
-	// Reconstruct the prefix by concatenating token texts
-	var prefix strings.Builder
-	for _, tok := range tokens {
-		prefix.WriteString(tok.Text())
-	}
-
-	return prefix.String()
-}
-
-// isInNamePosition checks if the cursor offset is in a position where a unique identifier
-// is being defined (like a message name, field name, etc.). We should not provide completions
-// for these positions.
-func isInNamePosition(decl ast.DeclAny, offset int) bool {
-	if decl.IsZero() {
-		return false
-	}
-
-	switch decl.Kind() {
-	case ast.DeclKindDef:
-		def := decl.AsDef()
-		// Check if cursor is in the name of the definition.
-		if !def.Name().IsZero() {
-			nameSpan := def.Name().Span()
-			if offset >= nameSpan.Start && offset <= nameSpan.End {
-				return true
-			}
-		}
-
-		// For fields, also check the field name (not the type).
-		switch def.Classify() {
-		case ast.DefKindField:
-			field := def.AsField()
-			// Check if cursor is within the field name span.
-			if !field.Name.IsZero() {
-				nameSpan := field.Name.Span()
-				if offset >= nameSpan.Start && offset <= nameSpan.End {
-					return true
-				}
-			}
-			// Check if cursor is after the type (where the field name should be).
-			// This handles the case where the user has typed the type but not yet
-			// the field name (e.g., "buf.validate.Rule _").
-			if !field.Type.IsZero() {
-				typeSpan := field.Type.Span()
-				// If cursor is after the type ends, we're in the field name position.
-				if offset > typeSpan.End {
-					return true
-				}
-			}
-		case ast.DefKindEnumValue:
-			enumValue := def.AsEnumValue()
-			if !enumValue.Name.IsZero() {
-				nameSpan := enumValue.Name.Span()
-				if offset >= nameSpan.Start && offset <= nameSpan.End {
-					return true
-				}
-			}
-		case ast.DefKindMethod:
-			method := def.AsMethod()
-			if !method.Name.IsZero() {
-				nameSpan := method.Name.Span()
-				if offset >= nameSpan.Start && offset <= nameSpan.End {
-					return true
-				}
-			}
-		}
-	}
-	return false
 }
 
 // completionItemsForDecl returns completion items based on the AST declaration at the cursor.
@@ -504,55 +350,6 @@ func keywordToCompletionItem(kw keyword.Keyword) protocol.CompletionItem {
 		Label: kw.String(),
 		Kind:  protocol.CompletionItemKindKeyword,
 	}
-}
-
-// protocolPositionToOffset converts an LSP protocol position (0-based line, 0-based UTF-16 character)
-// to a byte offset in the file text.
-func protocolPositionToOffset(text string, position protocol.Position) int {
-	targetLine := int(position.Line)
-	targetChar := int(position.Character)
-
-	currentLine := 0
-	byteOffset := 0
-
-	// Find the start of the target line.
-	for i, r := range text {
-		if currentLine == targetLine {
-			byteOffset = i
-			break
-		}
-		if r == '\n' {
-			currentLine++
-		}
-	}
-
-	// If we didn't find the target line, return end of file.
-	if currentLine < targetLine {
-		return len(text)
-	}
-
-	// Now count UTF-16 code units from the start of the line to find target character.
-	utf16Col := 0
-	for i, r := range text[byteOffset:] {
-		if r == '\n' {
-			// Reached end of line before target character.
-			break
-		}
-		if utf16Col >= targetChar {
-			return byteOffset + i
-		}
-		utf16Col += utf16.RuneLen(r)
-	}
-
-	// If we reached here, return the end of the line.
-	for i, r := range text[byteOffset:] {
-		if r == '\n' {
-			return byteOffset + i
-		}
-	}
-
-	// End of file.
-	return len(text)
 }
 
 // getDeclForPosition finds the smallest AST declaration that contains the given protocol position.
