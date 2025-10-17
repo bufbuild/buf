@@ -59,7 +59,7 @@ func getCompletionItems(
 	prefix := extractIdentifierPrefixFromTokens(file, offset)
 
 	// Find the smallest AST declaration containing this offset.
-	decl := getDeclForPosition(file.ir.AST().DeclBody, offset)
+	decl := getDeclForPosition(file.ir.AST().DeclBody, position)
 
 	file.lsp.logger.DebugContext(
 		ctx,
@@ -555,16 +555,10 @@ func protocolPositionToOffset(text string, position protocol.Position) int {
 	return len(text)
 }
 
-// getDeclForPosition finds the smallest AST declaration that contains the given byte offset.
-func getDeclForPosition(body ast.DeclBody, offset int) ast.DeclAny {
-	return findSmallestDecl(body, offset)
-}
-
-// findSmallestDecl recursively searches for the smallest declaration containing the offset.
-func findSmallestDecl(body ast.DeclBody, offset int) ast.DeclAny {
-	var smallest ast.DeclAny
+// getDeclForPosition finds the smallest AST declaration that contains the given protocol position.
+func getDeclForPosition(body ast.DeclBody, position protocol.Position) ast.DeclAny {
 	smallestSize := -1
-
+	var smallest ast.DeclAny
 	for _, decl := range seq.All(body.Decls()) {
 		if decl.IsZero() {
 			continue
@@ -574,17 +568,18 @@ func findSmallestDecl(body ast.DeclBody, offset int) ast.DeclAny {
 			continue
 		}
 
-		// Check if the offset is within this declaration's span.
-		if offset >= span.Start && offset <= span.End {
+		// Check if the position is within this declaration's span.
+		protocolRange := reportSpanToProtocolRange(span)
+		if comparePositions(position, protocolRange.Start) >= 0 &&
+			comparePositions(position, protocolRange.End) <= 0 {
 			size := span.End - span.Start
 			if smallestSize == -1 || size < smallestSize {
 				smallest = decl
 				smallestSize = size
 			}
-
 			// If this is a definition with a body, search recursively.
 			if decl.Kind() == ast.DeclKindDef && !decl.AsDef().Body().IsZero() {
-				child := findSmallestDecl(decl.AsDef().Body(), offset)
+				child := getDeclForPosition(decl.AsDef().Body(), position)
 				if !child.IsZero() {
 					childSize := child.Span().End - child.Span().Start
 					if childSize < smallestSize {
@@ -595,7 +590,6 @@ func findSmallestDecl(body ast.DeclBody, offset int) ast.DeclAny {
 			}
 		}
 	}
-
 	return smallest
 }
 
