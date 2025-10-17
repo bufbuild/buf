@@ -289,7 +289,7 @@ func (s *server) Formatting(
 			warningErrorsWithPos = append(warningErrorsWithPos, errorWithPos)
 		},
 	))
-	parsed, err := parser.Parse(file.uri.Filename(), strings.NewReader(file.text), handler)
+	parsed, err := parser.Parse(file.uri.Filename(), strings.NewReader(file.file.Text()), handler)
 	if err == nil {
 		_, _ = parser.ResultFromAST(parsed, true, handler)
 	}
@@ -306,14 +306,14 @@ func (s *server) Formatting(
 		return nil, err
 	}
 	newText := out.String()
-	if newText == file.text {
+	if newText == file.file.Text() {
 		return nil, nil
 	}
 
 	// Calculate the end location for the file range.
-	endLine := strings.Count(file.text, "\n")
+	endLine := strings.Count(file.file.Text(), "\n")
 	endCharacter := 0
-	for _, char := range file.text[strings.LastIndexByte(file.text, '\n')+1:] {
+	for _, char := range file.file.Text()[strings.LastIndexByte(file.file.Text(), '\n')+1:] {
 		endCharacter += utf16.RuneLen(char)
 	}
 	return []protocol.TextEdit{

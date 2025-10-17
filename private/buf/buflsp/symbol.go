@@ -175,7 +175,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 	case *imported:
 		imported, _ := s.kind.(*imported)
 		// Provide a preview of the imported file.
-		return fmt.Sprintf("```proto\n%s\n```", imported.file.text)
+		return fmt.Sprintf("```proto\n%s\n```", imported.file.file.Text())
 	case *tag:
 		plural := func(i int) string {
 			if i == 1 {
@@ -398,6 +398,10 @@ func positionInRange(position protocol.Position, within protocol.Range) int {
 func reportSpanToProtocolRange(span report.Span) protocol.Range {
 	startLocation := span.File.Location(span.Start, positionalEncoding)
 	endLocation := span.File.Location(span.End, positionalEncoding)
+	return reportLocationsToProtocolRange(startLocation, endLocation)
+}
+
+func reportLocationsToProtocolRange(startLocation, endLocation report.Location) protocol.Range {
 	return protocol.Range{
 		Start: protocol.Position{
 			Line:      uint32(startLocation.Line - 1),

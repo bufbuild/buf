@@ -24,6 +24,7 @@ import (
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/protocompile"
+	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/protoutil"
@@ -75,7 +76,7 @@ func buildImage(
 		logger.Warn("error building image", slog.String("path", path), xslog.ErrorAttr(err))
 		if len(errorsWithPos) > 0 {
 			diagnostics = xslices.Map(errorsWithPos, func(errorWithPos reporter.ErrorWithPos) protocol.Diagnostic {
-				return newDiagnostic(errorWithPos, false)
+				return newDiagnostic(errorWithPos, false, opener, logger)
 			})
 		}
 	}
@@ -178,10 +179,40 @@ func buildImage(
 //
 // Unfortunately, protocompile's errors are currently too meagre to provide full code
 // spans; that will require a fix in the compiler.
-func newDiagnostic(err reporter.ErrorWithPos, isWarning bool) protocol.Diagnostic {
+func newDiagnostic(err reporter.ErrorWithPos, isWarning bool, opener fileOpener, logger *slog.Logger) protocol.Diagnostic {
+	// Read the file text for the error's filename to convert byte offset to UTF-16 column.
+	position := err.GetPosition()
+	filename := position.Filename
+	// Fallback to byte-based column (will be wrong for non-ASCII).
+	utf16Col := err.GetPosition().Col - 1
+
+	// TODO: this is a temporary workaround for old diagnostic errors.
+	// When using the new compiler these conversions will be already handled.
+	if rc, openErr := opener(filename); openErr == nil {
+		defer rc.Close()
+		text, readErr := readAllAsString(rc)
+		if readErr == nil {
+			file := report.NewFile(filename, text)
+			loc := file.Location(position.Offset, positionalEncoding)
+			utf16Col = loc.Column - 1
+		} else {
+			logger.Warn(
+				"failed to read file for diagnostic position encoding",
+				slog.String("filename", filename),
+				xslog.ErrorAttr(readErr),
+			)
+		}
+	} else {
+		logger.Warn(
+			"failed to open file for diagnostic position encoding",
+			slog.String("filename", filename),
+			xslog.ErrorAttr(openErr),
+		)
+	}
+
 	pos := protocol.Position{
 		Line:      uint32(err.GetPosition().Line - 1),
-		Character: uint32(err.GetPosition().Col - 1),
+		Character: uint32(utf16Col),
 	}
 
 	severity := protocol.DiagnosticSeverityError
