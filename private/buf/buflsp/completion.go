@@ -294,7 +294,7 @@ func keywordToCompletionItem(kw keyword.Keyword) protocol.CompletionItem {
 func getDeclForPosition(body ast.DeclBody, position protocol.Position) ast.DeclAny {
 	smallestSize := -1
 	var smallest ast.DeclAny
-	for _, decl := range seq.All(body.Decls()) {
+	for decl := range seq.Values(body.Decls()) {
 		if decl.IsZero() {
 			continue
 		}
