@@ -28,7 +28,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-      - name: Make upgrade
-        run: bash ./make/buf/scripts/githubactionmakeupgrade.bash
+      - name: make-githubactionupgrade
+        run : make githubactionupgrade
         env:
           GH_TOKEN: ${{ steps.app_token.outputs.token }}

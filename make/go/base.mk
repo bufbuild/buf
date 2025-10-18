@@ -216,6 +216,10 @@ upgradenopost:
 	@$(MAKE) preupgrade
 	@$(MAKE) generate
 
+.PHONY: githubactionupgrade
+githubactionupgrade:
+	bash $(MAKEGO)/scripts/githubactionmakeupgrade.bash
+
 .PHONY: copyfrommakego
 copyfrommakego:
 	@rm -rf $(TMP)/makego
