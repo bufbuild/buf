@@ -144,8 +144,10 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 	var buffer bytes.Buffer
 	buffer.Grow(bufferSize)
 	for _, line := range out {
-		if line.hunk && len(line.line) > 0 {
-			buffer.Write(line.line)
+		if line.hunk {
+			if len(line.line) > 0 {
+				buffer.Write(line.line)
+			}
 			continue
 		}
 		switch line.EditKind {
