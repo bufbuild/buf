@@ -58,7 +58,7 @@ enable:
   #- require-pkg-doc
   - specific-file-pkg-doc
   - start-with-name
-  #- require-doc
+  - require-doc
   - deprecated
   #- max-len
   - no-unused-link

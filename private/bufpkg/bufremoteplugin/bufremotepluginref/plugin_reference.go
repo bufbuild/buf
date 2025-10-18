@@ -77,6 +77,7 @@ func newPluginReference(identity PluginIdentity, version string, revision int) (
 	}, nil
 }
 
+// ValidatePluginVersion validates the plugin version.
 func ValidatePluginVersion(version string) error {
 	if !semver.IsValid(version) {
 		return fmt.Errorf("plugin version %q is not a valid semantic version", version)

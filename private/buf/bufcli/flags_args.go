@@ -30,6 +30,9 @@ import (
 )
 
 const (
+	// DefaultArchiveStatus is the default archive status.
+	//
+	// This is currently unarchived.
 	DefaultArchiveStatus = unarchivedArchiveStatus
 
 	inputHashtagFlagName      = "__hashtag__"

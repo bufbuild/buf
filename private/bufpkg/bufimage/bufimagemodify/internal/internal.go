@@ -28,6 +28,7 @@ type MarkSweeper interface {
 	Sweep() error
 }
 
+// NewMarkSweeper returns a new MarkSweeper.
 func NewMarkSweeper(image bufimage.Image) MarkSweeper {
 	return newMarkSweeper(image)
 }

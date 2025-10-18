@@ -878,6 +878,7 @@ func WithGetReadWriteBucketTargetPaths(targetPaths []string) GetReadWriteBucketO
 	}
 }
 
+// WithGetReadWriteBucketTargetExcludePaths sets the target exclude paths.
 func WithGetReadWriteBucketTargetExcludePaths(targetExcludePaths []string) GetReadWriteBucketOption {
 	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
 		getReadWriteBucketOptions.targetExcludePaths = targetExcludePaths

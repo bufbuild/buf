@@ -82,6 +82,7 @@ func NewFileAnnotation(
 	)
 }
 
+// FileAnnotationOption is an option for a FileAnnotation.
 type FileAnnotationOption func(*fileAnnotationOptions)
 
 // WithPluginName returns a FileAnnotationOption that sets the plugin name.

@@ -37,6 +37,7 @@ type ObjectData interface {
 	Data() []byte
 }
 
+// NewObjectData returns a new ObjectData.
 func NewObjectData(name string, data []byte) (ObjectData, error) {
 	return newObjectData(name, data)
 }

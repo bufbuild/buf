@@ -32,6 +32,7 @@ type Checker interface {
 	) ([]Violation, error)
 }
 
+// NewChecker returns a new Checker.
 func NewChecker(logger *slog.Logger) Checker {
 	return newChecker(logger)
 }
@@ -62,6 +63,7 @@ type ExternalBanConfig struct {
 	Note string `json:"note,omitempty" yaml:"note,omitempty"`
 }
 
+// ExternalPackageConfig is an external package configuration.
 type ExternalPackageConfig struct {
 	// Use are the package expressions to list with go list.
 	Use []string `json:"use,omitempty" yaml:"use,omitempty"`

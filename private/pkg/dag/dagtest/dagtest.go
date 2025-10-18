@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// ExpectedNode is an expected node.
 type ExpectedNode[Key cmp.Ordered] struct {
 	Key      Key
 	Outbound []Key
