@@ -3,7 +3,12 @@
 # Must be set
 $(call _assert_var,MAKEGO)
 $(call _conditional_include,$(MAKEGO)/base.mk)
+$(call _conditional_include,$(MAKEGO)/dep_bandeps.mk)
+$(call _conditional_include,$(MAKEGO)/dep_bufstyle.mk)
+$(call _conditional_include,$(MAKEGO)/dep_bufprivateusage.mk)
+$(call _conditional_include,$(MAKEGO)/dep_godoclint.mk)
 $(call _conditional_include,$(MAKEGO)/dep_golangci_lint.mk)
+$(call _conditional_include,$(MAKEGO)/dep_govulncheck.mk)
 $(call _conditional_include,$(MAKEGO)/dep_yq.mk)
 # Must be set
 $(call _assert_var,GO_MODULE)
@@ -26,9 +31,19 @@ GO_MOD_TOOLCHAIN ?=
 # Settable
 GO_ALL_REPO_PKGS ?= ./cmd/... ./internal/...
 # Settable
+SKIP_BUFSTYLE ?=
+# Settable
+SKIP_GODOCLINT ?=
+# Settable
 SKIP_GOLANGCI_LINT ?=
 # Settable
+SKIP_GOVULNCHECK ?=
+# Settable
 DISALLOW_NOLINT ?=
+# Settable
+BUFPRIVATEUSAGE_PKGS ?=
+# Settable
+BANDEPS_CONFIG ?=
 
 # Runtime
 GOPKGS ?= $(GO_ALL_REPO_PKGS)
@@ -103,6 +118,14 @@ endif
 
 format:: gofmtmodtidy
 
+ifneq ($(BUFPRIVATEUSAGE_PKGS),)
+.PHONY: bufprivateusage
+bufprivateusage: $(BUFPRIVATEUSAGE)
+	bufprivateusage $(BUFPRIVATEUSAGE_PKGS)
+
+postprepostgenerate:: bufprivateusage
+endif
+
 .PHONY: checknolintlint
 checknolintlint: $(YQ)
 ifneq ($(DISALLOW_NOLINT),)
@@ -114,6 +137,24 @@ else
 	bash $(MAKEGO)/scripts/checknolintlint.bash
 endif
 
+.PHONY: bufstyle
+bufstyle: $(BUFSTYLE)
+ifneq ($(SKIP_BUFSTYLE),)
+	@echo Skipping bufstyle...
+else
+	@echo bufstyle GOPKGS
+	@bufstyle $(GOPKGS)
+endif
+
+.PHONY: godoclint
+godoclint: $(GODOCLINT)
+ifneq ($(SKIP_GODOCLINT),)
+	@echo Skipping godoclint...
+else
+	@echo godoclint GOPKGS
+	@godoclint $(GOPKGS)
+endif
+
 .PHONY: golangcilint
 golangcilint: $(GOLANGCI_LINT)
 ifneq ($(SKIP_GOLANGCI_LINT),)
@@ -123,16 +164,29 @@ else
 	golangci-lint run --timeout $(GOLANGCILINTTIMEOUT)
 endif
 
+.PHONY: govulncheck
+govulncheck: $(GOVULNCHECK)
+	@echo govulncheck GOPKGS
+	@govulncheck $(GOPKGS)
+
 .PHONY: postlint
 postlint::
 
 .PHONY: postlonglint
 postlonglint::
 
+ifneq ($(BANDEPS_CONFIG),)
+.PHONY: bandeps
+bandeps: $(BANDEPS)
+	bandeps -f $(BANDEPS_CONFIG)
+
+postlonglint:: bandeps
+endif
+
 .PHONY: shortlint
 shortlint: ## Run all linters but exclude long-running linters.
 	@$(MAKE) checknodiffgenerated
-	@$(MAKE) checknolintlint golangcilint postlint
+	@$(MAKE) checknolintlint bufstyle godoclint golangcilint govulncheck postlint
 
 .PHONY: lint
 lint: ## Run all linters.
