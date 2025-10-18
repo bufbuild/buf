@@ -35,7 +35,6 @@ func (r branch) checkout() string {
 	return ""
 }
 
-// Used for logging
 func (r *branch) MarshalJSON() ([]byte, error) {
 	return []byte(`"` + r.cloneBranch() + `"`), nil
 }

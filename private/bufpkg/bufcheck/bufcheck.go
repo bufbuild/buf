@@ -32,6 +32,8 @@ import (
 	"pluginrpc.com/pluginrpc"
 )
 
+// Client is the main client into bufcheck.
+//
 // Rules are returned sorted by ID, but PrintRules does our sort by category.
 type Client interface {
 	// Lint lints the given Image with the given LintConfig.

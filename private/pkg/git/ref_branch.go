@@ -42,7 +42,6 @@ func (r *refWithBranch) checkout() string {
 	return r.ref
 }
 
-// Used for logging
 func (r *refWithBranch) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		Ref    string

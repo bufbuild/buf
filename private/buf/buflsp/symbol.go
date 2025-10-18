@@ -257,7 +257,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 	return tooltip.String()
 }
 
-// GetSymbolInformat returns the protocol symbol information for the symbol.
+// GetSymbolInformation returns the protocol symbol information for the symbol.
 func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 	if s.ir.IsZero() {
 		return protocol.SymbolInformation{}

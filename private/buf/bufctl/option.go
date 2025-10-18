@@ -44,6 +44,8 @@ func WithCopyToInMemory() ControllerOption {
 	}
 }
 
+// FunctionOption is an option for a function in a Controller.
+//
 // TODO FUTURE: split up to per-function.
 type FunctionOption func(*functionOptions)
 

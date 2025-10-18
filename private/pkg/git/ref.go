@@ -35,7 +35,6 @@ func (r *ref) checkout() string {
 	return r.ref
 }
 
-// Used for logging
 func (r *ref) MarshalJSON() ([]byte, error) {
 	return []byte(`"` + r.checkout() + `"`), nil
 }

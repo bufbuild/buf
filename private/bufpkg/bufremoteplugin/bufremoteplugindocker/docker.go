@@ -36,6 +36,8 @@ import (
 )
 
 const (
+	// BufUpstreamClientUserAgentPrefix is the user-agent prefix.
+	//
 	// Setting this value on the buf docker client allows us to propagate a custom
 	// value to the OCI registry. This is a useful property that enables registries
 	// to differentiate between the buf cli vs other tools like docker cli.

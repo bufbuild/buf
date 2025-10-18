@@ -71,6 +71,8 @@ func WithIgnoreAndDisallowV1BufWorkYAMLs() WorkspaceBucketOption {
 	return &workspaceIgnoreAndDisallowV1BufWorkYAMLsOption{}
 }
 
+// WithTargetPaths specifies the target paths.
+//
 // Note these paths need to have the path/to/module stripped, and then each new path
 // filtered to the specific module it applies to. If some modules do not have any
 // target paths, but we specified WorkspaceWithTargetPaths, then those modules
