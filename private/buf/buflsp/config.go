@@ -22,15 +22,14 @@ package buflsp
 //
 // Keep in sync with bufbuild/vscode-buf package.json.
 const (
-	// The strategy for how to calculate the --against input for a breaking
-	// check. This must be one of the following values:
+	// ConfigBreakingStrategy is the strategy for how to calculate the --against input
+	// for a breaking check. This must be one of the following values:
 	//
 	// - "git". Use a particular Git revision to find the against file.
-	//
 	// - "disk". Use the last-saved value on disk as the against file.
 	ConfigBreakingStrategy = "buf.checks.breaking.againstStrategy"
-	// The Git revision to use for calculating the --against input for a
-	// breaking check when using the "git" strategy.
+	// ConfigBreakingGitRef is the Git revision to use for calculating the --against input
+	// for a breaking check when using the "git" strategy.
 	ConfigBreakingGitRef = "buf.checks.breaking.againstGitRef"
 )
 

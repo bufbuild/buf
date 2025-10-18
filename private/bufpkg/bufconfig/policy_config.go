@@ -24,7 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
-// PluginConfig is a configuration for a policy.
+// PolicyConfig is a configuration for a policy.
 type PolicyConfig interface {
 	// Name returns the policy name. This is never empty.
 	Name() string

@@ -17,6 +17,7 @@
 // In particular, this file handles semantic information in fileManager that have been
 // *opened by the editor*, and thus do not need references to Buf modules to find.
 // See imports.go for that part of the LSP.
+
 package buflsp
 
 import (

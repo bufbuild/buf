@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package buflsp implements a language server for Protobuf.
-//
-// The main entry-point of this package is the Serve() function, which creates a new LSP server.
 package buflsp
 
 import (
