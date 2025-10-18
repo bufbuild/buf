@@ -16,6 +16,7 @@ linters:
     - forbidigo
     - forcetypeassert
     - gochecknoinits
+    - godoclint
     - goheader
     - gomodguard
     - goprintffuncname
@@ -72,6 +73,37 @@ linters:
         - pattern: ^(proto|prototext|protojson|protoyaml).UnmarshalOptions$
         - pattern: ^proto\.Clone$
           msg: please use proto.CloneOf
+    godoclint:
+      default: none
+      enable:
+        # Check proper package-level godoc, if any.
+        # https://github.com/godoc-lint/godoc-lint?tab=readme-ov-file#pkg-doc
+        - pkg-doc
+        # Assert at most one godoc per package.
+        # https://github.com/godoc-lint/godoc-lint?tab=readme-ov-file#single-pkg-doc
+        - single-pkg-doc
+        # Require all packages to have a godoc.
+        # https://github.com/godoc-lint/godoc-lint?tab=readme-ov-file#require-pkg-doc
+        - require-pkg-doc
+        # Assert symbol godocs start with the symbol name.
+        # https://github.com/godoc-lint/godoc-lint?tab=readme-ov-file#start-with-name
+        - start-with-name
+        # Require godoc for all public symbols.
+        # https://github.com/godoc-lint/godoc-lint?tab=readme-ov-file#require-doc
+        - require-doc
+        # Assert correct formatting of deprecation notes.
+        # https://github.com/godoc-lint/godoc-lint?tab=readme-ov-file#deprecated
+        - deprecated
+        # Assert maximum line length for godocs.
+        # https://github.com/godoc-lint/godoc-lint?tab=readme-ov-file#max-len
+        - max-len
+        # Assert no unused link in godocs.
+        # https://github.com/godoc-lint/godoc-lint?tab=readme-ov-file#no-unused-link
+        - no-unused-link
+      options:
+        max-len:
+          # Maximum line length for godocs, not including the `// `, or `/*` or `*/` tokens.
+          length: 120
     govet:
       enable:
         - nilness
