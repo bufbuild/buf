@@ -23,8 +23,11 @@ import (
 )
 
 const (
+	// FileTypeProto is the file type for .proto files.
 	FileTypeProto FileType = iota + 1
+	// FileTypeDoc is the file type for documentation files.
 	FileTypeDoc
+	// FileTypeLicense is the file type for license files.
 	FileTypeLicense
 )
 
@@ -41,8 +44,10 @@ var (
 	}
 )
 
+// FileType is a tile type within a module.
 type FileType int
 
+// String implements fmt.Stringer.
 func (c FileType) String() string {
 	s, ok := fileTypeToString[c]
 	if !ok {

@@ -12,7 +12,7 @@ $(call _assert_var,BUF_VERSION)
 #
 # Based off of dev branch.
 # https://github.com/bufbuild/godoc-lint/commits/dev
-GODOCLINT_VERSION ?= 5405ef06cd81f5b3115c6e52744f6cd9a8fa84f1a
+GODOCLINT_VERSION ?= 26c7b506fc2bf37a67fc2b42a3d9825c7ade2068
 
 GODOCLINT := $(CACHE_VERSIONS)/godoclint/$(GODOCLINT_VERSION)
 $(GODOCLINT):

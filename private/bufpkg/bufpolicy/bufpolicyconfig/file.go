@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
+// File is a file.
 type File interface {
 	// FileVersion returns the file version.
 	FileVersion() bufconfig.FileVersion

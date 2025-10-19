@@ -61,6 +61,7 @@ func (m *pluginIdentity) IdentityString() string {
 
 func (*pluginIdentity) isPluginIdentity() {}
 
+// ValidatePluginIdentity validates the PluginIdentity.
 func ValidatePluginIdentity(pluginIdentity PluginIdentity) error {
 	if pluginIdentity == nil {
 		return errors.New("plugin identity is required")
@@ -77,6 +78,7 @@ func ValidatePluginIdentity(pluginIdentity PluginIdentity) error {
 	return nil
 }
 
+// ValidateRemote validates the remote.
 func ValidateRemote(remote string) error {
 	if remote == "" {
 		return errors.New("remote name is required")

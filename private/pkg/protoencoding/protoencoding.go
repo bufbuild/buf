@@ -204,6 +204,7 @@ func YAMLUnmarshalerWithPath(path string) YAMLUnmarshalerOption {
 	}
 }
 
+// YAMLUnmarshalerWithValidator says to use the given Validator.
 func YAMLUnmarshalerWithValidator(validator protoyaml.Validator) YAMLUnmarshalerOption {
 	return func(yamlUnmarshaler *yamlUnmarshaler) {
 		yamlUnmarshaler.validator = validator

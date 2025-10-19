@@ -71,6 +71,7 @@ type ImageWithConfig interface {
 	isImageWithConfig()
 }
 
+// Controller is the central entrypoint for the Buf CLI.
 type Controller interface {
 	GetWorkspace(
 		ctx context.Context,
@@ -156,6 +157,7 @@ type Controller interface {
 	) (bufcheck.Client, error)
 }
 
+// NewController returns a new Controller.
 func NewController(
 	logger *slog.Logger,
 	container app.EnvStdioContainer,

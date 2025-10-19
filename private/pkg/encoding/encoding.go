@@ -175,6 +175,7 @@ func InterfaceSliceOrStringToCommaSepString(in any) (string, error) {
 	return strings.Join(values, ","), nil
 }
 
+// InterfaceSliceOrStringToStringSlice converts the slice or string to a []string.
 func InterfaceSliceOrStringToStringSlice(in any) ([]string, error) {
 	if in == nil {
 		return nil, nil

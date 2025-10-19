@@ -18,26 +18,31 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 )
 
+// ControllerOption is a controller option.
 type ControllerOption func(*controller)
 
+// WithDisableSymlinks returns a new ControllerOption that
 func WithDisableSymlinks(disableSymlinks bool) ControllerOption {
 	return func(controller *controller) {
 		controller.disableSymlinks = disableSymlinks
 	}
 }
 
+// WithFileAnnotationErrorFormat returns a new ControllerOption that sets the FileAnnotation format.
 func WithFileAnnotationErrorFormat(fileAnnotationErrorFormat string) ControllerOption {
 	return func(controller *controller) {
 		controller.fileAnnotationErrorFormat = fileAnnotationErrorFormat
 	}
 }
 
+// WithFileAnnotationsToStdout returns a new ControllerOption that sends FileAnnotations to stdout
 func WithFileAnnotationsToStdout() ControllerOption {
 	return func(controller *controller) {
 		controller.fileAnnotationsToStdout = true
 	}
 }
 
+// WithCopyToInMemory returns a new ControllerOption that copies to memory.
 func WithCopyToInMemory() ControllerOption {
 	return func(controller *controller) {
 		controller.copyToInMemory = true
@@ -49,6 +54,7 @@ func WithCopyToInMemory() ControllerOption {
 // TODO FUTURE: split up to per-function.
 type FunctionOption func(*functionOptions)
 
+// WithTargetPaths returns a new FunctionOption that  sets the target paths.
 func WithTargetPaths(targetPaths []string, targetExcludePaths []string) FunctionOption {
 	return func(functionOptions *functionOptions) {
 		functionOptions.targetPaths = targetPaths
@@ -56,30 +62,35 @@ func WithTargetPaths(targetPaths []string, targetExcludePaths []string) Function
 	}
 }
 
+// WithImageExcludeSourceInfo returns a new FunctionOption that excludes source code info.
 func WithImageExcludeSourceInfo(imageExcludeSourceInfo bool) FunctionOption {
 	return func(functionOptions *functionOptions) {
 		functionOptions.imageExcludeSourceInfo = imageExcludeSourceInfo
 	}
 }
 
+// WithImageExcludeImports returns a new FunctionOption that excludes imports.
 func WithImageExcludeImports(imageExcludeImports bool) FunctionOption {
 	return func(functionOptions *functionOptions) {
 		functionOptions.imageExcludeImports = imageExcludeImports
 	}
 }
 
+// WithImageIncludeTypes returns a new FunctionOption that includes the given types.
 func WithImageIncludeTypes(imageTypes []string) FunctionOption {
 	return func(functionOptions *functionOptions) {
 		functionOptions.imageIncludeTypes = imageTypes
 	}
 }
 
+// WithImageExcludeTypes returns a new FunctionOption that excludes the given types.
 func WithImageExcludeTypes(imageExcludeTypes []string) FunctionOption {
 	return func(functionOptions *functionOptions) {
 		functionOptions.imageExcludeTypes = imageExcludeTypes
 	}
 }
 
+// WithImageAsFileDescriptorSet returns a new FunctionOption that returns the image as a FileDescriptorSet.
 func WithImageAsFileDescriptorSet(imageAsFileDescriptorSet bool) FunctionOption {
 	return func(functionOptions *functionOptions) {
 		functionOptions.imageAsFileDescriptorSet = imageAsFileDescriptorSet
