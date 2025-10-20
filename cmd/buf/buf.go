@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"time"
 
 	"buf.build/go/app"
 	"buf.build/go/app/appcmd"
@@ -135,7 +134,7 @@ func main() {
 func newRootCommand(name string) *appcmd.Command {
 	builder := appext.NewBuilder(
 		name,
-		appext.BuilderWithTimeout(120*time.Second),
+		appext.BuilderWithTimeout(0),
 		appext.BuilderWithInterceptor(newErrorInterceptor()),
 		appext.BuilderWithLoggerProvider(slogapp.LoggerProvider),
 	)
