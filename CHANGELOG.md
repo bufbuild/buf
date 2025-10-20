@@ -9,7 +9,8 @@
 - Fix positional encoding for diagnostics in `buf lsp serve`.
 - Fix format updates for `buf lsp serve`.
 - Fix syntax highlighting on semantic tokens for `buf lsp serve`.
-- Fix `buf format` to remove extraneous whitespace before the first header node (syntax/package declarations).
+- Fix `buf format` to remove extraneous whitespace before the first header node (syntax/package
+  declarations).
 
 ## [v1.58.0] - 2025-10-09
 
