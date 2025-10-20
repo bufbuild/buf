@@ -1,8 +1,16 @@
 # Changelog
 
-## [Unreleased]
+## [v1.59.0] - 2025-10-20
 
-- No changes yet.
+- Promote `buf beta lsp` to `buf lsp serve`. Command `buf beta lsp` is now deprecated.
+- Add `textDocument/References` support for `buf lsp serve`.
+- Add autocompletion for basic keywords, syntax, package and imports for `buf lsp serve`.
+- Add workspace symbol queries for `buf lsp serve`.
+- Fix positional encoding for diagnostics in `buf lsp serve`.
+- Fix format updates for `buf lsp serve`.
+- Fix syntax highlighting on semantic tokens for `buf lsp serve`.
+- Fix `buf format` to remove extraneous whitespace before the first header node (syntax/package
+  declarations).
 
 ## [v1.58.0] - 2025-10-09
 
@@ -1422,7 +1430,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.58.0...HEAD
+[v1.59.0]: https://github.com/bufbuild/buf/compare/v1.58.0...v1.59.0
 [v1.58.0]: https://github.com/bufbuild/buf/compare/v1.57.2...v1.58.0
 [v1.57.2]: https://github.com/bufbuild/buf/compare/v1.57.1...v1.57.2
 [v1.57.1]: https://github.com/bufbuild/buf/compare/v1.57.0...v1.57.1
