@@ -126,7 +126,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
+
+const timeoutFlagName = "timeout"
 
 func main() {
 	appcmd.Main(context.Background(), newRootCommand("buf"))
@@ -135,16 +138,18 @@ func main() {
 func newRootCommand(name string) *appcmd.Command {
 	builder := appext.NewBuilder(
 		name,
-		appext.BuilderWithTimeout(120*time.Second),
 		appext.BuilderWithInterceptor(newErrorInterceptor()),
 		appext.BuilderWithLoggerProvider(slogapp.LoggerProvider),
 	)
 	return &appcmd.Command{
-		Use:                 name,
-		Short:               "The Buf CLI",
-		Long:                "A tool for working with Protocol Buffers and managing resources on the Buf Schema Registry (BSR)",
-		Version:             bufcli.Version,
-		BindPersistentFlags: builder.BindRoot,
+		Use:     name,
+		Short:   "The Buf CLI",
+		Long:    "A tool for working with Protocol Buffers and managing resources on the Buf Schema Registry (BSR)",
+		Version: bufcli.Version,
+		BindPersistentFlags: appcmd.BindMultiple(
+			builder.BindRoot,
+			bindHiddenTimeoutFlag,
+		),
 		SubCommands: []*appcmd.Command{
 			build.NewCommand("build", builder),
 			export.NewCommand("export", builder),
@@ -622,4 +627,15 @@ func deprecatedMessage(newCommand, oldCommand string) string {
 		`use "%s" instead. However, "%s" will continue to work.`,
 		newCommand, oldCommand,
 	)
+}
+
+// bindHiddenTimeoutFlag binds a hidden and deprecated timeout flag.
+//
+// Every command used to have a timeout flag, but we removed this. We need to keep the flag around so that
+// callers are not broken.
+func bindHiddenTimeoutFlag(flagSet *pflag.FlagSet) {
+	var timeout time.Duration
+	flagSet.DurationVar(&timeout, timeoutFlagName, 0, "This flag is deprecated and has no effect.")
+	_ = flagSet.MarkDeprecated(timeoutFlagName, "This flag is deprecated and has no effect.")
+	_ = flagSet.MarkHidden(timeoutFlagName)
 }
