@@ -154,7 +154,8 @@ func (f *file) ReadFromDisk(ctx context.Context) (err error) {
 		return nil
 	}
 
-	reader, err := os.Open(f.uri.Filename())
+	fileName := f.uri.Filename()
+	reader, err := os.Open(fileName)
 	if err != nil {
 		return fmt.Errorf("could not open file %q from disk: %w", f.uri, err)
 	}
@@ -165,7 +166,7 @@ func (f *file) ReadFromDisk(ctx context.Context) (err error) {
 	}
 
 	f.version = -1
-	f.file = report.NewFile(f.objectInfo.Path(), text)
+	f.file = report.NewFile(fileName, text)
 	f.hasText = true
 	return nil
 }
@@ -177,7 +178,7 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 
 	f.lsp.logger.Info(fmt.Sprintf("new file version: %v, %v -> %v", f.uri, f.version, version))
 	f.version = version
-	f.file = report.NewFile(f.objectInfo.Path(), text)
+	f.file = report.NewFile(f.uri.Filename(), text)
 	f.hasText = true
 }
 
