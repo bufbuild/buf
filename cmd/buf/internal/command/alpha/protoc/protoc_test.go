@@ -45,8 +45,6 @@ var buftestingDirPath = filepath.Join(
 	"..",
 	"..",
 	"..",
-	"..",
-	"..",
 	"private",
 	"buf",
 	"buftesting",

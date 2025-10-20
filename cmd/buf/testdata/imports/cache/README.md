@@ -9,9 +9,9 @@ To re-generate digests:
 
 ```
 buf-digest \
-  private/buf/cmd/buf/testdata/imports/success/school \
-  private/buf/cmd/buf/testdata/imports/success/people \
-  private/buf/cmd/buf/testdata/imports/success/students
+  cmd/buf/testdata/imports/success/school \
+  cmd/buf/testdata/imports/success/people \
+  cmd/buf/testdata/imports/success/students
 ```
 
 To make new commit IDs:

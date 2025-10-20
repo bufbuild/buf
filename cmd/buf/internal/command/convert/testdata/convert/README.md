@@ -2,7 +2,7 @@ To re-generate the `descriptor.plain.binpb` file, run the following command in t
 
 ```
 echo "{\"one\":\"55\"}" | \
-buf convert private/buf/cmd/buf/testdata/success \
+buf convert cmd/buf/testdata/success \
     --type buf.Foo \
     --from -#format=json \
     --to cmd/buf/internal/command/convert/testdata/convert/descriptor.plain.binpb
