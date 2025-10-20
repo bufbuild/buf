@@ -636,6 +636,6 @@ func deprecatedMessage(newCommand, oldCommand string) string {
 func bindHiddenTimeoutFlag(flagSet *pflag.FlagSet) {
 	var timeout time.Duration
 	flagSet.DurationVar(&timeout, timeoutFlagName, 0, "This flag is deprecated and has no effect.")
-	_ = flagSet.MarkDeprecated(timeoutFlagName, "This flag is deprecated and has no effect.")
+	_ = flagSet.MarkDeprecated(timeoutFlagName, "this flag has no effect")
 	_ = flagSet.MarkHidden(timeoutFlagName)
 }
