@@ -539,15 +539,14 @@ func (s *server) Symbols(
 		}
 		// Search through all symbols in this file.
 		for _, sym := range file.symbols {
+			if sym.ir.IsZero() {
+				continue
+			}
 			// Only include definitions: static and referenceable symbols.
 			// Skip references, imports, builtins, and tags
 			_, isStatic := sym.kind.(*static)
 			_, isReferenceable := sym.kind.(*referenceable)
 			if !isStatic && !isReferenceable {
-				continue
-			}
-
-			if sym.ir.IsZero() {
 				continue
 			}
 			symbolInfo := sym.GetSymbolInformation()
