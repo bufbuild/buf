@@ -475,6 +475,10 @@ func (f *file) RefreshIR(ctx context.Context) {
 	}
 	for i, file := range files {
 		file.ir = results[i].Value
+		if i > 0 {
+			// Update symbols for imports.
+			file.IndexSymbols(ctx)
+		}
 	}
 	diagnostics, err := xslices.MapError(
 		report.Diagnostics,
