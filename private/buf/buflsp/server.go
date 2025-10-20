@@ -533,14 +533,20 @@ func (s *server) Symbols(
 	query := strings.ToLower(params.Query)
 
 	var results []protocol.SymbolInformation
-	for uri, file := range s.fileManager.uriToFile.Range {
+	for _, file := range s.fileManager.uriToFile.Range {
 		if file.ir.IsZero() {
-			s.lsp.logger.DebugContext(ctx, fmt.Sprintf("workspace symbol: skipping file without IR: %s", uri))
 			continue
 		}
-
 		// Search through all symbols in this file.
 		for _, sym := range file.symbols {
+			// Only include definitions: static and referenceable symbols.
+			// Skip references, imports, builtins, and tags
+			_, isStatic := sym.kind.(*static)
+			_, isReferenceable := sym.kind.(*referenceable)
+			if !isStatic && !isReferenceable {
+				continue
+			}
+
 			if sym.ir.IsZero() {
 				continue
 			}
@@ -548,7 +554,6 @@ func (s *server) Symbols(
 			if symbolInfo.Name == "" {
 				continue // Symbol information not supported for this symbol.
 			}
-
 			// Filter by query (case-insensitive substring match)
 			if query != "" && !strings.Contains(strings.ToLower(symbolInfo.Name), query) {
 				continue
@@ -559,7 +564,6 @@ func (s *server) Symbols(
 			}
 		}
 	}
-
 	slices.SortFunc(results, func(a, b protocol.SymbolInformation) int {
 		if a.Name != b.Name {
 			return strings.Compare(a.Name, b.Name)
