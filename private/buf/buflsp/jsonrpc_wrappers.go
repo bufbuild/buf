@@ -95,7 +95,7 @@ func (c *connWrapper) Notify(
 			xslog.ErrorAttr(err),
 		)
 	} else {
-		c.logger.Warn(
+		c.logger.Debug(
 			"notify returned",
 			slog.String("method", method),
 		)
