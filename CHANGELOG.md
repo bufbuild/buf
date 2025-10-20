@@ -2,7 +2,14 @@
 
 ## [v1.59.0] - 2025-10-20
 
-- No changes yet.
+- Promote `buf beta lsp` to `buf lsp serve`. Command `buf beta lsp` is now deprecated.
+- Add `textDocument/References` support for `buf lsp serve`.
+- Add autocompletion for basic keywords, syntax, package and imports for `buf lsp serve`.
+- Add workspace symbol queries for `buf lsp serve`.
+- Fix positional encoding for diagnostics in `buf lsp serve`.
+- Fix format updates for `buf lsp serve`.
+- Fix syntax highlighting on semantic tokens for `buf lsp serve`.
+- Fix `buf format` to remove extraneous whitespace before the first header node (syntax/package declarations).
 
 ## [v1.58.0] - 2025-10-09
 
