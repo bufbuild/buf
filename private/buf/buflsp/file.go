@@ -361,7 +361,7 @@ func (f *file) IndexImports(ctx context.Context) {
 	if f.importToFile != nil {
 		return
 	}
-	importables, err := f.findImportable(ctx)
+	fileInfos, err := f.getWorkspaceFileInfos(ctx)
 	if err != nil {
 		f.lsp.logger.Error(
 			"failed to get importable files",
@@ -369,7 +369,7 @@ func (f *file) IndexImports(ctx context.Context) {
 		)
 	}
 	f.importToFile = make(map[string]*file)
-	for _, importable := range importables {
+	for _, importable := range fileInfos {
 		if importable.ExternalPath() == f.uri.Filename() {
 			f.objectInfo = importable
 			if err := f.ReadFromDisk(ctx); err != nil {
@@ -396,39 +396,38 @@ func (f *file) IndexImports(ctx context.Context) {
 	}
 }
 
-// findImportable finds all files that can potentially be imported by the proto file, f.
+// getWorkspaceFileInfos returns all files within the workspace.
 //
 // Note that this performs no validation on these files, because those files might be open in the
 // editor and might contain invalid syntax at the moment. We only want to get their paths and nothing
 // more.
 //
 // This operation requires RefreshWorkspace.
-func (f *file) findImportable(ctx context.Context) ([]storage.ObjectInfo, error) {
-	// This does not use Controller.GetImportableImageFileInfos because that function does
-	// not specify which of the files it returns are well-known types. We can use heuristics
-	// based on the path to try and guess which files are well-known types, but this can be
-	// fragile. Instead we explicitly walk the well-known types bucket instead.
-	//
-	// We track the imports in a map to dedup by import path.
-	imports := make(map[string]storage.ObjectInfo)
+func (f *file) getWorkspaceFileInfos(ctx context.Context) ([]storage.ObjectInfo, error) {
+	seen := make(map[string]struct{})
+	var fileInfos []storage.ObjectInfo
 	for _, module := range f.workspace.Modules() {
 		if err := module.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
 			if fileInfo.FileType() != bufmodule.FileTypeProto {
 				return nil
 			}
-			imports[fileInfo.Path()] = fileInfo
+			fileInfos = append(fileInfos, fileInfo)
+			seen[fileInfo.Path()] = struct{}{}
 			return nil
 		}); err != nil {
 			return nil, err
 		}
 	}
+	// Add all wellknown types if not provided within the workspace.
 	if err := f.lsp.wktBucket.Walk(ctx, "", func(objectInfo storage.ObjectInfo) error {
-		imports[objectInfo.Path()] = wktObjectInfo{objectInfo}
+		if _, ok := seen[objectInfo.Path()]; !ok {
+			fileInfos = append(fileInfos, wktObjectInfo{objectInfo})
+		}
 		return nil
 	}); err != nil {
 		return nil, err
 	}
-	return xslices.MapValuesToSlice(imports), nil
+	return fileInfos, nil
 }
 
 // RefreshIR queries for the IR of the file and the IR of each import file.
