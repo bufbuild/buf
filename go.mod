@@ -2,6 +2,8 @@ module github.com/bufbuild/buf
 
 go 1.24.0
 
+replace go.lsp.dev/protocol => github.com/emcfarlane/protocol v0.0.0-20251021131257-8d260a18d239
+
 require (
 	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.10-20250718181942-e35f9b667443.1
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.10-20250912141014-52f32327d4b0.1

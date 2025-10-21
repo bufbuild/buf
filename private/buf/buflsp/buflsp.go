@@ -32,7 +32,6 @@ import (
 	"github.com/bufbuild/protocompile/experimental/incremental"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
-	"go.uber.org/zap"
 )
 
 // Serve spawns a new LSP server, listening on the given stream.
@@ -48,21 +47,22 @@ func Serve(
 	queryExecutor *incremental.Executor,
 ) (jsonrpc2.Conn, error) {
 	conn := jsonrpc2.NewConn(stream)
+	logger := container.Logger()
 	lsp := &lsp{
 		conn: conn,
 		client: protocol.ClientDispatcher(
-			&connWrapper{Conn: conn, logger: container.Logger()},
-			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
+			conn,
+			logger,
 		),
 		container:     container,
-		logger:        container.Logger(),
+		logger:        logger,
 		controller:    controller,
 		wasmRuntime:   wasmRuntime,
 		wktBucket:     wktBucket,
 		queryExecutor: queryExecutor,
 	}
 	lsp.fileManager = newFileManager(lsp)
-	off := protocol.TraceOff
+	off := protocol.TraceVerbose
 	lsp.traceValue.Store(&off)
 
 	conn.Go(ctx, lsp.newHandler())
@@ -133,16 +133,16 @@ func (l *lsp) newHandler() jsonrpc2.Handler {
 			slog.Any("params", req.Params()),
 		)()
 
-		replier := l.wrapReplier(reply, req)
+		//replier := l.wrapReplier(reply, req)
 
 		var err error
 		if req.Method() != protocol.MethodInitialize && l.initParams.Load() == nil {
 			// Verify that the server has been initialized if this isn't the initialization
 			// request.
-			err = replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize))
+			err = reply(ctx, nil, fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize))
 		} else {
 			l.lock.Lock()
-			err = actual(ctx, replier, req)
+			err = actual(ctx, reply, req)
 			l.lock.Unlock()
 		}
 

@@ -14,6 +14,7 @@
 
 package buflsp
 
+/*
 import (
 	"context"
 	"log/slog"
@@ -102,4 +103,4 @@ func (c *connWrapper) Notify(
 	}
 
 	return err
-}
+}*/

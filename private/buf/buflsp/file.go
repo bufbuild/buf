@@ -1105,6 +1105,7 @@ func (f *file) appendLintErrors(source string, err error) bool {
 		)
 		return false
 	}
+	f.lsp.logger.Debug("ADDING LOG ERRORS", slog.Int("count", len(annotations.FileAnnotations())))
 
 	for _, annotation := range annotations.FileAnnotations() {
 		// Convert 1-indexed byte-based line/column to byte offset.
@@ -1139,6 +1140,11 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 	diagnostics := f.diagnostics
 	if f.diagnostics == nil {
 		diagnostics = []protocol.Diagnostic{}
+	}
+
+	const maxLimit = 100 // Limit to avoid overwhelming clients
+	if len(diagnostics) > maxLimit {
+		diagnostics = diagnostics[:100]
 	}
 
 	// Publish the diagnostics. This error is automatically logged by the LSP framework.
