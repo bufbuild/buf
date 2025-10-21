@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix `buf lsp serve` to skip files in the buf cache directory to prevent workspace resolution
+  issues that could cause import paths to become unresolvable.
 
 ## [v1.59.0] - 2025-10-20
 
