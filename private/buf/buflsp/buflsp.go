@@ -62,6 +62,7 @@ func Serve(
 		queryExecutor: queryExecutor,
 	}
 	lsp.fileManager = newFileManager(lsp)
+	lsp.workspaceManager = newWorkspaceManager(lsp)
 	off := protocol.TraceOff
 	lsp.traceValue.Store(&off)
 
@@ -83,13 +84,14 @@ type lsp struct {
 	client    protocol.Client
 	container appext.Container
 
-	logger        *slog.Logger
-	controller    bufctl.Controller
-	wasmRuntime   wasm.Runtime
-	fileManager   *fileManager
-	queryExecutor *incremental.Executor
-	wktBucket     storage.ReadBucket
-	shutdown      bool
+	logger           *slog.Logger
+	controller       bufctl.Controller
+	wasmRuntime      wasm.Runtime
+	fileManager      *fileManager
+	workspaceManager *workspaceManager
+	queryExecutor    *incremental.Executor
+	wktBucket        storage.ReadBucket
+	shutdown         bool
 
 	lock sync.Mutex
 
