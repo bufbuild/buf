@@ -96,7 +96,7 @@ func completionItemsForDeclPath(ctx context.Context, file *file, declPath []ast.
 	case ast.DeclKindPackage:
 		return completionItemsForPackage(ctx, file, decl.AsPackage())
 	case ast.DeclKindImport:
-		return completionItemsForImport(ctx, file)
+		return completionItemsForImport(ctx, file, decl.AsImport(), position)
 	default:
 		file.lsp.logger.DebugContext(ctx, "completion: unknown declaration type", slog.String("kind", decl.Kind().String()))
 		return nil
@@ -208,19 +208,52 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 // completionItemsForImport returns completion items for import declarations.
 //
 // Suggest all importable files.
-func completionItemsForImport(ctx context.Context, file *file) []protocol.CompletionItem {
+func completionItemsForImport(ctx context.Context, file *file, declImport ast.DeclImport, position protocol.Position) []protocol.CompletionItem {
 	file.lsp.logger.DebugContext(ctx, "completion: import declaration", slog.Int("importable_count", len(file.importToFile)))
 
+	currentImportPathText := declImport.ImportPath().AsLiteral().Text()
 	items := make([]protocol.CompletionItem, 0, len(file.importToFile))
 	for importPath := range file.importToFile {
+		suggestedImportPath := importPath
+		if currentImportPathText != "" {
+			// If there is already text in the import path, only suggest import paths with the given
+			// prefix.
+			currentImportPathWithoutSurroundingQuotes := strings.TrimSuffix(strings.TrimPrefix(currentImportPathText, `"`), `"`)
+			if !strings.HasPrefix(importPath, currentImportPathWithoutSurroundingQuotes) {
+				continue
+			}
+			suggestedImportPath = strings.TrimPrefix(suggestedImportPath, currentImportPathWithoutSurroundingQuotes)
+		}
+		var newText strings.Builder
+		if !strings.HasPrefix(currentImportPathText, `"`) {
+			_, _ = newText.WriteString(`"`)
+		}
+		newText.WriteString(suggestedImportPath)
+		if !strings.HasSuffix(currentImportPathText, `"`) {
+			_, _ = newText.WriteString(`"`)
+			// Only suggest a finishing `;` character if one doesn't already exist, and we're writing out
+			// a `"` before it.
+			// TODO: Should we add an AdditionalTextEdit for adding the `;` at the end of the line?
+			// e.g., if we're doing:
+			//   import "‸"
+			// And we select a value, is it valuable to also insert the semicolon?
+			if declImport.Semicolon().IsZero() {
+				_, _ = newText.WriteString(";")
+			}
+		}
 		items = append(items, protocol.CompletionItem{
-			Label: " \"" + importPath + "\";",
+			// Show the whole import path in the label.
+			Label: importPath,
 			Kind:  protocol.CompletionItemKindFile,
+			TextEdit: &protocol.TextEdit{
+				NewText: newText.String(),
+				Range: protocol.Range{
+					Start: position,
+					End:   position,
+				},
+			},
 		})
 	}
-	slices.SortFunc(items, func(a, b protocol.CompletionItem) int {
-		return strings.Compare(strings.ToLower(a.Label), strings.ToLower(b.Label))
-	})
 	return items
 }
 
