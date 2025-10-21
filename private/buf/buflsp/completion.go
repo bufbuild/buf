@@ -143,7 +143,7 @@ func completionItemsForPackage(ctx context.Context, file *file, syntaxPackage as
 	file.lsp.logger.DebugContext(ctx, "completion: package suggestion", slog.String("package", strings.Join(suggested, ".")))
 	return []protocol.CompletionItem{{
 		Label: strings.Join(suggested, ".") + ";",
-		Kind:  protocol.CompletionItemKindSnippet,
+		Kind:  protocol.CompletionItemKindModule,
 	}}
 }
 
