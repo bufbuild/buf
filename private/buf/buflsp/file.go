@@ -89,14 +89,17 @@ type file struct {
 	image, againstImage  bufimage.Image
 }
 
+// IsCache returns whether this file is in the cache.
+func (f *file) IsCache() bool {
+	return normalpath.ContainsPath(f.lsp.container.CacheDirPath(), f.uri.Filename(), normalpath.Absolute)
+}
+
 // IsLocal returns whether this is a local file, i.e. a file that the editor
 // is editing and not something from e.g. the BSR.
 func (f *file) IsLocal() bool {
-	if f.objectInfo == nil {
-		return false
-	}
-
-	return f.objectInfo.LocalPath() == f.objectInfo.ExternalPath()
+	return !f.IsCache() &&
+		f.objectInfo != nil &&
+		f.objectInfo.LocalPath() == f.objectInfo.ExternalPath()
 }
 
 // IsWKT returns whether this file corresponds to a well-known type.
@@ -277,6 +280,12 @@ func getSetting[T, U any](f *file, settings []any, name string, index int, parse
 
 // Refresh rebuilds all of a file's internal book-keeping.
 func (f *file) Refresh(ctx context.Context) {
+	if f.IsCache() {
+		// Cache files are not currently supported.
+		f.lsp.logger.Debug("skipping cache file", slog.String("file", f.uri.Filename()))
+		return
+	}
+
 	var progress *progress
 	if f.IsOpenInEditor() {
 		// NOTE: Nil progress does nothing when methods are called. This helps
@@ -898,6 +907,10 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 //
 // This operation requires IndexImports..
 func (f *file) RunChecks(ctx context.Context) {
+	if !f.IsLocal() {
+		// Non local files are not yet supported.
+		return
+	}
 	// If we have not yet started a goroutine to run checks, start one.
 	// This goroutine will run checks in the background and publish diagnostics.
 	// We debounce checks to avoid spamming the client.
@@ -1037,6 +1050,10 @@ func (f *file) BuildImages(ctx context.Context) {
 //
 // This operation requires BuildImage.
 func (f *file) RunLints(ctx context.Context) bool {
+	if !f.IsLocal() {
+		// Non local files are not yet supported.
+		return false
+	}
 	if f.IsWKT() {
 		// Well-known types are not linted.
 		return false
@@ -1065,6 +1082,10 @@ func (f *file) RunLints(ctx context.Context) bool {
 //
 // This operation requires BuildImage.
 func (f *file) RunBreaking(ctx context.Context) bool {
+	if !f.IsLocal() {
+		// Non local files are not yet supported.
+		return false
+	}
 	if f.IsWKT() {
 		// Well-known types are not linted.
 		return false
