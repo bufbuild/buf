@@ -174,8 +174,9 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 	switch s.kind.(type) {
 	case *imported:
 		imported, _ := s.kind.(*imported)
-		// Provide a preview of the imported file.
-		return fmt.Sprintf("```proto\n%s\n```", imported.file.file.Text())
+		// Show the path to the file on disk, which is similar to how other LSP clients treat hovering
+		// on an import file.
+		return imported.file.file.Path()
 	case *tag:
 		plural := func(i int) string {
 			if i == 1 {
