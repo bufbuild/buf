@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `textDocument/documentSymbol` support for `buf lsp serve`.
 
 ## [v1.59.0] - 2025-10-20
 
