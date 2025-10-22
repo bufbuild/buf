@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Fix LSP published diagnostics to filter to the opened file.
+- Add `textDocument/documentSymbol` support for `buf lsp serve`.
 
 ## [v1.59.0] - 2025-10-20
 

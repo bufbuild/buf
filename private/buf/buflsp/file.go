@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"iter"
 	"log/slog"
 	"os"
 	"slices"
@@ -1165,4 +1166,40 @@ func readAllAsString(reader io.Reader) (string, error) {
 		return "", err
 	}
 	return builder.String(), nil
+}
+
+// GetSymbols retrieves symbols for the file. If a query is passed, matches only symbols matching
+// the case-insensitive substring match to the symbol.
+//
+// This operation requires [IndexSymbols].
+func (f *file) GetSymbols(query string) iter.Seq[protocol.SymbolInformation] {
+	return func(yield func(protocol.SymbolInformation) bool) {
+		if f.ir.IsZero() {
+			return
+		}
+		// Search through all symbols in this file.
+		for _, sym := range f.symbols {
+			if sym.ir.IsZero() {
+				continue
+			}
+			// Only include definitions: static and referenceable symbols.
+			// Skip references, imports, builtins, and tags
+			_, isStatic := sym.kind.(*static)
+			_, isReferenceable := sym.kind.(*referenceable)
+			if !isStatic && !isReferenceable {
+				continue
+			}
+			symbolInfo := sym.GetSymbolInformation()
+			if symbolInfo.Name == "" {
+				continue // Symbol information not supported for this symbol.
+			}
+			// Filter by query (case-insensitive substring match)
+			if query != "" && !strings.Contains(strings.ToLower(symbolInfo.Name), query) {
+				continue
+			}
+			if !yield(symbolInfo) {
+				return
+			}
+		}
+	}
 }
