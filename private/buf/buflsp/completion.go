@@ -225,6 +225,11 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 			suggestedImportPath = strings.TrimPrefix(suggestedImportPath, currentImportPathWithoutSurroundingQuotes)
 		}
 		var newText strings.Builder
+		if afterImport := declImport.KeywordToken().Span().After(); len(afterImport) != 0 && afterImport[0] != ' ' {
+			// If we have a literal `import` on the line and are asking for completion, we want to add
+			// a space after the `import` keyword.
+			_, _ = newText.WriteString(` `)
+		}
 		if !strings.HasPrefix(currentImportPathText, `"`) {
 			_, _ = newText.WriteString(`"`)
 		}
