@@ -534,61 +534,31 @@ func (s *server) Symbols(
 	query := strings.ToLower(params.Query)
 	var results []protocol.SymbolInformation
 	for _, file := range s.fileManager.uriToFile.Range {
-		results = append(results, getFileSymbols(file, query)...)
-		if len(results) > maxSymbolResults {
-			// Trim the slice if we have too many symbols.
-			results = results[:maxSymbolResults]
-			break
+		for symbol := range file.GetSymbols(query) {
+			results = append(results, symbol)
+			if len(results) > maxSymbolResults {
+				break
+			}
 		}
 	}
 	return results, nil
 }
 
 // DocumentSymbol is the entry point for document symbol search.
-func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) (result []any, err error) {
+func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) (
+	result []any, // []protocol.SymbolInformation
+	err error,
+) {
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {
 		return nil, nil
 	}
-	results := getFileSymbols(file, "")
-	if len(results) > maxSymbolResults {
-		// Trim the slice if we have too many symbols.
-		results = results[:maxSymbolResults]
-	}
-	// Fix the return type.
-	anyResults := make([]any, len(results))
-	for i, result := range results {
-		anyResults[i] = result
+	anyResults := []any{}
+	for symbol := range file.GetSymbols("") {
+		anyResults = append(anyResults, symbol)
+		if len(anyResults) > maxSymbolResults {
+			break
+		}
 	}
 	return anyResults, nil
-}
-
-func getFileSymbols(f *file, query string) []protocol.SymbolInformation {
-	if f.ir.IsZero() {
-		return nil
-	}
-	// Search through all symbols in this file.
-	results := []protocol.SymbolInformation{}
-	for _, sym := range f.symbols {
-		if sym.ir.IsZero() {
-			continue
-		}
-		// Only include definitions: static and referenceable symbols.
-		// Skip references, imports, builtins, and tags
-		_, isStatic := sym.kind.(*static)
-		_, isReferenceable := sym.kind.(*referenceable)
-		if !isStatic && !isReferenceable {
-			continue
-		}
-		symbolInfo := sym.GetSymbolInformation()
-		if symbolInfo.Name == "" {
-			continue // Symbol information not supported for this symbol.
-		}
-		// Filter by query (case-insensitive substring match)
-		if query != "" && !strings.Contains(strings.ToLower(symbolInfo.Name), query) {
-			continue
-		}
-		results = append(results, symbolInfo)
-	}
-	return results
 }
