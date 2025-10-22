@@ -295,6 +295,10 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 				})
 			}
 		}
+		var isImportFileDeprecated bool
+		if _, ok := importFile.ir.Deprecated().AsBool(); ok {
+			isImportFileDeprecated = true
+		}
 		items = append(items, protocol.CompletionItem{
 			// Show the whole import path in the label.
 			Label: importPath,
@@ -307,6 +311,8 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 				},
 			},
 			AdditionalTextEdits: additionalTextEdits,
+			// TODO: Use Tags with a protocol.CompletionItemTagDeprecated if the client supports tags.
+			Deprecated: isImportFileDeprecated,
 		})
 	}
 	return items
