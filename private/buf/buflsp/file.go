@@ -458,7 +458,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 			Session: session,
 		}
 	})
-	results, report, err := incremental.Run(
+	results, diagnosticReport, err := incremental.Run(
 		ctx,
 		f.lsp.queryExecutor,
 		queries...,
@@ -479,8 +479,12 @@ func (f *file) RefreshIR(ctx context.Context) {
 			file.IndexSymbols(ctx)
 		}
 	}
+	// Only hold on to diagnostics where the primary span is for this path.
+	fileDiagnostics := xslices.Filter(diagnosticReport.Diagnostics, func(d report.Diagnostic) bool {
+		return d.Primary().Path() == f.objectInfo.Path()
+	})
 	diagnostics, err := xslices.MapError(
-		report.Diagnostics,
+		fileDiagnostics,
 		reportDiagnosticToProtocolDiagnostic,
 	)
 	if err != nil {
