@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"runtime/debug"
-	"slices"
 	"strings"
 	"unicode/utf16"
 
@@ -32,6 +31,8 @@ import (
 
 const (
 	serverName = "buf-lsp"
+
+	maxSymbolResults = 1000
 )
 
 const (
@@ -141,6 +142,7 @@ func (s *server) Initialize(
 				Full: true,
 			},
 			WorkspaceSymbolProvider: true,
+			DocumentSymbolProvider:  true,
 		},
 		ServerInfo: info,
 	}, nil
@@ -529,45 +531,64 @@ func (s *server) Symbols(
 	ctx context.Context,
 	params *protocol.WorkspaceSymbolParams,
 ) ([]protocol.SymbolInformation, error) {
-	const maxResults = 1000 // Limit results to avoid overwhelming clients
 	query := strings.ToLower(params.Query)
-
 	var results []protocol.SymbolInformation
 	for _, file := range s.fileManager.uriToFile.Range {
-		if file.ir.IsZero() {
-			continue
-		}
-		// Search through all symbols in this file.
-		for _, sym := range file.symbols {
-			if sym.ir.IsZero() {
-				continue
-			}
-			// Only include definitions: static and referenceable symbols.
-			// Skip references, imports, builtins, and tags
-			_, isStatic := sym.kind.(*static)
-			_, isReferenceable := sym.kind.(*referenceable)
-			if !isStatic && !isReferenceable {
-				continue
-			}
-			symbolInfo := sym.GetSymbolInformation()
-			if symbolInfo.Name == "" {
-				continue // Symbol information not supported for this symbol.
-			}
-			// Filter by query (case-insensitive substring match)
-			if query != "" && !strings.Contains(strings.ToLower(symbolInfo.Name), query) {
-				continue
-			}
-			results = append(results, symbolInfo)
-			if len(results) >= maxResults {
-				break
-			}
+		results = append(results, getFileSymbols(file, query)...)
+		if len(results) > maxSymbolResults {
+			// Trim the slice if we have too many symbols.
+			results = results[:maxSymbolResults]
+			break
 		}
 	}
-	slices.SortFunc(results, func(a, b protocol.SymbolInformation) int {
-		if a.Name != b.Name {
-			return strings.Compare(a.Name, b.Name)
-		}
-		return strings.Compare(a.ContainerName, b.ContainerName)
-	})
 	return results, nil
+}
+
+// DocumentSymbol is the entry point for document symbol search.
+func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) (result []any, err error) {
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, nil
+	}
+	results := getFileSymbols(file, "")
+	if len(results) > maxSymbolResults {
+		// Trim the slice if we have too many symbols.
+		results = results[:maxSymbolResults]
+	}
+	// Fix the return type.
+	anyResults := make([]any, len(results))
+	for i, result := range results {
+		anyResults[i] = result
+	}
+	return anyResults, nil
+}
+
+func getFileSymbols(f *file, query string) []protocol.SymbolInformation {
+	if f.ir.IsZero() {
+		return nil
+	}
+	// Search through all symbols in this file.
+	results := []protocol.SymbolInformation{}
+	for _, sym := range f.symbols {
+		if sym.ir.IsZero() {
+			continue
+		}
+		// Only include definitions: static and referenceable symbols.
+		// Skip references, imports, builtins, and tags
+		_, isStatic := sym.kind.(*static)
+		_, isReferenceable := sym.kind.(*referenceable)
+		if !isStatic && !isReferenceable {
+			continue
+		}
+		symbolInfo := sym.GetSymbolInformation()
+		if symbolInfo.Name == "" {
+			continue // Symbol information not supported for this symbol.
+		}
+		// Filter by query (case-insensitive substring match)
+		if query != "" && !strings.Contains(strings.ToLower(symbolInfo.Name), query) {
+			continue
+		}
+		results = append(results, symbolInfo)
+	}
+	return results
 }
