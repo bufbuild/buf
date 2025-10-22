@@ -213,8 +213,18 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 	file.lsp.logger.DebugContext(ctx, "completion: import declaration", slog.Int("importable_count", len(file.importToFile)))
 
 	currentImportPathText := declImport.ImportPath().AsLiteral().Text()
+	if currentImportPathText == "" {
+		// If we don't have import path text, it's still possible that we have something like:
+		// `import goo`
+		// In which case we want to still recommend import paths with that prefix.
+		tokens := strings.Fields(declImport.Span().Text())
+		if len(tokens) != 0 {
+			lastToken := tokens[len(tokens)-1]
+			currentImportPathText = strings.TrimSuffix(lastToken, ";")
+		}
+	}
 	items := make([]protocol.CompletionItem, 0, len(file.importToFile))
-	for importPath := range file.importToFile {
+	for importPath, importFile := range file.importToFile {
 		suggestedImportPath := importPath
 		if currentImportPathText != "" {
 			// If there is already text in the import path, only suggest import paths with the given
@@ -231,11 +241,30 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 			// a space after the `import` keyword.
 			_, _ = newText.WriteString(` `)
 		}
+		var additionalTextEdits []protocol.TextEdit
 		if !strings.HasPrefix(currentImportPathText, `"`) {
-			_, _ = newText.WriteString(`"`)
+			if currentImportPathText != "" {
+				// We're in a situation where we have `import goo`, in which case we want to make sure that
+				// we fix the entire import to be wrapped in quotes.
+				// Send an AdditionalTextEdit to add the front quote.
+				additionalTextEdits = append(additionalTextEdits, protocol.TextEdit{
+					NewText: `"`,
+					Range: protocol.Range{
+						Start: protocol.Position{
+							Line:      position.Line,
+							Character: position.Character - uint32(len(currentImportPathText)),
+						},
+						End: protocol.Position{
+							Line:      position.Line,
+							Character: position.Character - uint32(len(currentImportPathText)),
+						},
+					},
+				})
+			} else {
+				_, _ = newText.WriteString(`"`)
+			}
 		}
 		newText.WriteString(suggestedImportPath)
-		var additionalTextEdits []protocol.TextEdit
 		if !strings.HasSuffix(currentImportPathText, `"`) {
 			_, _ = newText.WriteString(`"`)
 			// Only suggest a finishing `;` character if one doesn't already exist, and we're writing out
