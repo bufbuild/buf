@@ -247,11 +247,12 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 				// We're in a situation where we have `import goo`, in which case we want to make sure that
 				// we fix the entire import to be wrapped in quotes.
 				// Send an AdditionalTextEdit to add the front quote.
-				if len(currentImportPathText) > math.MaxUint32 {
+				importPathLength := len(currentImportPathText)
+				if importPathLength < 0 || importPathLength > math.MaxUint32 {
 					file.lsp.logger.DebugContext(ctx, "completion: current import path text > math.MaxUint32")
 					return nil
 				}
-				characterForInsert := position.Character - uint32(len(currentImportPathText))
+				characterForInsert := position.Character - uint32(importPathLength)
 				positionForInsert := protocol.Position{
 					Line:      position.Line,
 					Character: characterForInsert,
