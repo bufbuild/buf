@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix LSP published diagnostics to filter to the opened file.
 
 ## [v1.59.0] - 2025-10-20
 
