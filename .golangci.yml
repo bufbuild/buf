@@ -184,6 +184,11 @@ linters:
         path: private/buf/buflsp/symbol.go
         text: 'G115:'
       - linters:
+          - gosec
+        # G115 checks for use of truncating conversions.
+        path: private/buf/buflsp/completion.go
+        text: 'G115'
+      - linters:
           - containedctx
         # Type must implement an interface whose methods do not accept context. But this
         # implementation makes RPC calls, which need a context. So we allow creator of the
@@ -194,11 +199,6 @@ linters:
         # We verify manually so that we can emit verbose output while doing so.
         path: private/buf/bufcurl/tls.go
         text: 'G402:'
-      - linters:
-          - gosec
-        # We specifically check for a math.MaxUint32 overflow before downcasting in this file.
-        path: private/buf/buflsp/completion.go
-        text: 'G115'
       - linters:
           - paralleltest
         # This test shouldn't run in parallel as it needs osext.Getwd.
