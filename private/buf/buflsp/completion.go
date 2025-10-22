@@ -234,16 +234,34 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 			_, _ = newText.WriteString(`"`)
 		}
 		newText.WriteString(suggestedImportPath)
+		var additionalTextEdits []protocol.TextEdit
 		if !strings.HasSuffix(currentImportPathText, `"`) {
 			_, _ = newText.WriteString(`"`)
 			// Only suggest a finishing `;` character if one doesn't already exist, and we're writing out
 			// a `"` before it.
-			// TODO: Should we add an AdditionalTextEdit for adding the `;` at the end of the line?
-			// e.g., if we're doing:
-			//   import "‸"
-			// And we select a value, is it valuable to also insert the semicolon?
 			if declImport.Semicolon().IsZero() {
 				_, _ = newText.WriteString(";")
+			}
+		} else {
+			// We're currently ending in a `"`, which means we're only going to suggest the file path.
+			// e.g., if we're doing:
+			//   import "‸"
+			// We ought to also send along an AdditionalTextEdit for adding the `;` at the end of the
+			// line, if it doesn't already exist.
+			if declImport.Semicolon().IsZero() {
+				additionalTextEdits = append(additionalTextEdits, protocol.TextEdit{
+					NewText: ";",
+					Range: protocol.Range{
+						Start: protocol.Position{
+							Line:      position.Line,
+							Character: 100, // End of line.
+						},
+						End: protocol.Position{
+							Line:      position.Line,
+							Character: 101,
+						},
+					},
+				})
 			}
 		}
 		items = append(items, protocol.CompletionItem{
@@ -257,6 +275,7 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 					End:   position,
 				},
 			},
+			AdditionalTextEdits: additionalTextEdits,
 		})
 	}
 	return items
