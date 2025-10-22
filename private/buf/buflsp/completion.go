@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"iter"
 	"log/slog"
+	"math"
 	"slices"
 	"strings"
 
@@ -251,14 +252,15 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 			if declImport.Semicolon().IsZero() {
 				additionalTextEdits = append(additionalTextEdits, protocol.TextEdit{
 					NewText: ";",
+					// End of line.
 					Range: protocol.Range{
 						Start: protocol.Position{
 							Line:      position.Line,
-							Character: 100, // End of line.
+							Character: math.MaxInt32 - 1,
 						},
 						End: protocol.Position{
 							Line:      position.Line,
-							Character: 101,
+							Character: math.MaxUint32,
 						},
 					},
 				})
