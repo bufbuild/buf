@@ -27,7 +27,6 @@ import (
 	"slices"
 	"strings"
 
-	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
 	"github.com/bufbuild/protocompile/experimental/ir"
@@ -124,22 +123,38 @@ func (s *symbol) Definition() protocol.Location {
 	}
 }
 
-// References returns the locations of references to the symbol, if applicable. Otherwise,
-// it just returns the location of the symbol itself.
+// References returns the locations of references to the symbol (including the definition), if
+// applicable. Otherwise, it just returns the location of the symbol itself.
 func (s *symbol) References() []protocol.Location {
-	referenceable, ok := s.kind.(*referenceable)
-	if !ok {
-		return []protocol.Location{{
+	var references []protocol.Location
+	referenceableKind, ok := s.kind.(*referenceable)
+	if !ok && s.def != nil {
+		// If the symbol isn't referenceable itself, but has a referenceable definition, use the
+		// definition for the references.
+		referenceableKind, ok = s.def.kind.(*referenceable)
+	}
+	if ok {
+		for _, reference := range referenceableKind.references {
+			references = append(references, protocol.Location{
+				URI:   reference.file.uri,
+				Range: reference.Range(),
+			})
+		}
+	} else {
+		// No referenceable kind; add the location of the symbol itself.
+		references = append(references, protocol.Location{
 			URI:   s.file.uri,
 			Range: s.Range(),
-		}}
+		})
 	}
-	return xslices.Map(referenceable.references, func(sym *symbol) protocol.Location {
-		return protocol.Location{
-			URI:   sym.file.uri,
-			Range: sym.Range(),
-		}
-	})
+	// Add the definition of the symbol to the list of references.
+	if s.def != nil {
+		references = append(references, protocol.Location{
+			URI:   s.def.file.uri,
+			Range: s.def.Range(),
+		})
+	}
+	return references
 }
 
 // LogValue provides the log value for a symbol.
@@ -174,8 +189,9 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 	switch s.kind.(type) {
 	case *imported:
 		imported, _ := s.kind.(*imported)
-		// Provide a preview of the imported file.
-		return fmt.Sprintf("```proto\n%s\n```", imported.file.file.Text())
+		// Show the path to the file on disk, which is similar to how other LSP clients treat hovering
+		// on an import file.
+		return imported.file.file.Path()
 	case *tag:
 		plural := func(i int) string {
 			if i == 1 {
@@ -298,11 +314,17 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 	default:
 		kind = protocol.SymbolKindVariable
 	}
+	var isDeprecated bool
+	if _, ok := s.ir.Deprecated().AsBool(); ok {
+		isDeprecated = true
+	}
 	return protocol.SymbolInformation{
 		Name:          name,
 		Kind:          kind,
 		Location:      location,
 		ContainerName: containerName,
+		// TODO: Use Tags with a protocol.CompletionItemTagDeprecated if the client supports tags.
+		Deprecated: isDeprecated,
 	}
 }
 

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"iter"
 	"log/slog"
 	"os"
 	"slices"
@@ -32,11 +33,9 @@ import (
 	"buf.build/go/standard/xio"
 	"buf.build/go/standard/xlog/xslog"
 	"buf.build/go/standard/xslices"
-	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -52,7 +51,6 @@ import (
 )
 
 const (
-	descriptorPath     = "google/protobuf/descriptor.proto"
 	checkRefreshPeriod = 3 * time.Second
 )
 
@@ -71,9 +69,7 @@ type file struct {
 	version int32
 	hasText bool // Whether this file has ever had text read into it.
 
-	workspace   bufworkspace.Workspace
-	module      bufmodule.Module
-	checkClient bufcheck.Client
+	workspace *workspace // May be nil.
 
 	againstStrategy againstStrategy
 	againstGitRef   string
@@ -133,6 +129,10 @@ func (f *file) Close(ctx context.Context) {
 	if f.checkWork != nil {
 		close(f.checkWork)
 		f.checkWork = nil
+	}
+	if f.workspace != nil {
+		f.workspace.Release()
+		f.workspace = nil
 	}
 }
 
@@ -313,44 +313,30 @@ func (f *file) Refresh(ctx context.Context) {
 // The Buf workspace provides the sources for the compiler to work with.
 func (f *file) RefreshWorkspace(ctx context.Context) {
 	f.lsp.logger.Debug(
-		"getting workspace",
+		"refresh workspace",
 		slog.String("file", f.uri.Filename()),
 		slog.Int("version", int(f.version)),
 	)
-	workspace, err := f.lsp.controller.GetWorkspace(ctx, f.uri.Filename())
-	if err != nil {
-		f.lsp.logger.Error(
-			"could not load workspace",
-			slog.String("uri", string(f.uri)),
-			xslog.ErrorAttr(err),
-		)
-		return
-	}
-	f.workspace = workspace
-
-	var module bufmodule.Module
-	for _, mod := range workspace.Modules() {
-		// We do not care about this error, so we discard it.
-		_ = mod.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
-			if fileInfo.LocalPath() == f.uri.Filename() {
-				module = mod
-			}
-			return nil
-		})
-		if module != nil {
-			break
+	if f.workspace != nil {
+		if err := f.workspace.Refresh(ctx); err != nil {
+			f.lsp.logger.Error(
+				"could not refresh workspace",
+				slog.String("uri", string(f.uri)),
+				xslog.ErrorAttr(err),
+			)
 		}
+	} else {
+		workspace, err := f.lsp.workspaceManager.LeaseWorkspace(ctx, f.uri)
+		if err != nil {
+			f.lsp.logger.Error(
+				"could not lease workspace",
+				slog.String("uri", string(f.uri)),
+				xslog.ErrorAttr(err),
+			)
+			return
+		}
+		f.workspace = workspace
 	}
-	if module == nil {
-		f.lsp.logger.Warn("could not find module", slog.String("file", f.uri.Filename()))
-	}
-	f.module = module
-
-	checkClient, err := f.lsp.controller.GetCheckClientForWorkspace(ctx, workspace, f.lsp.wasmRuntime)
-	if err != nil {
-		f.lsp.logger.Warn("could not get check client", xslog.ErrorAttr(err))
-	}
-	f.checkClient = checkClient
 }
 
 // IndexImports keeps track of importable files.
@@ -361,7 +347,7 @@ func (f *file) IndexImports(ctx context.Context) {
 	if f.importToFile != nil {
 		return
 	}
-	importables, err := f.findImportable(ctx)
+	fileInfos, err := f.getWorkspaceFileInfos(ctx)
 	if err != nil {
 		f.lsp.logger.Error(
 			"failed to get importable files",
@@ -369,7 +355,7 @@ func (f *file) IndexImports(ctx context.Context) {
 		)
 	}
 	f.importToFile = make(map[string]*file)
-	for _, importable := range importables {
+	for _, importable := range fileInfos {
 		if importable.ExternalPath() == f.uri.Filename() {
 			f.objectInfo = importable
 			if err := f.ReadFromDisk(ctx); err != nil {
@@ -396,39 +382,30 @@ func (f *file) IndexImports(ctx context.Context) {
 	}
 }
 
-// findImportable finds all files that can potentially be imported by the proto file, f.
+// getWorkspaceFileInfos returns all files within the workspace.
 //
 // Note that this performs no validation on these files, because those files might be open in the
 // editor and might contain invalid syntax at the moment. We only want to get their paths and nothing
 // more.
 //
 // This operation requires RefreshWorkspace.
-func (f *file) findImportable(ctx context.Context) ([]storage.ObjectInfo, error) {
-	// This does not use Controller.GetImportableImageFileInfos because that function does
-	// not specify which of the files it returns are well-known types. We can use heuristics
-	// based on the path to try and guess which files are well-known types, but this can be
-	// fragile. Instead we explicitly walk the well-known types bucket instead.
-	//
-	// We track the imports in a map to dedup by import path.
-	imports := make(map[string]storage.ObjectInfo)
-	for _, module := range f.workspace.Modules() {
-		if err := module.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
-			if fileInfo.FileType() != bufmodule.FileTypeProto {
-				return nil
-			}
-			imports[fileInfo.Path()] = fileInfo
-			return nil
-		}); err != nil {
-			return nil, err
-		}
+func (f *file) getWorkspaceFileInfos(ctx context.Context) ([]storage.ObjectInfo, error) {
+	seen := make(map[string]struct{})
+	var fileInfos []storage.ObjectInfo
+	for fileInfo := range f.workspace.FileInfo() {
+		fileInfos = append(fileInfos, fileInfo)
+		seen[fileInfo.Path()] = struct{}{}
 	}
+	// Add all wellknown types if not provided within the workspace.
 	if err := f.lsp.wktBucket.Walk(ctx, "", func(objectInfo storage.ObjectInfo) error {
-		imports[objectInfo.Path()] = wktObjectInfo{objectInfo}
+		if _, ok := seen[objectInfo.Path()]; !ok {
+			fileInfos = append(fileInfos, wktObjectInfo{objectInfo})
+		}
 		return nil
 	}); err != nil {
 		return nil, err
 	}
-	return xslices.MapValuesToSlice(imports), nil
+	return fileInfos, nil
 }
 
 // RefreshIR queries for the IR of the file and the IR of each import file.
@@ -459,7 +436,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 			Session: session,
 		}
 	})
-	results, report, err := incremental.Run(
+	results, diagnosticReport, err := incremental.Run(
 		ctx,
 		f.lsp.queryExecutor,
 		queries...,
@@ -480,8 +457,12 @@ func (f *file) RefreshIR(ctx context.Context) {
 			file.IndexSymbols(ctx)
 		}
 	}
+	// Only hold on to diagnostics where the primary span is for this path.
+	fileDiagnostics := xslices.Filter(diagnosticReport.Diagnostics, func(d report.Diagnostic) bool {
+		return d.Primary().Path() == f.objectInfo.Path()
+	})
 	diagnostics, err := xslices.MapError(
-		report.Diagnostics,
+		fileDiagnostics,
 		reportDiagnosticToProtocolDiagnostic,
 	)
 	if err != nil {
@@ -1042,22 +1023,29 @@ func (f *file) RunLints(ctx context.Context) bool {
 		return false
 	}
 
-	if f.module == nil || f.image == nil {
+	workspace := f.workspace.Workspace()
+	module := f.workspace.GetModule(f.uri)
+	checkClient := f.workspace.CheckClient()
+	if workspace == nil {
+		f.lsp.logger.Warn(fmt.Sprintf("could not find workspace for %q", f.uri))
+		return false
+	}
+	if module == nil || f.image == nil {
 		f.lsp.logger.Warn(fmt.Sprintf("could not find image for %q", f.uri))
 		return false
 	}
-	if f.checkClient == nil {
+	if checkClient == nil {
 		f.lsp.logger.Warn(fmt.Sprintf("could not find check client for %q", f.uri))
 		return false
 	}
 
-	f.lsp.logger.Debug(fmt.Sprintf("running lint for %q in %v", f.uri, f.module.FullName()))
-	return f.appendLintErrors("buf lint", f.checkClient.Lint(
+	f.lsp.logger.Debug(fmt.Sprintf("running lint for %q in %v", f.uri, module.FullName()))
+	return f.appendLintErrors("buf lint", checkClient.Lint(
 		ctx,
-		f.workspace.GetLintConfigForOpaqueID(f.module.OpaqueID()),
+		workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
 		f.image,
-		bufcheck.WithPluginConfigs(f.workspace.PluginConfigs()...),
-		bufcheck.WithPolicyConfigs(f.workspace.PolicyConfigs()...),
+		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
+		bufcheck.WithPolicyConfigs(workspace.PolicyConfigs()...),
 	))
 }
 
@@ -1070,23 +1058,30 @@ func (f *file) RunBreaking(ctx context.Context) bool {
 		return false
 	}
 
-	if f.module == nil || f.image == nil || f.againstImage == nil {
+	workspace := f.workspace.Workspace()
+	module := f.workspace.GetModule(f.uri)
+	checkClient := f.workspace.CheckClient()
+	if workspace == nil {
+		f.lsp.logger.Warn(fmt.Sprintf("could not find workspace for %q", f.uri))
+		return false
+	}
+	if module == nil || f.image == nil || f.againstImage == nil {
 		f.lsp.logger.Warn(fmt.Sprintf("could not find --against image for %q", f.uri))
 		return false
 	}
-	if f.checkClient == nil {
+	if checkClient == nil {
 		f.lsp.logger.Warn(fmt.Sprintf("could not find check client for %q", f.uri))
 		return false
 	}
 
-	f.lsp.logger.Debug(fmt.Sprintf("running breaking for %q in %v", f.uri, f.module.FullName()))
-	return f.appendLintErrors("buf breaking", f.checkClient.Breaking(
+	f.lsp.logger.Debug(fmt.Sprintf("running breaking for %q in %v", f.uri, module.FullName()))
+	return f.appendLintErrors("buf breaking", checkClient.Breaking(
 		ctx,
-		f.workspace.GetBreakingConfigForOpaqueID(f.module.OpaqueID()),
+		workspace.GetBreakingConfigForOpaqueID(module.OpaqueID()),
 		f.image,
 		f.againstImage,
-		bufcheck.WithPluginConfigs(f.workspace.PluginConfigs()...),
-		bufcheck.WithPolicyConfigs(f.workspace.PolicyConfigs()...),
+		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
+		bufcheck.WithPolicyConfigs(workspace.PolicyConfigs()...),
 	))
 }
 
@@ -1162,4 +1157,40 @@ func readAllAsString(reader io.Reader) (string, error) {
 		return "", err
 	}
 	return builder.String(), nil
+}
+
+// GetSymbols retrieves symbols for the file. If a query is passed, matches only symbols matching
+// the case-insensitive substring match to the symbol.
+//
+// This operation requires [IndexSymbols].
+func (f *file) GetSymbols(query string) iter.Seq[protocol.SymbolInformation] {
+	return func(yield func(protocol.SymbolInformation) bool) {
+		if f.ir.IsZero() {
+			return
+		}
+		// Search through all symbols in this file.
+		for _, sym := range f.symbols {
+			if sym.ir.IsZero() {
+				continue
+			}
+			// Only include definitions: static and referenceable symbols.
+			// Skip references, imports, builtins, and tags
+			_, isStatic := sym.kind.(*static)
+			_, isReferenceable := sym.kind.(*referenceable)
+			if !isStatic && !isReferenceable {
+				continue
+			}
+			symbolInfo := sym.GetSymbolInformation()
+			if symbolInfo.Name == "" {
+				continue // Symbol information not supported for this symbol.
+			}
+			// Filter by query (case-insensitive substring match)
+			if query != "" && !strings.Contains(strings.ToLower(symbolInfo.Name), query) {
+				continue
+			}
+			if !yield(symbolInfo) {
+				return
+			}
+		}
+	}
 }

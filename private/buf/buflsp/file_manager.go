@@ -30,7 +30,7 @@ type fileManager struct {
 	uriToFile refcount.Map[protocol.URI, file]
 }
 
-// newFiles creates a new file manager.
+// newFileManager creates a new file manager.
 func newFileManager(lsp *lsp) *fileManager {
 	return &fileManager{lsp: lsp}
 }
