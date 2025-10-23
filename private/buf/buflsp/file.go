@@ -51,7 +51,6 @@ import (
 )
 
 const (
-	descriptorPath     = "google/protobuf/descriptor.proto"
 	checkRefreshPeriod = 3 * time.Second
 )
 
@@ -70,7 +69,7 @@ type file struct {
 	version int32
 	hasText bool // Whether this file has ever had text read into it.
 
-	workspace *workspace
+	workspace *workspace // May be nil.
 
 	againstStrategy againstStrategy
 	againstGitRef   string
@@ -393,7 +392,7 @@ func (f *file) IndexImports(ctx context.Context) {
 func (f *file) getWorkspaceFileInfos(ctx context.Context) ([]storage.ObjectInfo, error) {
 	seen := make(map[string]struct{})
 	var fileInfos []storage.ObjectInfo
-	for _, fileInfo := range f.workspace.fileNameToFileInfo {
+	for fileInfo := range f.workspace.FileInfo() {
 		fileInfos = append(fileInfos, fileInfo)
 		seen[fileInfo.Path()] = struct{}{}
 	}

@@ -17,6 +17,7 @@ package buflsp
 import (
 	"context"
 	"fmt"
+	"iter"
 	"log/slog"
 
 	"buf.build/go/standard/xlog/xslog"
@@ -141,6 +142,9 @@ func (w *workspace) Release() int {
 
 // Refresh rebuilds the workspace and required context.
 func (w *workspace) Refresh(ctx context.Context) error {
+	if w == nil {
+		return nil
+	}
 	fileName := w.workspaceURI.Filename()
 	bufWorkspace, err := w.lsp.controller.GetWorkspace(ctx, fileName)
 	if err != nil {
@@ -170,6 +174,20 @@ func (w *workspace) Refresh(ctx context.Context) error {
 	w.fileNameToFileInfo = fileNameToFileInfo
 	w.checkClient = checkClient
 	return nil
+}
+
+// FileInfo returns an iterator over the files in the workspace.
+func (w *workspace) FileInfo() iter.Seq[bufmodule.FileInfo] {
+	return func(yield func(bufmodule.FileInfo) bool) {
+		if w == nil {
+			return
+		}
+		for _, fileInfo := range w.fileNameToFileInfo {
+			if !yield(fileInfo) {
+				return
+			}
+		}
+	}
 }
 
 // Workspace returns the buf Workspace.
