@@ -27,7 +27,6 @@ import (
 	"slices"
 	"strings"
 
-	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
 	"github.com/bufbuild/protocompile/experimental/ir"
@@ -135,12 +134,12 @@ func (s *symbol) References() []protocol.Location {
 		referenceableKind, ok = s.def.kind.(*referenceable)
 	}
 	if ok {
-		references = append(references, xslices.Map(referenceableKind.references, func(sym *symbol) protocol.Location {
-			return protocol.Location{
-				URI:   sym.file.uri,
-				Range: sym.Range(),
-			}
-		})...)
+		for _, reference := range referenceableKind.references {
+			references = append(references, protocol.Location{
+				URI:   reference.file.uri,
+				Range: reference.Range(),
+			})
+		}
 	} else {
 		// No referenceable kind; add the location of the symbol itself.
 		references = append(references, protocol.Location{
