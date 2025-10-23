@@ -215,20 +215,28 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 	offset := positionLocation.Offset
 
 	importPathSpan := declImport.ImportPath().Span()
+	start, end := importPathSpan.Start, importPathSpan.End
 	importPathText := importPathSpan.Text()
-	if importPathSpan.Start > offset || offset > importPathSpan.End {
+
+	// Break on newlines to split an unintended capture.
+	if index := strings.IndexByte(importPathText, '\n'); index != -1 {
+		end = start + index
+		importPathText = importPathText[:index]
+	}
+
+	if start > offset || offset > end {
 		file.lsp.logger.Debug("completion: outside import expr range",
 			slog.String("import", importPathText),
-			slog.Int("start", importPathSpan.Start),
+			slog.Int("start", start),
 			slog.Int("offset", offset),
-			slog.Int("end", importPathSpan.End),
+			slog.Int("end", end),
 			slog.Int("line", int(position.Line)),
 			slog.Int("character", int(position.Character)),
 		)
 		return nil
 	}
 
-	index := offset - importPathSpan.Start
+	index := offset - start
 	prefix := importPathText[:index]
 	suffix := importPathText[index:]
 
