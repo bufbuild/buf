@@ -337,7 +337,9 @@ func (s *server) DidClose(
 	ctx context.Context,
 	params *protocol.DidCloseTextDocumentParams,
 ) error {
-	s.fileManager.Close(ctx, params.TextDocument.URI)
+	if file := s.fileManager.Get(params.TextDocument.URI); file != nil {
+		file.Close(ctx)
+	}
 	return nil
 }
 
