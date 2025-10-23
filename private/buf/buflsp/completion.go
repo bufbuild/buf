@@ -232,7 +232,7 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 	prefix := importPathText[:index]
 	suffix := importPathText[index:]
 
-	items := make([]protocol.CompletionItem, 0, len(file.importToFile))
+	var items []protocol.CompletionItem
 	for importPath := range file.importToFile {
 		suggest := fmt.Sprintf("%q", importPath)
 		if !strings.HasPrefix(suggest, prefix) {

@@ -433,6 +433,9 @@ func (s *server) Completion(
 		return nil, nil
 	}
 	items := getCompletionItems(ctx, file, params.Position)
+	if len(items) == 0 {
+		return nil, nil
+	}
 	return &protocol.CompletionList{Items: items}, nil
 }
 
