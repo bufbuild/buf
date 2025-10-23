@@ -127,32 +127,24 @@ func (s *symbol) Definition() protocol.Location {
 // References returns the locations of references to the symbol, if applicable. Otherwise,
 // it just returns the location of the symbol itself.
 func (s *symbol) References() []protocol.Location {
-	switch kind := s.kind.(type) {
-	case *referenceable:
-		return xslices.Map(kind.references, func(sym *symbol) protocol.Location {
-			return protocol.Location{
-				URI:   sym.file.uri,
-				Range: sym.Range(),
-			}
-		})
-	case *reference:
-		definition, ok := s.def.kind.(*referenceable)
-		if !ok {
-			// This should not happen; should always be ok.
-			return nil
-		}
-		return xslices.Map(definition.references, func(sym *symbol) protocol.Location {
-			return protocol.Location{
-				URI:   sym.file.uri,
-				Range: sym.Range(),
-			}
-		})
-	default:
-		return []protocol.Location{{
-			URI:   s.file.uri,
-			Range: s.Range(),
-		}}
+	referenceableKind, ok := s.kind.(*referenceable)
+	if !ok && s.def != nil {
+		// If the symbol isn't referenceable itself, but has a referenceable definition, use the
+		// definition.
+		referenceableKind, ok = s.def.kind.(*referenceable)
 	}
+	if ok {
+		return xslices.Map(referenceableKind.references, func(sym *symbol) protocol.Location {
+			return protocol.Location{
+				URI:   sym.file.uri,
+				Range: sym.Range(),
+			}
+		})
+	}
+	return []protocol.Location{{
+		URI:   s.file.uri,
+		Range: s.Range(),
+	}}
 }
 
 // LogValue provides the log value for a symbol.
