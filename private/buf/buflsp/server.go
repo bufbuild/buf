@@ -123,7 +123,7 @@ func (s *server) Initialize(
 			},
 			CompletionProvider: &protocol.CompletionOptions{
 				ResolveProvider:   true,
-				TriggerCharacters: []string{" ", ".", "("},
+				TriggerCharacters: []string{" ", ".", "(", "\"", "/"},
 			},
 			DefinitionProvider: &protocol.DefinitionOptions{
 				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
@@ -455,6 +455,9 @@ func (s *server) Completion(
 		return nil, nil
 	}
 	items := getCompletionItems(ctx, file, params.Position)
+	if len(items) == 0 {
+		return nil, nil
+	}
 	return &protocol.CompletionList{Items: items}, nil
 }
 
