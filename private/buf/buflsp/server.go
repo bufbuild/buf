@@ -128,6 +128,9 @@ func (s *server) Initialize(
 			DefinitionProvider: &protocol.DefinitionOptions{
 				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
 			},
+			TypeDefinitionProvider: &protocol.TypeDefinitionOptions{
+				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
+			},
 			DocumentFormattingProvider: true,
 			HoverProvider:              true,
 			ReferencesProvider: &protocol.ReferenceOptions{
@@ -382,16 +385,35 @@ func (s *server) Definition(
 	ctx context.Context,
 	params *protocol.DefinitionParams,
 ) ([]protocol.Location, error) {
-	file := s.fileManager.Get(params.TextDocument.URI)
+	return s.definition(ctx, params.TextDocument.URI, &params.WorkDoneProgressParams, params.Position)
+}
+
+// TypeDefinition is the entry point for go-to-type-definition.
+func (s *server) TypeDefinition(
+	ctx context.Context,
+	params *protocol.TypeDefinitionParams,
+) ([]protocol.Location, error) {
+	return s.definition(ctx, params.TextDocument.URI, &params.WorkDoneProgressParams, params.Position)
+}
+
+// definition powers [server.Definition] and [server.TypeDefinition], as they are not meaningfully
+// different in protobuf, but users may be used to using either.
+func (s *server) definition(
+	ctx context.Context,
+	uri protocol.URI,
+	workDoneProgressParams *protocol.WorkDoneProgressParams,
+	position protocol.Position,
+) ([]protocol.Location, error) {
+	file := s.fileManager.Get(uri)
 	if file == nil {
 		return nil, nil
 	}
 
-	progress := newProgressFromClient(s.lsp, &params.WorkDoneProgressParams)
+	progress := newProgressFromClient(s.lsp, workDoneProgressParams)
 	progress.Begin(ctx, "Searching")
 	defer progress.Done(ctx)
 
-	symbol := file.SymbolAt(ctx, params.Position)
+	symbol := file.SymbolAt(ctx, position)
 	if symbol == nil {
 		return nil, nil
 	}
