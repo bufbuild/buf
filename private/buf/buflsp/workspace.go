@@ -48,8 +48,11 @@ func newWorkspaceManager(lsp *lsp) *workspaceManager {
 // LeaseWorkspace attempts to find and lease the workspace for the given URI string. If the
 // workspace has not been seen before, a new workspace is created. This may fail.
 func (w *workspaceManager) LeaseWorkspace(ctx context.Context, uri protocol.URI) (*workspace, error) {
-	// Run a cleanup as a lazy job.
-	defer w.Cleanup(ctx)
+	defer func() {
+		// Run a cleanup as a lazy job.
+		w.Cleanup(ctx)
+		w.lsp.logger.Debug("workspace: lease workspace", slog.Int("active", len(w.workspaces)))
+	}()
 
 	workspace, err := w.getOrCreateWorkspace(ctx, uri)
 	if err != nil {
@@ -81,7 +84,7 @@ func (w *workspaceManager) Cleanup(ctx context.Context) {
 func (w *workspaceManager) getOrCreateWorkspace(ctx context.Context, uri protocol.URI) (*workspace, error) {
 	// This looks for a workspace that already has ownership over the URI.
 	// If a new file is added we will create a new workspace.
-	// Reusing workspaces is an optimization
+	// Reusing workspaces is an optimization. Matching is on best-effort.
 	fileName := uri.Filename()
 	for _, workspace := range w.workspaces {
 		if _, ok := workspace.fileNameToFileInfo[fileName]; ok {
