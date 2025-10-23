@@ -96,7 +96,7 @@ func completionItemsForDeclPath(ctx context.Context, file *file, declPath []ast.
 	case ast.DeclKindPackage:
 		return completionItemsForPackage(ctx, file, decl.AsPackage())
 	case ast.DeclKindImport:
-		return completionItemsForImport(ctx, file)
+		return completionItemsForImport(ctx, file, decl.AsImport(), position)
 	default:
 		file.lsp.logger.DebugContext(ctx, "completion: unknown declaration type", slog.String("kind", decl.Kind().String()))
 		return nil
@@ -208,19 +208,61 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 // completionItemsForImport returns completion items for import declarations.
 //
 // Suggest all importable files.
-func completionItemsForImport(ctx context.Context, file *file) []protocol.CompletionItem {
+func completionItemsForImport(ctx context.Context, file *file, declImport ast.DeclImport, position protocol.Position) []protocol.CompletionItem {
 	file.lsp.logger.DebugContext(ctx, "completion: import declaration", slog.Int("importable_count", len(file.importToFile)))
+
+	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
+	offset := positionLocation.Offset
+
+	importPathSpan := declImport.ImportPath().Span()
+	importPathText := importPathSpan.Text()
+	if importPathSpan.Start > offset || offset > importPathSpan.End {
+		file.lsp.logger.Debug("completion: outside import expr range",
+			slog.String("import", importPathText),
+			slog.Int("start", importPathSpan.Start),
+			slog.Int("offset", offset),
+			slog.Int("end", importPathSpan.End),
+			slog.Int("line", int(position.Line)),
+			slog.Int("character", int(position.Character)),
+		)
+		return nil
+	}
+
+	index := offset - importPathSpan.Start
+	prefix := importPathText[:index]
+	suffix := importPathText[index:]
 
 	items := make([]protocol.CompletionItem, 0, len(file.importToFile))
 	for importPath := range file.importToFile {
+		suggest := fmt.Sprintf("%q", importPath)
+		if !strings.HasPrefix(suggest, prefix) {
+			file.lsp.logger.Debug("completion: skipping on prefix",
+				slog.String("import", importPathText),
+				slog.String("prefix", prefix),
+				slog.String("suggest", suggest),
+			)
+			continue
+		}
+		if !strings.HasSuffix(suggest, suffix) {
+			file.lsp.logger.Debug("completion: skipping on suffix",
+				slog.String("import", importPathText),
+				slog.String("suffix", prefix),
+				slog.String("suggest", suggest),
+			)
+			continue
+		}
 		items = append(items, protocol.CompletionItem{
-			Label: " \"" + importPath + "\";",
+			Label: importPath,
 			Kind:  protocol.CompletionItemKindFile,
+			TextEdit: &protocol.TextEdit{
+				Range: protocol.Range{
+					Start: position,
+					End:   position,
+				},
+				NewText: suggest[len(prefix) : len(suggest)-len(suffix)],
+			},
 		})
 	}
-	slices.SortFunc(items, func(a, b protocol.CompletionItem) int {
-		return strings.Compare(strings.ToLower(a.Label), strings.ToLower(b.Label))
-	})
 	return items
 }
 
