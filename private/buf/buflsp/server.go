@@ -525,6 +525,9 @@ func (s *server) SemanticTokensFull(
 			}
 		}
 	}
+	if len(encoded) == 0 {
+		return nil, nil
+	}
 	return &protocol.SemanticTokens{Data: encoded}, nil
 }
 
