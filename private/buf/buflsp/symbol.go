@@ -299,11 +299,17 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 	default:
 		kind = protocol.SymbolKindVariable
 	}
+	var isDeprecated bool
+	if _, ok := s.ir.Deprecated().AsBool(); ok {
+		isDeprecated = true
+	}
 	return protocol.SymbolInformation{
 		Name:          name,
 		Kind:          kind,
 		Location:      location,
 		ContainerName: containerName,
+		// TODO: Use Tags with a protocol.CompletionItemTagDeprecated if the client supports tags.
+		Deprecated: isDeprecated,
 	}
 }
 
