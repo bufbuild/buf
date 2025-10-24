@@ -22,6 +22,7 @@ import (
 	"strings"
 	"unicode/utf16"
 
+	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufformat"
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/parser"
@@ -442,7 +443,9 @@ func (s *server) References(
 	if symbol == nil {
 		return nil, nil
 	}
-	return symbol.References(), nil
+	// TODO: Determine why we have duplicate references here, and fix that instead of deduplicating at
+	// this level.
+	return xslices.Deduplicate(symbol.References()), nil
 }
 
 // Completion is the entry point for code completion.
