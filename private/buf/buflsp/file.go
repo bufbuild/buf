@@ -879,7 +879,7 @@ func (f *file) newFileOpener() fileOpener {
 	}
 }
 
-// BuildImages builds Buf Images for this file, to be used with linting
+// BuildImage builds an image for linting.
 // routines.
 //
 // This operation requires IndexImports.
