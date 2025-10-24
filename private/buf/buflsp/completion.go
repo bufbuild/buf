@@ -170,7 +170,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 			file.lsp.logger.DebugContext(
 				ctx,
 				"completion: ignoring definition name",
-				slog.String("def_kind", def.Classify().String()),
+				slog.String("kind", def.Classify().String()),
 			)
 			return nil
 		}
@@ -183,7 +183,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 			file.lsp.logger.DebugContext(
 				ctx,
 				"completion: ignoring definition passed type",
-				slog.String("def_kind", def.Classify().String()),
+				slog.String("kind", def.Classify().String()),
 			)
 			return nil
 		}
@@ -201,7 +201,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 	case ast.DefKindInvalid:
 		return completionItemsForKeyword(ctx, file, declPath, def, position)
 	default:
-		file.lsp.logger.DebugContext(ctx, "completion: unknown definition type")
+		file.lsp.logger.DebugContext(ctx, "completion: unknown definition type", slog.String("kind", def.Classify().String()))
 		return nil
 	}
 }
@@ -213,16 +213,17 @@ func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.D
 
 	span := def.Span()
 
-	// Check on on a line with only whitespace after the position.
+	// Check if at newline or end of span. Keywords are restricted to the first identifier.
 	if !isNewlineOrEndOfSpan(span, offset) {
-		file.lsp.logger.Debug("completion: skip non-empty suffix", slog.String("text", span.Text()))
+		file.lsp.logger.Debug("completion: keyword skip on span bounds", slog.String("span", span.Text()))
 		return nil
 	}
 
 	prefixSpan, suffixSpan := extractAroundTokenStream(file, offset)
 	prefix := prefixSpan.Text()
 	suffix := suffixSpan.Text()
-	file.lsp.logger.Debug("completion: extractAroundTokenStream",
+	file.lsp.logger.DebugContext(
+		ctx, "completion: keyword items",
 		slog.String("span", span.Text()),
 		slog.String("prefix", prefix),
 		slog.String("suffix", suffix),
@@ -230,7 +231,7 @@ func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.D
 
 	// If this is an invalid definition at the top level, return top-level keywords.
 	if len(declPath) == 1 {
-		file.lsp.logger.DebugContext(ctx, "completion: unknown definition at top level, returning top-level keywords")
+		file.lsp.logger.DebugContext(ctx, "completion: keyword returning top-level")
 		return slices.Collect(keywordToCompletionItem(
 			topLevelKeywords(),
 			protocol.CompletionItemKindKeyword,
@@ -242,7 +243,7 @@ func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.D
 
 	parent := declPath[len(declPath)-2]
 	file.lsp.logger.DebugContext(
-		ctx, "completion: field within definition",
+		ctx, "completion: keyword nested definition",
 		slog.String("kind", parent.Kind().String()),
 	)
 	if parent.Kind() != ast.DeclKindDef {
@@ -253,7 +254,7 @@ func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.D
 	parentDef := parent.AsDef()
 	switch parentDef.Classify() {
 	case ast.DefKindMessage:
-		isProto2 := true // TODO: disable !proto2.
+		isProto2 := isProto2(file)
 		items = joinCompletionItems(
 			keywordToCompletionItem(
 				messageLevelKeywords(isProto2),
@@ -640,6 +641,21 @@ func isNewlineOrEndOfSpan(span report.Span, offset int) bool {
 		// Newline separates the end, check theres no dangling content after us on this line.
 		after := text[index : index+newLine]
 		return len(strings.TrimSpace(after)) == 0
+	}
+	return false
+}
+
+// isProto2 returns true if the file has a syntax declaration of proto2.
+func isProto2(file *file) bool {
+	body := file.ir.AST().DeclBody
+	for decl := range seq.Values(body.Decls()) {
+		if decl.IsZero() {
+			continue
+		}
+		if kind := decl.Kind(); kind == ast.DeclKindSyntax {
+			declSyntax := decl.AsSyntax()
+			return declSyntax.IsSyntax() && declSyntax.Value().Span().Text() == "proto2"
+		}
 	}
 	return false
 }
