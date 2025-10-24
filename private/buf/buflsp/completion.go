@@ -271,7 +271,7 @@ func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.D
 			),
 			keywordToCompletionItem(
 				predeclaredTypeKeywords(),
-				protocol.CompletionItemKindTypeParameter,
+				protocol.CompletionItemKindClass,
 				position,
 				prefix,
 				suffix,
