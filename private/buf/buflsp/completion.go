@@ -219,9 +219,8 @@ func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.D
 		return nil
 	}
 
-	prefixSpan, suffixSpan := extractAroundTokenStream(file, offset)
-	prefix := prefixSpan.Text()
-	suffix := suffixSpan.Text()
+	tokenSpan := extractAroundToken(file, offset)
+	prefix, suffix := splitSpan(tokenSpan, offset)
 	file.lsp.logger.DebugContext(
 		ctx, "completion: keyword items",
 		slog.String("span", span.Text()),
@@ -397,6 +396,7 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 			)
 			continue
 		}
+
 		items = append(items, protocol.CompletionItem{
 			Label: importPath,
 			Kind:  protocol.CompletionItemKindFile,
@@ -579,19 +579,18 @@ func getDeclForPositionHelper(body ast.DeclBody, position protocol.Position, pat
 	return bestPath
 }
 
-// extractAroundTokenStream extracts the prefix and suffix around the cursor
-// by querying the token stream.
-func extractAroundTokenStream(file *file, offset int) (prefix report.Span, suffix report.Span) {
+// extractAroundToken extracts the value around the offset by querying the token stream.
+func extractAroundToken(file *file, offset int) report.Span {
 	if file.ir.AST().IsZero() {
-		return report.Span{}, report.Span{}
+		return report.Span{}
 	}
 	stream := file.ir.AST().Context().Stream()
 	if stream == nil {
-		return report.Span{}, report.Span{}
+		return report.Span{}
 	}
 	before, after := stream.Around(offset)
-	if before.IsZero() {
-		return report.Span{}, report.Span{}
+	if before.IsZero() && after.IsZero() {
+		return report.Span{}
 	}
 
 	isToken := func(tok token.Token) bool {
@@ -602,31 +601,39 @@ func extractAroundTokenStream(file *file, offset int) (prefix report.Span, suffi
 			return false
 		}
 	}
+	span := report.Span{
+		File:  file.file,
+		Start: offset,
+		End:   offset,
+	}
 	if !before.IsZero() {
-		prefix = report.Span{
-			File:  file.file,
-			Start: offset,
-			End:   offset,
-		}
 		cursor := token.NewCursorAt(before)
 		for tok := cursor.PrevSkippable(); isToken(tok); tok = cursor.PrevSkippable() {
 			before = tok
 		}
-		prefix.Start = before.Span().Start
+		if isToken(before) {
+			span.Start = before.Span().Start
+		}
 	}
 	if !after.IsZero() {
-		suffix = report.Span{
-			File:  file.file,
-			Start: offset,
-			End:   offset,
-		}
-		cursor := token.NewCursorAt(before)
+		cursor := token.NewCursorAt(after)
 		for tok := cursor.NextSkippable(); isToken(tok); tok = cursor.NextSkippable() {
 			after = tok
 		}
-		prefix.End = after.Span().End
+		if isToken(after) {
+			span.End = after.Span().End
+		}
 	}
-	return prefix, suffix
+	return span
+}
+
+func splitSpan(span report.Span, offset int) (prefix string, suffix string) {
+	if span.Start > offset || offset > span.End {
+		return "", ""
+	}
+	index := offset - span.Start
+	text := span.Text()
+	return text[:index], text[index:]
 }
 
 // isNewlineOrEndOfSpan returns true if this offset is separated be a newline or at the end of the span.
