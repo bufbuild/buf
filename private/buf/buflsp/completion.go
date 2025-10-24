@@ -27,7 +27,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/syntax"
+	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/seq"
+	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
 	"go.lsp.dev/protocol"
 )
@@ -194,13 +196,155 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		return nil
 	case ast.DefKindEnum:
 		return nil
+	case ast.DefKindField:
+		return completionItemsForField(ctx, file, declPath, def.AsField(), position)
+	case ast.DefKindInvalid:
+		return completionItemsForKeyword(ctx, file, declPath, def, position)
 	default:
-		// If this is an invalid definition at the top level, return top-level keywords.
-		if len(declPath) == 1 {
-			file.lsp.logger.DebugContext(ctx, "completion: unknown definition at top level, returning top-level keywords")
-			return slices.Collect(topLevelCompletionItems())
-		}
-		file.lsp.logger.DebugContext(ctx, "completion: unknown definition type (not at top level)")
+		file.lsp.logger.DebugContext(ctx, "completion: unknown definition type")
+		return nil
+	}
+}
+
+// completionItemsForKeyword returns completion items for a declaration expecting keywords.
+func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.DeclAny, def ast.DeclDef, position protocol.Position) []protocol.CompletionItem {
+	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
+	offset := positionLocation.Offset
+
+	span := def.Span()
+
+	// Check on on a line with only whitespace after the position.
+	if !isNewlineOrEndOfSpan(span, offset) {
+		file.lsp.logger.Debug("completion: skip non-empty suffix", slog.String("text", span.Text()))
+		return nil
+	}
+
+	prefixSpan, suffixSpan := extractAroundTokenStream(file, offset)
+	prefix := prefixSpan.Text()
+	suffix := suffixSpan.Text()
+	file.lsp.logger.Debug("completion: extractAroundTokenStream",
+		slog.String("span", span.Text()),
+		slog.String("prefix", prefix),
+		slog.String("suffix", suffix),
+	)
+
+	// If this is an invalid definition at the top level, return top-level keywords.
+	if len(declPath) == 1 {
+		file.lsp.logger.DebugContext(ctx, "completion: unknown definition at top level, returning top-level keywords")
+		return slices.Collect(keywordToCompletionItem(
+			topLevelKeywords(),
+			protocol.CompletionItemKindKeyword,
+			position,
+			prefix,
+			suffix,
+		))
+	}
+
+	parent := declPath[len(declPath)-2]
+	file.lsp.logger.DebugContext(
+		ctx, "completion: field within definition",
+		slog.String("kind", parent.Kind().String()),
+	)
+	if parent.Kind() != ast.DeclKindDef {
+		return nil
+	}
+
+	var items iter.Seq[protocol.CompletionItem]
+	parentDef := parent.AsDef()
+	switch parentDef.Classify() {
+	case ast.DefKindMessage:
+		isProto2 := true // TODO: disable !proto2.
+		items = joinCompletionItems(
+			keywordToCompletionItem(
+				messageLevelKeywords(isProto2),
+				protocol.CompletionItemKindKeyword,
+				position,
+				prefix,
+				suffix,
+			),
+			keywordToCompletionItem(
+				messageLevelFieldKeywords(),
+				protocol.CompletionItemKindKeyword,
+				position,
+				prefix,
+				suffix,
+			),
+			keywordToCompletionItem(
+				predeclaredTypeKeywords(),
+				protocol.CompletionItemKindTypeParameter,
+				position,
+				prefix,
+				suffix,
+			),
+			// TODO: add custom types.
+		)
+	case ast.DefKindService:
+		items = keywordToCompletionItem(
+			serviceLevelKeywords(),
+			protocol.CompletionItemKindKeyword,
+			position,
+			prefix,
+			suffix,
+		)
+	case ast.DefKindEnum:
+		items = keywordToCompletionItem(
+			enumLevelKeywords(),
+			protocol.CompletionItemKindKeyword,
+			position,
+			prefix,
+			suffix,
+		)
+	default:
+		return nil
+	}
+	return slices.Collect(items)
+}
+
+// completionItemsForField returns completion items for a field.
+func completionItemsForField(ctx context.Context, file *file, declPath []ast.DeclAny, defField ast.DefField, position protocol.Position) []protocol.CompletionItem {
+	if len(declPath) == 1 {
+		file.lsp.logger.DebugContext(ctx, "completion: field top level, going to keywords")
+		return completionItemsForKeyword(ctx, file, declPath, defField.Decl, position)
+	}
+
+	parent := declPath[len(declPath)-2]
+	file.lsp.logger.DebugContext(
+		ctx, "completion: field within definition",
+		slog.String("kind", parent.Kind().String()),
+	)
+	if parent.Kind() != ast.DeclKindDef {
+		return nil
+	}
+
+	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
+	offset := positionLocation.Offset
+
+	// If on a newline, before the current field or at the end of the span return keywords.
+	if isNewlineOrEndOfSpan(defField.Span(), offset) {
+		file.lsp.logger.DebugContext(ctx, "completion: field on newline, return keywords")
+		return completionItemsForKeyword(ctx, file, declPath, defField.Decl, position)
+	}
+
+	typeSpan := defField.Type.Span()
+	start, end := typeSpan.Start, typeSpan.End
+
+	if start > offset || offset > end {
+		file.lsp.logger.DebugContext(
+			ctx, "completion: field outside definition",
+			slog.String("kind", parent.Kind().String()),
+		)
+		return nil
+	}
+
+	def := parent.AsDef()
+	switch def.Classify() {
+	case ast.DefKindMessage:
+		return nil
+	case ast.DefKindService:
+		return nil
+	case ast.DefKindEnum:
+		return nil
+	default:
 		return nil
 	}
 }
@@ -243,19 +387,12 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 	var items []protocol.CompletionItem
 	for importPath := range file.importToFile {
 		suggest := fmt.Sprintf("%q", importPath)
-		if !strings.HasPrefix(suggest, prefix) {
-			file.lsp.logger.Debug("completion: skipping on prefix",
+		if !strings.HasPrefix(suggest, prefix) || !strings.HasSuffix(suggest, suffix) {
+			file.lsp.logger.Debug("completion: skipping on prefix/suffix",
 				slog.String("import", importPathText),
+				slog.String("suggest", suggest),
 				slog.String("prefix", prefix),
-				slog.String("suggest", suggest),
-			)
-			continue
-		}
-		if !strings.HasSuffix(suggest, suffix) {
-			file.lsp.logger.Debug("completion: skipping on suffix",
-				slog.String("import", importPathText),
-				slog.String("suffix", prefix),
-				slog.String("suggest", suggest),
+				slog.String("suffix", suffix),
 			)
 			continue
 		}
@@ -274,26 +411,122 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 	return items
 }
 
-// topLevelCompletionItems returns completion items for top-level proto keywords.
-func topLevelCompletionItems() iter.Seq[protocol.CompletionItem] {
-	return func(yield func(protocol.CompletionItem) bool) {
-		_ = yield(keywordToCompletionItem(keyword.Syntax)) &&
-			yield(keywordToCompletionItem(keyword.Edition)) &&
-			yield(keywordToCompletionItem(keyword.Import)) &&
-			yield(keywordToCompletionItem(keyword.Package)) &&
-			yield(keywordToCompletionItem(keyword.Message)) &&
-			yield(keywordToCompletionItem(keyword.Service)) &&
-			yield(keywordToCompletionItem(keyword.Option)) &&
-			yield(keywordToCompletionItem(keyword.Enum)) &&
-			yield(keywordToCompletionItem(keyword.Extend))
+// topLevelKeywords returns keywords for the top-level.
+func topLevelKeywords() iter.Seq[keyword.Keyword] {
+	return func(yield func(keyword.Keyword) bool) {
+		_ = yield(keyword.Syntax) &&
+			yield(keyword.Edition) &&
+			yield(keyword.Import) &&
+			yield(keyword.Package) &&
+			yield(keyword.Message) &&
+			yield(keyword.Service) &&
+			yield(keyword.Option) &&
+			yield(keyword.Enum) &&
+			yield(keyword.Extend)
+	}
+}
+
+// messageLevelFieldKeywords returns keywords for messages.
+func messageLevelKeywords(isProto2 bool) iter.Seq[keyword.Keyword] {
+	return func(yield func(keyword.Keyword) bool) {
+		ok := yield(keyword.Message) &&
+			yield(keyword.Enum) &&
+			yield(keyword.Option) &&
+			yield(keyword.Extend) &&
+			yield(keyword.Oneof) &&
+			yield(keyword.Extensions) &&
+			yield(keyword.Reserved)
+		_ = ok && isProto2 &&
+			yield(keyword.Group)
+	}
+}
+
+// messageLevelFieldKeywords returns keywords for type modifiers.
+func messageLevelFieldKeywords() iter.Seq[keyword.Keyword] {
+	return func(yield func(keyword.Keyword) bool) {
+		_ = yield(keyword.Repeated) &&
+			yield(keyword.Optional) &&
+			yield(keyword.Required)
+	}
+}
+
+// predeclaredTypeKeywords returns keywords for all predeclared types.
+func predeclaredTypeKeywords() iter.Seq[keyword.Keyword] {
+	return func(yield func(keyword.Keyword) bool) {
+		_ = yield(keyword.Int32) &&
+			yield(keyword.Int64) &&
+			yield(keyword.UInt32) &&
+			yield(keyword.UInt64) &&
+			yield(keyword.SInt32) &&
+			yield(keyword.SInt64) &&
+			yield(keyword.Fixed32) &&
+			yield(keyword.Fixed64) &&
+			yield(keyword.SFixed32) &&
+			yield(keyword.SFixed64) &&
+			yield(keyword.Float) &&
+			yield(keyword.Double) &&
+			yield(keyword.Bool) &&
+			yield(keyword.String) &&
+			yield(keyword.Bytes)
+	}
+}
+
+// serviceLevelKeywords returns keywords for service.
+func serviceLevelKeywords() iter.Seq[keyword.Keyword] {
+	return func(yield func(keyword.Keyword) bool) {
+		_ = yield(keyword.RPC) &&
+			yield(keyword.Option)
+	}
+}
+
+// enumLevelKeywords returns keywords for enums.
+func enumLevelKeywords() iter.Seq[keyword.Keyword] {
+	return func(yield func(keyword.Keyword) bool) {
+		_ = yield(keyword.Option)
 	}
 }
 
 // keywordToCompletionItem converts a keyword to a completion item.
-func keywordToCompletionItem(kw keyword.Keyword) protocol.CompletionItem {
-	return protocol.CompletionItem{
-		Label: kw.String(),
-		Kind:  protocol.CompletionItemKindKeyword,
+func keywordToCompletionItem(
+	keywords iter.Seq[keyword.Keyword],
+	kind protocol.CompletionItemKind,
+	position protocol.Position,
+	prefix string,
+	suffix string,
+) iter.Seq[protocol.CompletionItem] {
+	return func(yield func(protocol.CompletionItem) bool) {
+		for keyword := range keywords {
+			suggest := keyword.String()
+			if !strings.HasPrefix(suggest, prefix) || !strings.HasSuffix(suggest, suffix) {
+				continue
+			}
+			if !yield(protocol.CompletionItem{
+				Label: suggest,
+				Kind:  kind,
+				TextEdit: &protocol.TextEdit{
+					Range: protocol.Range{
+						Start: position,
+						End:   position,
+					},
+					NewText: suggest[len(prefix) : len(suggest)-len(suffix)],
+				},
+			}) {
+				break
+			}
+		}
+	}
+}
+
+// joinCompletionItems returns a sequence of sequences.
+func joinCompletionItems(itemIters ...iter.Seq[protocol.CompletionItem]) iter.Seq[protocol.CompletionItem] {
+	return func(yield func(protocol.CompletionItem) bool) {
+		for _, items := range itemIters {
+			for item := range items {
+				if !yield(item) {
+					break
+				}
+			}
+		}
 	}
 }
 
@@ -343,6 +576,72 @@ func getDeclForPositionHelper(body ast.DeclBody, position protocol.Position, pat
 		}
 	}
 	return bestPath
+}
+
+// extractAroundTokenStream extracts the prefix and suffix around the cursor
+// by querying the token stream.
+func extractAroundTokenStream(file *file, offset int) (prefix report.Span, suffix report.Span) {
+	if file.ir.AST().IsZero() {
+		return report.Span{}, report.Span{}
+	}
+	stream := file.ir.AST().Context().Stream()
+	if stream == nil {
+		return report.Span{}, report.Span{}
+	}
+	before, after := stream.Around(offset)
+	if before.IsZero() {
+		return report.Span{}, report.Span{}
+	}
+
+	isToken := func(tok token.Token) bool {
+		switch kind := tok.Kind(); kind {
+		case token.Ident, token.Punct:
+			return true
+		default:
+			return false
+		}
+	}
+	if !before.IsZero() {
+		prefix = report.Span{
+			File:  file.file,
+			Start: offset,
+			End:   offset,
+		}
+		cursor := token.NewCursorAt(before)
+		for tok := cursor.PrevSkippable(); isToken(tok); tok = cursor.PrevSkippable() {
+			before = tok
+		}
+		prefix.Start = before.Span().Start
+	}
+	if !after.IsZero() {
+		suffix = report.Span{
+			File:  file.file,
+			Start: offset,
+			End:   offset,
+		}
+		cursor := token.NewCursorAt(before)
+		for tok := cursor.NextSkippable(); isToken(tok); tok = cursor.NextSkippable() {
+			after = tok
+		}
+		prefix.End = after.Span().End
+	}
+	return prefix, suffix
+}
+
+// isNewlineOrEndOfSpan returns true if this offset is separated be a newline or at the end of the span.
+// This most likely means we are at the start of a new declaration.
+func isNewlineOrEndOfSpan(span report.Span, offset int) bool {
+	if offset == span.End {
+		return true
+	}
+	text := span.Text()
+	index := offset - span.Start
+	if newLine := strings.IndexByte(text[index:], '\n'); newLine >= 0 {
+		// Newline separates the end, check theres no dangling content after us on this line.
+		after := text[index : index+newLine]
+		return len(strings.TrimSpace(after)) == 0
+	}
+	return false
 }
 
 // resolveCompletionItem resolves additional details for a completion item.
