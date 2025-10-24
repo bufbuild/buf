@@ -27,7 +27,6 @@ import (
 	"os"
 	"slices"
 	"strings"
-	"time"
 
 	"buf.build/go/standard/xio"
 	"buf.build/go/standard/xlog/xslog"
@@ -47,10 +46,6 @@ import (
 	"github.com/bufbuild/protocompile/experimental/source"
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-)
-
-const (
-	checkRefreshPeriod = 3 * time.Second
 )
 
 // file is a file that has been opened by the client.
