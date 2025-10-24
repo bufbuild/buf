@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"iter"
 	"log/slog"
+	"math"
 	"slices"
 	"strings"
 
@@ -240,6 +241,26 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 	prefix := importPathText[:index]
 	suffix := importPathText[index:]
 
+	// We ought to also send along an AdditionalTextEdit for adding the `;` at the end of the
+	// line, if it doesn't already exist.
+	var additionalTextEdits []protocol.TextEdit
+	if declImport.Semicolon().IsZero() {
+		additionalTextEdits = append(additionalTextEdits, protocol.TextEdit{
+			NewText: ";",
+			// End of line.
+			Range: protocol.Range{
+				Start: protocol.Position{
+					Line:      position.Line,
+					Character: math.MaxInt32 - 1,
+				},
+				End: protocol.Position{
+					Line:      position.Line,
+					Character: math.MaxUint32,
+				},
+			},
+		})
+	}
+
 	var items []protocol.CompletionItem
 	for importPath := range file.importToFile {
 		suggest := fmt.Sprintf("%q", importPath)
@@ -269,6 +290,7 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 				},
 				NewText: suggest[len(prefix) : len(suggest)-len(suffix)],
 			},
+			AdditionalTextEdits: additionalTextEdits,
 		})
 	}
 	return items
