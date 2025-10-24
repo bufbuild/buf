@@ -220,13 +220,7 @@ func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.D
 	}
 
 	tokenSpan := extractAroundToken(file, offset)
-	prefix, suffix := splitSpan(tokenSpan, offset)
-	file.lsp.logger.DebugContext(
-		ctx, "completion: keyword items",
-		slog.String("span", span.Text()),
-		slog.String("prefix", prefix),
-		slog.String("suffix", suffix),
-	)
+	file.lsp.logger.DebugContext(ctx, "completion: keyword items", slog.String("span", span.Text()))
 
 	// If this is an invalid definition at the top level, return top-level keywords.
 	if len(declPath) == 1 {
@@ -234,9 +228,8 @@ func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.D
 		return slices.Collect(keywordToCompletionItem(
 			topLevelKeywords(),
 			protocol.CompletionItemKindKeyword,
-			position,
-			prefix,
-			suffix,
+			tokenSpan,
+			offset,
 		))
 	}
 
@@ -258,23 +251,20 @@ func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.D
 			keywordToCompletionItem(
 				messageLevelKeywords(isProto2),
 				protocol.CompletionItemKindKeyword,
-				position,
-				prefix,
-				suffix,
+				tokenSpan,
+				offset,
 			),
 			keywordToCompletionItem(
 				messageLevelFieldKeywords(),
 				protocol.CompletionItemKindKeyword,
-				position,
-				prefix,
-				suffix,
+				tokenSpan,
+				offset,
 			),
 			keywordToCompletionItem(
 				predeclaredTypeKeywords(),
 				protocol.CompletionItemKindClass,
-				position,
-				prefix,
-				suffix,
+				tokenSpan,
+				offset,
 			),
 			// TODO: add custom types.
 		)
@@ -282,17 +272,15 @@ func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.D
 		items = keywordToCompletionItem(
 			serviceLevelKeywords(),
 			protocol.CompletionItemKindKeyword,
-			position,
-			prefix,
-			suffix,
+			tokenSpan,
+			offset,
 		)
 	case ast.DefKindEnum:
 		items = keywordToCompletionItem(
 			enumLevelKeywords(),
 			protocol.CompletionItemKindKeyword,
-			position,
-			prefix,
-			suffix,
+			tokenSpan,
+			offset,
 		)
 	default:
 		return nil
@@ -491,11 +479,12 @@ func enumLevelKeywords() iter.Seq[keyword.Keyword] {
 func keywordToCompletionItem(
 	keywords iter.Seq[keyword.Keyword],
 	kind protocol.CompletionItemKind,
-	position protocol.Position,
-	prefix string,
-	suffix string,
+	span report.Span,
+	offset int,
 ) iter.Seq[protocol.CompletionItem] {
 	return func(yield func(protocol.CompletionItem) bool) {
+		editRange := reportSpanToProtocolRange(span)
+		prefix, suffix := splitSpan(span, offset)
 		for keyword := range keywords {
 			suggest := keyword.String()
 			if !strings.HasPrefix(suggest, prefix) || !strings.HasSuffix(suggest, suffix) {
@@ -505,11 +494,8 @@ func keywordToCompletionItem(
 				Label: suggest,
 				Kind:  kind,
 				TextEdit: &protocol.TextEdit{
-					Range: protocol.Range{
-						Start: position,
-						End:   position,
-					},
-					NewText: suggest[len(prefix) : len(suggest)-len(suffix)],
+					Range:   editRange,
+					NewText: suggest,
 				},
 			}) {
 				break
