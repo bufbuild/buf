@@ -52,9 +52,8 @@ import (
 //
 // Mutating a file is thread-safe.
 type file struct {
-	lsp       *lsp
-	uri       protocol.URI
-	checkWork chan<- struct{}
+	lsp *lsp
+	uri protocol.URI
 
 	file *report.File
 	// Version is an opaque version identifier given to us by the LSP client. This
@@ -120,10 +119,6 @@ func (f *file) Reset(ctx context.Context) {
 // for this file.
 func (f *file) Close(ctx context.Context) {
 	f.Manager().Close(ctx, f.uri)
-	if f.checkWork != nil {
-		close(f.checkWork)
-		f.checkWork = nil
-	}
 	if f.workspace != nil {
 		f.workspace.Release()
 		f.workspace = nil
