@@ -553,11 +553,21 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			)
 			continue
 		}
+		if slices.ContainsFunc(referenceable.references, func(s *symbol) bool {
+			return s.span.Start == sym.span.Start && s.span.End == sym.span.End
+		}) {
+			f.lsp.logger.Warn(
+				"already have unresolved symbol in references",
+				slog.String("file", f.uri.Filename()),
+				slog.Any("symbol", sym.span.String()),
+			)
+		}
 		referenceable.references = append(referenceable.references, sym)
 	}
 
 	// Resolve all references outside of this file to symbols in this file
-	for _, file := range f.importToFile {
+	for imp, file := range f.importToFile {
+		f.lsp.logger.Debug("resolving reference", "name", f.file.Path(), "import", imp)
 		for _, sym := range file.referenceSymbols {
 			ref, ok := sym.kind.(*reference)
 			if !ok {
@@ -593,6 +603,16 @@ func (f *file) IndexSymbols(ctx context.Context) {
 				)
 				continue
 			}
+			if slices.ContainsFunc(referenceable.references, func(s *symbol) bool {
+				return s.span.Start == sym.span.Start && s.span.End == sym.span.End
+			}) {
+				f.lsp.logger.Warn(
+					"already have symbol from file in references",
+					slog.String("file", f.uri.Filename()),
+					slog.Any("symbol", sym),
+					slog.Any("import", imp),
+				)
+			}
 			referenceable.references = append(referenceable.references, sym)
 		}
 	}
@@ -617,9 +637,8 @@ func (f *file) IndexSymbols(ctx context.Context) {
 // For unresolved symbols, we need to track the definition we're attempting to resolve.
 func (f *file) indexSymbols() ([]*symbol, []*symbol) {
 	var resolved, unresolved []*symbol
-	for i := range f.ir.Symbols().Len() {
+	for symbol := range seq.Values(f.ir.Symbols()) {
 		// We only index the symbols for this file.
-		symbol := f.ir.Symbols().At(i)
 		if symbol.File().Path() != f.objectInfo.Path() {
 			continue
 		}
@@ -633,7 +652,7 @@ func (f *file) indexSymbols() ([]*symbol, []*symbol) {
 // irToSymbols takes the [ir.Symbol] and returns the corresponding symbols used by the LSP
 // in two slices:
 //   - The first slice contains resolved symbols that are ready to go
-//   - The second slice contains symbols that resolution for their defs
+//   - The second slice contains symbols that need resolution for their defs
 func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 	var resolved, unresolved []*symbol
 	switch irSymbol.Kind() {
@@ -692,6 +711,9 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		typ.kind = kind
 		if needsResolution {
 			unresolved = append(unresolved, typ)
+			f.lsp.logger.Debug("adding unresolved typ",
+				"span", typ.span.String(),
+			)
 		} else {
 			resolved = append(resolved, typ)
 		}
@@ -715,6 +737,12 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		tag.def = tag
 		resolved = append(resolved, tag)
+		unresolvedFields := f.messageToSymbols(irSymbol.AsMember().Options())
+		for _, field := range unresolvedFields {
+			f.lsp.logger.Debug("adding unresolved field",
+				"span", field.span.String(),
+			)
+		}
 		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options())...)
 	case ir.SymbolKindExtension:
 		// TODO: we should figure out if we need to do any resolution here.
@@ -820,6 +848,7 @@ func (f *file) messageToSymbols(msg ir.MessageValue) []*symbol {
 		if field.ValueAST().IsZero() {
 			continue
 		}
+		f.lsp.logger.Debug("msg field")
 		for element := range seq.Values(field.Elements()) {
 			span := element.Value().KeyASTs().At(element.ValueNodeIndex()).Span()
 			elem := &symbol{
@@ -831,6 +860,9 @@ func (f *file) messageToSymbols(msg ir.MessageValue) []*symbol {
 				},
 				isOption: true,
 			}
+			f.lsp.logger.Debug("adding symbol",
+				"span", elem.span.String(),
+			)
 			symbols = append(symbols, elem)
 			if !element.AsMessage().IsZero() {
 				symbols = append(symbols, f.messageToSymbols(element.AsMessage())...)

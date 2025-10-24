@@ -442,7 +442,7 @@ func (s *server) References(
 	if symbol == nil {
 		return nil, nil
 	}
-	return symbol.References(), nil
+	return symbol.References(s.logger), nil
 }
 
 // Completion is the entry point for code completion.
