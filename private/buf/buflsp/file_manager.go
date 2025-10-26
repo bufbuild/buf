@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/refcount"
 	"go.lsp.dev/protocol"
+	"log/slog"
 )
 
 // fileManager tracks all files the LSP is currently handling, whether read from disk or opened
@@ -59,6 +60,7 @@ func (fm *fileManager) Get(uri protocol.URI) *file {
 // for this file.
 func (fm *fileManager) Close(ctx context.Context, uri protocol.URI) {
 	if deleted := fm.uriToFile.Delete(uri); deleted != nil {
+		fm.lsp.logger.DebugContext(ctx, "evicted file", slog.String("uri", deleted.uri.Filename()))
 		deleted.Reset(ctx)
 	}
 }

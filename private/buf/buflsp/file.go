@@ -17,27 +17,18 @@
 package buflsp
 
 import (
-	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"iter"
 	"log/slog"
-	"os"
 	"slices"
 	"strings"
-	"time"
 
-	"buf.build/go/standard/xio"
 	"buf.build/go/standard/xlog/xslog"
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/git"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
 	"github.com/bufbuild/protocompile/experimental/incremental"
@@ -50,17 +41,10 @@ import (
 	"go.lsp.dev/uri"
 )
 
-const (
-	checkRefreshPeriod = 3 * time.Second
-)
-
 // file is a file that has been opened by the client.
-//
-// Mutating a file is thread-safe.
 type file struct {
-	lsp       *lsp
-	uri       protocol.URI
-	checkWork chan<- struct{}
+	lsp *lsp
+	uri protocol.URI
 
 	file *report.File
 	// Version is an opaque version identifier given to us by the LSP client. This
@@ -69,20 +53,16 @@ type file struct {
 	version int32
 	hasText bool // Whether this file has ever had text read into it.
 
-	workspace *workspace // May be nil.
-
-	againstStrategy againstStrategy
-	againstGitRef   string
-
-	objectInfo   storage.ObjectInfo
-	importToFile map[string]*file
+	workspace        *workspace // May be nil.
+	workspaceVersion int32      // Last seen version.
+	objectInfo       storage.ObjectInfo
+	importToFile     map[string]*file
 
 	ir                   ir.File
 	referenceableSymbols map[string]*symbol
 	referenceSymbols     []*symbol
 	symbols              []*symbol
 	diagnostics          []protocol.Diagnostic
-	image, againstImage  bufimage.Image
 }
 
 // IsLocal returns whether this is a local file, i.e. a file that the editor
@@ -108,16 +88,14 @@ func (f *file) Manager() *fileManager {
 
 // Reset clears all bookkeeping information on this file.
 func (f *file) Reset(ctx context.Context) {
-	f.lsp.logger.Debug(fmt.Sprintf("resetting file %v", f.uri))
-
-	f.ir = ir.File{}
-	f.diagnostics = nil
-	f.symbols = nil
-	f.image = nil
 	for _, imported := range f.importToFile {
 		imported.Close(ctx)
 	}
 	f.importToFile = nil
+	if f.workspace != nil {
+		f.workspace.Release()
+		f.workspace = nil
+	}
 }
 
 // Close marks a file as closed.
@@ -126,14 +104,6 @@ func (f *file) Reset(ctx context.Context) {
 // for this file.
 func (f *file) Close(ctx context.Context) {
 	f.Manager().Close(ctx, f.uri)
-	if f.checkWork != nil {
-		close(f.checkWork)
-		f.checkWork = nil
-	}
-	if f.workspace != nil {
-		f.workspace.Release()
-		f.workspace = nil
-	}
 }
 
 // IsOpenInEditor returns whether this file was opened in the LSP client's
@@ -145,28 +115,36 @@ func (f *file) IsOpenInEditor() bool {
 	return f.version != -1 // See [file.ReadFromDisk].
 }
 
-// ReadFromDisk reads this file from disk if it has never had data loaded into it before.
+// ReadFromWorkspace reads this file from the workspace if it has never had data loaded into it before.
 //
-// If it has been read from disk before, or has received updates from the LSP client, this
-// function returns nil.
-func (f *file) ReadFromDisk(ctx context.Context) (err error) {
+// If this file has been updated from the LSP, this function does nothing.
+func (f *file) ReadFromWorkspace(ctx context.Context) (err error) {
 	if f.hasText {
 		return nil
 	}
 
-	fileName := f.uri.Filename()
-	reader, err := os.Open(fileName)
+	var reader io.ReadCloser
+	switch info := f.objectInfo.(type) {
+	case bufmodule.FileInfo:
+		reader, err = info.Module().GetFile(ctx, info.Path())
+	case wktObjectInfo:
+		reader, err = f.lsp.wktBucket.Get(ctx, info.Path())
+	default:
+		return fmt.Errorf("unsupported objectInfo type %T", f.objectInfo)
+	}
 	if err != nil {
-		return fmt.Errorf("could not open file %q from disk: %w", f.uri, err)
+		return err
 	}
 	defer reader.Close()
-	text, err := readAllAsString(reader)
-	if err != nil {
-		return fmt.Errorf("could not read file %q from disk: %w", f.uri, err)
+
+	var builder strings.Builder
+	if _, err := io.Copy(&builder, reader); err != nil {
+		return err
 	}
+	text := builder.String()
 
 	f.version = -1
-	f.file = report.NewFile(fileName, text)
+	f.file = report.NewFile(f.uri.Filename(), text)
 	f.hasText = true
 	return nil
 }
@@ -174,133 +152,23 @@ func (f *file) ReadFromDisk(ctx context.Context) (err error) {
 // Update updates the contents of this file with the given text received from
 // the LSP client.
 func (f *file) Update(ctx context.Context, version int32, text string) {
-	f.Reset(ctx)
+	f.lsp.logger.Debug(
+		"update file",
+		slog.String("uri", f.uri.Filename()),
+		slog.Int("version", int(f.version)),
+	)
+	// Cancel any workspace checks, as they are no longer valid.
+	f.workspace.CancelChecks(ctx)
+
+	f.IndexImports(ctx)
 
 	f.lsp.logger.Info(fmt.Sprintf("new file version: %v, %v -> %v", f.uri, f.version, version))
 	f.version = version
 	f.file = report.NewFile(f.uri.Filename(), text)
 	f.hasText = true
-}
 
-// RefreshSettings refreshes configuration settings for this file.
-//
-// This only needs to happen when the file is open or when the client signals
-// that configuration settings have changed.
-func (f *file) RefreshSettings(ctx context.Context) {
-	settings, err := f.lsp.client.Configuration(ctx, &protocol.ConfigurationParams{
-		Items: []protocol.ConfigurationItem{
-			{ScopeURI: f.uri, Section: ConfigBreakingStrategy},
-			{ScopeURI: f.uri, Section: ConfigBreakingGitRef},
-		},
-	})
-	if err != nil {
-		// We can throw the error away, since the handler logs it for us.
-		return
-	}
-
-	// NOTE: indices here are those from the array in the call to Configuration above.
-	f.againstStrategy = getSetting(f, settings, ConfigBreakingStrategy, 0, parseAgainstStrategy)
-	f.againstGitRef = getSetting(f, settings, ConfigBreakingGitRef, 1, func(s string) (string, bool) { return s, true })
-
-	switch f.againstStrategy {
-	case againstDisk:
-		f.againstGitRef = ""
-	case againstGit:
-		// Check to see if the user setting is a valid Git ref.
-		err := git.IsValidRef(
-			ctx,
-			f.lsp.container,
-			normalpath.Dir(f.uri.Filename()),
-			f.againstGitRef,
-		)
-		if err != nil {
-			f.lsp.logger.Warn(
-				"failed to validate buf.againstGit",
-				slog.String("uri", string(f.uri)),
-				xslog.ErrorAttr(err),
-			)
-			f.againstGitRef = ""
-		} else {
-			f.lsp.logger.Debug(
-				"found remote branch",
-				slog.String("uri", string(f.uri)),
-				slog.String("ref", f.againstGitRef),
-			)
-		}
-	}
-}
-
-// getSetting is a helper that extracts a configuration setting from the return
-// value of [protocol.Client.Configuration].
-//
-// The parse function should convert the JSON value we get from the protocol
-// (such as a string), potentially performing validation, and returning a default
-// value on validation failure.
-func getSetting[T, U any](f *file, settings []any, name string, index int, parse func(T) (U, bool)) (value U) {
-	if len(settings) <= index {
-		f.lsp.logger.Warn(
-			"missing config setting",
-			slog.String("setting", name),
-			slog.String("uri", string(f.uri)),
-		)
-	}
-
-	if raw, ok := settings[index].(T); ok {
-		// For invalid settings, this will default to againstTrunk for us!
-		value, ok = parse(raw)
-		if !ok {
-			f.lsp.logger.Warn(
-				"invalid config setting",
-				slog.String("setting", name),
-				slog.String("uri", string(f.uri)),
-				slog.Any("raw", raw),
-			)
-		}
-	} else {
-		f.lsp.logger.Warn(
-			"invalid config setting",
-			slog.String("setting", name),
-			slog.String("uri", string(f.uri)),
-			slog.Any("raw", raw),
-		)
-	}
-
-	f.lsp.logger.Debug(
-		"parsed config setting",
-		slog.String("setting", name),
-		slog.String("uri", string(f.uri)),
-		slog.Any("value", value),
-	)
-
-	return value
-}
-
-// Refresh rebuilds all of a file's internal book-keeping.
-func (f *file) Refresh(ctx context.Context) {
-	var progress *progress
-	if f.IsOpenInEditor() {
-		// NOTE: Nil progress does nothing when methods are called. This helps
-		// minimize RPC spam from the client when indexing lots of files.
-		progress = newProgress(f.lsp)
-	}
-	progress.Begin(ctx, "Indexing")
-
-	progress.Report(ctx, "Setting workspace", 1.0/5)
-	f.RefreshWorkspace(ctx)
-
-	progress.Report(ctx, "Indexing imports", 2.0/5)
-	f.IndexImports(ctx)
-
-	progress.Report(ctx, "Parsing IR", 3.0/5)
 	f.RefreshIR(ctx)
-
-	progress.Report(ctx, "Indexing Symbols", 4.0/5)
 	f.IndexSymbols(ctx)
-
-	progress.Report(ctx, "Running Checks", 5.0/5)
-	f.RunChecks(ctx)
-
-	progress.Done(ctx)
 
 	// NOTE: Diagnostics are published unconditionally. This is necessary even
 	// if we have zero diagnostics, so that the client correctly ticks over from
@@ -308,13 +176,13 @@ func (f *file) Refresh(ctx context.Context) {
 	f.PublishDiagnostics(ctx)
 }
 
-// RefreshWorkspace builds the workspace for the current file and sets the workspace it.
+// UpdateWorkspace updates the workspace for the current file.
 //
 // The Buf workspace provides the sources for the compiler to work with.
-func (f *file) RefreshWorkspace(ctx context.Context) {
+func (f *file) UpdateWorkspace(ctx context.Context) {
 	f.lsp.logger.Debug(
-		"refresh workspace",
-		slog.String("file", f.uri.Filename()),
+		"update workspace",
+		slog.String("uri", f.uri.Filename()),
 		slog.Int("version", int(f.version)),
 	)
 	if f.workspace != nil {
@@ -324,6 +192,7 @@ func (f *file) RefreshWorkspace(ctx context.Context) {
 				slog.String("uri", string(f.uri)),
 				xslog.ErrorAttr(err),
 			)
+			return
 		}
 	} else {
 		workspace, err := f.lsp.workspaceManager.LeaseWorkspace(ctx, f.uri)
@@ -337,6 +206,7 @@ func (f *file) RefreshWorkspace(ctx context.Context) {
 		}
 		f.workspace = workspace
 	}
+	f.workspaceVersion = f.workspace.version
 }
 
 // IndexImports keeps track of importable files.
@@ -344,38 +214,49 @@ func (f *file) RefreshWorkspace(ctx context.Context) {
 // This operation requires RefreshWorkspace.
 func (f *file) IndexImports(ctx context.Context) {
 	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))
-	if f.importToFile != nil {
-		return
+
+	if f.workspace.Version() != f.workspaceVersion {
+		return // Workspace is up to date.
 	}
+
+	// Reset the imported files.
+	// TODO: only close files that are removed.
+	for _, imported := range f.importToFile {
+		imported.Close(ctx)
+	}
+	clear(f.importToFile)
+
 	fileInfos, err := f.getWorkspaceFileInfos(ctx)
 	if err != nil {
 		f.lsp.logger.Error(
 			"failed to get importable files",
-			slog.String("file", f.uri.Filename()),
+			slog.String("uri", f.uri.Filename()),
 		)
 	}
-	f.importToFile = make(map[string]*file)
-	for _, importable := range fileInfos {
-		if importable.ExternalPath() == f.uri.Filename() {
-			f.objectInfo = importable
-			if err := f.ReadFromDisk(ctx); err != nil {
+	if f.importToFile == nil {
+		f.importToFile = make(map[string]*file, len(fileInfos))
+	}
+	for _, fileInfo := range fileInfos {
+		if fileInfo.ExternalPath() == f.uri.Filename() {
+			f.objectInfo = fileInfo
+			if err := f.ReadFromWorkspace(ctx); err != nil {
 				f.lsp.logger.Error(
 					"failed to read contents for file",
 					xslog.ErrorAttr(err),
-					slog.String("file", importable.Path()),
+					slog.String("file", fileInfo.Path()),
 				)
 			}
 			continue
 		}
-		importableFile := f.Manager().Track(uri.File(importable.LocalPath()))
+		importableFile := f.Manager().Track(uri.File(fileInfo.LocalPath()))
 		if importableFile.objectInfo == nil {
-			importableFile.objectInfo = importable
+			importableFile.objectInfo = fileInfo
 		}
-		if err := importableFile.ReadFromDisk(ctx); err != nil {
+		if err := importableFile.ReadFromWorkspace(ctx); err != nil {
 			f.lsp.logger.Error(
 				"failed to read contents for file",
 				xslog.ErrorAttr(err),
-				slog.String("file", importable.Path()),
+				slog.String("file", fileInfo.Path()),
 			)
 		}
 		f.importToFile[importableFile.objectInfo.Path()] = importableFile
@@ -418,6 +299,8 @@ func (f *file) RefreshIR(ctx context.Context) {
 		slog.String("uri", string(f.uri)),
 		slog.Int("version", int(f.version)),
 	)
+	f.diagnostics = f.diagnostics[:0]
+	f.ir = ir.File{}
 
 	openerMap := map[string]string{
 		f.objectInfo.Path(): f.file.Text(),
@@ -491,12 +374,19 @@ func (f *file) IndexSymbols(ctx context.Context) {
 
 	// Throw away all the old symbols and rebuild symbols unconditionally. This is because if
 	// this file depends on a file that has since been modified, we may need to update references.
-	f.symbols = nil
-	f.referenceSymbols = nil
-	f.referenceableSymbols = make(map[string]*symbol)
+	clear(f.symbols)
+	f.symbols = f.symbols[:0]
+	clear(f.referenceSymbols)
+	f.referenceSymbols = f.referenceSymbols[:0]
+	clear(f.referenceableSymbols)
+	if f.referenceableSymbols == nil {
+		f.referenceableSymbols = make(map[string]*symbol)
+	}
 
 	// Process all imports as symbols
-	f.symbols = xslices.Map(seq.ToSlice(f.ir.Imports()), f.importToSymbol)
+	for imp := range seq.Values(f.ir.Imports()) {
+		f.symbols = append(f.symbols, f.importToSymbol(imp))
+	}
 
 	resolved, unresolved := f.indexSymbols()
 	f.symbols = append(f.symbols, resolved...)
@@ -521,7 +411,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			// This shouldn't happen, logging a warning
 			f.lsp.logger.Warn(
 				"found unresolved non-reference symbol",
-				slog.String("file", f.uri.Filename()),
+				slog.String("uri", f.uri.Filename()),
 				slog.Any("symbol", sym),
 			)
 			continue
@@ -548,7 +438,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			// This shouldn't happen, logging a warning
 			f.lsp.logger.Warn(
 				"found non-referenceable symbol in index",
-				slog.String("file", f.uri.Filename()),
+				slog.String("uri", f.uri.Filename()),
 				slog.Any("symbol", def),
 			)
 			continue
@@ -564,7 +454,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 				// This shouldn't happen, logging a warning
 				f.lsp.logger.Warn(
 					"found unresolved non-reference symbol",
-					slog.String("file", f.uri.Filename()),
+					slog.String("uri", f.uri.Filename()),
 					slog.Any("symbol", sym),
 				)
 				continue
@@ -578,7 +468,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 				// should be resolved, logging a warning
 				f.lsp.logger.Warn(
 					"found reference to unknown symbol",
-					slog.String("file", f.uri.Filename()),
+					slog.String("uri", f.uri.Filename()),
 					slog.Any("reference", sym),
 				)
 				continue
@@ -588,7 +478,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 				// This shouldn't happen, logging a warning
 				f.lsp.logger.Warn(
 					"found non-referenceable symbol in index",
-					slog.String("file", f.uri.Filename()),
+					slog.String("uri", f.uri.Filename()),
 					slog.Any("symbol", def),
 				)
 				continue
@@ -864,257 +754,22 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 	return symbol
 }
 
-// RunChecks initiates background checks (lint and breaking) on this file and
-// returns immediately.
-//
-// Checks are executed in a background goroutine to avoid blocking the LSP
-// call. Each call to RunChecks invalidates any ongoing checks, triggering a
-// fresh run. However, previous checks are not interrupted. The checks acquire
-// the LSP mutex. Subsequent LSP calls will wait for the current check to
-// complete before proceeding.
-//
-// Checks are debounce (with the delay defined by checkRefreshPeriod) to avoid
-// overwhelming the client with expensive checks. If the file is not open in the
-// editor, checks are skipped. Diagnostics are published after checks are run.
-//
-// This operation requires IndexImports..
-func (f *file) RunChecks(ctx context.Context) {
-	// If we have not yet started a goroutine to run checks, start one.
-	// This goroutine will run checks in the background and publish diagnostics.
-	// We debounce checks to avoid spamming the client.
-	if f.checkWork == nil {
-		// We use a buffered channel of length one as the check invalidation mechanism.
-		work := make(chan struct{}, 1)
-		f.checkWork = work
-		runChecks := func(ctx context.Context) {
-			f.lsp.lock.Lock()
-			defer f.lsp.lock.Unlock()
-			if !f.IsOpenInEditor() {
-				// Skip checks if the file is not open in the editor.
-				return
-			}
-			f.lsp.logger.Info(fmt.Sprintf("running checks for %v, %v", f.uri, f.version))
-			f.BuildImages(ctx)
-			f.RunLints(ctx)
-			f.RunBreaking(ctx)
-			f.PublishDiagnostics(ctx) // Publish the latest diagnostics.
-		}
-		// Start a goroutine to process checks.
-		go func() {
-			// Detach from the parent RPC context.
-			ctx := context.WithoutCancel(ctx)
-			for range work {
-				runChecks(ctx)
-				// Debounce checks to prevent thrashing expensive checks.
-				time.Sleep(checkRefreshPeriod)
-			}
-		}()
-	}
-	// Signal the goroutine to invalidate and rerun checks.
-	select {
-	case f.checkWork <- struct{}{}:
-	default:
-		// Channel is full, checks are already invalidated and will be rerun.
-	}
-}
-
-// newFileOpener returns a fileOpener for the context of this file.
-//
-// May return nil, if insufficient information is present to open the file.
-func (f *file) newFileOpener() fileOpener {
-	return func(path string) (io.ReadCloser, error) {
-		var file *file
-		if f.objectInfo.Path() == path {
-			file = f
-		} else {
-			file = f.importToFile[path]
-		}
-		if file == nil {
-			return nil, fmt.Errorf("%s: %w", path, fs.ErrNotExist)
-		}
-		return xio.CompositeReadCloser(strings.NewReader(file.file.Text()), xio.NopCloser), nil
-	}
-}
-
-// newAgainstFileOpener returns a fileOpener for building the --against file
-// for this file. In other words, this pulls files out of the git index, if
-// necessary.
-//
-// May return nil, if there is insufficient information to build an --against
-// file.
-func (f *file) newAgainstFileOpener(ctx context.Context) fileOpener {
-	if !f.IsLocal() {
-		return nil
-	}
-
-	if f.againstStrategy == againstGit && f.againstGitRef == "" {
-		return nil
-	}
-
-	return func(path string) (io.ReadCloser, error) {
-		var file *file
-		if f.objectInfo.Path() == path {
-			file = f
-		} else {
-			file = f.importToFile[path]
-		}
-		if file == nil {
-			return nil, fmt.Errorf("%s: %w", path, fs.ErrNotExist)
-		}
-		var (
-			data []byte
-			err  error
-		)
-		if f.againstGitRef != "" {
-			data, err = git.ReadFileAtRef(
-				ctx,
-				f.lsp.container,
-				file.objectInfo.LocalPath(),
-				f.againstGitRef,
-			)
-		}
-
-		if data == nil || errors.Is(err, git.ErrInvalidGitCheckout) {
-			return os.Open(file.objectInfo.LocalPath())
-		}
-
-		return xio.CompositeReadCloser(bytes.NewReader(data), xio.NopCloser), err
-	}
-}
-
-// BuildImages builds Buf Images for this file, to be used with linting
-// routines.
-//
-// This operation requires IndexImports.
-func (f *file) BuildImages(ctx context.Context) {
-	if f.objectInfo == nil {
-		return
-	}
-
-	if opener := f.newFileOpener(); opener != nil {
-		image, diagnostics := buildImage(ctx, f.objectInfo.Path(), f.lsp.logger, opener)
-		if len(diagnostics) > 0 {
-			f.diagnostics = diagnostics
-		}
-		f.image = image
-	} else {
-		f.lsp.logger.Warn("not building image", slog.String("uri", string(f.uri)))
-	}
-
-	if opener := f.newAgainstFileOpener(ctx); opener != nil {
-		// We explicitly throw the diagnostics away.
-		image, diagnostics := buildImage(ctx, f.objectInfo.Path(), f.lsp.logger, opener)
-
-		f.againstImage = image
-		if image == nil {
-			f.lsp.logger.Warn("failed to build --against image", slog.Any("diagnostics", diagnostics))
-		}
-	} else {
-		f.lsp.logger.Warn("not building --against image", slog.String("uri", string(f.uri)))
-	}
-}
-
-// RunLints runs linting on this file. Returns whether any lints failed.
-//
-// This operation requires BuildImage.
-func (f *file) RunLints(ctx context.Context) bool {
-	if f.IsWKT() {
-		// Well-known types are not linted.
-		return false
-	}
-
-	workspace := f.workspace.Workspace()
-	module := f.workspace.GetModule(f.uri)
-	checkClient := f.workspace.CheckClient()
-	if workspace == nil {
-		f.lsp.logger.Warn(fmt.Sprintf("could not find workspace for %q", f.uri))
-		return false
-	}
-	if module == nil || f.image == nil {
-		f.lsp.logger.Warn(fmt.Sprintf("could not find image for %q", f.uri))
-		return false
-	}
-	if checkClient == nil {
-		f.lsp.logger.Warn(fmt.Sprintf("could not find check client for %q", f.uri))
-		return false
-	}
-
-	f.lsp.logger.Debug(fmt.Sprintf("running lint for %q in %v", f.uri, module.FullName()))
-	return f.appendLintErrors("buf lint", checkClient.Lint(
-		ctx,
-		workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
-		f.image,
-		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
-		bufcheck.WithPolicyConfigs(workspace.PolicyConfigs()...),
-	))
-}
-
-// RunBreaking runs breaking lints on this file. Returns whether any lints failed.
-//
-// This operation requires BuildImage.
-func (f *file) RunBreaking(ctx context.Context) bool {
-	if f.IsWKT() {
-		// Well-known types are not linted.
-		return false
-	}
-
-	workspace := f.workspace.Workspace()
-	module := f.workspace.GetModule(f.uri)
-	checkClient := f.workspace.CheckClient()
-	if workspace == nil {
-		f.lsp.logger.Warn(fmt.Sprintf("could not find workspace for %q", f.uri))
-		return false
-	}
-	if module == nil || f.image == nil || f.againstImage == nil {
-		f.lsp.logger.Warn(fmt.Sprintf("could not find --against image for %q", f.uri))
-		return false
-	}
-	if checkClient == nil {
-		f.lsp.logger.Warn(fmt.Sprintf("could not find check client for %q", f.uri))
-		return false
-	}
-
-	f.lsp.logger.Debug(fmt.Sprintf("running breaking for %q in %v", f.uri, module.FullName()))
-	return f.appendLintErrors("buf breaking", checkClient.Breaking(
-		ctx,
-		workspace.GetBreakingConfigForOpaqueID(module.OpaqueID()),
-		f.image,
-		f.againstImage,
-		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
-		bufcheck.WithPolicyConfigs(workspace.PolicyConfigs()...),
-	))
-}
-
-func (f *file) appendLintErrors(source string, err error) bool {
-	if err == nil {
-		f.lsp.logger.Debug(fmt.Sprintf("%s generated no errors for %s", source, f.uri))
-		return false
-	}
-
-	var annotations bufanalysis.FileAnnotationSet
-	if !errors.As(err, &annotations) {
-		f.lsp.logger.Warn(
-			"error while linting",
-			slog.String("uri", string(f.uri)),
-			xslog.ErrorAttr(err),
-		)
-		return false
-	}
-
-	for _, annotation := range annotations.FileAnnotations() {
-		// Convert 1-indexed byte-based line/column to byte offset.
-		startLocation := f.file.InverseLocation(annotation.StartLine(), annotation.StartColumn(), positionalEncoding)
-		endLocation := f.file.InverseLocation(annotation.EndLine(), annotation.EndColumn(), positionalEncoding)
-		protocolRange := reportLocationsToProtocolRange(startLocation, endLocation)
-		f.diagnostics = append(f.diagnostics, protocol.Diagnostic{
-			Range:    protocolRange,
-			Code:     annotation.Type(),
-			Severity: protocol.DiagnosticSeverityWarning,
-			Source:   source,
-			Message:  annotation.Message(),
-		})
-	}
-	return true
+func (f *file) appendAnnotation(source string, annotation bufanalysis.FileAnnotation) {
+	// Convert 1-indexed byte-based line/column to byte offset.
+	startLocation := f.file.InverseLocation(
+		annotation.StartLine(), annotation.StartColumn(), positionalEncoding,
+	)
+	endLocation := f.file.InverseLocation(
+		annotation.EndLine(), annotation.EndColumn(), positionalEncoding,
+	)
+	protocolRange := reportLocationsToProtocolRange(startLocation, endLocation)
+	f.diagnostics = append(f.diagnostics, protocol.Diagnostic{
+		Range:    protocolRange,
+		Code:     annotation.Type(),
+		Severity: protocol.DiagnosticSeverityWarning,
+		Source:   source,
+		Message:  annotation.Message(),
+	})
 }
 
 // PublishDiagnostics publishes all of this file's diagnostics to the LSP client.
@@ -1149,14 +804,6 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 // wktObjectInfo is a concrete type to help us identify WKTs among the importable files.
 type wktObjectInfo struct {
 	storage.ObjectInfo
-}
-
-func readAllAsString(reader io.Reader) (string, error) {
-	var builder strings.Builder
-	if _, err := io.Copy(&builder, reader); err != nil {
-		return "", err
-	}
-	return builder.String(), nil
 }
 
 // GetSymbols retrieves symbols for the file. If a query is passed, matches only symbols matching

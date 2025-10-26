@@ -16,16 +16,23 @@ package buflsp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"iter"
 	"log/slog"
+	"time"
 
 	"buf.build/go/standard/xlog/xslog"
+	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 // errUnresolvableWorkspace is an unsupported workspace error.
@@ -120,13 +127,19 @@ func (w *workspaceManager) getOrCreateWorkspace(ctx context.Context, uri protoco
 type workspace struct {
 	lsp *lsp
 
+	// verison of the workspace.
+	version int32
+
 	// refCount counts all the files that currently reference this workspace.
 	// A refCount of zero will be removed by the workspaceManager on cleanup.
 	refCount           int
 	workspaceURI       protocol.URI // File that created this workspace.
+	workspaceDir       string       // Directory containing the buf.yaml.
 	workspace          bufworkspace.Workspace
 	fileNameToFileInfo map[string]bufmodule.FileInfo
-	checkClient        bufcheck.Client
+
+	// cancelChecks if not nil, cancels any running check context.
+	cancelChecks func()
 }
 
 // Lease increments the reference count.
@@ -140,6 +153,14 @@ func (w *workspace) Release() int {
 	return w.refCount
 }
 
+// Version returns the workspace iteration count.
+func (w *workspace) Version() int32 {
+	if w == nil {
+		return 0
+	}
+	return w.version
+}
+
 // Refresh rebuilds the workspace and required context.
 func (w *workspace) Refresh(ctx context.Context) error {
 	if w == nil {
@@ -151,6 +172,20 @@ func (w *workspace) Refresh(ctx context.Context) error {
 		w.lsp.logger.Error("workspace: get workspace", slog.String("file", fileName), xslog.ErrorAttr(err))
 		return err
 	}
+
+	// Determine the workspace directory using buftarget.
+	workspaceDir, err := w.getWorkspaceDir(ctx, fileName)
+	if err != nil {
+		w.lsp.logger.Warn("workspace: failed to determine workspace directory", xslog.ErrorAttr(err))
+		// Fall back to using the directory of the file.
+		workspaceDir = normalpath.Dir(fileName)
+	}
+	w.lsp.logger.Debug(
+		"workspace: determined workspace directory",
+		slog.String("uri", fileName),
+		slog.String("workspaceDir", workspaceDir),
+	)
+
 	fileNameToFileInfo := make(map[string]bufmodule.FileInfo)
 	for _, module := range bufWorkspace.Modules() {
 		if err := module.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
@@ -163,16 +198,11 @@ func (w *workspace) Refresh(ctx context.Context) error {
 			return err
 		}
 	}
-	// Get the check client for the workspace.
-	checkClient, err := w.lsp.controller.GetCheckClientForWorkspace(ctx, bufWorkspace, w.lsp.wasmRuntime)
-	if err != nil {
-		w.lsp.logger.Warn("workspace: get check client", slog.String("file", fileName), xslog.ErrorAttr(err))
-	}
-
 	// Update the workspace.
+	w.version++
 	w.workspace = bufWorkspace
+	w.workspaceDir = workspaceDir
 	w.fileNameToFileInfo = fileNameToFileInfo
-	w.checkClient = checkClient
 	return nil
 }
 
@@ -211,10 +241,179 @@ func (w *workspace) GetModule(uri protocol.URI) bufmodule.Module {
 	return nil
 }
 
-// CheckClient returns the buf check Client configured for the workspace.
-func (w *workspace) CheckClient() bufcheck.Client {
+// CancelChecks cancels any currently running checks for this workspace.
+func (w *workspace) CancelChecks(ctx context.Context) {
 	if w == nil {
-		return nil
+		return
 	}
-	return w.checkClient
+	if w.cancelChecks != nil {
+		w.cancelChecks()
+		w.cancelChecks = nil
+	}
+}
+
+// RunChecks triggers the run of checks within the workspace. Diagnostics are published asynchronously.
+func (w *workspace) RunChecks(ctx context.Context) {
+	if w == nil {
+		return
+	}
+	w.CancelChecks(ctx)
+
+	const checkTimeout = 10 * time.Second
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), checkTimeout)
+	w.cancelChecks = cancel
+
+	go func() {
+		annotations, err := w.runChecks(ctx)
+		if err != nil {
+			if errors.Is(err, context.Canceled) {
+				w.lsp.logger.DebugContext(ctx, "workspace: checks cancelled", slog.String("uri", w.workspaceURI.Filename()), xslog.ErrorAttr(err))
+			} else if errors.Is(err, context.DeadlineExceeded) {
+				w.lsp.logger.WarnContext(ctx, "workspace: checks deadline exceeded", slog.String("uri", w.workspaceURI.Filename()), xslog.ErrorAttr(err))
+			} else {
+				w.lsp.logger.ErrorContext(ctx, "workspace: checks failed", slog.String("uri", w.workspaceURI.Filename()), xslog.ErrorAttr(err))
+			}
+			return
+		}
+
+		w.lsp.lock.Lock()
+		defer w.lsp.lock.Unlock()
+
+		select {
+		case <-ctx.Done():
+			return // Context cancelled before publishing.
+		default:
+		}
+
+		// Group annotations by file.
+		pathToLocalPath := make(map[string]string)
+		for fileInfo := range w.FileInfo() {
+			pathToLocalPath[fileInfo.Path()] = fileInfo.LocalPath()
+		}
+		annotationsByPath := make(map[string][]bufanalysis.FileAnnotation)
+		for _, annotation := range annotations {
+			fileInfo := annotation.FileInfo()
+			if fileInfo == nil {
+				continue
+			}
+			path := fileInfo.Path()
+			annotationsByPath[path] = append(annotationsByPath[path], annotation)
+		}
+
+		// Append diagnostics to each file and publish.
+		for path, fileAnnotations := range annotationsByPath {
+			localPath, ok := pathToLocalPath[path]
+			if !ok {
+				// File path not found in workspace, skip it.
+				continue
+			}
+			fileURI := uri.File(localPath)
+			file := w.lsp.fileManager.Get(fileURI)
+			if file == nil {
+				// File is not tracked, skip it.
+				continue
+			}
+			if !file.IsOpenInEditor() {
+				// Only publish diagnostics for files open in the editor.
+				continue
+			}
+			for _, annotation := range fileAnnotations {
+				file.appendAnnotation("buf lint", annotation)
+			}
+			file.PublishDiagnostics(ctx)
+		}
+	}()
+}
+
+// getWorkspaceDir determines the workspace directory by finding the controlling workspace.
+func (w *workspace) getWorkspaceDir(ctx context.Context, fileName string) (string, error) {
+	absPath, err := normalpath.NormalizeAndAbsolute(fileName)
+	if err != nil {
+		return "", err
+	}
+	// Split the absolute path into components to get the FS root.
+	absPathComponents := normalpath.Components(absPath)
+	fsRoot := absPathComponents[0]
+	fsRelPath, err := normalpath.Rel(fsRoot, absPath)
+	if err != nil {
+		return "", err
+	}
+	storageosProvider := storageos.NewProvider()
+	osRootBucket, err := storageosProvider.NewReadWriteBucket(
+		fsRoot,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	if err != nil {
+		return "", err
+	}
+	bucketTargeting, err := buftarget.NewBucketTargeting(
+		ctx,
+		w.lsp.logger,
+		osRootBucket,
+		fsRelPath,
+		nil, // no target paths
+		nil, // no target exclude paths
+		buftarget.TerminateAtControllingWorkspace,
+	)
+	if err != nil {
+		return "", err
+	}
+	controllingWorkspace := bucketTargeting.ControllingWorkspace()
+	if controllingWorkspace == nil {
+		return "", fmt.Errorf("no controlling workspace found")
+	}
+	// The controlling workspace path is relative to the bucket (fileDir).
+	// Combine it to get the absolute workspace directory.
+	return normalpath.Join(fsRoot, controllingWorkspace.Path()), nil
+}
+
+// runChecks invokes checks on the workspace.
+func (w *workspace) runChecks(ctx context.Context) (annotations []bufanalysis.FileAnnotation, err error) {
+	defer xslog.DebugProfile(
+		w.lsp.logger,
+		slog.String("uri", w.workspaceURI.Filename()),
+		slog.String("workspaceDir", w.workspaceDir),
+	)()
+
+	imageWithConfigs, checkClient, err := w.lsp.controller.GetTargetImageWithConfigsAndCheckClient(
+		ctx,
+		w.workspaceDir,
+		w.lsp.wasmRuntime,
+	)
+	if err != nil {
+		return nil, err
+	}
+	var allFileAnnotations []bufanalysis.FileAnnotation
+	allCheckConfigs := make([]bufconfig.CheckConfig, 0, len(imageWithConfigs)*2)
+	for _, imageWithConfig := range imageWithConfigs {
+		allCheckConfigs = append(allCheckConfigs, imageWithConfig.LintConfig())
+		allCheckConfigs = append(allCheckConfigs, imageWithConfig.BreakingConfig())
+	}
+	for _, imageWithConfig := range imageWithConfigs {
+		w.lsp.logger.DebugContext(
+			ctx, "workspace: running lint",
+			slog.String("uri", w.workspaceURI.Filename()),
+			slog.String("workspaceDir", w.workspaceDir),
+			slog.String("module", imageWithConfig.ModuleOpaqueID()),
+		)
+		lintOptions := []bufcheck.LintOption{
+			bufcheck.WithPluginConfigs(imageWithConfig.PluginConfigs()...),
+			bufcheck.WithPolicyConfigs(imageWithConfig.PolicyConfigs()...),
+			bufcheck.WithRelatedCheckConfigs(allCheckConfigs...),
+		}
+		if err := checkClient.Lint(
+			ctx,
+			imageWithConfig.LintConfig(),
+			imageWithConfig,
+			lintOptions...,
+		); err != nil {
+			var fileAnnotationSet bufanalysis.FileAnnotationSet
+			if errors.As(err, &fileAnnotationSet) {
+				allFileAnnotations = append(allFileAnnotations, fileAnnotationSet.FileAnnotations()...)
+			} else {
+				return nil, err
+			}
+		}
+	}
+	return allFileAnnotations, nil
 }
