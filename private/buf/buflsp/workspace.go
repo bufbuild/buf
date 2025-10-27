@@ -253,15 +253,7 @@ func (w *workspace) indexFiles(ctx context.Context) {
 	unused := w.pathToFile
 	w.pathToFile = make(map[string]*file, len(unused))
 
-	fileInfos, err := w.getWorkspaceFileInfos(ctx)
-	if err != nil {
-		w.lsp.logger.Error(
-			"failed to get importable files",
-			slog.String("file", w.workspaceURI.Filename()),
-		)
-		return
-	}
-	for _, fileInfo := range fileInfos {
+	for fileInfo := range w.fileInfos(ctx) {
 		fileURI := uri.File(fileInfo.LocalPath())
 		file := w.lsp.fileManager.Track(fileURI)
 
@@ -293,24 +285,28 @@ func (w *workspace) indexFiles(ctx context.Context) {
 	}
 }
 
-// getWorkspaceFileInfos returns all files within the workspace.
+// fileInfos returns all files within the workspace.
 //
 // This consists of files within the workspace plus WKTs.
-func (w *workspace) getWorkspaceFileInfos(ctx context.Context) ([]storage.ObjectInfo, error) {
-	seen := make(map[string]struct{})
-	var fileInfos []storage.ObjectInfo
-	for fileInfo := range w.FileInfo() {
-		fileInfos = append(fileInfos, fileInfo)
-		seen[fileInfo.Path()] = struct{}{}
-	}
-	// Add all wellknown types if not provided within the workspace.
-	if err := w.lsp.wktBucket.Walk(ctx, "", func(objectInfo storage.ObjectInfo) error {
-		if _, ok := seen[objectInfo.Path()]; !ok {
-			fileInfos = append(fileInfos, wktObjectInfo{objectInfo})
+func (w *workspace) fileInfos(ctx context.Context) iter.Seq[storage.ObjectInfo] {
+	return func(yield func(storage.ObjectInfo) bool) {
+		seen := make(map[string]struct{})
+		for fileInfo := range w.FileInfo() {
+			if !yield(fileInfo) {
+				return
+			}
+			seen[fileInfo.Path()] = struct{}{}
 		}
-		return nil
-	}); err != nil {
-		return nil, err
+		// Add all wellknown types if not provided within the workspace.
+		if err := w.lsp.wktBucket.Walk(ctx, "", func(objectInfo storage.ObjectInfo) error {
+			if _, ok := seen[objectInfo.Path()]; !ok {
+				if !yield(wktObjectInfo{objectInfo}) {
+					return nil
+				}
+			}
+			return nil
+		}); err != nil {
+			w.lsp.logger.Error("wkt bucket failed", xslog.ErrorAttr(err))
+		}
 	}
-	return fileInfos, nil
 }
