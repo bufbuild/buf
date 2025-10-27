@@ -272,6 +272,7 @@ func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.D
 			),
 			typeReferencesToCompletionItems(
 				file,
+				findTypeFullName(file, parentDef),
 				tokenSpan,
 				offset,
 			),
@@ -386,6 +387,7 @@ func completionItemsForField(ctx context.Context, file *file, declPath []ast.Dec
 				),
 				typeReferencesToCompletionItems(
 					file,
+					findTypeFullName(file, parentDef),
 					tokenSpan,
 					offset,
 				),
@@ -601,14 +603,12 @@ func keywordToCompletionItem(
 // typeReferencesToCompletionItems returns completion items for user-defined types (messages, enums, etc).
 func typeReferencesToCompletionItems(
 	current *file,
+	parentFullName ir.FullName,
 	span report.Span,
 	offset int,
 ) iter.Seq[protocol.CompletionItem] {
 	fileSymbolTypesIter := func(yield func(*file, *symbol) bool) {
 		for _, imported := range current.workspace.PathToFile() {
-			if imported == current {
-				continue
-			}
 			for _, symbol := range imported.referenceableSymbols {
 				if !yield(imported, symbol) {
 					return
@@ -616,25 +616,22 @@ func typeReferencesToCompletionItems(
 			}
 		}
 	}
+	parentPrefix := string(current.ir.Package())
+	if len(parentFullName) > 0 {
+		parentPrefix = string(parentFullName)
+	}
 	return func(yield func(protocol.CompletionItem) bool) {
 		editRange := reportSpanToProtocolRange(span)
 		prefix, suffix := splitSpan(span, offset)
-		for file, symbol := range fileSymbolTypesIter {
+		for _, symbol := range fileSymbolTypesIter {
 			if !symbol.ir.Kind().IsType() {
 				continue
 			}
-			var (
-				label string
-				kind  protocol.CompletionItemKind
-			)
-			if file.ir.Package() == current.ir.Package() {
-				label = symbol.ir.FullName().Name()
-			} else {
-				label = string(symbol.ir.FullName())
-			}
+			label := strings.TrimPrefix(string(symbol.ir.FullName()), parentPrefix)
 			if !strings.HasPrefix(label, prefix) || !strings.HasSuffix(label, suffix) {
 				continue
 			}
+			var kind protocol.CompletionItemKind
 			switch symbol.ir.Kind() {
 			case ir.SymbolKindMessage:
 				kind = protocol.CompletionItemKindStruct
@@ -813,17 +810,23 @@ func isNewlineOrEndOfSpan(span report.Span, offset int) bool {
 
 // isProto2 returns true if the file has a syntax declaration of proto2.
 func isProto2(file *file) bool {
-	body := file.ir.AST().DeclBody
-	for decl := range seq.Values(body.Decls()) {
-		if decl.IsZero() {
-			continue
-		}
-		if kind := decl.Kind(); kind == ast.DeclKindSyntax {
-			declSyntax := decl.AsSyntax()
-			return declSyntax.IsSyntax() && declSyntax.Value().Span().Text() == "proto2"
+	return file.ir.Syntax() == syntax.Proto2
+}
+
+// findTypeFullName simply loops through and finds the type definition name.
+func findTypeFullName(file *file, declDef ast.DeclDef) ir.FullName {
+	declDefSpan := declDef.Span()
+	if declDefSpan.IsZero() {
+		return ""
+	}
+	for irType := range seq.Values(file.ir.AllTypes()) {
+		typeSpan := irType.AST().Span()
+		if typeSpan.Start == declDefSpan.Start && typeSpan.End == declDefSpan.End {
+			file.lsp.logger.Debug("completion: found parent type", slog.String("parent", string(irType.FullName())))
+			return irType.FullName()
 		}
 	}
-	return false
+	return ""
 }
 
 // resolveCompletionItem resolves additional details for a completion item.
