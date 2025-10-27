@@ -21,12 +21,14 @@ import (
 	"fmt"
 	"iter"
 	"log/slog"
+	"math"
 	"slices"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/syntax"
+	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/seq"
 	"github.com/bufbuild/protocompile/experimental/token"
@@ -197,7 +199,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 	case ast.DefKindEnum:
 		return nil
 	case ast.DefKindField:
-		return completionItemsForField(ctx, file, declPath, def.AsField(), position)
+		return completionItemsForField(ctx, file, declPath, def, position)
 	case ast.DefKindInvalid:
 		return completionItemsForKeyword(ctx, file, declPath, def, position)
 	default:
@@ -210,11 +212,13 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.DeclAny, def ast.DeclDef, position protocol.Position) []protocol.CompletionItem {
 	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
 	offset := positionLocation.Offset
-
 	span := def.Span()
 
 	// Check if at newline or end of span. Keywords are restricted to the first identifier.
 	if !isNewlineOrEndOfSpan(span, offset) {
+		if len(declPath) > 1 {
+			return completionItemsForField(ctx, file, declPath, def, position)
+		}
 		file.lsp.logger.Debug("completion: keyword skip on span bounds", slog.String("span", span.Text()))
 		return nil
 	}
@@ -247,7 +251,7 @@ func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.D
 	switch parentDef.Classify() {
 	case ast.DefKindMessage:
 		isProto2 := isProto2(file)
-		items = joinCompletionItems(
+		items = joinSequences(
 			keywordToCompletionItem(
 				messageLevelKeywords(isProto2),
 				protocol.CompletionItemKindKeyword,
@@ -266,7 +270,11 @@ func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.D
 				tokenSpan,
 				offset,
 			),
-			// TODO: add custom types.
+			typeReferencesToCompletionItems(
+				file,
+				tokenSpan,
+				offset,
+			),
 		)
 	case ast.DefKindService:
 		items = keywordToCompletionItem(
@@ -289,10 +297,10 @@ func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.D
 }
 
 // completionItemsForField returns completion items for a field.
-func completionItemsForField(ctx context.Context, file *file, declPath []ast.DeclAny, defField ast.DefField, position protocol.Position) []protocol.CompletionItem {
+func completionItemsForField(ctx context.Context, file *file, declPath []ast.DeclAny, def ast.DeclDef, position protocol.Position) []protocol.CompletionItem {
 	if len(declPath) == 1 {
 		file.lsp.logger.DebugContext(ctx, "completion: field top level, going to keywords")
-		return completionItemsForKeyword(ctx, file, declPath, defField.Decl, position)
+		return completionItemsForKeyword(ctx, file, declPath, def, position)
 	}
 
 	parent := declPath[len(declPath)-2]
@@ -308,15 +316,13 @@ func completionItemsForField(ctx context.Context, file *file, declPath []ast.Dec
 	offset := positionLocation.Offset
 
 	// If on a newline, before the current field or at the end of the span return keywords.
-	if isNewlineOrEndOfSpan(defField.Span(), offset) {
+	if isNewlineOrEndOfSpan(def.Span(), offset) {
 		file.lsp.logger.DebugContext(ctx, "completion: field on newline, return keywords")
-		return completionItemsForKeyword(ctx, file, declPath, defField.Decl, position)
+		return completionItemsForKeyword(ctx, file, declPath, def, position)
 	}
 
-	typeSpan := defField.Type.Span()
-	start, end := typeSpan.Start, typeSpan.End
-
-	if start > offset || offset > end {
+	typeSpan := def.Type().Span()
+	if offsetInSpan(typeSpan, offset) {
 		file.lsp.logger.DebugContext(
 			ctx, "completion: field outside definition",
 			slog.String("kind", parent.Kind().String()),
@@ -324,17 +330,75 @@ func completionItemsForField(ctx context.Context, file *file, declPath []ast.Dec
 		return nil
 	}
 
-	def := parent.AsDef()
-	switch def.Classify() {
+	// Resolve the token the cursor is under. We don't use the ast.FieldStruct as this doesn't
+	// work with invalid path types. Instead resolve the token from the stream.
+	tokenSpan := extractAroundToken(file, offset)
+	tokenPrefix, tokenSuffix := splitSpan(tokenSpan, offset)
+	typePrefix, typeSuffix := splitSpan(typeSpan, offset)
+	prefixCount := 0
+	for range strings.FieldsSeq(strings.TrimSuffix(typePrefix, tokenPrefix)) {
+		prefixCount++
+	}
+	suffixCount := 0
+	for range strings.FieldsSeq(strings.TrimPrefix(typeSuffix, tokenSuffix)) {
+		suffixCount++
+	}
+	// Limit completions based on the following heuristic:
+	// - Show modifiers for the first two types
+	// - Only show types on the final type
+	showModifiers := prefixCount <= 2
+	showTypes := suffixCount == 0
+
+	file.lsp.logger.DebugContext(
+		ctx, "completion: got types",
+		slog.String("kind", parent.Kind().String()),
+		slog.String("type", typeSpan.Text()),
+		slog.String("type_kind", def.Type().Kind().String()),
+		slog.Int("start", typeSpan.Start),
+		slog.Int("end", typeSpan.End),
+		slog.Bool("show_modifiers", showModifiers),
+		slog.Bool("show_types", showTypes),
+		slog.String("token", tokenSpan.Text()),
+	)
+
+	var items iter.Seq[protocol.CompletionItem]
+	parentDef := parent.AsDef()
+	switch parentDef.Classify() {
 	case ast.DefKindMessage:
-		return nil
-	case ast.DefKindService:
-		return nil
-	case ast.DefKindEnum:
-		return nil
+		var iters []iter.Seq[protocol.CompletionItem]
+		if showModifiers {
+			iters = append(iters,
+				keywordToCompletionItem(
+					messageLevelFieldKeywords(),
+					protocol.CompletionItemKindKeyword,
+					tokenSpan,
+					offset,
+				),
+			)
+		}
+		if showTypes {
+			iters = append(iters,
+				keywordToCompletionItem(
+					predeclaredTypeKeywords(),
+					protocol.CompletionItemKindClass,
+					tokenSpan,
+					offset,
+				),
+				typeReferencesToCompletionItems(
+					file,
+					tokenSpan,
+					offset,
+				),
+			)
+		}
+		if len(iters) == 0 {
+			return nil
+		}
+		items = joinSequences(iters...)
 	default:
 		return nil
 	}
+	return slices.Collect(items)
 }
 
 // completionItemsForImport returns completion items for import declarations.
@@ -372,6 +436,26 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 	prefix := importPathText[:index]
 	suffix := importPathText[index:]
 
+	// We ought to also send along an AdditionalTextEdit for adding the `;` at the end of the
+	// line, if it doesn't already exist.
+	var additionalTextEdits []protocol.TextEdit
+	if declImport.Semicolon().IsZero() {
+		additionalTextEdits = append(additionalTextEdits, protocol.TextEdit{
+			NewText: ";",
+			// End of line.
+			Range: protocol.Range{
+				Start: protocol.Position{
+					Line:      position.Line,
+					Character: math.MaxInt32 - 1,
+				},
+				End: protocol.Position{
+					Line:      position.Line,
+					Character: math.MaxUint32,
+				},
+			},
+		})
+	}
+
 	var items []protocol.CompletionItem
 	for importPath := range file.workspace.PathToFile() {
 		if importPath == file.objectInfo.LocalPath() {
@@ -399,6 +483,7 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 				},
 				NewText: suggest[len(prefix) : len(suggest)-len(suffix)],
 			},
+			AdditionalTextEdits: additionalTextEdits,
 		})
 	}
 	return items
@@ -508,9 +593,80 @@ func keywordToCompletionItem(
 	}
 }
 
-// joinCompletionItems returns a sequence of sequences.
-func joinCompletionItems(itemIters ...iter.Seq[protocol.CompletionItem]) iter.Seq[protocol.CompletionItem] {
+// typeReferencesToCompletionItems returns completion items for user-defined types (messages, enums, etc).
+func typeReferencesToCompletionItems(
+	current *file,
+	span report.Span,
+	offset int,
+) iter.Seq[protocol.CompletionItem] {
+	fileSymbolTypesIter := func(yield func(*file, *symbol) bool) {
+		for _, imported := range current.importToFile {
+			for _, symbol := range imported.referenceableSymbols {
+				if !yield(imported, symbol) {
+					return
+				}
+			}
+		}
+	}
 	return func(yield func(protocol.CompletionItem) bool) {
+		editRange := reportSpanToProtocolRange(span)
+		prefix, suffix := splitSpan(span, offset)
+		for file, symbol := range fileSymbolTypesIter {
+			if !symbol.ir.Kind().IsType() {
+				continue
+			}
+			var (
+				label string
+				kind  protocol.CompletionItemKind
+			)
+			if file.ir.Package() == current.ir.Package() {
+				label = symbol.ir.FullName().Name()
+			} else {
+				label = string(symbol.ir.FullName())
+			}
+			if !strings.HasPrefix(label, prefix) || !strings.HasSuffix(label, suffix) {
+				continue
+			}
+			switch symbol.ir.Kind() {
+			case ir.SymbolKindMessage:
+				kind = protocol.CompletionItemKindStruct
+			case ir.SymbolKindEnum:
+				kind = protocol.CompletionItemKindEnum
+			case ir.SymbolKindService:
+				kind = protocol.CompletionItemKindInterface
+			case ir.SymbolKindScalar:
+				kind = protocol.CompletionItemKindClass
+			case ir.SymbolKindPackage:
+				kind = protocol.CompletionItemKindModule
+			case ir.SymbolKindField, ir.SymbolKindEnumValue, ir.SymbolKindExtension, ir.SymbolKindOneof, ir.SymbolKindMethod:
+				// These should be skipped by IsType() filter.
+			}
+			if kind == 0 {
+				continue // Unsupported kind, skip it.
+			}
+			var isDeprecated bool
+			if _, ok := symbol.ir.Deprecated().AsBool(); ok {
+				isDeprecated = true
+			}
+			if !yield(protocol.CompletionItem{
+				Label: label,
+				Kind:  kind,
+				TextEdit: &protocol.TextEdit{
+					Range:   editRange,
+					NewText: label,
+				},
+				Deprecated: isDeprecated,
+				// TODO: If this type's file is not currently imported add an additional edit.
+			}) {
+				break
+			}
+		}
+	}
+}
+
+// joinSequences returns a sequence of sequences.
+func joinSequences[T any](itemIters ...iter.Seq[T]) iter.Seq[T] {
+	return func(yield func(T) bool) {
 		for _, items := range itemIters {
 			for item := range items {
 				if !yield(item) {
@@ -618,12 +774,16 @@ func extractAroundToken(file *file, offset int) report.Span {
 }
 
 func splitSpan(span report.Span, offset int) (prefix string, suffix string) {
-	if span.Start > offset || offset > span.End {
+	if !offsetInSpan(span, offset) {
 		return "", ""
 	}
 	index := offset - span.Start
 	text := span.Text()
 	return text[:index], text[index:]
+}
+
+func offsetInSpan(span report.Span, offset int) bool {
+	return span.Start > offset || offset > span.End
 }
 
 // isNewlineOrEndOfSpan returns true if this offset is separated be a newline or at the end of the span.
