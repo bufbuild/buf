@@ -17,7 +17,6 @@
 package buflsp
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -28,7 +27,6 @@ import (
 	"os"
 	"slices"
 	"strings"
-	"time"
 
 	"buf.build/go/standard/xio"
 	"buf.build/go/standard/xlog/xslog"
@@ -36,8 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/git"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
 	"github.com/bufbuild/protocompile/experimental/incremental"
@@ -50,17 +46,12 @@ import (
 	"go.lsp.dev/uri"
 )
 
-const (
-	checkRefreshPeriod = 3 * time.Second
-)
-
 // file is a file that has been opened by the client.
 //
 // Mutating a file is thread-safe.
 type file struct {
-	lsp       *lsp
-	uri       protocol.URI
-	checkWork chan<- struct{}
+	lsp *lsp
+	uri protocol.URI
 
 	file *report.File
 	// Version is an opaque version identifier given to us by the LSP client. This
@@ -71,9 +62,6 @@ type file struct {
 
 	workspace *workspace // May be nil.
 
-	againstStrategy againstStrategy
-	againstGitRef   string
-
 	objectInfo   storage.ObjectInfo
 	importToFile map[string]*file
 
@@ -82,7 +70,7 @@ type file struct {
 	referenceSymbols     []*symbol
 	symbols              []*symbol
 	diagnostics          []protocol.Diagnostic
-	image, againstImage  bufimage.Image
+	image                bufimage.Image
 }
 
 // IsLocal returns whether this is a local file, i.e. a file that the editor
@@ -126,10 +114,6 @@ func (f *file) Reset(ctx context.Context) {
 // for this file.
 func (f *file) Close(ctx context.Context) {
 	f.Manager().Close(ctx, f.uri)
-	if f.checkWork != nil {
-		close(f.checkWork)
-		f.checkWork = nil
-	}
 	if f.workspace != nil {
 		f.workspace.Release()
 		f.workspace = nil
@@ -182,99 +166,6 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 	f.hasText = true
 }
 
-// RefreshSettings refreshes configuration settings for this file.
-//
-// This only needs to happen when the file is open or when the client signals
-// that configuration settings have changed.
-func (f *file) RefreshSettings(ctx context.Context) {
-	settings, err := f.lsp.client.Configuration(ctx, &protocol.ConfigurationParams{
-		Items: []protocol.ConfigurationItem{
-			{ScopeURI: f.uri, Section: ConfigBreakingStrategy},
-			{ScopeURI: f.uri, Section: ConfigBreakingGitRef},
-		},
-	})
-	if err != nil {
-		// We can throw the error away, since the handler logs it for us.
-		return
-	}
-
-	// NOTE: indices here are those from the array in the call to Configuration above.
-	f.againstStrategy = getSetting(f, settings, ConfigBreakingStrategy, 0, parseAgainstStrategy)
-	f.againstGitRef = getSetting(f, settings, ConfigBreakingGitRef, 1, func(s string) (string, bool) { return s, true })
-
-	switch f.againstStrategy {
-	case againstDisk:
-		f.againstGitRef = ""
-	case againstGit:
-		// Check to see if the user setting is a valid Git ref.
-		err := git.IsValidRef(
-			ctx,
-			f.lsp.container,
-			normalpath.Dir(f.uri.Filename()),
-			f.againstGitRef,
-		)
-		if err != nil {
-			f.lsp.logger.Warn(
-				"failed to validate buf.againstGit",
-				slog.String("uri", string(f.uri)),
-				xslog.ErrorAttr(err),
-			)
-			f.againstGitRef = ""
-		} else {
-			f.lsp.logger.Debug(
-				"found remote branch",
-				slog.String("uri", string(f.uri)),
-				slog.String("ref", f.againstGitRef),
-			)
-		}
-	}
-}
-
-// getSetting is a helper that extracts a configuration setting from the return
-// value of [protocol.Client.Configuration].
-//
-// The parse function should convert the JSON value we get from the protocol
-// (such as a string), potentially performing validation, and returning a default
-// value on validation failure.
-func getSetting[T, U any](f *file, settings []any, name string, index int, parse func(T) (U, bool)) (value U) {
-	if len(settings) <= index {
-		f.lsp.logger.Warn(
-			"missing config setting",
-			slog.String("setting", name),
-			slog.String("uri", string(f.uri)),
-		)
-	}
-
-	if raw, ok := settings[index].(T); ok {
-		// For invalid settings, this will default to againstTrunk for us!
-		value, ok = parse(raw)
-		if !ok {
-			f.lsp.logger.Warn(
-				"invalid config setting",
-				slog.String("setting", name),
-				slog.String("uri", string(f.uri)),
-				slog.Any("raw", raw),
-			)
-		}
-	} else {
-		f.lsp.logger.Warn(
-			"invalid config setting",
-			slog.String("setting", name),
-			slog.String("uri", string(f.uri)),
-			slog.Any("raw", raw),
-		)
-	}
-
-	f.lsp.logger.Debug(
-		"parsed config setting",
-		slog.String("setting", name),
-		slog.String("uri", string(f.uri)),
-		slog.Any("value", value),
-	)
-
-	return value
-}
-
 // Refresh rebuilds all of a file's internal book-keeping.
 func (f *file) Refresh(ctx context.Context) {
 	var progress *progress
@@ -298,7 +189,10 @@ func (f *file) Refresh(ctx context.Context) {
 	f.IndexSymbols(ctx)
 
 	progress.Report(ctx, "Running Checks", 5.0/5)
-	f.RunChecks(ctx)
+	if f.IsOpenInEditor() {
+		f.BuildImage(ctx)
+		f.RunLints(ctx)
+	}
 
 	progress.Done(ctx)
 
@@ -864,60 +758,6 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 	return symbol
 }
 
-// RunChecks initiates background checks (lint and breaking) on this file and
-// returns immediately.
-//
-// Checks are executed in a background goroutine to avoid blocking the LSP
-// call. Each call to RunChecks invalidates any ongoing checks, triggering a
-// fresh run. However, previous checks are not interrupted. The checks acquire
-// the LSP mutex. Subsequent LSP calls will wait for the current check to
-// complete before proceeding.
-//
-// Checks are debounce (with the delay defined by checkRefreshPeriod) to avoid
-// overwhelming the client with expensive checks. If the file is not open in the
-// editor, checks are skipped. Diagnostics are published after checks are run.
-//
-// This operation requires IndexImports..
-func (f *file) RunChecks(ctx context.Context) {
-	// If we have not yet started a goroutine to run checks, start one.
-	// This goroutine will run checks in the background and publish diagnostics.
-	// We debounce checks to avoid spamming the client.
-	if f.checkWork == nil {
-		// We use a buffered channel of length one as the check invalidation mechanism.
-		work := make(chan struct{}, 1)
-		f.checkWork = work
-		runChecks := func(ctx context.Context) {
-			f.lsp.lock.Lock()
-			defer f.lsp.lock.Unlock()
-			if !f.IsOpenInEditor() {
-				// Skip checks if the file is not open in the editor.
-				return
-			}
-			f.lsp.logger.Info(fmt.Sprintf("running checks for %v, %v", f.uri, f.version))
-			f.BuildImages(ctx)
-			f.RunLints(ctx)
-			f.RunBreaking(ctx)
-			f.PublishDiagnostics(ctx) // Publish the latest diagnostics.
-		}
-		// Start a goroutine to process checks.
-		go func() {
-			// Detach from the parent RPC context.
-			ctx := context.WithoutCancel(ctx)
-			for range work {
-				runChecks(ctx)
-				// Debounce checks to prevent thrashing expensive checks.
-				time.Sleep(checkRefreshPeriod)
-			}
-		}()
-	}
-	// Signal the goroutine to invalidate and rerun checks.
-	select {
-	case f.checkWork <- struct{}{}:
-	default:
-		// Channel is full, checks are already invalidated and will be rerun.
-	}
-}
-
 // newFileOpener returns a fileOpener for the context of this file.
 //
 // May return nil, if insufficient information is present to open the file.
@@ -936,57 +776,11 @@ func (f *file) newFileOpener() fileOpener {
 	}
 }
 
-// newAgainstFileOpener returns a fileOpener for building the --against file
-// for this file. In other words, this pulls files out of the git index, if
-// necessary.
-//
-// May return nil, if there is insufficient information to build an --against
-// file.
-func (f *file) newAgainstFileOpener(ctx context.Context) fileOpener {
-	if !f.IsLocal() {
-		return nil
-	}
-
-	if f.againstStrategy == againstGit && f.againstGitRef == "" {
-		return nil
-	}
-
-	return func(path string) (io.ReadCloser, error) {
-		var file *file
-		if f.objectInfo.Path() == path {
-			file = f
-		} else {
-			file = f.importToFile[path]
-		}
-		if file == nil {
-			return nil, fmt.Errorf("%s: %w", path, fs.ErrNotExist)
-		}
-		var (
-			data []byte
-			err  error
-		)
-		if f.againstGitRef != "" {
-			data, err = git.ReadFileAtRef(
-				ctx,
-				f.lsp.container,
-				file.objectInfo.LocalPath(),
-				f.againstGitRef,
-			)
-		}
-
-		if data == nil || errors.Is(err, git.ErrInvalidGitCheckout) {
-			return os.Open(file.objectInfo.LocalPath())
-		}
-
-		return xio.CompositeReadCloser(bytes.NewReader(data), xio.NopCloser), err
-	}
-}
-
-// BuildImages builds Buf Images for this file, to be used with linting
+// BuildImage builds an image for linting.
 // routines.
 //
 // This operation requires IndexImports.
-func (f *file) BuildImages(ctx context.Context) {
+func (f *file) BuildImage(ctx context.Context) {
 	if f.objectInfo == nil {
 		return
 	}
@@ -999,18 +793,6 @@ func (f *file) BuildImages(ctx context.Context) {
 		f.image = image
 	} else {
 		f.lsp.logger.Warn("not building image", slog.String("uri", string(f.uri)))
-	}
-
-	if opener := f.newAgainstFileOpener(ctx); opener != nil {
-		// We explicitly throw the diagnostics away.
-		image, diagnostics := buildImage(ctx, f.objectInfo.Path(), f.lsp.logger, opener)
-
-		f.againstImage = image
-		if image == nil {
-			f.lsp.logger.Warn("failed to build --against image", slog.Any("diagnostics", diagnostics))
-		}
-	} else {
-		f.lsp.logger.Warn("not building --against image", slog.String("uri", string(f.uri)))
 	}
 }
 
@@ -1044,42 +826,6 @@ func (f *file) RunLints(ctx context.Context) bool {
 		ctx,
 		workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
 		f.image,
-		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
-		bufcheck.WithPolicyConfigs(workspace.PolicyConfigs()...),
-	))
-}
-
-// RunBreaking runs breaking lints on this file. Returns whether any lints failed.
-//
-// This operation requires BuildImage.
-func (f *file) RunBreaking(ctx context.Context) bool {
-	if f.IsWKT() {
-		// Well-known types are not linted.
-		return false
-	}
-
-	workspace := f.workspace.Workspace()
-	module := f.workspace.GetModule(f.uri)
-	checkClient := f.workspace.CheckClient()
-	if workspace == nil {
-		f.lsp.logger.Warn(fmt.Sprintf("could not find workspace for %q", f.uri))
-		return false
-	}
-	if module == nil || f.image == nil || f.againstImage == nil {
-		f.lsp.logger.Warn(fmt.Sprintf("could not find --against image for %q", f.uri))
-		return false
-	}
-	if checkClient == nil {
-		f.lsp.logger.Warn(fmt.Sprintf("could not find check client for %q", f.uri))
-		return false
-	}
-
-	f.lsp.logger.Debug(fmt.Sprintf("running breaking for %q in %v", f.uri, module.FullName()))
-	return f.appendLintErrors("buf breaking", checkClient.Breaking(
-		ctx,
-		workspace.GetBreakingConfigForOpaqueID(module.OpaqueID()),
-		f.image,
-		f.againstImage,
 		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
 		bufcheck.WithPolicyConfigs(workspace.PolicyConfigs()...),
 	))
