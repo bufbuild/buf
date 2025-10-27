@@ -158,20 +158,7 @@ func (s *server) Initialized(
 	ctx context.Context,
 	params *protocol.InitializedParams,
 ) error {
-	workspaceCapabilities := s.initParams.Load().Capabilities.Workspace
-	if workspaceCapabilities == nil {
-		return nil
-	}
-	didChangeConfiguration := workspaceCapabilities.DidChangeConfiguration
-	if didChangeConfiguration != nil && didChangeConfiguration.DynamicRegistration {
-		// The error is logged for us by the client wrapper.
-		_ = s.client.RegisterCapability(ctx, &protocol.RegistrationParams{
-			Registrations: []protocol.Registration{
-				{Method: protocol.MethodWorkspaceDidChangeConfiguration},
-			},
-		})
-	}
-
+	// No initialization required.
 	return nil
 }
 
@@ -202,23 +189,6 @@ func (s *server) Exit(ctx context.Context) error {
 	return s.lsp.conn.Close()
 }
 
-// DidChangeConfiguration is sent whenever the client changes its config settings.
-func (s *server) DidChangeConfiguration(
-	ctx context.Context,
-	params *protocol.DidChangeConfigurationParams,
-) error {
-	// We need to refresh every open file's settings, and refresh the file
-	// itself.
-	s.fileManager.uriToFile.Range(func(_ protocol.URI, file *file) bool {
-		if file.IsOpenInEditor() {
-			file.RefreshSettings(ctx)
-			file.Refresh(ctx)
-		}
-		return true
-	})
-	return nil
-}
-
 // -- File synchronization methods.
 
 // DidOpen is called whenever the client opens a document. This is our signal to parse
@@ -228,7 +198,6 @@ func (s *server) DidOpen(
 	params *protocol.DidOpenTextDocumentParams,
 ) error {
 	file := s.fileManager.Track(params.TextDocument.URI)
-	file.RefreshSettings(ctx)
 	file.Update(ctx, params.TextDocument.Version, params.TextDocument.Text)
 	file.Refresh(ctx)
 	return nil
