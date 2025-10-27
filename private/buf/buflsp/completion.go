@@ -457,8 +457,8 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 	}
 
 	var items []protocol.CompletionItem
-	for importPath := range file.workspace.PathToFile() {
-		if importPath == file.objectInfo.LocalPath() {
+	for importPath, importFile := range file.workspace.PathToFile() {
+		if file == importFile {
 			continue // ignore self
 		}
 
