@@ -228,7 +228,7 @@ func (w *workspace) CheckClient() bufcheck.Client {
 	return w.checkClient
 }
 
-// Open implements [source.Opener].
+// Open implements [github.com/bufbuild/protocompile/experimental/source.Opener].
 func (w *workspace) Open(path string) (string, error) {
 	if w.workspace == nil {
 		return "", fs.ErrNotExist

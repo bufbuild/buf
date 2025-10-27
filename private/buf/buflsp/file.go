@@ -178,10 +178,10 @@ func (f *file) Refresh(ctx context.Context) {
 	}
 	progress.Begin(ctx, "Indexing")
 
-	progress.Report(ctx, "Setting workspace", 1.0/2)
+	progress.Report(ctx, "Setting workspace", 1.0/4)
 	f.RefreshWorkspace(ctx)
 
-	progress.Report(ctx, "Parsing IR", 2.0/3)
+	progress.Report(ctx, "Parsing IR", 2.0/4)
 	f.RefreshIR(ctx)
 
 	progress.Report(ctx, "Indexing Symbols", 3.0/4)
