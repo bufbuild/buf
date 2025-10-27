@@ -600,7 +600,10 @@ func typeReferencesToCompletionItems(
 	offset int,
 ) iter.Seq[protocol.CompletionItem] {
 	fileSymbolTypesIter := func(yield func(*file, *symbol) bool) {
-		for _, imported := range current.importToFile {
+		for _, imported := range current.workspace.PathToFile() {
+			if imported == current {
+				continue
+			}
 			for _, symbol := range imported.referenceableSymbols {
 				if !yield(imported, symbol) {
 					return
