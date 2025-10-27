@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"strings"
 
 	"buf.build/go/standard/xlog/xslog"
 	"buf.build/go/standard/xslices"
@@ -190,9 +191,9 @@ func newDiagnostic(err reporter.ErrorWithPos, isWarning bool, opener fileOpener,
 	// When using the new compiler these conversions will be already handled.
 	if rc, openErr := opener(filename); openErr == nil {
 		defer rc.Close()
-		text, readErr := readAllAsString(rc)
-		if readErr == nil {
-			file := report.NewFile(filename, text)
+		var builder strings.Builder
+		if _, readErr := io.Copy(&builder, rc); readErr == nil {
+			file := report.NewFile(filename, builder.String())
 			loc := file.Location(position.Offset, positionalEncoding)
 			utf16Col = loc.Column - 1
 		} else {

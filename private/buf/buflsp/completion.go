@@ -405,7 +405,7 @@ func completionItemsForField(ctx context.Context, file *file, declPath []ast.Dec
 //
 // Suggest all importable files.
 func completionItemsForImport(ctx context.Context, file *file, declImport ast.DeclImport, position protocol.Position) []protocol.CompletionItem {
-	file.lsp.logger.DebugContext(ctx, "completion: import declaration", slog.Int("importable_count", len(file.importToFile)))
+	file.lsp.logger.DebugContext(ctx, "completion: import declaration", slog.Int("importable_count", len(file.workspace.PathToFile())))
 
 	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
 	offset := positionLocation.Offset
@@ -457,7 +457,11 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 	}
 
 	var items []protocol.CompletionItem
-	for importPath, importFile := range file.importToFile {
+	for importPath, importFile := range file.workspace.PathToFile() {
+		if file == importFile {
+			continue // ignore self
+		}
+
 		suggest := fmt.Sprintf("%q", importPath)
 		if !strings.HasPrefix(suggest, prefix) || !strings.HasSuffix(suggest, suffix) {
 			file.lsp.logger.Debug("completion: skipping on prefix/suffix",
@@ -601,7 +605,10 @@ func typeReferencesToCompletionItems(
 	offset int,
 ) iter.Seq[protocol.CompletionItem] {
 	fileSymbolTypesIter := func(yield func(*file, *symbol) bool) {
-		for _, imported := range current.importToFile {
+		for _, imported := range current.workspace.PathToFile() {
+			if imported == current {
+				continue
+			}
 			for _, symbol := range imported.referenceableSymbols {
 				if !yield(imported, symbol) {
 					return
