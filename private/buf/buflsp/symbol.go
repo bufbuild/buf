@@ -21,7 +21,6 @@
 package buflsp
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -184,7 +183,7 @@ func (s *symbol) LogValue() slog.Value {
 // string for showing to the client.
 //
 // Returns the empty string if no docs are available.
-func (s *symbol) FormatDocs(ctx context.Context) string {
+func (s *symbol) FormatDocs() string {
 	var def ast.DeclDef
 	switch s.kind.(type) {
 	case *imported:
@@ -265,12 +264,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 		reference, _ := s.kind.(*reference)
 		def = reference.def
 	}
-	var tooltip strings.Builder
-	docs := getCommentsFromDef(def)
-	if docs != "" {
-		fmt.Fprintln(&tooltip, docs)
-	}
-	return tooltip.String()
+	return getCommentsFromDef(def)
 }
 
 // GetSymbolInformation returns the protocol symbol information for the symbol.
