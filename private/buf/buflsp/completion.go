@@ -618,6 +618,10 @@ func typeReferencesToCompletionItems(
 			if kind == 0 {
 				continue // Unsupported kind, skip it.
 			}
+			var isDeprecated bool
+			if _, ok := symbol.ir.Deprecated().AsBool(); ok {
+				isDeprecated = true
+			}
 			if !yield(protocol.CompletionItem{
 				Label: label,
 				Kind:  kind,
@@ -625,6 +629,7 @@ func typeReferencesToCompletionItems(
 					Range:   editRange,
 					NewText: label,
 				},
+				Deprecated: isDeprecated,
 				// TODO: If this type's file is not currently imported add an additional edit.
 			}) {
 				break
