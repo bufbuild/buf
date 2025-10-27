@@ -34,8 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/git"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
 	"github.com/bufbuild/protocompile/experimental/incremental"
@@ -63,9 +61,6 @@ type file struct {
 	hasText bool // Whether this file has ever had text read into it.
 
 	workspace *workspace // May be nil.
-
-	againstStrategy againstStrategy
-	againstGitRef   string
 
 	objectInfo   storage.ObjectInfo
 	importToFile map[string]*file
@@ -169,99 +164,6 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 	f.version = version
 	f.file = report.NewFile(f.uri.Filename(), text)
 	f.hasText = true
-}
-
-// RefreshSettings refreshes configuration settings for this file.
-//
-// This only needs to happen when the file is open or when the client signals
-// that configuration settings have changed.
-func (f *file) RefreshSettings(ctx context.Context) {
-	settings, err := f.lsp.client.Configuration(ctx, &protocol.ConfigurationParams{
-		Items: []protocol.ConfigurationItem{
-			{ScopeURI: f.uri, Section: ConfigBreakingStrategy},
-			{ScopeURI: f.uri, Section: ConfigBreakingGitRef},
-		},
-	})
-	if err != nil {
-		// We can throw the error away, since the handler logs it for us.
-		return
-	}
-
-	// NOTE: indices here are those from the array in the call to Configuration above.
-	f.againstStrategy = getSetting(f, settings, ConfigBreakingStrategy, 0, parseAgainstStrategy)
-	f.againstGitRef = getSetting(f, settings, ConfigBreakingGitRef, 1, func(s string) (string, bool) { return s, true })
-
-	switch f.againstStrategy {
-	case againstDisk:
-		f.againstGitRef = ""
-	case againstGit:
-		// Check to see if the user setting is a valid Git ref.
-		err := git.IsValidRef(
-			ctx,
-			f.lsp.container,
-			normalpath.Dir(f.uri.Filename()),
-			f.againstGitRef,
-		)
-		if err != nil {
-			f.lsp.logger.Warn(
-				"failed to validate buf.againstGit",
-				slog.String("uri", string(f.uri)),
-				xslog.ErrorAttr(err),
-			)
-			f.againstGitRef = ""
-		} else {
-			f.lsp.logger.Debug(
-				"found remote branch",
-				slog.String("uri", string(f.uri)),
-				slog.String("ref", f.againstGitRef),
-			)
-		}
-	}
-}
-
-// getSetting is a helper that extracts a configuration setting from the return
-// value of [protocol.Client.Configuration].
-//
-// The parse function should convert the JSON value we get from the protocol
-// (such as a string), potentially performing validation, and returning a default
-// value on validation failure.
-func getSetting[T, U any](f *file, settings []any, name string, index int, parse func(T) (U, bool)) (value U) {
-	if len(settings) <= index {
-		f.lsp.logger.Warn(
-			"missing config setting",
-			slog.String("setting", name),
-			slog.String("uri", string(f.uri)),
-		)
-	}
-
-	if raw, ok := settings[index].(T); ok {
-		// For invalid settings, this will default to againstTrunk for us!
-		value, ok = parse(raw)
-		if !ok {
-			f.lsp.logger.Warn(
-				"invalid config setting",
-				slog.String("setting", name),
-				slog.String("uri", string(f.uri)),
-				slog.Any("raw", raw),
-			)
-		}
-	} else {
-		f.lsp.logger.Warn(
-			"invalid config setting",
-			slog.String("setting", name),
-			slog.String("uri", string(f.uri)),
-			slog.Any("raw", raw),
-		)
-	}
-
-	f.lsp.logger.Debug(
-		"parsed config setting",
-		slog.String("setting", name),
-		slog.String("uri", string(f.uri)),
-		slog.Any("value", value),
-	)
-
-	return value
 }
 
 // Refresh rebuilds all of a file's internal book-keeping.
