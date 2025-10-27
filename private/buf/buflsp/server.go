@@ -333,7 +333,7 @@ func (s *server) Hover(
 		return nil, nil
 	}
 
-	docs := symbol.FormatDocs(ctx)
+	docs := symbol.FormatDocs()
 	if docs == "" {
 		return nil, nil
 	}

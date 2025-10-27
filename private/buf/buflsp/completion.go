@@ -473,6 +473,10 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 			continue
 		}
 
+		var importFileIsDeprecated bool
+		if _, ok := importFile.ir.Deprecated().AsBool(); ok {
+			importFileIsDeprecated = true
+		}
 		items = append(items, protocol.CompletionItem{
 			Label: importPath,
 			Kind:  protocol.CompletionItemKindFile,
@@ -484,6 +488,7 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 				NewText: suggest[len(prefix) : len(suggest)-len(suffix)],
 			},
 			AdditionalTextEdits: additionalTextEdits,
+			Deprecated:          importFileIsDeprecated,
 		})
 	}
 	return items
@@ -658,7 +663,8 @@ func typeReferencesToCompletionItems(
 					Range:   editRange,
 					NewText: label,
 				},
-				Deprecated: isDeprecated,
+				Deprecated:    isDeprecated,
+				Documentation: symbol.FormatDocs(),
 				// TODO: If this type's file is not currently imported add an additional edit.
 			}) {
 				break
