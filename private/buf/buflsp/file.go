@@ -24,16 +24,15 @@ import (
 	"io/fs"
 	"iter"
 	"log/slog"
-	"os"
 	"slices"
 	"strings"
 
-	"buf.build/go/standard/xio"
 	"buf.build/go/standard/xlog/xslog"
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
 	"github.com/bufbuild/protocompile/experimental/incremental"
@@ -41,9 +40,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/seq"
-	"github.com/bufbuild/protocompile/experimental/source"
 	"go.lsp.dev/protocol"
-	"go.lsp.dev/uri"
 )
 
 // file is a file that has been opened by the client.
@@ -60,10 +57,8 @@ type file struct {
 	version int32
 	hasText bool // Whether this file has ever had text read into it.
 
-	workspace *workspace // May be nil.
-
-	objectInfo   storage.ObjectInfo
-	importToFile map[string]*file
+	workspace  *workspace         // May be nil.
+	objectInfo storage.ObjectInfo // Info in the context of the workspace.
 
 	ir                   ir.File
 	referenceableSymbols map[string]*symbol
@@ -102,10 +97,6 @@ func (f *file) Reset(ctx context.Context) {
 	f.diagnostics = nil
 	f.symbols = nil
 	f.image = nil
-	for _, imported := range f.importToFile {
-		imported.Close(ctx)
-	}
-	f.importToFile = nil
 }
 
 // Close marks a file as closed.
@@ -126,28 +117,39 @@ func (f *file) Close(ctx context.Context) {
 // Some files may be opened as dependencies, so we want to avoid doing extra
 // work like sending progress notifications.
 func (f *file) IsOpenInEditor() bool {
-	return f.version != -1 // See [file.ReadFromDisk].
+	return f.version != -1 // See [file.ReadFromWorkspace].
 }
 
-// ReadFromDisk reads this file from disk if it has never had data loaded into it before.
+// ReadFromWorkspace reads this file from the workspace if it has never had data loaded into it
+// before.
 //
-// If it has been read from disk before, or has received updates from the LSP client, this
-// function returns nil.
-func (f *file) ReadFromDisk(ctx context.Context) (err error) {
+// If it has been read from disk before, or has received updates from the LSP client, this function
+// returns nil.
+func (f *file) ReadFromWorkspace(ctx context.Context) (err error) {
 	if f.hasText {
 		return nil
 	}
 
 	fileName := f.uri.Filename()
-	reader, err := os.Open(fileName)
+	var reader io.ReadCloser
+	switch info := f.objectInfo.(type) {
+	case bufmodule.FileInfo:
+		reader, err = info.Module().GetFile(ctx, info.Path())
+	case wktObjectInfo:
+		reader, err = f.lsp.wktBucket.Get(ctx, info.Path())
+	default:
+		return fmt.Errorf("unsupported objectInfo type %T", f.objectInfo)
+	}
 	if err != nil {
-		return fmt.Errorf("could not open file %q from disk: %w", f.uri, err)
+		return fmt.Errorf("read file %q from workspace", err)
 	}
 	defer reader.Close()
-	text, err := readAllAsString(reader)
-	if err != nil {
-		return fmt.Errorf("could not read file %q from disk: %w", f.uri, err)
+
+	var builder strings.Builder
+	if _, err := io.Copy(&builder, reader); err != nil {
+		return fmt.Errorf("could not read file %q from workspace", err)
 	}
+	text := builder.String()
 
 	f.version = -1
 	f.file = report.NewFile(fileName, text)
@@ -176,19 +178,16 @@ func (f *file) Refresh(ctx context.Context) {
 	}
 	progress.Begin(ctx, "Indexing")
 
-	progress.Report(ctx, "Setting workspace", 1.0/5)
+	progress.Report(ctx, "Setting workspace", 1.0/2)
 	f.RefreshWorkspace(ctx)
 
-	progress.Report(ctx, "Indexing imports", 2.0/5)
-	f.IndexImports(ctx)
-
-	progress.Report(ctx, "Parsing IR", 3.0/5)
+	progress.Report(ctx, "Parsing IR", 2.0/3)
 	f.RefreshIR(ctx)
 
-	progress.Report(ctx, "Indexing Symbols", 4.0/5)
+	progress.Report(ctx, "Indexing Symbols", 3.0/4)
 	f.IndexSymbols(ctx)
 
-	progress.Report(ctx, "Running Checks", 5.0/5)
+	progress.Report(ctx, "Running Checks", 4.0/4)
 	if f.IsOpenInEditor() {
 		f.BuildImage(ctx)
 		f.RunLints(ctx)
@@ -233,75 +232,6 @@ func (f *file) RefreshWorkspace(ctx context.Context) {
 	}
 }
 
-// IndexImports keeps track of importable files.
-//
-// This operation requires RefreshWorkspace.
-func (f *file) IndexImports(ctx context.Context) {
-	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))
-	if f.importToFile != nil {
-		return
-	}
-	fileInfos, err := f.getWorkspaceFileInfos(ctx)
-	if err != nil {
-		f.lsp.logger.Error(
-			"failed to get importable files",
-			slog.String("file", f.uri.Filename()),
-		)
-	}
-	f.importToFile = make(map[string]*file)
-	for _, importable := range fileInfos {
-		if importable.ExternalPath() == f.uri.Filename() {
-			f.objectInfo = importable
-			if err := f.ReadFromDisk(ctx); err != nil {
-				f.lsp.logger.Error(
-					"failed to read contents for file",
-					xslog.ErrorAttr(err),
-					slog.String("file", importable.Path()),
-				)
-			}
-			continue
-		}
-		importableFile := f.Manager().Track(uri.File(importable.LocalPath()))
-		if importableFile.objectInfo == nil {
-			importableFile.objectInfo = importable
-		}
-		if err := importableFile.ReadFromDisk(ctx); err != nil {
-			f.lsp.logger.Error(
-				"failed to read contents for file",
-				xslog.ErrorAttr(err),
-				slog.String("file", importable.Path()),
-			)
-		}
-		f.importToFile[importableFile.objectInfo.Path()] = importableFile
-	}
-}
-
-// getWorkspaceFileInfos returns all files within the workspace.
-//
-// Note that this performs no validation on these files, because those files might be open in the
-// editor and might contain invalid syntax at the moment. We only want to get their paths and nothing
-// more.
-//
-// This operation requires RefreshWorkspace.
-func (f *file) getWorkspaceFileInfos(ctx context.Context) ([]storage.ObjectInfo, error) {
-	seen := make(map[string]struct{})
-	var fileInfos []storage.ObjectInfo
-	for fileInfo := range f.workspace.FileInfo() {
-		fileInfos = append(fileInfos, fileInfo)
-		seen[fileInfo.Path()] = struct{}{}
-	}
-	// Add all wellknown types if not provided within the workspace.
-	if err := f.lsp.wktBucket.Walk(ctx, "", func(objectInfo storage.ObjectInfo) error {
-		if _, ok := seen[objectInfo.Path()]; !ok {
-			fileInfos = append(fileInfos, wktObjectInfo{objectInfo})
-		}
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-	return fileInfos, nil
-}
-
 // RefreshIR queries for the IR of the file and the IR of each import file.
 // Diagnostics from the compiler are returned when applicable.
 //
@@ -313,19 +243,11 @@ func (f *file) RefreshIR(ctx context.Context) {
 		slog.Int("version", int(f.version)),
 	)
 
-	openerMap := map[string]string{
-		f.objectInfo.Path(): f.file.Text(),
-	}
-	files := []*file{f}
-	for path, file := range f.importToFile {
-		openerMap[path] = file.file.Text()
-		files = append(files, file)
-	}
-	opener := source.NewMap(openerMap)
+	files := xslices.MapValuesToSlice(f.workspace.PathToFile())
 	session := new(ir.Session)
 	queries := xslices.Map(files, func(file *file) incremental.Query[ir.File] {
 		return queries.IR{
-			Opener:  opener,
+			Opener:  f.workspace,
 			Path:    file.objectInfo.Path(),
 			Session: session,
 		}
@@ -346,7 +268,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 	}
 	for i, file := range files {
 		file.ir = results[i].Value
-		if i > 0 {
+		if f != file {
 			// Update symbols for imports.
 			file.IndexSymbols(ctx)
 		}
@@ -420,7 +342,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			)
 			continue
 		}
-		file, ok := f.importToFile[ref.def.Span().Path()]
+		file, ok := f.workspace.PathToFile()[ref.def.Span().Path()]
 		if !ok {
 			// Check current file
 			if ref.def.Span().Path() != f.objectInfo.Path() {
@@ -451,7 +373,10 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	}
 
 	// Resolve all references outside of this file to symbols in this file
-	for _, file := range f.importToFile {
+	for _, file := range f.workspace.PathToFile() {
+		if f == file {
+			continue // ignore self
+		}
 		for _, sym := range file.referenceSymbols {
 			ref, ok := sym.kind.(*reference)
 			if !ok {
@@ -703,7 +628,7 @@ func (f *file) importToSymbol(imp ir.Import) *symbol {
 		file: f,
 		span: imp.Decl.Span(),
 		kind: &imported{
-			file: f.importToFile[imp.File.Path()],
+			file: f.workspace.PathToFile()[imp.File.Path()],
 		},
 	}
 }
@@ -767,12 +692,12 @@ func (f *file) newFileOpener() fileOpener {
 		if f.objectInfo.Path() == path {
 			file = f
 		} else {
-			file = f.importToFile[path]
+			file = f.workspace.PathToFile()[path]
 		}
 		if file == nil {
 			return nil, fmt.Errorf("%s: %w", path, fs.ErrNotExist)
 		}
-		return xio.CompositeReadCloser(strings.NewReader(file.file.Text()), xio.NopCloser), nil
+		return io.NopCloser(strings.NewReader(file.file.Text())), nil
 	}
 }
 
@@ -895,14 +820,6 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 // wktObjectInfo is a concrete type to help us identify WKTs among the importable files.
 type wktObjectInfo struct {
 	storage.ObjectInfo
-}
-
-func readAllAsString(reader io.Reader) (string, error) {
-	var builder strings.Builder
-	if _, err := io.Copy(&builder, reader); err != nil {
-		return "", err
-	}
-	return builder.String(), nil
 }
 
 // GetSymbols retrieves symbols for the file. If a query is passed, matches only symbols matching

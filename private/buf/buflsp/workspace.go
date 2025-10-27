@@ -17,6 +17,7 @@ package buflsp
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"iter"
 	"log/slog"
 
@@ -25,7 +26,9 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 // errUnresolvableWorkspace is an unsupported workspace error.
@@ -71,9 +74,13 @@ func (w *workspaceManager) Cleanup(ctx context.Context) {
 		if workspace.refCount > 0 {
 			w.workspaces[index] = workspace
 			index++
-		} else {
-			w.lsp.logger.Debug("workspace: cleanup removing workspace", slog.String("parent", workspace.workspaceURI.Filename()))
+			continue // workspace leased
 		}
+		w.lsp.logger.Debug("workspace: cleanup removing workspace", slog.String("parent", workspace.workspaceURI.Filename()))
+		for _, file := range workspace.pathToFile {
+			file.Close(ctx)
+		}
+		workspace.pathToFile = nil
 	}
 	for j := index; j < len(w.workspaces); j++ {
 		w.workspaces[j] = nil
@@ -126,6 +133,7 @@ type workspace struct {
 	workspaceURI       protocol.URI // File that created this workspace.
 	workspace          bufworkspace.Workspace
 	fileNameToFileInfo map[string]bufmodule.FileInfo
+	pathToFile         map[string]*file
 	checkClient        bufcheck.Client
 }
 
@@ -173,6 +181,7 @@ func (w *workspace) Refresh(ctx context.Context) error {
 	w.workspace = bufWorkspace
 	w.fileNameToFileInfo = fileNameToFileInfo
 	w.checkClient = checkClient
+	w.indexFiles(ctx)
 	return nil
 }
 
@@ -217,4 +226,91 @@ func (w *workspace) CheckClient() bufcheck.Client {
 		return nil
 	}
 	return w.checkClient
+}
+
+// Open implements [source.Opener].
+func (w *workspace) Open(path string) (string, error) {
+	if w.workspace == nil {
+		return "", fs.ErrNotExist
+	}
+	file, ok := w.pathToFile[path]
+	if !ok {
+		return "", fs.ErrNotExist
+	}
+	return file.file.Text(), nil
+}
+
+// PathToFile is an index of all files within the workspace.
+func (w *workspace) PathToFile() map[string]*file {
+	if w == nil {
+		return nil
+	}
+	return w.pathToFile
+}
+
+// indexFiles builds the pathToFile mapping.
+func (w *workspace) indexFiles(ctx context.Context) {
+	unused := w.pathToFile
+	w.pathToFile = make(map[string]*file, len(unused))
+
+	fileInfos, err := w.getWorkspaceFileInfos(ctx)
+	if err != nil {
+		w.lsp.logger.Error(
+			"failed to get importable files",
+			slog.String("file", w.workspaceURI.Filename()),
+		)
+		return
+	}
+	for _, fileInfo := range fileInfos {
+		fileURI := uri.File(fileInfo.LocalPath())
+		file := w.lsp.fileManager.Track(fileURI)
+
+		// Currently we only associate a file with one workspace. This assumption isn't accurate
+		// for shared dependencies. Here we update to the lastest, most recently used, workspace.
+		// This will make goto definition and find references only work in that workspace.
+		if oldWorkspace := file.workspace; oldWorkspace != nil && oldWorkspace != w {
+			oldWorkspace.Release()
+			w.Lease()
+			file.workspace = w
+		}
+
+		file.objectInfo = fileInfo
+		if err := file.ReadFromWorkspace(ctx); err != nil {
+			w.lsp.logger.Error(
+				"failed to read contents for file",
+				xslog.ErrorAttr(err),
+				slog.String("file", fileInfo.Path()),
+			)
+		}
+
+		// Update index.
+		w.pathToFile[fileInfo.Path()] = file
+		delete(unused, fileInfo.Path())
+	}
+	// Drop all unused files. It was deleted from the workspace.
+	for _, file := range unused {
+		file.Close(ctx)
+	}
+}
+
+// getWorkspaceFileInfos returns all files within the workspace.
+//
+// This consists of files within the workspace plus WKTs.
+func (w *workspace) getWorkspaceFileInfos(ctx context.Context) ([]storage.ObjectInfo, error) {
+	seen := make(map[string]struct{})
+	var fileInfos []storage.ObjectInfo
+	for fileInfo := range w.FileInfo() {
+		fileInfos = append(fileInfos, fileInfo)
+		seen[fileInfo.Path()] = struct{}{}
+	}
+	// Add all wellknown types if not provided within the workspace.
+	if err := w.lsp.wktBucket.Walk(ctx, "", func(objectInfo storage.ObjectInfo) error {
+		if _, ok := seen[objectInfo.Path()]; !ok {
+			fileInfos = append(fileInfos, wktObjectInfo{objectInfo})
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return fileInfos, nil
 }

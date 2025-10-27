@@ -341,7 +341,7 @@ func completionItemsForField(ctx context.Context, file *file, declPath []ast.Dec
 //
 // Suggest all importable files.
 func completionItemsForImport(ctx context.Context, file *file, declImport ast.DeclImport, position protocol.Position) []protocol.CompletionItem {
-	file.lsp.logger.DebugContext(ctx, "completion: import declaration", slog.Int("importable_count", len(file.importToFile)))
+	file.lsp.logger.DebugContext(ctx, "completion: import declaration", slog.Int("importable_count", len(file.workspace.PathToFile())))
 
 	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
 	offset := positionLocation.Offset
@@ -373,7 +373,11 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 	suffix := importPathText[index:]
 
 	var items []protocol.CompletionItem
-	for importPath := range file.importToFile {
+	for importPath := range file.workspace.PathToFile() {
+		if importPath == file.objectInfo.LocalPath() {
+			continue // ignore self
+		}
+
 		suggest := fmt.Sprintf("%q", importPath)
 		if !strings.HasPrefix(suggest, prefix) || !strings.HasSuffix(suggest, suffix) {
 			file.lsp.logger.Debug("completion: skipping on prefix/suffix",
