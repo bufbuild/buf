@@ -342,7 +342,7 @@ func completionItemsForField(ctx context.Context, file *file, declPath []ast.Dec
 	for range strings.FieldsSeq(strings.TrimPrefix(typeSuffix, tokenSuffix)) {
 		suffixCount++
 	}
-	// Limit completions based on the following hyeristics:
+	// Limit completions based on the following heuristic:
 	// - Show modifiers for the first two types
 	// - Only show types on the final type
 	showModifiers := prefixCount <= 2
