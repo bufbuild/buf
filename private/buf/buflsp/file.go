@@ -62,9 +62,6 @@ type file struct {
 
 	workspace *workspace // May be nil.
 
-	againstStrategy againstStrategy
-	againstGitRef   string
-
 	objectInfo   storage.ObjectInfo
 	importToFile map[string]*file
 
