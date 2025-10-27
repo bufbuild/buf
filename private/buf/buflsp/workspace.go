@@ -17,7 +17,6 @@ package buflsp
 import (
 	"context"
 	"fmt"
-	"io/fs"
 	"iter"
 	"log/slog"
 
@@ -139,11 +138,13 @@ type workspace struct {
 
 // Lease increments the reference count.
 func (w *workspace) Lease() {
+	w.lsp.logger.Debug("workspace: lease", slog.String("path", w.workspaceURI.Filename()))
 	w.refCount++
 }
 
 // Release decrements the reference count.
 func (w *workspace) Release() int {
+	w.lsp.logger.Debug("workspace: release", slog.String("path", w.workspaceURI.Filename()))
 	w.refCount--
 	return w.refCount
 }
@@ -228,18 +229,6 @@ func (w *workspace) CheckClient() bufcheck.Client {
 	return w.checkClient
 }
 
-// Open implements [github.com/bufbuild/protocompile/experimental/source.Opener].
-func (w *workspace) Open(path string) (string, error) {
-	if w.workspace == nil {
-		return "", fs.ErrNotExist
-	}
-	file, ok := w.pathToFile[path]
-	if !ok {
-		return "", fs.ErrNotExist
-	}
-	return file.file.Text(), nil
-}
-
 // PathToFile is an index of all files within the workspace.
 func (w *workspace) PathToFile() map[string]*file {
 	if w == nil {
@@ -250,12 +239,17 @@ func (w *workspace) PathToFile() map[string]*file {
 
 // indexFiles builds the pathToFile mapping.
 func (w *workspace) indexFiles(ctx context.Context) {
-	unused := w.pathToFile
-	w.pathToFile = make(map[string]*file, len(unused))
+	w.lsp.logger.Debug("workspace: index files", slog.String("path", w.workspaceURI.Filename()))
+	previous := w.pathToFile
+	w.pathToFile = make(map[string]*file, len(previous))
 
 	for fileInfo := range w.fileInfos(ctx) {
-		fileURI := uri.File(fileInfo.LocalPath())
-		file := w.lsp.fileManager.Track(fileURI)
+		file, ok := previous[fileInfo.Path()]
+		if !ok {
+			fileURI := uri.File(fileInfo.LocalPath())
+			file = w.lsp.fileManager.Track(fileURI)
+			w.lsp.logger.Debug("workspace: index track file", slog.String("path", file.uri.Filename()))
+		}
 
 		// Currently we only associate a file with one workspace. This assumption isn't accurate
 		// for shared dependencies. Here we update to the lastest, most recently used, workspace.
@@ -277,10 +271,11 @@ func (w *workspace) indexFiles(ctx context.Context) {
 
 		// Update index.
 		w.pathToFile[fileInfo.Path()] = file
-		delete(unused, fileInfo.Path())
+		delete(previous, fileInfo.Path())
 	}
 	// Drop all unused files. It was deleted from the workspace.
-	for _, file := range unused {
+	for _, file := range previous {
+		w.lsp.logger.Debug("workspace: index drop file", slog.String("path", file.uri.Filename()))
 		file.Close(ctx)
 	}
 }
