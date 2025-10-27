@@ -329,6 +329,8 @@ func completionItemsForField(ctx context.Context, file *file, declPath []ast.Dec
 		return nil
 	}
 
+	// Resolve the token the cursor is under. We don't use the ast.FieldStruct as this doesn't
+	// work with invalid path types. Instead resolve the token from the stream.
 	tokenSpan := extractAroundToken(file, offset)
 	tokenPrefix, tokenSuffix := splitSpan(tokenSpan, offset)
 	typePrefix, typeSuffix := splitSpan(typeSpan, offset)
@@ -340,6 +342,9 @@ func completionItemsForField(ctx context.Context, file *file, declPath []ast.Dec
 	for range strings.FieldsSeq(strings.TrimPrefix(typeSuffix, tokenSuffix)) {
 		suffixCount++
 	}
+	// Limit completions based on the following hyeristics:
+	// - Show modifiers for the first two types
+	// - Only show types on the final type
 	showModifiers := prefixCount <= 2
 	showTypes := suffixCount == 0
 
@@ -568,7 +573,7 @@ func typeReferencesToCompletionItems(
 	span report.Span,
 	offset int,
 ) iter.Seq[protocol.CompletionItem] {
-	fileSymobolTypesIter := func(yield func(*file, *symbol) bool) {
+	fileSymbolTypesIter := func(yield func(*file, *symbol) bool) {
 		for _, imported := range current.importToFile {
 			for _, symbol := range imported.referenceableSymbols {
 				if !yield(imported, symbol) {
@@ -580,7 +585,7 @@ func typeReferencesToCompletionItems(
 	return func(yield func(protocol.CompletionItem) bool) {
 		editRange := reportSpanToProtocolRange(span)
 		prefix, suffix := splitSpan(span, offset)
-		for file, symbol := range fileSymobolTypesIter {
+		for file, symbol := range fileSymbolTypesIter {
 			if !symbol.ir.Kind().IsType() {
 				continue
 			}
