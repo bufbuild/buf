@@ -295,7 +295,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 	}
 	f.diagnostics = diagnostics
 	f.lsp.logger.DebugContext(
-		ctx, "ir diagnositc(s)",
+		ctx, "ir diagnostic(s)",
 		slog.String("uri", f.uri.Filename()),
 		slog.Int("count", len(f.diagnostics)),
 		slog.Any("diagnostics", f.diagnostics),
