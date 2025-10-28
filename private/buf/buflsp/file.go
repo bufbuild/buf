@@ -91,7 +91,7 @@ func (f *file) Manager() *fileManager {
 
 // Reset clears all bookkeeping information on this file.
 func (f *file) Reset(ctx context.Context) {
-	f.lsp.logger.Debug(fmt.Sprintf("resetting file %v", f.uri))
+	f.lsp.logger.DebugContext(ctx, "resetting file", slog.String("uri", f.uri.Filename()))
 
 	f.ir = ir.File{}
 	f.diagnostics = nil
@@ -162,7 +162,7 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 	f.Reset(ctx)
 	f.CancelChecks(ctx)
 
-	f.lsp.logger.Info(fmt.Sprintf("new file version: %v, %v -> %v", f.uri, f.version, version))
+	f.lsp.logger.InfoContext(ctx, "file updated", slog.String("uri", f.uri.Filename()), slog.Int("old_version", int(f.version)), slog.Int("new_version", int(version)))
 	f.version = version
 	f.file = report.NewFile(f.uri.Filename(), text)
 	f.hasText = true
@@ -294,8 +294,10 @@ func (f *file) RefreshIR(ctx context.Context) {
 		)
 	}
 	f.diagnostics = diagnostics
-	f.lsp.logger.Debug(
-		fmt.Sprintf("got %v diagnostic(s) for %s", len(f.diagnostics), f.uri.Filename()),
+	f.lsp.logger.DebugContext(
+		ctx, "ir diagnositc(s)",
+		slog.String("uri", f.uri.Filename()),
+		slog.Int("count", len(f.diagnostics)),
 		slog.Any("diagnostics", f.diagnostics),
 	)
 }
@@ -431,7 +433,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 		return diff
 	})
 
-	f.lsp.logger.DebugContext(ctx, fmt.Sprintf("symbol indexing complete %s", f.uri))
+	f.lsp.logger.DebugContext(ctx, "symbol indexing complete", slog.String("uri", f.uri.Filename()))
 }
 
 // indexSymbols takes the IR [ir.File] for each [file] and returns all the file symbols in
@@ -725,11 +727,11 @@ func (f *file) RunChecks(ctx context.Context) {
 	go func() {
 		image, diagnostics := buildImage(ctx, path, f.lsp.logger, opener)
 		if image == nil {
-			f.lsp.logger.DebugContext(ctx, "check cancelled on image build", slog.String("uri", f.uri.Filename()))
+			f.lsp.logger.DebugContext(ctx, "checks cancelled on image build", slog.String("uri", f.uri.Filename()))
 			return
 		}
 
-		f.lsp.logger.Debug(fmt.Sprintf("check running lint for %q in %v", f.uri, module.FullName()))
+		f.lsp.logger.DebugContext(ctx, "checks running lint", slog.String("uri", f.uri.Filename()), slog.String("module", module.OpaqueID()))
 		var annotations []bufanalysis.FileAnnotation
 		if err := checkClient.Lint(
 			ctx,
@@ -749,7 +751,11 @@ func (f *file) RunChecks(ctx context.Context) {
 				}
 				return
 			}
-			annotations = append(annotations, fileAnnotationSet.FileAnnotations()...)
+			if len(fileAnnotationSet.FileAnnotations()) == 0 {
+				f.lsp.logger.DebugContext(ctx, "checks lint passed", slog.String("uri", f.uri.Filename()))
+			} else {
+				annotations = append(annotations, fileAnnotationSet.FileAnnotations()...)
+			}
 		}
 
 		select {
@@ -764,23 +770,22 @@ func (f *file) RunChecks(ctx context.Context) {
 
 		select {
 		case <-ctx.Done():
-			f.lsp.logger.DebugContext(ctx, "checks cancelled after waiting ", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(ctx.Err()))
+			f.lsp.logger.DebugContext(ctx, "checks: cancelled after waiting for file lock", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(ctx.Err()))
 			return // Context cancelled whilst waiting to publishing diagnostics.
 		default:
 		}
 
 		// Update diagnostics and publish.
-		f.diagnostics = diagnostics
+		if len(diagnostics) != 0 {
+			// TODO: prefer diagnostics from the old compiler to the new compiler to remove duplicates from both.
+			f.diagnostics = diagnostics
+		}
 		f.appendAnnotations("buf lint", annotations)
 		f.PublishDiagnostics(ctx)
 	}()
 }
 
-func (f *file) appendAnnotations(source string, annotations []bufanalysis.FileAnnotation) bool {
-	if len(annotations) == 0 {
-		f.lsp.logger.Debug(fmt.Sprintf("%s generated no errors for %s", source, f.uri))
-		return false
-	}
+func (f *file) appendAnnotations(source string, annotations []bufanalysis.FileAnnotation) {
 	for _, annotation := range annotations {
 		// Convert 1-indexed byte-based line/column to byte offset.
 		startLocation := f.file.InverseLocation(annotation.StartLine(), annotation.StartColumn(), positionalEncoding)
@@ -794,7 +799,6 @@ func (f *file) appendAnnotations(source string, annotations []bufanalysis.FileAn
 			Message:  annotation.Message(),
 		})
 	}
-	return true
 }
 
 // PublishDiagnostics publishes all of this file's diagnostics to the LSP client.
