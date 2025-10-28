@@ -279,14 +279,9 @@ func (f *file) IndexSymbols(ctx context.Context) {
 
 	// Throw away all the old symbols and rebuild symbols unconditionally. This is because if
 	// this file depends on a file that has since been modified, we may need to update references.
-	clear(f.symbols)
-	f.symbols = f.symbols[:0]
-	clear(f.referenceSymbols)
-	f.referenceSymbols = f.referenceSymbols[:0]
-	clear(f.referenceableSymbols)
-	if f.referenceableSymbols == nil {
-		f.referenceableSymbols = make(map[string]*symbol)
-	}
+	f.symbols = nil
+	f.referenceSymbols = nil
+	f.referenceableSymbols = make(map[string]*symbol)
 
 	// Process all imports as symbols
 	for imp := range seq.Values(f.ir.Imports()) {
