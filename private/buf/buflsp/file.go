@@ -89,14 +89,15 @@ func (f *file) Manager() *fileManager {
 	return f.lsp.fileManager
 }
 
-// Reset clears all bookkeeping information on this file.
+// Reset clears all bookkeeping information on this file and resets it.
 func (f *file) Reset(ctx context.Context) {
 	f.lsp.logger.Debug(fmt.Sprintf("resetting file %v", f.uri))
-
-	f.ir = ir.File{}
-	f.diagnostics = nil
-	f.symbols = nil
-	f.image = nil
+	if f.workspace != nil {
+		f.workspace.Release()
+		f.workspace = nil
+	}
+	// Clear the file as nothing should use it after reset. This asserts that.
+	*f = file{}
 }
 
 // Close marks a file as closed.
@@ -105,10 +106,6 @@ func (f *file) Reset(ctx context.Context) {
 // for this file.
 func (f *file) Close(ctx context.Context) {
 	f.Manager().Close(ctx, f.uri)
-	if f.workspace != nil {
-		f.workspace.Release()
-		f.workspace = nil
-	}
 }
 
 // IsOpenInEditor returns whether this file was opened in the LSP client's
@@ -160,48 +157,21 @@ func (f *file) ReadFromWorkspace(ctx context.Context) (err error) {
 // Update updates the contents of this file with the given text received from
 // the LSP client.
 func (f *file) Update(ctx context.Context, version int32, text string) {
-	f.Reset(ctx)
-
 	f.lsp.logger.Info(fmt.Sprintf("new file version: %v, %v -> %v", f.uri, f.version, version))
 	f.version = version
 	f.file = report.NewFile(f.uri.Filename(), text)
 	f.hasText = true
-}
 
-// Refresh rebuilds all of a file's internal book-keeping.
-func (f *file) Refresh(ctx context.Context) {
-	var progress *progress
-	if f.IsOpenInEditor() {
-		// NOTE: Nil progress does nothing when methods are called. This helps
-		// minimize RPC spam from the client when indexing lots of files.
-		progress = newProgress(f.lsp)
-	}
-	progress.Begin(ctx, "Indexing")
-
-	progress.Report(ctx, "Setting workspace", 1.0/4)
-	f.RefreshWorkspace(ctx)
-
-	progress.Report(ctx, "Parsing IR", 2.0/4)
 	f.RefreshIR(ctx)
-
-	progress.Report(ctx, "Indexing Symbols", 3.0/4)
 	f.IndexSymbols(ctx)
-
-	progress.Report(ctx, "Running Checks", 4.0/4)
 	if f.IsOpenInEditor() {
 		f.BuildImage(ctx)
 		f.RunLints(ctx)
 	}
-
-	progress.Done(ctx)
-
-	// NOTE: Diagnostics are published unconditionally. This is necessary even
-	// if we have zero diagnostics, so that the client correctly ticks over from
-	// n > 0 diagnostics to 0 diagnostics.
 	f.PublishDiagnostics(ctx)
 }
 
-// RefreshWorkspace builds the workspace for the current file and sets the workspace it.
+// RefreshWorkspace rebuilds the workspace for the current file and sets the workspace.
 //
 // The Buf workspace provides the sources for the compiler to work with.
 func (f *file) RefreshWorkspace(ctx context.Context) {
@@ -235,13 +205,15 @@ func (f *file) RefreshWorkspace(ctx context.Context) {
 // RefreshIR queries for the IR of the file and the IR of each import file.
 // Diagnostics from the compiler are returned when applicable.
 //
-// This operation requires IndexImports.
+// This operation requires a workspace.
 func (f *file) RefreshIR(ctx context.Context) {
 	f.lsp.logger.Info(
 		"parsing IR for file",
 		slog.String("uri", string(f.uri)),
 		slog.Int("version", int(f.version)),
 	)
+	f.diagnostics = nil
+	f.ir = ir.File{}
 
 	files := xslices.MapValuesToSlice(f.workspace.PathToFile())
 	session := new(ir.Session)
@@ -307,12 +279,19 @@ func (f *file) IndexSymbols(ctx context.Context) {
 
 	// Throw away all the old symbols and rebuild symbols unconditionally. This is because if
 	// this file depends on a file that has since been modified, we may need to update references.
-	f.symbols = nil
-	f.referenceSymbols = nil
-	f.referenceableSymbols = make(map[string]*symbol)
+	clear(f.symbols)
+	f.symbols = f.symbols[:0]
+	clear(f.referenceSymbols)
+	f.referenceSymbols = f.referenceSymbols[:0]
+	clear(f.referenceableSymbols)
+	if f.referenceableSymbols == nil {
+		f.referenceableSymbols = make(map[string]*symbol)
+	}
 
 	// Process all imports as symbols
-	f.symbols = xslices.Map(seq.ToSlice(f.ir.Imports()), f.importToSymbol)
+	for imp := range seq.Values(f.ir.Imports()) {
+		f.symbols = append(f.symbols, f.importToSymbol(imp))
+	}
 
 	resolved, unresolved := f.indexSymbols()
 	f.symbols = append(f.symbols, resolved...)
@@ -704,7 +683,7 @@ func (f *file) newFileOpener() fileOpener {
 // BuildImage builds an image for linting.
 // routines.
 //
-// This operation requires IndexImports.
+// This operation requires a workspace.
 func (f *file) BuildImage(ctx context.Context) {
 	if f.objectInfo == nil {
 		return

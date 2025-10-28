@@ -198,8 +198,8 @@ func (s *server) DidOpen(
 	params *protocol.DidOpenTextDocumentParams,
 ) error {
 	file := s.fileManager.Track(params.TextDocument.URI)
+	file.RefreshWorkspace(ctx)
 	file.Update(ctx, params.TextDocument.Version, params.TextDocument.Text)
-	file.Refresh(ctx)
 	return nil
 }
 
@@ -216,7 +216,6 @@ func (s *server) DidChange(
 	}
 
 	file.Update(ctx, params.TextDocument.Version, params.ContentChanges[0].Text)
-	file.Refresh(ctx)
 	return nil
 }
 
@@ -232,7 +231,7 @@ func (s *server) DidSave(
 		// Update for a file we don't know about? Seems bad!
 		return fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
 	}
-	file.Refresh(ctx)
+	file.RefreshWorkspace(ctx)
 	return nil
 }
 
