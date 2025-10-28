@@ -615,7 +615,7 @@ func typeReferencesToCompletionItems(
 	var lastImportLine uint32
 	currentImportPaths := map[string]struct{}{}
 	for currentFileImport := range seq.Values(current.ir.Imports()) {
-		l := currentFileImport.Decl.Span().StartLoc().Line
+		l := currentFileImport.Decl.Span().EndLoc().Line
 		if l < 0 || l > math.MaxUint32 {
 			continue // skip this import; exceptional case.
 		}
@@ -638,9 +638,9 @@ func typeReferencesToCompletionItems(
 		var line int
 		switch {
 		case !current.ir.AST().Package().IsZero():
-			line = current.ir.AST().Package().Span().StartLoc().Line
+			line = current.ir.AST().Package().Span().EndLoc().Line
 		case !current.ir.AST().Syntax().IsZero():
-			line = current.ir.AST().Syntax().Span().StartLoc().Line
+			line = current.ir.AST().Syntax().Span().EndLoc().Line
 		default:
 			// We won't add an import in this case.
 			line = 0
