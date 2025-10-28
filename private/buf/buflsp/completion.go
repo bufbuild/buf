@@ -616,6 +616,47 @@ func typeReferencesToCompletionItems(
 			}
 		}
 	}
+	var lastImportLine uint32
+	currentImportPaths := map[string]struct{}{}
+	for currentFileImport := range seq.Values(current.ir.Imports()) {
+		l := currentFileImport.Decl.Span().StartLoc().Line
+		if l < 0 || l > math.MaxUint32 {
+			return nil
+		}
+		lastImportLine = max(uint32(l), lastImportLine)
+		currentImportPaths[currentFileImport.Path()] = struct{}{}
+	}
+	var insertPosition protocol.Position
+	if lastImportLine != 0 {
+		// add an additionalTextEdit to the end of the current imports, which can then be tidied by
+		// `buf format` to go in it's proper location.
+		insertPosition = protocol.Position{
+			Line:      lastImportLine,
+			Character: 0,
+		}
+	} else {
+		// If lastImportLine is 0, we have no imports in this file; put it after `package`, if
+		// package exists. Otherwise, after `syntax`, if it exists. Otherwise, balk.
+		// NOTE: We simply want to add the import on the next line (which may not be how `buf
+		// format` would format the file); we leave the overall file formatting to `buf format`.
+		var line int
+		switch {
+		case !current.ir.AST().Package().IsZero():
+			line = current.ir.AST().Package().Span().StartLoc().Line
+		case !current.ir.AST().Syntax().IsZero():
+			line = current.ir.AST().Syntax().Span().StartLoc().Line
+		default:
+			// We won't add an import in this case.
+			line = 0
+		}
+		if line < 0 || line > math.MaxUint32 {
+			return nil
+		}
+		insertPosition = protocol.Position{
+			Line:      uint32(line),
+			Character: 0,
+		}
+	}
 	return func(yield func(protocol.CompletionItem) bool) {
 		editRange := reportSpanToProtocolRange(span)
 		prefix, suffix := splitSpan(span, offset)
@@ -652,62 +693,17 @@ func typeReferencesToCompletionItems(
 				isDeprecated = true
 			}
 			symbolFile := symbol.ir.File().Path()
-			missingImport := true
-			var lastImportLine uint32
-			for currentFileImport := range seq.Values(current.ir.Imports()) {
-				l := currentFileImport.Decl.Span().StartLoc().Line
-				if l < 0 || l > math.MaxUint32 {
-					return
-				}
-				lastImportLine = max(uint32(l), lastImportLine)
-				if currentFileImport.Path() == symbolFile {
-					missingImport = false
-					break
-				}
-			}
+			_, hasImport := currentImportPaths[symbolFile]
 			var additionalTextEdits []protocol.TextEdit
-			if missingImport {
-				var insertPosition protocol.Position
-				if lastImportLine != 0 {
-					// add an additionalTextEdit to the end of the current imports, which can then be tidied by
-					// `buf format` to go in it's proper location.
-					insertPosition = protocol.Position{
-						Line:      lastImportLine,
-						Character: 0,
-					}
-				} else {
-					// If lastImportLine is 0, we have no imports in this file; put it after `package`, if
-					// package exists. Otherwise, after `syntax`, if it exists. Otherwise, balk.
-					// NOTE: We simply want to add the import on the next line (which may not be how `buf
-					// format` would format the file); we leave the overall file formatting to `buf format`.
-					var line int
-					switch {
-					case !current.ir.AST().Package().IsZero():
-						line = current.ir.AST().Package().Span().StartLoc().Line
-					case !current.ir.AST().Syntax().IsZero():
-						line = current.ir.AST().Syntax().Span().StartLoc().Line
-					default:
-						// We won't add an import in this case.
-						line = 0
-					}
-					if line < 0 || line > math.MaxUint32 {
-						return
-					}
-					insertPosition = protocol.Position{
-						Line:      uint32(line),
-						Character: 0,
-					}
-				}
-				var zero protocol.Position
-				if insertPosition != zero {
-					additionalTextEdits = append(additionalTextEdits, protocol.TextEdit{
-						NewText: "import " + `"` + symbolFile + `";` + "\n",
-						Range: protocol.Range{
-							Start: insertPosition,
-							End:   insertPosition,
-						},
-					})
-				}
+			var zero protocol.Position
+			if !hasImport && insertPosition != zero {
+				additionalTextEdits = append(additionalTextEdits, protocol.TextEdit{
+					NewText: "import " + `"` + symbolFile + `";` + "\n",
+					Range: protocol.Range{
+						Start: insertPosition,
+						End:   insertPosition,
+					},
+				})
 			}
 			if !yield(protocol.CompletionItem{
 				Label: label,
