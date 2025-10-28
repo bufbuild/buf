@@ -612,10 +612,10 @@ func typeReferencesToCompletionItems(
 			}
 		}
 	}
-	var lastImportLine uint64
+	var lastImportLine int64
 	currentImportPaths := map[string]struct{}{}
 	for currentFileImport := range seq.Values(current.ir.Imports()) {
-		lastImportLine = max(lastImportLine, uint64(currentFileImport.Decl.Span().EndLoc().Line))
+		lastImportLine = max(lastImportLine, int64(currentFileImport.Decl.Span().EndLoc().Line))
 		currentImportPaths[currentFileImport.Path()] = struct{}{}
 	}
 	if lastImportLine == 0 {
@@ -625,12 +625,12 @@ func typeReferencesToCompletionItems(
 		// format` would format the file); we leave the overall file formatting to `buf format`.
 		switch {
 		case !current.ir.AST().Package().IsZero():
-			lastImportLine = uint64(current.ir.AST().Package().Span().EndLoc().Line)
+			lastImportLine = int64(current.ir.AST().Package().Span().EndLoc().Line)
 		case !current.ir.AST().Syntax().IsZero():
-			lastImportLine = uint64(current.ir.AST().Syntax().Span().EndLoc().Line)
+			lastImportLine = int64(current.ir.AST().Syntax().Span().EndLoc().Line)
 		}
 	}
-	if lastImportLine > math.MaxUint32 {
+	if lastImportLine < 0 || lastImportLine > math.MaxUint32 {
 		lastImportLine = 0 // Default to insert at top of page.
 	}
 	importInsertPosition := protocol.Position{
