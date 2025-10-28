@@ -617,7 +617,7 @@ func typeReferencesToCompletionItems(
 	for currentFileImport := range seq.Values(current.ir.Imports()) {
 		l := currentFileImport.Decl.Span().StartLoc().Line
 		if l < 0 || l > math.MaxUint32 {
-			return nil
+			continue // skip this import; exceptional case.
 		}
 		lastImportLine = max(uint32(l), lastImportLine)
 		currentImportPaths[currentFileImport.Path()] = struct{}{}
@@ -646,11 +646,12 @@ func typeReferencesToCompletionItems(
 			line = 0
 		}
 		if line < 0 || line > math.MaxUint32 {
-			return nil
-		}
-		insertPosition = protocol.Position{
-			Line:      uint32(line),
-			Character: 0,
+			// Nothing to do; exceptional case.
+		} else {
+			insertPosition = protocol.Position{
+				Line:      uint32(line),
+				Character: 0,
+			}
 		}
 	}
 	parentPrefix := string(parentFullName) + "."
