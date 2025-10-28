@@ -642,7 +642,6 @@ func typeReferencesToCompletionItems(
 		case !current.ir.AST().Syntax().IsZero():
 			line = current.ir.AST().Syntax().Span().EndLoc().Line
 		default:
-			// We won't add an import in this case.
 			line = 0
 		}
 		if line < 0 || line > math.MaxUint32 {
@@ -697,8 +696,7 @@ func typeReferencesToCompletionItems(
 			symbolFile := symbol.ir.File().Path()
 			_, hasImport := currentImportPaths[symbolFile]
 			var additionalTextEdits []protocol.TextEdit
-			var zero protocol.Position
-			if !hasImport && insertPosition != zero {
+			if !hasImport {
 				additionalTextEdits = append(additionalTextEdits, protocol.TextEdit{
 					NewText: "import " + `"` + symbolFile + `";` + "\n",
 					Range: protocol.Range{
