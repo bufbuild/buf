@@ -275,7 +275,6 @@ func (f *file) RefreshIR(ctx context.Context) {
 		ctx, "ir diagnostic(s)",
 		slog.String("uri", f.uri.Filename()),
 		slog.Int("count", len(f.diagnostics)),
-		slog.Any("diagnostics", f.diagnostics),
 	)
 }
 
@@ -661,12 +660,11 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 		idx--
 	}
 	symbol := f.symbols[idx]
-	f.lsp.logger.DebugContext(ctx, "found symbol", slog.Any("symbol", symbol))
 	// Check that cursor is before the end of the symbol. Range is half-open [Start, End).
 	if comparePositions(symbol.Range().End, cursor) < 0 {
 		return nil
 	}
-
+	f.lsp.logger.DebugContext(ctx, "found symbol", slog.Any("symbol", symbol))
 	return symbol
 }
 

@@ -60,8 +60,6 @@ func getCompletionItems(
 			ctx,
 			"completion: found declaration",
 			slog.String("decl_kind", decl.Kind().String()),
-			slog.Any("decl_span_start", decl.Span().StartLoc()),
-			slog.Any("decl_span_end", decl.Span().EndLoc()),
 			slog.Int("path_depth", len(declPath)),
 		)
 	} else {
@@ -160,8 +158,6 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		slog.String("name", def.Name().Span().String()),
 		slog.String("def_kind", def.Classify().String()),
 		slog.Int("path_depth", len(declPath)),
-		slog.Any("decl_span_start", def.Span().StartLoc()),
-		slog.Any("decl_span_end", def.Span().EndLoc()),
 	)
 
 	// Check if cursor is in the name of the definition, if so ignore.
@@ -657,6 +653,8 @@ func typeReferencesToCompletionItems(
 			Character: 0,
 		}
 	}
+	parentPrefix := string(parentFullName) + "."
+	packagePrefix := string(current.ir.Package()) + "."
 	return func(yield func(protocol.CompletionItem) bool) {
 		editRange := reportSpanToProtocolRange(span)
 		prefix, suffix := splitSpan(span, offset)
@@ -664,9 +662,12 @@ func typeReferencesToCompletionItems(
 			if !symbol.ir.Kind().IsType() {
 				continue
 			}
-			label := strings.TrimPrefix(string(symbol.ir.FullName()), string(parentFullName))
-			label = strings.TrimPrefix(label, string(current.ir.Package()))
-			label = strings.TrimPrefix(label, ".")
+			label := string(symbol.ir.FullName())
+			if strings.HasPrefix(label, parentPrefix) {
+				label = label[len(parentPrefix):]
+			} else if strings.HasPrefix(label, packagePrefix) {
+				label = label[len(packagePrefix):]
+			}
 			if !strings.HasPrefix(label, prefix) || !strings.HasSuffix(label, suffix) {
 				continue
 			}
