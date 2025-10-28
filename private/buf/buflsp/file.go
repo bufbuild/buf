@@ -21,17 +21,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"iter"
 	"log/slog"
 	"slices"
 	"strings"
+	"time"
 
 	"buf.build/go/standard/xlog/xslog"
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
@@ -66,7 +65,7 @@ type file struct {
 	referenceSymbols     []*symbol
 	symbols              []*symbol
 	diagnostics          []protocol.Diagnostic
-	image                bufimage.Image
+	cancelChecks         func()
 }
 
 // IsLocal returns whether this is a local file, i.e. a file that the editor
@@ -92,12 +91,11 @@ func (f *file) Manager() *fileManager {
 
 // Reset clears all bookkeeping information on this file.
 func (f *file) Reset(ctx context.Context) {
-	f.lsp.logger.Debug(fmt.Sprintf("resetting file %v", f.uri))
+	f.lsp.logger.DebugContext(ctx, "resetting file", slog.String("uri", f.uri.Filename()))
 
 	f.ir = ir.File{}
 	f.diagnostics = nil
 	f.symbols = nil
-	f.image = nil
 }
 
 // Close marks a file as closed.
@@ -162,8 +160,9 @@ func (f *file) ReadFromWorkspace(ctx context.Context) (err error) {
 // the LSP client.
 func (f *file) Update(ctx context.Context, version int32, text string) {
 	f.Reset(ctx)
+	f.CancelChecks(ctx)
 
-	f.lsp.logger.Info(fmt.Sprintf("new file version: %v, %v -> %v", f.uri, f.version, version))
+	f.lsp.logger.InfoContext(ctx, "file updated", slog.String("uri", f.uri.Filename()), slog.Int("old_version", int(f.version)), slog.Int("new_version", int(version)))
 	f.version = version
 	f.file = report.NewFile(f.uri.Filename(), text)
 	f.hasText = true
@@ -189,10 +188,7 @@ func (f *file) Refresh(ctx context.Context) {
 	f.IndexSymbols(ctx)
 
 	progress.Report(ctx, "Running Checks", 4.0/4)
-	if f.IsOpenInEditor() {
-		f.BuildImage(ctx)
-		f.RunLints(ctx)
-	}
+	f.RunChecks(ctx)
 
 	progress.Done(ctx)
 
@@ -298,8 +294,10 @@ func (f *file) RefreshIR(ctx context.Context) {
 		)
 	}
 	f.diagnostics = diagnostics
-	f.lsp.logger.Debug(
-		fmt.Sprintf("got %v diagnostic(s) for %s", len(f.diagnostics), f.uri.Filename()),
+	f.lsp.logger.DebugContext(
+		ctx, "ir diagnostic(s)",
+		slog.String("uri", f.uri.Filename()),
+		slog.Int("count", len(f.diagnostics)),
 		slog.Any("diagnostics", f.diagnostics),
 	)
 }
@@ -435,7 +433,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 		return diff
 	})
 
-	f.lsp.logger.DebugContext(ctx, fmt.Sprintf("symbol indexing complete %s", f.uri))
+	f.lsp.logger.DebugContext(ctx, "symbol indexing complete", slog.String("uri", f.uri.Filename()))
 }
 
 // indexSymbols takes the IR [ir.File] for each [file] and returns all the file symbols in
@@ -693,96 +691,102 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 	return symbol
 }
 
-// newFileOpener returns a fileOpener for the context of this file.
-//
-// May return nil, if insufficient information is present to open the file.
-func (f *file) newFileOpener() fileOpener {
-	return func(path string) (io.ReadCloser, error) {
-		var file *file
-		if f.objectInfo.Path() == path {
-			file = f
-		} else {
-			file = f.workspace.PathToFile()[path]
-		}
-		if file == nil {
-			return nil, fmt.Errorf("%s: %w", path, fs.ErrNotExist)
-		}
-		return io.NopCloser(strings.NewReader(file.file.Text())), nil
+// CancelChecks cancels any currently running checks for this file.
+func (f *file) CancelChecks(ctx context.Context) {
+	if f.cancelChecks != nil {
+		f.cancelChecks()
+		f.cancelChecks = nil
 	}
 }
 
-// BuildImage builds an image for linting.
-// routines.
-//
-// This operation requires IndexImports.
-func (f *file) BuildImage(ctx context.Context) {
-	if f.objectInfo == nil {
-		return
+// RunChecks triggers the run of checks for this file. Diagnostics are published asynchronously.
+func (f *file) RunChecks(ctx context.Context) {
+	if f.IsWKT() || !f.IsOpenInEditor() {
+		return // Must be open and not a WKT.
 	}
+	f.CancelChecks(ctx)
 
-	if opener := f.newFileOpener(); opener != nil {
-		image, diagnostics := buildImage(ctx, f.objectInfo.Path(), f.lsp.logger, opener)
-		if len(diagnostics) > 0 {
-			f.diagnostics = diagnostics
-		}
-		f.image = image
-	} else {
-		f.lsp.logger.Warn("not building image", slog.String("uri", string(f.uri)))
-	}
-}
-
-// RunLints runs linting on this file. Returns whether any lints failed.
-//
-// This operation requires BuildImage.
-func (f *file) RunLints(ctx context.Context) bool {
-	if f.IsWKT() {
-		// Well-known types are not linted.
-		return false
-	}
-
+	path := f.objectInfo.Path()
 	workspace := f.workspace.Workspace()
 	module := f.workspace.GetModule(f.uri)
 	checkClient := f.workspace.CheckClient()
-	if workspace == nil {
-		f.lsp.logger.Warn(fmt.Sprintf("could not find workspace for %q", f.uri))
-		return false
-	}
-	if module == nil || f.image == nil {
-		f.lsp.logger.Warn(fmt.Sprintf("could not find image for %q", f.uri))
-		return false
-	}
-	if checkClient == nil {
-		f.lsp.logger.Warn(fmt.Sprintf("could not find check client for %q", f.uri))
-		return false
+	if workspace == nil || module == nil || checkClient == nil {
+		f.lsp.logger.Debug("checks skipped", slog.String("uri", f.uri.Filename()))
+		return
 	}
 
-	f.lsp.logger.Debug(fmt.Sprintf("running lint for %q in %v", f.uri, module.FullName()))
-	return f.appendLintErrors("buf lint", checkClient.Lint(
-		ctx,
-		workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
-		f.image,
-		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
-		bufcheck.WithPolicyConfigs(workspace.PolicyConfigs()...),
-	))
+	opener := make(fileOpener)
+	for path, file := range f.workspace.PathToFile() {
+		opener[path] = file.file.Text()
+	}
+
+	const checkTimeout = 30 * time.Second
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), checkTimeout)
+	f.cancelChecks = cancel
+
+	go func() {
+		image, diagnostics := buildImage(ctx, path, f.lsp.logger, opener)
+		if image == nil {
+			f.lsp.logger.DebugContext(ctx, "checks cancelled on image build", slog.String("uri", f.uri.Filename()))
+			return
+		}
+
+		f.lsp.logger.DebugContext(ctx, "checks running lint", slog.String("uri", f.uri.Filename()), slog.String("module", module.OpaqueID()))
+		var annotations []bufanalysis.FileAnnotation
+		if err := checkClient.Lint(
+			ctx,
+			workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
+			image,
+			bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
+			bufcheck.WithPolicyConfigs(workspace.PolicyConfigs()...),
+		); err != nil {
+			var fileAnnotationSet bufanalysis.FileAnnotationSet
+			if !errors.As(err, &fileAnnotationSet) {
+				if errors.Is(err, context.Canceled) {
+					f.lsp.logger.DebugContext(ctx, "checks cancelled", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(err))
+				} else if errors.Is(err, context.DeadlineExceeded) {
+					f.lsp.logger.WarnContext(ctx, "checks deadline exceeded", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(err))
+				} else {
+					f.lsp.logger.WarnContext(ctx, "checks failed", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(err))
+				}
+				return
+			}
+			if len(fileAnnotationSet.FileAnnotations()) == 0 {
+				f.lsp.logger.DebugContext(ctx, "checks lint passed", slog.String("uri", f.uri.Filename()))
+			} else {
+				annotations = append(annotations, fileAnnotationSet.FileAnnotations()...)
+			}
+		}
+
+		select {
+		case <-ctx.Done():
+			f.lsp.logger.DebugContext(ctx, "checks cancelled", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(ctx.Err()))
+			return
+		default:
+		}
+
+		f.lsp.lock.Lock()
+		defer f.lsp.lock.Unlock()
+
+		select {
+		case <-ctx.Done():
+			f.lsp.logger.DebugContext(ctx, "checks: cancelled after waiting for file lock", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(ctx.Err()))
+			return // Context cancelled whilst waiting to publishing diagnostics.
+		default:
+		}
+
+		// Update diagnostics and publish.
+		if len(diagnostics) != 0 {
+			// TODO: prefer diagnostics from the old compiler to the new compiler to remove duplicates from both.
+			f.diagnostics = diagnostics
+		}
+		f.appendAnnotations("buf lint", annotations)
+		f.PublishDiagnostics(ctx)
+	}()
 }
 
-func (f *file) appendLintErrors(source string, err error) bool {
-	if err == nil {
-		f.lsp.logger.Debug(fmt.Sprintf("%s generated no errors for %s", source, f.uri))
-		return false
-	}
-
-	var annotations bufanalysis.FileAnnotationSet
-	if !errors.As(err, &annotations) {
-		f.lsp.logger.Warn(
-			"error while linting",
-			slog.String("uri", string(f.uri)),
-			xslog.ErrorAttr(err),
-		)
-		return false
-	}
-
-	for _, annotation := range annotations.FileAnnotations() {
+func (f *file) appendAnnotations(source string, annotations []bufanalysis.FileAnnotation) {
+	for _, annotation := range annotations {
 		// Convert 1-indexed byte-based line/column to byte offset.
 		startLocation := f.file.InverseLocation(annotation.StartLine(), annotation.StartColumn(), positionalEncoding)
 		endLocation := f.file.InverseLocation(annotation.EndLine(), annotation.EndColumn(), positionalEncoding)
@@ -795,7 +799,6 @@ func (f *file) appendLintErrors(source string, err error) bool {
 			Message:  annotation.Message(),
 		})
 	}
-	return true
 }
 
 // PublishDiagnostics publishes all of this file's diagnostics to the LSP client.
