@@ -616,6 +616,8 @@ func typeReferencesToCompletionItems(
 			}
 		}
 	}
+	parentPrefix := string(parentFullName) + "."
+	packagePrefix := string(current.ir.Package()) + "."
 	return func(yield func(protocol.CompletionItem) bool) {
 		editRange := reportSpanToProtocolRange(span)
 		prefix, suffix := splitSpan(span, offset)
@@ -623,9 +625,12 @@ func typeReferencesToCompletionItems(
 			if !symbol.ir.Kind().IsType() {
 				continue
 			}
-			label := strings.TrimPrefix(string(symbol.ir.FullName()), string(parentFullName))
-			label = strings.TrimPrefix(label, string(current.ir.Package()))
-			label = strings.TrimPrefix(label, ".")
+			label := string(symbol.ir.FullName())
+			if strings.HasPrefix(label, parentPrefix) {
+				label = label[len(parentPrefix):]
+			} else if strings.HasPrefix(label, packagePrefix) {
+				label = label[len(packagePrefix):]
+			}
 			if !strings.HasPrefix(label, prefix) || !strings.HasSuffix(label, suffix) {
 				continue
 			}
