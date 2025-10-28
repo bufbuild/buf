@@ -685,14 +685,14 @@ func (f *file) RunChecks(ctx context.Context) {
 	}
 	f.CancelChecks(ctx)
 
-	path := f.objectInfo.Path()
 	workspace := f.workspace.Workspace()
 	module := f.workspace.GetModule(f.uri)
 	checkClient := f.workspace.CheckClient()
-	if workspace == nil || module == nil || checkClient == nil {
+	if workspace == nil || module == nil || checkClient == nil || f.objectInfo == nil {
 		f.lsp.logger.Debug("checks skipped", slog.String("uri", f.uri.Filename()))
 		return
 	}
+	path := f.objectInfo.Path()
 
 	opener := make(fileOpener)
 	for path, file := range f.workspace.PathToFile() {
