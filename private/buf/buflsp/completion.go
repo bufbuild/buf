@@ -94,7 +94,7 @@ func completionItemsForDeclPath(ctx context.Context, file *file, declPath []ast.
 	case ast.DeclKindDef:
 		return completionItemsForDef(ctx, file, declPath, decl.AsDef(), position)
 	case ast.DeclKindSyntax:
-		return completionItemsForSyntax(ctx, file, decl.AsSyntax())
+		return completionItemsForSyntax(ctx, file, decl.AsSyntax(), position)
 	case ast.DeclKindPackage:
 		return completionItemsForPackage(ctx, file, decl.AsPackage())
 	case ast.DeclKindImport:
@@ -106,8 +106,67 @@ func completionItemsForDeclPath(ctx context.Context, file *file, declPath []ast.
 }
 
 // completionItemsForSyntax returns the completion items for the files syntax.
-func completionItemsForSyntax(ctx context.Context, file *file, syntaxDecl ast.DeclSyntax) []protocol.CompletionItem {
+func completionItemsForSyntax(ctx context.Context, file *file, syntaxDecl ast.DeclSyntax, position protocol.Position) []protocol.CompletionItem {
 	file.lsp.logger.DebugContext(ctx, "completion: syntax declaration", slog.Bool("is_edition", syntaxDecl.IsEdition()))
+
+	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
+	offset := positionLocation.Offset
+
+	valueSpan := syntaxDecl.Value().Span()
+	start, end := valueSpan.Start, valueSpan.End
+	valueText := valueSpan.Text()
+
+	// Break on newlines to split an unintended capture.
+	if index := strings.IndexByte(valueText, '\n'); index != -1 {
+		end = start + index
+		valueText = valueText[:index]
+	}
+
+	if start > offset || offset > end {
+		file.lsp.logger.DebugContext(
+			ctx, "completion: syntax outside value",
+			slog.String("value", valueSpan.Text()),
+			slog.Int("start", start),
+			slog.Int("offset", offset),
+			slog.Int("end", end),
+			slog.Int("line", int(position.Line)),
+			slog.Int("character", int(position.Character)),
+		)
+		return nil // outside value
+	}
+
+	index := offset - start
+	prefix := valueText[:index]
+	suffix := valueText[index:]
+
+	var additionalTextEdits []protocol.TextEdit
+	if syntaxDecl.Equals().IsZero() {
+		valueRange := reportSpanToProtocolRange(valueSpan)
+		additionalTextEdits = append(additionalTextEdits, protocol.TextEdit{
+			NewText: "= ",
+			// Insert before value.
+			Range: protocol.Range{
+				Start: valueRange.Start,
+				End:   valueRange.Start,
+			},
+		})
+	}
+	if syntaxDecl.Semicolon().IsZero() {
+		additionalTextEdits = append(additionalTextEdits, protocol.TextEdit{
+			NewText: ";",
+			// End of line.
+			Range: protocol.Range{
+				Start: protocol.Position{
+					Line:      position.Line,
+					Character: math.MaxInt32 - 1,
+				},
+				End: protocol.Position{
+					Line:      position.Line,
+					Character: math.MaxUint32,
+				},
+			},
+		})
+	}
 
 	var syntaxes iter.Seq[syntax.Syntax]
 	if syntaxDecl.IsEdition() {
@@ -118,17 +177,29 @@ func completionItemsForSyntax(ctx context.Context, file *file, syntaxDecl ast.De
 				yield(syntax.Proto3)
 		}
 	}
-	syntaxRange := reportSpanToProtocolRange(syntaxDecl.Span())
-
 	var items []protocol.CompletionItem
 	for syntax := range syntaxes {
+		suggest := fmt.Sprintf("%q", syntax)
+		if !strings.HasPrefix(suggest, prefix) || !strings.HasSuffix(suggest, suffix) {
+			file.lsp.logger.Debug("completion: skipping on prefix/suffix",
+				slog.String("value", valueSpan.Text()),
+				slog.String("suggest", suggest),
+				slog.String("prefix", prefix),
+				slog.String("suffix", suffix),
+			)
+			continue
+		}
 		items = append(items, protocol.CompletionItem{
 			Label: syntax.String(),
 			Kind:  protocol.CompletionItemKindValue,
 			TextEdit: &protocol.TextEdit{
-				Range:   syntaxRange,
-				NewText: fmt.Sprintf("%s = %q;", syntaxDecl.Keyword(), syntax),
+				Range: protocol.Range{
+					Start: position,
+					End:   position,
+				},
+				NewText: suggest[len(prefix) : len(suggest)-len(suffix)],
 			},
+			AdditionalTextEdits: additionalTextEdits,
 		})
 	}
 	return items
@@ -321,7 +392,7 @@ func completionItemsForField(ctx context.Context, file *file, declPath []ast.Dec
 	}
 
 	typeSpan := def.Type().Span()
-	if offsetInSpan(typeSpan, offset) {
+	if !offsetInSpan(typeSpan, offset) {
 		file.lsp.logger.DebugContext(
 			ctx, "completion: field outside definition",
 			slog.String("kind", parent.Kind().String()),
@@ -843,7 +914,7 @@ func splitSpan(span report.Span, offset int) (prefix string, suffix string) {
 }
 
 func offsetInSpan(span report.Span, offset int) bool {
-	return span.Start > offset || offset > span.End
+	return span.Start <= offset && offset <= span.End // End is inclusive for completions_
 }
 
 // isNewlineOrEndOfSpan returns true if this offset is separated be a newline or at the end of the span.
