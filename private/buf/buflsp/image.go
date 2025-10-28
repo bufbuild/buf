@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"strings"
 
@@ -35,14 +36,22 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-// fileOpener is a function that opens files as they are named in the import
+// fileOpener is a type that opens files as they are named in the import
 // statements of .proto files.
 //
 // This is the context given to [buildImage] to control what text to look up for
 // specific files, so that we can e.g. use file contents that are still unsaved
 // in the editor, or use files from a different commit for building an --against
 // image.
-type fileOpener func(string) (io.ReadCloser, error)
+type fileOpener map[string]string
+
+func (p fileOpener) Open(path string) (io.ReadCloser, error) {
+	text, ok := p[path]
+	if !ok {
+		return nil, fmt.Errorf("%s: %w", path, fs.ErrNotExist)
+	}
+	return io.NopCloser(strings.NewReader(text)), nil
+}
 
 // buildImage builds a Buf Image for the given path. This does not use the controller to build
 // the image, because we need delicate control over the input files: namely, for the case
@@ -58,7 +67,7 @@ func buildImage(
 	var symbols linker.Symbols
 	compiler := protocompile.Compiler{
 		SourceInfoMode: protocompile.SourceInfoExtraOptionLocations,
-		Resolver:       &protocompile.SourceResolver{Accessor: opener},
+		Resolver:       &protocompile.SourceResolver{Accessor: opener.Open},
 		Symbols:        &symbols,
 		Reporter: reporter.NewReporter(
 			func(errorWithPos reporter.ErrorWithPos) error {
@@ -189,25 +198,14 @@ func newDiagnostic(err reporter.ErrorWithPos, isWarning bool, opener fileOpener,
 
 	// TODO: this is a temporary workaround for old diagnostic errors.
 	// When using the new compiler these conversions will be already handled.
-	if rc, openErr := opener(filename); openErr == nil {
-		defer rc.Close()
-		var builder strings.Builder
-		if _, readErr := io.Copy(&builder, rc); readErr == nil {
-			file := report.NewFile(filename, builder.String())
-			loc := file.Location(position.Offset, positionalEncoding)
-			utf16Col = loc.Column - 1
-		} else {
-			logger.Warn(
-				"failed to read file for diagnostic position encoding",
-				slog.String("filename", filename),
-				xslog.ErrorAttr(readErr),
-			)
-		}
+	if text, ok := opener[filename]; ok {
+		file := report.NewFile(filename, text)
+		loc := file.Location(position.Offset, positionalEncoding)
+		utf16Col = loc.Column - 1
 	} else {
 		logger.Warn(
 			"failed to open file for diagnostic position encoding",
 			slog.String("filename", filename),
-			xslog.ErrorAttr(openErr),
 		)
 	}
 
