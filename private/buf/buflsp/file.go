@@ -39,6 +39,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/seq"
+	"github.com/bufbuild/protocompile/experimental/source"
 	"go.lsp.dev/protocol"
 )
 
@@ -239,11 +240,20 @@ func (f *file) RefreshIR(ctx context.Context) {
 		slog.Int("version", int(f.version)),
 	)
 
-	files := xslices.MapValuesToSlice(f.workspace.PathToFile())
+	// Opener creates a cached view of all files in the workspace.
+	pathToFiles := f.workspace.PathToFile()
+	files := make([]*file, 0, len(pathToFiles))
+	openerMap := make(map[string]string, len(pathToFiles))
+	for path, file := range pathToFiles {
+		openerMap[path] = file.file.Text()
+		files = append(files, file)
+	}
+	opener := source.NewMap(openerMap)
+
 	session := new(ir.Session)
 	queries := xslices.Map(files, func(file *file) incremental.Query[ir.File] {
 		return queries.IR{
-			Opener:  f.workspace,
+			Opener:  opener,
 			Path:    file.objectInfo.Path(),
 			Session: session,
 		}
