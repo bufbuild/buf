@@ -275,7 +275,6 @@ func (f *file) RefreshIR(ctx context.Context) {
 		ctx, "ir diagnostic(s)",
 		slog.String("uri", f.uri.Filename()),
 		slog.Int("count", len(f.diagnostics)),
-		slog.Any("diagnostics", f.diagnostics),
 	)
 }
 
@@ -325,7 +324,6 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			f.lsp.logger.Warn(
 				"found unresolved non-reference symbol",
 				slog.String("file", f.uri.Filename()),
-				slog.Any("symbol", sym),
 			)
 			continue
 		}
@@ -352,7 +350,6 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			f.lsp.logger.Warn(
 				"found non-referenceable symbol in index",
 				slog.String("file", f.uri.Filename()),
-				slog.Any("symbol", def),
 			)
 			continue
 		}
@@ -371,7 +368,6 @@ func (f *file) IndexSymbols(ctx context.Context) {
 				f.lsp.logger.Warn(
 					"found unresolved non-reference symbol",
 					slog.String("file", f.uri.Filename()),
-					slog.Any("symbol", sym),
 				)
 				continue
 			}
@@ -385,7 +381,6 @@ func (f *file) IndexSymbols(ctx context.Context) {
 				f.lsp.logger.Warn(
 					"found reference to unknown symbol",
 					slog.String("file", f.uri.Filename()),
-					slog.Any("reference", sym),
 				)
 				continue
 			}
@@ -395,7 +390,6 @@ func (f *file) IndexSymbols(ctx context.Context) {
 				f.lsp.logger.Warn(
 					"found non-referenceable symbol in index",
 					slog.String("file", f.uri.Filename()),
-					slog.Any("symbol", def),
 				)
 				continue
 			}
@@ -661,12 +655,11 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 		idx--
 	}
 	symbol := f.symbols[idx]
-	f.lsp.logger.DebugContext(ctx, "found symbol", slog.Any("symbol", symbol))
 	// Check that cursor is before the end of the symbol. Range is half-open [Start, End).
 	if comparePositions(symbol.Range().End, cursor) < 0 {
 		return nil
 	}
-
+	f.lsp.logger.DebugContext(ctx, "found symbol", slog.Any("symbol", symbol))
 	return symbol
 }
 

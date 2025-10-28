@@ -35,7 +35,6 @@ func (l *lsp) wrapReplier(reply jsonrpc2.Replier, req jsonrpc2.Request) jsonrpc2
 			l.logger.Debug(
 				"responding",
 				slog.String("method", req.Method()),
-				slog.Any("params", result),
 			)
 		}
 
@@ -58,7 +57,6 @@ func (c *connWrapper) Call(
 	c.logger.Debug(
 		"call",
 		slog.String("method", method),
-		slog.Any("params", params),
 	)
 
 	id, err = c.Conn.Call(ctx, method, params, result)
@@ -72,7 +70,6 @@ func (c *connWrapper) Call(
 		c.logger.Debug(
 			"call returned",
 			slog.String("method", method),
-			slog.Any("result", result),
 		)
 	}
 
@@ -84,7 +81,6 @@ func (c *connWrapper) Notify(
 	c.logger.Debug(
 		"notify",
 		slog.String("method", method),
-		slog.Any("params", params),
 	)
 
 	err := c.Conn.Notify(ctx, method, params)
