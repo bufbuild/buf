@@ -612,6 +612,47 @@ func typeReferencesToCompletionItems(
 			}
 		}
 	}
+	var lastImportLine uint32
+	currentImportPaths := map[string]struct{}{}
+	for currentFileImport := range seq.Values(current.ir.Imports()) {
+		l := currentFileImport.Decl.Span().EndLoc().Line
+		if l < 0 || l > math.MaxUint32 {
+			continue // skip this import; exceptional case.
+		}
+		lastImportLine = max(uint32(l), lastImportLine)
+		currentImportPaths[currentFileImport.Path()] = struct{}{}
+	}
+	var insertPosition protocol.Position
+	if lastImportLine != 0 {
+		// add an additionalTextEdit to the end of the current imports, which can then be tidied by
+		// `buf format` to go in it's proper location.
+		insertPosition = protocol.Position{
+			Line:      lastImportLine,
+			Character: 0,
+		}
+	} else {
+		// If lastImportLine is 0, we have no imports in this file; put it after `package`, if
+		// package exists. Otherwise, after `syntax`, if it exists. Otherwise, balk.
+		// NOTE: We simply want to add the import on the next line (which may not be how `buf
+		// format` would format the file); we leave the overall file formatting to `buf format`.
+		var line int
+		switch {
+		case !current.ir.AST().Package().IsZero():
+			line = current.ir.AST().Package().Span().EndLoc().Line
+		case !current.ir.AST().Syntax().IsZero():
+			line = current.ir.AST().Syntax().Span().EndLoc().Line
+		default:
+			line = 0
+		}
+		if line < 0 || line > math.MaxUint32 {
+			// Nothing to do; exceptional case.
+		} else {
+			insertPosition = protocol.Position{
+				Line:      uint32(line),
+				Character: 0,
+			}
+		}
+	}
 	parentPrefix := string(parentFullName) + "."
 	packagePrefix := string(current.ir.Package()) + "."
 	return func(yield func(protocol.CompletionItem) bool) {
@@ -652,6 +693,18 @@ func typeReferencesToCompletionItems(
 			if _, ok := symbol.ir.Deprecated().AsBool(); ok {
 				isDeprecated = true
 			}
+			symbolFile := symbol.ir.File().Path()
+			_, hasImport := currentImportPaths[symbolFile]
+			var additionalTextEdits []protocol.TextEdit
+			if !hasImport {
+				additionalTextEdits = append(additionalTextEdits, protocol.TextEdit{
+					NewText: "import " + `"` + symbolFile + `";` + "\n",
+					Range: protocol.Range{
+						Start: insertPosition,
+						End:   insertPosition,
+					},
+				})
+			}
 			if !yield(protocol.CompletionItem{
 				Label: label,
 				Kind:  kind,
@@ -659,9 +712,9 @@ func typeReferencesToCompletionItems(
 					Range:   editRange,
 					NewText: label,
 				},
-				Deprecated:    isDeprecated,
-				Documentation: symbol.FormatDocs(),
-				// TODO: If this type's file is not currently imported add an additional edit.
+				Deprecated:          isDeprecated,
+				Documentation:       symbol.FormatDocs(),
+				AdditionalTextEdits: additionalTextEdits,
 			}) {
 				break
 			}
