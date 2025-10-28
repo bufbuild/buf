@@ -21,7 +21,6 @@
 package buflsp
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -166,16 +165,18 @@ func (s *symbol) LogValue() slog.Value {
 		)
 	}
 	attrs := []slog.Attr{
-		slog.String("file", s.span.Path()),
+		slog.String("path", s.span.Path()),
 		slog.Any("start", loc(s.span.StartLoc())),
 		slog.Any("end", loc(s.span.EndLoc())),
 	}
 	if imported, ok := s.kind.(*imported); ok {
 		attrs = append(attrs, slog.String("imported", imported.file.uri.Filename()))
 	} else if s.def != nil {
-		attrs = append(attrs, slog.String("def_file", s.def.file.uri.Filename()))
-		attrs = append(attrs, slog.Any("def_start", loc(s.def.span.StartLoc())))
-		attrs = append(attrs, slog.Any("def_end", loc(s.def.span.EndLoc())))
+		attrs = append(attrs,
+			slog.String("uri", s.def.file.uri.Filename()),
+			slog.Any("start", loc(s.span.StartLoc())),
+			slog.Any("end", loc(s.span.EndLoc())),
+		)
 	}
 	return slog.GroupValue(attrs...)
 }
@@ -184,7 +185,7 @@ func (s *symbol) LogValue() slog.Value {
 // string for showing to the client.
 //
 // Returns the empty string if no docs are available.
-func (s *symbol) FormatDocs(ctx context.Context) string {
+func (s *symbol) FormatDocs() string {
 	var def ast.DeclDef
 	switch s.kind.(type) {
 	case *imported:
@@ -265,12 +266,7 @@ func (s *symbol) FormatDocs(ctx context.Context) string {
 		reference, _ := s.kind.(*reference)
 		def = reference.def
 	}
-	var tooltip strings.Builder
-	docs := getCommentsFromDef(def)
-	if docs != "" {
-		fmt.Fprintln(&tooltip, docs)
-	}
-	return tooltip.String()
+	return getCommentsFromDef(def)
 }
 
 // GetSymbolInformation returns the protocol symbol information for the symbol.

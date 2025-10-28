@@ -25,7 +25,9 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 // errUnresolvableWorkspace is an unsupported workspace error.
@@ -71,9 +73,13 @@ func (w *workspaceManager) Cleanup(ctx context.Context) {
 		if workspace.refCount > 0 {
 			w.workspaces[index] = workspace
 			index++
-		} else {
-			w.lsp.logger.Debug("workspace: cleanup removing workspace", slog.String("parent", workspace.workspaceURI.Filename()))
+			continue // workspace leased
 		}
+		w.lsp.logger.Debug("workspace: cleanup removing workspace", slog.String("parent", workspace.workspaceURI.Filename()))
+		for _, file := range workspace.pathToFile {
+			file.Close(ctx)
+		}
+		workspace.pathToFile = nil
 	}
 	for j := index; j < len(w.workspaces); j++ {
 		w.workspaces[j] = nil
@@ -126,16 +132,19 @@ type workspace struct {
 	workspaceURI       protocol.URI // File that created this workspace.
 	workspace          bufworkspace.Workspace
 	fileNameToFileInfo map[string]bufmodule.FileInfo
+	pathToFile         map[string]*file
 	checkClient        bufcheck.Client
 }
 
 // Lease increments the reference count.
 func (w *workspace) Lease() {
+	w.lsp.logger.Debug("workspace: lease", slog.String("path", w.workspaceURI.Filename()))
 	w.refCount++
 }
 
 // Release decrements the reference count.
 func (w *workspace) Release() int {
+	w.lsp.logger.Debug("workspace: release", slog.String("path", w.workspaceURI.Filename()))
 	w.refCount--
 	return w.refCount
 }
@@ -173,6 +182,7 @@ func (w *workspace) Refresh(ctx context.Context) error {
 	w.workspace = bufWorkspace
 	w.fileNameToFileInfo = fileNameToFileInfo
 	w.checkClient = checkClient
+	w.indexFiles(ctx)
 	return nil
 }
 
@@ -217,4 +227,81 @@ func (w *workspace) CheckClient() bufcheck.Client {
 		return nil
 	}
 	return w.checkClient
+}
+
+// PathToFile is an index of all files within the workspace.
+func (w *workspace) PathToFile() map[string]*file {
+	if w == nil {
+		return nil
+	}
+	return w.pathToFile
+}
+
+// indexFiles builds the pathToFile mapping.
+func (w *workspace) indexFiles(ctx context.Context) {
+	w.lsp.logger.Debug("workspace: index files", slog.String("path", w.workspaceURI.Filename()))
+	previous := w.pathToFile
+	w.pathToFile = make(map[string]*file, len(previous))
+
+	for fileInfo := range w.fileInfos(ctx) {
+		file, ok := previous[fileInfo.Path()]
+		if !ok {
+			fileURI := uri.File(fileInfo.LocalPath())
+			file = w.lsp.fileManager.Track(fileURI)
+			w.lsp.logger.Debug("workspace: index track file", slog.String("path", file.uri.Filename()))
+		}
+
+		// Currently we only associate a file with one workspace. This assumption isn't accurate
+		// for shared dependencies. Here we update to the lastest, most recently used, workspace.
+		// This will make goto definition and find references only work in that workspace.
+		if oldWorkspace := file.workspace; oldWorkspace != nil && oldWorkspace != w {
+			oldWorkspace.Release()
+			w.Lease()
+			file.workspace = w
+		}
+
+		file.objectInfo = fileInfo
+		if err := file.ReadFromWorkspace(ctx); err != nil {
+			w.lsp.logger.Error(
+				"failed to read contents for file",
+				xslog.ErrorAttr(err),
+				slog.String("file", fileInfo.Path()),
+			)
+		}
+
+		// Update index.
+		w.pathToFile[fileInfo.Path()] = file
+		delete(previous, fileInfo.Path())
+	}
+	// Drop all unused files. It was deleted from the workspace.
+	for _, file := range previous {
+		w.lsp.logger.Debug("workspace: index drop file", slog.String("path", file.uri.Filename()))
+		file.Close(ctx)
+	}
+}
+
+// fileInfos returns all files within the workspace.
+//
+// This consists of files within the workspace plus WKTs.
+func (w *workspace) fileInfos(ctx context.Context) iter.Seq[storage.ObjectInfo] {
+	return func(yield func(storage.ObjectInfo) bool) {
+		seen := make(map[string]struct{})
+		for fileInfo := range w.FileInfo() {
+			if !yield(fileInfo) {
+				return
+			}
+			seen[fileInfo.Path()] = struct{}{}
+		}
+		// Add all wellknown types if not provided within the workspace.
+		if err := w.lsp.wktBucket.Walk(ctx, "", func(objectInfo storage.ObjectInfo) error {
+			if _, ok := seen[objectInfo.Path()]; !ok {
+				if !yield(wktObjectInfo{objectInfo}) {
+					return nil
+				}
+			}
+			return nil
+		}); err != nil {
+			w.lsp.logger.Error("wkt bucket failed", xslog.ErrorAttr(err))
+		}
+	}
 }

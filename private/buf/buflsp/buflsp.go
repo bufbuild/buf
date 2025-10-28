@@ -127,12 +127,10 @@ func (l *lsp) newHandler() jsonrpc2.Handler {
 		l.logger.Debug(
 			"handling request",
 			slog.String("method", req.Method()),
-			slog.Any("params", req.Params()),
 		)
 		defer xslog.DebugProfile(
 			l.logger,
 			slog.String("method", req.Method()),
-			slog.Any("params", req.Params()),
 		)()
 
 		replier := l.wrapReplier(reply, req)
