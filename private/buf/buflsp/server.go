@@ -124,7 +124,7 @@ func (s *server) Initialize(
 			},
 			CompletionProvider: &protocol.CompletionOptions{
 				ResolveProvider:   true,
-				TriggerCharacters: []string{" ", ".", "(", "\"", "/"},
+				TriggerCharacters: []string{".", "\"", "/"},
 			},
 			DefinitionProvider: &protocol.DefinitionOptions{
 				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},

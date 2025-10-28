@@ -109,10 +109,6 @@ func completionItemsForDeclPath(ctx context.Context, file *file, declPath []ast.
 func completionItemsForSyntax(ctx context.Context, file *file, syntaxDecl ast.DeclSyntax) []protocol.CompletionItem {
 	file.lsp.logger.DebugContext(ctx, "completion: syntax declaration", slog.Bool("is_edition", syntaxDecl.IsEdition()))
 
-	var prefix string
-	if syntaxDecl.Equals().IsZero() {
-		prefix += "= "
-	}
 	var syntaxes iter.Seq[syntax.Syntax]
 	if syntaxDecl.IsEdition() {
 		syntaxes = syntax.Editions()
@@ -122,11 +118,17 @@ func completionItemsForSyntax(ctx context.Context, file *file, syntaxDecl ast.De
 				yield(syntax.Proto3)
 		}
 	}
+	syntaxRange := reportSpanToProtocolRange(syntaxDecl.Span())
+
 	var items []protocol.CompletionItem
 	for syntax := range syntaxes {
 		items = append(items, protocol.CompletionItem{
-			Label: fmt.Sprintf("%s%q;", prefix, syntax),
+			Label: syntax.String(),
 			Kind:  protocol.CompletionItemKindValue,
+			TextEdit: &protocol.TextEdit{
+				Range:   syntaxRange,
+				NewText: fmt.Sprintf("%s = %q;", syntaxDecl.Keyword(), syntax),
+			},
 		})
 	}
 	return items
