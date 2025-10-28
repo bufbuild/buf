@@ -653,9 +653,13 @@ func typeReferencesToCompletionItems(
 			}
 			symbolFile := symbol.ir.File().Path()
 			missingImport := true
-			var lastImportLine int
+			var lastImportLine uint32
 			for currentFileImport := range seq.Values(current.ir.Imports()) {
-				lastImportLine = max(currentFileImport.Decl.Span().StartLoc().Line)
+				l := currentFileImport.Decl.Span().StartLoc().Line
+				if l < 0 || l > math.MaxUint32 {
+					return
+				}
+				lastImportLine = max(uint32(l), lastImportLine)
 				if currentFileImport.Path() == symbolFile {
 					missingImport = false
 					break
@@ -668,7 +672,7 @@ func typeReferencesToCompletionItems(
 					// add an additionalTextEdit to the end of the current imports, which can then be tidied by
 					// `buf format` to go in it's proper location.
 					insertPosition = protocol.Position{
-						Line:      uint32(lastImportLine),
+						Line:      lastImportLine,
 						Character: 0,
 					}
 				} else {
@@ -685,6 +689,9 @@ func typeReferencesToCompletionItems(
 					default:
 						// We won't add an import in this case.
 						line = 0
+					}
+					if line < 0 || line > math.MaxUint32 {
+						return
 					}
 					insertPosition = protocol.Position{
 						Line:      uint32(line),
