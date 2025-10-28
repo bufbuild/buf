@@ -165,16 +165,18 @@ func (s *symbol) LogValue() slog.Value {
 		)
 	}
 	attrs := []slog.Attr{
-		slog.String("file", s.span.Path()),
+		slog.String("path", s.span.Path()),
 		slog.Any("start", loc(s.span.StartLoc())),
 		slog.Any("end", loc(s.span.EndLoc())),
 	}
 	if imported, ok := s.kind.(*imported); ok {
 		attrs = append(attrs, slog.String("imported", imported.file.uri.Filename()))
 	} else if s.def != nil {
-		attrs = append(attrs, slog.String("def_file", s.def.file.uri.Filename()))
-		attrs = append(attrs, slog.Any("def_start", loc(s.def.span.StartLoc())))
-		attrs = append(attrs, slog.Any("def_end", loc(s.def.span.EndLoc())))
+		attrs = append(attrs,
+			slog.String("uri", s.def.file.uri.Filename()),
+			slog.Any("start", loc(s.span.StartLoc())),
+			slog.Any("end", loc(s.span.EndLoc())),
+		)
 	}
 	return slog.GroupValue(attrs...)
 }

@@ -60,8 +60,6 @@ func getCompletionItems(
 			ctx,
 			"completion: found declaration",
 			slog.String("decl_kind", decl.Kind().String()),
-			slog.Any("decl_span_start", decl.Span().StartLoc()),
-			slog.Any("decl_span_end", decl.Span().EndLoc()),
 			slog.Int("path_depth", len(declPath)),
 		)
 	} else {
@@ -160,8 +158,6 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		slog.String("name", def.Name().Span().String()),
 		slog.String("def_kind", def.Classify().String()),
 		slog.Int("path_depth", len(declPath)),
-		slog.Any("decl_span_start", def.Span().StartLoc()),
-		slog.Any("decl_span_end", def.Span().EndLoc()),
 	)
 
 	// Check if cursor is in the name of the definition, if so ignore.
