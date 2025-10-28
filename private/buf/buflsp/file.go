@@ -89,13 +89,15 @@ func (f *file) Manager() *fileManager {
 	return f.lsp.fileManager
 }
 
-// Reset clears all bookkeeping information on this file.
+// Reset clears all bookkeeping information on this file and resets it.
 func (f *file) Reset(ctx context.Context) {
 	f.lsp.logger.DebugContext(ctx, "resetting file", slog.String("uri", f.uri.Filename()))
-
-	f.ir = ir.File{}
-	f.diagnostics = nil
-	f.symbols = nil
+	if f.workspace != nil {
+		f.workspace.Release()
+		f.workspace = nil
+	}
+	// Clear the file as nothing should use it after reset. This asserts that.
+	*f = file{}
 }
 
 // Close marks a file as closed.
@@ -104,10 +106,6 @@ func (f *file) Reset(ctx context.Context) {
 // for this file.
 func (f *file) Close(ctx context.Context) {
 	f.Manager().Close(ctx, f.uri)
-	if f.workspace != nil {
-		f.workspace.Release()
-		f.workspace = nil
-	}
 }
 
 // IsOpenInEditor returns whether this file was opened in the LSP client's
@@ -159,38 +157,15 @@ func (f *file) ReadFromWorkspace(ctx context.Context) (err error) {
 // Update updates the contents of this file with the given text received from
 // the LSP client.
 func (f *file) Update(ctx context.Context, version int32, text string) {
-	f.Reset(ctx)
-	f.CancelChecks(ctx)
-
 	f.lsp.logger.InfoContext(ctx, "file updated", slog.String("uri", f.uri.Filename()), slog.Int("old_version", int(f.version)), slog.Int("new_version", int(version)))
 	f.version = version
 	f.file = report.NewFile(f.uri.Filename(), text)
 	f.hasText = true
-}
 
-// Refresh rebuilds all of a file's internal book-keeping.
-func (f *file) Refresh(ctx context.Context) {
-	var progress *progress
-	if f.IsOpenInEditor() {
-		// NOTE: Nil progress does nothing when methods are called. This helps
-		// minimize RPC spam from the client when indexing lots of files.
-		progress = newProgress(f.lsp)
-	}
-	progress.Begin(ctx, "Indexing")
-
-	progress.Report(ctx, "Setting workspace", 1.0/4)
-	f.RefreshWorkspace(ctx)
-
-	progress.Report(ctx, "Parsing IR", 2.0/4)
+	f.CancelChecks(ctx)
 	f.RefreshIR(ctx)
-
-	progress.Report(ctx, "Indexing Symbols", 3.0/4)
 	f.IndexSymbols(ctx)
-
-	progress.Report(ctx, "Running Checks", 4.0/4)
 	f.RunChecks(ctx)
-
-	progress.Done(ctx)
 
 	// NOTE: Diagnostics are published unconditionally. This is necessary even
 	// if we have zero diagnostics, so that the client correctly ticks over from
@@ -198,7 +173,7 @@ func (f *file) Refresh(ctx context.Context) {
 	f.PublishDiagnostics(ctx)
 }
 
-// RefreshWorkspace builds the workspace for the current file and sets the workspace it.
+// RefreshWorkspace rebuilds the workspace for the current file and sets the workspace.
 //
 // The Buf workspace provides the sources for the compiler to work with.
 func (f *file) RefreshWorkspace(ctx context.Context) {
@@ -232,13 +207,15 @@ func (f *file) RefreshWorkspace(ctx context.Context) {
 // RefreshIR queries for the IR of the file and the IR of each import file.
 // Diagnostics from the compiler are returned when applicable.
 //
-// This operation requires IndexImports.
+// This operation requires a workspace.
 func (f *file) RefreshIR(ctx context.Context) {
 	f.lsp.logger.Info(
 		"parsing IR for file",
 		slog.String("uri", string(f.uri)),
 		slog.Int("version", int(f.version)),
 	)
+	f.diagnostics = nil
+	f.ir = ir.File{}
 
 	// Opener creates a cached view of all files in the workspace.
 	pathToFiles := f.workspace.PathToFile()
@@ -320,7 +297,9 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	f.referenceableSymbols = make(map[string]*symbol)
 
 	// Process all imports as symbols
-	f.symbols = xslices.Map(seq.ToSlice(f.ir.Imports()), f.importToSymbol)
+	for imp := range seq.Values(f.ir.Imports()) {
+		f.symbols = append(f.symbols, f.importToSymbol(imp))
+	}
 
 	resolved, unresolved := f.indexSymbols()
 	f.symbols = append(f.symbols, resolved...)
@@ -706,14 +685,14 @@ func (f *file) RunChecks(ctx context.Context) {
 	}
 	f.CancelChecks(ctx)
 
-	path := f.objectInfo.Path()
 	workspace := f.workspace.Workspace()
 	module := f.workspace.GetModule(f.uri)
 	checkClient := f.workspace.CheckClient()
-	if workspace == nil || module == nil || checkClient == nil {
+	if workspace == nil || module == nil || checkClient == nil || f.objectInfo == nil {
 		f.lsp.logger.Debug("checks skipped", slog.String("uri", f.uri.Filename()))
 		return
 	}
+	path := f.objectInfo.Path()
 
 	opener := make(fileOpener)
 	for path, file := range f.workspace.PathToFile() {

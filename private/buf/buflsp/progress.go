@@ -16,8 +16,6 @@ package buflsp
 
 import (
 	"context"
-	"fmt"
-	"math/rand/v2"
 
 	"go.lsp.dev/protocol"
 )
@@ -31,14 +29,6 @@ type progress struct {
 	token string
 }
 
-// Creates new server-initiated progress.
-func newProgress(lsp *lsp) *progress {
-	return &progress{
-		lsp:   lsp,
-		token: fmt.Sprintf("%016x", rand.Uint64()),
-	}
-}
-
 // Creates progress to track client-initiated progress.
 //
 // If params is nil (i.e., the client doesn't want progress) this returns a nil progress
@@ -47,7 +37,6 @@ func newProgressFromClient(lsp *lsp, params *protocol.WorkDoneProgressParams) *p
 	if params == nil || params.WorkDoneToken == nil {
 		return nil
 	}
-
 	return &progress{
 		lsp:   lsp,
 		token: params.WorkDoneToken.String(),
