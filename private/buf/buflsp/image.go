@@ -90,9 +90,10 @@ func buildImage(
 			})
 		}
 	}
-	if compiled[0] == nil {
-		return nil, nil
+	if len(compiled) == 0 || compiled[0] == nil {
+		return nil, nil // Image failed to build.
 	}
+	compiledFile := compiled[0]
 
 	syntaxMissing := make(map[string]bool)
 	pathToUnusedImports := make(map[string]map[string]bool)
@@ -113,7 +114,7 @@ func buildImage(
 	var imageFiles []bufimage.ImageFile
 	seen := map[string]bool{}
 
-	queue := []protoreflect.FileDescriptor{compiled[0]}
+	queue := []protoreflect.FileDescriptor{compiledFile}
 	for len(queue) > 0 {
 		descriptor := queue[len(queue)-1]
 		queue = queue[:len(queue)-1]
