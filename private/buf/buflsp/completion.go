@@ -680,7 +680,7 @@ func typeReferencesToCompletionItems(
 			symbolFile := symbol.ir.File().Path()
 			_, hasImport := currentImportPaths[symbolFile]
 			var additionalTextEdits []protocol.TextEdit
-			if !hasImport {
+			if !hasImport && symbolFile != current.ir.Path() {
 				additionalTextEdits = append(additionalTextEdits, protocol.TextEdit{
 					NewText: "import " + `"` + symbolFile + `";` + "\n",
 					Range: protocol.Range{
