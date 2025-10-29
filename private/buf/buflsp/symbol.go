@@ -307,6 +307,8 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 		kind = protocol.SymbolKindInterface // Services are like interfaces
 	case ir.SymbolKindMethod:
 		kind = protocol.SymbolKindMethod
+	case ir.SymbolKindScalar:
+		kind = protocol.SymbolKindConstant
 	default:
 		kind = protocol.SymbolKindVariable
 	}
