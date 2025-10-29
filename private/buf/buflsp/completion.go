@@ -716,7 +716,8 @@ func typeReferencesToCompletionItems(
 		editRange := reportSpanToProtocolRange(span)
 		prefix, _ := splitSpan(span, offset)
 		// Prefix filter on the trigger character '.', if present.
-		prefix = prefix[:strings.LastIndexByte(prefix, '.')+1]
+		dotPrefix := prefix[:strings.LastIndexByte(prefix, '.')+1]
+		contains := strings.TrimPrefix(prefix, dotPrefix)
 		for _, symbol := range fileSymbolTypesIter {
 			// We only support types in this completion instance, and not scalar values, which leaves us
 			// with messages and enums.
@@ -735,7 +736,7 @@ func typeReferencesToCompletionItems(
 			} else if strings.HasPrefix(label, packagePrefix) {
 				label = label[len(packagePrefix):]
 			}
-			if !strings.HasPrefix(label, prefix) {
+			if !strings.HasPrefix(label, dotPrefix) || !strings.Contains(label, contains) {
 				continue
 			}
 			var isDeprecated bool
