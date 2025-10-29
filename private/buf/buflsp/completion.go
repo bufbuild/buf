@@ -262,7 +262,7 @@ func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.D
 			),
 			keywordToCompletionItem(
 				predeclaredTypeKeywords(),
-				protocol.CompletionItemKindClass,
+				protocol.CompletionItemKindKeyword,
 				tokenSpan,
 				offset,
 			),
@@ -377,7 +377,7 @@ func completionItemsForField(ctx context.Context, file *file, declPath []ast.Dec
 			iters = append(iters,
 				keywordToCompletionItem(
 					predeclaredTypeKeywords(),
-					protocol.CompletionItemKindClass,
+					protocol.CompletionItemKindKeyword,
 					tokenSpan,
 					offset,
 				),
@@ -643,8 +643,16 @@ func typeReferencesToCompletionItems(
 		editRange := reportSpanToProtocolRange(span)
 		prefix, suffix := splitSpan(span, offset)
 		for _, symbol := range fileSymbolTypesIter {
-			if !symbol.ir.Kind().IsType() {
-				continue
+			// We only support types in this completion instance, and not scalar values, which leaves us
+			// with messages and enums.
+			var kind protocol.CompletionItemKind
+			switch symbol.ir.Kind() {
+			case ir.SymbolKindMessage:
+				kind = protocol.CompletionItemKindClass // Messages are like classes
+			case ir.SymbolKindEnum:
+				kind = protocol.CompletionItemKindEnum
+			default:
+				continue // Unsupported kind, skip it.
 			}
 			label := string(symbol.ir.FullName())
 			if strings.HasPrefix(label, parentPrefix) {
@@ -654,24 +662,6 @@ func typeReferencesToCompletionItems(
 			}
 			if !strings.HasPrefix(label, prefix) || !strings.HasSuffix(label, suffix) {
 				continue
-			}
-			var kind protocol.CompletionItemKind
-			switch symbol.ir.Kind() {
-			case ir.SymbolKindMessage:
-				kind = protocol.CompletionItemKindStruct
-			case ir.SymbolKindEnum:
-				kind = protocol.CompletionItemKindEnum
-			case ir.SymbolKindService:
-				kind = protocol.CompletionItemKindInterface
-			case ir.SymbolKindScalar:
-				kind = protocol.CompletionItemKindClass
-			case ir.SymbolKindPackage:
-				kind = protocol.CompletionItemKindModule
-			case ir.SymbolKindField, ir.SymbolKindEnumValue, ir.SymbolKindExtension, ir.SymbolKindOneof, ir.SymbolKindMethod:
-				// These should be skipped by IsType() filter.
-			}
-			if kind == 0 {
-				continue // Unsupported kind, skip it.
 			}
 			var isDeprecated bool
 			if _, ok := symbol.ir.Deprecated().AsBool(); ok {
