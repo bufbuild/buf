@@ -714,6 +714,9 @@ func typeReferencesToCompletionItems(
 	packagePrefix := string(current.ir.Package()) + "."
 	return func(yield func(protocol.CompletionItem) bool) {
 		editRange := reportSpanToProtocolRange(span)
+		prefix, _ := splitSpan(span, offset)
+		// Prefix filter on the trigger character '.', if present.
+		prefix = prefix[:strings.LastIndexByte(prefix, '.')+1]
 		for _, symbol := range fileSymbolTypesIter {
 			if !symbol.ir.Kind().IsType() {
 				continue
@@ -723,6 +726,9 @@ func typeReferencesToCompletionItems(
 				label = label[len(parentPrefix):]
 			} else if strings.HasPrefix(label, packagePrefix) {
 				label = label[len(packagePrefix):]
+			}
+			if !strings.HasPrefix(label, prefix) {
+				continue
 			}
 			var kind protocol.CompletionItemKind
 			switch symbol.ir.Kind() {
