@@ -122,7 +122,7 @@ func (s *server) Initialize(
 			},
 			CompletionProvider: &protocol.CompletionOptions{
 				ResolveProvider:   true,
-				TriggerCharacters: []string{" ", ".", "(", "\"", "/"},
+				TriggerCharacters: []string{".", "\"", "/"},
 			},
 			DefinitionProvider:         &protocol.DefinitionOptions{},
 			TypeDefinitionProvider:     &protocol.TypeDefinitionOptions{},
