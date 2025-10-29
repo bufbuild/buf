@@ -102,8 +102,6 @@ func (s *server) Initialize(
 		TokenModifiers []string `json:"tokenModifiers"`
 	}
 	type SemanticTokensOptions struct {
-		protocol.WorkDoneProgressOptions
-
 		Legend SemanticTokensLegend `json:"legend"`
 		Full   bool                 `json:"full"`
 	}
@@ -126,19 +124,12 @@ func (s *server) Initialize(
 				ResolveProvider:   true,
 				TriggerCharacters: []string{".", "\"", "/"},
 			},
-			DefinitionProvider: &protocol.DefinitionOptions{
-				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
-			},
-			TypeDefinitionProvider: &protocol.TypeDefinitionOptions{
-				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
-			},
+			DefinitionProvider:         &protocol.DefinitionOptions{},
+			TypeDefinitionProvider:     &protocol.TypeDefinitionOptions{},
 			DocumentFormattingProvider: true,
 			HoverProvider:              true,
-			ReferencesProvider: &protocol.ReferenceOptions{
-				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
-			},
+			ReferencesProvider:         &protocol.ReferenceOptions{},
 			SemanticTokensProvider: &SemanticTokensOptions{
-				WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{WorkDoneProgress: true},
 				Legend: SemanticTokensLegend{
 					TokenTypes:     semanticTypeLegend,
 					TokenModifiers: semanticModifierLegend,
@@ -356,7 +347,7 @@ func (s *server) Definition(
 	ctx context.Context,
 	params *protocol.DefinitionParams,
 ) ([]protocol.Location, error) {
-	return s.definition(ctx, params.TextDocument.URI, &params.WorkDoneProgressParams, params.Position)
+	return s.definition(ctx, params.TextDocument.URI, params.Position)
 }
 
 // TypeDefinition is the entry point for go-to-type-definition.
@@ -364,25 +355,16 @@ func (s *server) TypeDefinition(
 	ctx context.Context,
 	params *protocol.TypeDefinitionParams,
 ) ([]protocol.Location, error) {
-	return s.definition(ctx, params.TextDocument.URI, &params.WorkDoneProgressParams, params.Position)
+	return s.definition(ctx, params.TextDocument.URI, params.Position)
 }
 
 // definition powers [server.Definition] and [server.TypeDefinition], as they are not meaningfully
 // different in protobuf, but users may be used to using either.
-func (s *server) definition(
-	ctx context.Context,
-	uri protocol.URI,
-	workDoneProgressParams *protocol.WorkDoneProgressParams,
-	position protocol.Position,
-) ([]protocol.Location, error) {
+func (s *server) definition(ctx context.Context, uri protocol.URI, position protocol.Position) ([]protocol.Location, error) {
 	file := s.fileManager.Get(uri)
 	if file == nil {
 		return nil, nil
 	}
-
-	progress := newProgressFromClient(s.lsp, workDoneProgressParams)
-	progress.Begin(ctx, "Searching")
-	defer progress.Done(ctx)
 
 	symbol := file.SymbolAt(ctx, position)
 	if symbol == nil {
@@ -403,10 +385,6 @@ func (s *server) References(
 	if file == nil {
 		return nil, nil
 	}
-	progress := newProgressFromClient(s.lsp, &params.WorkDoneProgressParams)
-	progress.Begin(ctx, "Searching")
-	defer progress.Done(ctx)
-
 	symbol := file.SymbolAt(ctx, params.Position)
 	if symbol == nil {
 		return nil, nil
@@ -449,9 +427,6 @@ func (s *server) SemanticTokensFull(
 	if file == nil {
 		return nil, nil
 	}
-	progress := newProgressFromClient(s.lsp, &params.WorkDoneProgressParams)
-	progress.Begin(ctx, "Processing Tokens")
-	defer progress.Done(ctx)
 	// In the case where there are no symbols for the file, we return nil for SemanticTokensFull.
 	// This is based on the specification for the method textDocument/semanticTokens/full,
 	// the expected response is the union type `SemanticTokens | null`.
@@ -465,8 +440,7 @@ func (s *server) SemanticTokensFull(
 		encoded           []uint32
 		prevLine, prevCol uint32
 	)
-	for i, symbol := range file.symbols {
-		progress.Report(ctx, fmt.Sprintf("%d/%d", i+1, len(file.symbols)), float64(i)/float64(len(file.symbols)))
+	for _, symbol := range file.symbols {
 		var semanticType uint32
 		if symbol.isOption {
 			semanticType = semanticTypeDecorator
