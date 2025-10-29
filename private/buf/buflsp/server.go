@@ -45,6 +45,12 @@ const (
 	semanticTypeInterface
 	semanticTypeMethod
 	semanticTypeDecorator
+	semanticTypeNamespace
+)
+
+const (
+	semanticModifierDeprecated = 1 << iota
+	semanticModifierDefaultLibrary
 )
 
 var (
@@ -52,8 +58,12 @@ var (
 	semanticTypeLegend = []string{
 		"type", "struct", "variable", "enum",
 		"enumMember", "interface", "method", "decorator",
+		"namespace",
 	}
-	semanticModifierLegend = []string{}
+	semanticModifierLegend = []string{
+		"deprecated",
+		"defaultLibrary", // builtin
+	}
 )
 
 // server is an implementation of [protocol.Server].
@@ -442,10 +452,13 @@ func (s *server) SemanticTokensFull(
 	)
 	for _, symbol := range file.symbols {
 		var semanticType uint32
+		var semanticModifier uint32
 		if symbol.isOption {
 			semanticType = semanticTypeDecorator
 		} else {
 			switch symbol.ir.Kind() {
+			case ir.SymbolKindPackage:
+				semanticType = semanticTypeNamespace
 			case ir.SymbolKindMessage:
 				semanticType = semanticTypeStruct
 			case ir.SymbolKindEnum:
@@ -454,6 +467,7 @@ func (s *server) SemanticTokensFull(
 				// For predeclared types, we set semanticType to semanticTypeType
 				if symbol.IsBuiltIn() {
 					semanticType = semanticTypeType
+					semanticModifier += semanticModifierDefaultLibrary
 				} else {
 					semanticType = semanticTypeVariable
 				}
@@ -468,6 +482,9 @@ func (s *server) SemanticTokensFull(
 			default:
 				continue
 			}
+		}
+		if _, ok := symbol.ir.Deprecated().AsBool(); ok {
+			semanticModifier += semanticModifierDeprecated
 		}
 
 		startLocation := symbol.span.Location(symbol.span.Start, positionalEncoding)
@@ -486,7 +503,7 @@ func (s *server) SemanticTokensFull(
 			if i == startLocation.Line {
 				symbolLen -= uint32(startLocation.Column - 1)
 			}
-			encoded = append(encoded, newLine-prevLine, newCol, symbolLen, semanticType, 0)
+			encoded = append(encoded, newLine-prevLine, newCol, symbolLen, semanticType, semanticModifier)
 			prevLine = newLine
 			if i == startLocation.Line {
 				prevCol = uint32(startLocation.Column - 1)
