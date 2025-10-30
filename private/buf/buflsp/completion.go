@@ -233,7 +233,6 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 	if !def.Name().IsZero() {
 		span.End = def.Name().Span().End
 	}
-
 	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
 	offset := positionLocation.Offset
 
@@ -269,20 +268,6 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		return nil
 	}
 
-	// Walk the token stream, find all prefix and suffic values.
-	if _, after := file.ir.AST().Context().Stream().Stream().Around(typeSpan.Start); !after.IsZero() {
-		cursor := token.NewCursorAt(after)
-		file.lsp.logger.DebugContext(ctx, "completion: GOT token", slog.String("token", after.Span().Text()))
-		for {
-			token := cursor.Next()
-			file.lsp.logger.DebugContext(ctx, "completion: GOT next", slog.String("token", token.Span().Text()))
-			if token.IsZero() || token.Span().End >= typeSpan.End {
-				file.lsp.logger.DebugContext(ctx, "completion: reached end", slog.String("token", token.Span().Text()))
-				break
-			}
-		}
-	}
-
 	// Compute the heuristics for completion. Use strings over the token stream for whitespace handling.
 	prefixCount := 0
 	hasDeclaration := false
@@ -297,18 +282,6 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		file.lsp.logger.DebugContext(ctx, "completion: definition suffix", slog.String("suffix", value))
 		suffixCount++
 	}
-	file.lsp.logger.DebugContext(
-		ctx, "completion: definition value",
-		slog.String("token", tokenSpan.Text()),
-		slog.String("token_prefix", tokenPrefix),
-		slog.String("token_suffix", tokenSuffix),
-		slog.String("type", typeSpan.Text()),
-		slog.String("type_prefix", tokenPrefix),
-		slog.String("type_suffix", tokenSuffix),
-		slog.Int("prefix_count", prefixCount),
-		slog.Int("suffix_count", suffixCount),
-		slog.Bool("has_declaration", hasDeclaration),
-	)
 
 	// If at the top level, and on the first item, return top level keywords.
 	if len(declPath) == 1 && prefixCount == 0 {
@@ -846,22 +819,6 @@ func splitSpan(span report.Span, offset int) (prefix string, suffix string) {
 
 func offsetInSpan(span report.Span, offset int) bool {
 	return span.Start <= offset && offset <= span.End // End is inclusive for completions_
-}
-
-// isNewlineOrEndOfSpan returns true if this offset is separated by a newline or at the end of the span.
-// This most likely means we are at the start of a new declaration.
-func isNewlineOrEndOfSpan(span report.Span, offset int) bool {
-	if offset == span.End {
-		return true
-	}
-	text := span.Text()
-	index := offset - span.Start
-	if newLine := strings.IndexByte(text[index:], '\n'); newLine >= 0 {
-		// Newline separates the end, check theres no dangling content after us on this line.
-		after := text[index : index+newLine]
-		return len(strings.TrimSpace(after)) == 0
-	}
-	return false
 }
 
 // isProto2 returns true if the file has a syntax declaration of proto2.
