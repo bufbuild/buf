@@ -272,6 +272,8 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 	case ast.DefKindMessage, ast.DefKindService, ast.DefKindEnum:
 		return nil // ignored
 	case ast.DefKindField, ast.DefKindInvalid:
+		// Use DefKindField and DefKindInvalid as completion starts.
+		// An invalid field is caused from partial values, with still invalid syntax.
 	default:
 		file.lsp.logger.DebugContext(ctx, "completion: unknown definition type", slog.String("kind", def.Classify().String()))
 		return nil
