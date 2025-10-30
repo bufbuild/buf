@@ -36,6 +36,9 @@ const (
 	maxSymbolResults = 1000
 )
 
+// The subset of SemanticTokenTypes that we support.
+// Must match the order of [semanticTypeLegend].
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_semanticTokens
 const (
 	semanticTypeType = iota
 	semanticTypeStruct
@@ -45,15 +48,35 @@ const (
 	semanticTypeInterface
 	semanticTypeMethod
 	semanticTypeDecorator
+	semanticTypeNamespace
+)
+
+// The subset of SemanticTokenModifiers that we support.
+// Must match the order of [semanticModifierLegend].
+// Semantic modifiers are encoded as a bitset, hence the shifted iota.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_semanticTokens
+const (
+	semanticModifierDeprecated = 1 << iota
+	semanticModifierDefaultLibrary
 )
 
 var (
-	// These slices must match the order of the indices in the above const block.
+	// These slices must match the order of the indices in the above const blocks.
 	semanticTypeLegend = []string{
-		"type", "struct", "variable", "enum",
-		"enumMember", "interface", "method", "decorator",
+		"type",
+		"struct",
+		"variable",
+		"enum",
+		"enumMember",
+		"interface",
+		"method",
+		"decorator",
+		"namespace",
 	}
-	semanticModifierLegend = []string{}
+	semanticModifierLegend = []string{
+		"deprecated",
+		"defaultLibrary", // maps to builtin values
+	}
 )
 
 // server is an implementation of [protocol.Server].
@@ -442,10 +465,13 @@ func (s *server) SemanticTokensFull(
 	)
 	for _, symbol := range file.symbols {
 		var semanticType uint32
+		var semanticModifier uint32
 		if symbol.isOption {
 			semanticType = semanticTypeDecorator
 		} else {
 			switch symbol.ir.Kind() {
+			case ir.SymbolKindPackage:
+				semanticType = semanticTypeNamespace
 			case ir.SymbolKindMessage:
 				semanticType = semanticTypeStruct
 			case ir.SymbolKindEnum:
@@ -454,6 +480,7 @@ func (s *server) SemanticTokensFull(
 				// For predeclared types, we set semanticType to semanticTypeType
 				if symbol.IsBuiltIn() {
 					semanticType = semanticTypeType
+					semanticModifier += semanticModifierDefaultLibrary
 				} else {
 					semanticType = semanticTypeVariable
 				}
@@ -468,6 +495,9 @@ func (s *server) SemanticTokensFull(
 			default:
 				continue
 			}
+		}
+		if _, ok := symbol.ir.Deprecated().AsBool(); ok {
+			semanticModifier += semanticModifierDeprecated
 		}
 
 		startLocation := symbol.span.Location(symbol.span.Start, positionalEncoding)
@@ -486,7 +516,7 @@ func (s *server) SemanticTokensFull(
 			if i == startLocation.Line {
 				symbolLen -= uint32(startLocation.Column - 1)
 			}
-			encoded = append(encoded, newLine-prevLine, newCol, symbolLen, semanticType, 0)
+			encoded = append(encoded, newLine-prevLine, newCol, symbolLen, semanticType, semanticModifier)
 			prevLine = newLine
 			if i == startLocation.Line {
 				prevCol = uint32(startLocation.Column - 1)
