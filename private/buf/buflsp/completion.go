@@ -224,79 +224,94 @@ func completionItemsForPackage(ctx context.Context, file *file, syntaxPackage as
 
 // completionItemsForDef returns completion items for definition declarations (message, enum, service, etc.).
 func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclAny, def ast.DeclDef, position protocol.Position) []protocol.CompletionItem {
+	// Extract the span of the definition to include the type and name.
+	// We only complete in types, but the type may be capture in the name for an unfinished def.
+	span := def.Span()
+	if !def.Type().IsZero() {
+		span.Start = def.Type().Span().Start
+	}
+	if !def.Name().IsZero() {
+		span.End = def.Name().Span().End
+	}
+
+	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
+	offset := positionLocation.Offset
+
+	tokenSpan := extractAroundToken(file, offset)
+	tokenPrefix, tokenSuffix := splitSpan(tokenSpan, offset)
+	typeSpan := extractLine(span, offset)
+	typePrefix, typeSuffix := splitSpan(typeSpan, offset)
+
 	file.lsp.logger.DebugContext(
 		ctx,
 		"completion: definition",
 		slog.String("type", def.Type().Span().String()),
 		slog.String("name", def.Name().Span().String()),
+		slog.String("span", span.String()),
 		slog.String("def_kind", def.Classify().String()),
 		slog.Int("path_depth", len(declPath)),
 	)
-
-	// Check if cursor is in the name of the definition, if so ignore.
-	if !def.Name().IsZero() {
-		nameSpan := def.Name().Span()
-		within := reportSpanToProtocolRange(nameSpan)
-		if positionInRange(position, within) == 0 {
-			file.lsp.logger.DebugContext(
-				ctx,
-				"completion: ignoring definition name",
-				slog.String("kind", def.Classify().String()),
-			)
-			return nil
-		}
-	}
-	// Check if the cursor is outside the type, if so ignore.
-	if !def.Type().IsZero() {
-		typeSpan := def.Type().Span()
-		within := reportSpanToProtocolRange(typeSpan)
-		if positionInRange(position, within) > 0 {
-			file.lsp.logger.DebugContext(
-				ctx,
-				"completion: ignoring definition passed type",
-				slog.String("kind", def.Classify().String()),
-			)
-			return nil
-		}
+	if !offsetInSpan(typeSpan, offset) {
+		file.lsp.logger.DebugContext(
+			ctx,
+			"completion: ignoring definition outside type and name",
+			slog.String("kind", def.Classify().String()),
+		)
+		return nil
 	}
 
 	switch def.Classify() {
-	case ast.DefKindMessage:
-		return nil
-	case ast.DefKindService:
-		return nil
-	case ast.DefKindEnum:
-		return nil
-	case ast.DefKindField:
-		return completionItemsForField(ctx, file, declPath, def, position)
-	case ast.DefKindInvalid:
-		return completionItemsForKeyword(ctx, file, declPath, def, position)
+	case ast.DefKindMessage, ast.DefKindService, ast.DefKindEnum:
+		return nil // ignored
+	case ast.DefKindField, ast.DefKindInvalid:
 	default:
 		file.lsp.logger.DebugContext(ctx, "completion: unknown definition type", slog.String("kind", def.Classify().String()))
 		return nil
 	}
-}
 
-// completionItemsForKeyword returns completion items for a declaration expecting keywords.
-func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.DeclAny, def ast.DeclDef, position protocol.Position) []protocol.CompletionItem {
-	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
-	offset := positionLocation.Offset
-	span := def.Span()
-
-	// Check if at newline or end of span. Keywords are restricted to the first identifier.
-	if !isNewlineOrEndOfSpan(span, offset) {
-		if len(declPath) > 1 {
-			return completionItemsForField(ctx, file, declPath, def, position)
+	// Walk the token stream, find all prefix and suffic values.
+	if _, after := file.ir.AST().Context().Stream().Stream().Around(typeSpan.Start); !after.IsZero() {
+		cursor := token.NewCursorAt(after)
+		file.lsp.logger.DebugContext(ctx, "completion: GOT token", slog.String("token", after.Span().Text()))
+		for {
+			token := cursor.Next()
+			file.lsp.logger.DebugContext(ctx, "completion: GOT next", slog.String("token", token.Span().Text()))
+			if token.IsZero() || token.Span().End >= typeSpan.End {
+				file.lsp.logger.DebugContext(ctx, "completion: reached end", slog.String("token", token.Span().Text()))
+				break
+			}
 		}
-		file.lsp.logger.Debug("completion: keyword skip on span bounds", slog.String("span", span.Text()))
-		return nil
 	}
 
-	tokenSpan := extractAroundToken(file, offset)
-	file.lsp.logger.DebugContext(ctx, "completion: keyword items", slog.String("span", span.Text()))
+	// Compute the heuristics for completion. Use strings over the token stream for whitespace handling.
+	prefixCount := 0
+	hasDeclaration := false
+	for value := range strings.FieldsSeq(strings.TrimSuffix(typePrefix, tokenPrefix)) {
+		file.lsp.logger.DebugContext(ctx, "completion: definition prefix", slog.String("prefix", value))
+		_, isDeclaration := declarationSet[value]
+		hasDeclaration = hasDeclaration || isDeclaration
+		prefixCount++
+	}
+	suffixCount := 0
+	for value := range strings.FieldsSeq(strings.TrimPrefix(typeSuffix, tokenSuffix)) {
+		file.lsp.logger.DebugContext(ctx, "completion: definition suffix", slog.String("suffix", value))
+		suffixCount++
+	}
+	file.lsp.logger.DebugContext(
+		ctx, "completion: definition value",
+		slog.String("token", tokenSpan.Text()),
+		slog.String("token_prefix", tokenPrefix),
+		slog.String("token_suffix", tokenSuffix),
+		slog.String("type", typeSpan.Text()),
+		slog.String("type_prefix", tokenPrefix),
+		slog.String("type_suffix", tokenSuffix),
+		slog.Int("prefix_count", prefixCount),
+		slog.Int("suffix_count", suffixCount),
+		slog.Bool("has_declaration", hasDeclaration),
+	)
 
-	// If this is an invalid definition at the top level, return top-level keywords.
-	if len(declPath) == 1 {
+	// If at the top level, and on the first item, return top level keywords.
+	if len(declPath) == 1 && prefixCount == 0 {
 		file.lsp.logger.DebugContext(ctx, "completion: keyword returning top-level")
 		return slices.Collect(keywordToCompletionItem(
 			topLevelKeywords(),
@@ -315,129 +330,25 @@ func completionItemsForKeyword(ctx context.Context, file *file, declPath []ast.D
 		return nil
 	}
 
-	var items iter.Seq[protocol.CompletionItem]
-	parentDef := parent.AsDef()
-	switch parentDef.Classify() {
-	case ast.DefKindMessage:
-		isProto2 := isProto2(file)
-		items = joinSequences(
-			keywordToCompletionItem(
-				messageLevelKeywords(isProto2),
-				protocol.CompletionItemKindKeyword,
-				tokenSpan,
-				offset,
-			),
-			keywordToCompletionItem(
-				messageLevelFieldKeywords(),
-				protocol.CompletionItemKindKeyword,
-				tokenSpan,
-				offset,
-			),
-			keywordToCompletionItem(
-				predeclaredTypeKeywords(),
-				protocol.CompletionItemKindKeyword,
-				tokenSpan,
-				offset,
-			),
-			typeReferencesToCompletionItems(
-				file,
-				findTypeFullName(file, parentDef),
-				tokenSpan,
-				offset,
-			),
-		)
-	case ast.DefKindService:
-		items = keywordToCompletionItem(
-			serviceLevelKeywords(),
-			protocol.CompletionItemKindKeyword,
-			tokenSpan,
-			offset,
-		)
-	case ast.DefKindEnum:
-		items = keywordToCompletionItem(
-			enumLevelKeywords(),
-			protocol.CompletionItemKindKeyword,
-			tokenSpan,
-			offset,
-		)
-	default:
-		return nil
-	}
-	return slices.Collect(items)
-}
-
-// completionItemsForField returns completion items for a field.
-func completionItemsForField(ctx context.Context, file *file, declPath []ast.DeclAny, def ast.DeclDef, position protocol.Position) []protocol.CompletionItem {
-	if len(declPath) == 1 {
-		file.lsp.logger.DebugContext(ctx, "completion: field top level, going to keywords")
-		return completionItemsForKeyword(ctx, file, declPath, def, position)
-	}
-
-	parent := declPath[len(declPath)-2]
-	file.lsp.logger.DebugContext(
-		ctx, "completion: field within definition",
-		slog.String("kind", parent.Kind().String()),
-	)
-	if parent.Kind() != ast.DeclKindDef {
-		return nil
-	}
-
-	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
-	offset := positionLocation.Offset
-
-	// If on a newline, before the current field or at the end of the span return keywords.
-	if isNewlineOrEndOfSpan(def.Span(), offset) {
-		file.lsp.logger.DebugContext(ctx, "completion: field on newline, return keywords")
-		return completionItemsForKeyword(ctx, file, declPath, def, position)
-	}
-
-	typeSpan := def.Type().Span()
-	if !offsetInSpan(typeSpan, offset) {
-		file.lsp.logger.DebugContext(
-			ctx, "completion: field outside definition",
-			slog.String("kind", parent.Kind().String()),
-		)
-		return nil
-	}
-
-	// Resolve the token the cursor is under. We don't use the ast.FieldStruct as this doesn't
-	// work with invalid path types. Instead resolve the token from the stream.
-	tokenSpan := extractAroundToken(file, offset)
-	tokenPrefix, tokenSuffix := splitSpan(tokenSpan, offset)
-	typePrefix, typeSuffix := splitSpan(typeSpan, offset)
-	prefixCount := 0
-	for range strings.FieldsSeq(strings.TrimSuffix(typePrefix, tokenPrefix)) {
-		prefixCount++
-	}
-	suffixCount := 0
-	for range strings.FieldsSeq(strings.TrimPrefix(typeSuffix, tokenSuffix)) {
-		suffixCount++
-	}
 	// Limit completions based on the following heuristic:
-	// - Show modifiers for the first two types
-	// - Only show types on the final type
-	showModifiers := prefixCount <= 2
-	showTypes := suffixCount == 0
+	// - Show keywords for the first values
+	// - Show types up until the last value, and no declaration keyword is present
+	showKeywords := prefixCount == 0
+	showTypes := prefixCount < 2 && suffixCount < 2 && !hasDeclaration
 
-	file.lsp.logger.DebugContext(
-		ctx, "completion: got types",
-		slog.String("kind", parent.Kind().String()),
-		slog.String("type", typeSpan.Text()),
-		slog.String("type_kind", def.Type().Kind().String()),
-		slog.Int("start", typeSpan.Start),
-		slog.Int("end", typeSpan.End),
-		slog.Bool("show_modifiers", showModifiers),
-		slog.Bool("show_types", showTypes),
-		slog.String("token", tokenSpan.Text()),
-	)
-
-	var items iter.Seq[protocol.CompletionItem]
+	var iters []iter.Seq[protocol.CompletionItem]
 	parentDef := parent.AsDef()
 	switch parentDef.Classify() {
 	case ast.DefKindMessage:
-		var iters []iter.Seq[protocol.CompletionItem]
-		if showModifiers {
+		if showKeywords {
+			isProto2 := isProto2(file)
 			iters = append(iters,
+				keywordToCompletionItem(
+					messageLevelKeywords(isProto2),
+					protocol.CompletionItemKindKeyword,
+					tokenSpan,
+					offset,
+				),
 				keywordToCompletionItem(
 					messageLevelFieldKeywords(),
 					protocol.CompletionItemKindKeyword,
@@ -462,14 +373,35 @@ func completionItemsForField(ctx context.Context, file *file, declPath []ast.Dec
 				),
 			)
 		}
-		if len(iters) == 0 {
-			return nil
+	case ast.DefKindService:
+		if showKeywords {
+			iters = append(iters,
+				keywordToCompletionItem(
+					serviceLevelKeywords(),
+					protocol.CompletionItemKindKeyword,
+					tokenSpan,
+					offset,
+				),
+			)
 		}
-		items = joinSequences(iters...)
+	case ast.DefKindEnum:
+		if showKeywords {
+			iters = append(iters,
+				keywordToCompletionItem(
+					enumLevelKeywords(),
+					protocol.CompletionItemKindKeyword,
+					tokenSpan,
+					offset,
+				),
+			)
+		}
 	default:
 		return nil
 	}
-	return slices.Collect(items)
+	if len(iters) == 0 {
+		return nil
+	}
+	return slices.Collect(joinSequences(iters...))
 }
 
 // completionItemsForImport returns completion items for import declarations.
@@ -564,6 +496,18 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 	}
 	return items
 }
+
+// declarationSet is the set of keywords that starts a declaration.
+var declarationSet = func() map[string]struct{} {
+	m := make(map[string]struct{})
+	for keyword := range joinSequences(
+		topLevelKeywords(),
+		messageLevelKeywords(true),
+	) {
+		m[keyword.String()] = struct{}{}
+	}
+	return m
+}()
 
 // topLevelKeywords returns keywords for the top-level.
 func topLevelKeywords() iter.Seq[keyword.Keyword] {
@@ -880,6 +824,17 @@ func extractAroundToken(file *file, offset int) report.Span {
 	return span
 }
 
+// extractLine extracts the line around the offset.
+func extractLine(span report.Span, offset int) report.Span {
+	text := span.Text()
+	index := offset - span.Start
+	if newLine := strings.IndexByte(text[index:], '\n'); newLine >= 0 {
+		span.End = span.Start + index + newLine
+	}
+	span.Start += strings.LastIndexByte(text[:index], '\n') + 1
+	return span
+}
+
 func splitSpan(span report.Span, offset int) (prefix string, suffix string) {
 	if !offsetInSpan(span, offset) {
 		return "", ""
@@ -893,7 +848,7 @@ func offsetInSpan(span report.Span, offset int) bool {
 	return span.Start <= offset && offset <= span.End // End is inclusive for completions_
 }
 
-// isNewlineOrEndOfSpan returns true if this offset is separated be a newline or at the end of the span.
+// isNewlineOrEndOfSpan returns true if this offset is separated by a newline or at the end of the span.
 // This most likely means we are at the start of a new declaration.
 func isNewlineOrEndOfSpan(span report.Span, offset int) bool {
 	if offset == span.End {
