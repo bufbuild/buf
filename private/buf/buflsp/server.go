@@ -36,6 +36,9 @@ const (
 	maxSymbolResults = 1000
 )
 
+// The subset of SemanticTokenTypes that we support.
+// Must match the order of [semanticTypeLegend].
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_semanticTokens
 const (
 	semanticTypeType = iota
 	semanticTypeStruct
@@ -48,21 +51,31 @@ const (
 	semanticTypeNamespace
 )
 
+// The subset of SemanticTokenModifiers that we support.
+// Must match the order of [semanticModifierLegend].
+// Semantic modifiers are encoded as a bitset, hence the shifted iota.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_semanticTokens
 const (
 	semanticModifierDeprecated = 1 << iota
 	semanticModifierDefaultLibrary
 )
 
 var (
-	// These slices must match the order of the indices in the above const block.
+	// These slices must match the order of the indices in the above const blocks.
 	semanticTypeLegend = []string{
-		"type", "struct", "variable", "enum",
-		"enumMember", "interface", "method", "decorator",
+		"type",
+		"struct",
+		"variable",
+		"enum",
+		"enumMember",
+		"interface",
+		"method",
+		"decorator",
 		"namespace",
 	}
 	semanticModifierLegend = []string{
 		"deprecated",
-		"defaultLibrary", // builtin
+		"defaultLibrary", // maps to builtin values
 	}
 )
 
