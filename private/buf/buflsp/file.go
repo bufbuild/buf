@@ -683,6 +683,16 @@ func (f *file) RunChecks(ctx context.Context) {
 	}
 	f.CancelChecks(ctx)
 
+	for _, diagnostic := range f.diagnostics {
+		if diagnostic.Severity == protocol.DiagnosticSeverityError {
+			f.lsp.logger.DebugContext(
+				ctx, "checks skipped on diagnostic severity",
+				slog.String("severity", diagnostic.Severity.String()),
+			)
+			return // Skip on not buildable images.
+		}
+	}
+
 	workspace := f.workspace.Workspace()
 	module := f.workspace.GetModule(f.uri)
 	checkClient := f.workspace.CheckClient()
