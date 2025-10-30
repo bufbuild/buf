@@ -282,14 +282,12 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 	prefixCount := 0
 	hasDeclaration := false
 	for value := range strings.FieldsSeq(strings.TrimSuffix(typePrefix, tokenPrefix)) {
-		file.lsp.logger.DebugContext(ctx, "completion: definition prefix", slog.String("prefix", value))
 		_, isDeclaration := declarationSet[value]
 		hasDeclaration = hasDeclaration || isDeclaration
 		prefixCount++
 	}
 	suffixCount := 0
-	for value := range strings.FieldsSeq(strings.TrimPrefix(typeSuffix, tokenSuffix)) {
-		file.lsp.logger.DebugContext(ctx, "completion: definition suffix", slog.String("suffix", value))
+	for range strings.FieldsSeq(strings.TrimPrefix(typeSuffix, tokenSuffix)) {
 		suffixCount++
 	}
 
