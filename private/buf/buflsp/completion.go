@@ -305,13 +305,14 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 	}
 
 	parent := declPath[len(declPath)-2]
-	file.lsp.logger.DebugContext(
-		ctx, "completion: definition nested declaration",
-		slog.String("parent_kind", parent.Kind().String()),
-	)
 	if parent.Kind() != ast.DeclKindDef {
 		return nil
 	}
+	parentDef := parent.AsDef()
+	file.lsp.logger.DebugContext(
+		ctx, "completion: definition nested declaration",
+		slog.String("kind", parentDef.Classify().String()),
+	)
 
 	// Limit completions based on the following heuristic:
 	// - Show keywords for the first values
@@ -320,7 +321,6 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 	showTypes := prefixCount < 2 && suffixCount < 2 && !hasDeclaration
 
 	var iters []iter.Seq[protocol.CompletionItem]
-	parentDef := parent.AsDef()
 	switch parentDef.Classify() {
 	case ast.DefKindMessage:
 		if showKeywords {
