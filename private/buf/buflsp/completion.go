@@ -369,7 +369,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		if showKeywords {
 			iters = append(iters,
 				keywordToCompletionItem(
-					methodLevelKeywords(),
+					optionKeyword(),
 					protocol.CompletionItemKindKeyword,
 					tokenSpan,
 					offset,
@@ -380,7 +380,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		if showKeywords {
 			iters = append(iters,
 				keywordToCompletionItem(
-					enumLevelKeywords(),
+					optionKeyword(),
 					protocol.CompletionItemKindKeyword,
 					tokenSpan,
 					offset,
@@ -495,6 +495,7 @@ var declarationSet = func() map[string]struct{} {
 	for keyword := range joinSequences(
 		topLevelKeywords(),
 		messageLevelKeywords(true),
+		serviceLevelKeywords(),
 	) {
 		m[keyword.String()] = struct{}{}
 	}
@@ -569,15 +570,8 @@ func serviceLevelKeywords() iter.Seq[keyword.Keyword] {
 	}
 }
 
-// methodLevelKeywords returns keywords for methods
-func methodLevelKeywords() iter.Seq[keyword.Keyword] {
-	return func(yield func(keyword.Keyword) bool) {
-		_ = yield(keyword.Option)
-	}
-}
-
-// enumLevelKeywords returns keywords for enums.
-func enumLevelKeywords() iter.Seq[keyword.Keyword] {
+// optionKeyword returns the option keywords for methods and enums.
+func optionKeyword() iter.Seq[keyword.Keyword] {
 	return func(yield func(keyword.Keyword) bool) {
 		_ = yield(keyword.Option)
 	}
