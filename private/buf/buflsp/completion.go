@@ -563,7 +563,7 @@ func predeclaredTypeKeywords() iter.Seq[keyword.Keyword] {
 	}
 }
 
-// serviceLevelKeywords returns keywords for service.
+// serviceLevelKeywords returns keywords for services.
 func serviceLevelKeywords() iter.Seq[keyword.Keyword] {
 	return func(yield func(keyword.Keyword) bool) {
 		_ = yield(keyword.RPC) &&
@@ -571,7 +571,7 @@ func serviceLevelKeywords() iter.Seq[keyword.Keyword] {
 	}
 }
 
-// methodLevelKeywords returns keywords for service.
+// methodLevelKeywords returns keywords for methods
 func methodLevelKeywords() iter.Seq[keyword.Keyword] {
 	return func(yield func(keyword.Keyword) bool) {
 		_ = yield(keyword.Option)
