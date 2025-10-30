@@ -236,6 +236,15 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
 	offset := positionLocation.Offset
 
+	if !offsetInSpan(span, offset) {
+		file.lsp.logger.DebugContext(
+			ctx,
+			"completion: ignoring definition outside span",
+			slog.String("kind", def.Classify().String()),
+		)
+		return nil
+	}
+
 	tokenSpan := extractAroundToken(file, offset)
 	tokenPrefix, tokenSuffix := splitSpan(tokenSpan, offset)
 	typeSpan := extractLine(span, offset)
