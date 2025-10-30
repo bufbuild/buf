@@ -394,9 +394,7 @@ func (s *server) definition(ctx context.Context, uri protocol.URI, position prot
 		return nil, nil
 	}
 
-	return []protocol.Location{
-		symbol.Definition(),
-	}, nil
+	return symbol.Definitions(position), nil
 }
 
 // References is the entry point for get-all-references.

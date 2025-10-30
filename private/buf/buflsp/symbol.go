@@ -122,6 +122,42 @@ func (s *symbol) Definition() protocol.Location {
 	}
 }
 
+// Definitions returns location(s) for the definition of the symbol, considering cursor position.
+// If the cursor is on the package part of a qualified type name, returns the location of the package.
+// If the cursor is on the type part or a parent type, returns the type definition within the file.
+func (s *symbol) Definitions(cursor protocol.Position) []protocol.Location {
+	if _, isRef := s.kind.(*reference); !isRef && s.def == nil {
+		// Not a field reference, return single definition.
+		return []protocol.Location{s.Definition()}
+	}
+
+	positionLocation := s.file.file.InverseLocation(int(cursor.Line)+1, int(cursor.Character)+1, positionalEncoding)
+	offset := positionLocation.Offset
+	spanText := s.span.Text()
+	if !offsetInSpan(s.span, offset) {
+		return []protocol.Location{s.Definition()}
+	}
+
+	fullName := s.def.ir.FullName()
+	count := strings.Count(spanText[offset-s.span.Start:], ".")
+	if count == 0 {
+		return []protocol.Location{s.Definition()}
+	}
+	for range count {
+		fullName = fullName.Parent()
+	}
+
+	// TODO: for packages with multiple files return all file locations.
+	if irSymbol := s.def.file.ir.FindSymbol(fullName); !irSymbol.IsZero() {
+		file := s.file.workspace.PathToFile()[irSymbol.File().Path()]
+		return []protocol.Location{{
+			URI:   file.uri,
+			Range: reportSpanToProtocolRange(irSymbol.Definition().Span()),
+		}}
+	}
+	return nil
+}
+
 // References returns the locations of references to the symbol (including the definition), if
 // applicable. Otherwise, it just returns the location of the symbol itself.
 func (s *symbol) References() []protocol.Location {
