@@ -224,6 +224,15 @@ func completionItemsForPackage(ctx context.Context, file *file, syntaxPackage as
 
 // completionItemsForDef returns completion items for definition declarations (message, enum, service, etc.).
 func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclAny, def ast.DeclDef, position protocol.Position) []protocol.CompletionItem {
+	file.lsp.logger.DebugContext(
+		ctx,
+		"completion: definition",
+		slog.String("type", def.Type().Span().String()),
+		slog.String("name", def.Name().Span().String()),
+		slog.String("kind", def.Classify().String()),
+		slog.Int("path_depth", len(declPath)),
+	)
+
 	// Extract the span of the definition to include the type and name.
 	// We only complete in types, but the type may be capture in the name for an unfinished def.
 	span := def.Span()
@@ -235,7 +244,6 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 	}
 	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
 	offset := positionLocation.Offset
-
 	if !offsetInSpan(span, offset) {
 		file.lsp.logger.DebugContext(
 			ctx,
@@ -250,15 +258,6 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 	typeSpan := extractLine(span, offset)
 	typePrefix, typeSuffix := splitSpan(typeSpan, offset)
 
-	file.lsp.logger.DebugContext(
-		ctx,
-		"completion: definition",
-		slog.String("type", def.Type().Span().String()),
-		slog.String("name", def.Name().Span().String()),
-		slog.String("span", span.String()),
-		slog.String("def_kind", def.Classify().String()),
-		slog.Int("path_depth", len(declPath)),
-	)
 	if !offsetInSpan(typeSpan, offset) {
 		file.lsp.logger.DebugContext(
 			ctx,
@@ -296,7 +295,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 
 	// If at the top level, and on the first item, return top level keywords.
 	if len(declPath) == 1 && prefixCount == 0 {
-		file.lsp.logger.DebugContext(ctx, "completion: keyword returning top-level")
+		file.lsp.logger.DebugContext(ctx, "completion: definition returning top-level keywords")
 		return slices.Collect(keywordToCompletionItem(
 			topLevelKeywords(),
 			protocol.CompletionItemKindKeyword,
@@ -307,8 +306,8 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 
 	parent := declPath[len(declPath)-2]
 	file.lsp.logger.DebugContext(
-		ctx, "completion: keyword nested definition",
-		slog.String("kind", parent.Kind().String()),
+		ctx, "completion: definition nested declaration",
+		slog.String("parent_kind", parent.Kind().String()),
 	)
 	if parent.Kind() != ast.DeclKindDef {
 		return nil
@@ -362,6 +361,17 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 			iters = append(iters,
 				keywordToCompletionItem(
 					serviceLevelKeywords(),
+					protocol.CompletionItemKindKeyword,
+					tokenSpan,
+					offset,
+				),
+			)
+		}
+	case ast.DefKindMethod:
+		if showKeywords {
+			iters = append(iters,
+				keywordToCompletionItem(
+					methodLevelKeywords(),
 					protocol.CompletionItemKindKeyword,
 					tokenSpan,
 					offset,
@@ -558,6 +568,13 @@ func serviceLevelKeywords() iter.Seq[keyword.Keyword] {
 	return func(yield func(keyword.Keyword) bool) {
 		_ = yield(keyword.RPC) &&
 			yield(keyword.Option)
+	}
+}
+
+// methodLevelKeywords returns keywords for service.
+func methodLevelKeywords() iter.Seq[keyword.Keyword] {
+	return func(yield func(keyword.Keyword) bool) {
+		_ = yield(keyword.Option)
 	}
 }
 
