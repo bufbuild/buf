@@ -779,8 +779,11 @@ func (f *file) appendAnnotations(source string, annotations []bufanalysis.FileAn
 		endLocation := f.file.InverseLocation(annotation.EndLine(), annotation.EndColumn(), positionalEncoding)
 		protocolRange := reportLocationsToProtocolRange(startLocation, endLocation)
 		f.diagnostics = append(f.diagnostics, protocol.Diagnostic{
-			Range:    protocolRange,
-			Code:     annotation.Type(),
+			Range: protocolRange,
+			Code:  annotation.Type(),
+			CodeDescription: &protocol.CodeDescription{
+				Href: protocol.URI("https://buf.build/docs/lint/rules/#" + strings.ToLower(annotation.Type())),
+			},
 			Severity: protocol.DiagnosticSeverityWarning,
 			Source:   source,
 			Message:  annotation.Message(),
