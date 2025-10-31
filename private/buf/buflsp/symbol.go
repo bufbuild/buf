@@ -26,6 +26,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
 	"github.com/bufbuild/protocompile/experimental/ir"
@@ -253,6 +254,11 @@ func (s *symbol) FormatDocs() string {
 		builtin, _ := s.kind.(*builtin)
 		comments, ok := builtinDocs[builtin.predeclared.String()]
 		if ok {
+			comments = append(
+				comments,
+				"",
+				"This symbol is a Protobuf builtin. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#field-types)",
+			)
 			return strings.Join(comments, "\n")
 		}
 		return ""
@@ -266,7 +272,7 @@ func (s *symbol) FormatDocs() string {
 		reference, _ := s.kind.(*reference)
 		def = reference.def
 	}
-	return getCommentsFromDef(def)
+	return s.def.getComments(def)
 }
 
 // GetSymbolInformation returns the protocol symbol information for the symbol.
@@ -339,7 +345,7 @@ func protowireTypeForPredeclared(name predeclared.Name) protowire.Type {
 	return protowire.BytesType
 }
 
-func getCommentsFromDef(def ast.DeclDef) string {
+func (s *symbol) getComments(def ast.DeclDef) string {
 	if def.IsZero() {
 		return ""
 	}
@@ -361,6 +367,41 @@ func getCommentsFromDef(def ast.DeclDef) string {
 	}
 	// Reverse the list and return joined.
 	slices.Reverse(comments)
+	// If the file is a remote dependency, link to BSR docs.
+	if s.file != nil && !s.file.IsLocal() {
+		var hasAnchor, isExtension bool
+		switch def.Classify() {
+		case ast.DefKindMessage, ast.DefKindEnum, ast.DefKindService:
+			hasAnchor = true
+		case ast.DefKindExtend:
+			isExtension = def.AsExtend().Extendee.IsZero()
+		}
+
+		var bsrHost, bsrAnchor, bsrTooltip string
+		if s.file.IsWKT() {
+			bsrHost = "buf.build/protocolbuffers/wellknowntypes"
+		} else if fileInfo, ok := s.file.objectInfo.(bufmodule.FileInfo); ok {
+			bsrHost = fileInfo.Module().FullName().String()
+		}
+		bsrTooltip = string(s.ir.FullName())
+		if !hasAnchor {
+			components := strings.Split(bsrTooltip, ".")
+			bsrTooltip = strings.Join(components[:len(components)-1], ".")
+		}
+		bsrAnchor = bsrTooltip
+		if isExtension {
+			bsrAnchor = "extensions"
+		}
+		if bsrHost != "" {
+			comments = append(comments, fmt.Sprintf(
+				"\n[`%s` on the Buf Schema Registry](https://%s/docs/main:%s#%s)",
+				bsrTooltip,
+				bsrHost,
+				s.file.ir.Package(),
+				bsrAnchor,
+			))
+		}
+	}
 	return strings.Join(comments, "")
 }
 
