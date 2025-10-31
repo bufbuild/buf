@@ -233,40 +233,6 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		slog.Int("path_depth", len(declPath)),
 	)
 
-	// Extract the span of the definition to include the type and name.
-	// We only complete in types, but the type may be capture in the name for an unfinished def.
-	span := def.Span()
-	if !def.Type().IsZero() {
-		span.Start = def.Type().Span().Start
-	}
-	if !def.Name().IsZero() {
-		span.End = def.Name().Span().End
-	}
-	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
-	offset := positionLocation.Offset
-	if !offsetInSpan(span, offset) {
-		file.lsp.logger.DebugContext(
-			ctx,
-			"completion: ignoring definition outside span",
-			slog.String("kind", def.Classify().String()),
-		)
-		return nil
-	}
-
-	tokenSpan := extractAroundToken(file, offset)
-	tokenPrefix, tokenSuffix := splitSpan(tokenSpan, offset)
-	typeSpan := extractLine(span, offset)
-	typePrefix, typeSuffix := splitSpan(typeSpan, offset)
-
-	if !offsetInSpan(typeSpan, offset) {
-		file.lsp.logger.DebugContext(
-			ctx,
-			"completion: ignoring definition outside type and name",
-			slog.String("kind", def.Classify().String()),
-		)
-		return nil
-	}
-
 	switch def.Classify() {
 	case ast.DefKindMessage, ast.DefKindService, ast.DefKindEnum:
 		return nil // ignored
@@ -278,28 +244,94 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		return nil
 	}
 
-	// Compute the heuristics for completion. Use strings over the token stream for whitespace handling.
-	prefixCount := 0
+	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
+	offset := positionLocation.Offset
+
+	tokenSpan := extractAroundOffset(file, offset, isTokenType, isTokenType)
+	tokenPrefix, tokenSuffix := splitSpan(tokenSpan, offset)
+
+	// Extract the full type and name declaration to compute the heuristics for completion.
+	// Use the token stream to capture invalid declarations.
+	beforeCount, afterCount := 0, 0
+	hasBeforeGap, hasAfterGap := false, false
+	hasBeforeNewline, hasAfterNewline := false, false
+	hasFieldModifier := false
 	hasDeclaration := false
-	for value := range strings.FieldsSeq(strings.TrimSuffix(typePrefix, tokenPrefix)) {
-		_, isDeclaration := declarationSet[value]
-		hasDeclaration = hasDeclaration || isDeclaration
-		prefixCount++
+	typeSpan := extractAroundOffset(file, offset,
+		func(tok token.Token) bool {
+			if hasBeforeGap {
+				beforeCount += 1
+				hasBeforeGap = false
+				if kw := tok.Keyword(); kw != keyword.Unknown {
+					_, isDeclaration := declarationSet[tok.Keyword()]
+					hasDeclaration = hasDeclaration || isDeclaration
+					_, isFieldModifier := fieldModifierSet[tok.Keyword()]
+					hasFieldModifier = hasFieldModifier || isFieldModifier
+				}
+			}
+			if isTokenNewline(tok) {
+				hasBeforeNewline = true
+				return false
+			}
+			if isTokenSpace(tok) {
+				hasBeforeGap = true
+				return true
+			}
+			return isTokenType(tok)
+		},
+		func(tok token.Token) bool {
+			if hasAfterGap {
+				afterCount += 1
+				hasAfterGap = false
+			}
+			if isTokenNewline(tok) {
+				hasAfterNewline = true
+				return false
+			}
+			if isTokenSpace(tok) {
+				hasAfterGap = true
+				return true
+			}
+			return isTokenType(tok)
+		},
+	)
+	typePrefix, typeSuffix := splitSpan(typeSpan, offset)
+	if !hasBeforeNewline {
+		file.lsp.logger.DebugContext(
+			ctx,
+			"completion: ignoring definition type not on newline",
+			slog.String("kind", def.Classify().String()),
+		)
+		return nil
 	}
-	suffixCount := 0
-	for range strings.FieldsSeq(strings.TrimPrefix(typeSuffix, tokenSuffix)) {
-		suffixCount++
-	}
+	file.lsp.logger.DebugContext(
+		ctx, "completion: definition value",
+		slog.String("token", tokenSpan.Text()),
+		slog.String("token_prefix", tokenPrefix),
+		slog.String("token_suffix", tokenSuffix),
+		slog.String("type", typeSpan.Text()),
+		slog.String("type_prefix", typePrefix),
+		slog.String("type_suffix", typeSuffix),
+		slog.Int("before_count", beforeCount),
+		slog.Int("after_count", afterCount),
+		slog.Bool("has_before_newline", hasBeforeNewline),
+		slog.Bool("has_after_newline", hasAfterNewline),
+		slog.Bool("has_field_modifier", hasFieldModifier),
+		slog.Bool("has_declaration", hasDeclaration),
+	)
 
 	// If at the top level, and on the first item, return top level keywords.
-	if len(declPath) == 1 && prefixCount == 0 {
-		file.lsp.logger.DebugContext(ctx, "completion: definition returning top-level keywords")
-		return slices.Collect(keywordToCompletionItem(
-			topLevelKeywords(),
-			protocol.CompletionItemKindKeyword,
-			tokenSpan,
-			offset,
-		))
+	if len(declPath) == 1 {
+		if beforeCount == 0 {
+			file.lsp.logger.DebugContext(ctx, "completion: definition returning top-level keywords")
+			return slices.Collect(keywordToCompletionItem(
+				topLevelKeywords(),
+				protocol.CompletionItemKindKeyword,
+				tokenSpan,
+				offset,
+			))
+		}
+		return nil // unknown
 	}
 
 	parent := declPath[len(declPath)-2]
@@ -314,9 +346,10 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 
 	// Limit completions based on the following heuristic:
 	// - Show keywords for the first values
-	// - Show types up until the last value, and no declaration keyword is present
-	showKeywords := prefixCount == 0
-	showTypes := prefixCount < 2 && suffixCount < 2 && !hasDeclaration
+	// - Show types if no type declaration and at first, or second position with field modifier.
+	showKeywords := beforeCount == 0
+	showTypes := !hasDeclaration &&
+		((hasFieldModifier && beforeCount == 1) || (beforeCount == 0))
 
 	var iters []iter.Seq[protocol.CompletionItem]
 	switch parentDef.Classify() {
@@ -490,14 +523,23 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 }
 
 // declarationSet is the set of keywords that starts a declaration.
-var declarationSet = func() map[string]struct{} {
-	m := make(map[string]struct{})
+var declarationSet = func() map[keyword.Keyword]struct{} {
+	m := make(map[keyword.Keyword]struct{})
 	for keyword := range joinSequences(
 		topLevelKeywords(),
 		messageLevelKeywords(true),
 		serviceLevelKeywords(),
 	) {
-		m[keyword.String()] = struct{}{}
+		m[keyword] = struct{}{}
+	}
+	return m
+}()
+
+// fieldModifierSet is the set of keywords for type modifiers.
+var fieldModifierSet = func() map[keyword.Keyword]struct{} {
+	m := make(map[keyword.Keyword]struct{})
+	for keyword := range messageLevelFieldKeywords() {
+		m[keyword] = struct{}{}
 	}
 	return m
 }()
@@ -769,8 +811,21 @@ func getDeclForPositionHelper(body ast.DeclBody, position protocol.Position, pat
 	return bestPath
 }
 
-// extractAroundToken extracts the value around the offset by querying the token stream.
-func extractAroundToken(file *file, offset int) report.Span {
+func isTokenType(tok token.Token) bool {
+	kind := tok.Kind()
+	return kind == token.Ident || (kind == token.Punct && tok.Text() == ".")
+}
+
+func isTokenSpace(tok token.Token) bool {
+	return tok.Kind() == token.Space && strings.IndexByte(tok.Text(), '\n') == -1
+}
+
+func isTokenNewline(tok token.Token) bool {
+	return tok.Kind() == token.Space && strings.IndexByte(tok.Text(), '\n') != -1
+}
+
+// extractAroundOffset extracts the value around the offset by querying the token stream.
+func extractAroundOffset(file *file, offset int, isTokenBefore, isTokenAfter func(token.Token) bool) report.Span {
 	if file.ir.AST().IsZero() {
 		return report.Span{}
 	}
@@ -783,48 +838,29 @@ func extractAroundToken(file *file, offset int) report.Span {
 		return report.Span{}
 	}
 
-	isToken := func(tok token.Token) bool {
-		switch kind := tok.Kind(); kind {
-		case token.Ident, token.Punct:
-			return true
-		default:
-			return false
-		}
-	}
 	span := report.Span{
 		File:  file.file,
 		Start: offset,
 		End:   offset,
 	}
 	if !before.IsZero() {
-		cursor := token.NewCursorAt(before)
-		for tok := cursor.PrevSkippable(); isToken(tok); tok = cursor.PrevSkippable() {
-			before = tok
+		var firstToken token.Token
+		for cursor := token.NewCursorAt(before); isTokenBefore(before); before = cursor.PrevSkippable() {
+			firstToken = before
 		}
-		if isToken(before) {
-			span.Start = before.Span().Start
+		if !firstToken.IsZero() {
+			span.Start = firstToken.Span().Start
 		}
 	}
 	if !after.IsZero() {
-		cursor := token.NewCursorAt(after)
-		for tok := cursor.NextSkippable(); isToken(tok); tok = cursor.NextSkippable() {
-			after = tok
+		var lastToken token.Token
+		for cursor := token.NewCursorAt(after); isTokenAfter(after); after = cursor.NextSkippable() {
+			lastToken = after
 		}
-		if isToken(after) {
-			span.End = after.Span().End
+		if !lastToken.IsZero() {
+			span.End = lastToken.Span().End
 		}
 	}
-	return span
-}
-
-// extractLine extracts the line around the offset.
-func extractLine(span report.Span, offset int) report.Span {
-	text := span.Text()
-	index := offset - span.Start
-	if newLine := strings.IndexByte(text[index:], '\n'); newLine >= 0 {
-		span.End = span.Start + index + newLine
-	}
-	span.Start += strings.LastIndexByte(text[:index], '\n') + 1
 	return span
 }
 
