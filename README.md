@@ -108,6 +108,7 @@ The following is a breakdown of the binaries by CPU architecture and operating s
 | ARM (64-bit) | ✅ | ✅ | ✅ |
 | ARMv7 (32-bit) | ✅ | ❌ | ❌ |
 | RISC-V (64-bit) | ✅ | ❌ | ❌ |
+| LoongArch (64-bit) | ✅ | ❌ | ❌ |
 | ppc64le | ✅ | ❌ | ❌ |
 | s390x | ✅ | ❌ | ❌ |
 
