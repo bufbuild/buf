@@ -453,7 +453,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		msg.def = msg
 		resolved = append(resolved, msg)
-		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsType().Options())...)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.FullName(), irSymbol.AsType().Options(), 0)...)
 	case ir.SymbolKindEnum:
 		enum := &symbol{
 			ir:   irSymbol,
@@ -465,7 +465,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		enum.def = enum
 		resolved = append(resolved, enum)
-		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsType().Options())...)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.FullName(), irSymbol.AsType().Options(), 0)...)
 	case ir.SymbolKindEnumValue:
 		name := &symbol{
 			ir:   irSymbol,
@@ -486,7 +486,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		tag.def = tag
 		resolved = append(resolved, tag)
-		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options())...)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.FullName(), irSymbol.AsMember().Options(), 0)...)
 	case ir.SymbolKindField:
 		typ := &symbol{
 			ir:   irSymbol,
@@ -520,7 +520,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		tag.def = tag
 		resolved = append(resolved, tag)
-		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options())...)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.FullName(), irSymbol.AsMember().Options(), 0)...)
 	case ir.SymbolKindExtension:
 		// TODO: we should figure out if we need to do any resolution here.
 		ext := &symbol{
@@ -532,7 +532,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 			},
 		}
 		resolved = append(resolved, ext)
-		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options())...)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.FullName(), irSymbol.AsMember().Options(), 0)...)
 	case ir.SymbolKindOneof:
 		oneof := &symbol{
 			ir:   irSymbol,
@@ -544,7 +544,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		oneof.def = oneof
 		resolved = append(resolved, oneof)
-		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsOneof().Options())...)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.FullName(), irSymbol.AsOneof().Options(), 0)...)
 	case ir.SymbolKindService:
 		service := &symbol{
 			ir:   irSymbol,
@@ -556,7 +556,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		service.def = service
 		resolved = append(resolved, service)
-		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsService().Options())...)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.FullName(), irSymbol.AsService().Options(), 0)...)
 	case ir.SymbolKindMethod:
 		method := &symbol{
 			ir:   irSymbol,
@@ -590,7 +590,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 			},
 		}
 		unresolved = append(unresolved, outputSym)
-		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMethod().Options())...)
+		unresolved = append(unresolved, f.messageToSymbols(irSymbol.FullName(), irSymbol.AsMethod().Options(), 0)...)
 	}
 	return resolved, unresolved
 }
@@ -619,14 +619,31 @@ func (f *file) importToSymbol(imp ir.Import) *symbol {
 	}
 }
 
-func (f *file) messageToSymbols(msg ir.MessageValue) []*symbol {
+func (f *file) messageToSymbols(typeName ir.FullName, msg ir.MessageValue, parentOffset int) []*symbol {
 	var symbols []*symbol
+	f.lsp.logger.Debug("---")
 	for field := range msg.Fields() {
 		if field.ValueAST().IsZero() {
 			continue
 		}
+		f.lsp.logger.Debug("+++")
 		for element := range seq.Values(field.Elements()) {
 			span := element.Value().KeyASTs().At(element.ValueNodeIndex()).Span()
+			if parentOffset > 0 {
+				span = report.Span{
+					File:  span.File,
+					Start: parentOffset,
+					End:   span.End,
+				}
+				parentOffset = span.End
+			}
+			f.lsp.logger.Debug(
+				"element",
+				slog.String("type", string(typeName)),
+				slog.String("file", span.Path()),
+				slog.Any("start", span.StartLoc()),
+				slog.Any("end", span.EndLoc()),
+			)
 			elem := &symbol{
 				// NOTE: no [ir.Symbol] for option elements
 				file: f,
@@ -638,10 +655,16 @@ func (f *file) messageToSymbols(msg ir.MessageValue) []*symbol {
 			}
 			symbols = append(symbols, elem)
 			if !element.AsMessage().IsZero() {
-				symbols = append(symbols, f.messageToSymbols(element.AsMessage())...)
+				// For message value elements, we use the Type AST.
+				elem.kind = &reference{
+					def: element.Type().AST(),
+				}
+				symbols = append(symbols, f.messageToSymbols(typeName, element.AsMessage(), span.End)...)
 			}
 		}
+		f.lsp.logger.Debug("+++")
 	}
+	f.lsp.logger.Debug("---")
 	return symbols
 }
 
