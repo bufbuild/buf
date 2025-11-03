@@ -125,7 +125,9 @@ func (s *symbol) Definition() protocol.Location {
 
 // References returns the locations of references to the symbol (including the definition), if
 // applicable. Otherwise, it just returns the location of the symbol itself.
-func (s *symbol) References() []protocol.Location {
+// It also accepts the includeDeclaration param from the client - if true, the declaration
+// of the symbol is included as a reference.
+func (s *symbol) References(includeDeclaration bool) []protocol.Location {
 	var references []protocol.Location
 	referenceableKind, ok := s.kind.(*referenceable)
 	if !ok && s.def != nil {
@@ -147,12 +149,14 @@ func (s *symbol) References() []protocol.Location {
 			Range: s.Range(),
 		})
 	}
-	// Add the definition of the symbol to the list of references.
-	if s.def != nil {
-		references = append(references, protocol.Location{
-			URI:   s.def.file.uri,
-			Range: s.def.Range(),
-		})
+	if includeDeclaration {
+		// Add the definition of the symbol to the list of references.
+		if s.def != nil {
+			references = append(references, protocol.Location{
+				URI:   s.def.file.uri,
+				Range: s.def.Range(),
+			})
+		}
 	}
 	return references
 }
