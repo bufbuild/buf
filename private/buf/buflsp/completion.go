@@ -344,7 +344,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		slog.String("kind", parentDef.Classify().String()),
 	)
 
-	if offsetInSpan(def.Options().Span(), offset)  {
+	if offsetInSpan(def.Options().Span(), offset) {
 		// TODO: Handle option completions within options block.
 		file.lsp.logger.DebugContext(ctx, "completion: ignoring options block completion")
 		return nil
