@@ -344,6 +344,12 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		slog.String("kind", parentDef.Classify().String()),
 	)
 
+	if offsetInSpan(def.Options().Span(), offset)  {
+		// TODO: Handle option completions within options block.
+		file.lsp.logger.DebugContext(ctx, "completion: ignoring options block completion")
+		return nil
+	}
+
 	// Limit completions based on the following heuristic:
 	// - Show keywords for the first values
 	// - Show types if no type declaration and at first, or second position with field modifier.
