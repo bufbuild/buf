@@ -191,7 +191,6 @@ func (s *symbol) LogValue() slog.Value {
 //
 // Returns the empty string if no docs are available.
 func (s *symbol) FormatDocs() string {
-	var def ast.DeclDef
 	switch s.kind.(type) {
 	case *imported:
 		imported, _ := s.kind.(*imported)
@@ -261,22 +260,18 @@ func (s *symbol) FormatDocs() string {
 			comments = append(
 				comments,
 				"",
-				"This symbol is a Protobuf builtin. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#field-types)",
+				fmt.Sprintf(
+					"`%s` is a Protobuf builtin. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#field-types)",
+					builtin.predeclared,
+				),
 			)
 			return strings.Join(comments, "\n")
 		}
 		return ""
-	case *referenceable:
-		referenceable, _ := s.kind.(*referenceable)
-		def = referenceable.ast
-	case *static:
-		static, _ := s.kind.(*static)
-		def = static.ast
-	case *reference:
-		reference, _ := s.kind.(*reference)
-		def = reference.def
+	case *referenceable, *static, *reference:
+		return s.getDocsFromComments()
 	}
-	return s.def.getComments(def)
+	return ""
 }
 
 // GetSymbolInformation returns the protocol symbol information for the symbol.
@@ -349,10 +344,27 @@ func protowireTypeForPredeclared(name predeclared.Name) protowire.Type {
 	return protowire.BytesType
 }
 
-func (s *symbol) getComments(def ast.DeclDef) string {
+// getDocsFromComments is a helper function that gets the doc string from the comments from
+// the definition AST, if available.
+// This helper function expects that imports, tags, and predeclared (builtin) types are
+// already handled, since those types currently do not get docs from their comments.
+func (s *symbol) getDocsFromComments() string {
+	var def ast.DeclDef
+	switch s.kind.(type) {
+	case *referenceable:
+		referenceable, _ := s.kind.(*referenceable)
+		def = referenceable.ast
+	case *static:
+		static, _ := s.kind.(*static)
+		def = static.ast
+	case *reference:
+		reference, _ := s.kind.(*reference)
+		def = reference.def
+	}
 	if def.IsZero() {
 		return ""
 	}
+
 	var comments []string
 	// We drop the other side of "Around" because we only care about the beginning -- we're
 	// traversing backwards for leading comemnts only.
@@ -371,42 +383,51 @@ func (s *symbol) getComments(def ast.DeclDef) string {
 	}
 	// Reverse the list and return joined.
 	slices.Reverse(comments)
+
+	var docs strings.Builder
+	for _, comment := range comments {
+		docs.WriteString(comment)
+	}
+
 	// If the file is a remote dependency, link to BSR docs.
-	if s.file != nil && !s.file.IsLocal() {
+	if s.def.file != nil && !s.def.file.IsLocal() {
+		// In the BSR, messages, enums, and service definitions support anchor tags in the link.
+		// Otherwise, we use the anchor for the parent type.
 		var hasAnchor, isExtension bool
 		switch def.Classify() {
 		case ast.DefKindMessage, ast.DefKindEnum, ast.DefKindService:
 			hasAnchor = true
 		case ast.DefKindExtend:
-			isExtension = def.AsExtend().Extendee.IsZero()
+			isExtension = !def.AsExtend().Extendee.IsZero()
+			hasAnchor = isExtension
 		}
 
-		var bsrHost, bsrAnchor, bsrTooltip string
-		if s.file.IsWKT() {
+		var bsrHost, bsrAnchor string
+		if s.def.file.IsWKT() {
 			bsrHost = "buf.build/protocolbuffers/wellknowntypes"
-		} else if fileInfo, ok := s.file.objectInfo.(bufmodule.FileInfo); ok {
+		} else if fileInfo, ok := s.def.file.objectInfo.(bufmodule.FileInfo); ok {
 			bsrHost = fileInfo.Module().FullName().String()
 		}
-		bsrTooltip = string(s.ir.FullName())
+		defFullName := s.def.ir.FullName()
 		if !hasAnchor {
-			components := strings.Split(bsrTooltip, ".")
-			bsrTooltip = strings.Join(components[:len(components)-1], ".")
+			defFullName = defFullName.Parent()
 		}
-		bsrAnchor = bsrTooltip
+		bsrAnchor = string(defFullName)
+		// For extensions, we use the anchor for the extensions section in the BSR docs.
 		if isExtension {
 			bsrAnchor = "extensions"
 		}
 		if bsrHost != "" {
-			comments = append(comments, fmt.Sprintf(
+			docs.WriteString(fmt.Sprintf(
 				"\n[`%s` on the Buf Schema Registry](https://%s/docs/main:%s#%s)",
-				bsrTooltip,
+				defFullName,
 				bsrHost,
-				s.file.ir.Package(),
+				s.def.file.ir.Package(),
 				bsrAnchor,
 			))
 		}
 	}
-	return strings.Join(comments, "")
+	return docs.String()
 }
 
 // commentToMarkdown processes comment strings and formats them for markdown display.
