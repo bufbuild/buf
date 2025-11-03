@@ -26,6 +26,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
 	"github.com/bufbuild/protocompile/experimental/ir"
@@ -190,7 +191,6 @@ func (s *symbol) LogValue() slog.Value {
 //
 // Returns the empty string if no docs are available.
 func (s *symbol) FormatDocs() string {
-	var def ast.DeclDef
 	switch s.kind.(type) {
 	case *imported:
 		imported, _ := s.kind.(*imported)
@@ -257,20 +257,21 @@ func (s *symbol) FormatDocs() string {
 		builtin, _ := s.kind.(*builtin)
 		comments, ok := builtinDocs[builtin.predeclared.String()]
 		if ok {
+			comments = append(
+				comments,
+				"",
+				fmt.Sprintf(
+					"`%s` is a Protobuf builtin. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#field-types)",
+					builtin.predeclared,
+				),
+			)
 			return strings.Join(comments, "\n")
 		}
 		return ""
-	case *referenceable:
-		referenceable, _ := s.kind.(*referenceable)
-		def = referenceable.ast
-	case *static:
-		static, _ := s.kind.(*static)
-		def = static.ast
-	case *reference:
-		reference, _ := s.kind.(*reference)
-		def = reference.def
+	case *referenceable, *static, *reference:
+		return s.getDocsFromComments()
 	}
-	return getCommentsFromDef(def)
+	return ""
 }
 
 // GetSymbolInformation returns the protocol symbol information for the symbol.
@@ -343,10 +344,27 @@ func protowireTypeForPredeclared(name predeclared.Name) protowire.Type {
 	return protowire.BytesType
 }
 
-func getCommentsFromDef(def ast.DeclDef) string {
+// getDocsFromComments is a helper function that gets the doc string from the comments from
+// the definition AST, if available.
+// This helper function expects that imports, tags, and predeclared (builtin) types are
+// already handled, since those types currently do not get docs from their comments.
+func (s *symbol) getDocsFromComments() string {
+	var def ast.DeclDef
+	switch s.kind.(type) {
+	case *referenceable:
+		referenceable, _ := s.kind.(*referenceable)
+		def = referenceable.ast
+	case *static:
+		static, _ := s.kind.(*static)
+		def = static.ast
+	case *reference:
+		reference, _ := s.kind.(*reference)
+		def = reference.def
+	}
 	if def.IsZero() {
 		return ""
 	}
+
 	var comments []string
 	// We drop the other side of "Around" because we only care about the beginning -- we're
 	// traversing backwards for leading comemnts only.
@@ -365,7 +383,51 @@ func getCommentsFromDef(def ast.DeclDef) string {
 	}
 	// Reverse the list and return joined.
 	slices.Reverse(comments)
-	return strings.Join(comments, "")
+
+	var docs strings.Builder
+	for _, comment := range comments {
+		docs.WriteString(comment)
+	}
+
+	// If the file is a remote dependency, link to BSR docs.
+	if s.def.file != nil && !s.def.file.IsLocal() {
+		// In the BSR, messages, enums, and service definitions support anchor tags in the link.
+		// Otherwise, we use the anchor for the parent type.
+		var hasAnchor, isExtension bool
+		switch def.Classify() {
+		case ast.DefKindMessage, ast.DefKindEnum, ast.DefKindService:
+			hasAnchor = true
+		case ast.DefKindExtend:
+			isExtension = !def.AsExtend().Extendee.IsZero()
+			hasAnchor = isExtension
+		}
+
+		var bsrHost, bsrAnchor string
+		if s.def.file.IsWKT() {
+			bsrHost = "buf.build/protocolbuffers/wellknowntypes"
+		} else if fileInfo, ok := s.def.file.objectInfo.(bufmodule.FileInfo); ok {
+			bsrHost = fileInfo.Module().FullName().String()
+		}
+		defFullName := s.def.ir.FullName()
+		if !hasAnchor {
+			defFullName = defFullName.Parent()
+		}
+		bsrAnchor = string(defFullName)
+		// For extensions, we use the anchor for the extensions section in the BSR docs.
+		if isExtension {
+			bsrAnchor = "extensions"
+		}
+		if bsrHost != "" {
+			docs.WriteString(fmt.Sprintf(
+				"\n[`%s` on the Buf Schema Registry](https://%s/docs/main:%s#%s)",
+				defFullName,
+				bsrHost,
+				s.def.file.ir.Package(),
+				bsrAnchor,
+			))
+		}
+	}
+	return docs.String()
 }
 
 // commentToMarkdown processes comment strings and formats them for markdown display.
