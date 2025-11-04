@@ -18,7 +18,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"unicode/utf16"
 
@@ -161,6 +163,17 @@ func (s *server) Initialize(
 			},
 			WorkspaceSymbolProvider: true,
 			DocumentSymbolProvider:  true,
+			CodeActionProvider: &protocol.CodeActionOptions{
+				CodeActionKinds: []protocol.CodeActionKind{
+					protocol.SourceOrganizeImports,
+					protocol.Source,
+				},
+			},
+			ExecuteCommandProvider: &protocol.ExecuteCommandOptions{
+				Commands: []string{
+					"buf.showTokenStream",
+				},
+			},
 		},
 		ServerInfo: info,
 	}, nil
@@ -571,4 +584,215 @@ func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSy
 		}
 	}
 	return anyResults, nil
+}
+
+// -- Debugging methods.
+
+// CodeAction provides source actions for debugging features.
+func (s *server) CodeAction(
+	ctx context.Context,
+	params *protocol.CodeActionParams,
+) ([]protocol.CodeAction, error) {
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, nil
+	}
+
+	// Only show debug actions if the file has been successfully parsed
+	if file.ir.AST().IsZero() {
+		return nil, nil
+	}
+
+	var actions []protocol.CodeAction
+
+	// Prepare range argument for the command
+	var rangeArg any
+	hasSelection := params.Range.Start.Line != params.Range.End.Line ||
+		params.Range.Start.Character != params.Range.End.Character
+	if hasSelection {
+		// User has a selection
+		rangeArg = map[string]any{
+			"start": map[string]any{
+				"line":      float64(params.Range.Start.Line),
+				"character": float64(params.Range.Start.Character),
+			},
+			"end": map[string]any{
+				"line":      float64(params.Range.End.Line),
+				"character": float64(params.Range.End.Character),
+			},
+		}
+	}
+
+	// Add action for showing token stream
+	title := "Show token stream"
+	if rangeArg != nil {
+		title = "Show token stream for selection"
+	}
+
+	var args []any
+	if rangeArg != nil {
+		args = []any{params.TextDocument.URI, rangeArg}
+	} else {
+		args = []any{params.TextDocument.URI}
+	}
+
+	actions = append(actions, protocol.CodeAction{
+		Title: title,
+		Kind:  protocol.Source,
+		Command: &protocol.Command{
+			Title:     title,
+			Command:   "buf.showTokenStream",
+			Arguments: args,
+		},
+	})
+
+	return actions, nil
+}
+
+// ExecuteCommand handles custom LSP commands for debugging and other features.
+//
+// Available commands:
+//   - buf.showTokenStream: Shows the token stream for a file or selection
+//     Arguments: [fileURI: string, range?: {start: {line, character}, end: {line, character}}]
+//     Returns: {title: string, content: string, language: string}
+//
+// If range is provided, only tokens within that range are shown.
+// If range is omitted, all tokens in the file are shown.
+//
+// Example usage in VS Code (with selection):
+//
+//	const range = editor.selection.isEmpty ? undefined : {
+//	    start: { line: editor.selection.start.line, character: editor.selection.start.character },
+//	    end: { line: editor.selection.end.line, character: editor.selection.end.character }
+//	};
+//	vscode.commands.executeCommand('buf.showTokenStream', document.uri.toString(), range);
+//
+// Example usage in Neovim (with visual selection):
+//
+//	vim.lsp.buf.execute_command({
+//	    command = "buf.showTokenStream",
+//	    arguments = { vim.uri_from_bufnr(0), vim.lsp.util.make_given_range_params().range }
+//	})
+func (s *server) ExecuteCommand(
+	ctx context.Context,
+	params *protocol.ExecuteCommandParams,
+) (any, error) {
+	switch params.Command {
+	case "buf.showTokenStream":
+		return s.showTokenStream(ctx, params.Arguments)
+	default:
+		return nil, fmt.Errorf("unknown command: %s", params.Command)
+	}
+}
+
+// showTokenStream displays the token stream for a file or selected range.
+func (s *server) showTokenStream(ctx context.Context, args []any) (any, error) {
+	if len(args) == 0 {
+		return nil, fmt.Errorf("missing file URI argument")
+	}
+
+	// The URI comes as a string from the client
+	uriStr, ok := args[0].(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid URI argument type: %T", args[0])
+	}
+	uri := protocol.URI(uriStr)
+
+	file := s.fileManager.Get(uri)
+	if file == nil {
+		return nil, fmt.Errorf("file not found: %s", uri)
+	}
+
+	if file.ir.AST().IsZero() {
+		return nil, fmt.Errorf("no AST available for file")
+	}
+
+	// Parse optional range parameter and convert to offsets
+	var startOffset, endOffset int
+	var hasRange bool
+	if len(args) > 1 && args[1] != nil {
+		// Range comes as a map from JSON
+		if rangeMap, ok := args[1].(map[string]any); ok {
+			var startLine, startChar, endLine, endChar int
+			if start, ok := rangeMap["start"].(map[string]any); ok {
+				if line, ok := start["line"].(float64); ok {
+					startLine = int(line)
+				}
+				if char, ok := start["character"].(float64); ok {
+					startChar = int(char)
+				}
+			}
+			if end, ok := rangeMap["end"].(map[string]any); ok {
+				if line, ok := end["line"].(float64); ok {
+					endLine = int(line)
+				}
+				if char, ok := end["character"].(float64); ok {
+					endChar = int(char)
+				}
+			}
+
+			// Convert to offsets (LSP uses 0-indexed, InverseLocation uses 1-indexed)
+			startLocation := file.file.InverseLocation(startLine+1, startChar+1, positionalEncoding)
+			endLocation := file.file.InverseLocation(endLine+1, endChar+1, positionalEncoding)
+			startOffset = startLocation.Offset
+			endOffset = endLocation.Offset
+			hasRange = true
+		}
+	}
+
+	content := formatTokenStream(file, hasRange, startOffset, endOffset)
+
+	// Create a virtual document URI with buf:// scheme
+	fileName := file.uri.Filename()
+	u := &url.URL{
+		Scheme: "buf",
+		Path:   fileName + ".tsv",
+	}
+	if hasRange {
+		q := u.Query()
+		q.Set("start", strconv.Itoa(startOffset))
+		q.Set("end", strconv.Itoa(endOffset))
+		u.RawQuery = q.Encode()
+	}
+	docURI := protocol.DocumentURI(u.String())
+
+	// Use workspace/applyEdit to set the content of the virtual document
+	// Call directly via conn.Call to handle the unmarshalling bug:
+	// https://github.com/go-language-server/protocol/issues/38
+	var result struct {
+		Applied bool `json:"applied"`
+	}
+	_, err := s.conn.Call(ctx, "workspace/applyEdit", &protocol.ApplyWorkspaceEditParams{
+		Label: "Show Token Stream",
+		Edit: protocol.WorkspaceEdit{
+			Changes: map[protocol.DocumentURI][]protocol.TextEdit{
+				docURI: {
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{Line: 0, Character: 0},
+							End:   protocol.Position{Line: 0, Character: 0},
+						},
+						NewText: content,
+					},
+				},
+			},
+		},
+	}, &result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create document: %w", err)
+	}
+	if !result.Applied {
+		file.lsp.logger.WarnContext(ctx, "workspace edit was not applied")
+	}
+
+	// Use window/showDocument to open the virtual file
+	// Note: showDocument is a newer LSP feature, but most modern clients support it
+	if err := s.conn.Notify(ctx, "window/showDocument", map[string]any{
+		"uri":       docURI,
+		"takeFocus": true,
+	}); err != nil {
+		return nil, fmt.Errorf("failed to show document: %w", err)
+	}
+
+	return nil, nil
 }
