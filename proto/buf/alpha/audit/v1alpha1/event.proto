@@ -79,7 +79,7 @@ message Resource {
 
 // EventType is the type of audited event.
 //
-// [#next-free-field: 82]
+// [#next-free-field: 84]
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
   EVENT_TYPE_ORGANIZATION_CREATED = 1;
@@ -92,6 +92,8 @@ enum EventType {
   EVENT_TYPE_ORGANIZATION_IDP_GROUP_UPDATED = 59;
   EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED = 22;
   EVENT_TYPE_ORGANIZATION_RESOURCE_VISIBILITY_CONTROL_CHANGED = 81;
+  EVENT_TYPE_ORGANIZATION_UNIQUENESS_POLICY_ENABLED = 82;
+  EVENT_TYPE_ORGANIZATION_UNIQUENESS_POLICY_DISABLED = 83;
   EVENT_TYPE_REPOSITORY_CREATED = 6;
   EVENT_TYPE_REPOSITORY_DEPRECATED = 48;
   EVENT_TYPE_REPOSITORY_UNDEPRECATED = 49;
@@ -179,7 +181,7 @@ message EventMetadata {
 // it happened, who did it, which resource was affected, and more contextual information on the
 // event.
 //
-// [#next-free-field: 88]
+// [#next-free-field: 90]
 message Event {
   // Unique id of the audited event.
   string event_id = 1;
@@ -202,6 +204,8 @@ message Event {
     PayloadOrganizationMemberRolesChanged organization_member_roles_changed = 56;
     PayloadOrganizationMemberRemoved organization_member_removed = 11;
     PayloadOrganizationResourceVisibilityControlChanged organization_resource_visibility_control_changed = 87;
+    PayloadOrganizationUniquenessPolicyEnabled organization_uniqueness_policy_enabled = 88;
+    PayloadOrganizationUniquenessPolicyDisabled organization_uniqueness_policy_disabled = 89;
     PayloadRepositoryCreated repository_created = 12;
     PayloadRepositoryDeprecated repository_deprecated = 54;
     PayloadRepositoryUndeprecated repository_undeprecated = 55;
@@ -1141,3 +1145,7 @@ message PayloadOrganizationResourceVisibilityControlChanged {
   // then this visibility control was just deleted.
   optional ResourceVisibilityControl new_visibility_control = 3;
 }
+
+message PayloadOrganizationUniquenessPolicyEnabled {}
+
+message PayloadOrganizationUniquenessPolicyDisabled {}
