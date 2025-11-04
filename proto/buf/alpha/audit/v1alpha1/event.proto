@@ -179,7 +179,7 @@ message EventMetadata {
 // it happened, who did it, which resource was affected, and more contextual information on the
 // event.
 //
-// [#next-free-field: 88]
+// [#next-free-field: 90]
 message Event {
   // Unique id of the audited event.
   string event_id = 1;
@@ -202,6 +202,8 @@ message Event {
     PayloadOrganizationMemberRolesChanged organization_member_roles_changed = 56;
     PayloadOrganizationMemberRemoved organization_member_removed = 11;
     PayloadOrganizationResourceVisibilityControlChanged organization_resource_visibility_control_changed = 87;
+    PayloadOrganizationUniquenessPolicyEnabled organization_uniqueness_policy_enabled = 88;
+    PayloadOrganizationUniquenessPolicyDisabled organization_uniqueness_policy_disabled = 89;
     PayloadRepositoryCreated repository_created = 12;
     PayloadRepositoryDeprecated repository_deprecated = 54;
     PayloadRepositoryUndeprecated repository_undeprecated = 55;
@@ -1141,3 +1143,7 @@ message PayloadOrganizationResourceVisibilityControlChanged {
   // then this visibility control was just deleted.
   optional ResourceVisibilityControl new_visibility_control = 3;
 }
+
+message PayloadOrganizationUniquenessPolicyEnabled {}
+
+message PayloadOrganizationUniquenessPolicyDisabled {}
