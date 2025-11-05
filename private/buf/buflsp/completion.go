@@ -444,12 +444,6 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		}
 		if showTypes {
 			iters = append(iters,
-				keywordToCompletionItem(
-					predeclaredTypeKeywords(),
-					protocol.CompletionItemKindKeyword,
-					tokenSpan,
-					offset,
-				),
 				typeReferencesToCompletionItems(
 					file,
 					"", // No parent type within a service declaration.
