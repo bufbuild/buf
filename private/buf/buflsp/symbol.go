@@ -164,6 +164,9 @@ func (s *symbol) References(includeDeclaration bool) []protocol.Location {
 
 // LogValue provides the log value for a symbol.
 func (s *symbol) LogValue() slog.Value {
+	if s == nil {
+		return slog.AnyValue(nil)
+	}
 	loc := func(loc report.Location) slog.Value {
 		return slog.GroupValue(
 			slog.Int("line", loc.Line),

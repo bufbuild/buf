@@ -655,7 +655,12 @@ func (f *file) messageToSymbols(msg ir.MessageValue) []*symbol {
 func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 	cursorLocation := f.file.InverseLocation(int(cursor.Line)+1, int(cursor.Character)+1, positionalEncoding)
 	offset := cursorLocation.Offset
+	symbol := f.symbolAt(offset)
+	f.lsp.logger.DebugContext(ctx, "symbol at", slog.Int("line", int(cursor.Line)), slog.Int("character", int(cursor.Character)), slog.Any("symbol", symbol))
+	return symbol
+}
 
+func (f *file) symbolAt(offset int) *symbol {
 	// Binary search for insertion point based on Start.
 	idx, _ := slices.BinarySearchFunc(f.symbols, offset, func(sym *symbol, offset int) int {
 		if sym.span.Start <= offset {
@@ -675,7 +680,6 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 		}
 		symbol = before
 	}
-	f.lsp.logger.DebugContext(ctx, "symbol at", slog.Int("line", int(cursor.Line)), slog.Int("character", int(cursor.Character)), slog.Any("symbol", symbol))
 	return symbol
 }
 
