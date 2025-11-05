@@ -641,45 +641,8 @@ func (f *file) messageToSymbols(msg ir.MessageValue, index int, parents []*symbo
 				span = components[len(components)-1].Span()
 			} else {
 				span = components[index].Span()
-				// We check back along the path to make sure that we have a symbol for each component.
-				// This can happen if we have an option structure such as the following:
-				// [
-				//    (option).message.field_a = 2
-				//    (option).message.field_b = 100
-				//  ]
-				//
-				// We need to ensure that (option) for (option).message.field_b has a symbol defined
-				// among the parent symbols.
-				if len(components) > 1 {
-					parentType := element.Value().Container().Type()
-					for _, component := range slices.Backward(components) {
-						if component.IsLast() {
-							continue
-						}
-						found := false
-						for _, parent := range parents {
-							if parent.span == component.Span() {
-								found = true
-							}
-						}
-						if !found {
-							sym := &symbol{
-								// NOTE: no [ir.Symbol] for option elements
-								file: f,
-								span: component.Span(),
-								kind: &reference{
-									def: parentType.AST(),
-								},
-								isOption: true,
-							}
-							symbols = append(symbols, sym)
-						}
-						parentType = parentType.Parent()
-					}
-				}
 			}
 			sym := &symbol{
-				// NOTE: no [ir.Symbol] for option elements
 				file: f,
 				span: span,
 				kind: &reference{
@@ -694,6 +657,43 @@ func (f *file) messageToSymbols(msg ir.MessageValue, index int, parents []*symbo
 					def: element.Type().AST(),
 				}
 				symbols = append(symbols, f.messageToSymbols(element.AsMessage(), index+1, symbols)...)
+			}
+
+			// We check back along the path to make sure that we have a symbol for each component.
+			// This can happen if we have an option structure such as the following:
+			// [
+			//    (option).message.field_a = 2
+			//    (option).message.field_b = 100
+			//  ]
+			//
+			// We need to ensure that (option) for (option).message.field_b has a symbol defined
+			// among the parent symbols.
+			if len(components) > 1 {
+				parentType := element.Value().Container()
+				for _, component := range slices.Backward(components) {
+					if component.IsLast() {
+						continue
+					}
+					found := false
+					for _, parent := range parents {
+						if parent.span == component.Span() {
+							found = true
+						}
+					}
+					if !found {
+						sym := &symbol{
+							// NOTE: no [ir.Symbol] for option elements
+							file: f,
+							span: component.Span(),
+							kind: &reference{
+								def: parentType.Type().AST(),
+							},
+							isOption: true,
+						}
+						symbols = append(symbols, sym)
+					}
+					parentType = parentType.AsValue().Container()
+				}
 			}
 		}
 	}
