@@ -60,8 +60,8 @@ type file struct {
 	workspace  *workspace         // May be nil.
 	objectInfo storage.ObjectInfo // Info in the context of the workspace.
 
-	ir                   ir.File
-	referenceableSymbols map[string]*symbol
+	ir                   *ir.File
+	referenceableSymbols map[report.Span]*symbol
 	referenceSymbols     []*symbol
 	symbols              []*symbol
 	diagnostics          []protocol.Diagnostic
@@ -215,7 +215,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 		slog.Int("version", int(f.version)),
 	)
 	f.diagnostics = nil
-	f.ir = ir.File{}
+	f.ir = nil
 
 	// Opener creates a cached view of all files in the workspace.
 	pathToFiles := f.workspace.PathToFile()
@@ -228,7 +228,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 	opener := source.NewMap(openerMap)
 
 	session := new(ir.Session)
-	queries := xslices.Map(files, func(file *file) incremental.Query[ir.File] {
+	queries := xslices.Map(files, func(file *file) incremental.Query[*ir.File] {
 		return queries.IR{
 			Opener:  opener,
 			Path:    file.objectInfo.Path(),
@@ -285,7 +285,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 func (f *file) IndexSymbols(ctx context.Context) {
 	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 	// We cannot index symbols without the IR, so we keep the symbols as-is.
-	if f.ir.IsZero() {
+	if f.ir == nil {
 		return
 	}
 
@@ -293,7 +293,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	// this file depends on a file that has since been modified, we may need to update references.
 	f.symbols = nil
 	f.referenceSymbols = nil
-	f.referenceableSymbols = make(map[string]*symbol)
+	f.referenceableSymbols = make(map[report.Span]*symbol)
 
 	// Process all imports as symbols
 	for imp := range seq.Values(f.ir.Imports()) {
@@ -311,7 +311,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 		if !ok {
 			continue
 		}
-		f.referenceableSymbols[def.ast.Name().Canonicalized()] = sym
+		f.referenceableSymbols[def.ast.Name().Span()] = sym
 	}
 
 	// TODO: this could use a refactor, probably.
@@ -338,7 +338,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			}
 			file = f
 		}
-		def, ok := file.referenceableSymbols[ref.def.Name().Canonicalized()]
+		def, ok := file.referenceableSymbols[ref.def.Name().Span()]
 		if !ok {
 			// This could happen in the case where we are in the cache for example, and we do not
 			// have access to a buildable workspace.
@@ -377,7 +377,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			if ref.def.Span().Path() != f.objectInfo.Path() {
 				continue
 			}
-			def, ok := f.referenceableSymbols[ref.def.Name().Canonicalized()]
+			def, ok := f.referenceableSymbols[ref.def.Name().Span()]
 			if !ok {
 				// This shouldn't happen, if a symbol is pointing at this file, all definitions
 				// should be resolved, logging a warning
@@ -425,7 +425,7 @@ func (f *file) indexSymbols() ([]*symbol, []*symbol) {
 	for i := range f.ir.Symbols().Len() {
 		// We only index the symbols for this file.
 		symbol := f.ir.Symbols().At(i)
-		if symbol.File().Path() != f.objectInfo.Path() {
+		if symbol.Context().Path() != f.objectInfo.Path() {
 			continue
 		}
 		resolvedSyms, unresolvedSyms := f.irToSymbols(symbol)
@@ -907,7 +907,7 @@ type wktObjectInfo struct {
 // This operation requires [IndexSymbols].
 func (f *file) GetSymbols(query string) iter.Seq[protocol.SymbolInformation] {
 	return func(yield func(protocol.SymbolInformation) bool) {
-		if f.ir.IsZero() {
+		if f.ir == nil {
 			return
 		}
 		// Search through all symbols in this file.
