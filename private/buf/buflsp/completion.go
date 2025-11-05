@@ -389,6 +389,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 					findTypeFullName(file, parentDef),
 					tokenSpan,
 					offset,
+					true, // Allow enums.
 				),
 			)
 		}
@@ -449,6 +450,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 					"", // No parent type within a service declaration.
 					tokenSpan,
 					offset,
+					false, // Disallow enums.
 				),
 			)
 		}
@@ -727,6 +729,7 @@ func typeReferencesToCompletionItems(
 	parentFullName ir.FullName,
 	span report.Span,
 	offset int,
+	allowEnums bool,
 ) iter.Seq[protocol.CompletionItem] {
 	fileSymbolTypesIter := func(yield func(*file, *symbol) bool) {
 		for _, imported := range current.workspace.PathToFile() {
@@ -777,6 +780,9 @@ func typeReferencesToCompletionItems(
 			case ir.SymbolKindMessage:
 				kind = protocol.CompletionItemKindClass // Messages are like classes
 			case ir.SymbolKindEnum:
+				if !allowEnums {
+					continue
+				}
 				kind = protocol.CompletionItemKindEnum
 			default:
 				continue // Unsupported kind, skip it.
