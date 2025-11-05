@@ -312,6 +312,11 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			continue
 		}
 		f.referenceableSymbols[def.ast.Name().Span()] = sym
+		f.lsp.logger.Debug(
+			"referenceable symbol",
+			slog.String("file", f.objectInfo.Path()),
+			slog.String("name", def.ast.Name().Canonicalized()),
+		)
 	}
 
 	// TODO: this could use a refactor, probably.
@@ -651,7 +656,7 @@ func (f *file) messageToSymbols(msg ir.MessageValue, index int, parents []*symbo
 				// We need to ensure that (option) for (option).message.field_b has a symbol defined
 				// among the parent symbols.
 				if len(components) > 1 {
-					parentType := element.Type().Parent()
+					parentType := element.Value().Container().Type()
 					for _, component := range slices.Backward(components) {
 						if component.IsLast() {
 							continue
@@ -678,14 +683,17 @@ func (f *file) messageToSymbols(msg ir.MessageValue, index int, parents []*symbo
 								slog.String("file", sym.span.Path()),
 								slog.Any("start", sym.span.StartLoc()),
 								slog.Any("end", sym.span.EndLoc()),
+								slog.Bool("parent_is_message", parentType.IsMessage()),
+								slog.String("kind", parentType.AST().Classify().String()),
+								slog.Bool("type_is_zero", parentType.IsZero()),
 								slog.Bool("parent_ast_zero", parentType.AST().IsZero()),
 							)
 						}
 						f.lsp.logger.Debug(
 							"parent",
 							slog.Any("ast", parentType.AST()),
+							slog.String("kind", parentType.AST().Classify().String()),
 							slog.Bool("is_zero", parentType.AST().IsZero()),
-							slog.Bool("type_is_zero", parentType.IsZero()),
 							slog.Int("len_components", len(components)),
 						)
 						parentType = parentType.Parent()
@@ -698,6 +706,7 @@ func (f *file) messageToSymbols(msg ir.MessageValue, index int, parents []*symbo
 				slog.Any("start", span.StartLoc()),
 				slog.Any("end", span.EndLoc()),
 				slog.Int("index", index),
+				slog.String("def", element.Field().AST().Name().Canonicalized()),
 			)
 			sym := &symbol{
 				// NOTE: no [ir.Symbol] for option elements
