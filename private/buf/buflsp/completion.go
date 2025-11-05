@@ -54,6 +54,8 @@ func getCompletionItems(
 		return nil
 	}
 
+	// This grabs the contents of the file as the top-level [ast.DeclBody], see [ast.File].Decls()
+	// for reference.
 	declPath := getDeclForPosition(id.Wrap(file.ir.AST(), id.ID[ast.DeclBody](1)), position)
 	if len(declPath) > 0 {
 		decl := declPath[len(declPath)-1]

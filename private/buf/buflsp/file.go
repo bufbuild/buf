@@ -312,11 +312,6 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			continue
 		}
 		f.referenceableSymbols[def.ast.Name().Span()] = sym
-		f.lsp.logger.Debug(
-			"referenceable symbol",
-			slog.String("file", f.objectInfo.Path()),
-			slog.String("name", def.ast.Name().Canonicalized()),
-		)
 	}
 
 	// TODO: this could use a refactor, probably.
