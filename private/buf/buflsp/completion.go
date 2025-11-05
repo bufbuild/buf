@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/syntax"
+	"github.com/bufbuild/protocompile/experimental/id"
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/seq"
@@ -44,7 +45,7 @@ func getCompletionItems(
 	file *file,
 	position protocol.Position,
 ) []protocol.CompletionItem {
-	if file.ir.AST().IsZero() {
+	if file.ir.AST() == nil {
 		file.lsp.logger.DebugContext(
 			ctx,
 			"no AST found for completion",
@@ -53,7 +54,9 @@ func getCompletionItems(
 		return nil
 	}
 
-	declPath := getDeclForPosition(file.ir.AST().DeclBody, position)
+	// This grabs the contents of the file as the top-level [ast.DeclBody], see [ast.File].Decls()
+	// for reference.
+	declPath := getDeclForPosition(id.Wrap(file.ir.AST(), id.ID[ast.DeclBody](1)), position)
 	if len(declPath) > 0 {
 		decl := declPath[len(declPath)-1]
 		file.lsp.logger.DebugContext(
@@ -727,7 +730,7 @@ func typeReferencesToCompletionItems(
 			if _, ok := symbol.ir.Deprecated().AsBool(); ok {
 				isDeprecated = true
 			}
-			symbolFile := symbol.ir.File().Path()
+			symbolFile := symbol.ir.Context().Path()
 			_, hasImport := currentImportPaths[symbolFile]
 			var additionalTextEdits []protocol.TextEdit
 			if !hasImport && symbolFile != current.ir.Path() {
@@ -832,10 +835,10 @@ func isTokenNewline(tok token.Token) bool {
 
 // extractAroundOffset extracts the value around the offset by querying the token stream.
 func extractAroundOffset(file *file, offset int, isTokenBefore, isTokenAfter func(token.Token) bool) report.Span {
-	if file.ir.AST().IsZero() {
+	if file.ir.AST() == nil {
 		return report.Span{}
 	}
-	stream := file.ir.AST().Context().Stream()
+	stream := file.ir.AST().Stream()
 	if stream == nil {
 		return report.Span{}
 	}
