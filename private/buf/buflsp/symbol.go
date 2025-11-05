@@ -66,7 +66,8 @@ type referenceable struct {
 }
 
 type reference struct {
-	def ast.DeclDef
+	def      ast.DeclDef
+	fullName ir.FullName
 }
 
 type static struct {

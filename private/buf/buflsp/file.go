@@ -61,7 +61,7 @@ type file struct {
 	objectInfo storage.ObjectInfo // Info in the context of the workspace.
 
 	ir                   *ir.File
-	referenceableSymbols map[report.Span]*symbol
+	referenceableSymbols map[ir.FullName]*symbol
 	referenceSymbols     []*symbol
 	symbols              []*symbol
 	diagnostics          []protocol.Diagnostic
@@ -293,7 +293,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	// this file depends on a file that has since been modified, we may need to update references.
 	f.symbols = nil
 	f.referenceSymbols = nil
-	f.referenceableSymbols = make(map[report.Span]*symbol)
+	f.referenceableSymbols = make(map[ir.FullName]*symbol)
 
 	// Process all imports as symbols
 	for imp := range seq.Values(f.ir.Imports()) {
@@ -307,11 +307,11 @@ func (f *file) IndexSymbols(ctx context.Context) {
 
 	// Index all referenceable symbols
 	for _, sym := range resolved {
-		def, ok := sym.kind.(*referenceable)
+		_, ok := sym.kind.(*referenceable)
 		if !ok {
 			continue
 		}
-		f.referenceableSymbols[def.ast.Name().Span()] = sym
+		f.referenceableSymbols[sym.ir.FullName()] = sym
 	}
 
 	// TODO: this could use a refactor, probably.
@@ -338,7 +338,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			}
 			file = f
 		}
-		def, ok := file.referenceableSymbols[ref.def.Name().Span()]
+		def, ok := file.referenceableSymbols[ref.fullName]
 		if !ok {
 			// This could happen in the case where we are in the cache for example, and we do not
 			// have access to a buildable workspace.
@@ -377,7 +377,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			if ref.def.Span().Path() != f.objectInfo.Path() {
 				continue
 			}
-			def, ok := f.referenceableSymbols[ref.def.Name().Span()]
+			def, ok := f.referenceableSymbols[ref.fullName]
 			if !ok {
 				// This shouldn't happen, if a symbol is pointing at this file, all definitions
 				// should be resolved, logging a warning
@@ -575,7 +575,8 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 			file: f,
 			span: irSymbol.AsMethod().AST().AsMethod().Signature.Inputs().Span(),
 			kind: &reference{
-				def: input.AST(), // Only messages can be method inputs and outputs
+				def:      input.AST(), // Only messages can be method inputs and outputs
+				fullName: input.FullName(),
 			},
 		}
 		unresolved = append(unresolved, inputSym)
@@ -586,7 +587,8 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 			file: f,
 			span: irSymbol.AsMethod().AST().AsMethod().Signature.Outputs().Span(),
 			kind: &reference{
-				def: output.AST(), // Only messages can be method inputs and outputs
+				def:      output.AST(), // Only messages can be method inputs and outputs
+				fullName: output.FullName(),
 			},
 		}
 		unresolved = append(unresolved, outputSym)
@@ -604,7 +606,8 @@ func getKindForMember(member ir.Member) (kind, bool) {
 		}, false
 	}
 	return &reference{
-		def: member.Element().AST(),
+		def:      member.Element().AST(),
+		fullName: member.Element().FullName(),
 	}, true
 }
 
@@ -646,7 +649,8 @@ func (f *file) messageToSymbols(msg ir.MessageValue, index int, parents []*symbo
 				file: f,
 				span: span,
 				kind: &reference{
-					def: element.Field().AST(),
+					def:      element.Field().AST(),
+					fullName: element.Field().FullName(),
 				},
 				isOption: true,
 			}
