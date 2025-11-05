@@ -658,7 +658,8 @@ func (f *file) messageToSymbols(msg ir.MessageValue, index int, parents []*symbo
 			if !element.AsMessage().IsZero() {
 				// For message value elements, we use the Type AST.
 				sym.kind = &reference{
-					def: element.Type().AST(),
+					def:      element.Type().AST(),
+					fullName: element.Type().FullName(),
 				}
 				symbols = append(symbols, f.messageToSymbols(element.AsMessage(), index+1, symbols)...)
 			}
@@ -690,7 +691,8 @@ func (f *file) messageToSymbols(msg ir.MessageValue, index int, parents []*symbo
 							file: f,
 							span: component.Span(),
 							kind: &reference{
-								def: parentType.Type().AST(),
+								def:      parentType.Type().AST(),
+								fullName: parentType.Type().FullName(),
 							},
 							isOption: true,
 						}
