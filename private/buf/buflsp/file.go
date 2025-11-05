@@ -628,6 +628,7 @@ func (f *file) messageToSymbols(msg ir.MessageValue, index int, parents []*symbo
 		for element := range seq.Values(field.Elements()) {
 			key := element.Value().KeyASTs().At(element.ValueNodeIndex())
 			components := slices.Collect(key.AsPath().Components)
+			var span report.Span
 			// This can happen if we have an option structure such as the following:
 			// [(option).message = {
 			//    field_a: 2
@@ -636,7 +637,6 @@ func (f *file) messageToSymbols(msg ir.MessageValue, index int, parents []*symbo
 			//
 			// `field_a` is a path that only has one component, but index = 2, since we have
 			// (option).message.field_a. So, in this case, we use the last component.
-			var span report.Span
 			if index > len(components)-1 {
 				span = components[len(components)-1].Span()
 			} else {
@@ -658,7 +658,7 @@ func (f *file) messageToSymbols(msg ir.MessageValue, index int, parents []*symbo
 						}
 						found := false
 						for _, parent := range parents {
-							if parent.span.Path() == component.Span().Path() && parent.span.Start == component.Span().Start && parent.span.End == component.Span().End {
+							if parent.span == component.Span() {
 								found = true
 							}
 						}
@@ -673,36 +673,11 @@ func (f *file) messageToSymbols(msg ir.MessageValue, index int, parents []*symbo
 								isOption: true,
 							}
 							symbols = append(symbols, sym)
-							f.lsp.logger.Debug(
-								"added",
-								slog.String("file", sym.span.Path()),
-								slog.Any("start", sym.span.StartLoc()),
-								slog.Any("end", sym.span.EndLoc()),
-								slog.Bool("parent_is_message", parentType.IsMessage()),
-								slog.String("kind", parentType.AST().Classify().String()),
-								slog.Bool("type_is_zero", parentType.IsZero()),
-								slog.Bool("parent_ast_zero", parentType.AST().IsZero()),
-							)
 						}
-						f.lsp.logger.Debug(
-							"parent",
-							slog.Any("ast", parentType.AST()),
-							slog.String("kind", parentType.AST().Classify().String()),
-							slog.Bool("is_zero", parentType.AST().IsZero()),
-							slog.Int("len_components", len(components)),
-						)
 						parentType = parentType.Parent()
 					}
 				}
 			}
-			f.lsp.logger.Debug(
-				"element",
-				slog.String("file", span.Path()),
-				slog.Any("start", span.StartLoc()),
-				slog.Any("end", span.EndLoc()),
-				slog.Int("index", index),
-				slog.String("def", element.Field().AST().Name().Canonicalized()),
-			)
 			sym := &symbol{
 				// NOTE: no [ir.Symbol] for option elements
 				file: f,
