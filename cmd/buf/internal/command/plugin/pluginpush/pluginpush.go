@@ -104,7 +104,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		fmt.Sprintf(
 			"The plugin's type setting, if created. Can only be set with --%s. Must be one of %s",
-			createTypeFlagName,
+			createFlagName,
 			xstrings.SliceToString(bufplugin.AllPluginTypeStrings),
 		),
 	)
