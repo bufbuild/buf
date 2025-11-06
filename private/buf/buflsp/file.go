@@ -23,6 +23,7 @@ import (
 	"io"
 	"iter"
 	"log/slog"
+	"math"
 	"slices"
 	"strings"
 	"time"
@@ -653,22 +654,34 @@ func (f *file) messageToSymbols(msg ir.MessageValue) []*symbol {
 //
 // Returns nil if no symbol is found.
 func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
-	// Binary search for the symbol whose start is before or equal to cursor.
-	idx, found := slices.BinarySearchFunc(f.symbols, cursor, func(sym *symbol, cursor protocol.Position) int {
-		return comparePositions(sym.Range().Start, cursor)
-	})
-	if !found {
-		if idx == 0 {
-			return nil
+	cursorLocation := f.file.InverseLocation(int(cursor.Line)+1, int(cursor.Character)+1, positionalEncoding)
+	offset := cursorLocation.Offset
+
+	// Binary search for insertion point based on Start.
+	idx, _ := slices.BinarySearchFunc(f.symbols, offset, func(sym *symbol, offset int) int {
+		if sym.span.Start <= offset {
+			return -1
 		}
-		idx--
+		return 1
+	})
+	// Walk backwards from symbol with Start > offset to find the smallest symbol.
+	// This makes the assumption that overlapping spans share the same start position.
+	// For example: the following spans A[0,10], B[0,15], C[0,20], D[20,30] and a
+	// target offset 12, binary search returns 3 (D), and the minimum node is B.
+	var symbol *symbol
+	minLength := math.MaxInt
+	for _, before := range slices.Backward(f.symbols[:idx]) {
+		// Offset is past the end. Range is half-open [Start, End)
+		if offset > before.span.End {
+			break
+		}
+		length := before.span.End - before.span.Start
+		if minLength > length {
+			minLength = length
+			symbol = before
+		}
 	}
-	symbol := f.symbols[idx]
-	// Check that cursor is before the end of the symbol. Range is half-open [Start, End).
-	if comparePositions(symbol.Range().End, cursor) < 0 {
-		return nil
-	}
-	f.lsp.logger.DebugContext(ctx, "found symbol", slog.Any("symbol", symbol))
+	f.lsp.logger.DebugContext(ctx, "symbol at", slog.Int("line", int(cursor.Line)), slog.Int("character", int(cursor.Character)), slog.Any("symbol", symbol))
 	return symbol
 }
 
