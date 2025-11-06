@@ -237,11 +237,12 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 	)
 
 	switch def.Classify() {
-	case ast.DefKindMessage, ast.DefKindService, ast.DefKindEnum:
-		return nil // ignored
-	case ast.DefKindField, ast.DefKindInvalid:
-		// Use DefKindField and DefKindInvalid as completion starts.
-		// An invalid field is caused from partial values, with still invalid syntax.
+	case ast.DefKindMessage, ast.DefKindService, ast.DefKindEnum, ast.DefKindGroup:
+		// Ignore these kinds as this will be a completion for the name of the declaration.
+		return nil
+	case ast.DefKindField, ast.DefKindMethod, ast.DefKindInvalid:
+		// Use these kinds as completion starts.
+		// An invalid kind is caused from partial values, which may be any kind.
 	default:
 		file.lsp.logger.DebugContext(ctx, "completion: unknown definition type", slog.String("kind", def.Classify().String()))
 		return nil
@@ -257,56 +258,47 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 	// Use the token stream to capture invalid declarations.
 	beforeCount, afterCount := 0, 0
 	hasBeforeGap, hasAfterGap := false, false
-	hasBeforeNewline, hasAfterNewline := false, false
-	hasFieldModifier := false
+	hasStart := false // Start is a newline or open parenthesis for the start of a definition
+	hasTypeModifier := false
 	hasDeclaration := false
 	typeSpan := extractAroundOffset(file, offset,
 		func(tok token.Token) bool {
+			if isTokenTypeDelimiter(tok) {
+				hasStart = true
+				return false
+			}
 			if hasBeforeGap {
 				beforeCount += 1
 				hasBeforeGap = false
 				if kw := tok.Keyword(); kw != keyword.Unknown {
 					_, isDeclaration := declarationSet[tok.Keyword()]
 					hasDeclaration = hasDeclaration || isDeclaration
-					_, isFieldModifier := fieldModifierSet[tok.Keyword()]
-					hasFieldModifier = hasFieldModifier || isFieldModifier
+					_, isFieldModifier := typeModifierSet[tok.Keyword()]
+					hasTypeModifier = hasTypeModifier || isFieldModifier
 				}
-			}
-			if isTokenNewline(tok) {
-				hasBeforeNewline = true
-				return false
 			}
 			if isTokenSpace(tok) {
 				hasBeforeGap = true
 				return true
 			}
-			return isTokenType(tok)
+			return isTokenType(tok) || isTokenParen(tok)
 		},
 		func(tok token.Token) bool {
 			if hasAfterGap {
 				afterCount += 1
 				hasAfterGap = false
 			}
-			if isTokenNewline(tok) {
-				hasAfterNewline = true
+			if isTokenTypeDelimiter(tok) {
 				return false
 			}
 			if isTokenSpace(tok) {
 				hasAfterGap = true
 				return true
 			}
-			return isTokenType(tok)
+			return isTokenType(tok) || isTokenParen(tok)
 		},
 	)
 	typePrefix, typeSuffix := splitSpan(typeSpan, offset)
-	if !hasBeforeNewline {
-		file.lsp.logger.DebugContext(
-			ctx,
-			"completion: ignoring definition type not on newline",
-			slog.String("kind", def.Classify().String()),
-		)
-		return nil
-	}
 	file.lsp.logger.DebugContext(
 		ctx, "completion: definition value",
 		slog.String("token", tokenSpan.Text()),
@@ -317,15 +309,23 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		slog.String("type_suffix", typeSuffix),
 		slog.Int("before_count", beforeCount),
 		slog.Int("after_count", afterCount),
-		slog.Bool("has_before_newline", hasBeforeNewline),
-		slog.Bool("has_after_newline", hasAfterNewline),
-		slog.Bool("has_field_modifier", hasFieldModifier),
+		slog.Bool("has_start", hasStart),
+		slog.Bool("has_field_modifier", hasTypeModifier),
 		slog.Bool("has_declaration", hasDeclaration),
 	)
+	if !hasStart {
+		file.lsp.logger.DebugContext(
+			ctx,
+			"completion: ignoring definition type unable to find start",
+			slog.String("kind", def.Classify().String()),
+		)
+		return nil
+	}
 
 	// If at the top level, and on the first item, return top level keywords.
 	if len(declPath) == 1 {
-		if beforeCount == 0 {
+		showKeywords := beforeCount == 0
+		if showKeywords {
 			file.lsp.logger.DebugContext(ctx, "completion: definition returning top-level keywords")
 			return slices.Collect(keywordToCompletionItem(
 				topLevelKeywords(),
@@ -337,6 +337,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		return nil // unknown
 	}
 
+	// Parent declaration determines child completions.
 	parent := declPath[len(declPath)-2]
 	if parent.Kind() != ast.DeclKindDef {
 		return nil
@@ -347,22 +348,20 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		slog.String("kind", parentDef.Classify().String()),
 	)
 
-	if offsetInSpan(def.Options().Span(), offset) {
+	if offsetInSpan(offset, def.Options().Span()) == 0 {
 		// TODO: Handle option completions within options block.
 		file.lsp.logger.DebugContext(ctx, "completion: ignoring options block completion")
 		return nil
 	}
 
-	// Limit completions based on the following heuristic:
-	// - Show keywords for the first values
-	// - Show types if no type declaration and at first, or second position with field modifier.
-	showKeywords := beforeCount == 0
-	showTypes := !hasDeclaration &&
-		((hasFieldModifier && beforeCount == 1) || (beforeCount == 0))
-
 	var iters []iter.Seq[protocol.CompletionItem]
 	switch parentDef.Classify() {
 	case ast.DefKindMessage:
+		// Limit completions based on the following heuristics:
+		// - Show keywords for the first values
+		// - Show types if no type declaration and at first, or second position with field modifier.
+		showKeywords := beforeCount == 0
+		showTypes := !hasDeclaration && (beforeCount == 0 || (hasTypeModifier && beforeCount == 1))
 		if showKeywords {
 			isProto2 := isProto2(file)
 			iters = append(iters,
@@ -393,25 +392,77 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 					findTypeFullName(file, parentDef),
 					tokenSpan,
 					offset,
+					true, // Allow enums.
 				),
 			)
 		}
 	case ast.DefKindService:
+		// Method types are only shown within args of the method definition.
+		// Use the type to handle invalid defs.
+		defMethod := def.AsMethod()
+		isRPC := defMethod.Keyword.Keyword() == keyword.RPC ||
+			strings.HasPrefix(typeSpan.Text(), keyword.RPC.String())
+
+		// Limit complitions based on the following heuristics:
+		// - Show keywords for the first values.
+		// - Show return keyword if an RPC method and at the third position.
+		// - Show types if an RPC method and within the Input or Output args.
+		showKeywords := beforeCount == 0
+		showReturnKeyword := isRPC &&
+			(beforeCount == 2 || offsetInSpan(offset, defMethod.Signature.Returns().Span()) == 0)
+		showTypes := isRPC && !hasDeclaration &&
+			(beforeCount == 0 || (hasTypeModifier && beforeCount == 1)) &&
+			(offsetInSpan(offset, defMethod.Signature.Inputs().Span()) == 0 ||
+				offsetInSpan(offset, defMethod.Signature.Outputs().Span()) == 0)
+
 		if showKeywords {
+			// If both showKeywords and showTypes is set, we are in a services method args.
+			if showTypes {
+				iters = append(iters,
+					keywordToCompletionItem(
+						methodArgLevelKeywords(),
+						protocol.CompletionItemKindKeyword,
+						tokenSpan,
+						offset,
+					),
+				)
+			} else {
+				iters = append(iters,
+					keywordToCompletionItem(
+						serviceLevelKeywords(),
+						protocol.CompletionItemKindKeyword,
+						tokenSpan,
+						offset,
+					),
+				)
+			}
+		} else if showReturnKeyword {
 			iters = append(iters,
 				keywordToCompletionItem(
-					serviceLevelKeywords(),
+					serviceReturnKeyword(),
 					protocol.CompletionItemKindKeyword,
 					tokenSpan,
 					offset,
 				),
 			)
 		}
+		if showTypes {
+			iters = append(iters,
+				typeReferencesToCompletionItems(
+					file,
+					"", // No parent type within a service declaration.
+					tokenSpan,
+					offset,
+					false, // Disallow enums.
+				),
+			)
+		}
 	case ast.DefKindMethod:
+		showKeywords := beforeCount == 0
 		if showKeywords {
 			iters = append(iters,
 				keywordToCompletionItem(
-					optionKeyword(),
+					optionKeywords(),
 					protocol.CompletionItemKindKeyword,
 					tokenSpan,
 					offset,
@@ -419,10 +470,11 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 			)
 		}
 	case ast.DefKindEnum:
+		showKeywords := beforeCount == 0
 		if showKeywords {
 			iters = append(iters,
 				keywordToCompletionItem(
-					optionKeyword(),
+					optionKeywords(),
 					protocol.CompletionItemKindKeyword,
 					tokenSpan,
 					offset,
@@ -544,10 +596,13 @@ var declarationSet = func() map[keyword.Keyword]struct{} {
 	return m
 }()
 
-// fieldModifierSet is the set of keywords for type modifiers.
-var fieldModifierSet = func() map[keyword.Keyword]struct{} {
+// typeModifierSet is the set of keywords for type modifiers.
+var typeModifierSet = func() map[keyword.Keyword]struct{} {
 	m := make(map[keyword.Keyword]struct{})
-	for keyword := range messageLevelFieldKeywords() {
+	for keyword := range joinSequences(
+		messageLevelFieldKeywords(),
+		methodArgLevelKeywords(),
+	) {
 		m[keyword] = struct{}{}
 	}
 	return m
@@ -621,8 +676,22 @@ func serviceLevelKeywords() iter.Seq[keyword.Keyword] {
 	}
 }
 
-// optionKeyword returns the option keywords for methods and enums.
-func optionKeyword() iter.Seq[keyword.Keyword] {
+// serviceReturnKeyword returns keyword for service "return" value.
+func serviceReturnKeyword() iter.Seq[keyword.Keyword] {
+	return func(yield func(keyword.Keyword) bool) {
+		_ = yield(keyword.Returns)
+	}
+}
+
+// methodArgLevelKeywords returns keyword for methods.
+func methodArgLevelKeywords() iter.Seq[keyword.Keyword] {
+	return func(yield func(keyword.Keyword) bool) {
+		_ = yield(keyword.Stream)
+	}
+}
+
+// optionKeywords returns the option keywords for methods and enums.
+func optionKeywords() iter.Seq[keyword.Keyword] {
 	return func(yield func(keyword.Keyword) bool) {
 		_ = yield(keyword.Option)
 	}
@@ -663,6 +732,7 @@ func typeReferencesToCompletionItems(
 	parentFullName ir.FullName,
 	span report.Span,
 	offset int,
+	allowEnums bool,
 ) iter.Seq[protocol.CompletionItem] {
 	fileSymbolTypesIter := func(yield func(*file, *symbol) bool) {
 		for _, imported := range current.workspace.PathToFile() {
@@ -713,12 +783,15 @@ func typeReferencesToCompletionItems(
 			case ir.SymbolKindMessage:
 				kind = protocol.CompletionItemKindClass // Messages are like classes
 			case ir.SymbolKindEnum:
+				if !allowEnums {
+					continue
+				}
 				kind = protocol.CompletionItemKindEnum
 			default:
 				continue // Unsupported kind, skip it.
 			}
 			label := string(symbol.ir.FullName())
-			if strings.HasPrefix(label, parentPrefix) {
+			if len(parentFullName) > 0 && strings.HasPrefix(label, parentPrefix) {
 				label = label[len(parentPrefix):]
 			} else if strings.HasPrefix(label, packagePrefix) {
 				label = label[len(packagePrefix):]
@@ -829,8 +902,17 @@ func isTokenSpace(tok token.Token) bool {
 	return tok.Kind() == token.Space && strings.IndexByte(tok.Text(), '\n') == -1
 }
 
-func isTokenNewline(tok token.Token) bool {
-	return tok.Kind() == token.Space && strings.IndexByte(tok.Text(), '\n') != -1
+func isTokenParen(tok token.Token) bool {
+	return tok.Kind() == token.Punct &&
+		(strings.HasPrefix(tok.Text(), "(") ||
+			strings.HasSuffix(tok.Text(), ")"))
+}
+
+func isTokenTypeDelimiter(tok token.Token) bool {
+	kind := tok.Kind()
+	return (kind == token.Unrecognized && tok.IsZero()) ||
+		(kind == token.Space && strings.IndexByte(tok.Text(), '\n') != -1) ||
+		(kind == token.Comment)
 }
 
 // extractAroundOffset extracts the value around the offset by querying the token stream.
@@ -852,7 +934,7 @@ func extractAroundOffset(file *file, offset int, isTokenBefore, isTokenAfter fun
 		Start: offset,
 		End:   offset,
 	}
-	if !before.IsZero() {
+	if !before.IsZero() && isTokenBefore != nil {
 		var firstToken token.Token
 		for cursor := token.NewCursorAt(before); isTokenBefore(before); before = cursor.PrevSkippable() {
 			firstToken = before
@@ -861,7 +943,7 @@ func extractAroundOffset(file *file, offset int, isTokenBefore, isTokenAfter fun
 			span.Start = firstToken.Span().Start
 		}
 	}
-	if !after.IsZero() {
+	if !after.IsZero() && isTokenAfter != nil {
 		var lastToken token.Token
 		for cursor := token.NewCursorAt(after); isTokenAfter(after); after = cursor.NextSkippable() {
 			lastToken = after
@@ -874,7 +956,7 @@ func extractAroundOffset(file *file, offset int, isTokenBefore, isTokenAfter fun
 }
 
 func splitSpan(span report.Span, offset int) (prefix string, suffix string) {
-	if !offsetInSpan(span, offset) {
+	if offsetInSpan(offset, span) != 0 {
 		return "", ""
 	}
 	index := offset - span.Start
@@ -882,8 +964,14 @@ func splitSpan(span report.Span, offset int) (prefix string, suffix string) {
 	return text[:index], text[index:]
 }
 
-func offsetInSpan(span report.Span, offset int) bool {
-	return span.Start <= offset && offset <= span.End // End is inclusive for completions_
+func offsetInSpan(offset int, span report.Span) int {
+	if offset < span.Start {
+		return -1
+	} else if offset > span.End {
+		// End is inclusive for completions	_
+		return 1
+	}
+	return 0
 }
 
 // isProto2 returns true if the file has a syntax declaration of proto2.

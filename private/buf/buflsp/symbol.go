@@ -394,7 +394,7 @@ func (s *symbol) getDocsFromComments() string {
 	}
 
 	// If the file is a remote dependency, link to BSR docs.
-	if s.def.file != nil && !s.def.file.IsLocal() {
+	if s.def != nil && s.def.file != nil && !s.def.file.IsLocal() {
 		// In the BSR, messages, enums, and service definitions support anchor tags in the link.
 		// Otherwise, we use the anchor for the parent type.
 		var hasAnchor, isExtension bool
