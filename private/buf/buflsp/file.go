@@ -23,7 +23,6 @@ import (
 	"io"
 	"iter"
 	"log/slog"
-	"math"
 	"slices"
 	"strings"
 	"time"
@@ -669,17 +668,12 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 	// For example: the following spans A[0,10], B[0,15], C[0,20], D[20,30] and a
 	// target offset 12, binary search returns 3 (D), and the minimum node is B.
 	var symbol *symbol
-	minLength := math.MaxInt
 	for _, before := range slices.Backward(f.symbols[:idx]) {
 		// Offset is past the end. Range is half-open [Start, End)
 		if offset > before.span.End {
 			break
 		}
-		length := before.span.End - before.span.Start
-		if minLength > length {
-			minLength = length
-			symbol = before
-		}
+		symbol = before
 	}
 	f.lsp.logger.DebugContext(ctx, "symbol at", slog.Int("line", int(cursor.Line)), slog.Int("character", int(cursor.Character)), slog.Any("symbol", symbol))
 	return symbol
