@@ -656,11 +656,35 @@ func completionItemsForOptions(
 				break
 			}
 		}
-		optionType, isOptionType := getOptionValueType(file, ctx, parentType.Options(), offset)
-		if isOptionType {
-			typeSpan := extractAroundOffset(file, offset, isTokenType, isTokenType)
-			items = slices.Collect(messageFieldCompletionItems(file, optionType, typeSpan, offset))
+		hasStart := false
+		typeSpan := extractAroundOffset(
+			file,
+			offset,
+			func(tok token.Token) bool {
+				if isTokenTypeDelimiter(tok) {
+					hasStart = true
+					return false
+				}
+				return isTokenType(tok) || isTokenParen(tok)
+			},
+			isTokenType,
+		)
+		if !hasStart {
+			file.lsp.logger.DebugContext(
+				ctx,
+				"completion: could not find options value start",
+			)
+			return nil
 		}
+		optionType, isOptionType := getOptionValueType(file, ctx, parentType.Options(), offset)
+		if !isOptionType {
+			file.lsp.logger.DebugContext(
+				ctx,
+				"completion: could not find options type within value",
+			)
+			return nil
+		}
+		items = slices.Collect(messageFieldCompletionItems(file, optionType, typeSpan, offset))
 	} else if offsetInSpan(offset, option.Path.Span()) == 0 {
 		var pathSpans []report.Span
 		for component := range option.Path.Components {
@@ -708,6 +732,7 @@ func completionItemsForCompactOptions(
 		)
 		return nil
 	}
+	slices.Reverse(tokens)
 	var pathSpans []report.Span
 	if typeSpan.Start > 0 && file.file.Text()[typeSpan.Start-1] == '(' {
 		// Within parens, caputure the type as the full path. One root span.
@@ -726,8 +751,8 @@ func completionItemsForCompactOptions(
 					ctx,
 					"completion: ignoring option unable to parse path",
 					slog.String("kind", def.Classify().String()),
-					slog.String("punct", dotToken.Span().String()),
-					slog.String("ident", identToken.Span().String()),
+					slog.String("punct", dotToken.Span().Text()),
+					slog.String("ident", identToken.Span().Text()),
 				)
 				return nil
 			}
@@ -1084,8 +1109,7 @@ func optionToCompletionItems(
 		// Filter by option targets to only show options that can be applied to this symbol kind
 		for member := range seq.Values(optionsType.Members()) {
 			if member.IsExtension() {
-				current.lsp.logger.Debug("completion: skipping", slog.String("member", string(member.FullName())))
-				continue // Skip extensions, we'll handle them separately
+				continue
 			}
 			// Check if this option can target this symbol kind
 			if !member.CanTarget(targetKind) {
@@ -1322,20 +1346,17 @@ func messageFieldCompletionItems(
 
 		// Generate completion items for all fields in the message
 		for member := range seq.Values(messageType.Members()) {
-			if member.IsExtension() {
-				continue // Extensions are not typically used in nested paths or option values
-			}
-
 			label := member.Name()
 			if !strings.HasPrefix(label, prefix) {
 				continue
 			}
-
+			if member.IsExtension() {
+				label = "(" + label + ")"
+			}
 			var isDeprecated bool
 			if _, ok := member.Deprecated().AsBool(); ok {
 				isDeprecated = true
 			}
-
 			// Add detail string based on field type for better context
 			var detail string
 			fieldType := member.Element()
@@ -1346,7 +1367,6 @@ func messageFieldCompletionItems(
 					detail = string(fieldType.FullName())
 				}
 			}
-
 			item := protocol.CompletionItem{
 				Label: label,
 				Kind:  protocol.CompletionItemKindField,
@@ -1357,7 +1377,6 @@ func messageFieldCompletionItems(
 				Deprecated: isDeprecated,
 				Detail:     detail,
 			}
-
 			if !yield(item) {
 				return
 			}
@@ -1540,7 +1559,7 @@ func getOptionValueType(file *file, ctx context.Context, optionValue ir.MessageV
 				if optionType, isOptionValue := getOptionValueType(file, ctx, msg, offset); isOptionValue {
 					return optionType, isOptionValue
 				}
-				// Option value must be differnt to the key, otherwise in type declaration.
+				// Option value must be different to the key, otherwise in type declaration.
 				isOptionValue = isOptionValue ||
 					(offsetInSpan(offset, element.AST().Span()) == 0 && keySpan != valueSpan)
 				if isOptionValue {
