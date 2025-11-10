@@ -634,24 +634,44 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 		if field.ValueAST().IsZero() {
 			continue
 		}
+		// There are a couple of different ways options can be structured, e.g.
+		//
+		// [(option).message = {
+		//    field_a: 2
+		//    field_b: 100
+		//  }]
+		//
+		// Or:
+		//
+		// [
+		//    (option).message.field_a = 2
+		//    (option).message.field_b = 100
+		//  ]
+		//
+		// For both examples, we would want to create a separate symbol for each referenceable
+		// part of each path, e.g. (option), .message, .field_a, etc.
+		//
+		// To do this, we recursively iterate through the message value, e.g.
+		//   (option) -> (option).message -> (option).message.field_a
+		//
+		// and we set a symbol for each along the way. Then we also check the path we have to
+		// make sure we have a symbol for the corresponding span, e.g. (option).message.field_b
+		// we need to make sure we have a symbol for (option) and .message, even though we
+		// recursed into the message value through the top-level message value.
 		for element := range seq.Values(field.Elements()) {
-			key := element.Value().KeyASTs().At(element.ValueNodeIndex())
+			key := field.KeyASTs().At(element.ValueNodeIndex())
 			components := slices.Collect(key.AsPath().Components)
 			var span report.Span
-			// This can happen if we have an option structure such as the following:
-			// [(option).message = {
-			//    field_a: 2
-			//    field_b: 100
-			//  }]
-			//
-			// `field_a` is a path that only has one component, but index = 2, since we have
-			// (option).message.field_a. So, in this case, we use the last component.
+			// This covers the first case in the example above where the path is relative,
+			// e.g. field_a is a relative path within { } for (option).message.
 			if index > len(components)-1 {
 				span = components[len(components)-1].Span()
 			} else {
+				// Otherwise, we get the component for the corresponding index.
 				span = components[index].Span()
 			}
 			sym := &symbol{
+				// NOTE: no [ir.Symbol] for option elements
 				file: f,
 				span: span,
 				kind: &reference{
@@ -671,11 +691,6 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 			}
 
 			// We check back along the path to make sure that we have a symbol for each component.
-			// This can happen if we have an option structure such as the following:
-			// [
-			//    (option).message.field_a = 2
-			//    (option).message.field_b = 100
-			//  ]
 			//
 			// We need to ensure that (option) for (option).message.field_b has a symbol defined
 			// among the parent symbols.
