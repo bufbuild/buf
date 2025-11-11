@@ -677,16 +677,6 @@ func completionItemsForCompactOptions(
 		)
 		return nil
 	}
-
-	symbol := file.symbolAt(def.Span().Start)
-	if symbol == nil {
-		file.lsp.logger.DebugContext(
-			ctx,
-			"completion: ignoring compact option unable to find symbol",
-		)
-		return nil
-	}
-
 	// Find the parent containing type for the definition.
 	optionsTypeName, targetKind := defKindToOptionType(def.Classify())
 	if targetKind == ir.OptionTargetInvalid {
