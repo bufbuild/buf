@@ -594,7 +594,6 @@ func completionItemsForOptions(
 	offset int,
 ) []protocol.CompletionItem {
 	file.lsp.logger.DebugContext(ctx, "completion: options", slog.Int("offset", offset))
-
 	optionSpan, optionSpanParts := parseOptionSpan(file, offset)
 	if optionSpan.IsZero() {
 		file.lsp.logger.DebugContext(
@@ -604,7 +603,6 @@ func completionItemsForOptions(
 		)
 		return nil
 	}
-
 	optionsTypeName, targetKind := defKindToOptionType(parentDef.Classify())
 	if targetKind == ir.OptionTargetInvalid {
 		file.lsp.logger.DebugContext(
@@ -614,7 +612,6 @@ func completionItemsForOptions(
 		)
 		return nil
 	}
-
 	// Find the options message type in the workspace by looking through all types.
 	var optionsType ir.Type
 	for _, importedFile := range file.workspace.PathToFile() {
@@ -632,8 +629,7 @@ func completionItemsForOptions(
 		)
 		return nil
 	}
-
-	// Complete options from the value or path.
+	// Complete options within the value or the path.
 	if offsetInSpan(offset, def.Value().Span()) == 0 {
 		var parentType ir.Type
 		for irType := range seq.Values(file.ir.AllTypes()) {
@@ -651,7 +647,7 @@ func completionItemsForOptions(
 			return nil
 		}
 		return slices.Collect(
-			messageFieldCompletionItems(file, optionType, optionSpan, offset),
+			messageFieldCompletionItems(file, optionType, optionSpan, offset, true),
 		)
 	}
 	return slices.Collect(
@@ -704,7 +700,7 @@ func completionItemsForCompactOptions(
 			return nil
 		}
 		// Generate completions for fields in the options value at this position.
-		return slices.Collect(messageFieldCompletionItems(file, optionValueType, optionSpan, offset))
+		return slices.Collect(messageFieldCompletionItems(file, optionValueType, optionSpan, offset, true))
 	}
 	// Find the options message type in the workspace by looking through all types.
 	var optionsType ir.Type
@@ -1214,7 +1210,7 @@ func optionNamesToCompletionItems(
 			break
 		}
 	}
-	return messageFieldCompletionItems(current, currentType, tokenSpan, offset)
+	return messageFieldCompletionItems(current, currentType, tokenSpan, offset, false)
 }
 
 // messageFieldCompletionItems generates completion items for fields in a message type.
@@ -1224,6 +1220,7 @@ func messageFieldCompletionItems(
 	messageType ir.Type,
 	tokenSpan report.Span,
 	offset int,
+	isValueType bool,
 ) iter.Seq[protocol.CompletionItem] {
 	return func(yield func(protocol.CompletionItem) bool) {
 		if messageType.IsZero() || !messageType.IsMessage() {
@@ -1252,6 +1249,10 @@ func messageFieldCompletionItems(
 			if member.IsExtension() {
 				label = "(" + label + ")"
 			}
+			newText := label
+			if isValueType {
+				newText += ":"
+			}
 			var isDeprecated bool
 			if _, ok := member.Deprecated().AsBool(); ok {
 				isDeprecated = true
@@ -1271,7 +1272,7 @@ func messageFieldCompletionItems(
 				Kind:  protocol.CompletionItemKindField,
 				TextEdit: &protocol.TextEdit{
 					Range:   editRange,
-					NewText: label,
+					NewText: newText,
 				},
 				Deprecated:    isDeprecated,
 				Documentation: irMemberDoc(member),
