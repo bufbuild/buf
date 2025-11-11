@@ -281,12 +281,11 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 		return protocol.SymbolInformation{}
 	}
 
-	fullName := s.ir.FullName()
-	name := fullName.Name()
+	name := s.ir.FullName()
 	if name == "" {
 		return protocol.SymbolInformation{}
 	}
-	parentFullName := fullName.Parent()
+	parentFullName := name.Parent()
 	containerName := string(parentFullName)
 
 	location := protocol.Location{
@@ -323,7 +322,7 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 		isDeprecated = true
 	}
 	return protocol.SymbolInformation{
-		Name:          name,
+		Name:          string(name),
 		Kind:          kind,
 		Location:      location,
 		ContainerName: containerName,
