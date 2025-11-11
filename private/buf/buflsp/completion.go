@@ -56,7 +56,8 @@ func getCompletionItems(
 
 	// This grabs the contents of the file as the top-level [ast.DeclBody], see [ast.File].Decls()
 	// for reference.
-	declPath := getDeclForPosition(id.Wrap(file.ir.AST(), id.ID[ast.DeclBody](1)), position)
+	offset := positionToOffset(file, position)
+	declPath := getDeclForOffset(id.Wrap(file.ir.AST(), id.ID[ast.DeclBody](1)), offset)
 	if len(declPath) > 0 {
 		decl := declPath[len(declPath)-1]
 		file.lsp.logger.DebugContext(
@@ -112,9 +113,7 @@ func completionItemsForDeclPath(ctx context.Context, file *file, declPath []ast.
 func completionItemsForSyntax(ctx context.Context, file *file, syntaxDecl ast.DeclSyntax, position protocol.Position) []protocol.CompletionItem {
 	file.lsp.logger.DebugContext(ctx, "completion: syntax declaration", slog.Bool("is_edition", syntaxDecl.IsEdition()))
 
-	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
-	offset := positionLocation.Offset
-
+	offset := positionToOffset(file, position)
 	valueSpan := syntaxDecl.Value().Span()
 	start, end := valueSpan.Start, valueSpan.End
 	valueText := valueSpan.Text()
@@ -221,12 +220,27 @@ func completionItemsForPackage(ctx context.Context, file *file, syntaxPackage as
 
 // completionItemsForDef returns completion items for definition declarations (message, enum, service, etc.).
 func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclAny, def ast.DeclDef, position protocol.Position) []protocol.CompletionItem {
+	offset := positionToOffset(file, position)
+	inBody := offsetInSpan(offset, def.Body().Span()) == 0
+
+	// Parent declaration determines child completions.
+	var parentDef ast.DeclDef
+	if len(declPath) >= 2 {
+		parentDef = declPath[len(declPath)-2].AsDef()
+	}
+	if inBody {
+		parentDef = def
+		def = ast.DeclDef{} // Mark current def as invalid.
+	}
+
 	file.lsp.logger.DebugContext(
 		ctx,
 		"completion: definition",
 		slog.String("type", def.Type().Span().String()),
 		slog.String("name", def.Name().Span().String()),
 		slog.String("kind", def.Classify().String()),
+		slog.String("parent_kind", parentDef.Classify().String()),
+		slog.Bool("in_body", inBody),
 		slog.Int("path_depth", len(declPath)),
 	)
 
@@ -324,7 +338,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 	}
 
 	// If at the top level, and on the first item, return top level keywords.
-	if len(declPath) == 1 {
+	if parentDef.IsZero() {
 		showKeywords := beforeCount == 0
 		if showKeywords {
 			file.lsp.logger.DebugContext(ctx, "completion: definition returning top-level keywords")
@@ -337,14 +351,6 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		}
 		return nil // unknown
 	}
-
-	// Parent declaration determines child completions.
-	parentDef := declPath[len(declPath)-2].AsDef()
-	file.lsp.logger.DebugContext(
-		ctx, "completion: definition nested declaration",
-		slog.String("parent_kind", parentDef.Classify().String()),
-		slog.String("kind", def.Classify().String()),
-	)
 
 	var iters []iter.Seq[protocol.CompletionItem]
 	switch parentDef.Classify() {
@@ -488,9 +494,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 func completionItemsForImport(ctx context.Context, file *file, declImport ast.DeclImport, position protocol.Position) []protocol.CompletionItem {
 	file.lsp.logger.DebugContext(ctx, "completion: import declaration", slog.Int("importable_count", len(file.workspace.PathToFile())))
 
-	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
-	offset := positionLocation.Offset
-
+	offset := positionToOffset(file, position)
 	importPathSpan := declImport.ImportPath().Span()
 	start, end := importPathSpan.Start, importPathSpan.End
 	importPathText := importPathSpan.Text()
@@ -1415,15 +1419,15 @@ func joinSequences[T any](itemIters ...iter.Seq[T]) iter.Seq[T] {
 	}
 }
 
-// getDeclForPosition finds the path of AST declarations from parent to smallest that contains the given protocol position.
+// getDeclForOffset finds the path of AST declarations from parent to smallest that contains the given offset.
 // Returns a slice where [0] is the top-level declaration and [len-1] is the smallest/innermost declaration.
-// Returns nil if no declaration contains the position.
-func getDeclForPosition(body ast.DeclBody, position protocol.Position) []ast.DeclAny {
-	return getDeclForPositionHelper(body, position, nil)
+// Returns nil if no declaration contains the offset.
+func getDeclForOffset(body ast.DeclBody, offset int) []ast.DeclAny {
+	return getDeclForOffsetHelper(body, offset, nil)
 }
 
-// getDeclForPositionHelper is the recursive helper for getDeclForPosition.
-func getDeclForPositionHelper(body ast.DeclBody, position protocol.Position, path []ast.DeclAny) []ast.DeclAny {
+// getDeclForOffsetHelper is the recursive helper for getDeclForOffset.
+func getDeclForOffsetHelper(body ast.DeclBody, offset int, path []ast.DeclAny) []ast.DeclAny {
 	smallestSize := -1
 	var bestPath []ast.DeclAny
 
@@ -1435,10 +1439,8 @@ func getDeclForPositionHelper(body ast.DeclBody, position protocol.Position, pat
 		if span.IsZero() {
 			continue
 		}
-
 		// Check if the position is within this declaration's span.
-		within := reportSpanToProtocolRange(span)
-		if positionInRange(position, within) == 0 {
+		if offsetInSpan(offset, span) == 0 {
 			// Build the new path including this declaration.
 			newPath := append(append([]ast.DeclAny(nil), path...), decl)
 			size := span.End - span.Start
@@ -1449,7 +1451,7 @@ func getDeclForPositionHelper(body ast.DeclBody, position protocol.Position, pat
 
 			// If this is a definition with a body, search recursively.
 			if decl.Kind() == ast.DeclKindDef && !decl.AsDef().Body().IsZero() {
-				childPath := getDeclForPositionHelper(decl.AsDef().Body(), position, newPath)
+				childPath := getDeclForOffsetHelper(decl.AsDef().Body(), offset, newPath)
 				if len(childPath) > 0 {
 					childSize := childPath[len(childPath)-1].Span().End - childPath[len(childPath)-1].Span().Start
 					if childSize < smallestSize {
@@ -1540,6 +1542,12 @@ func offsetInSpan(offset int, span report.Span) int {
 		return 1
 	}
 	return 0
+}
+
+// positionToOffset returns the offset from the protocol position.
+func positionToOffset(file *file, position protocol.Position) int {
+	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
+	return positionLocation.Offset
 }
 
 // isProto2 returns true if the file has a syntax declaration of proto2.

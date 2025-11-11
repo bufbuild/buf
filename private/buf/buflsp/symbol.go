@@ -299,6 +299,9 @@ func protowireTypeForPredeclared(name predeclared.Name) protowire.Type {
 // This helper function expects that imports, tags, and predeclared (builtin) types are
 // already handled, since those types currently do not get docs from their comments.
 func (s *symbol) getDocsFromComments() string {
+	if s.def == nil {
+		return ""
+	}
 	var def ast.DeclDef
 	switch s.kind.(type) {
 	case *referenceable:
@@ -467,26 +470,6 @@ func irMemberDoc(irMember ir.Member) string {
 		return builder.String()
 	}
 	return builder.String()
-}
-
-// comparePositions compares two positions for lexicographic ordering.
-func comparePositions(a, b protocol.Position) int {
-	diff := int(a.Line) - int(b.Line)
-	if diff == 0 {
-		return int(a.Character) - int(b.Character)
-	}
-	return diff
-}
-
-// positionInRange returns 0 if a position is within the range, else returns -1 before or 1 after.
-func positionInRange(position protocol.Position, within protocol.Range) int {
-	if comparePositions(position, within.Start) < 0 {
-		return -1
-	}
-	if comparePositions(position, within.End) > 0 {
-		return 1
-	}
-	return 0
 }
 
 func reportSpanToProtocolRange(span report.Span) protocol.Range {

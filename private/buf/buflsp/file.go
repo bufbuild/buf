@@ -622,15 +622,63 @@ func (f *file) importToSymbol(imp ir.Import) *symbol {
 	}
 }
 
+// messageToSymbols takes an [ir.MessageValue] and returns the symbols parsed from it.
 func (f *file) messageToSymbols(msg ir.MessageValue) []*symbol {
+	return f.messageToSymbolsHelper(msg, 0, nil)
+}
+
+// messageToSymbolsHelper is a recursive helper for extracting the symbols from a [ir.MessageValue].
+func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []*symbol) []*symbol {
 	var symbols []*symbol
 	for field := range msg.Fields() {
 		if field.ValueAST().IsZero() {
 			continue
 		}
+		// There are a couple of different ways options can be structured, e.g.
+		//
+		// [(option).message = {
+		//    field_a: 2
+		//    field_b: 100
+		//  }]
+		//
+		// Or:
+		//
+		// [
+		//    (option).message.field_a = 2
+		//    (option).message.field_b = 100
+		//  ]
+		//
+		// For both examples, we would want to create a separate symbol for each referenceable
+		// part of each path, e.g. (option), .message, .field_a, etc.
+		//
+		// An option is represented as a [ir.MessageValue] that is accessed recursively, so in
+		// both examples above, we have:
+		//
+		//  (option) -> (option).message -> (option).message.field_a / field_a
+		//                               -> (option).message.field_b / field_b
+		//
+		// As we walk the message recursively, we set a symbol for each message/field along the
+		// way. Because we are accessing each message from the top-level message, we need to
+		// make sure that we capture a symbol for each corresponding path span along the way.
+		//
+		// In the example, in the second definition, (option) and .message for field_b has a
+		// separate span from (option) and .message for field_a, but when we walk the mesasge
+		// tree, we get the span for (option) and .mesage for the first field. So we check the
+		// symbols we've collected so far in parents and make sure we have captured a symbol for
+		// each path component.
 		for element := range seq.Values(field.Elements()) {
-			span := element.Value().KeyASTs().At(element.ValueNodeIndex()).Span()
-			elem := &symbol{
+			key := field.KeyASTs().At(element.ValueNodeIndex())
+			components := slices.Collect(key.AsPath().Components)
+			var span report.Span
+			// This covers the first case in the example above where the path is relative,
+			// e.g. field_a is a relative path within { } for (option).message.
+			if index > len(components)-1 {
+				span = components[len(components)-1].Span()
+			} else {
+				// Otherwise, we get the component for the corresponding index.
+				span = components[index].Span()
+			}
+			sym := &symbol{
 				// NOTE: no [ir.Symbol] for option elements
 				file: f,
 				span: span,
@@ -640,9 +688,48 @@ func (f *file) messageToSymbols(msg ir.MessageValue) []*symbol {
 				},
 				isOption: true,
 			}
-			symbols = append(symbols, elem)
+			symbols = append(symbols, sym)
 			if !element.AsMessage().IsZero() {
-				symbols = append(symbols, f.messageToSymbols(element.AsMessage())...)
+				// For message value elements, we use the Type AST.
+				sym.kind = &reference{
+					def:      element.Type().AST(),
+					fullName: element.Type().FullName(),
+				}
+				symbols = append(symbols, f.messageToSymbolsHelper(element.AsMessage(), index+1, symbols)...)
+			}
+
+			// We check back along the path to make sure that we have a symbol for each component.
+			//
+			// We need to ensure that (option) for (option).message.field_b has a symbol defined
+			// among the parent symbols.
+			if len(components) > 1 {
+				parentType := element.Value().Container()
+				for _, component := range slices.Backward(components) {
+					if component.IsLast() {
+						continue
+					}
+					found := false
+					for _, parent := range parents {
+						if parent.span == component.Span() {
+							found = true
+							break
+						}
+					}
+					if !found {
+						sym := &symbol{
+							// NOTE: no [ir.Symbol] for option elements
+							file: f,
+							span: component.Span(),
+							kind: &reference{
+								def:      parentType.Type().AST(),
+								fullName: parentType.Type().FullName(),
+							},
+							isOption: true,
+						}
+						symbols = append(symbols, sym)
+					}
+					parentType = parentType.AsValue().Container()
+				}
 			}
 		}
 	}
@@ -653,8 +740,7 @@ func (f *file) messageToSymbols(msg ir.MessageValue) []*symbol {
 //
 // Returns nil if no symbol is found.
 func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
-	cursorLocation := f.file.InverseLocation(int(cursor.Line)+1, int(cursor.Character)+1, positionalEncoding)
-	offset := cursorLocation.Offset
+	offset := positionToOffset(f, cursor)
 	symbol := f.symbolAt(offset)
 	f.lsp.logger.DebugContext(ctx, "symbol at", slog.Int("line", int(cursor.Line)), slog.Int("character", int(cursor.Character)), slog.Any("symbol", symbol))
 	return symbol
