@@ -244,18 +244,15 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		slog.Int("path_depth", len(declPath)),
 	)
 
-	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
-	offset := positionLocation.Offset
-
 	switch def.Classify() {
 	case ast.DefKindMessage, ast.DefKindService, ast.DefKindEnum, ast.DefKindGroup:
 		// Ignore these kinds as this will be a completion for the name of the declaration.
 		return nil
+	case ast.DefKindOption:
+		return completionItemsForOptions(ctx, file, parentDef, def, offset)
 	case ast.DefKindField, ast.DefKindMethod, ast.DefKindInvalid:
 		// Use these kinds as completion starts.
 		// An invalid kind is caused from partial values, which may be any kind.
-	case ast.DefKindOption:
-		return completionItemsForOptions(ctx, file, declPath, def, offset)
 	default:
 		file.lsp.logger.DebugContext(ctx, "completion: unknown definition type", slog.String("kind", def.Classify().String()))
 		return nil
@@ -335,6 +332,18 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 			slog.String("kind", def.Classify().String()),
 		)
 		return nil
+	}
+
+	// This corrects for invalid syntax on option declarations that corrupt the decl.
+	// For example "option (extension)." will fail to be parsed as an option decl.
+	if strings.HasPrefix(typeSpan.Text(), keyword.Option.String()+" ") {
+		file.lsp.logger.DebugContext(
+			ctx,
+			"completion: identified option from declaration",
+			slog.String("kind", def.Classify().String()),
+			slog.String("text", typeSpan.Text()),
+		)
+		return completionItemsForOptions(ctx, file, parentDef, def, offset)
 	}
 
 	// If at the top level, and on the first item, return top level keywords.
@@ -577,14 +586,22 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 func completionItemsForOptions(
 	ctx context.Context,
 	file *file,
-	declPath []ast.DeclAny,
+	parentDef ast.DeclDef,
 	def ast.DeclDef,
 	offset int,
 ) []protocol.CompletionItem {
 	file.lsp.logger.DebugContext(ctx, "completion: options", slog.Int("offset", offset))
 
-	option := def.AsOption()
-	parentDef := declPath[len(declPath)-2].AsDef()
+	optionSpan, optionSpanParts := parseOptionSpan(file, offset)
+	if optionSpan.IsZero() {
+		file.lsp.logger.DebugContext(
+			ctx,
+			"completion: ignoring compact option unable to parse declaration",
+			slog.String("kind", def.Classify().String()),
+		)
+		return nil
+	}
+
 	var (
 		optionsTypeName ir.FullName
 		targetKind      ir.OptionTarget
@@ -639,34 +656,13 @@ func completionItemsForOptions(
 	}
 
 	// Complete options from the value or path.
-	var items []protocol.CompletionItem
-	if offsetInSpan(offset, option.Value.Span()) == 0 {
+	if offsetInSpan(offset, def.Value().Span()) == 0 {
 		var parentType ir.Type
 		for irType := range seq.Values(file.ir.AllTypes()) {
 			if irType.AST().Span() == parentDef.Span() {
 				parentType = irType
 				break
 			}
-		}
-		hasStart := false
-		typeSpan := extractAroundOffset(
-			file,
-			offset,
-			func(tok token.Token) bool {
-				if isTokenTypeDelimiter(tok) {
-					hasStart = true
-					return false
-				}
-				return isTokenType(tok) || isTokenParen(tok)
-			},
-			isTokenType,
-		)
-		if !hasStart {
-			file.lsp.logger.DebugContext(
-				ctx,
-				"completion: could not find options value start",
-			)
-			return nil
 		}
 		optionType, isOptionType := getOptionValueType(file, ctx, parentType.Options(), offset)
 		if !isOptionType {
@@ -676,25 +672,13 @@ func completionItemsForOptions(
 			)
 			return nil
 		}
-		items = slices.Collect(messageFieldCompletionItems(file, optionType, typeSpan, offset))
-	} else if offsetInSpan(offset, option.Path.Span()) == 0 {
-		var pathSpans []report.Span
-		for component := range option.Path.Components {
-			span := component.Name().Span()
-			if span.IsZero() {
-				span = component.Separator().Span()
-				span.Start = span.End
-			}
-			pathSpans = append(pathSpans, span)
-			if offsetInSpan(offset, span) == 0 {
-				break
-			}
-		}
-		items = slices.Collect(
-			optionNamesToCompletionItems(file, pathSpans, offset, optionsType, targetKind),
+		return slices.Collect(
+			messageFieldCompletionItems(file, optionType, optionSpan, offset),
 		)
 	}
-	return items
+	return slices.Collect(
+		optionNamesToCompletionItems(file, optionSpanParts, offset, optionsType, targetKind),
+	)
 }
 
 // completionItemsForCompactOptions returns completion items for options within an options block.
@@ -706,64 +690,16 @@ func completionItemsForCompactOptions(
 ) []protocol.CompletionItem {
 	file.lsp.logger.DebugContext(ctx, "completion: compact options", slog.Int("offset", offset))
 
-	hasStart := false
-	var tokens []token.Token
-	typeSpan := extractAroundOffset(
-		file, offset,
-		func(tok token.Token) bool {
-			if isTokenTypeDelimiter(tok) {
-				hasStart = true
-				return false
-			}
-			tokens = append(tokens, tok)
-			return isTokenType(tok) || isTokenParen(tok)
-		},
-		isTokenType,
-	)
-	if !hasStart || len(tokens) == 0 {
+	optionSpan, optionSpanParts := parseOptionSpan(file, offset)
+	if optionSpan.IsZero() {
 		file.lsp.logger.DebugContext(
 			ctx,
-			"completion: ignoring option unable to find start",
+			"completion: ignoring compact option unable to parse declaration",
 			slog.String("kind", def.Classify().String()),
 		)
 		return nil
 	}
-	slices.Reverse(tokens)
-	var pathSpans []report.Span
-	if typeSpan.Start > 0 && file.file.Text()[typeSpan.Start-1] == '(' {
-		// Within parens, caputure the type as the full path. One root span.
-		typeSpan.Start -= 1
-		if strings.HasPrefix(file.file.Text()[typeSpan.End:], ")") {
-			typeSpan.End += 1
-		}
-		pathSpans = append(pathSpans, typeSpan)
-	} else {
-		pathSpans = append(pathSpans, tokens[0].Span())
-		for i := 1; i < len(tokens)-1; i += 2 {
-			dotToken := tokens[i]
-			identToken := tokens[i+1]
-			if dotToken.Text() != "." || identToken.Kind() != token.Ident {
-				file.lsp.logger.DebugContext(
-					ctx,
-					"completion: ignoring option unable to parse path",
-					slog.String("kind", def.Classify().String()),
-					slog.String("punct", dotToken.Span().Text()),
-					slog.String("ident", identToken.Span().Text()),
-				)
-				return nil
-			}
-			pathSpans = append(pathSpans, identToken.Span())
-		}
-		// Append an empty span on trailing "." token.
-		if (len(tokens)-1)%2 != 0 {
-			lastToken := tokens[len(tokens)-1]
-			if lastToken.Kind() == token.Punct && lastToken.Text() == "." {
-				lastSpan := lastToken.Span()
-				lastSpan.Start = lastSpan.End
-				pathSpans = append(pathSpans, lastSpan)
-			}
-		}
-	}
+
 	symbol := file.symbolAt(def.Span().Start)
 	if symbol == nil {
 		file.lsp.logger.DebugContext(
@@ -824,8 +760,7 @@ func completionItemsForCompactOptions(
 			return nil
 		}
 		// Generate completions for fields in the options value at this position.
-		tokenSpan := pathSpans[len(pathSpans)-1]
-		return slices.Collect(messageFieldCompletionItems(file, optionValueType, tokenSpan, offset))
+		return slices.Collect(messageFieldCompletionItems(file, optionValueType, optionSpan, offset))
 	}
 
 	// Find the options message type in the workspace by looking through all types.
@@ -846,7 +781,7 @@ func completionItemsForCompactOptions(
 		return nil
 	}
 	return slices.Collect(
-		optionNamesToCompletionItems(file, pathSpans, offset, optionsType, targetKind),
+		optionNamesToCompletionItems(file, optionSpanParts, offset, optionsType, targetKind),
 	)
 }
 
@@ -1463,6 +1398,69 @@ func getDeclForOffsetHelper(body ast.DeclBody, offset int, path []ast.DeclAny) [
 		}
 	}
 	return bestPath
+}
+
+// parseOptionSpan returns the span associated with the option declaration and
+// the fields up until the offset. This handles invalid declarations from
+// partial syntax.
+func parseOptionSpan(file *file, offset int) (report.Span, []report.Span) {
+	hasStart, hasGap := false, false
+	var tokens []token.Token
+	typeSpan := extractAroundOffset(
+		file, offset,
+		func(tok token.Token) bool {
+			// A gap is only allowed if the preceeding token is the "option" token.
+			// This is the start of an option declaration.
+			if hasGap {
+				hasStart = tok.Keyword() == keyword.Option
+				return false
+			}
+			if isTokenSpace(tok) {
+				hasGap = true
+				return true
+			}
+			if isTokenTypeDelimiter(tok) {
+				hasStart = true
+				return false
+			}
+			tokens = append(tokens, tok)
+			return isTokenType(tok) || isTokenParen(tok)
+		},
+		isTokenType,
+	)
+	if !hasStart || len(tokens) == 0 {
+		return report.Span{}, nil
+	}
+	slices.Reverse(tokens)
+	if typeSpan.Start > 0 && file.file.Text()[typeSpan.Start-1] == '(' {
+		// Within parens, caputure the type as the full path. One root span.
+		// The offset is within the child span. We expand the span to capture the
+		// extension.
+		typeSpan.Start -= 1
+		if strings.HasPrefix(file.file.Text()[typeSpan.End:], ")") {
+			typeSpan.End += 1
+		}
+		return typeSpan, []report.Span{typeSpan}
+	}
+	pathSpans := []report.Span{tokens[0].Span()}
+	for i := 1; i < len(tokens)-1; i += 2 {
+		dotToken := tokens[i]
+		identToken := tokens[i+1]
+		if dotToken.Text() != "." || identToken.Kind() != token.Ident {
+			return report.Span{}, nil
+		}
+		pathSpans = append(pathSpans, identToken.Span())
+	}
+	// Append an empty span on trailing "." token at it's position.
+	if (len(tokens)-1)%2 != 0 {
+		lastToken := tokens[len(tokens)-1]
+		if lastToken.Kind() == token.Punct && lastToken.Text() == "." {
+			lastSpan := lastToken.Span()
+			lastSpan.Start = lastSpan.End
+			pathSpans = append(pathSpans, lastSpan)
+		}
+	}
+	return typeSpan, pathSpans
 }
 
 func isTokenType(tok token.Token) bool {
