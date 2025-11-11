@@ -350,6 +350,9 @@ func protowireTypeForPredeclared(name predeclared.Name) protowire.Type {
 // This helper function expects that imports, tags, and predeclared (builtin) types are
 // already handled, since those types currently do not get docs from their comments.
 func (s *symbol) getDocsFromComments() string {
+	if s.def == nil {
+		return ""
+	}
 	var def ast.DeclDef
 	switch s.kind.(type) {
 	case *referenceable:
