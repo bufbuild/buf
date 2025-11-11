@@ -462,26 +462,6 @@ func commentToMarkdown(comment string) string {
 	return strings.TrimSuffix(strings.TrimPrefix(comment, "/*"), "*/")
 }
 
-// comparePositions compares two positions for lexicographic ordering.
-func comparePositions(a, b protocol.Position) int {
-	diff := int(a.Line) - int(b.Line)
-	if diff == 0 {
-		return int(a.Character) - int(b.Character)
-	}
-	return diff
-}
-
-// positionInRange returns 0 if a position is within the range, else returns -1 before or 1 after.
-func positionInRange(position protocol.Position, within protocol.Range) int {
-	if comparePositions(position, within.Start) < 0 {
-		return -1
-	}
-	if comparePositions(position, within.End) > 0 {
-		return 1
-	}
-	return 0
-}
-
 func reportSpanToProtocolRange(span report.Span) protocol.Range {
 	startLocation := span.File.Location(span.Start, positionalEncoding)
 	endLocation := span.File.Location(span.End, positionalEncoding)
