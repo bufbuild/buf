@@ -847,11 +847,11 @@ func joinSequences[T any](itemIters ...iter.Seq[T]) iter.Seq[T] {
 // Returns a slice where [0] is the top-level declaration and [len-1] is the smallest/innermost declaration.
 // Returns nil if no declaration contains the offset.
 func getDeclForOffset(body ast.DeclBody, offset int) []ast.DeclAny {
-	return getDeclForPositionHelper(body, offset, nil)
+	return getDeclForOffsetHelper(body, offset, nil)
 }
 
-// getDeclForPositionHelper is the recursive helper for getDeclForPosition.
-func getDeclForPositionHelper(body ast.DeclBody, offset int, path []ast.DeclAny) []ast.DeclAny {
+// getDeclForOffsetHelper is the recursive helper for getDeclForOffset.
+func getDeclForOffsetHelper(body ast.DeclBody, offset int, path []ast.DeclAny) []ast.DeclAny {
 	smallestSize := -1
 	var bestPath []ast.DeclAny
 
@@ -875,7 +875,7 @@ func getDeclForPositionHelper(body ast.DeclBody, offset int, path []ast.DeclAny)
 
 			// If this is a definition with a body, search recursively.
 			if decl.Kind() == ast.DeclKindDef && !decl.AsDef().Body().IsZero() {
-				childPath := getDeclForPositionHelper(decl.AsDef().Body(), offset, newPath)
+				childPath := getDeclForOffsetHelper(decl.AsDef().Body(), offset, newPath)
 				if len(childPath) > 0 {
 					childSize := childPath[len(childPath)-1].Span().End - childPath[len(childPath)-1].Span().Start
 					if childSize < smallestSize {
