@@ -236,8 +236,9 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 	file.lsp.logger.DebugContext(
 		ctx,
 		"completion: definition",
-		slog.String("type", def.Type().Span().String()),
-		slog.String("name", def.Name().Span().String()),
+		slog.String("keyword", def.Keyword().String()),
+		slog.String("type", def.Type().Span().Text()),
+		slog.String("name", def.Name().Span().Text()),
 		slog.String("kind", def.Classify().String()),
 		slog.String("parent_kind", parentDef.Classify().String()),
 		slog.Bool("in_body", inBody),
@@ -334,9 +335,11 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		return nil
 	}
 
-	// This corrects for invalid syntax on option declarations that corrupt the decl.
-	// For example "option (extension)." will fail to be parsed as an option decl.
-	if strings.HasPrefix(typeSpan.Text(), keyword.Option.String()+" ") {
+	// This corrects for invalid syntax on option declarations with a corrupt declaration.
+	// For example "option (extension)." will fail to be parsed as a declaration.
+	if def.Keyword() == keyword.Option ||
+		strings.HasPrefix(typeSpan.Text(), keyword.Option.String()+" ") ||
+		strings.HasPrefix(def.Type().Span().Text(), keyword.Option.String()+" ") {
 		file.lsp.logger.DebugContext(
 			ctx,
 			"completion: identified option from declaration",
@@ -602,37 +605,12 @@ func completionItemsForOptions(
 		return nil
 	}
 
-	var (
-		optionsTypeName ir.FullName
-		targetKind      ir.OptionTarget
-	)
-	switch kind := parentDef.Classify(); kind {
-	case ast.DefKindMessage:
-		optionsTypeName = "google.protobuf.MessageOptions"
-		targetKind = ir.OptionTargetMessage
-	case ast.DefKindEnum:
-		optionsTypeName = "google.protobuf.EnumOptions"
-		targetKind = ir.OptionTargetEnum
-	case ast.DefKindField:
-		optionsTypeName = "google.protobuf.FieldOptions"
-		targetKind = ir.OptionTargetField
-	case ast.DefKindEnumValue:
-		optionsTypeName = "google.protobuf.EnumValueOptions"
-		targetKind = ir.OptionTargetEnumValue
-	case ast.DefKindService:
-		optionsTypeName = "google.protobuf.ServiceOptions"
-		targetKind = ir.OptionTargetService
-	case ast.DefKindMethod:
-		optionsTypeName = "google.protobuf.MethodOptions"
-		targetKind = ir.OptionTargetMethod
-	case ast.DefKindOneof:
-		optionsTypeName = "google.protobuf.OneofOptions"
-		targetKind = ir.OptionTargetOneof
-	default:
+	optionsTypeName, targetKind := defKindToOptionType(parentDef.Classify())
+	if targetKind == ir.OptionTargetInvalid {
 		file.lsp.logger.DebugContext(
 			ctx,
 			"completion: unknown def kind for options",
-			slog.String("kind", kind.String()),
+			slog.String("kind", parentDef.Classify().String()),
 		)
 		return nil
 	}
@@ -710,49 +688,25 @@ func completionItemsForCompactOptions(
 	}
 
 	// Find the parent containing type for the definition.
-	var (
-		optionsTypeName ir.FullName
-		targetKind      ir.OptionTarget
-		optionMessage   ir.MessageValue
-	)
-	switch kind := def.Classify(); kind {
-	case ast.DefKindMessage:
-		optionsTypeName = "google.protobuf.MessageOptions"
-		targetKind = ir.OptionTargetMessage
-		optionMessage = symbol.ir.AsType().Options()
-	case ast.DefKindEnum:
-		optionsTypeName = "google.protobuf.EnumOptions"
-		targetKind = ir.OptionTargetEnum
-		optionMessage = symbol.ir.AsType().Options()
-	case ast.DefKindField:
-		optionsTypeName = "google.protobuf.FieldOptions"
-		targetKind = ir.OptionTargetField
-		optionMessage = symbol.ir.AsMember().Options()
-	case ast.DefKindEnumValue:
-		optionsTypeName = "google.protobuf.EnumValueOptions"
-		targetKind = ir.OptionTargetEnumValue
-		optionMessage = symbol.ir.AsMember().Options()
-	case ast.DefKindService:
-		optionsTypeName = "google.protobuf.ServiceOptions"
-		targetKind = ir.OptionTargetService
-		optionMessage = symbol.ir.AsService().Options()
-	case ast.DefKindMethod:
-		optionsTypeName = "google.protobuf.MethodOptions"
-		targetKind = ir.OptionTargetMethod
-		optionMessage = symbol.ir.AsMethod().Options()
-	case ast.DefKindOneof:
-		optionsTypeName = "google.protobuf.OneofOptions"
-		targetKind = ir.OptionTargetOneof
-		optionMessage = symbol.ir.AsOneof().Options()
-	default:
+	optionsTypeName, targetKind := defKindToOptionType(def.Classify())
+	if targetKind == ir.OptionTargetInvalid {
 		file.lsp.logger.DebugContext(
 			ctx,
-			"completion: unknown def kind for compact options",
-			slog.String("kind", kind.String()),
+			"completion: unknown def kind for options",
+			slog.String("kind", def.Classify().String()),
 		)
 		return nil
 	}
-
+	// Search for the option message in the IR.
+	optionMessage := defToOptionMessage(file, def)
+	if optionMessage.IsZero() {
+		file.lsp.logger.DebugContext(
+			ctx,
+			"completion: unable to find containing option message",
+			slog.String("kind", def.Classify().String()),
+		)
+		return nil
+	}
 	// Check the position within the option value.
 	if optionValueType, isOptionValue := getOptionValueType(file, ctx, optionMessage, offset); isOptionValue {
 		if optionValueType.IsZero() {
@@ -762,7 +716,6 @@ func completionItemsForCompactOptions(
 		// Generate completions for fields in the options value at this position.
 		return slices.Collect(messageFieldCompletionItems(file, optionValueType, optionSpan, offset))
 	}
-
 	// Find the options message type in the workspace by looking through all types.
 	var optionsType ir.Type
 	for _, importedFile := range file.workspace.PathToFile() {
@@ -1428,8 +1381,13 @@ func parseOptionSpan(file *file, offset int) (report.Span, []report.Span) {
 		},
 		isTokenType,
 	)
-	if !hasStart || len(tokens) == 0 {
+	if !hasStart {
 		return report.Span{}, nil
+	}
+	// If no tokens were found, return an empty span at the offset.
+	if len(tokens) == 0 {
+		emptySpan := report.Span{File: file.file, Start: offset, End: offset}
+		return emptySpan, []report.Span{emptySpan}
 	}
 	slices.Reverse(tokens)
 	if typeSpan.Start > 0 && file.file.Text()[typeSpan.Start-1] == '(' {
@@ -1461,6 +1419,91 @@ func parseOptionSpan(file *file, offset int) (report.Span, []report.Span) {
 		}
 	}
 	return typeSpan, pathSpans
+}
+
+// defKindToOptionType returns the option type associated with the decl.
+func defKindToOptionType(kind ast.DefKind) (ir.FullName, ir.OptionTarget) {
+	switch kind {
+	case ast.DefKindMessage:
+		return "google.protobuf.MessageOptions", ir.OptionTargetMessage
+	case ast.DefKindEnum:
+		return "google.protobuf.EnumOptions", ir.OptionTargetEnum
+	case ast.DefKindField:
+		return "google.protobuf.FieldOptions", ir.OptionTargetField
+	case ast.DefKindEnumValue:
+		return "google.protobuf.EnumValueOptions", ir.OptionTargetEnumValue
+	case ast.DefKindService:
+		return "google.protobuf.ServiceOptions", ir.OptionTargetService
+	case ast.DefKindMethod:
+		return "google.protobuf.MethodOptions", ir.OptionTargetMethod
+	case ast.DefKindOneof:
+		return "google.protobuf.OneofOptions", ir.OptionTargetOneof
+	default:
+		return "", ir.OptionTargetInvalid
+	}
+}
+
+// defToOptionMessage returns the option message associated with the decl.
+func defToOptionMessage(file *file, def ast.DeclDef) ir.MessageValue {
+	defSpan := def.Span()
+	switch kind := def.Classify(); kind {
+	case ast.DefKindMessage:
+		for irType := range seq.Values(file.ir.AllTypes()) {
+			if irType.AST().Span() == defSpan {
+				return irType.Options()
+			}
+		}
+	case ast.DefKindEnum:
+		for irType := range seq.Values(file.ir.AllTypes()) {
+			if irType.AST().Span() == defSpan {
+				return irType.Options()
+			}
+		}
+	case ast.DefKindField:
+		for irType := range seq.Values(file.ir.AllTypes()) {
+			for member := range seq.Values(irType.Members()) {
+				if member.AST().Span() == defSpan {
+					return member.Options()
+				}
+			}
+		}
+		for extension := range seq.Values(file.ir.AllExtensions()) {
+			if extension.AST().Span() == defSpan {
+				return extension.Options()
+			}
+		}
+	case ast.DefKindEnumValue:
+		for irType := range seq.Values(file.ir.AllTypes()) {
+			for member := range seq.Values(irType.Members()) {
+				if member.AST().Span() == defSpan {
+					return member.Options()
+				}
+			}
+		}
+	case ast.DefKindService:
+		for service := range seq.Values(file.ir.Services()) {
+			if service.AST().Span() == defSpan {
+				return service.Options()
+			}
+		}
+	case ast.DefKindMethod:
+		for service := range seq.Values(file.ir.Services()) {
+			for method := range seq.Values(service.Methods()) {
+				if method.AST().Span() == defSpan {
+					return method.Options()
+				}
+			}
+		}
+	case ast.DefKindOneof:
+		for irType := range seq.Values(file.ir.AllTypes()) {
+			for oneof := range seq.Values(irType.Oneofs()) {
+				if oneof.AST().Span() == defSpan {
+					return oneof.Options()
+				}
+			}
+		}
+	}
+	return ir.MessageValue{}
 }
 
 func isTokenType(tok token.Token) bool {
