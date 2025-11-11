@@ -1409,7 +1409,7 @@ func parseOptionSpan(file *file, offset int) (report.Span, []report.Span) {
 	typeSpan := extractAroundOffset(
 		file, offset,
 		func(tok token.Token) bool {
-			// A gap is only allowed if the preceeding token is the "option" token.
+			// A gap is only allowed if the preceding token is the "option" token.
 			// This is the start of an option declaration.
 			if hasGap {
 				hasStart = tok.Keyword() == keyword.Option
