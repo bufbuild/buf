@@ -651,13 +651,21 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 		// For both examples, we would want to create a separate symbol for each referenceable
 		// part of each path, e.g. (option), .message, .field_a, etc.
 		//
-		// To do this, we recursively iterate through the message value, e.g.
-		//   (option) -> (option).message -> (option).message.field_a
+		// An option is represented as a [ir.MessageValue] that is accessed recursively, so in
+		// both examples above, we have:
 		//
-		// and we set a symbol for each along the way. Then we also check the path we have to
-		// make sure we have a symbol for the corresponding span, e.g. (option).message.field_b
-		// we need to make sure we have a symbol for (option) and .message, even though we
-		// recursed into the message value through the top-level message value.
+		//  (option) -> (option).message -> (option).message.field_a / field_a
+		//                               -> (option).message.field_b / field_b
+		//
+		// As we walk the message recursively, we set a symbol for each message/field along the
+		// way. Because we are accessing each message from the top-level message, we need to
+		// make sure that we capture a symbol for each corresponding path span along the way.
+		//
+		// In the example, in the second definition, (option) and .message for field_b has a
+		// separate span from (option) and .message for field_a, but when we walk the mesasge
+		// tree, we get the span for (option) and .mesage for the first field. So we check the
+		// symbols we've collected so far in parents and make sure we have captured a symbol for
+		// each path component.
 		for element := range seq.Values(field.Elements()) {
 			key := field.KeyASTs().At(element.ValueNodeIndex())
 			components := slices.Collect(key.AsPath().Components)
@@ -704,6 +712,7 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 					for _, parent := range parents {
 						if parent.span == component.Span() {
 							found = true
+							break
 						}
 					}
 					if !found {
