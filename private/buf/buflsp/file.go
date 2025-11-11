@@ -740,8 +740,7 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 //
 // Returns nil if no symbol is found.
 func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
-	cursorLocation := f.file.InverseLocation(int(cursor.Line)+1, int(cursor.Character)+1, positionalEncoding)
-	offset := cursorLocation.Offset
+	offset := positionToOffset(f, cursor)
 
 	// Binary search for insertion point based on Start.
 	idx, _ := slices.BinarySearchFunc(f.symbols, offset, func(sym *symbol, offset int) int {
