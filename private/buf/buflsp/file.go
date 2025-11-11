@@ -491,7 +491,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		typ := &symbol{
 			ir:   irSymbol,
 			file: f,
-			span: irSymbol.AsMember().TypeAST().Span(),
+			span: irSymbol.AsMember().TypeAST().RemovePrefixes().Span(),
 		}
 		kind, needsResolution := getKindForMember(irSymbol.AsMember())
 		typ.kind = kind
@@ -600,9 +600,9 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 // getKindForMember takes a [ir.Member] and returns the symbol kind and whether or not the
 // symbol is currently resolved.
 func getKindForMember(member ir.Member) (kind, bool) {
-	if member.TypeAST().AsPath().AsPredeclared() != predeclared.Unknown {
+	if member.TypeAST().RemovePrefixes().AsPath().AsPredeclared() != predeclared.Unknown {
 		return &builtin{
-			predeclared: member.TypeAST().AsPath().AsPredeclared(),
+			predeclared: member.TypeAST().RemovePrefixes().AsPath().AsPredeclared(),
 		}, false
 	}
 	return &reference{
