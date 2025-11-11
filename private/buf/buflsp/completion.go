@@ -184,12 +184,6 @@ func completionItemsForSyntax(ctx context.Context, file *file, syntaxDecl ast.De
 	for syntax := range syntaxes {
 		suggest := fmt.Sprintf("%q", syntax)
 		if !strings.HasPrefix(suggest, prefix) || !strings.HasSuffix(suggest, suffix) {
-			file.lsp.logger.Debug("completion: skipping on prefix/suffix",
-				slog.String("value", valueSpan.Text()),
-				slog.String("suggest", suggest),
-				slog.String("prefix", prefix),
-				slog.String("suffix", suffix),
-			)
 			continue
 		}
 		items = append(items, protocol.CompletionItem{
@@ -551,12 +545,6 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 
 		suggest := fmt.Sprintf("%q", importPath)
 		if !strings.HasPrefix(suggest, prefix) || !strings.HasSuffix(suggest, suffix) {
-			file.lsp.logger.Debug("completion: skipping on prefix/suffix",
-				slog.String("import", importPathText),
-				slog.String("suggest", suggest),
-				slog.String("prefix", prefix),
-				slog.String("suffix", suffix),
-			)
 			continue
 		}
 
@@ -622,7 +610,7 @@ func completionItemsForOptions(
 	default:
 		file.lsp.logger.DebugContext(
 			ctx,
-			"completion: unknown def kind for compact options",
+			"completion: unknown def kind for options",
 			slog.String("kind", kind.String()),
 		)
 		return nil
@@ -689,6 +677,10 @@ func completionItemsForOptions(
 		var pathSpans []report.Span
 		for component := range option.Path.Components {
 			span := component.Name().Span()
+			if span.IsZero() {
+				span = component.Separator().Span()
+				span.Start = span.End
+			}
 			pathSpans = append(pathSpans, span)
 			if offsetInSpan(offset, span) == 0 {
 				break
@@ -758,8 +750,16 @@ func completionItemsForCompactOptions(
 			}
 			pathSpans = append(pathSpans, identToken.Span())
 		}
+		// Append an empty span on trailing "." token.
+		if (len(tokens)-1)%2 != 0 {
+			lastToken := tokens[len(tokens)-1]
+			if lastToken.Kind() == token.Punct && lastToken.Text() == "." {
+				lastSpan := lastToken.Span()
+				lastSpan.Start = lastSpan.End
+				pathSpans = append(pathSpans, lastSpan)
+			}
+		}
 	}
-
 	symbol := file.symbolAt(def.Span().Start)
 	if symbol == nil {
 		file.lsp.logger.DebugContext(
@@ -1236,10 +1236,6 @@ func optionNamesToCompletionItems(
 ) iter.Seq[protocol.CompletionItem] {
 	if len(pathSpans) == 0 {
 		return func(yield func(protocol.CompletionItem) bool) {}
-	}
-
-	for _, pathSpan := range pathSpans {
-		current.lsp.logger.Debug("completion: path span", slog.Any("span", pathSpan.Text()))
 	}
 
 	rootSpan := pathSpans[0]
