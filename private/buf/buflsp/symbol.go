@@ -202,61 +202,7 @@ func (s *symbol) FormatDocs() string {
 		// on an import file.
 		return imported.file.file.Path()
 	case *tag:
-		plural := func(i int) string {
-			if i == 1 {
-				return ""
-			}
-			return "s"
-		}
-		number := s.ir.AsMember().Number()
-		var ty protowire.Type
-		var packed bool
-		switch s.ir.Kind() {
-		case ir.SymbolKindEnumValue:
-			varint := protowire.AppendVarint(nil, uint64(number))
-			return fmt.Sprintf(
-				"`0x%x`, `0b%b`\n\nencoded (hex): `%X` (%d byte%s)",
-				number,
-				number,
-				varint,
-				len(varint),
-				plural(len(varint)),
-			)
-		case ir.SymbolKindField:
-			typ := s.ir.AsMember().TypeAST()
-			if s.ir.AsMember().IsGroup() {
-				ty = protowire.StartGroupType
-			} else if s.ir.AsMember().TypeAST().Kind() == ast.TypeKindPrefixed {
-				prefixed := typ.AsPrefixed()
-				prefixedType := prefixed.Type()
-				if prefixedType.Kind() == ast.TypeKindPath {
-					ty = protowireTypeForPredeclared(prefixedType.AsPath().AsPredeclared())
-					if ty != protowire.BytesType {
-						packed = prefixed.Prefix() == keyword.Repeated
-					}
-				} else {
-					ty = protowire.BytesType
-				}
-			} else if s.ir.AsMember().TypeAST().Kind() == ast.TypeKindPath {
-				ty = protowireTypeForPredeclared(typ.AsPath().AsPredeclared())
-			} else {
-				// All other cases, use protowire.BytesType
-				ty = protowire.BytesType
-			}
-			varint := protowire.AppendTag(nil, protowire.Number(number), ty)
-			doc := fmt.Sprintf(
-				"encoded (hex): `%X` (%d byte%s)",
-				varint, len(varint), plural(len(varint)),
-			)
-			if packed {
-				packed := protowire.AppendTag(nil, protowire.Number(number), protowire.BytesType)
-				return doc + fmt.Sprintf(
-					"\n\npacked (hex): `%X` (%d byte%s)",
-					packed, len(packed), plural(len(varint)),
-				)
-			}
-			return doc
-		}
+		return irMemberDoc(s.ir.AsMember())
 	case *builtin:
 		builtin, _ := s.kind.(*builtin)
 		comments, ok := builtinDocs[builtin.predeclared.String()]
@@ -465,6 +411,64 @@ func commentToMarkdown(comment string) string {
 	return strings.TrimSuffix(strings.TrimPrefix(comment, "/*"), "*/")
 }
 
+// irMemberDoc returns the documentation for a message field, enum value or extension field.
+func irMemberDoc(irMember ir.Member) string {
+	number := irMember.Number()
+	if irMember.IsEnumValue() {
+		varint := protowire.AppendVarint(nil, uint64(number))
+		return fmt.Sprintf(
+			"`0x%x`, `0b%b`\n\nencoded (hex): `%X` (%d byte%s)",
+			number,
+			number,
+			varint,
+			len(varint),
+			plural(len(varint)),
+		)
+	}
+
+	var (
+		builder strings.Builder
+		ty      protowire.Type
+		packed  bool
+	)
+	typeAST := irMember.TypeAST()
+	if irMember.IsGroup() {
+		ty = protowire.StartGroupType
+	} else if typeAST.Kind() == ast.TypeKindPrefixed {
+		prefixed := typeAST.AsPrefixed()
+		prefixedType := prefixed.Type()
+		if prefixedType.Kind() == ast.TypeKindPath {
+			ty = protowireTypeForPredeclared(prefixedType.AsPath().AsPredeclared())
+			if ty != protowire.BytesType {
+				packed = prefixed.Prefix() == keyword.Repeated
+			}
+		} else {
+			ty = protowire.BytesType
+		}
+	} else if typeAST.Kind() == ast.TypeKindPath {
+		ty = protowireTypeForPredeclared(typeAST.AsPath().AsPredeclared())
+	} else {
+		// All other cases, use protowire.BytesType
+		ty = protowire.BytesType
+	}
+	varint := protowire.AppendTag(nil, protowire.Number(number), ty)
+	fmt.Fprintf(
+		&builder,
+		"encoded (hex): `%X` (%d byte%s)",
+		varint, len(varint), plural(len(varint)),
+	)
+	if packed {
+		packed := protowire.AppendTag(nil, protowire.Number(number), protowire.BytesType)
+		fmt.Fprintf(
+			&builder,
+			"\n\npacked (hex): `%X` (%d byte%s)",
+			packed, len(packed), plural(len(varint)),
+		)
+		return builder.String()
+	}
+	return builder.String()
+}
+
 // comparePositions compares two positions for lexicographic ordering.
 func comparePositions(a, b protocol.Position) int {
 	diff := int(a.Line) - int(b.Line)
@@ -502,4 +506,11 @@ func reportLocationsToProtocolRange(startLocation, endLocation report.Location) 
 			Character: uint32(endLocation.Column - 1),
 		},
 	}
+}
+
+func plural(i int) string {
+	if i == 1 {
+		return ""
+	}
+	return "s"
 }

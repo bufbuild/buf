@@ -1128,6 +1128,15 @@ func optionToCompletionItems(
 			if _, ok := member.Deprecated().AsBool(); ok {
 				isDeprecated = true
 			}
+			var detail string
+			fieldType := member.Element()
+			if !fieldType.IsZero() {
+				if fieldType.IsPredeclared() {
+					detail = fieldType.Name()
+				} else {
+					detail = string(fieldType.FullName())
+				}
+			}
 			item := protocol.CompletionItem{
 				Label: label,
 				Kind:  protocol.CompletionItemKindField,
@@ -1135,7 +1144,9 @@ func optionToCompletionItems(
 					Range:   reportSpanToProtocolRange(span),
 					NewText: label,
 				},
-				Deprecated: isDeprecated,
+				Deprecated:    isDeprecated,
+				Documentation: irMemberDoc(member),
+				Detail:        detail,
 			}
 			if !yield(item) {
 				break
@@ -1186,6 +1197,15 @@ func extensionToCompletionItems(
 				if _, ok := extension.Deprecated().AsBool(); ok {
 					isDeprecated = true
 				}
+				var detail string
+				fieldType := extension.Element()
+				if !fieldType.IsZero() {
+					if fieldType.IsPredeclared() {
+						detail = fieldType.Name()
+					} else {
+						detail = string(fieldType.FullName())
+					}
+				}
 				item := protocol.CompletionItem{
 					Label: label,
 					Kind:  protocol.CompletionItemKindProperty,
@@ -1193,8 +1213,9 @@ func extensionToCompletionItems(
 						Range:   reportSpanToProtocolRange(span),
 						NewText: label,
 					},
-					Deprecated: isDeprecated,
-					Detail:     "extension",
+					Deprecated:    isDeprecated,
+					Documentation: irMemberDoc(extension),
+					Detail:        detail,
 				}
 				if !yield(item) {
 					break
@@ -1374,8 +1395,9 @@ func messageFieldCompletionItems(
 					Range:   editRange,
 					NewText: label,
 				},
-				Deprecated: isDeprecated,
-				Detail:     detail,
+				Deprecated:    isDeprecated,
+				Documentation: irMemberDoc(member),
+				Detail:        detail,
 			}
 			if !yield(item) {
 				return
