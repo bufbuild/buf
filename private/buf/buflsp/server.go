@@ -336,12 +336,7 @@ func (s *server) Hover(
 	ctx context.Context,
 	params *protocol.HoverParams,
 ) (*protocol.Hover, error) {
-	file := s.fileManager.Get(params.TextDocument.URI)
-	if file == nil {
-		return nil, nil
-	}
-
-	symbol := file.SymbolAt(ctx, params.Position)
+	symbol := s.getSymbol(ctx, params.TextDocument.URI, params.Position)
 	if symbol == nil {
 		return nil, nil
 	}
@@ -370,32 +365,26 @@ func (s *server) Definition(
 	ctx context.Context,
 	params *protocol.DefinitionParams,
 ) ([]protocol.Location, error) {
-	return s.definition(ctx, params.TextDocument.URI, params.Position)
+	symbol := s.getSymbol(ctx, params.TextDocument.URI, params.Position)
+	if symbol == nil {
+		return nil, nil
+	}
+	return []protocol.Location{
+		symbol.Definition(),
+	}, nil
 }
 
-// TypeDefinition is the entry point for go-to-type-definition.
+// TypeDefinition is the entry point for go-to type-definition.
 func (s *server) TypeDefinition(
 	ctx context.Context,
 	params *protocol.TypeDefinitionParams,
 ) ([]protocol.Location, error) {
-	return s.definition(ctx, params.TextDocument.URI, params.Position)
-}
-
-// definition powers [server.Definition] and [server.TypeDefinition], as they are not meaningfully
-// different in protobuf, but users may be used to using either.
-func (s *server) definition(ctx context.Context, uri protocol.URI, position protocol.Position) ([]protocol.Location, error) {
-	file := s.fileManager.Get(uri)
-	if file == nil {
-		return nil, nil
-	}
-
-	symbol := file.SymbolAt(ctx, position)
+	symbol := s.getSymbol(ctx, params.TextDocument.URI, params.Position)
 	if symbol == nil {
 		return nil, nil
 	}
-
 	return []protocol.Location{
-		symbol.Definition(),
+		symbol.TypeDefinition(),
 	}, nil
 }
 
@@ -404,11 +393,7 @@ func (s *server) References(
 	ctx context.Context,
 	params *protocol.ReferenceParams,
 ) ([]protocol.Location, error) {
-	file := s.fileManager.Get(params.TextDocument.URI)
-	if file == nil {
-		return nil, nil
-	}
-	symbol := file.SymbolAt(ctx, params.Position)
+	symbol := s.getSymbol(ctx, params.TextDocument.URI, params.Position)
 	if symbol == nil {
 		return nil, nil
 	}
@@ -471,7 +456,8 @@ func (s *server) SemanticTokensFull(
 	for _, symbol := range file.symbols {
 		var semanticType uint32
 		var semanticModifier uint32
-		if symbol.isOption {
+		_, ok := symbol.kind.(*option)
+		if ok {
 			semanticType = semanticTypeDecorator
 		} else {
 			switch symbol.ir.Kind() {
@@ -571,4 +557,18 @@ func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSy
 		}
 	}
 	return anyResults, nil
+}
+
+// getSymbol is a helper function that gets the *[symbol] for the given [protocol.URI] and
+// [protocol.Position].
+func (s *server) getSymbol(
+	ctx context.Context,
+	uri protocol.URI,
+	position protocol.Position,
+) *symbol {
+	file := s.fileManager.Get(uri)
+	if file == nil {
+		return nil
+	}
+	return file.SymbolAt(ctx, position)
 }

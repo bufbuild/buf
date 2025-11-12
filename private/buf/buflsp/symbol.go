@@ -46,13 +46,11 @@ import (
 type symbol struct {
 	ir ir.Symbol
 
-	file *file
-	def  *symbol
-	span report.Span
-	kind kind
-
-	// isOption indicates whether this symbol represents an option.
-	isOption bool
+	file    *file
+	def     *symbol
+	typeDef *symbol // Empty for non-option symbols
+	span    report.Span
+	kind    kind
 }
 
 // kind is used to track the symbol kind and lets us resolve definitions to their symbol.
@@ -68,6 +66,13 @@ type referenceable struct {
 type reference struct {
 	def      ast.DeclDef
 	fullName ir.FullName
+}
+
+type option struct {
+	def             ast.DeclDef
+	defFullName     ir.FullName
+	typeDef         ast.DeclDef
+	typeDefFullName ir.FullName
 }
 
 type static struct {
@@ -86,6 +91,7 @@ type tag struct{}
 
 func (*referenceable) isSymbolKind() {}
 func (*reference) isSymbolKind()     {}
+func (*option) isSymbolKind()        {}
 func (*static) isSymbolKind()        {}
 func (*imported) isSymbolKind()      {}
 func (*builtin) isSymbolKind()       {}
@@ -121,6 +127,26 @@ func (s *symbol) Definition() protocol.Location {
 	return protocol.Location{
 		URI:   s.def.file.uri,
 		Range: s.def.Range(),
+	}
+}
+
+// TypeDefinition returns the location of the type definition of the symbol.
+func (s *symbol) TypeDefinition() protocol.Location {
+	// For non-option symbols, this is the same as the definition, so we return that.
+	if _, ok := s.kind.(*option); !ok {
+		return s.Definition()
+	}
+	if s.typeDef == nil {
+		// The type definition does not have a span, so we just jump to the span of the symbol
+		// itself as a fallback.
+		return protocol.Location{
+			URI:   s.file.uri,
+			Range: s.Range(),
+		}
+	}
+	return protocol.Location{
+		URI:   s.typeDef.file.uri,
+		Range: s.typeDef.Range(),
 	}
 }
 
@@ -218,7 +244,7 @@ func (s *symbol) FormatDocs() string {
 			return strings.Join(comments, "\n")
 		}
 		return ""
-	case *referenceable, *static, *reference:
+	case *referenceable, *static, *reference, *option:
 		return s.getDocsFromComments()
 	}
 	return ""
@@ -312,6 +338,9 @@ func (s *symbol) getDocsFromComments() string {
 	case *reference:
 		reference, _ := s.kind.(*reference)
 		def = reference.def
+	case *option:
+		option, _ := s.kind.(*option)
+		def = option.def
 	}
 	if def.IsZero() {
 		return ""
