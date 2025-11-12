@@ -507,7 +507,9 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		typ := &symbol{
 			ir:   irSymbol,
 			file: f,
-			span: irSymbol.AsMember().TypeAST().Span(),
+			// We remove prefixes from the type, since we want to exclude the prefix from the
+			// symbol, e.g. repeated string values = 1;, we want to capture the symbol for "string".
+			span: irSymbol.AsMember().TypeAST().RemovePrefixes().Span(),
 		}
 		kind, needsResolution := getKindForMember(irSymbol.AsMember())
 		typ.kind = kind
@@ -616,9 +618,12 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 // getKindForMember takes a [ir.Member] and returns the symbol kind and whether or not the
 // symbol is currently resolved.
 func getKindForMember(member ir.Member) (kind, bool) {
-	if member.TypeAST().AsPath().AsPredeclared() != predeclared.Unknown {
+	// We remove prefixes to check for a predeclared type, e.g. repeated string values = 1;,
+	// "repeated string" would not be captured as a predeclared type. The corresponding symbol
+	// also excludes prefixes.
+	if member.TypeAST().RemovePrefixes().AsPath().AsPredeclared() != predeclared.Unknown {
 		return &builtin{
-			predeclared: member.TypeAST().AsPath().AsPredeclared(),
+			predeclared: member.TypeAST().RemovePrefixes().AsPath().AsPredeclared(),
 		}, false
 	}
 	return &reference{

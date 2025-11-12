@@ -190,6 +190,9 @@ func (s *symbol) References(includeDeclaration bool) []protocol.Location {
 
 // LogValue provides the log value for a symbol.
 func (s *symbol) LogValue() slog.Value {
+	if s == nil {
+		return slog.AnyValue(nil)
+	}
 	loc := func(loc report.Location) slog.Value {
 		return slog.GroupValue(
 			slog.Int("line", loc.Line),
@@ -225,61 +228,7 @@ func (s *symbol) FormatDocs() string {
 		// on an import file.
 		return imported.file.file.Path()
 	case *tag:
-		plural := func(i int) string {
-			if i == 1 {
-				return ""
-			}
-			return "s"
-		}
-		number := s.ir.AsMember().Number()
-		var ty protowire.Type
-		var packed bool
-		switch s.ir.Kind() {
-		case ir.SymbolKindEnumValue:
-			varint := protowire.AppendVarint(nil, uint64(number))
-			return fmt.Sprintf(
-				"`0x%x`, `0b%b`\n\nencoded (hex): `%X` (%d byte%s)",
-				number,
-				number,
-				varint,
-				len(varint),
-				plural(len(varint)),
-			)
-		case ir.SymbolKindField:
-			typ := s.ir.AsMember().TypeAST()
-			if s.ir.AsMember().IsGroup() {
-				ty = protowire.StartGroupType
-			} else if s.ir.AsMember().TypeAST().Kind() == ast.TypeKindPrefixed {
-				prefixed := typ.AsPrefixed()
-				prefixedType := prefixed.Type()
-				if prefixedType.Kind() == ast.TypeKindPath {
-					ty = protowireTypeForPredeclared(prefixedType.AsPath().AsPredeclared())
-					if ty != protowire.BytesType {
-						packed = prefixed.Prefix() == keyword.Repeated
-					}
-				} else {
-					ty = protowire.BytesType
-				}
-			} else if s.ir.AsMember().TypeAST().Kind() == ast.TypeKindPath {
-				ty = protowireTypeForPredeclared(typ.AsPath().AsPredeclared())
-			} else {
-				// All other cases, use protowire.BytesType
-				ty = protowire.BytesType
-			}
-			varint := protowire.AppendTag(nil, protowire.Number(number), ty)
-			doc := fmt.Sprintf(
-				"encoded (hex): `%X` (%d byte%s)",
-				varint, len(varint), plural(len(varint)),
-			)
-			if packed {
-				packed := protowire.AppendTag(nil, protowire.Number(number), protowire.BytesType)
-				return doc + fmt.Sprintf(
-					"\n\npacked (hex): `%X` (%d byte%s)",
-					packed, len(packed), plural(len(varint)),
-				)
-			}
-			return doc
-		}
+		return irMemberDoc(s.ir.AsMember())
 	case *builtin:
 		builtin, _ := s.kind.(*builtin)
 		comments, ok := builtinDocs[builtin.predeclared.String()]
@@ -307,12 +256,11 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 		return protocol.SymbolInformation{}
 	}
 
-	fullName := s.ir.FullName()
-	name := fullName.Name()
+	name := s.ir.FullName()
 	if name == "" {
 		return protocol.SymbolInformation{}
 	}
-	parentFullName := fullName.Parent()
+	parentFullName := name.Parent()
 	containerName := string(parentFullName)
 
 	location := protocol.Location{
@@ -349,7 +297,7 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 		isDeprecated = true
 	}
 	return protocol.SymbolInformation{
-		Name:          name,
+		Name:          string(name),
 		Kind:          kind,
 		Location:      location,
 		ContainerName: containerName,
@@ -494,6 +442,64 @@ func commentToMarkdown(comment string) string {
 	return strings.TrimSuffix(strings.TrimPrefix(comment, "/*"), "*/")
 }
 
+// irMemberDoc returns the documentation for a message field, enum value or extension field.
+func irMemberDoc(irMember ir.Member) string {
+	number := irMember.Number()
+	if irMember.IsEnumValue() {
+		varint := protowire.AppendVarint(nil, uint64(number))
+		return fmt.Sprintf(
+			"`0x%x`, `0b%b`\n\nencoded (hex): `%X` (%d byte%s)",
+			number,
+			number,
+			varint,
+			len(varint),
+			plural(len(varint)),
+		)
+	}
+
+	var (
+		builder strings.Builder
+		ty      protowire.Type
+		packed  bool
+	)
+	typeAST := irMember.TypeAST()
+	if irMember.IsGroup() {
+		ty = protowire.StartGroupType
+	} else if typeAST.Kind() == ast.TypeKindPrefixed {
+		prefixed := typeAST.AsPrefixed()
+		prefixedType := prefixed.Type()
+		if prefixedType.Kind() == ast.TypeKindPath {
+			ty = protowireTypeForPredeclared(prefixedType.AsPath().AsPredeclared())
+			if ty != protowire.BytesType {
+				packed = prefixed.Prefix() == keyword.Repeated
+			}
+		} else {
+			ty = protowire.BytesType
+		}
+	} else if typeAST.Kind() == ast.TypeKindPath {
+		ty = protowireTypeForPredeclared(typeAST.AsPath().AsPredeclared())
+	} else {
+		// All other cases, use protowire.BytesType
+		ty = protowire.BytesType
+	}
+	varint := protowire.AppendTag(nil, protowire.Number(number), ty)
+	fmt.Fprintf(
+		&builder,
+		"encoded (hex): `%X` (%d byte%s)",
+		varint, len(varint), plural(len(varint)),
+	)
+	if packed {
+		packed := protowire.AppendTag(nil, protowire.Number(number), protowire.BytesType)
+		fmt.Fprintf(
+			&builder,
+			"\n\npacked (hex): `%X` (%d byte%s)",
+			packed, len(packed), plural(len(varint)),
+		)
+		return builder.String()
+	}
+	return builder.String()
+}
+
 func reportSpanToProtocolRange(span report.Span) protocol.Range {
 	startLocation := span.File.Location(span.Start, positionalEncoding)
 	endLocation := span.File.Location(span.End, positionalEncoding)
@@ -511,4 +517,11 @@ func reportLocationsToProtocolRange(startLocation, endLocation report.Location) 
 			Character: uint32(endLocation.Column - 1),
 		},
 	}
+}
+
+func plural(i int) string {
+	if i == 1 {
+		return ""
+	}
+	return "s"
 }
