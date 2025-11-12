@@ -357,8 +357,16 @@ func (s *symbol) getDocsFromComments() string {
 		case token.Comment:
 			comments = append(comments, commentToMarkdown(t.Text()))
 		}
-		if !cursor.PeekPrevSkippable().Kind().IsSkippable() {
+		prev := cursor.PeekPrevSkippable()
+		if !prev.Kind().IsSkippable() {
 			break
+		}
+		if prev.Kind() == token.Space {
+			// Check if the whitespace contains a newline. If so, then we break. This is to prevent
+			// picking up comments that are not contiguous to the declaration.
+			if strings.Contains(prev.Text(), "\n") {
+				break
+			}
 		}
 		t = cursor.PrevSkippable()
 	}
