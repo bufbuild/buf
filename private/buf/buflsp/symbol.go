@@ -25,6 +25,7 @@ import (
 	"log/slog"
 	"slices"
 	"strings"
+	"unicode"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/protocompile/experimental/ast"
@@ -351,27 +352,11 @@ func (s *symbol) getDocsFromComments() string {
 	// traversing backwards for leading comemnts only.
 	_, start := def.Context().Stream().Around(def.Span().Start)
 	cursor := token.NewCursorAt(start)
-	t := cursor.PrevSkippable()
-	for !t.IsZero() {
-		switch t.Kind() {
-		case token.Comment:
-			comments = append(comments, commentToMarkdown(t.Text()))
-		}
-		prev := cursor.PeekPrevSkippable()
-		if !prev.Kind().IsSkippable() {
-			break
-		}
-		if prev.Kind() == token.Space {
-			// Check if the whitespace contains a newline. If so, then we break. This is to prevent
-			// picking up comments that are not contiguous to the declaration.
-			if strings.Contains(prev.Text(), "\n") {
-				break
-			}
-		}
-		t = cursor.PrevSkippable()
+	for t := cursor.PrevSkippable(); t.Kind() == token.Comment; t = cursor.PrevSkippable() {
+		comments = append(comments, commentToMarkdown(t.Text()))
 	}
 	// Reverse the list and return joined.
-	slices.Reverse(comments)
+	slices.Reverse(lineUpComments(comments))
 
 	var docs strings.Builder
 	for _, comment := range comments {
@@ -448,6 +433,44 @@ func commentToMarkdown(comment string) string {
 	}
 	// Handle standard multi-line comments (/* ... */)
 	return strings.TrimSuffix(strings.TrimPrefix(comment, "/*"), "*/")
+}
+
+// lineUpComments is a helper function for lining up the comments for docs, since some users
+// may start their comments with spaces, e.g.
+//
+//	// Foo is a ...
+//	//
+//	// Foo is used for ...
+//	message Foo { ... }
+//
+// vs.
+//
+//	//Foo is a ...
+//	//
+//	//Foo is used for ...
+//	message Foo { ... }
+//
+// When different LSP clients render these docs, they treat leading spaces differently. To
+// help mitigate this, we use the following heuristic to line up the comments:
+//
+// If all lines containing one or more non-space characters all start with a single space
+// character, we trim the space character for each of these lines. Otherwise, do nothing.
+func lineUpComments(comments []string) []string {
+	linedUp := make([]string, len(comments))
+	for i, comment := range comments {
+		if strings.ContainsFunc(comment, func(r rune) bool {
+			return !unicode.IsSpace(r)
+		}) {
+			// We are only checking for " " and do not count nbsp's.
+			if !strings.HasPrefix(comment, " ") {
+				return comments
+			}
+			linedUp[i] = strings.TrimPrefix(comment, " ")
+		} else {
+			linedUp[i] = comment
+		}
+	}
+	return linedUp
 }
 
 // irMemberDoc returns the documentation for a message field, enum value or extension field.
