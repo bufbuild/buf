@@ -319,10 +319,9 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	//
 	// Resolve all unresolved symbols from this file
 	for _, sym := range unresolved {
-		switch sym.kind.(type) {
+		switch kind := sym.kind.(type) {
 		case *reference:
-			ref, _ := sym.kind.(*reference)
-			def := f.resolveASTDefinition(ref.def, ref.fullName)
+			def := f.resolveASTDefinition(kind.def, kind.fullName)
 			sym.def = def
 			if def == nil {
 				// In the case where the symbol is not resolved, we continue
@@ -340,8 +339,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			}
 			referenceable.references = append(referenceable.references, sym)
 		case *option:
-			option, _ := sym.kind.(*option)
-			def := f.resolveASTDefinition(option.def, option.defFullName)
+			def := f.resolveASTDefinition(kind.def, kind.defFullName)
 			sym.def = def
 			if def != nil {
 				referenceable, ok := def.kind.(*referenceable)
@@ -352,10 +350,11 @@ func (f *file) IndexSymbols(ctx context.Context) {
 						slog.String("file", f.uri.Filename()),
 						slog.Any("symbol", def),
 					)
+				} else {
+					referenceable.references = append(referenceable.references, sym)
 				}
-				referenceable.references = append(referenceable.references, sym)
 			}
-			typeDef := f.resolveASTDefinition(option.typeDef, option.typeDefFullName)
+			typeDef := f.resolveASTDefinition(kind.typeDef, kind.typeDefFullName)
 			sym.typeDef = typeDef
 		default:
 			// This shouldn't happen, logging a warning
@@ -364,7 +363,6 @@ func (f *file) IndexSymbols(ctx context.Context) {
 				slog.String("file", f.uri.Filename()),
 				slog.Any("symbol", sym),
 			)
-			continue
 		}
 	}
 
@@ -375,19 +373,17 @@ func (f *file) IndexSymbols(ctx context.Context) {
 		}
 		for _, sym := range file.referenceSymbols {
 			var fullName ir.FullName
-			switch sym.kind.(type) {
+			switch kind := sym.kind.(type) {
 			case *reference:
-				ref, _ := sym.kind.(*reference)
-				if ref.def.Span().Path() != f.objectInfo.Path() {
+				if kind.def.Span().Path() != f.objectInfo.Path() {
 					continue
 				}
-				fullName = ref.fullName
+				fullName = kind.fullName
 			case *option:
-				option, _ := sym.kind.(*option)
-				if option.def.Span().Path() != f.objectInfo.Path() {
+				if kind.def.Span().Path() != f.objectInfo.Path() {
 					continue
 				}
-				fullName = option.defFullName
+				fullName = kind.defFullName
 			default:
 				// This shouldn't happen, logging a warning
 				f.lsp.logger.Warn(
