@@ -768,13 +768,7 @@ func (f *file) resolveASTDefinition(def ast.DeclDef, defName ir.FullName) *symbo
 		}
 		file = f
 	}
-	sym, ok := file.referenceableSymbols[defName]
-	if !ok {
-		// This could happen in the case where we are in the cache for example, and we do not
-		// have access to a buildable workspace.
-		return nil
-	}
-	return sym
+	return file.referenceableSymbols[defName]
 }
 
 // SymbolAt finds a symbol in this file at the given cursor position, if one exists.
