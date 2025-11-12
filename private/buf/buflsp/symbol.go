@@ -462,7 +462,7 @@ func lineUpComments(comments []string) []string {
 			return !unicode.IsSpace(r)
 		}) {
 			// We are only checking for " " and do not count nbsp's.
-			if strings.Index(comment, " ") != 0 {
+			if !strings.HasPrefix(comment, " ") {
 				return comments
 			}
 			linedUp[i] = strings.TrimPrefix(comment, " ")
