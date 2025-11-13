@@ -352,11 +352,28 @@ func (s *symbol) getDocsFromComments() string {
 	// traversing backwards for leading comemnts only.
 	_, start := def.Context().Stream().Around(def.Span().Start)
 	cursor := token.NewCursorAt(start)
-	for t := cursor.PrevSkippable(); t.Kind() == token.Comment; t = cursor.PrevSkippable() {
-		comments = append(comments, commentToMarkdown(t.Text()))
+	t := cursor.PrevSkippable()
+	for !t.IsZero() {
+		switch t.Kind() {
+		case token.Comment:
+			comments = append(comments, commentToMarkdown(t.Text()))
+		}
+		prev := cursor.PeekPrevSkippable()
+		if !prev.Kind().IsSkippable() {
+			break
+		}
+		if prev.Kind() == token.Space {
+			// Check if the whitespace contains a newline. If so, then we break. This is to prevent
+			// picking up comments that are not contiguous to the declaration.
+			if strings.Contains(prev.Text(), "\n") {
+				break
+			}
+		}
+		t = cursor.PrevSkippable()
 	}
+	comments = lineUpComments(comments)
 	// Reverse the list and return joined.
-	slices.Reverse(lineUpComments(comments))
+	slices.Reverse(comments)
 
 	var docs strings.Builder
 	for _, comment := range comments {
