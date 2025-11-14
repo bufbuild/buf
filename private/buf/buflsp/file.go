@@ -51,7 +51,7 @@ type file struct {
 	lsp *lsp
 	uri protocol.URI
 
-	file *report.File
+	file *source.File
 	// Version is an opaque version identifier given to us by the LSP client. This
 	// is used in the protocol to disambiguate which version of a file e.g. publishing
 	// diagnostics or symbols an operating refers to.
@@ -150,7 +150,7 @@ func (f *file) ReadFromWorkspace(ctx context.Context) (err error) {
 	text := builder.String()
 
 	f.version = -1
-	f.file = report.NewFile(fileName, text)
+	f.file = source.NewFile(fileName, text)
 	f.hasText = true
 	return nil
 }
@@ -160,7 +160,7 @@ func (f *file) ReadFromWorkspace(ctx context.Context) (err error) {
 func (f *file) Update(ctx context.Context, version int32, text string) {
 	f.lsp.logger.InfoContext(ctx, "file updated", slog.String("uri", f.uri.Filename()), slog.Int("old_version", int(f.version)), slog.Int("new_version", int(version)))
 	f.version = version
-	f.file = report.NewFile(f.uri.Filename(), text)
+	f.file = source.NewFile(f.uri.Filename(), text)
 	f.hasText = true
 
 	f.CancelChecks(ctx)
@@ -221,9 +221,9 @@ func (f *file) RefreshIR(ctx context.Context) {
 	// Opener creates a cached view of all files in the workspace.
 	pathToFiles := f.workspace.PathToFile()
 	files := make([]*file, 0, len(pathToFiles))
-	openerMap := make(map[string]string, len(pathToFiles))
+	openerMap := make(map[string]*source.File, len(pathToFiles))
 	for path, file := range pathToFiles {
-		openerMap[path] = file.file.Text()
+		openerMap[path] = file.file
 		files = append(files, file)
 	}
 	opener := source.NewMap(openerMap)
@@ -375,12 +375,12 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			var fullName ir.FullName
 			switch kind := sym.kind.(type) {
 			case *reference:
-				if kind.def.Span().Path() != f.objectInfo.Path() {
+				if f.localPathToPath(kind.def.Span().Path()) != f.objectInfo.Path() {
 					continue
 				}
 				fullName = kind.fullName
 			case *option:
-				if kind.def.Span().Path() != f.objectInfo.Path() {
+				if f.localPathToPath(kind.def.Span().Path()) != f.objectInfo.Path() {
 					continue
 				}
 				fullName = kind.defFullName
@@ -690,7 +690,7 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 		for element := range seq.Values(field.Elements()) {
 			key := field.KeyASTs().At(element.ValueNodeIndex())
 			components := slices.Collect(key.AsPath().Components)
-			var span report.Span
+			var span source.Span
 			// This covers the first case in the example above where the path is relative,
 			// e.g. field_a is a relative path within { } for (option).message.
 			if index > len(components)-1 {
@@ -757,7 +757,7 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 // resolveASTDefinition is a helper for resolving the [ast.DeclDef] to the *[symbol], if
 // there is a matching indexed *[symbol].
 func (f *file) resolveASTDefinition(def ast.DeclDef, defName ir.FullName) *symbol {
-	file, ok := f.workspace.PathToFile()[def.Span().Path()]
+	file, ok := f.workspace.PathToFile()[f.localPathToPath(def.Span().Path())]
 	if !ok {
 		// Check current file
 		if def.Span().Path() != f.objectInfo.Path() {
@@ -769,6 +769,20 @@ func (f *file) resolveASTDefinition(def ast.DeclDef, defName ir.FullName) *symbo
 		file = f
 	}
 	return file.referenceableSymbols[defName]
+}
+
+// localPathToPath is a helper function for converting a local (on-disk) path to the importable
+// path, if available. If not, this will return an empty string. If the workspace is nil,
+// then we also return an empty string.
+func (f *file) localPathToPath(localPath string) string {
+	if f.workspace == nil {
+		return ""
+	}
+	fileInfo, ok := f.workspace.fileNameToFileInfo[localPath]
+	if !ok {
+		return ""
+	}
+	return fileInfo.Path()
 }
 
 // SymbolAt finds a symbol in this file at the given cursor position, if one exists.

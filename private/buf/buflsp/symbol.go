@@ -31,7 +31,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
 	"github.com/bufbuild/protocompile/experimental/ir"
-	"github.com/bufbuild/protocompile/experimental/report"
+	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
 	"go.lsp.dev/protocol"
@@ -40,7 +40,7 @@ import (
 
 // symbol represents a named symbol inside of a [file].
 //
-// For each symbol, we keep track of the location [report.Span] and file [*file] of the
+// For each symbol, we keep track of the location [source.Span] and file [*file] of the
 // actual symbol and the definition symbol, if available.
 //
 // We also keep track of metadata for documentation rendering.
@@ -50,7 +50,7 @@ type symbol struct {
 	file    *file
 	def     *symbol
 	typeDef *symbol // Empty for non-option symbols
-	span    report.Span
+	span    source.Span
 	kind    kind
 }
 
@@ -194,7 +194,7 @@ func (s *symbol) LogValue() slog.Value {
 	if s == nil {
 		return slog.AnyValue(nil)
 	}
-	loc := func(loc report.Location) slog.Value {
+	loc := func(loc source.Location) slog.Value {
 		return slog.GroupValue(
 			slog.Int("line", loc.Line),
 			slog.Int("column", loc.Column),
@@ -548,13 +548,13 @@ func irMemberDoc(irMember ir.Member) string {
 	return builder.String()
 }
 
-func reportSpanToProtocolRange(span report.Span) protocol.Range {
+func reportSpanToProtocolRange(span source.Span) protocol.Range {
 	startLocation := span.File.Location(span.Start, positionalEncoding)
 	endLocation := span.File.Location(span.End, positionalEncoding)
 	return reportLocationsToProtocolRange(startLocation, endLocation)
 }
 
-func reportLocationsToProtocolRange(startLocation, endLocation report.Location) protocol.Range {
+func reportLocationsToProtocolRange(startLocation, endLocation source.Location) protocol.Range {
 	return protocol.Range{
 		Start: protocol.Position{
 			Line:      uint32(startLocation.Line - 1),

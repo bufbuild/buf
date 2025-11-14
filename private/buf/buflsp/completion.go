@@ -30,8 +30,8 @@ import (
 	"github.com/bufbuild/protocompile/experimental/ast/syntax"
 	"github.com/bufbuild/protocompile/experimental/id"
 	"github.com/bufbuild/protocompile/experimental/ir"
-	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/seq"
+	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
 	"go.lsp.dev/protocol"
@@ -842,7 +842,7 @@ func optionKeywords() iter.Seq[keyword.Keyword] {
 func keywordToCompletionItem(
 	keywords iter.Seq[keyword.Keyword],
 	kind protocol.CompletionItemKind,
-	span report.Span,
+	span source.Span,
 	offset int,
 ) iter.Seq[protocol.CompletionItem] {
 	return func(yield func(protocol.CompletionItem) bool) {
@@ -871,7 +871,7 @@ func keywordToCompletionItem(
 func typeReferencesToCompletionItems(
 	current *file,
 	parentFullName ir.FullName,
-	span report.Span,
+	span source.Span,
 	offset int,
 	allowEnums bool,
 ) iter.Seq[protocol.CompletionItem] {
@@ -976,7 +976,7 @@ func typeReferencesToCompletionItems(
 // optionToCompletionItems returns completion items for options.
 func optionToCompletionItems(
 	current *file,
-	span report.Span,
+	span source.Span,
 	offset int,
 	optionsType ir.Type,
 	targetKind ir.OptionTarget,
@@ -1036,7 +1036,7 @@ func optionToCompletionItems(
 // extensionToCompletionItems returns completion items for options from extensions.
 func extensionToCompletionItems(
 	current *file,
-	span report.Span,
+	span source.Span,
 	offset int,
 	optionsType ir.Type,
 	targetKind ir.OptionTarget,
@@ -1107,7 +1107,7 @@ func extensionToCompletionItems(
 // It walks through the path segments to find the current message type and suggests valid fields.
 func optionNamesToCompletionItems(
 	current *file,
-	pathSpans []report.Span,
+	pathSpans []source.Span,
 	offset int,
 	optionType ir.Type,
 	targetKind ir.OptionTarget,
@@ -1218,7 +1218,7 @@ func optionNamesToCompletionItems(
 func messageFieldCompletionItems(
 	current *file,
 	messageType ir.Type,
-	tokenSpan report.Span,
+	tokenSpan source.Span,
 	offset int,
 	isValueType bool,
 ) iter.Seq[protocol.CompletionItem] {
@@ -1347,7 +1347,7 @@ func getDeclForOffsetHelper(body ast.DeclBody, offset int, path []ast.DeclAny) [
 // parseOptionSpan returns the span associated with the option declaration and
 // the fields up until the offset. This handles invalid declarations from
 // partial syntax.
-func parseOptionSpan(file *file, offset int) (report.Span, []report.Span) {
+func parseOptionSpan(file *file, offset int) (source.Span, []source.Span) {
 	hasStart, hasGap := false, false
 	var tokens []token.Token
 	typeSpan := extractAroundOffset(
@@ -1373,12 +1373,12 @@ func parseOptionSpan(file *file, offset int) (report.Span, []report.Span) {
 		isTokenType,
 	)
 	if !hasStart {
-		return report.Span{}, nil
+		return source.Span{}, nil
 	}
 	// If no tokens were found, return an empty span at the offset.
 	if len(tokens) == 0 {
-		emptySpan := report.Span{File: file.file, Start: offset, End: offset}
-		return emptySpan, []report.Span{emptySpan}
+		emptySpan := source.Span{File: file.file, Start: offset, End: offset}
+		return emptySpan, []source.Span{emptySpan}
 	}
 	slices.Reverse(tokens)
 	if typeSpan.Start > 0 && file.file.Text()[typeSpan.Start-1] == '(' {
@@ -1389,14 +1389,14 @@ func parseOptionSpan(file *file, offset int) (report.Span, []report.Span) {
 		if strings.HasPrefix(file.file.Text()[typeSpan.End:], ")") {
 			typeSpan.End += 1
 		}
-		return typeSpan, []report.Span{typeSpan}
+		return typeSpan, []source.Span{typeSpan}
 	}
-	pathSpans := []report.Span{tokens[0].Span()}
+	pathSpans := []source.Span{tokens[0].Span()}
 	for i := 1; i < len(tokens)-1; i += 2 {
 		dotToken := tokens[i]
 		identToken := tokens[i+1]
 		if dotToken.Text() != "." || identToken.Kind() != token.Ident {
-			return report.Span{}, nil
+			return source.Span{}, nil
 		}
 		pathSpans = append(pathSpans, identToken.Span())
 	}
@@ -1520,20 +1520,20 @@ func isTokenTypeDelimiter(tok token.Token) bool {
 }
 
 // extractAroundOffset extracts the value around the offset by querying the token stream.
-func extractAroundOffset(file *file, offset int, isTokenBefore, isTokenAfter func(token.Token) bool) report.Span {
+func extractAroundOffset(file *file, offset int, isTokenBefore, isTokenAfter func(token.Token) bool) source.Span {
 	if file.ir.AST() == nil {
-		return report.Span{}
+		return source.Span{}
 	}
 	stream := file.ir.AST().Stream()
 	if stream == nil {
-		return report.Span{}
+		return source.Span{}
 	}
 	before, after := stream.Around(offset)
 	if before.IsZero() && after.IsZero() {
-		return report.Span{}
+		return source.Span{}
 	}
 
-	span := report.Span{
+	span := source.Span{
 		File:  file.file,
 		Start: offset,
 		End:   offset,
@@ -1557,7 +1557,7 @@ func extractAroundOffset(file *file, offset int, isTokenBefore, isTokenAfter fun
 	return span
 }
 
-func splitSpan(span report.Span, offset int) (prefix string, suffix string) {
+func splitSpan(span source.Span, offset int) (prefix string, suffix string) {
 	if offsetInSpan(offset, span) != 0 {
 		return "", ""
 	}
@@ -1566,7 +1566,7 @@ func splitSpan(span report.Span, offset int) (prefix string, suffix string) {
 	return text[:index], text[index:]
 }
 
-func offsetInSpan(offset int, span report.Span) int {
+func offsetInSpan(offset int, span source.Span) int {
 	if offset < span.Start {
 		return -1
 	} else if offset > span.End {
