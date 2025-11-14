@@ -24,7 +24,7 @@ message MessageTest {
     message: "message",
     expression: "this == this"
   };
-  // empty id
+  // empty id UPDATE this is now OK
   option (buf.validate.message).cel = {
     id: "",
     message: "message",
@@ -60,7 +60,7 @@ message MessageTest {
     message: "uh",
     expression: "foo + bar",
   };
-  // missing message with a bool expression
+  // missing message with a bool expression UPDATE: this is now OK
   option (buf.validate.message).cel = {
     id: "id5",
     message: "",
