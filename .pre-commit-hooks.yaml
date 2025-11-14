@@ -5,6 +5,13 @@
   entry: buf generate
   types: [proto]
   pass_filenames: false
+- id: buf-build
+  name: buf build
+  language: golang
+  language_version: 1.24.0
+  entry: buf build
+  types: [proto]
+  pass_filenames: false
 - id: buf-breaking
   name: buf breaking
   language: golang
