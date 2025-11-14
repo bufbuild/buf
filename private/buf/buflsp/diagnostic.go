@@ -21,13 +21,14 @@ import (
 	"strings"
 
 	"github.com/bufbuild/protocompile/experimental/report"
+	"github.com/bufbuild/protocompile/experimental/source/length"
 	"go.lsp.dev/protocol"
 )
 
 // UTF-16 is the default per LSP spec. Position encoding negotiation is not yet
 // supported by the go.lsp.dev/protocol library.
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#position
-const positionalEncoding = report.UTF16Length
+const positionalEncoding = length.UTF16
 
 // diagnosticData is a structure to hold the [report.Diagnostic] notes, help, and debug
 // messages, to marshal into JSON for the [protocol.Diagnostic].Data field.

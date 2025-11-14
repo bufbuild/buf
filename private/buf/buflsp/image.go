@@ -26,7 +26,7 @@ import (
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/protocompile"
-	"github.com/bufbuild/protocompile/experimental/report"
+	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/protoutil"
@@ -200,7 +200,7 @@ func newDiagnostic(err reporter.ErrorWithPos, isWarning bool, opener fileOpener,
 	// TODO: this is a temporary workaround for old diagnostic errors.
 	// When using the new compiler these conversions will be already handled.
 	if text, ok := opener[filename]; ok {
-		file := report.NewFile(filename, text)
+		file := source.NewFile(filename, text)
 		loc := file.Location(position.Offset, positionalEncoding)
 		utf16Col = loc.Column - 1
 	} else {
