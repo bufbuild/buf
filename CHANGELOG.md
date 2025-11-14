@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.60.0] - 2025-11-14
 
 - Fix LSP published diagnostics to filter to the opened file.
@@ -1437,6 +1441,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.60.0...HEAD
 [v1.60.0]: https://github.com/bufbuild/buf/compare/v1.59.0...v1.60.0
 [v1.59.0]: https://github.com/bufbuild/buf/compare/v1.58.0...v1.59.0
 [v1.58.0]: https://github.com/bufbuild/buf/compare/v1.57.2...v1.58.0
