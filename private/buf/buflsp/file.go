@@ -375,12 +375,12 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			var fullName ir.FullName
 			switch kind := sym.kind.(type) {
 			case *reference:
-				if f.localPathToPath(kind.def.Span().Path()) != f.objectInfo.Path() {
+				if kind.def.Span().Path() != f.objectInfo.LocalPath() {
 					continue
 				}
 				fullName = kind.fullName
 			case *option:
-				if f.localPathToPath(kind.def.Span().Path()) != f.objectInfo.Path() {
+				if kind.def.Span().Path() != f.objectInfo.LocalPath() {
 					continue
 				}
 				fullName = kind.defFullName
@@ -757,7 +757,24 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 // resolveASTDefinition is a helper for resolving the [ast.DeclDef] to the *[symbol], if
 // there is a matching indexed *[symbol].
 func (f *file) resolveASTDefinition(def ast.DeclDef, defName ir.FullName) *symbol {
-	file, ok := f.workspace.PathToFile()[f.localPathToPath(def.Span().Path())]
+	// No workspace, we cannot resolve the AST definition
+	if f.workspace == nil {
+		return nil
+	}
+	// We resolve the import path of the span of the AST definition and search for it in our
+	// workspace.
+	fileInfo, ok := f.workspace.fileNameToFileInfo[def.Span().Path()]
+	if !ok {
+		// Unable to resolve an importable path for the file in our workspace, log a debug
+		// statement and return no definition.
+		f.lsp.logger.Debug(
+			"unable to resolve an importable file path for local path",
+			slog.String("file", f.uri.Filename()),
+			slog.String("local path", def.Span().Path()),
+		)
+		return nil
+	}
+	file, ok := f.workspace.PathToFile()[fileInfo.Path()]
 	if !ok {
 		// Check current file
 		if def.Span().Path() != f.objectInfo.Path() {
@@ -769,20 +786,6 @@ func (f *file) resolveASTDefinition(def ast.DeclDef, defName ir.FullName) *symbo
 		file = f
 	}
 	return file.referenceableSymbols[defName]
-}
-
-// localPathToPath is a helper function for converting a local (on-disk) path to the importable
-// path, if available. If not, this will return an empty string. If the workspace is nil,
-// then we also return an empty string.
-func (f *file) localPathToPath(localPath string) string {
-	if f.workspace == nil {
-		return ""
-	}
-	fileInfo, ok := f.workspace.fileNameToFileInfo[localPath]
-	if !ok {
-		return ""
-	}
-	return fileInfo.Path()
 }
 
 // SymbolAt finds a symbol in this file at the given cursor position, if one exists.
