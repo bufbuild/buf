@@ -29,6 +29,7 @@ goarch() {
     arm64) echo arm64 ;;
     aarch64) echo arm64 ;;
     armv7) echo arm ;;
+    loongarch64 ) echo loong64 ;;
     ppc64le) echo ppc64le ;;
     s390x) echo s390x ;;
     *) echo "unsupported"; return 1 ;;
@@ -87,7 +88,7 @@ mkdir -p "${RELEASE_DIR}"
 cd "${RELEASE_DIR}"
 
 for os in Darwin Linux Windows; do
-  for arch in x86_64 riscv64 arm64 armv7 ppc64le s390x; do
+  for arch in x86_64 riscv64 arm64 armv7 loongarch64 ppc64le s390x; do
     # our goal is to have the binaries be suffixed with $(uname -s)-$(uname -m)
     # on mac, this is arm64, on linux, this is aarch64, for historical reasons
     # this is a hacky way to not have to rewrite this loop (and others below)
@@ -120,7 +121,7 @@ for os in Darwin Linux Windows; do
 done
 
 for os in Darwin Linux Windows; do
-  for arch in x86_64 riscv64 arm64 armv7 ppc64le s390x; do
+  for arch in x86_64 riscv64 arm64 armv7 loongarch64 ppc64le s390x; do
     if [[ ! "${arch}" =~ x86_64|arm64 ]] && [ "${os}" != "Linux" ]; then
       continue
     fi
@@ -143,7 +144,7 @@ for os in Darwin Linux Windows; do
 done
 
 for os in Darwin Linux; do
-  for arch in x86_64 riscv64 arm64 armv7 ppc64le s390x; do
+  for arch in x86_64 riscv64 arm64 armv7 loongarch64 ppc64le s390x; do
     if [[ ! "${arch}" =~ x86_64|arm64 ]] && [ "${os}" != "Linux" ]; then
       continue
     fi
