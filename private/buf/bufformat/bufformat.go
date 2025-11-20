@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"log"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -87,7 +86,6 @@ func FormatFileNode(dest io.Writer, fileNode *ast.FileNode) error {
 	// capture unknown syntax like edition "2024" which at the current time is
 	// not supported.
 	if _, err := parser.ResultFromAST(fileNode, true, reporter.NewHandler(nil)); err != nil {
-		log.Printf("%T, %s", err, err)
 		return err
 	}
 	formatter := newFormatter(dest, fileNode)
