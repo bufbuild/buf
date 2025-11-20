@@ -95,7 +95,6 @@ func testFormatNoDiff(t *testing.T, path string) {
 					formattedData, err := io.ReadAll(formattedFile)
 					require.NoError(t, err)
 					expectedPath := strings.Replace(formattedFile.Path(), ".proto", ".golden", 1)
-					t.Log("expectedPath", expectedPath, formattedFile.Path())
 					expectedData, err := storage.ReadPath(ctx, bucket, expectedPath)
 					require.NoError(t, err)
 					fileDiff, err := diff.Diff(ctx, expectedData, formattedData, expectedPath, formattedFile.Path()+" (formatted)")
