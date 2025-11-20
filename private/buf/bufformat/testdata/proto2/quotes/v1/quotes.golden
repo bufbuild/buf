@@ -1,0 +1,24 @@
+syntax = "proto2";
+
+import "google/protobuf/descriptor.proto";
+
+message Foo {
+  optional string something = 1;
+}
+
+extend google.protobuf.FieldOptions {
+  optional string name = 10001;
+  optional Foo foo = 10002;
+}
+
+message Foo {
+  optional string one = 1 [(name) = "f\"o\"'o'"];
+  optional string two = 2 [(name) = 'f"oo"'];
+  optional string three = 3 [(name) = "f'oo'"];
+  optional string four = 4 [(name) = "f\"o\"\'o\'"];
+  optional string five = 5 [(name) = "f\"o\"o"];
+  optional string six = 6 [(name) = 'f\'o\'o'];
+  optional string seven = 7 [(name) = "foo"];
+  optional string eight = 8 [(foo) = {something: 'something:"foo"'}];
+  optional string nine = 9 [(foo) = {something: "something:\"foo\"\nanother:\"bar\""}];
+}

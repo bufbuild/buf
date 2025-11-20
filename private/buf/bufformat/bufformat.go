@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"log"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -82,10 +83,11 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.Rea
 
 // FormatFileNode formats the given file node and writ the result to dest.
 func FormatFileNode(dest io.Writer, fileNode *ast.FileNode) error {
-	// Construct the file descriptor to ensure the ast is understandable.
-	// This will capture unknown syntax like edition "2024" which at the current
-	// time is not supported.
+	// Construct the file descriptor to ensure the AST is valid. This will
+	// capture unknown syntax like edition "2024" which at the current time is
+	// not supported.
 	if _, err := parser.ResultFromAST(fileNode, true, reporter.NewHandler(nil)); err != nil {
+		log.Printf("%T, %s", err, err)
 		return err
 	}
 	formatter := newFormatter(dest, fileNode)

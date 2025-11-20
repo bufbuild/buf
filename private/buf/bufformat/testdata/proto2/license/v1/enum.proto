@@ -5,5 +5,5 @@
 */
 
 
-enum Foo {}
-enum Bar {}
+enum Foo { FOO_UNKNOWN = 1;}
+enum Bar {BAR_UNKNOWN=1;}

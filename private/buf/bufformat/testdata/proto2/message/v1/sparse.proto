@@ -1,4 +1,6 @@
-message  
+syntax = "proto2";
+
+message
 
 
   Foo
@@ -8,9 +10,9 @@ message
   // This is a trailing comment on the '{'.
 
 
-                                string name = 1;
+                                optional string name = 1;
 
-    string value = 2; // In-line on value.
+    optional string value = 2; // In-line on value.
 
 
 }

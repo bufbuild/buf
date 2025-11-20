@@ -42,7 +42,8 @@ func testFormatCustomOptions(t *testing.T) {
 }
 
 func testFormatEditions(t *testing.T) {
-	testFormatNoDiff(t, "testdata/editions")
+	testFormatNoDiff(t, "testdata/editions/2023")
+	testFormatError(t, "testdata/editions/2024", `edition "2024" not yet fully supported; latest supported edition "2023"`)
 }
 
 func testFormatProto2(t *testing.T) {
@@ -78,40 +79,55 @@ func testFormatNoDiff(t *testing.T, path string) {
 		ctx := context.Background()
 		bucket, err := storageos.NewProvider().NewReadWriteBucket(path)
 		require.NoError(t, err)
+
 		moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, slogtestext.NewLogger(t), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 		moduleSetBuilder.AddLocalModule(bucket, path, true)
 		moduleSet, err := moduleSetBuilder.Build()
 		require.NoError(t, err)
-		readBucket, err := FormatModuleSet(ctx, moduleSet)
+		formatBucket, err := FormatModuleSet(ctx, moduleSet)
 		require.NoError(t, err)
-		require.NoError(
-			t,
-			storage.WalkReadObjects(
+		assertGolden := func(formatBucket storage.ReadBucket) {
+			err := storage.WalkReadObjects(
 				ctx,
-				readBucket,
+				formatBucket,
 				"",
 				func(formattedFile storage.ReadObject) error {
-					expectedPath := formattedFile.Path()
-					t.Run(expectedPath, func(t *testing.T) {
-						// The expected format result is the golden file. If
-						// this file IS a golden file, it is expected to not
-						// change.
-						if !strings.HasSuffix(expectedPath, ".golden.proto") {
-							expectedPath = strings.Replace(expectedPath, ".proto", ".golden.proto", 1)
-						}
-						formattedData, err := io.ReadAll(formattedFile)
-						require.NoError(t, err)
-						expectedFile, err := bucket.Get(ctx, expectedPath)
-						require.NoError(t, err)
-						expectedData, err := io.ReadAll(expectedFile)
-						require.NoError(t, err)
-						fileDiff, err := diff.Diff(ctx, expectedData, formattedData, expectedPath, formattedFile.Path()+" (formatted)")
-						require.NoError(t, err)
-						require.Empty(t, string(fileDiff))
-					})
+					formattedData, err := io.ReadAll(formattedFile)
+					require.NoError(t, err)
+					expectedPath := strings.Replace(formattedFile.Path(), ".proto", ".golden", 1)
+					t.Log("expectedPath", expectedPath, formattedFile.Path())
+					expectedData, err := storage.ReadPath(ctx, bucket, expectedPath)
+					require.NoError(t, err)
+					fileDiff, err := diff.Diff(ctx, expectedData, formattedData, expectedPath, formattedFile.Path()+" (formatted)")
+					require.NoError(t, err)
+					require.Empty(t, string(fileDiff))
 					return nil
 				},
-			),
-		)
+			)
+			require.NoError(t, err)
+		}
+		assertGolden(formatBucket)
+
+		moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, slogtestext.NewLogger(t), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+		moduleSetBuilder.AddLocalModule(formatBucket, path, true)
+		moduleSet, err = moduleSetBuilder.Build()
+		require.NoError(t, err)
+		reformattedBucket, err := FormatModuleSet(ctx, moduleSet)
+		require.NoError(t, err)
+		assertGolden(reformattedBucket)
+	})
+}
+
+func testFormatError(t *testing.T, path string, errContains string) {
+	t.Run(path, func(t *testing.T) {
+		ctx := context.Background()
+		bucket, err := storageos.NewProvider().NewReadWriteBucket(path)
+		require.NoError(t, err)
+		moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, slogtestext.NewLogger(t), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+		moduleSetBuilder.AddLocalModule(bucket, path, true)
+		moduleSet, err := moduleSetBuilder.Build()
+		require.NoError(t, err)
+		_, err = FormatModuleSet(ctx, moduleSet)
+		require.ErrorContains(t, err, errContains)
 	})
 }
