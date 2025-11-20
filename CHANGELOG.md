@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.60.0] - 2025-11-14
+
 - Fix LSP published diagnostics to filter to the opened file.
 - Add `textDocument/documentSymbol` support for `buf lsp serve`.
 - Fix LSP navigation for cached modules which could cause import paths to become unresolvable.
@@ -1437,7 +1441,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.59.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.60.0...HEAD
+[v1.60.0]: https://github.com/bufbuild/buf/compare/v1.59.0...v1.60.0
 [v1.59.0]: https://github.com/bufbuild/buf/compare/v1.58.0...v1.59.0
 [v1.58.0]: https://github.com/bufbuild/buf/compare/v1.57.2...v1.58.0
 [v1.57.2]: https://github.com/bufbuild/buf/compare/v1.57.1...v1.57.2
