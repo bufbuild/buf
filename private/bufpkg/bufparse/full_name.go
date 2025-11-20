@@ -27,11 +27,11 @@ type FullName interface {
 	// String returns "registry/owner/name".
 	fmt.Stringer
 
-	// Registry returns the hostname of the BSR instance that this  is contained within.
+	// Registry returns the hostname of the BSR instance that this entity is contained within.
 	Registry() string
-	// Owner returns the name of the user or organization that owns this .
+	// Owner returns the name of the user or organization that owns this entity.
 	Owner() string
-	// Name returns the name of the .
+	// Name returns the name of the entity.
 	Name() string
 
 	isFullName()
