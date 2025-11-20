@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/pkg/browser"
+	"github.com/cli/browser"
 )
 
 const deprecationMessage = "this command is not supported for v2 buf.yaml files as v2 buf.yaml files contain multiple modules. However, this command will continue to work for v1 buf.yaml files."

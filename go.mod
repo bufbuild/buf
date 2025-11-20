@@ -18,6 +18,7 @@ require (
 	connectrpc.com/otelconnect v0.8.0
 	github.com/bufbuild/protocompile v0.14.2-0.20251112213711-9afd4296dfe2
 	github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1
+	github.com/cli/browser v1.3.0
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/gofrs/flock v0.13.0
@@ -30,7 +31,6 @@ require (
 	github.com/klauspost/compress v1.18.1
 	github.com/klauspost/pgzip v1.2.6
 	github.com/mattn/go-colorable v0.1.14
-	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/quic-go/quic-go v0.56.0
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.10.1
