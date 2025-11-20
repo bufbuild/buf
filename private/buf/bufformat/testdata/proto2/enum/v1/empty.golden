@@ -1,0 +1,14 @@
+enum Foo {
+  FOO_UNKNOWN = 1;
+  /* C-style comment in the middle */
+}
+
+enum Bar {
+  BAR_UNKNOWN = 1;
+  // Normal comment in the middle
+}
+
+enum Baz {
+  BAZ_UNKNOWN = 1;
+  // Body comment.
+}

@@ -1,0 +1,5 @@
+edition = "2024";
+
+package a.b.c;
+
+import option "google/protobuf/descriptor.proto";
