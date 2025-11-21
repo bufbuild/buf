@@ -145,8 +145,6 @@ func checkCEL(
 				break
 			}
 			idToConstraintIndices[celID] = append(idToConstraintIndices[celID], i)
-		} else {
-			add(i, "%s has an empty %s.id. IDs should always be specified.", parentNameCapitalized, celName)
 		}
 		if len(strings.TrimSpace(celConstraint.GetExpression())) == 0 {
 			add(i, "%s has an empty %s.expression. Expressions should always be specified.", parentNameCapitalized, celName)
@@ -155,14 +153,6 @@ func checkCEL(
 		ast, compileIssues := celEnv.Compile(celConstraint.GetExpression())
 		switch {
 		case ast.OutputType().IsAssignableType(cel.BoolType):
-			if celConstraint.GetMessage() == "" {
-				add(
-					i,
-					"%s has an empty %s.message for an expression that evaluates to a boolean. If an expression evaluates to a boolean, a message should always be specified.",
-					parentNameCapitalized,
-					celName,
-				)
-			}
 		case ast.OutputType().IsAssignableType(cel.StringType):
 			if celConstraint.GetMessage() != "" {
 				add(
