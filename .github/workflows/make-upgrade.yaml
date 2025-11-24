@@ -16,7 +16,7 @@ jobs:
           app-id: ${{ env.APP_ID }}
           private-key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
       - name: Checkout repository code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           token: ${{ steps.app_token.outputs.token }}
       - name: setup-go
