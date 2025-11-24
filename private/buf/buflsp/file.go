@@ -765,28 +765,11 @@ func (f *file) resolveASTDefinition(ctx context.Context, def ast.DeclDef, defNam
 	if f.workspace == nil {
 		return nil
 	}
-	for objectInfo := range f.workspace.fileInfos(ctx) {
-		if objectInfo.LocalPath() == def.Span().Path() {
-			file, ok := f.workspace.PathToFile()[objectInfo.Path()]
-			if !ok {
-				// This shouldn't happen, if it does, we log an error and optimistically continue
-				// to walk file infos.
-				f.lsp.logger.Error(
-					"found local path that does not resolve to a file in the workspace",
-					slog.String("file", f.uri.Filename()),
-					slog.String("local path", def.Span().Path()),
-				)
-			}
+	for _, file := range f.workspace.PathToFile() {
+		if file.file.Path() == def.Span().Path() {
 			return file.referenceableSymbols[defName]
 		}
 	}
-	// Unable to resolve an importable path for the file in our workspace, log a debug
-	// statement and return no definition.
-	f.lsp.logger.Debug(
-		"unable to resolve an importable file path for local path",
-		slog.String("file", f.uri.Filename()),
-		slog.String("local path", def.Span().Path()),
-	)
 	return nil
 }
 
