@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Disable format on unknown or invalid syntax.
+- Fix regression in LSP functionality for well-known types.
 
 ## [v1.60.0] - 2025-11-14
 
