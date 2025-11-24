@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Disable format on unknown or invalid syntax.
 
 ## [v1.60.0] - 2025-11-14
 

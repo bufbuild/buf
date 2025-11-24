@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+message Foo {
+  // This is a trailing comment on the '{'.
+
+  optional string name = 1;
+
+  optional string value = 2; // In-line on value.
+}
