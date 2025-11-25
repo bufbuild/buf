@@ -371,48 +371,51 @@ func (a *uploader) createContentModuleIfNotExist(
 	createModuleVisibility bufmodule.ModuleVisibility,
 	createDefaultLabel string,
 ) (*modulev1.Module, error) {
-	v1ProtoCreateModuleVisibility, err := moduleVisibilityToV1Proto(createModuleVisibility)
+	// We first check if a module already exists on the registry, if so, we do not need to
+	// attempt to create it.
+	modules, err := a.validateContentModulesExist(ctx, primaryRegistry, []bufmodule.Module{contentModule})
 	if err != nil {
-		return nil, err
-	}
-	response, err := a.moduleClientProvider.V1ModuleServiceClient(primaryRegistry).CreateModules(
-		ctx,
-		connect.NewRequest(
-			&modulev1.CreateModulesRequest{
-				Values: []*modulev1.CreateModulesRequest_Value{
-					{
-						OwnerRef: &ownerv1.OwnerRef{
-							Value: &ownerv1.OwnerRef_Name{
-								Name: contentModule.FullName().Owner(),
-							},
-						},
-						Name:             contentModule.FullName().Name(),
-						Visibility:       v1ProtoCreateModuleVisibility,
-						DefaultLabelName: createDefaultLabel,
-					},
-				},
-			},
-		),
-	)
-	if err != nil {
-		if connect.CodeOf(err) == connect.CodeAlreadyExists {
-			// If a module already existed, then we check validate its contents.
-			modules, err := a.validateContentModulesExist(ctx, primaryRegistry, []bufmodule.Module{contentModule})
+		// The module is not found, attempt to create
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			v1ProtoCreateModuleVisibility, err := moduleVisibilityToV1Proto(createModuleVisibility)
 			if err != nil {
 				return nil, err
 			}
-			if len(modules) != 1 {
-				return nil, syserror.Newf("expected 1 Module, found %d", len(modules))
+			response, err := a.moduleClientProvider.V1ModuleServiceClient(primaryRegistry).CreateModules(
+				ctx,
+				connect.NewRequest(
+					&modulev1.CreateModulesRequest{
+						Values: []*modulev1.CreateModulesRequest_Value{
+							{
+								OwnerRef: &ownerv1.OwnerRef{
+									Value: &ownerv1.OwnerRef_Name{
+										Name: contentModule.FullName().Owner(),
+									},
+								},
+								Name:             contentModule.FullName().Name(),
+								Visibility:       v1ProtoCreateModuleVisibility,
+								DefaultLabelName: createDefaultLabel,
+							},
+						},
+					},
+				),
+			)
+			if err != nil {
+				return nil, err
 			}
-			return modules[0], nil
+			// Check that we only created a single module
+			if len(response.Msg.Modules) != 1 {
+				return nil, syserror.Newf("expected 1 Module, found %d", len(response.Msg.Modules))
+			}
+			// Return the created module.
+			return response.Msg.Modules[0], nil
 		}
 		return nil, err
 	}
-	if len(response.Msg.Modules) != 1 {
-		return nil, syserror.Newf("expected 1 Module, found %d", len(response.Msg.Modules))
+	if len(modules) != 1 {
+		return nil, syserror.Newf("expected 1 Module, found %d", len(modules))
 	}
-	// Otherwise we return the module we created
-	return response.Msg.Modules[0], nil
+	return modules[0], nil
 }
 
 func (a *uploader) validateContentModulesExist(

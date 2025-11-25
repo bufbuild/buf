@@ -6,6 +6,7 @@
 - Fix regression in LSP functionality for well-known types.
 - Fix browser open for `buf registry login` in WSL2.
 - Fix panic in LSP for EOF lookups.
+- Fix `--create` flag for `buf push` to avoid errors on already existing modules if create is disallowed.
 
 ## [v1.60.0] - 2025-11-14
 
