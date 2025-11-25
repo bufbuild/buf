@@ -4,6 +4,7 @@
 
 - Disable format on unknown or invalid syntax.
 - Fix regression in LSP functionality for well-known types.
+- Fix browser open for `buf registry login` in WSL2.
 
 ## [v1.60.0] - 2025-11-14
 
