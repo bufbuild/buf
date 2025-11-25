@@ -321,7 +321,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	for _, sym := range unresolved {
 		switch kind := sym.kind.(type) {
 		case *reference:
-			def := f.resolveASTDefinition(ctx, kind.def, kind.fullName)
+			def := f.resolveASTDefinition(kind.def, kind.fullName)
 			sym.def = def
 			if def == nil {
 				// In the case where the symbol is not resolved, we continue
@@ -339,7 +339,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			}
 			referenceable.references = append(referenceable.references, sym)
 		case *option:
-			def := f.resolveASTDefinition(ctx, kind.def, kind.defFullName)
+			def := f.resolveASTDefinition(kind.def, kind.defFullName)
 			sym.def = def
 			if def != nil {
 				referenceable, ok := def.kind.(*referenceable)
@@ -354,7 +354,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 					referenceable.references = append(referenceable.references, sym)
 				}
 			}
-			typeDef := f.resolveASTDefinition(ctx, kind.typeDef, kind.typeDefFullName)
+			typeDef := f.resolveASTDefinition(kind.typeDef, kind.typeDefFullName)
 			sym.typeDef = typeDef
 		default:
 			// This shouldn't happen, logging a warning
@@ -756,9 +756,9 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 
 // resolveASTDefinition is a helper for resolving the [ast.DeclDef] to the *[symbol], if
 // there is a matching indexed *[symbol].
-func (f *file) resolveASTDefinition(ctx context.Context, def ast.DeclDef, defName ir.FullName) *symbol {
+func (f *file) resolveASTDefinition(def ast.DeclDef, defName ir.FullName) *symbol {
 	// First check if the definition is in the current file.
-	if def.Span().Path() == f.objectInfo.LocalPath() {
+	if def.Span().Path() == f.file.Path() {
 		return f.referenceableSymbols[defName]
 	}
 	// No workspace, we cannot resolve the AST definition from outside of the file.
