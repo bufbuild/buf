@@ -13,6 +13,8 @@
 - Add `textDocument/documentSymbol` support for `buf lsp serve`.
 - Fix LSP navigation for cached modules which could cause import paths to become unresolvable.
 - Update default value of `--timeout` flag to 0, which results in no timeout by default.
+- Update `PROTOVALIDATE` lint rule to allow for custom rules that do not have `id` or `message`
+  fields.
 
 ## [v1.59.0] - 2025-10-20
 
