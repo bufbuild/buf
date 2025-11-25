@@ -16,7 +16,9 @@ package buflsp
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"iter"
 	"log/slog"
 
@@ -296,11 +298,11 @@ func (w *workspace) fileInfos(ctx context.Context) iter.Seq[storage.ObjectInfo] 
 		if err := w.lsp.wktBucket.Walk(ctx, "", func(objectInfo storage.ObjectInfo) error {
 			if _, ok := seen[objectInfo.Path()]; !ok {
 				if !yield(wktObjectInfo{objectInfo}) {
-					return nil
+					return io.EOF
 				}
 			}
 			return nil
-		}); err != nil {
+		}); err != nil && !errors.Is(err, io.EOF) {
 			w.lsp.logger.Error("wkt bucket failed", xslog.ErrorAttr(err))
 		}
 	}
