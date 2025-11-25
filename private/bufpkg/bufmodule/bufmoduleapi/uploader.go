@@ -395,8 +395,10 @@ func (a *uploader) createContentModuleIfNotExist(
 		),
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeAlreadyExists {
-			// If a module already existed, then we check validate its contents.
+		if connect.CodeOf(err) == connect.CodeAlreadyExists || connect.CodeOf(err) == connect.CodeFailedPrecondition {
+			// If the module already existed or if we receive a failed pre-condition (e.g. BSR server configurations
+			// restrict use-owned modules), we attempt to check and validate the module's contents. If a module already
+			// exists, we should attempt to push to it.
 			modules, err := a.validateContentModulesExist(ctx, primaryRegistry, []bufmodule.Module{contentModule})
 			if err != nil {
 				return nil, err
