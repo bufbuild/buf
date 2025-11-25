@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.61.0] - 2025-11-25
 
 - Disable format on unknown or invalid syntax.
 - Fix regression in LSP functionality for well-known types.
@@ -1447,7 +1447,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.60.0...HEAD
+[v1.61.0]: https://github.com/bufbuild/buf/compare/v1.60.0...v1.61.0
 [v1.60.0]: https://github.com/bufbuild/buf/compare/v1.59.0...v1.60.0
 [v1.59.0]: https://github.com/bufbuild/buf/compare/v1.58.0...v1.59.0
 [v1.58.0]: https://github.com/bufbuild/buf/compare/v1.57.2...v1.58.0
