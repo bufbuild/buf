@@ -25,12 +25,13 @@ import (
 	"log/slog"
 	"slices"
 	"strings"
+	"unicode"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
 	"github.com/bufbuild/protocompile/experimental/ir"
-	"github.com/bufbuild/protocompile/experimental/report"
+	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
 	"go.lsp.dev/protocol"
@@ -39,20 +40,18 @@ import (
 
 // symbol represents a named symbol inside of a [file].
 //
-// For each symbol, we keep track of the location [report.Span] and file [*file] of the
+// For each symbol, we keep track of the location [source.Span] and file [*file] of the
 // actual symbol and the definition symbol, if available.
 //
 // We also keep track of metadata for documentation rendering.
 type symbol struct {
 	ir ir.Symbol
 
-	file *file
-	def  *symbol
-	span report.Span
-	kind kind
-
-	// isOption indicates whether this symbol represents an option.
-	isOption bool
+	file    *file
+	def     *symbol
+	typeDef *symbol // Empty for non-option symbols
+	span    source.Span
+	kind    kind
 }
 
 // kind is used to track the symbol kind and lets us resolve definitions to their symbol.
@@ -68,6 +67,13 @@ type referenceable struct {
 type reference struct {
 	def      ast.DeclDef
 	fullName ir.FullName
+}
+
+type option struct {
+	def             ast.DeclDef
+	defFullName     ir.FullName
+	typeDef         ast.DeclDef
+	typeDefFullName ir.FullName
 }
 
 type static struct {
@@ -86,6 +92,7 @@ type tag struct{}
 
 func (*referenceable) isSymbolKind() {}
 func (*reference) isSymbolKind()     {}
+func (*option) isSymbolKind()        {}
 func (*static) isSymbolKind()        {}
 func (*imported) isSymbolKind()      {}
 func (*builtin) isSymbolKind()       {}
@@ -121,6 +128,26 @@ func (s *symbol) Definition() protocol.Location {
 	return protocol.Location{
 		URI:   s.def.file.uri,
 		Range: s.def.Range(),
+	}
+}
+
+// TypeDefinition returns the location of the type definition of the symbol.
+func (s *symbol) TypeDefinition() protocol.Location {
+	// For non-option symbols, this is the same as the definition, so we return that.
+	if _, ok := s.kind.(*option); !ok {
+		return s.Definition()
+	}
+	if s.typeDef == nil {
+		// The type definition does not have a span, so we just jump to the span of the symbol
+		// itself as a fallback.
+		return protocol.Location{
+			URI:   s.file.uri,
+			Range: s.Range(),
+		}
+	}
+	return protocol.Location{
+		URI:   s.typeDef.file.uri,
+		Range: s.typeDef.Range(),
 	}
 }
 
@@ -164,7 +191,10 @@ func (s *symbol) References(includeDeclaration bool) []protocol.Location {
 
 // LogValue provides the log value for a symbol.
 func (s *symbol) LogValue() slog.Value {
-	loc := func(loc report.Location) slog.Value {
+	if s == nil {
+		return slog.AnyValue(nil)
+	}
+	loc := func(loc source.Location) slog.Value {
 		return slog.GroupValue(
 			slog.Int("line", loc.Line),
 			slog.Int("column", loc.Column),
@@ -199,61 +229,7 @@ func (s *symbol) FormatDocs() string {
 		// on an import file.
 		return imported.file.file.Path()
 	case *tag:
-		plural := func(i int) string {
-			if i == 1 {
-				return ""
-			}
-			return "s"
-		}
-		number := s.ir.AsMember().Number()
-		var ty protowire.Type
-		var packed bool
-		switch s.ir.Kind() {
-		case ir.SymbolKindEnumValue:
-			varint := protowire.AppendVarint(nil, uint64(number))
-			return fmt.Sprintf(
-				"`0x%x`, `0b%b`\n\nencoded (hex): `%X` (%d byte%s)",
-				number,
-				number,
-				varint,
-				len(varint),
-				plural(len(varint)),
-			)
-		case ir.SymbolKindField:
-			typ := s.ir.AsMember().TypeAST()
-			if s.ir.AsMember().IsGroup() {
-				ty = protowire.StartGroupType
-			} else if s.ir.AsMember().TypeAST().Kind() == ast.TypeKindPrefixed {
-				prefixed := typ.AsPrefixed()
-				prefixedType := prefixed.Type()
-				if prefixedType.Kind() == ast.TypeKindPath {
-					ty = protowireTypeForPredeclared(prefixedType.AsPath().AsPredeclared())
-					if ty != protowire.BytesType {
-						packed = prefixed.Prefix() == keyword.Repeated
-					}
-				} else {
-					ty = protowire.BytesType
-				}
-			} else if s.ir.AsMember().TypeAST().Kind() == ast.TypeKindPath {
-				ty = protowireTypeForPredeclared(typ.AsPath().AsPredeclared())
-			} else {
-				// All other cases, use protowire.BytesType
-				ty = protowire.BytesType
-			}
-			varint := protowire.AppendTag(nil, protowire.Number(number), ty)
-			doc := fmt.Sprintf(
-				"encoded (hex): `%X` (%d byte%s)",
-				varint, len(varint), plural(len(varint)),
-			)
-			if packed {
-				packed := protowire.AppendTag(nil, protowire.Number(number), protowire.BytesType)
-				return doc + fmt.Sprintf(
-					"\n\npacked (hex): `%X` (%d byte%s)",
-					packed, len(packed), plural(len(varint)),
-				)
-			}
-			return doc
-		}
+		return irMemberDoc(s.ir.AsMember())
 	case *builtin:
 		builtin, _ := s.kind.(*builtin)
 		comments, ok := builtinDocs[builtin.predeclared.String()]
@@ -269,7 +245,7 @@ func (s *symbol) FormatDocs() string {
 			return strings.Join(comments, "\n")
 		}
 		return ""
-	case *referenceable, *static, *reference:
+	case *referenceable, *static, *reference, *option:
 		return s.getDocsFromComments()
 	}
 	return ""
@@ -281,12 +257,11 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 		return protocol.SymbolInformation{}
 	}
 
-	fullName := s.ir.FullName()
-	name := fullName.Name()
+	name := s.ir.FullName()
 	if name == "" {
 		return protocol.SymbolInformation{}
 	}
-	parentFullName := fullName.Parent()
+	parentFullName := name.Parent()
 	containerName := string(parentFullName)
 
 	location := protocol.Location{
@@ -323,7 +298,7 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 		isDeprecated = true
 	}
 	return protocol.SymbolInformation{
-		Name:          name,
+		Name:          string(name),
 		Kind:          kind,
 		Location:      location,
 		ContainerName: containerName,
@@ -350,6 +325,9 @@ func protowireTypeForPredeclared(name predeclared.Name) protowire.Type {
 // This helper function expects that imports, tags, and predeclared (builtin) types are
 // already handled, since those types currently do not get docs from their comments.
 func (s *symbol) getDocsFromComments() string {
+	if s.def == nil {
+		return ""
+	}
 	var def ast.DeclDef
 	switch s.kind.(type) {
 	case *referenceable:
@@ -361,6 +339,9 @@ func (s *symbol) getDocsFromComments() string {
 	case *reference:
 		reference, _ := s.kind.(*reference)
 		def = reference.def
+	case *option:
+		option, _ := s.kind.(*option)
+		def = option.def
 	}
 	if def.IsZero() {
 		return ""
@@ -377,11 +358,20 @@ func (s *symbol) getDocsFromComments() string {
 		case token.Comment:
 			comments = append(comments, commentToMarkdown(t.Text()))
 		}
-		if !cursor.PeekPrevSkippable().Kind().IsSkippable() {
+		prev := cursor.PeekPrevSkippable()
+		if !prev.Kind().IsSkippable() {
 			break
+		}
+		if prev.Kind() == token.Space {
+			// Check if the whitespace contains a newline. If so, then we break. This is to prevent
+			// picking up comments that are not contiguous to the declaration.
+			if strings.Contains(prev.Text(), "\n") {
+				break
+			}
 		}
 		t = cursor.PrevSkippable()
 	}
+	comments = lineUpComments(comments)
 	// Reverse the list and return joined.
 	slices.Reverse(comments)
 
@@ -462,33 +452,109 @@ func commentToMarkdown(comment string) string {
 	return strings.TrimSuffix(strings.TrimPrefix(comment, "/*"), "*/")
 }
 
-// comparePositions compares two positions for lexicographic ordering.
-func comparePositions(a, b protocol.Position) int {
-	diff := int(a.Line) - int(b.Line)
-	if diff == 0 {
-		return int(a.Character) - int(b.Character)
+// lineUpComments is a helper function for lining up the comments for docs, since some users
+// may start their comments with spaces, e.g.
+//
+//	// Foo is a ...
+//	//
+//	// Foo is used for ...
+//	message Foo { ... }
+//
+// vs.
+//
+//	//Foo is a ...
+//	//
+//	//Foo is used for ...
+//	message Foo { ... }
+//
+// When different LSP clients render these docs, they treat leading spaces differently. To
+// help mitigate this, we use the following heuristic to line up the comments:
+//
+// If all lines containing one or more non-space characters all start with a single space
+// character, we trim the space character for each of these lines. Otherwise, do nothing.
+func lineUpComments(comments []string) []string {
+	linedUp := make([]string, len(comments))
+	for i, comment := range comments {
+		if strings.ContainsFunc(comment, func(r rune) bool {
+			return !unicode.IsSpace(r)
+		}) {
+			// We are only checking for " " and do not count nbsp's.
+			if !strings.HasPrefix(comment, " ") {
+				return comments
+			}
+			linedUp[i] = strings.TrimPrefix(comment, " ")
+		} else {
+			linedUp[i] = comment
+		}
 	}
-	return diff
+	return linedUp
 }
 
-// positionInRange returns 0 if a position is within the range, else returns -1 before or 1 after.
-func positionInRange(position protocol.Position, within protocol.Range) int {
-	if comparePositions(position, within.Start) < 0 {
-		return -1
+// irMemberDoc returns the documentation for a message field, enum value or extension field.
+func irMemberDoc(irMember ir.Member) string {
+	number := irMember.Number()
+	if irMember.IsEnumValue() {
+		varint := protowire.AppendVarint(nil, uint64(number))
+		return fmt.Sprintf(
+			"`0x%x`, `0b%b`\n\nencoded (hex): `%X` (%d byte%s)",
+			number,
+			number,
+			varint,
+			len(varint),
+			plural(len(varint)),
+		)
 	}
-	if comparePositions(position, within.End) > 0 {
-		return 1
+
+	var (
+		builder strings.Builder
+		ty      protowire.Type
+		packed  bool
+	)
+	typeAST := irMember.TypeAST()
+	if irMember.IsGroup() {
+		ty = protowire.StartGroupType
+	} else if typeAST.Kind() == ast.TypeKindPrefixed {
+		prefixed := typeAST.AsPrefixed()
+		prefixedType := prefixed.Type()
+		if prefixedType.Kind() == ast.TypeKindPath {
+			ty = protowireTypeForPredeclared(prefixedType.AsPath().AsPredeclared())
+			if ty != protowire.BytesType {
+				packed = prefixed.Prefix() == keyword.Repeated
+			}
+		} else {
+			ty = protowire.BytesType
+		}
+	} else if typeAST.Kind() == ast.TypeKindPath {
+		ty = protowireTypeForPredeclared(typeAST.AsPath().AsPredeclared())
+	} else {
+		// All other cases, use protowire.BytesType
+		ty = protowire.BytesType
 	}
-	return 0
+	varint := protowire.AppendTag(nil, protowire.Number(number), ty)
+	fmt.Fprintf(
+		&builder,
+		"encoded (hex): `%X` (%d byte%s)",
+		varint, len(varint), plural(len(varint)),
+	)
+	if packed {
+		packed := protowire.AppendTag(nil, protowire.Number(number), protowire.BytesType)
+		fmt.Fprintf(
+			&builder,
+			"\n\npacked (hex): `%X` (%d byte%s)",
+			packed, len(packed), plural(len(varint)),
+		)
+		return builder.String()
+	}
+	return builder.String()
 }
 
-func reportSpanToProtocolRange(span report.Span) protocol.Range {
+func reportSpanToProtocolRange(span source.Span) protocol.Range {
 	startLocation := span.File.Location(span.Start, positionalEncoding)
 	endLocation := span.File.Location(span.End, positionalEncoding)
 	return reportLocationsToProtocolRange(startLocation, endLocation)
 }
 
-func reportLocationsToProtocolRange(startLocation, endLocation report.Location) protocol.Range {
+func reportLocationsToProtocolRange(startLocation, endLocation source.Location) protocol.Range {
 	return protocol.Range{
 		Start: protocol.Position{
 			Line:      uint32(startLocation.Line - 1),
@@ -499,4 +565,11 @@ func reportLocationsToProtocolRange(startLocation, endLocation report.Location) 
 			Character: uint32(endLocation.Column - 1),
 		},
 	}
+}
+
+func plural(i int) string {
+	if i == 1 {
+		return ""
+	}
+	return "s"
 }

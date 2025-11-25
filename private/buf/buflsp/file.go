@@ -33,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
 	"github.com/bufbuild/protocompile/experimental/incremental"
 	"github.com/bufbuild/protocompile/experimental/incremental/queries"
@@ -50,7 +51,7 @@ type file struct {
 	lsp *lsp
 	uri protocol.URI
 
-	file *report.File
+	file *source.File
 	// Version is an opaque version identifier given to us by the LSP client. This
 	// is used in the protocol to disambiguate which version of a file e.g. publishing
 	// diagnostics or symbols an operating refers to.
@@ -149,7 +150,7 @@ func (f *file) ReadFromWorkspace(ctx context.Context) (err error) {
 	text := builder.String()
 
 	f.version = -1
-	f.file = report.NewFile(fileName, text)
+	f.file = source.NewFile(fileName, text)
 	f.hasText = true
 	return nil
 }
@@ -159,7 +160,7 @@ func (f *file) ReadFromWorkspace(ctx context.Context) (err error) {
 func (f *file) Update(ctx context.Context, version int32, text string) {
 	f.lsp.logger.InfoContext(ctx, "file updated", slog.String("uri", f.uri.Filename()), slog.Int("old_version", int(f.version)), slog.Int("new_version", int(version)))
 	f.version = version
-	f.file = report.NewFile(f.uri.Filename(), text)
+	f.file = source.NewFile(f.uri.Filename(), text)
 	f.hasText = true
 
 	f.CancelChecks(ctx)
@@ -220,9 +221,9 @@ func (f *file) RefreshIR(ctx context.Context) {
 	// Opener creates a cached view of all files in the workspace.
 	pathToFiles := f.workspace.PathToFile()
 	files := make([]*file, 0, len(pathToFiles))
-	openerMap := make(map[string]string, len(pathToFiles))
+	openerMap := make(map[string]*source.File, len(pathToFiles))
 	for path, file := range pathToFiles {
-		openerMap[path] = file.file.Text()
+		openerMap[path] = file.file
 		files = append(files, file)
 	}
 	opener := source.NewMap(openerMap)
@@ -315,47 +316,54 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	}
 
 	// TODO: this could use a refactor, probably.
-
+	//
 	// Resolve all unresolved symbols from this file
 	for _, sym := range unresolved {
-		ref, ok := sym.kind.(*reference)
-		if !ok {
+		switch kind := sym.kind.(type) {
+		case *reference:
+			def := f.resolveASTDefinition(kind.def, kind.fullName)
+			sym.def = def
+			if def == nil {
+				// In the case where the symbol is not resolved, we continue
+				continue
+			}
+			referenceable, ok := def.kind.(*referenceable)
+			if !ok {
+				// This shouldn't happen, logging a warning
+				f.lsp.logger.Warn(
+					"found non-referenceable symbol in index",
+					slog.String("file", f.uri.Filename()),
+					slog.Any("symbol", def),
+				)
+				continue
+			}
+			referenceable.references = append(referenceable.references, sym)
+		case *option:
+			def := f.resolveASTDefinition(kind.def, kind.defFullName)
+			sym.def = def
+			if def != nil {
+				referenceable, ok := def.kind.(*referenceable)
+				if !ok {
+					// This shouldn't happen, logging a warning
+					f.lsp.logger.Warn(
+						"found non-referenceable symbol in index",
+						slog.String("file", f.uri.Filename()),
+						slog.Any("symbol", def),
+					)
+				} else {
+					referenceable.references = append(referenceable.references, sym)
+				}
+			}
+			typeDef := f.resolveASTDefinition(kind.typeDef, kind.typeDefFullName)
+			sym.typeDef = typeDef
+		default:
 			// This shouldn't happen, logging a warning
 			f.lsp.logger.Warn(
-				"found unresolved non-reference symbol",
+				"found unresolved non-reference and non-option symbol",
 				slog.String("file", f.uri.Filename()),
 				slog.Any("symbol", sym),
 			)
-			continue
 		}
-		file, ok := f.workspace.PathToFile()[ref.def.Span().Path()]
-		if !ok {
-			// Check current file
-			if ref.def.Span().Path() != f.objectInfo.Path() {
-				// This can happen if this references a predeclared type or if the file we are
-				// checking has not indexed imports.
-				continue
-			}
-			file = f
-		}
-		def, ok := file.referenceableSymbols[ref.fullName]
-		if !ok {
-			// This could happen in the case where we are in the cache for example, and we do not
-			// have access to a buildable workspace.
-			continue
-		}
-		sym.def = def
-		referenceable, ok := def.kind.(*referenceable)
-		if !ok {
-			// This shouldn't happen, logging a warning
-			f.lsp.logger.Warn(
-				"found non-referenceable symbol in index",
-				slog.String("file", f.uri.Filename()),
-				slog.Any("symbol", def),
-			)
-			continue
-		}
-		referenceable.references = append(referenceable.references, sym)
 	}
 
 	// Resolve all references outside of this file to symbols in this file
@@ -364,20 +372,28 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			continue // ignore self
 		}
 		for _, sym := range file.referenceSymbols {
-			ref, ok := sym.kind.(*reference)
-			if !ok {
+			var fullName ir.FullName
+			switch kind := sym.kind.(type) {
+			case *reference:
+				if kind.def.Span().Path() != f.objectInfo.LocalPath() {
+					continue
+				}
+				fullName = kind.fullName
+			case *option:
+				if kind.def.Span().Path() != f.objectInfo.LocalPath() {
+					continue
+				}
+				fullName = kind.defFullName
+			default:
 				// This shouldn't happen, logging a warning
 				f.lsp.logger.Warn(
-					"found unresolved non-reference symbol",
+					"found unresolved non-reference and non-option symbol",
 					slog.String("file", f.uri.Filename()),
 					slog.Any("symbol", sym),
 				)
 				continue
 			}
-			if ref.def.Span().Path() != f.objectInfo.Path() {
-				continue
-			}
-			def, ok := f.referenceableSymbols[ref.fullName]
+			def, ok := f.referenceableSymbols[fullName]
 			if !ok {
 				// This shouldn't happen, if a symbol is pointing at this file, all definitions
 				// should be resolved, logging a warning
@@ -491,7 +507,9 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		typ := &symbol{
 			ir:   irSymbol,
 			file: f,
-			span: irSymbol.AsMember().TypeAST().Span(),
+			// We remove prefixes from the type, since we want to exclude the prefix from the
+			// symbol, e.g. repeated string values = 1;, we want to capture the symbol for "string".
+			span: irSymbol.AsMember().TypeAST().RemovePrefixes().Span(),
 		}
 		kind, needsResolution := getKindForMember(irSymbol.AsMember())
 		typ.kind = kind
@@ -522,12 +540,12 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		resolved = append(resolved, tag)
 		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options())...)
 	case ir.SymbolKindExtension:
-		// TODO: we should figure out if we need to do any resolution here.
+		// The symbol only includes the extension field name.
 		ext := &symbol{
 			ir:   irSymbol,
 			file: f,
 			span: irSymbol.AsMember().AST().AsExtend().Extendee.Span(),
-			kind: &static{
+			kind: &referenceable{
 				ast: irSymbol.AsMember().AST(),
 			},
 		}
@@ -600,9 +618,12 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 // getKindForMember takes a [ir.Member] and returns the symbol kind and whether or not the
 // symbol is currently resolved.
 func getKindForMember(member ir.Member) (kind, bool) {
-	if member.TypeAST().AsPath().AsPredeclared() != predeclared.Unknown {
+	// We remove prefixes to check for a predeclared type, e.g. repeated string values = 1;,
+	// "repeated string" would not be captured as a predeclared type. The corresponding symbol
+	// also excludes prefixes.
+	if member.TypeAST().RemovePrefixes().AsPath().AsPredeclared() != predeclared.Unknown {
 		return &builtin{
-			predeclared: member.TypeAST().AsPath().AsPredeclared(),
+			predeclared: member.TypeAST().RemovePrefixes().AsPath().AsPredeclared(),
 		}, false
 	}
 	return &reference{
@@ -622,39 +643,141 @@ func (f *file) importToSymbol(imp ir.Import) *symbol {
 	}
 }
 
+// messageToSymbols takes an [ir.MessageValue] and returns the symbols parsed from it.
 func (f *file) messageToSymbols(msg ir.MessageValue) []*symbol {
+	return f.messageToSymbolsHelper(msg, 0, nil)
+}
+
+// messageToSymbolsHelper is a recursive helper for extracting the symbols from a [ir.MessageValue].
+func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []*symbol) []*symbol {
 	var symbols []*symbol
 	for field := range msg.Fields() {
 		if field.ValueAST().IsZero() {
 			continue
 		}
+		// There are a couple of different ways options can be structured, e.g.
+		//
+		// [(option).message = {
+		//    field_a: 2
+		//    field_b: 100
+		//  }]
+		//
+		// Or:
+		//
+		// [
+		//    (option).message.field_a = 2
+		//    (option).message.field_b = 100
+		//  ]
+		//
+		// For both examples, we would want to create a separate symbol for each referenceable
+		// part of each path, e.g. (option), .message, .field_a, etc.
+		//
+		// An option is represented as a [ir.MessageValue] that is accessed recursively, so in
+		// both examples above, we have:
+		//
+		//  (option) -> (option).message -> (option).message.field_a / field_a
+		//                               -> (option).message.field_b / field_b
+		//
+		// As we walk the message recursively, we set a symbol for each message/field along the
+		// way. Because we are accessing each message from the top-level message, we need to
+		// make sure that we capture a symbol for each corresponding path span along the way.
+		//
+		// In the example, in the second definition, (option) and .message for field_b has a
+		// separate span from (option) and .message for field_a, but when we walk the mesasge
+		// tree, we get the span for (option) and .mesage for the first field. So we check the
+		// symbols we've collected so far in parents and make sure we have captured a symbol for
+		// each path component.
 		for element := range seq.Values(field.Elements()) {
-			span := element.Value().KeyASTs().At(element.ValueNodeIndex()).Span()
-			elem := &symbol{
+			key := field.KeyASTs().At(element.ValueNodeIndex())
+			components := slices.Collect(key.AsPath().Components)
+			var span source.Span
+			// This covers the first case in the example above where the path is relative,
+			// e.g. field_a is a relative path within { } for (option).message.
+			if index > len(components)-1 {
+				span = components[len(components)-1].Span()
+			} else {
+				// Otherwise, we get the component for the corresponding index.
+				span = components[index].Span()
+			}
+			sym := &symbol{
 				// NOTE: no [ir.Symbol] for option elements
 				file: f,
 				span: span,
-				kind: &reference{
-					def:      element.Field().AST(),
-					fullName: element.Field().FullName(),
+				kind: &option{
+					def:             element.Field().AST(),
+					defFullName:     element.Field().FullName(),
+					typeDef:         element.Type().AST(),
+					typeDefFullName: element.Type().FullName(),
 				},
-				isOption: true,
 			}
-			symbols = append(symbols, elem)
+			symbols = append(symbols, sym)
 			if !element.AsMessage().IsZero() {
-				symbols = append(symbols, f.messageToSymbols(element.AsMessage())...)
+				symbols = append(symbols, f.messageToSymbolsHelper(element.AsMessage(), index+1, symbols)...)
+			}
+
+			// We check back along the path to make sure that we have a symbol for each component.
+			//
+			// We need to ensure that (option) for (option).message.field_b has a symbol defined
+			// among the parent symbols.
+			if len(components) > 1 {
+				parentType := element.Value().Container()
+				for _, component := range slices.Backward(components) {
+					if component.IsLast() {
+						continue
+					}
+					found := false
+					for _, parent := range parents {
+						if parent.span == component.Span() {
+							found = true
+							break
+						}
+					}
+					if !found {
+						sym := &symbol{
+							// NOTE: no [ir.Symbol] for option elements
+							file: f,
+							span: component.Span(),
+							kind: &option{
+								def:             parentType.AsValue().Field().AST(),
+								defFullName:     parentType.AsValue().Field().FullName(),
+								typeDef:         parentType.Type().AST(),
+								typeDefFullName: parentType.Type().FullName(),
+							},
+						}
+						symbols = append(symbols, sym)
+					}
+					parentType = parentType.AsValue().Container()
+				}
 			}
 		}
 	}
 	return symbols
 }
 
+// resolveASTDefinition is a helper for resolving the [ast.DeclDef] to the *[symbol], if
+// there is a matching indexed *[symbol].
+func (f *file) resolveASTDefinition(def ast.DeclDef, defName ir.FullName) *symbol {
+	// First check if the definition is in the current file.
+	if def.Span().Path() == f.file.Path() {
+		return f.referenceableSymbols[defName]
+	}
+	// No workspace, we cannot resolve the AST definition from outside of the file.
+	if f.workspace == nil {
+		return nil
+	}
+	for _, file := range f.workspace.PathToFile() {
+		if file.file.Path() == def.Span().Path() {
+			return file.referenceableSymbols[defName]
+		}
+	}
+	return nil
+}
+
 // SymbolAt finds a symbol in this file at the given cursor position, if one exists.
 //
 // Returns nil if no symbol is found.
 func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
-	cursorLocation := f.file.InverseLocation(int(cursor.Line)+1, int(cursor.Character)+1, positionalEncoding)
-	offset := cursorLocation.Offset
+	offset := positionToOffset(f, cursor)
 
 	// Binary search for insertion point based on Start.
 	idx, _ := slices.BinarySearchFunc(f.symbols, offset, func(sym *symbol, offset int) int {
@@ -675,7 +798,15 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 		}
 		symbol = before
 	}
-	f.lsp.logger.DebugContext(ctx, "symbol at", slog.Int("line", int(cursor.Line)), slog.Int("character", int(cursor.Character)), slog.Any("symbol", symbol))
+	if symbol != nil {
+		f.lsp.logger.DebugContext(
+			ctx,
+			"symbol at",
+			slog.Int("line", int(cursor.Line)),
+			slog.Int("character", int(cursor.Character)),
+			slog.Any("symbol", symbol),
+		)
+	}
 	return symbol
 }
 

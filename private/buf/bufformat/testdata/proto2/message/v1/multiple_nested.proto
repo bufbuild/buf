@@ -14,9 +14,9 @@ syntax = "proto2";
                              /* This one is required */ required bool /* Between 'bool' and 'truth' */ truth = 3;
                     }         
         // Comment on the nested Baz message.
-     message Baz     { 
-         
-          string something = 5;
+     message Baz     {
+
+          optional string something = 5;
    
                  // Comment on the nested Qux message.
          message Qux { 
@@ -24,7 +24,7 @@ syntax = "proto2";
             
              option no_standard_descriptor_accessor = false;
 
-               string another = 6;
+               optional string another = 6;
          }
      }
 

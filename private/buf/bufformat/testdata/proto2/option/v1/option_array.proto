@@ -4,7 +4,7 @@ import "custom.proto";
 
 message Foo {
   message Bar {
-    string name = 1 [
+    optional string name = 1 [
       (custom.field_thing_option) = {
         // Trailing comment on '{'.
 
