@@ -42,8 +42,8 @@ github.com/bmatcuk/doublestar/v4 v4.9.1 h1:X8jg9rRZmJd4yRy7ZeNDRnM+T3ZfHv15JiBJ/
 github.com/bmatcuk/doublestar/v4 v4.9.1/go.mod h1:xBQ8jztBU6kakFMg+8WGxn0c6z1fTSPVIjEY1Wr7jzc=
 github.com/brianvoe/gofakeit/v6 v6.28.0 h1:Xib46XXuQfmlLS2EXRuJpqcw8St6qSZz75OUo0tgAW4=
 github.com/brianvoe/gofakeit/v6 v6.28.0/go.mod h1:Xj58BMSnFqcn/fAQeSK+/PLtC5kSb7FJIq4JyGa8vEs=
-github.com/bufbuild/protocompile v0.14.2-0.20251112213711-9afd4296dfe2 h1:PpGm1S0XcJuNCrbwlktT1pM4hTgu6n0Gdsw5diq6p6k=
-github.com/bufbuild/protocompile v0.14.2-0.20251112213711-9afd4296dfe2/go.mod h1:HKN246DRQwavs64sr2xYmSL+RFOFxmLti+WGCZ2jh9U=
+github.com/bufbuild/protocompile v0.14.2-0.20251120233202-3f9009bcd6c8 h1:l4PKzJ7Usff8j5/e+YaWZPaM+rJHIghgDxRn8vDNxNo=
+github.com/bufbuild/protocompile v0.14.2-0.20251120233202-3f9009bcd6c8/go.mod h1:HKN246DRQwavs64sr2xYmSL+RFOFxmLti+WGCZ2jh9U=
 github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1 h1:V1xulAoqLqVg44rY97xOR+mQpD2N+GzhMHVwJ030WEU=
 github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1/go.mod h1:c5D8gWRIZ2HLWO3gXYTtUfw/hbJyD8xikv2ooPxnklQ=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
