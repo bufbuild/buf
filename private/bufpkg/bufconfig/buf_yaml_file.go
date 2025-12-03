@@ -403,7 +403,7 @@ func readBufYAMLFile(
 	case FileVersionV1Beta1, FileVersionV1:
 		var externalBufYAMLFile externalBufYAMLFileV1Beta1V1
 		if err := getUnmarshalStrict(allowJSON)(data, &externalBufYAMLFile); err != nil {
-			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+			return nil, err
 		}
 		if fileVersion == FileVersionV1 && len(externalBufYAMLFile.Build.Roots) > 0 {
 			return nil, fmt.Errorf("build.roots cannot be set on version %v: %v", fileVersion, externalBufYAMLFile.Build.Roots)
@@ -475,7 +475,7 @@ func readBufYAMLFile(
 	case FileVersionV2:
 		var externalBufYAMLFile externalBufYAMLFileV2
 		if err := getUnmarshalStrict(allowJSON)(data, &externalBufYAMLFile); err != nil {
-			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+			return nil, err
 		}
 		externalModules := externalBufYAMLFile.Modules
 		if len(externalModules) == 0 {
