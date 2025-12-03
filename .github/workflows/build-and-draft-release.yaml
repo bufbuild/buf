@@ -32,7 +32,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.25.x'
+          go-version: "1.25.x"
+          check-latest: true
       - name: Set up Git name and email
         run: |
           git config user.name "${{ github.actor }}"
@@ -40,7 +41,7 @@ jobs:
       - name: Build assets and draft release
         run: bash ./make/buf/scripts/draftrelease.bash
         env:
-          GH_TOKEN:  ${{ steps.app_token.outputs.token }}
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
           WEBHOOK_URL: ${{ secrets.SLACK_RELEASE_NOTIFICATION_WEBHOOK }}
           RELEASE_MINISIGN_PRIVATE_KEY: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY}}
           RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}}

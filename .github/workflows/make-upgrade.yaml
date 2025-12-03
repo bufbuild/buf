@@ -2,7 +2,7 @@ name: Make upgrade
 on:
   schedule:
     # Run every Monday at 10am UTC
-    - cron: '0 10 * * 1'
+    - cron: "0 10 * * 1"
 env:
   APP_ID: 251311
 jobs:
@@ -22,13 +22,14 @@ jobs:
       - name: setup-go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.25.x'
+          go-version: "1.25.x"
+          check-latest: true
           cache: false
       - name: Set up Git name and email
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
       - name: make-githubactionupgrade
-        run : make githubactionupgrade
+        run: make githubactionupgrade
         env:
           GH_TOKEN: ${{ steps.app_token.outputs.token }}
