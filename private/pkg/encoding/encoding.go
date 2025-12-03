@@ -193,7 +193,7 @@ func InterfaceSliceOrStringToStringSlice(in any) ([]string, error) {
 
 func updateYAMLTypeError(err error) error {
 	if err == nil {
-		return err
+		return nil
 	}
 	var yamlTypeError *yaml.TypeError
 	if errors.As(err, &yamlTypeError) {
