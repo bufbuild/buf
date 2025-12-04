@@ -353,7 +353,7 @@ func readBufLockFile(
 	case FileVersionV1Beta1, FileVersionV1:
 		var externalBufLockFile externalBufLockFileV1Beta1V1
 		if err := getUnmarshalStrict(allowJSON)(data, &externalBufLockFile); err != nil {
-			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+			return nil, err
 		}
 		depModuleKeys := make([]bufmodule.ModuleKey, len(externalBufLockFile.Deps))
 		for i, dep := range externalBufLockFile.Deps {
@@ -406,7 +406,7 @@ func readBufLockFile(
 	case FileVersionV2:
 		var externalBufLockFile externalBufLockFileV2
 		if err := getUnmarshalStrict(allowJSON)(data, &externalBufLockFile); err != nil {
-			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+			return nil, err
 		}
 		depModuleKeys := make([]bufmodule.ModuleKey, len(externalBufLockFile.Deps))
 		for i, dep := range externalBufLockFile.Deps {

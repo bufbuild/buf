@@ -17,7 +17,6 @@ package bufconfig
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 
 	"buf.build/go/standard/xslices"
@@ -179,7 +178,7 @@ func readBufGenYAMLFile(
 	case FileVersionV1Beta1:
 		var externalGenYAMLFile externalBufGenYAMLFileV1Beta1
 		if err := getUnmarshalStrict(allowJSON)(data, &externalGenYAMLFile); err != nil {
-			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+			return nil, err
 		}
 		generateConfig, err := newGenerateConfigFromExternalFileV1Beta1(externalGenYAMLFile)
 		if err != nil {
@@ -194,7 +193,7 @@ func readBufGenYAMLFile(
 	case FileVersionV1:
 		var externalGenYAMLFile externalBufGenYAMLFileV1
 		if err := getUnmarshalStrict(allowJSON)(data, &externalGenYAMLFile); err != nil {
-			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+			return nil, err
 		}
 		generateConfig, err := newGenerateConfigFromExternalFileV1(externalGenYAMLFile)
 		if err != nil {
@@ -209,7 +208,7 @@ func readBufGenYAMLFile(
 	case FileVersionV2:
 		var externalGenYAMLFile externalBufGenYAMLFileV2
 		if err := getUnmarshalStrict(allowJSON)(data, &externalGenYAMLFile); err != nil {
-			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+			return nil, err
 		}
 		generateConfig, err := newGenerateConfigFromExternalFileV2(externalGenYAMLFile)
 		if err != nil {

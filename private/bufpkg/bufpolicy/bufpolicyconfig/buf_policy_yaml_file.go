@@ -198,7 +198,7 @@ func readBufPolicyYAMLFile(
 	}
 	var externalBufPolicyYAMLFile externalBufPolicyYAMLFileV2
 	if err := getUnmarshalStrict(allowJSON)(data, &externalBufPolicyYAMLFile); err != nil {
-		return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+		return nil, err
 	}
 	var lintConfig bufpolicy.LintConfig
 	if !externalBufPolicyYAMLFile.Lint.isEmpty() {

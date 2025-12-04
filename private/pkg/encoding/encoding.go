@@ -35,10 +35,7 @@ func UnmarshalJSONStrict(data []byte, v any) error {
 	}
 	jsonDecoder := json.NewDecoder(bytes.NewReader(data))
 	jsonDecoder.DisallowUnknownFields()
-	if err := jsonDecoder.Decode(v); err != nil {
-		return fmt.Errorf("could not unmarshal as JSON: %v", err)
-	}
-	return nil
+	return jsonDecoder.Decode(v)
 }
 
 // UnmarshalYAMLStrict unmarshals the data as YAML, returning a user error on failure.
@@ -49,10 +46,7 @@ func UnmarshalYAMLStrict(data []byte, v any) error {
 		return nil
 	}
 	yamlDecoder := NewYAMLDecoderStrict(bytes.NewReader(data))
-	if err := yamlDecoder.Decode(v); err != nil {
-		return fmt.Errorf("could not unmarshal as YAML: %v", err)
-	}
-	return nil
+	return updateYAMLTypeError(yamlDecoder.Decode(v))
 }
 
 // UnmarshalJSONOrYAMLStrict unmarshals the data as JSON or YAML in order, returning
@@ -79,10 +73,7 @@ func UnmarshalJSONNonStrict(data []byte, v any) error {
 		return nil
 	}
 	jsonDecoder := json.NewDecoder(bytes.NewReader(data))
-	if err := jsonDecoder.Decode(v); err != nil {
-		return fmt.Errorf("could not unmarshal as JSON: %v", err)
-	}
-	return nil
+	return jsonDecoder.Decode(v)
 }
 
 // UnmarshalYAMLNonStrict unmarshals the data as YAML, returning a user error on failure.
@@ -93,10 +84,7 @@ func UnmarshalYAMLNonStrict(data []byte, v any) error {
 		return nil
 	}
 	yamlDecoder := NewYAMLDecoderNonStrict(bytes.NewReader(data))
-	if err := yamlDecoder.Decode(v); err != nil {
-		return fmt.Errorf("could not unmarshal as YAML: %v", err)
-	}
-	return nil
+	return updateYAMLTypeError(yamlDecoder.Decode(v))
 }
 
 // UnmarshalJSONOrYAMLNonStrict unmarshals the data as JSON or YAML in order, returning
@@ -199,4 +187,35 @@ func InterfaceSliceOrStringToStringSlice(in any) ([]string, error) {
 	default:
 		return nil, fmt.Errorf("could not interpret %T as string or string slice", in)
 	}
+}
+
+// *** PRIVATE ***
+
+func updateYAMLTypeError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var yamlTypeError *yaml.TypeError
+	if errors.As(err, &yamlTypeError) {
+		for i, errString := range yamlTypeError.Errors {
+			yamlTypeError.Errors[i] = replaceAfter(
+				replaceAfter(
+					errString,
+					"already set in type",
+					"already set",
+				),
+				"not found in type",
+				"not found",
+			)
+		}
+		return yamlTypeError
+	}
+	return err
+}
+
+func replaceAfter(s string, substitute string, replace string) string {
+	if index := strings.Index(s, substitute); index != -1 {
+		return s[:index] + replace
+	}
+	return s
 }

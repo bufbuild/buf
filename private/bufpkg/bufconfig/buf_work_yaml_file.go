@@ -186,7 +186,7 @@ func readBufWorkYAMLFile(
 	}
 	var externalBufWorkYAMLFile externalBufWorkYAMLFileV1
 	if err := getUnmarshalStrict(allowJSON)(data, &externalBufWorkYAMLFile); err != nil {
-		return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+		return nil, err
 	}
 	return newBufWorkYAMLFile(fileVersion, objectData, externalBufWorkYAMLFile.Directories)
 }
