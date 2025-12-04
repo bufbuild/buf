@@ -334,7 +334,6 @@ func checkFieldFlags(
 			adder.fieldName(),
 			adder.getFieldRuleName(ignoreFieldNumber),
 			validate.Ignore_IGNORE_IF_ZERO_VALUE,
-			adder.getFieldRuleName(),
 		)
 	}
 }
