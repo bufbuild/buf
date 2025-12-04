@@ -13,7 +13,7 @@ extend google.protobuf.FieldOptions {
 message Foo {
   option (/* One */  something  /* Two */) = 1;
 
-  string name = 1 [
+  optional string name = 1 [
     // Leading comment on deprecated.
     deprecated /* After deprecated */ = true,
     // Leading comment on another.

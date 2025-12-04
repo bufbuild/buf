@@ -2,10 +2,24 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.61.0] - 2025-11-25
+
+- Disable format on unknown or invalid syntax.
+- Fix regression in LSP functionality for well-known types.
+- Fix browser open for `buf registry login` in WSL2.
+- Fix panic in LSP for EOF lookups.
+- Fix `--create` flag for `buf push` to avoid errors on already existing modules if create is disallowed.
+
+## [v1.60.0] - 2025-11-14
+
 - Fix LSP published diagnostics to filter to the opened file.
 - Add `textDocument/documentSymbol` support for `buf lsp serve`.
 - Fix LSP navigation for cached modules which could cause import paths to become unresolvable.
 - Update default value of `--timeout` flag to 0, which results in no timeout by default.
+- Update `PROTOVALIDATE` lint rule to allow for custom rules that do not have `id` or `message`
+  fields.
 
 ## [v1.59.0] - 2025-10-20
 
@@ -1437,7 +1451,9 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.59.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.61.0...HEAD
+[v1.61.0]: https://github.com/bufbuild/buf/compare/v1.60.0...v1.61.0
+[v1.60.0]: https://github.com/bufbuild/buf/compare/v1.59.0...v1.60.0
 [v1.59.0]: https://github.com/bufbuild/buf/compare/v1.58.0...v1.59.0
 [v1.58.0]: https://github.com/bufbuild/buf/compare/v1.57.2...v1.58.0
 [v1.57.2]: https://github.com/bufbuild/buf/compare/v1.57.1...v1.57.2

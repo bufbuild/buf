@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-    tags: ['v*']
+    tags: ["v*"]
   pull_request:
 # Prevent writing to the repository using the CI token.
 # Ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#permissions
@@ -22,11 +22,12 @@ jobs:
       - name: support-longpaths
         run: git config --system core.longpaths true
       - name: checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: setup-go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.25.x'
+          go-version: "1.25.x"
+          check-latest: true
           cache: true
       - name: windows-cache
         uses: actions/cache@v4

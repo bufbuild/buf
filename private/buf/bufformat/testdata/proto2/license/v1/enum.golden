@@ -1,0 +1,12 @@
+/*
+   This is a license header.
+   It's separated be a newline
+   before the enums.
+*/
+
+enum Foo {
+  FOO_UNKNOWN = 1;
+}
+enum Bar {
+  BAR_UNKNOWN = 1;
+}

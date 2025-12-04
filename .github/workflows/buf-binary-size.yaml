@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-    tags: ['v*']
+    tags: ["v*"]
   pull_request:
 # Prevent writing to the repository using the CI token.
 # Ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#permissions
@@ -15,11 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: setup-go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.25.x'
+          go-version: "1.25.x"
+          check-latest: true
       - name: cache
         uses: actions/cache@v4
         with:

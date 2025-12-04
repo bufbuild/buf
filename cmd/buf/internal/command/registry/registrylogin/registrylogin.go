@@ -36,7 +36,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/oauth2"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
-	"github.com/pkg/browser"
+	"github.com/cli/browser"
 	"github.com/spf13/pflag"
 )
 
