@@ -24,7 +24,7 @@ require (
 	github.com/gofrs/flock v0.13.0
 	github.com/google/cel-go v0.26.1
 	github.com/google/go-cmp v0.7.0
-	github.com/google/go-containerregistry v0.20.6
+	github.com/google/go-containerregistry v0.20.7
 	github.com/google/uuid v1.6.0
 	github.com/jdx/go-netrc v1.0.0
 	github.com/jhump/protoreflect/v2 v2.0.0-beta.2
@@ -62,11 +62,11 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
-	github.com/containerd/stargz-snapshotter/estargz v0.17.0 // indirect
+	github.com/containerd/stargz-snapshotter/estargz v0.18.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/cli v28.5.1+incompatible // indirect
+	github.com/docker/cli v29.0.3+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.4 // indirect
 	github.com/docker/go-connections v0.6.0 // indirect
@@ -94,7 +94,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stoewer/go-strcase v1.3.1 // indirect
 	github.com/tidwall/btree v1.8.1 // indirect
-	github.com/vbatts/tar-split v0.12.1 // indirect
+	github.com/vbatts/tar-split v0.12.2 // indirect
 	go.lsp.dev/pkg v0.0.0-20210717090340-384b27a52fb2 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.63.0 // indirect
