@@ -854,36 +854,33 @@ func (f *file) RunChecks(ctx context.Context) {
 	f.cancelChecks = cancel
 
 	go func() {
-		image, diagnostics := buildImage(ctx, path, f.lsp.logger, opener)
-		if image == nil {
-			f.lsp.logger.DebugContext(ctx, "checks cancelled on image build", slog.String("uri", f.uri.Filename()))
-			return
-		}
-
-		f.lsp.logger.DebugContext(ctx, "checks running lint", slog.String("uri", f.uri.Filename()), slog.String("module", module.OpaqueID()))
 		var annotations []bufanalysis.FileAnnotation
-		if err := checkClient.Lint(
-			ctx,
-			workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
-			image,
-			bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
-			bufcheck.WithPolicyConfigs(workspace.PolicyConfigs()...),
-		); err != nil {
-			var fileAnnotationSet bufanalysis.FileAnnotationSet
-			if !errors.As(err, &fileAnnotationSet) {
-				if errors.Is(err, context.Canceled) {
-					f.lsp.logger.DebugContext(ctx, "checks cancelled", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(err))
-				} else if errors.Is(err, context.DeadlineExceeded) {
-					f.lsp.logger.WarnContext(ctx, "checks deadline exceeded", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(err))
-				} else {
-					f.lsp.logger.WarnContext(ctx, "checks failed", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(err))
+		image, diagnostics := buildImage(ctx, path, f.lsp.logger, opener)
+		if image != nil {
+			f.lsp.logger.DebugContext(ctx, "checks running lint", slog.String("uri", f.uri.Filename()), slog.String("module", module.OpaqueID()))
+			if err := checkClient.Lint(
+				ctx,
+				workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
+				image,
+				bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
+				bufcheck.WithPolicyConfigs(workspace.PolicyConfigs()...),
+			); err != nil {
+				var fileAnnotationSet bufanalysis.FileAnnotationSet
+				if !errors.As(err, &fileAnnotationSet) {
+					if errors.Is(err, context.Canceled) {
+						f.lsp.logger.DebugContext(ctx, "checks cancelled", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(err))
+					} else if errors.Is(err, context.DeadlineExceeded) {
+						f.lsp.logger.WarnContext(ctx, "checks deadline exceeded", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(err))
+					} else {
+						f.lsp.logger.WarnContext(ctx, "checks failed", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(err))
+					}
+					return
 				}
-				return
-			}
-			if len(fileAnnotationSet.FileAnnotations()) == 0 {
-				f.lsp.logger.DebugContext(ctx, "checks lint passed", slog.String("uri", f.uri.Filename()))
-			} else {
-				annotations = append(annotations, fileAnnotationSet.FileAnnotations()...)
+				if len(fileAnnotationSet.FileAnnotations()) == 0 {
+					f.lsp.logger.DebugContext(ctx, "checks lint passed", slog.String("uri", f.uri.Filename()))
+				} else {
+					annotations = append(annotations, fileAnnotationSet.FileAnnotations()...)
+				}
 			}
 		}
 
