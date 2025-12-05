@@ -91,7 +91,7 @@ func buildImage(
 		}
 	}
 	if len(compiled) == 0 || compiled[0] == nil {
-		return nil, nil // Image failed to build.
+		return nil, diagnostics // Image failed to build.
 	}
 	compiledFile := compiled[0]
 
