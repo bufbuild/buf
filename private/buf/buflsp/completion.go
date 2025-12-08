@@ -793,14 +793,14 @@ func predeclaredTypeKeywords() iter.Seq[keyword.Keyword] {
 	return func(yield func(keyword.Keyword) bool) {
 		_ = yield(keyword.Int32) &&
 			yield(keyword.Int64) &&
-			yield(keyword.UInt32) &&
-			yield(keyword.UInt64) &&
-			yield(keyword.SInt32) &&
-			yield(keyword.SInt64) &&
+			yield(keyword.Uint32) &&
+			yield(keyword.Uint64) &&
+			yield(keyword.Sint32) &&
+			yield(keyword.Sint64) &&
 			yield(keyword.Fixed32) &&
 			yield(keyword.Fixed64) &&
-			yield(keyword.SFixed32) &&
-			yield(keyword.SFixed64) &&
+			yield(keyword.Sfixed32) &&
+			yield(keyword.Sfixed64) &&
 			yield(keyword.Float) &&
 			yield(keyword.Double) &&
 			yield(keyword.Bool) &&
@@ -1403,7 +1403,7 @@ func parseOptionSpan(file *file, offset int) (source.Span, []source.Span) {
 	// Append an empty span on trailing "." token at it's position.
 	if (len(tokens)-1)%2 != 0 {
 		lastToken := tokens[len(tokens)-1]
-		if lastToken.Kind() == token.Punct && lastToken.Text() == "." {
+		if lastToken.Kind() == token.Keyword && lastToken.Text() == "." {
 			lastSpan := lastToken.Span()
 			lastSpan.Start = lastSpan.End
 			pathSpans = append(pathSpans, lastSpan)
@@ -1499,7 +1499,7 @@ func defToOptionMessage(file *file, def ast.DeclDef) ir.MessageValue {
 
 func isTokenType(tok token.Token) bool {
 	kind := tok.Kind()
-	return kind == token.Ident || (kind == token.Punct && tok.Text() == ".")
+	return kind == token.Ident || (kind == token.Keyword && tok.Text() == ".")
 }
 
 func isTokenSpace(tok token.Token) bool {
@@ -1507,7 +1507,7 @@ func isTokenSpace(tok token.Token) bool {
 }
 
 func isTokenParen(tok token.Token) bool {
-	return tok.Kind() == token.Punct &&
+	return tok.Kind() == token.Keyword &&
 		(strings.HasPrefix(tok.Text(), "(") ||
 			strings.HasSuffix(tok.Text(), ")"))
 }
