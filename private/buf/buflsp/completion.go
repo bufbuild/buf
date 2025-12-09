@@ -1516,7 +1516,7 @@ func isTokenTypeDelimiter(tok token.Token) bool {
 	kind := tok.Kind()
 	return (kind == token.Unrecognized && tok.IsZero()) ||
 		(kind == token.Space && strings.IndexByte(tok.Text(), '\n') != -1) ||
-		(kind == token.Comment)
+		(kind == token.Comment && strings.HasSuffix(tok.Text(), "\n"))
 }
 
 // extractAroundOffset extracts the value around the offset by querying the token stream.
