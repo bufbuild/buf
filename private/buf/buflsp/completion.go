@@ -1516,7 +1516,7 @@ func isTokenParen(tok token.Token) bool {
 }
 
 // isTokenTypeDelimiter returns true if the token represents a delimiter for completion.
-// A delimiter is a newline or start of stream. This handles invalid partial tokens.
+// A delimiter is a newline or start of stream. This handles invalid partial declarations.
 func isTokenTypeDelimiter(tok token.Token) bool {
 	kind := tok.Kind()
 	return (kind == token.Unrecognized && tok.IsZero()) ||
