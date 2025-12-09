@@ -1497,26 +1497,31 @@ func defToOptionMessage(file *file, def ast.DeclDef) ir.MessageValue {
 	return ir.MessageValue{}
 }
 
+// isTokenType returns true if the tokens are valid for a type declaration e.g "buf.registry.Type".
 func isTokenType(tok token.Token) bool {
 	kind := tok.Kind()
 	return kind == token.Ident || (kind == token.Keyword && tok.Text() == ".")
 }
 
+// isTokenSpace returns true for spaces, excluding newlines.
 func isTokenSpace(tok token.Token) bool {
 	return tok.Kind() == token.Space && strings.IndexByte(tok.Text(), '\n') == -1
 }
 
+// isTokenParen returns true for '(' or ')' tokens.
 func isTokenParen(tok token.Token) bool {
 	return tok.Kind() == token.Keyword &&
 		(strings.HasPrefix(tok.Text(), "(") ||
 			strings.HasSuffix(tok.Text(), ")"))
 }
 
+// isTokenTypeDelimiter returns true if the token represents a delimiter for completion.
+// A delimiter is a newline or start of stream. This handles invalid partial declarations.
 func isTokenTypeDelimiter(tok token.Token) bool {
 	kind := tok.Kind()
 	return (kind == token.Unrecognized && tok.IsZero()) ||
 		(kind == token.Space && strings.IndexByte(tok.Text(), '\n') != -1) ||
-		(kind == token.Comment)
+		(kind == token.Comment && strings.HasSuffix(tok.Text(), "\n"))
 }
 
 // extractAroundOffset extracts the value around the offset by querying the token stream.
