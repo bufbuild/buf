@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `swift_prefix` to managed mode.
 
 ## [v1.61.0] - 2025-11-25
 

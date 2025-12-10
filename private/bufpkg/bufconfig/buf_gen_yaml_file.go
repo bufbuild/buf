@@ -333,6 +333,7 @@ type externalGenerateManagedConfigV1 struct {
 	GoPackagePrefix     externalGoPackagePrefixConfigV1   `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
 	ObjcClassPrefix     externalObjcClassPrefixConfigV1   `json:"objc_class_prefix,omitempty" yaml:"objc_class_prefix,omitempty"`
 	RubyPackage         externalRubyPackageConfigV1       `json:"ruby_package,omitempty" yaml:"ruby_package,omitempty"`
+	SwiftPrefix         externalSwiftPrefixConfigV1       `json:"swift_prefix,omitempty" yaml:"swift_prefix,omitempty"`
 	// Override maps from a file option to a file path then to the value.
 	Override map[string]map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
 }
@@ -458,6 +459,20 @@ type externalRubyPackageConfigV1 struct {
 // isEmpty returns true is the config is empty.
 func (e externalRubyPackageConfigV1) isEmpty() bool {
 	return len(e.Except) == 0 && len(e.Override) == 0
+}
+
+// externalSwiftPrefixConfigV1 represents the swift_prefix config in a v1 buf.gen.yaml file.
+type externalSwiftPrefixConfigV1 struct {
+	Default  string            `json:"default,omitempty" yaml:"default,omitempty"`
+	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
+	Override map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
+}
+
+// isEmpty returns true is the config is empty.
+func (e externalSwiftPrefixConfigV1) isEmpty() bool {
+	return e.Default == "" &&
+		len(e.Except) == 0 &&
+		len(e.Override) == 0
 }
 
 // externalObjcClassPrefixConfigV1 represents the objc_class_prefix config in a v1 buf.gen.yaml file.
