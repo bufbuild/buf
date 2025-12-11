@@ -152,6 +152,7 @@ func (s *server) Initialize(
 			DocumentFormattingProvider: true,
 			HoverProvider:              true,
 			ReferencesProvider:         &protocol.ReferenceOptions{},
+			RenameProvider:             &protocol.RenameOptions{},
 			SemanticTokensProvider: &SemanticTokensOptions{
 				Legend: SemanticTokensLegend{
 					TokenTypes:     semanticTypeLegend,
@@ -557,6 +558,21 @@ func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSy
 		}
 	}
 	return anyResults, nil
+}
+
+// func (s *server) PrepareRename(ctx context.Context, params *protocol.PrepareRenameParams) (*protocol.Range, error) {
+// }
+
+// Rename is the entry point for workspace wide renaming of a symbol.
+func (s *server) Rename(
+	ctx context.Context,
+	params *protocol.RenameParams,
+) (*protocol.WorkspaceEdit, error) {
+	symbol := s.getSymbol(ctx, params.TextDocument.URI, params.Position)
+	if symbol == nil {
+		return nil, nil
+	}
+	return symbol.Rename(params.NewName)
 }
 
 // getSymbol is a helper function that gets the *[symbol] for the given [protocol.URI] and

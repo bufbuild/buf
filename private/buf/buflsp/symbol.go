@@ -307,6 +307,62 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 	}
 }
 
+// Rename returns the [protocol.WorkspaceEdit] for renaming the symbol.
+func (s *symbol) Rename(newName string) (*protocol.WorkspaceEdit, error) {
+	var edits protocol.WorkspaceEdit
+	edits.Changes = make(map[protocol.DocumentURI][]protocol.TextEdit)
+	switch s.kind.(type) {
+	case *referenceable:
+		changes, err := renameChangesForReferenceSymbol(s, newName)
+		if err != nil {
+			return nil, err
+		}
+		edits.Changes = changes
+	case *static:
+		edits.Changes = map[protocol.DocumentURI][]protocol.TextEdit{
+			s.file.uri: []protocol.TextEdit{{
+				Range:   reportSpanToProtocolRange(s.span),
+				NewText: newName,
+			}},
+		}
+	case *reference:
+		// For references, we attempt to rename the definition symbol, if resolved. This would
+		// include this reference symbol.
+		if s.def != nil {
+			changes, err := renameChangesForReferenceSymbol(s.def, newName)
+			if err != nil {
+				return nil, err
+			}
+			edits.Changes = changes
+		}
+	}
+	// All other symbol types (options, imports, built-ins, and tags) cannot be renamed.
+	return &edits, nil
+}
+
+// renameChangesForReferenceSymbols is a helper for getting all rename changes for the given
+// reference symbol.
+func renameChangesForReferenceSymbol(s *symbol, newName string) (map[protocol.DocumentURI][]protocol.TextEdit, error) {
+	// At minimum, we would rename the symbol itself.
+	changes := map[protocol.DocumentURI][]protocol.TextEdit{
+		s.file.uri: []protocol.TextEdit{{
+			Range:   reportSpanToProtocolRange(s.span),
+			NewText: newName,
+		}},
+	}
+	if def, ok := s.def.kind.(*referenceable); ok {
+		for _, reference := range def.references {
+			changes[reference.file.uri] = append(changes[reference.file.uri], protocol.TextEdit{
+				Range:   reportSpanToProtocolRange(reference.span),
+				NewText: newName,
+			})
+		}
+	} else {
+		return nil, fmt.Errorf("attempting to rename a non-reference symbol as a reference symbol: %v", s)
+	}
+	return changes, nil
+}
+
 func protowireTypeForPredeclared(name predeclared.Name) protowire.Type {
 	switch name {
 	case predeclared.Bool, predeclared.Int32, predeclared.Int64, predeclared.UInt32,
