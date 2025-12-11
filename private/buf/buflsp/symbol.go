@@ -313,7 +313,7 @@ func (s *symbol) Rename(newName string) (*protocol.WorkspaceEdit, error) {
 	edits.Changes = make(map[protocol.DocumentURI][]protocol.TextEdit)
 	switch s.kind.(type) {
 	case *referenceable:
-		changes, err := renameChangesForReferenceSymbol(s, newName)
+		changes, err := renameChangesForReferenceableSymbol(s, newName)
 		if err != nil {
 			return nil, err
 		}
@@ -329,7 +329,7 @@ func (s *symbol) Rename(newName string) (*protocol.WorkspaceEdit, error) {
 		// For references, we attempt to rename the definition symbol, if resolved. This would
 		// include this reference symbol.
 		if s.def != nil {
-			changes, err := renameChangesForReferenceSymbol(s.def, newName)
+			changes, err := renameChangesForReferenceableSymbol(s.def, newName)
 			if err != nil {
 				return nil, err
 			}
@@ -340,9 +340,9 @@ func (s *symbol) Rename(newName string) (*protocol.WorkspaceEdit, error) {
 	return &edits, nil
 }
 
-// renameChangesForReferenceSymbols is a helper for getting all rename changes for the given
-// reference symbol.
-func renameChangesForReferenceSymbol(s *symbol, newName string) (map[protocol.DocumentURI][]protocol.TextEdit, error) {
+// renameChangesForReferenceableSymbol is a helper for getting all rename changes for the
+// given referenceable symbol.
+func renameChangesForReferenceableSymbol(s *symbol, newName string) (map[protocol.DocumentURI][]protocol.TextEdit, error) {
 	// At minimum, we would rename the symbol itself.
 	changes := map[protocol.DocumentURI][]protocol.TextEdit{
 		s.file.uri: {{
@@ -358,7 +358,7 @@ func renameChangesForReferenceSymbol(s *symbol, newName string) (map[protocol.Do
 			})
 		}
 	} else {
-		return nil, fmt.Errorf("attempting to rename a non-reference symbol as a reference symbol: %v", s)
+		return nil, fmt.Errorf("attempting to rename a non-referenceble symbol as a referenceable symbol: %v", s)
 	}
 	return changes, nil
 }
