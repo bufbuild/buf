@@ -152,7 +152,9 @@ func (s *server) Initialize(
 			DocumentFormattingProvider: true,
 			HoverProvider:              true,
 			ReferencesProvider:         &protocol.ReferenceOptions{},
-			RenameProvider:             &protocol.RenameOptions{},
+			RenameProvider: &protocol.RenameOptions{
+				PrepareProvider: true,
+			},
 			SemanticTokensProvider: &SemanticTokensOptions{
 				Legend: SemanticTokensLegend{
 					TokenTypes:     semanticTypeLegend,
@@ -560,8 +562,25 @@ func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSy
 	return anyResults, nil
 }
 
-// func (s *server) PrepareRename(ctx context.Context, params *protocol.PrepareRenameParams) (*protocol.Range, error) {
-// }
+// PrepareRename is the entry point for checking workspace wide renaming of a symbol.
+//
+// If a symbol can be renamed, PrepareRename will return the range for the rename. Returning
+// an empty range indicates that the requested position cannot be renamed and the client
+// will handle providing feedback to the user.
+//
+// Supported symbol types for renaming are [referenceable], [static], and [reference].
+func (s *server) PrepareRename(ctx context.Context, params *protocol.PrepareRenameParams) (*protocol.Range, error) {
+	symbol := s.getSymbol(ctx, params.TextDocument.URI, params.Position)
+	if symbol == nil {
+		return nil, nil
+	}
+	switch symbol.kind.(type) {
+	case *referenceable, *static, *reference:
+		rnge := reportSpanToProtocolRange(symbol.span)
+		return &rnge, nil
+	}
+	return nil, nil
+}
 
 // Rename is the entry point for workspace wide renaming of a symbol.
 func (s *server) Rename(
