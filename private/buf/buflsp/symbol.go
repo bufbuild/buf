@@ -320,7 +320,7 @@ func (s *symbol) Rename(newName string) (*protocol.WorkspaceEdit, error) {
 		edits.Changes = changes
 	case *static:
 		edits.Changes = map[protocol.DocumentURI][]protocol.TextEdit{
-			s.file.uri: []protocol.TextEdit{{
+			s.file.uri: {{
 				Range:   reportSpanToProtocolRange(s.span),
 				NewText: newName,
 			}},
@@ -345,7 +345,7 @@ func (s *symbol) Rename(newName string) (*protocol.WorkspaceEdit, error) {
 func renameChangesForReferenceSymbol(s *symbol, newName string) (map[protocol.DocumentURI][]protocol.TextEdit, error) {
 	// At minimum, we would rename the symbol itself.
 	changes := map[protocol.DocumentURI][]protocol.TextEdit{
-		s.file.uri: []protocol.TextEdit{{
+		s.file.uri: {{
 			Range:   reportSpanToProtocolRange(s.span),
 			NewText: newName,
 		}},

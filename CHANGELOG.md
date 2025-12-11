@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `textDocument/rename` and `textDocument/prepareRename` support for `buf lsp serve`.
 
 ## [v1.61.0] - 2025-11-25
 
