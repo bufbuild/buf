@@ -427,5 +427,13 @@ func rubyPackageValue(imageFile bufimage.ImageFile) string {
 // package declaration. If the image file doesn't have a package declaration, an
 // empty string is returned.
 func swiftPrefixValue(imageFile bufimage.ImageFile) string {
-	panic("TODO")
+	pkg := imageFile.FileDescriptorProto().GetPackage()
+	if pkg == "" {
+		return ""
+	}
+	packageParts := strings.Split(pkg, ".")
+	for i, part := range packageParts {
+		packageParts[i] = xstrings.ToPascalCase(part)
+	}
+	return strings.Join(packageParts, "")
 }
