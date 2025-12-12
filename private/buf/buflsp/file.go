@@ -588,10 +588,12 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		resolved = append(resolved, method)
 
 		input, _ := irSymbol.AsMethod().Input()
+		// Method input must be a single message type.
+		inputAST := irSymbol.AsMethod().AST().AsMethod().Signature.Inputs().At(0)
 		inputSym := &symbol{
 			ir:   irSymbol,
 			file: f,
-			span: irSymbol.AsMethod().AST().AsMethod().Signature.Inputs().Span(),
+			span: inputAST.RemovePrefixes().Span(), // We always strip prefixes in case of streaming.
 			kind: &reference{
 				def:      input.AST(), // Only messages can be method inputs and outputs
 				fullName: input.FullName(),
@@ -600,10 +602,12 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		unresolved = append(unresolved, inputSym)
 
 		output, _ := irSymbol.AsMethod().Output()
+		// Method output must be a single message type.
+		outputAST := irSymbol.AsMethod().AST().AsMethod().Signature.Outputs().At(0)
 		outputSym := &symbol{
 			ir:   irSymbol,
 			file: f,
-			span: irSymbol.AsMethod().AST().AsMethod().Signature.Outputs().Span(),
+			span: outputAST.RemovePrefixes().Span(), // We always strip prefixes in case of streaming.
 			kind: &reference{
 				def:      output.AST(), // Only messages can be method inputs and outputs
 				fullName: output.FullName(),

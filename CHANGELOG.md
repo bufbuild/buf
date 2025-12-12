@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Add `swift_prefix` to managed mode.
+- Add `textDocument/rename` and `textDocument/prepareRename` support for `buf lsp serve`.
 
 ## [v1.61.0] - 2025-11-25
 
