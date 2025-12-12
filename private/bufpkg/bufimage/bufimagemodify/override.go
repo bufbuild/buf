@@ -435,5 +435,7 @@ func swiftPrefixValue(imageFile bufimage.ImageFile) string {
 	for i, part := range packageParts {
 		packageParts[i] = xstrings.ToPascalCase(part)
 	}
-	return strings.Join(packageParts, "")
+	// We add a "_" as the suffix since this emulates the default behaviour if swift_prefix
+	// is not set.
+	return strings.Join(packageParts, "_") + "_"
 }
