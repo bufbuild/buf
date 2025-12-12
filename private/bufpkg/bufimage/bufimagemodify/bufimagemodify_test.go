@@ -99,7 +99,7 @@ func TestModifyImage(t *testing.T) {
 					PhpMetadataNamespace: proto.String(`Foo\Empty_\GPBMetadata`),
 					PhpNamespace:         proto.String(`Foo\Empty_`),
 					RubyPackage:          proto.String("Foo::Empty"),
-					SwiftPrefix:          proto.String("FooEmpty"),
+					SwiftPrefix:          proto.String("Foo_Empty_"),
 				},
 				"foo_empty/without_package.proto": {
 					// CcEnableArena's default value is true
@@ -126,7 +126,7 @@ func TestModifyImage(t *testing.T) {
 					PhpNamespace:         proto.String(`Bar\All`),
 					PyGenericServices:    proto.Bool(false),
 					RubyPackage:          proto.String("Bar::All"),
-					SwiftPrefix:          proto.String("BarAll"),
+					SwiftPrefix:          proto.String("Bar_All_"),
 				},
 				"bar_all/without_package.proto": {
 					CcEnableArenas:       proto.Bool(true),
