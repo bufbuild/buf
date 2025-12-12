@@ -387,6 +387,32 @@ func newGenerateManagedConfigFromExternalV1(
 		disables = append(disables, rubyPackageDisables...)
 		overrides = append(overrides, rubyPackageOverrides...)
 	}
+	if externalSwiftPrefix := externalConfig.SwiftPrefix; !externalSwiftPrefix.isEmpty() {
+		if externalSwiftPrefix.Default != "" {
+			// objc class prefix allows empty default
+			defaultOverride, err := NewManagedOverrideRuleForFileOption(
+				"",
+				"",
+				FileOptionSwiftPrefix,
+				externalSwiftPrefix.Default,
+			)
+			if err != nil {
+				return nil, err
+			}
+			overrides = append(overrides, defaultOverride)
+		}
+		swiftPrefixDisables, swiftPrefixOverrides, err := disablesAndOverridesFromExceptAndOverrideV1(
+			FileOptionSwiftPrefix,
+			externalSwiftPrefix.Except,
+			FileOptionSwiftPrefix,
+			externalSwiftPrefix.Override,
+		)
+		if err != nil {
+			return nil, err
+		}
+		disables = append(disables, swiftPrefixDisables...)
+		overrides = append(overrides, swiftPrefixOverrides...)
+	}
 	perFileOverrides, err := overrideRulesForPerFileOverridesV1(externalConfig.Override)
 	if err != nil {
 		return nil, err

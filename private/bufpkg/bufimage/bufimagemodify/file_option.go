@@ -56,10 +56,12 @@ var (
 	// phpNamespacePath is the SourceCodeInfo path for the php_namespace option.
 	// Ref: https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L443
 	phpNamespacePath = []int32{8, 41}
-
 	// rubyPackagePath is the SourceCodeInfo path for the ruby_package option.
 	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L453
 	rubyPackagePath = []int32{8, 45}
+	// swiftPrefixPath is the SourceCodeInfo path for the swift_prefix option.
+	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L434
+	swiftPrefixPath = []int32{8, 39}
 )
 
 func modifyJavaOuterClass(
@@ -356,6 +358,43 @@ func modifyRubyPackage(
 			return options != nil && options.RubyPackage != nil
 		},
 		rubyPackagePath,
+	)
+}
+
+func modifySwiftPrefix(
+	sweeper internal.MarkSweeper,
+	imageFile bufimage.ImageFile,
+	config bufconfig.GenerateManagedConfig,
+	options ...ModifyOption,
+) error {
+	modifyOptions := newModifyOptions()
+	for _, option := range options {
+		option(modifyOptions)
+	}
+	return modifyStringOption(
+		sweeper,
+		imageFile,
+		config,
+		modifyOptions.preserveExisting,
+		bufconfig.FileOptionSwiftPrefix,
+		bufconfig.FileOptionUnspecified,
+		bufconfig.FileOptionUnspecified,
+		func(bufimage.ImageFile) stringOverrideOptions {
+			return stringOverrideOptions{value: swiftPrefixValue(imageFile)}
+		},
+		func(imageFile bufimage.ImageFile, _ stringOverrideOptions) string {
+			return swiftPrefixValue(imageFile)
+		},
+		func(options *descriptorpb.FileOptions) string {
+			return options.GetSwiftPrefix()
+		},
+		func(options *descriptorpb.FileOptions, value string) {
+			options.SwiftPrefix = proto.String(value)
+		},
+		func(options *descriptorpb.FileOptions) bool {
+			return options != nil && options.SwiftPrefix != nil
+		},
+		swiftPrefixPath,
 	)
 }
 

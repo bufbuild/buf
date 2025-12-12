@@ -601,6 +601,57 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 			},
 		},
 		{
+			description: "managed_mode_swift_prefix",
+			externalConfig: externalBufGenYAMLFileV1{
+				Version: "v1",
+				Plugins: []externalGeneratePluginConfigV1{
+					{
+						Plugin: "go",
+						Out:    "go/out",
+					},
+				},
+				Managed: externalGenerateManagedConfigV1{
+					Enabled: true,
+					SwiftPrefix: externalSwiftPrefixConfigV1{
+						Default: "foo",
+						Except:  []string{"buf.build/acme/foo"},
+						Override: map[string]string{
+							"buf.build/acme/petapis": "pet",
+						},
+					},
+				},
+			},
+			expectedConfig: &generateConfig{
+				generatePluginConfigs: []GeneratePluginConfig{
+					&generatePluginConfig{
+						generatePluginConfigType: GeneratePluginConfigTypeLocalOrProtocBuiltin,
+						name:                     "go",
+						out:                      "go/out",
+					},
+				},
+				generateManagedConfig: &generateManagedConfig{
+					enabled: true,
+					disables: []ManagedDisableRule{
+						&managedDisableRule{
+							fileOption:     FileOptionSwiftPrefix,
+							moduleFullName: "buf.build/acme/foo",
+						},
+					},
+					overrides: []ManagedOverrideRule{
+						&managedOverrideRule{
+							fileOption: FileOptionSwiftPrefix,
+							value:      "foo",
+						},
+						&managedOverrideRule{
+							fileOption:     FileOptionSwiftPrefix,
+							moduleFullName: "buf.build/acme/petapis",
+							value:          "pet",
+						},
+					},
+				},
+			},
+		},
+		{
 			description: "managed_mode_per_file_override",
 			externalConfig: externalBufGenYAMLFileV1{
 				Version: "v1",
