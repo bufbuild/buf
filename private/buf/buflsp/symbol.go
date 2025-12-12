@@ -310,7 +310,6 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 // Rename returns the [protocol.WorkspaceEdit] for renaming the symbol.
 func (s *symbol) Rename(newName string) (*protocol.WorkspaceEdit, error) {
 	var edits protocol.WorkspaceEdit
-	edits.Changes = make(map[protocol.DocumentURI][]protocol.TextEdit)
 	switch s.kind.(type) {
 	case *referenceable:
 		changes, err := renameChangesForReferenceableSymbol(s, newName)
