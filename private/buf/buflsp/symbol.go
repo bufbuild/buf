@@ -408,21 +408,27 @@ func (s *symbol) getDocsFromComments() string {
 	_, start := def.Context().Stream().Around(def.Span().Start)
 	cursor := token.NewCursorAt(start)
 	t := cursor.PrevSkippable()
+	var addNewline string
 	for !t.IsZero() {
 		switch t.Kind() {
 		case token.Comment:
-			comments = append(comments, commentToMarkdown(t.Text()))
+			text := t.Text()
+			if addNewline != "" {
+				text += addNewline
+				addNewline = ""
+			}
+			comments = append(comments, commentToMarkdown(text))
+		case token.Space:
+			// If the space token only contains spaces (e.g. code indentation), then we drop it.
+			// If the space token is a new-line, we append it to the comment above for formatting.
+			// We store the space token text to account for carriage returns (\r\n).
+			if t.Text() == "\n" || t.Text() == "\r\n" {
+				addNewline = t.Text()
+			}
 		}
 		prev := cursor.PeekPrevSkippable()
 		if !prev.Kind().IsSkippable() {
 			break
-		}
-		if prev.Kind() == token.Space {
-			// Check if the whitespace contains a newline. If so, then we break. This is to prevent
-			// picking up comments that are not contiguous to the declaration.
-			if strings.Contains(prev.Text(), "\n") {
-				break
-			}
 		}
 		t = cursor.PrevSkippable()
 	}
