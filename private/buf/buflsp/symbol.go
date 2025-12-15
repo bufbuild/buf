@@ -387,7 +387,7 @@ func checkRenameConflicts(target *symbol, newName string) error {
 		// We first check the current symbol's file.
 		if slices.ContainsFunc(target.file.symbols, containsFunc) {
 			return fmt.Errorf(
-				"Renaming %q to %q would conflict with existing symbol at %q:%d:%d",
+				"Renaming %q to %q would conflict with existing symbol at %s:%d:%d",
 				target.ir.FullName().Name(),
 				newName,
 				target.file.ir.Path(),
@@ -398,7 +398,7 @@ func checkRenameConflicts(target *symbol, newName string) error {
 		for _, file := range target.file.workspace.PathToFile() {
 			if slices.ContainsFunc(file.symbols, containsFunc) {
 				return fmt.Errorf(
-					"Renaming %q to %q would conflict with existing symbol at %q:%d:%d",
+					"Renaming %q to %q would conflict with existing symbol at %s:%d:%d",
 					target.ir.FullName().Name(),
 					newName,
 					file.ir.Path(),
