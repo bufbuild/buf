@@ -30,6 +30,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/bufbuild/protocompile/experimental/incremental"
+	"github.com/bufbuild/protocompile/experimental/ir"
+	"github.com/bufbuild/protocompile/experimental/source"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
 	"go.uber.org/zap"
@@ -63,6 +65,8 @@ func Serve(
 		wasmRuntime:   wasmRuntime,
 		wktBucket:     wktBucket,
 		queryExecutor: queryExecutor,
+		opener:        source.NewMap(nil),
+		irSession:     new(ir.Session),
 	}
 	lsp.fileManager = newFileManager(lsp)
 	lsp.workspaceManager = newWorkspaceManager(lsp)
@@ -98,6 +102,8 @@ type lsp struct {
 	fileManager      *fileManager
 	workspaceManager *workspaceManager
 	queryExecutor    *incremental.Executor
+	opener           source.Map
+	irSession        *ir.Session
 	wktBucket        storage.ReadBucket
 	shutdown         bool
 

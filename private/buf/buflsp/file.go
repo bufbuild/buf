@@ -23,6 +23,7 @@ import (
 	"io"
 	"iter"
 	"log/slog"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -221,19 +222,31 @@ func (f *file) RefreshIR(ctx context.Context) {
 	// Opener creates a cached view of all files in the workspace.
 	pathToFiles := f.workspace.PathToFile()
 	files := make([]*file, 0, len(pathToFiles))
-	openerMap := make(map[string]*source.File, len(pathToFiles))
+	seen := make([]string, 0, len(pathToFiles))
+
+	openerMap := f.lsp.opener.Get()
 	for path, file := range pathToFiles {
-		openerMap[path] = file.file
+		current := openerMap[path]
+		// If there is no entry for the current path or if the file content has changed, we
+		// update the opener.
+		if current == nil || current.Text() != file.file.Text() {
+			openerMap[path] = file.file
+		}
+		seen = append(seen, path)
 		files = append(files, file)
 	}
-	opener := source.NewMap(openerMap)
+	// Remove paths that are no longer in the current workspace.
+	for key := range maps.Keys(openerMap) {
+		if !slices.Contains(seen, key) {
+			delete(openerMap, key)
+		}
+	}
 
-	session := new(ir.Session)
 	queries := xslices.Map(files, func(file *file) incremental.Query[*ir.File] {
 		return queries.IR{
-			Opener:  opener,
+			Opener:  f.lsp.opener,
 			Path:    file.objectInfo.Path(),
-			Session: session,
+			Session: f.lsp.irSession,
 		}
 	})
 	results, diagnosticReport, err := incremental.Run(

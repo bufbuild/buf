@@ -254,7 +254,7 @@ func (w *workspace) indexFiles(ctx context.Context) {
 		}
 
 		// Currently we only associate a file with one workspace. This assumption isn't accurate
-		// for shared dependencies. Here we update to the lastest, most recently used, workspace.
+		// for shared dependencies. Here we update to the latest, most recently used, workspace.
 		// This will make goto definition and find references only work in that workspace.
 		if oldWorkspace := file.workspace; oldWorkspace != nil && oldWorkspace != w {
 			oldWorkspace.Release()
