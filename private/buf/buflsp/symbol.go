@@ -312,12 +312,18 @@ func (s *symbol) Rename(newName string) (*protocol.WorkspaceEdit, error) {
 	var edits protocol.WorkspaceEdit
 	switch s.kind.(type) {
 	case *referenceable:
+		if err := checkRenameConflicts(s, newName); err != nil {
+			return nil, err
+		}
 		changes, err := renameChangesForReferenceableSymbol(s, newName)
 		if err != nil {
 			return nil, err
 		}
 		edits.Changes = changes
 	case *static:
+		if err := checkRenameConflicts(s, newName); err != nil {
+			return nil, err
+		}
 		edits.Changes = map[protocol.DocumentURI][]protocol.TextEdit{
 			s.file.uri: {{
 				Range:   reportSpanToProtocolRange(s.span),
@@ -328,6 +334,9 @@ func (s *symbol) Rename(newName string) (*protocol.WorkspaceEdit, error) {
 		// For references, we attempt to rename the definition symbol, if resolved. This would
 		// include this reference symbol.
 		if s.def != nil {
+			if err := checkRenameConflicts(s.def, newName); err != nil {
+				return nil, err
+			}
 			changes, err := renameChangesForReferenceableSymbol(s.def, newName)
 			if err != nil {
 				return nil, err
@@ -360,6 +369,46 @@ func renameChangesForReferenceableSymbol(s *symbol, newName string) (map[protoco
 		return nil, fmt.Errorf("attempting to rename a non-referenceble symbol as a referenceable symbol: %v", s)
 	}
 	return changes, nil
+}
+
+// checkRenameConflicts takes the symbol and desired new name and checks if this conflicts
+// with an existing symbol in the same scope and returns an error if a conflict is found.
+func checkRenameConflicts(target *symbol, newName string) error {
+	parent := target.ir.FullName().Parent()
+	if parent != "" {
+		var existing source.Span
+		newFullName := parent.Append(newName)
+		containsFunc := func(s *symbol) bool {
+			existing = s.span
+			return s.ir.FullName() == newFullName
+		}
+		// We check all files in the workspace for a conflict, since a package can span an arbitrary
+		// number of files.
+		// We first check the current symbol's file.
+		if slices.ContainsFunc(target.file.symbols, containsFunc) {
+			return fmt.Errorf(
+				"Renaming %q to %q would conflict with existing symbol at %s:%d:%d",
+				target.ir.FullName().Name(),
+				newName,
+				target.file.ir.Path(),
+				existing.StartLoc().Line,
+				existing.StartLoc().Column,
+			)
+		}
+		for _, file := range target.file.workspace.PathToFile() {
+			if slices.ContainsFunc(file.symbols, containsFunc) {
+				return fmt.Errorf(
+					"Renaming %q to %q would conflict with existing symbol at %s:%d:%d",
+					target.ir.FullName().Name(),
+					newName,
+					file.ir.Path(),
+					existing.StartLoc().Line,
+					existing.StartLoc().Column,
+				)
+			}
+		}
+	}
+	return nil
 }
 
 func protowireTypeForPredeclared(name predeclared.Name) protowire.Type {
