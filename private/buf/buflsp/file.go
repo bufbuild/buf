@@ -688,12 +688,17 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 		//
 		// In the example, in the second definition, (option) and .message for field_b has a
 		// separate span from (option) and .message for field_a, but when we walk the mesasge
-		// tree, we get the span for (option) and .mesage for the first field. So we check the
+		// tree, we get the span for (option) and .message for the first field. So we check the
 		// symbols we've collected so far in parents and make sure we have captured a symbol for
 		// each path component.
 		for element := range seq.Values(field.Elements()) {
 			key := field.KeyASTs().At(element.ValueNodeIndex())
 			components := slices.Collect(key.AsPath().Components)
+			// If there are no path components for an element, then we skip it, since there are
+			// no symbols to track.
+			if len(components) == 0 {
+				continue
+			}
 			var span source.Span
 			// This covers the first case in the example above where the path is relative,
 			// e.g. field_a is a relative path within { } for (option).message.
