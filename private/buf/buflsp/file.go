@@ -688,7 +688,7 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 		//
 		// In the example, in the second definition, (option) and .message for field_b has a
 		// separate span from (option) and .message for field_a, but when we walk the mesasge
-		// tree, we get the span for (option) and .mesage for the first field. So we check the
+		// tree, we get the span for (option) and .message for the first field. So we check the
 		// symbols we've collected so far in parents and make sure we have captured a symbol for
 		// each path component.
 		for element := range seq.Values(field.Elements()) {
