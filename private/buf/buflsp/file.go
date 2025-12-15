@@ -694,6 +694,11 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 		for element := range seq.Values(field.Elements()) {
 			key := field.KeyASTs().At(element.ValueNodeIndex())
 			components := slices.Collect(key.AsPath().Components)
+			// If there are no path components for an element, then we skip it, since there are
+			// no symbols to track.
+			if len(components) == 0 {
+				continue
+			}
 			var span source.Span
 			// This covers the first case in the example above where the path is relative,
 			// e.g. field_a is a relative path within { } for (option).message.
