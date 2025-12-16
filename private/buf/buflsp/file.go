@@ -222,7 +222,6 @@ func (f *file) RefreshIR(ctx context.Context) {
 	// Opener creates a cached view of all files in the workspace.
 	pathToFiles := f.workspace.PathToFile()
 	files := make([]*file, 0, len(pathToFiles))
-	seen := make([]string, 0, len(pathToFiles))
 
 	openerMap := f.lsp.opener.Get()
 	for path, file := range pathToFiles {
@@ -232,13 +231,12 @@ func (f *file) RefreshIR(ctx context.Context) {
 		if current == nil || current.Text() != file.file.Text() {
 			openerMap[path] = file.file
 		}
-		seen = append(seen, path)
 		files = append(files, file)
 	}
 	// Remove paths that are no longer in the current workspace.
-	for key := range maps.Keys(openerMap) {
-		if !slices.Contains(seen, key) {
-			delete(openerMap, key)
+	for path := range maps.Keys(openerMap) {
+		if _, ok := pathToFiles[path]; !ok {
+			delete(openerMap, path)
 		}
 	}
 
