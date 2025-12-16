@@ -35,9 +35,6 @@ import (
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
 	"go.uber.org/zap"
-
-	"net/http"
-	_ "net/http/pprof"
 )
 
 // Serve spawns a new LSP server, listening on the given stream.
@@ -74,11 +71,6 @@ func Serve(
 	lsp.traceValue.Store(&off)
 
 	conn.Go(ctx, lsp.newHandler())
-
-	go func() {
-		http.ListenAndServe("localhost:6060", nil)
-	}()
-
 	return conn, nil
 }
 
