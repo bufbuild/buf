@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add `swift_prefix` to managed mode.
 - Add `textDocument/rename` and `textDocument/prepareRename` support for `buf lsp serve`.
 - Fix panic in LSP for empty option paths.
 - Fix support for multi-arch image manifests for `buf beta registry plugin push`.
