@@ -495,19 +495,14 @@ func getImageIDAndDigestFromReference(
 				break
 			}
 		}
-		refNameWithoutDigest, _, ok := strings.Cut(ref.Name(), "@")
-		if !ok {
-			return "", "", fmt.Errorf("failed to parse reference name %q", ref)
-		}
-		repository, err := name.NewRepository(refNameWithoutDigest)
-		if err != nil {
-			return "", "", fmt.Errorf("failed to construct repository %q: %w", refNameWithoutDigest, err)
+		if manifest.Digest.String() == "" {
+			return "", "", fmt.Errorf("no valid platform manifest found in image index for %q", ref)
 		}
 		// We resolved the image index to an image manifest digest, we can now call this function
 		// again to resolve the image manifest digest to an image config digest.
 		return getImageIDAndDigestFromReference(
 			ctx,
-			repository.Digest(manifest.Digest.String()),
+			ref.Context().Digest(manifest.Digest.String()),
 			options...,
 		)
 	case desc.MediaType.IsImage():
