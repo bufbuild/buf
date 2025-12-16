@@ -23,7 +23,6 @@ import (
 	"io"
 	"iter"
 	"log/slog"
-	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -234,7 +233,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 		files = append(files, file)
 	}
 	// Remove paths that are no longer in the current workspace.
-	for path := range maps.Keys(openerMap) {
+	for path := range openerMap {
 		if _, ok := pathToFiles[path]; !ok {
 			delete(openerMap, path)
 		}
