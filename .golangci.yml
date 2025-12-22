@@ -445,6 +445,12 @@ linters:
         # to set the source path for the location, this operation should be safe.
         path: private/bufpkg/bufcheck/bufcheckserver/internal/buflintvalidate/predefined_rules.go
         text: 'G115:'
+      - linters:
+          - govet
+        # We print command.Short to markdown, which is controlled and set by each command
+        # and should be considered safe.
+        path: private/bufpkg/bufcobra/markdown.go
+        text: 'printf: non-constant format string in call to p'
 
 issues:
   max-same-issues: 0
