@@ -24,7 +24,24 @@ bufgenerateclean::
 bufgeneratesteps::
 
 .PHONY: bufgenerate
-bufgenerate:
+bufgenerate: ## Run all generation steps for Protobuf.
+	@$(MAKE) __bufgenerate
+	@$(MAKE) licensegenerate
+
+# __bufgenerate calls just the buf generate steps. It should
+# only be referenced wtihin this file
+#
+# bufgenerate can be called independently of make generate and
+# *should* do everything required for a proto-only change. It's
+# not super-safe, but should work 99.9999% of the time, and CI
+# will catch when it does not via calling the full make generate.
+#
+# It will not work if other generate steps are required for
+# Protobuf files in the future that are not captured by
+# __bufgenerate and licensegenerate, however this is very unlikely.
+
+.PHONY: __bufgenerate
+__bufgenerate:
 	@echo make bufgeneratedeps
 	@$(MAKE) bufgeneratedeps
 ifneq ($(BUF_FORMAT_INPUT),)
@@ -36,7 +53,7 @@ endif
 	@echo make bufgeneratesteps
 	@$(MAKE) bufgeneratesteps
 
-pregenerate:: bufgenerate
+pregenerate:: __bufgenerate
 
 .PHONY: buflintdeps
 buflintdeps:: $(BUF)
