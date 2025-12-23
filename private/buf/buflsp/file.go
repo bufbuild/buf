@@ -217,6 +217,14 @@ func (f *file) RefreshWorkspace(ctx context.Context) {
 //
 // This operation requires a workspace.
 func (f *file) RefreshIR(ctx context.Context) {
+	if f.objectInfo == nil {
+		// This can happen if the file that is opened is excluded from the workspace through
+		// includes/excludes in the build. In those cases, we ignore the file, the same way
+		// the rest of our tools would.
+		// In the future, we may want to rework this behavior in the LSP.
+		return
+	}
+
 	f.lsp.logger.Info(
 		"parsing IR for file",
 		slog.String("uri", string(f.uri)),
