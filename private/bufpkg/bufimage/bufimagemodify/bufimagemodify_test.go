@@ -99,6 +99,7 @@ func TestModifyImage(t *testing.T) {
 					PhpMetadataNamespace: proto.String(`Foo\Empty_\GPBMetadata`),
 					PhpNamespace:         proto.String(`Foo\Empty_`),
 					RubyPackage:          proto.String("Foo::Empty"),
+					SwiftPrefix:          proto.String("Foo_Empty_"),
 				},
 				"foo_empty/without_package.proto": {
 					// CcEnableArena's default value is true
@@ -125,7 +126,7 @@ func TestModifyImage(t *testing.T) {
 					PhpNamespace:         proto.String(`Bar\All`),
 					PyGenericServices:    proto.Bool(false),
 					RubyPackage:          proto.String("Bar::All"),
-					SwiftPrefix:          proto.String("bar"),
+					SwiftPrefix:          proto.String("Bar_All_"),
 				},
 				"bar_all/without_package.proto": {
 					CcEnableArenas:       proto.Bool(true),
@@ -544,6 +545,65 @@ func TestModifyImageFile(
 				"foo_empty/without_package.proto": {objcClassPrefixPath},
 				"foo_all/without_package.proto":   {objcClassPrefixPath},
 				"foo_all/with_package.proto":      {objcClassPrefixPath},
+			},
+		},
+		{
+			description: "swift_prefix",
+			dirPathToFullName: map[string]string{
+				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
+				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
+			},
+			config: bufconfig.NewGenerateManagedConfig(
+				true,
+				[]bufconfig.ManagedDisableRule{
+					newTestManagedDisableRule(t, "foo_empty/with_package.proto", "", "", bufconfig.FileOptionSwiftPrefix, bufconfig.FieldOptionUnspecified),
+				},
+				[]bufconfig.ManagedOverrideRule{
+					newTestFileOptionOverrideRule(t, "", "buf.build/acme/bar", bufconfig.FileOptionSwiftPrefix, "BAR"),
+					newTestFileOptionOverrideRule(t, "", "buf.build/acme/foo", bufconfig.FileOptionSwiftPrefix, "FOO"),
+					newTestFileOptionOverrideRule(t, "foo_all", "buf.build/acme/foo", bufconfig.FileOptionSwiftPrefix, "FOOALL"),
+				},
+			),
+			modifyFunc: modifySwiftPrefix,
+			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
+				"bar_empty/with_package.proto": {
+					SwiftPrefix: proto.String("BAR"),
+				},
+				"bar_empty/without_package.proto": {
+					SwiftPrefix: proto.String("BAR"),
+				},
+				// disabled
+				"foo_empty/with_package.proto": nil,
+				// no package
+				"foo_empty/without_package.proto": {
+					SwiftPrefix: proto.String("FOO"),
+				},
+				"foo_all/with_package.proto": {
+					ObjcClassPrefix:      proto.String("foo"),
+					CcEnableArenas:       proto.Bool(true),
+					CcGenericServices:    proto.Bool(true),
+					CsharpNamespace:      proto.String("foo"),
+					GoPackage:            proto.String("foo"),
+					JavaGenericServices:  proto.Bool(true),
+					JavaMultipleFiles:    proto.Bool(true),
+					JavaOuterClassname:   proto.String("foo"),
+					JavaPackage:          proto.String("foo"),
+					JavaStringCheckUtf8:  proto.Bool(true),
+					OptimizeFor:          descriptorpb.FileOptions_CODE_SIZE.Enum(),
+					PhpClassPrefix:       proto.String("foo"),
+					PhpMetadataNamespace: proto.String("foo"),
+					PhpNamespace:         proto.String("foo"),
+					PyGenericServices:    proto.Bool(true),
+					RubyPackage:          proto.String("foo"),
+					SwiftPrefix:          proto.String("FOOALL"),
+				},
+			},
+			filePathToExpectedMarkedLocationPaths: map[string][][]int32{
+				"bar_empty/with_package.proto":    {swiftPrefixPath},
+				"bar_empty/without_package.proto": {swiftPrefixPath},
+				"foo_empty/without_package.proto": {swiftPrefixPath},
+				"foo_all/without_package.proto":   {swiftPrefixPath},
+				"foo_all/with_package.proto":      {swiftPrefixPath},
 			},
 		},
 	}

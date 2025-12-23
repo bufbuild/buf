@@ -45,6 +45,7 @@ func Modify(
 			modifyPhpMetadataNamespace,
 			modifyPhpNamespace,
 			modifyRubyPackage,
+			modifySwiftPrefix,
 			modifyJsType,
 		},
 		options...,
@@ -159,6 +160,20 @@ func ModifyRubyPackage(
 		image,
 		config,
 		modifyRubyPackage,
+		options...,
+	)
+}
+
+// ModifySwiftPrefix modifies the swift_prefix file option.
+func ModifySwiftPrefix(
+	image bufimage.Image,
+	config bufconfig.GenerateManagedConfig,
+	options ...ModifyOption,
+) error {
+	return modifyImageForSingleOption(
+		image,
+		config,
+		modifySwiftPrefix,
 		options...,
 	)
 }

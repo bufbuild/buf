@@ -65,6 +65,8 @@ const (
 	FileOptionRubyPackage
 	// FileOptionRubyPackageSuffix is the file option ruby_package_suffix.
 	FileOptionRubyPackageSuffix
+	// FileOptionSwiftPrefix is the file option swift_prefix.
+	FileOptionSwiftPrefix
 )
 
 // String implements fmt.Stringer.
@@ -117,6 +119,7 @@ var (
 		FileOptionPhpMetadataNamespaceSuffix: "php_metadata_namespace_suffix",
 		FileOptionRubyPackage:                "ruby_package",
 		FileOptionRubyPackageSuffix:          "ruby_package_suffix",
+		FileOptionSwiftPrefix:                "swift_prefix",
 	}
 	stringToFileOption = map[string]FileOption{
 		"java_package":                  FileOptionJavaPackage,
@@ -137,6 +140,7 @@ var (
 		"php_metadata_namespace_suffix": FileOptionPhpMetadataNamespaceSuffix,
 		"ruby_package":                  FileOptionRubyPackage,
 		"ruby_package_suffix":           FileOptionRubyPackageSuffix,
+		"swift_prefix":                  FileOptionSwiftPrefix,
 	}
 	fileOptionToParseOverrideValueFunc = map[FileOption]func(any) (any, error){
 		FileOptionJavaPackage:                parseOverrideValue[string],
@@ -157,6 +161,7 @@ var (
 		FileOptionPhpMetadataNamespaceSuffix: parseOverrideValue[string],
 		FileOptionRubyPackage:                parseOverrideValue[string],
 		FileOptionRubyPackageSuffix:          parseOverrideValue[string],
+		FileOptionSwiftPrefix:                parseOverrideValue[string],
 	}
 	fieldOptionToString = map[FieldOption]string{
 		FieldOptionJSType: "jstype",
@@ -258,7 +263,8 @@ func getOverrideValue(fileOptionName string, fieldOptionName string, value any) 
 			FileOptionPhpMetadataNamespace,
 			FileOptionPhpMetadataNamespaceSuffix,
 			FileOptionRubyPackage,
-			FileOptionRubyPackageSuffix:
+			FileOptionRubyPackageSuffix,
+			FileOptionSwiftPrefix:
 			return value, nil
 
 		case FileOptionOptimizeFor:
