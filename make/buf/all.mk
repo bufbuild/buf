@@ -164,7 +164,7 @@ endif
 	# make sure both of these docker images exist
 	# the release of these images will lag the actual release
 	docker pull golang:$(GOVERSION)-bookworm
-	docker pull golang:$(GOVERSION)-alpine3.22
+	docker pull golang:$(GOVERSION)-alpine3.23
 	$(SED_I) "s/golang:1\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep Dockerfile)
 	$(SED_I) "s/golang:1\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.mk$)
 	$(SED_I) "s/go-version: '1\.[0-9][0-9].x'/go-version: '$(GOVERSION).x'/g" $(shell git-ls-files-unstaged | grep \.github\/workflows | grep -v previous.yaml)
