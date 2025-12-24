@@ -62,6 +62,8 @@ type file struct {
 	objectInfo storage.ObjectInfo // Info in the context of the workspace.
 
 	ir                   *ir.File
+	irQuery              queries.IR
+	fileQuery            queries.File
 	referenceableSymbols map[ir.FullName]*symbol
 	referenceSymbols     []*symbol
 	symbols              []*symbol
@@ -96,6 +98,11 @@ func (f *file) Reset(ctx context.Context) {
 	if f.workspace != nil {
 		f.workspace.Release()
 		f.workspace = nil
+	}
+	// Evict the query key if there is a query cached on the file. We cache the [queries.File]
+	// query since this allows the executor to evict all dependent queries, e.g. AST and IR.
+	if f.fileQuery.Path != "" {
+		f.lsp.queryExecutor.Evict(f.fileQuery.Key())
 	}
 	// Clear the file as nothing should use it after reset. This asserts that.
 	*f = file{}
@@ -229,21 +236,46 @@ func (f *file) RefreshIR(ctx context.Context) {
 	// Opener creates a cached view of all files in the workspace.
 	pathToFiles := f.workspace.PathToFile()
 	files := make([]*file, 0, len(pathToFiles))
-	openerMap := make(map[string]*source.File, len(pathToFiles))
+	var evictQueryKeys []any
+
+	openerMap := f.lsp.opener.Get()
 	for path, file := range pathToFiles {
-		openerMap[path] = file.file
+		current := openerMap[path]
+		// If there is no entry for the current path or if the file content has changed, we
+		// update the opener and set a new query.
+		if current == nil || current.Text() != file.file.Text() {
+			openerMap[path] = file.file
+			// Add the query key for eviction if there is a query cached on the file. We cache
+			// the [queries.File] query since this allows the executor to evict all dependent
+			// queries, e.g. AST and IR.
+			if file.fileQuery.Path != "" {
+				evictQueryKeys = append(evictQueryKeys, file.fileQuery.Key())
+			}
+			file.fileQuery = queries.File{
+				Opener:      file.lsp.opener,
+				Path:        path,
+				ReportError: true, // [queries.AST] sets this to be true.
+			}
+			file.irQuery = queries.IR{
+				Opener:  file.lsp.opener,
+				Path:    file.objectInfo.Path(),
+				Session: file.lsp.irSession,
+			}
+		}
 		files = append(files, file)
 	}
-	opener := source.NewMap(openerMap)
-
-	session := new(ir.Session)
-	queries := xslices.Map(files, func(file *file) incremental.Query[*ir.File] {
-		return queries.IR{
-			Opener:  opener,
-			Path:    file.objectInfo.Path(),
-			Session: session,
+	// Remove paths that are no longer in the current workspace and evict stale query keys.
+	for path := range openerMap {
+		if _, ok := pathToFiles[path]; !ok {
+			delete(openerMap, path)
 		}
+	}
+	f.lsp.queryExecutor.Evict(evictQueryKeys...)
+
+	queries := xslices.Map(files, func(file *file) incremental.Query[*ir.File] {
+		return file.irQuery
 	})
+
 	results, diagnosticReport, err := incremental.Run(
 		ctx,
 		f.lsp.queryExecutor,
