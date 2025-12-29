@@ -383,7 +383,7 @@ func modifySwiftPrefix(
 			return stringOverrideOptions{}
 		},
 		func(imageFile bufimage.ImageFile, stringOverrideOptions stringOverrideOptions) string {
-			return ""
+			return stringOverrideOptions.value
 		},
 		func(options *descriptorpb.FileOptions) string {
 			return options.GetSwiftPrefix()
