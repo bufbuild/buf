@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.62.0] - 2025-12-29
 
 - Add `swift_prefix` to managed mode.
@@ -1454,6 +1458,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.62.0...HEAD
 [v1.62.0]: https://github.com/bufbuild/buf/compare/v1.61.0...v1.62.0
 [v1.61.0]: https://github.com/bufbuild/buf/compare/v1.60.0...v1.61.0
 [v1.60.0]: https://github.com/bufbuild/buf/compare/v1.59.0...v1.60.0
