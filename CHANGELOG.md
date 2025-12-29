@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.62.1] - 2025-12-29
 
 - Fix default behavior for `swift_prefix` to remain unset when no override is provided in
@@ -1459,6 +1463,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.62.1...HEAD
 [v1.62.1]: https://github.com/bufbuild/buf/compare/v1.62.0...v1.62.1
 [v1.62.0]: https://github.com/bufbuild/buf/compare/v1.61.0...v1.62.0
 [v1.61.0]: https://github.com/bufbuild/buf/compare/v1.60.0...v1.61.0

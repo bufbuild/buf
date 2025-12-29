@@ -15,4 +15,4 @@
 package bufcli
 
 // Version is the CLI version of buf.
-const Version = "1.62.1"
+const Version = "1.62.2-dev"
