@@ -380,10 +380,10 @@ func modifySwiftPrefix(
 		bufconfig.FileOptionUnspecified,
 		bufconfig.FileOptionUnspecified,
 		func(bufimage.ImageFile) stringOverrideOptions {
-			return stringOverrideOptions{value: swiftPrefixValue(imageFile)}
+			return stringOverrideOptions{}
 		},
-		func(imageFile bufimage.ImageFile, _ stringOverrideOptions) string {
-			return swiftPrefixValue(imageFile)
+		func(imageFile bufimage.ImageFile, stringOverrideOptions stringOverrideOptions) string {
+			return ""
 		},
 		func(options *descriptorpb.FileOptions) string {
 			return options.GetSwiftPrefix()
