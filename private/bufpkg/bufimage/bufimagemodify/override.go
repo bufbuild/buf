@@ -422,20 +422,3 @@ func rubyPackageValue(imageFile bufimage.ImageFile) string {
 	}
 	return strings.Join(packageParts, "::")
 }
-
-// swiftPrefixValue returns the swift_prefix for the given ImageFile based on its
-// package declaration. If the image file doesn't have a package declaration, an
-// empty string is returned.
-func swiftPrefixValue(imageFile bufimage.ImageFile) string {
-	pkg := imageFile.FileDescriptorProto().GetPackage()
-	if pkg == "" {
-		return ""
-	}
-	packageParts := strings.Split(pkg, ".")
-	for i, part := range packageParts {
-		packageParts[i] = xstrings.ToPascalCase(part)
-	}
-	// We add a "_" as the suffix since this emulates the default behavior if swift_prefix
-	// is not set.
-	return strings.Join(packageParts, "_") + "_"
-}

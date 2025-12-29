@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix default behavior for `swift_prefix` to remain unset when no override is provided in
+  managed mode.
 
 ## [v1.62.0] - 2025-12-29
 
