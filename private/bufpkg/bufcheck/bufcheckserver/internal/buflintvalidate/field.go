@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -32,6 +33,7 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -67,6 +69,7 @@ const (
 	requiredFieldNumber       = 25
 	ignoreEmptyFieldNumber    = 26
 	ignoreFieldNumber         = 27
+	fieldMaskRulesFieldNumber = 28
 	// https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.StringRules
 	minLenFieldNumberInStringRules         = 2
 	maxLenFieldNumberInStringRules         = 3
@@ -98,6 +101,8 @@ const (
 	ltNowFieldNumberInTimestampRules  = 7
 	gtNowFieldNumberInTimestampRules  = 8
 	withInFieldNumberInTimestampRules = 9
+	// https://buf.build/bufbuild/protovalidate/docs/v1.1.0:buf.validate#buf.validate.FieldMaskRules
+	inFieldMaskRules = 2
 
 	exampleName = "example"
 )
@@ -134,6 +139,7 @@ var (
 		anyRulesFieldNumber:       string((&anypb.Any{}).ProtoReflect().Descriptor().FullName()),
 		durationRulesFieldNumber:  string((&durationpb.Duration{}).ProtoReflect().Descriptor().FullName()),
 		timestampRulesFieldNumber: string((&timestamppb.Timestamp{}).ProtoReflect().Descriptor().FullName()),
+		fieldMaskRulesFieldNumber: string((&fieldmaskpb.FieldMask{}).ProtoReflect().Descriptor().FullName()),
 	}
 	wrapperTypeNames = map[string]struct{}{
 		string((&wrapperspb.FloatValue{}).ProtoReflect().Descriptor().FullName()):  {},
@@ -290,6 +296,8 @@ func checkRulesForField(
 		return checkDurationRules(adder, fieldRules.GetDuration())
 	case timestampRulesFieldNumber:
 		return checkTimestampRules(adder, fieldRules.GetTimestamp())
+	case fieldMaskRulesFieldNumber:
+		checkFieldMaskRules(adder, fieldRules.GetFieldMask())
 	}
 	return nil
 }
@@ -736,6 +744,22 @@ func checkTimestampRules(adder *adder, timestampRules *validate.TimestampRules) 
 		}
 	}
 	return nil
+}
+
+func checkFieldMaskRules(adder *adder, fieldMaskRules *validate.FieldMaskRules) {
+	checkConst(adder, fieldMaskRules, fieldMaskRulesFieldNumber)
+	if len(fieldMaskRules.In) > 0 && len(fieldMaskRules.NotIn) > 0 {
+		for _, in := range fieldMaskRules.In {
+			if slices.Contains(fieldMaskRules.NotIn, in) {
+				adder.addForPathf(
+					[]int32{fieldMaskRulesFieldNumber, inFieldMaskRules},
+					"Field %q has path %q in both in and not_in rules.",
+					adder.fieldName(),
+					in,
+				)
+			}
+		}
+	}
 }
 
 func checkExampleValues(

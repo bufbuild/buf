@@ -18,6 +18,7 @@ package buf.validate;
 
 import "google/protobuf/descriptor.proto";
 import "google/protobuf/duration.proto";
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate";
@@ -109,6 +110,25 @@ message Rule {
 // MessageRules represents validation rules that are applied to the entire message.
 // It includes disabling options and a list of Rule messages representing Common Expression Language (CEL) validation rules.
 message MessageRules {
+  // `cel_expression` is a repeated field CEL expressions. Each expression specifies a validation
+  // rule to be applied to this message. These rules are written in Common Expression Language (CEL) syntax.
+  //
+  // This is a simplified form of the `cel` Rule field, where only `expression` is set. This allows for
+  // simpler syntax when defining CEL Rules where `id` and `message` derived from the `expression`. `id` will
+  // be same as the `expression`.
+  //
+  // For more information, [see our documentation](https://buf.build/docs/protovalidate/schemas/custom-rules/).
+  //
+  // ```proto
+  // message MyMessage {
+  //   // The field `foo` must be greater than 42.
+  //   option (buf.validate.message).cel_expression = "this.foo > 42";
+  //   // The field `foo` must be less than 84.
+  //   option (buf.validate.message).cel_expression = "this.foo < 84";
+  //   optional int32 foo = 1;
+  // }
+  // ```
+  repeated string cel_expression = 5;
   // `cel` is a repeated field of type Rule. Each Rule specifies a validation rule to be applied to this message.
   // These rules are written in Common Expression Language (CEL) syntax. For more information,
   // [see our documentation](https://buf.build/docs/protovalidate/schemas/custom-rules/).
@@ -201,6 +221,22 @@ message OneofRules {
 // FieldRules encapsulates the rules for each type of field. Depending on
 // the field, the correct set should be used to ensure proper validations.
 message FieldRules {
+  // `cel_expression` is a repeated field CEL expressions. Each expression specifies a validation
+  // rule to be applied to this message. These rules are written in Common Expression Language (CEL) syntax.
+  //
+  // This is a simplified form of the `cel` Rule field, where only `expression` is set. This allows for
+  // simpler syntax when defining CEL Rules where `id` and `message` derived from the `expression`. `id` will
+  // be same as the `expression`.
+  //
+  // For more information, [see our documentation](https://buf.build/docs/protovalidate/schemas/custom-rules/).
+  //
+  // ```proto
+  // message MyMessage {
+  //   // The field `value` must be greater than 42.
+  //   optional int32 value = 1 [(buf.validate.field).cel_expression = "this > 42"];
+  // }
+  // ```
+  repeated string cel_expression = 29;
   // `cel` is a repeated field used to represent a textual expression
   // in the Common Expression Language (CEL) syntax. For more information,
   // [see our documentation](https://buf.build/docs/protovalidate/schemas/custom-rules/).
@@ -313,6 +349,7 @@ message FieldRules {
     // Well-Known Field Types
     AnyRules any = 20;
     DurationRules duration = 21;
+    FieldMaskRules field_mask = 28;
     TimestampRules timestamp = 22;
   }
 
@@ -3731,6 +3768,29 @@ message StringRules {
       }
     ];
 
+    // `ulid` specifies that the field value must be a valid ULID (Universally Unique
+    // Lexicographically Sortable Identifier) as defined by the [ULID specification](https://github.com/ulid/spec).
+    // If the field value isn't a valid ULID, an error message will be generated.
+    //
+    // ```proto
+    // message MyString {
+    //   // value must be a valid ULID
+    //   string value = 1 [(buf.validate.field).string.ulid = true];
+    // }
+    // ```
+    bool ulid = 35 [
+      (predefined).cel = {
+        id: "string.ulid"
+        message: "value must be a valid ULID"
+        expression: "!rules.ulid || this == '' || this.matches('^[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}$')"
+      },
+      (predefined).cel = {
+        id: "string.ulid_empty"
+        message: "value is empty, which is not a valid ULID"
+        expression: "!rules.ulid || this != ''"
+      }
+    ];
+
     // `well_known_regex` specifies a common well-known pattern
     // defined as a regex. If the field value doesn't match the well-known
     // regex, an error message will be generated.
@@ -3943,7 +4003,7 @@ message BytesRules {
   // the string.
   // If the field value doesn't meet the requirement, an error message is generated.
   //
-  // ```protobuf
+  // ```proto
   // message MyBytes {
   //   // value does not contain \x02\x03
   //   optional bytes value = 1 [(buf.validate.field).bytes.contains = "\x02\x03"];
@@ -3958,7 +4018,7 @@ message BytesRules {
   // values. If the field value doesn't match any of the specified values, an
   // error message is generated.
   //
-  // ```protobuf
+  // ```proto
   // message MyBytes {
   //   // value must in ["\x01\x02", "\x02\x03", "\x03\x04"]
   //   optional bytes value = 1 [(buf.validate.field).bytes.in = {"\x01\x02", "\x02\x03", "\x03\x04"}];
@@ -4050,6 +4110,31 @@ message BytesRules {
         id: "bytes.ipv6_empty"
         message: "value is empty, which is not a valid IPv6 address"
         expression: "!rules.ipv6 || this.size() != 0"
+      }
+    ];
+
+    // `uuid` ensures that the field `value` encodes the 128-bit UUID data as
+    // defined by [RFC 4122](https://datatracker.ietf.org/doc/html/rfc4122#section-4.1.2).
+    // The field must contain exactly 16 bytes
+    // representing the UUID. If the field value isn't a valid UUID, an error
+    // message will be generated.
+    //
+    // ```proto
+    // message MyBytes {
+    //   // value must be a valid UUID
+    //   optional bytes value = 1 [(buf.validate.field).bytes.uuid = true];
+    // }
+    // ```
+    bool uuid = 15 [
+      (predefined).cel = {
+        id: "bytes.uuid"
+        message: "value must be a valid UUID"
+        expression: "!rules.uuid || this.size() == 0 || this.size() == 16"
+      },
+      (predefined).cel = {
+        id: "bytes.uuid_empty"
+        message: "value is empty, which is not a valid UUID"
+        expression: "!rules.uuid || this.size() != 0"
       }
     ];
   }
@@ -4589,6 +4674,93 @@ message DurationRules {
   // ```
   repeated google.protobuf.Duration example = 9 [(predefined).cel = {
     id: "duration.example"
+    expression: "true"
+  }];
+
+  // Extension fields in this range that have the (buf.validate.predefined)
+  // option set will be treated as predefined field rules that can then be
+  // set on the field options of other fields to apply field rules.
+  // Extension numbers 1000 to 99999 are reserved for extension numbers that are
+  // defined in the [Protobuf Global Extension Registry][1]. Extension numbers
+  // above this range are reserved for extension numbers that are not explicitly
+  // assigned. For rules defined in publicly-consumed schemas, use of extensions
+  // above 99999 is discouraged due to the risk of conflicts.
+  //
+  // [1]: https://github.com/protocolbuffers/protobuf/blob/main/docs/options.md
+  extensions 1000 to max;
+}
+
+// FieldMaskRules describe rules applied exclusively to the `google.protobuf.FieldMask` well-known type.
+message FieldMaskRules {
+  // `const` dictates that the field must match the specified value of the `google.protobuf.FieldMask` type exactly.
+  // If the field's value deviates from the specified value, an error message
+  // will be generated.
+  //
+  // ```proto
+  // message MyFieldMask {
+  //   // value must equal ["a"]
+  //   google.protobuf.FieldMask value = 1 [(buf.validate.field).field_mask.const = {
+  //       paths: ["a"]
+  //   }];
+  // }
+  // ```
+  optional google.protobuf.FieldMask const = 1 [(predefined).cel = {
+    id: "field_mask.const"
+    expression: "this.paths != getField(rules, 'const').paths ? 'value must equal paths %s'.format([getField(rules, 'const').paths]) : ''"
+  }];
+
+  // `in` requires the field value to only contain paths matching specified
+  // values or their subpaths.
+  // If any of the field value's paths doesn't match the rule,
+  // an error message is generated.
+  // See: https://protobuf.dev/reference/protobuf/google.protobuf/#field-mask
+  //
+  // ```proto
+  // message MyFieldMask {
+  //   //  The `value` FieldMask must only contain paths listed in `in`.
+  //   google.protobuf.FieldMask value = 1 [(buf.validate.field).field_mask = {
+  //       in: ["a", "b", "c.a"]
+  //   }];
+  // }
+  // ```
+  repeated string in = 2 [(predefined).cel = {
+    id: "field_mask.in"
+    expression: "!this.paths.all(p, p in getField(rules, 'in') || getField(rules, 'in').exists(f, p.startsWith(f+'.'))) ? 'value must only contain paths in %s'.format([getField(rules, 'in')]) : ''"
+  }];
+
+  // `not_in` requires the field value to not contain paths matching specified
+  // values or their subpaths.
+  // If any of the field value's paths matches the rule,
+  // an error message is generated.
+  // See: https://protobuf.dev/reference/protobuf/google.protobuf/#field-mask
+  //
+  // ```proto
+  // message MyFieldMask {
+  //   //  The `value` FieldMask shall not contain paths listed in `not_in`.
+  //   google.protobuf.FieldMask value = 1 [(buf.validate.field).field_mask = {
+  //       not_in: ["forbidden", "immutable", "c.a"]
+  //   }];
+  // }
+  // ```
+  repeated string not_in = 3 [(predefined).cel = {
+    id: "field_mask.not_in"
+    expression: "!this.paths.all(p, !(p in getField(rules, 'not_in') || getField(rules, 'not_in').exists(f, p.startsWith(f+'.')))) ? 'value must not contain any paths in %s'.format([getField(rules, 'not_in')]) : ''"
+  }];
+
+  // `example` specifies values that the field may have. These values SHOULD
+  // conform to other rules. `example` values will not impact validation
+  // but may be used as helpful guidance on how to populate the given field.
+  //
+  // ```proto
+  // message MyFieldMask {
+  //   google.protobuf.FieldMask value = 1 [
+  //     (buf.validate.field).field_mask.example = { paths: ["a", "b"] },
+  //     (buf.validate.field).field_mask.example = { paths: ["c.a", "d"] },
+  //   ];
+  // }
+  // ```
+  repeated google.protobuf.FieldMask example = 4 [(predefined).cel = {
+    id: "field_mask.example"
     expression: "true"
   }];
 

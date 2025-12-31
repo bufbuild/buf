@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package example.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/field_mask.proto";
+
+message FieldMaskTest {
+  // valid
+  google.protobuf.FieldMask const_field_mask = 1 [(buf.validate.field).field_mask.const = {
+    paths: ["a"]
+  }];
+  google.protobuf.FieldMask in_field_mask = 2 [(buf.validate.field).field_mask.in = "some_field"];
+  google.protobuf.FieldMask not_in_field_mask = 3 [(buf.validate.field).field_mask.not_in = "some_other_field"];
+  // invalid
+  google.protobuf.FieldMask not_string = 4 [(buf.validate.field).string.const = "field"];
+  // const should be the only field if defined
+  google.protobuf.FieldMask in_and_const = 5 [
+    (buf.validate.field).field_mask.in = "a",
+    (buf.validate.field).field_mask.const = {
+      paths: ["b"]
+    }];
+  // valid
+  google.protobuf.FieldMask no_conflict = 6 [
+    (buf.validate.field).field_mask.in = "a",
+    (buf.validate.field).field_mask.not_in = "b",
+    (buf.validate.field).field_mask.not_in = "c"
+  ];
+  // conflict between in and not_in
+  google.protobuf.FieldMask conflict = 7 [
+    (buf.validate.field).field_mask.in = "a",
+    (buf.validate.field).field_mask.not_in = "b",
+    (buf.validate.field).field_mask.not_in = "a"
+  ];
+}
