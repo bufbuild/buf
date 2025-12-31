@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -100,6 +101,8 @@ const (
 	ltNowFieldNumberInTimestampRules  = 7
 	gtNowFieldNumberInTimestampRules  = 8
 	withInFieldNumberInTimestampRules = 9
+	// https://buf.build/bufbuild/protovalidate/docs/v1.1.0:buf.validate#buf.validate.FieldMaskRules
+	inFieldMaskRules = 2
 
 	exampleName = "example"
 )
@@ -293,6 +296,8 @@ func checkRulesForField(
 		return checkDurationRules(adder, fieldRules.GetDuration())
 	case timestampRulesFieldNumber:
 		return checkTimestampRules(adder, fieldRules.GetTimestamp())
+	case fieldMaskRulesFieldNumber:
+		checkFieldMaskRules(adder, fieldRules.GetFieldMask())
 	}
 	return nil
 }
@@ -739,6 +744,22 @@ func checkTimestampRules(adder *adder, timestampRules *validate.TimestampRules) 
 		}
 	}
 	return nil
+}
+
+func checkFieldMaskRules(adder *adder, fieldMaskRules *validate.FieldMaskRules) {
+	checkConst(adder, fieldMaskRules, fieldMaskRulesFieldNumber)
+	if len(fieldMaskRules.In) > 0 && len(fieldMaskRules.NotIn) > 0 {
+		for _, in := range fieldMaskRules.In {
+			if slices.Contains(fieldMaskRules.NotIn, in) {
+				adder.addForPathf(
+					[]int32{fieldMaskRulesFieldNumber, inFieldMaskRules},
+					"Field %q has path %q in both in and not_in rules.",
+					adder.fieldName(),
+					in,
+				)
+			}
+		}
+	}
 }
 
 func checkExampleValues(
