@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Update `PROTOVALIDATE` lint rule to support field mask rules.
 
 ## [v1.62.1] - 2025-12-29
 
