@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufapp"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
+	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
@@ -271,7 +272,6 @@ func doBrowserLogin(
 	container appext.Container,
 	remote string,
 ) (string, error) {
-	baseURL := "https://" + remote
 	clientName, err := getClientName()
 	if err != nil {
 		return "", err
@@ -283,6 +283,10 @@ func doBrowserLogin(
 	appConfig, err := bufapp.NewConfig(container, externalConfig)
 	if err != nil {
 		return "", err
+	}
+	baseURL := buftransport.PrependHTTPS(remote)
+	if appConfig.TLS == nil {
+		baseURL = buftransport.PrependHTTP(remote)
 	}
 	client := httpclient.NewClient(appConfig.TLS)
 	oauth2Client := oauth2.NewClient(baseURL, client)
