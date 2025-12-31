@@ -32,6 +32,7 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -67,6 +68,7 @@ const (
 	requiredFieldNumber       = 25
 	ignoreEmptyFieldNumber    = 26
 	ignoreFieldNumber         = 27
+	fieldMaskRulesFieldNumber = 28
 	// https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.StringRules
 	minLenFieldNumberInStringRules         = 2
 	maxLenFieldNumberInStringRules         = 3
@@ -134,6 +136,7 @@ var (
 		anyRulesFieldNumber:       string((&anypb.Any{}).ProtoReflect().Descriptor().FullName()),
 		durationRulesFieldNumber:  string((&durationpb.Duration{}).ProtoReflect().Descriptor().FullName()),
 		timestampRulesFieldNumber: string((&timestamppb.Timestamp{}).ProtoReflect().Descriptor().FullName()),
+		fieldMaskRulesFieldNumber: string((&fieldmaskpb.FieldMask{}).ProtoReflect().Descriptor().FullName()),
 	}
 	wrapperTypeNames = map[string]struct{}{
 		string((&wrapperspb.FloatValue{}).ProtoReflect().Descriptor().FullName()):  {},

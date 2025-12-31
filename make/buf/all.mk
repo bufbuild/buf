@@ -46,7 +46,7 @@ LICENSE_HEADER_YEAR_RANGE := 2020-2025
 LICENSE_HEADER_IGNORES := \/testdata enterprise
 BANDEPS_CONFIG := etc/bandeps/bandeps.yaml
 BUFPRIVATEUSAGE_PKGS := ./private/...
-PROTOVALIDATE_VERSION := v1.0.0
+PROTOVALIDATE_VERSION := v1.1.0
 # Comment out to use released buf
 #BUF_GO_INSTALL_PATH := ./cmd/buf
 
