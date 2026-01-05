@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buflsp
+package buflsp_test
 
 import (
 	"context"
@@ -25,6 +25,7 @@ import (
 	"buf.build/go/app"
 	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/bufbuild/buf/private/buf/bufwkt/bufwktstore"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -120,7 +121,7 @@ func setupLSPServer(
 	stream := jsonrpc2.NewStream(serverConn)
 
 	go func() {
-		conn, err := Serve(
+		conn, err := buflsp.Serve(
 			ctx,
 			wktBucket,
 			appextContainer,

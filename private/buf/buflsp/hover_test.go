@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buflsp
+package buflsp_test
 
 import (
 	"path/filepath"
