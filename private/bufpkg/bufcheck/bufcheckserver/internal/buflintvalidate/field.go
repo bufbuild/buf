@@ -1172,11 +1172,12 @@ func checkLenRules(
 				{ruleFieldNumber, minLenFieldNumber},
 				{ruleFieldNumber, maxLenFieldNumber},
 			},
-			"Field %q has equal %s and %s, use %s.const instead.",
+			"Field %q has equal %s and %s, use %s.%s instead.",
 			adder.fieldName(),
 			adder.getFieldRuleName(ruleFieldNumber, minLenFieldNumber),
 			maxLenFieldName,
 			adder.getFieldRuleName(ruleFieldNumber),
+			lenFieldName,
 		)
 	}
 	return nil
