@@ -63,7 +63,7 @@ type file struct {
 
 	ir                   *ir.File
 	irQuery              queries.IR
-	fileQuery            queries.File
+	evictQueryKeys       []any
 	referenceableSymbols map[ir.FullName]*symbol
 	referenceSymbols     []*symbol
 	symbols              []*symbol
@@ -101,9 +101,7 @@ func (f *file) Reset(ctx context.Context) {
 	}
 	// Evict the query key if there is a query cached on the file. We cache the [queries.File]
 	// query since this allows the executor to evict all dependent queries, e.g. AST and IR.
-	if f.fileQuery.Path != "" {
-		f.lsp.queryExecutor.Evict(f.fileQuery.Key())
-	}
+	f.lsp.queryExecutor.Evict(f.evictQueryKeys...)
 	// Clear the file as nothing should use it after reset. This asserts that.
 	*f = file{}
 }
@@ -245,16 +243,22 @@ func (f *file) RefreshIR(ctx context.Context) {
 		// update the opener and set a new query.
 		if current == nil || current.Text() != file.file.Text() {
 			openerMap[path] = file.file
-			// Add the query key for eviction if there is a query cached on the file. We cache
-			// the [queries.File] query since this allows the executor to evict all dependent
-			// queries, e.g. AST and IR.
-			if file.fileQuery.Path != "" {
-				evictQueryKeys = append(evictQueryKeys, file.fileQuery.Key())
-			}
-			file.fileQuery = queries.File{
-				Opener:      file.lsp.opener,
-				Path:        path,
-				ReportError: true, // [queries.AST] sets this to be true.
+			evictQueryKeys = append(evictQueryKeys, file.evictQueryKeys...)
+
+			// Set new queries on the file. We must evict [queries.File] with ReportError set to
+			// both true and false, since [queries.AST] depends on ReportError set to true, and
+			// [queries.IR] depends on ReportError set to false.
+			file.evictQueryKeys = []any{
+				queries.File{
+					Opener:      file.lsp.opener,
+					Path:        path,
+					ReportError: true,
+				}.Key(),
+				queries.File{
+					Opener:      file.lsp.opener,
+					Path:        path,
+					ReportError: false,
+				}.Key(),
 			}
 			file.irQuery = queries.IR{
 				Opener:  file.lsp.opener,
