@@ -53,10 +53,11 @@ func (nopModuleKeyProvider) GetModuleKeysForModuleRefs(context.Context, []bufpar
 // Returns the client JSON-RPC connection and the test file URI.
 func setupLSPServer(
 	t *testing.T,
-	ctx context.Context,
 	testProtoPath string,
 ) (jsonrpc2.Conn, protocol.URI) {
 	t.Helper()
+
+	ctx := t.Context()
 
 	logger := slogtestext.NewLogger(t)
 

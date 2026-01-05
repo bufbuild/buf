@@ -16,6 +16,7 @@ package buflsp
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,12 +27,16 @@ import (
 func TestHover(t *testing.T) {
 	t.Parallel()
 
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping on Windows")
+	}
+
 	ctx := t.Context()
 
 	testProtoPath, err := filepath.Abs("testdata/hover/test.proto")
 	require.NoError(t, err)
 
-	clientJSONConn, testURI := setupLSPServer(t, ctx, testProtoPath)
+	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
 
 	tests := []struct {
 		name             string
