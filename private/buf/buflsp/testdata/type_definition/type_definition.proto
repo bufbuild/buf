@@ -1,0 +1,147 @@
+syntax = "proto3";
+
+package type_definition.v1;
+
+// Product represents a product in the catalog.
+message Product {
+  // The product ID.
+  string id = 1;
+
+  // The product category.
+  Category category = 2;
+
+  // The product vendor.
+  Vendor vendor = 3;
+
+  // The product tags.
+  repeated Tag tags = 4;
+
+  // The product metadata.
+  map<string, Metadata> metadata = 5;
+}
+
+// Category represents a product category.
+message Category {
+  // The category name.
+  string name = 1;
+
+  // The parent category.
+  Category parent = 2;
+}
+
+// Vendor represents a product vendor.
+message Vendor {
+  // The vendor name.
+  string name = 1;
+
+  // The vendor type.
+  VendorType type = 2;
+}
+
+// Tag represents a product tag.
+message Tag {
+  // The tag key.
+  string key = 1;
+
+  // The tag value.
+  string value = 2;
+}
+
+// Metadata represents arbitrary metadata.
+message Metadata {
+  // The metadata value.
+  string value = 1;
+}
+
+// VendorType represents the type of vendor.
+enum VendorType {
+  // The vendor type is not specified.
+  VENDOR_TYPE_UNSPECIFIED = 0;
+
+  // A direct vendor.
+  VENDOR_TYPE_DIRECT = 1;
+
+  // A reseller vendor.
+  VENDOR_TYPE_RESELLER = 2;
+}
+
+// Order represents a customer order.
+message Order {
+  // The order ID.
+  string id = 1;
+
+  // The ordered product.
+  Product product = 2;
+
+  // The order status.
+  OrderStatus status = 3;
+
+  // The customer.
+  Customer customer = 4;
+}
+
+// Customer represents a customer.
+message Customer {
+  // The customer name.
+  string name = 1;
+
+  // The customer contact.
+  Contact contact = 2;
+}
+
+// Contact represents contact information.
+message Contact {
+  // The email address.
+  string email = 1;
+
+  // The phone number.
+  string phone = 2;
+}
+
+// OrderStatus represents the status of an order.
+enum OrderStatus {
+  // The order status is not specified.
+  ORDER_STATUS_UNSPECIFIED = 0;
+
+  // The order is pending.
+  ORDER_STATUS_PENDING = 1;
+
+  // The order is confirmed.
+  ORDER_STATUS_CONFIRMED = 2;
+}
+
+// ProductService provides operations for products.
+service ProductService {
+  // GetProduct retrieves a product.
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse);
+
+  // CreateProduct creates a new product.
+  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
+}
+
+// GetProductRequest is the request for GetProduct.
+message GetProductRequest {
+  // The product ID.
+  string product_id = 1;
+}
+
+// GetProductResponse is the response for GetProduct.
+message GetProductResponse {
+  // The retrieved product.
+  Product product = 1;
+}
+
+// CreateProductRequest is the request for CreateProduct.
+message CreateProductRequest {
+  // The product to create.
+  Product product = 1;
+
+  // The initial category.
+  Category category = 2;
+}
+
+// CreateProductResponse is the response for CreateProduct.
+message CreateProductResponse {
+  // The created product.
+  Product product = 1;
+}
