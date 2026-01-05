@@ -55,19 +55,19 @@ func TestCompletion(t *testing.T) {
 		},
 		{
 			name:             "complete_builtin_service",
-			line:             14, // Line 15 in file (1-indexed) = line 14 in LSP (0-indexed) with "// complete_builtin_service"
-			character:        2,  // Indented position where "rpc" would be
+			line:             14,
+			character:        2, // Indented position where "rpc" would be
 			expectedContains: []string{"rpc", "option"},
 		},
 		{
 			name:             "complete_rpc_request_type",
-			line:             13, // Line 14 in file (1-indexed) = line 13 in LSP (0-indexed) with RPC definition
+			line:             13,
 			character:        uint32(len("  rpc GetUser(Get") - 1),
 			expectedContains: []string{"GetUserRequest", "GetUserResponse"},
 		},
 		{
 			name:             "complete_rpc_response_type",
-			line:             13, // Line 14 in file (1-indexed) = line 13 in LSP (0-indexed) with RPC definition
+			line:             13,
 			character:        uint32(len("  rpc GetUser(Get) returns (Get") - 1),
 			expectedContains: []string{"GetUserRequest", "GetUserResponse"},
 		},
