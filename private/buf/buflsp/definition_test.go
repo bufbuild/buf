@@ -107,7 +107,7 @@ func TestDefinition(t *testing.T) {
 			line:               96, // Line with "Account account = 1;" in CreateAccountRequest
 			character:          2,  // On "Account" type
 			expectedDefURI:     testURI,
-			expectedDefLine:    7,  // message Account definition
+			expectedDefLine:    7, // message Account definition
 			expectedDefCharMin: 8,
 			expectedDefCharMax: 15,
 		},

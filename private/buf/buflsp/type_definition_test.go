@@ -99,13 +99,13 @@ func TestTypeDefinition(t *testing.T) {
 			line:                81, // Line with "Product product = 2;" in Order message
 			character:           2,  // On "Product" type name
 			expectedTypeDefURI:  testURI,
-			expectedTypeDefLine: 7,  // message Product definition
+			expectedTypeDefLine: 7, // message Product definition
 			expectedTypeDefChar: 8,
 		},
 		{
 			name:                "type_definition_of_status_field",
-			line:                84,  // Line with "OrderStatus status = 3;"
-			character:           2,   // On "OrderStatus" type name
+			line:                84, // Line with "OrderStatus status = 3;"
+			character:           2,  // On "OrderStatus" type name
 			expectedTypeDefURI:  testURI,
 			expectedTypeDefLine: 109, // enum OrderStatus definition
 			expectedTypeDefChar: 5,
@@ -131,7 +131,7 @@ func TestTypeDefinition(t *testing.T) {
 			line:                144, // Line with "Product product = 1;" in CreateProductRequest
 			character:           2,   // On "Product" type name
 			expectedTypeDefURI:  testURI,
-			expectedTypeDefLine: 7,   // message Product definition
+			expectedTypeDefLine: 7, // message Product definition
 			expectedTypeDefChar: 8,
 		},
 		{
@@ -139,7 +139,7 @@ func TestTypeDefinition(t *testing.T) {
 			line:                147, // Line with "Category category = 2;" in CreateProductRequest
 			character:           2,   // On "Category" type name
 			expectedTypeDefURI:  testURI,
-			expectedTypeDefLine: 31,  // message Category definition
+			expectedTypeDefLine: 31, // message Category definition
 			expectedTypeDefChar: 8,
 		},
 		{
