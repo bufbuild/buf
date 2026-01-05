@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 func TestDefinition(t *testing.T) {
@@ -31,12 +32,17 @@ func TestDefinition(t *testing.T) {
 	testProtoPath, err := filepath.Abs("testdata/definition/definition.proto")
 	require.NoError(t, err)
 
+	typesProtoPath, err := filepath.Abs("testdata/definition/types.proto")
+	require.NoError(t, err)
+
 	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
+	typesURI := uri.New(typesProtoPath)
 
 	tests := []struct {
 		name               string
 		line               uint32
 		character          uint32
+		expectedDefURI     protocol.URI
 		expectedDefLine    uint32
 		expectedDefCharMin uint32
 		expectedDefCharMax uint32
@@ -44,75 +50,102 @@ func TestDefinition(t *testing.T) {
 	}{
 		{
 			name:               "definition_of_account_type_reference",
-			line:               10, // Line with "AccountType type = 2;"
+			line:               12, // Line with "AccountType type = 2;"
 			character:          2,  // On "AccountType" type
-			expectedDefLine:    41, // enum AccountType definition
+			expectedDefURI:     testURI,
+			expectedDefLine:    49, // enum AccountType definition
 			expectedDefCharMin: 5,
 			expectedDefCharMax: 16,
 		},
 		{
 			name:               "definition_of_person_type_reference",
-			line:               13, // Line with "Person owner = 3;"
+			line:               15, // Line with "Person owner = 3;"
 			character:          2,  // On "Person" type
-			expectedDefLine:    17, // message Person definition
+			expectedDefURI:     testURI,
+			expectedDefLine:    25, // message Person definition
 			expectedDefCharMin: 8,
 			expectedDefCharMax: 14,
 		},
 		{
 			name:               "definition_of_address_type_reference",
-			line:               25, // Line with "Address address = 3;"
+			line:               33, // Line with "Address address = 3;"
 			character:          2,  // On "Address" type
-			expectedDefLine:    29, // message Address definition
+			expectedDefURI:     testURI,
+			expectedDefLine:    37, // message Address definition
 			expectedDefCharMin: 8,
 			expectedDefCharMax: 15,
 		},
 		{
 			name:               "definition_of_country_code_reference",
-			line:               37, // Line with "CountryCode country = 3;"
+			line:               45, // Line with "CountryCode country = 3;"
 			character:          2,  // On "CountryCode" type
-			expectedDefLine:    53, // enum CountryCode definition
+			expectedDefURI:     testURI,
+			expectedDefLine:    61, // enum CountryCode definition
 			expectedDefCharMin: 5,
 			expectedDefCharMax: 16,
 		},
 		{
 			name:               "definition_of_rpc_request_type",
-			line:               67, // Line with "rpc GetAccount(GetAccountRequest)"
+			line:               75, // Line with "rpc GetAccount(GetAccountRequest)"
 			character:          18, // On "GetAccountRequest"
-			expectedDefLine:    74, // message GetAccountRequest definition
+			expectedDefURI:     testURI,
+			expectedDefLine:    82, // message GetAccountRequest definition
 			expectedDefCharMin: 8,
 			expectedDefCharMax: 25,
 		},
 		{
 			name:               "definition_of_rpc_response_type",
-			line:               67, // Line with "returns (GetAccountResponse)"
+			line:               75, // Line with "returns (GetAccountResponse)"
 			character:          45, // On "GetAccountResponse"
-			expectedDefLine:    80, // message GetAccountResponse definition
+			expectedDefURI:     testURI,
+			expectedDefLine:    88, // message GetAccountResponse definition
 			expectedDefCharMin: 8,
 			expectedDefCharMax: 26,
 		},
 		{
 			name:               "definition_of_account_field_in_request",
-			line:               88, // Line with "Account account = 1;" in CreateAccountRequest
+			line:               96, // Line with "Account account = 1;" in CreateAccountRequest
 			character:          2,  // On "Account" type
-			expectedDefLine:    5,  // message Account definition
+			expectedDefURI:     testURI,
+			expectedDefLine:    7,  // message Account definition
 			expectedDefCharMin: 8,
 			expectedDefCharMax: 15,
 		},
 		{
 			name:               "definition_of_field_name",
-			line:               10, // Line with "AccountType type = 2;"
+			line:               12, // Line with "AccountType type = 2;"
 			character:          14, // On "type" field name
-			expectedDefLine:    10,
+			expectedDefURI:     testURI,
+			expectedDefLine:    12,
 			expectedDefCharMin: 14,
 			expectedDefCharMax: 18,
 		},
 		{
 			name:               "definition_of_service",
-			line:               65, // Line with "service AccountService {"
+			line:               73, // Line with "service AccountService {"
 			character:          8,  // On "AccountService"
-			expectedDefLine:    65,
+			expectedDefURI:     testURI,
+			expectedDefLine:    73,
 			expectedDefCharMin: 8,
 			expectedDefCharMax: 22,
+		},
+		{
+			name:               "definition_of_status_imported_type",
+			line:               18, // Line with "Status status = 4;"
+			character:          2,  // On "Status" type
+			expectedDefURI:     typesURI,
+			expectedDefLine:    5, // enum Status definition in types.proto
+			expectedDefCharMin: 5,
+			expectedDefCharMax: 11,
+		},
+		{
+			name:               "definition_of_timestamp_imported_type",
+			line:               21, // Line with "Timestamp created_at = 5;"
+			character:          2,  // On "Timestamp" type
+			expectedDefURI:     typesURI,
+			expectedDefLine:    17, // message Timestamp definition in types.proto
+			expectedDefCharMin: 8,
+			expectedDefCharMax: 17,
 		},
 		{
 			name:               "definition_of_syntax_keyword",
@@ -156,7 +189,7 @@ func TestDefinition(t *testing.T) {
 			} else {
 				require.Len(t, locations, 1, "expected exactly one definition location")
 				location := locations[0]
-				assert.Equal(t, testURI, location.URI)
+				assert.Equal(t, tt.expectedDefURI, location.URI)
 				assert.Equal(t, tt.expectedDefLine, location.Range.Start.Line)
 				assert.GreaterOrEqual(t, location.Range.Start.Character, tt.expectedDefCharMin)
 				assert.LessOrEqual(t, location.Range.Start.Character, tt.expectedDefCharMax)

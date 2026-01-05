@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package definition.v1;
 
+import "types.proto";
+
 // Account represents a user account.
 message Account {
   // The account ID.
@@ -12,6 +14,12 @@ message Account {
 
   // The account owner.
   Person owner = 3;
+
+  // The account status.
+  Status status = 4;
+
+  // The creation timestamp.
+  Timestamp created_at = 5;
 }
 
 // Person represents an individual.

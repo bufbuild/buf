@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package type_definition.v1;
 
+import "types.proto";
+
 // Product represents a product in the catalog.
 message Product {
   // The product ID.
@@ -18,6 +20,12 @@ message Product {
 
   // The product metadata.
   map<string, Metadata> metadata = 5;
+
+  // The product priority.
+  Priority priority = 6;
+
+  // The audit information.
+  Audit audit = 7;
 }
 
 // Category represents a product category.
