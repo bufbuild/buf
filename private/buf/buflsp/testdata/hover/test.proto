@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package example.v1;
+
+// User represents a user in the system.
+// This is a multi-line comment that provides
+// detailed information about the User message.
+message User {
+  // The unique identifier for the user.
+  string id = 1;
+
+  // The user's email address.
+  string email = 2;
+
+  // The user's current status.
+  Status status = 3;
+}
+
+// Status represents the current state of a user.
+enum Status {
+  // The status is not specified.
+  STATUS_UNSPECIFIED = 0;
+
+  // The user is active.
+  STATUS_ACTIVE = 1;
+
+  // The user is inactive.
+  STATUS_INACTIVE = 2;
+}
+
+// UserService provides operations for managing users.
+service UserService {
+  // GetUser retrieves a user by their ID.
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+}
+
+// GetUserRequest is the request message for GetUser.
+message GetUserRequest {
+  // The ID of the user to retrieve.
+  string user_id = 1;
+}
+
+// GetUserResponse is the response message for GetUser.
+message GetUserResponse {
+  // The retrieved user.
+  User user = 1;
+}
