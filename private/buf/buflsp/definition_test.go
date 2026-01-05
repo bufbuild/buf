@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buflsp
+package buflsp_test
 
 import (
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,10 +25,6 @@ import (
 
 func TestDefinition(t *testing.T) {
 	t.Parallel()
-
-	if runtime.GOOS == "windows" {
-		t.Skip("Skipping on Windows")
-	}
 
 	ctx := t.Context()
 

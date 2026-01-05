@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buflsp
+package buflsp_test
 
 import (
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,10 +25,6 @@ import (
 
 func TestTypeDefinition(t *testing.T) {
 	t.Parallel()
-
-	if runtime.GOOS == "windows" {
-		t.Skip("Skipping on Windows")
-	}
 
 	ctx := t.Context()
 
@@ -96,8 +91,8 @@ func TestTypeDefinition(t *testing.T) {
 		},
 		{
 			name:                "type_definition_of_status_field",
-			line:                76, // Line with "OrderStatus status = 3;"
-			character:           2,  // On "OrderStatus" type name
+			line:                76,  // Line with "OrderStatus status = 3;"
+			character:           2,   // On "OrderStatus" type name
 			expectedTypeDefLine: 101, // enum OrderStatus definition
 			expectedTypeDefChar: 5,
 		},
