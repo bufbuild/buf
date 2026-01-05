@@ -41,6 +41,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 // nopModuleKeyProvider is a no-op implementation of ModuleKeyProvider for testing
@@ -150,11 +151,10 @@ func setupLSPServer(
 	})
 
 	testWorkspaceDir := filepath.Dir(testProtoPath)
-	testURI := protocol.URI("file:///" + testProtoPath)
-
+	testURI := uri.New("file://" + testProtoPath)
 	var initResult protocol.InitializeResult
 	_, initErr := clientJSONConn.Call(ctx, protocol.MethodInitialize, &protocol.InitializeParams{
-		RootURI: protocol.URI("file:///" + testWorkspaceDir),
+		RootURI: uri.New("file://" + testWorkspaceDir),
 		Capabilities: protocol.ClientCapabilities{
 			TextDocument: &protocol.TextDocumentClientCapabilities{},
 		},
