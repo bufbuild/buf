@@ -151,10 +151,10 @@ func setupLSPServer(
 	})
 
 	testWorkspaceDir := filepath.Dir(testProtoPath)
-	testURI := uri.New("file://" + testProtoPath)
+	testURI := uri.New(testProtoPath)
 	var initResult protocol.InitializeResult
 	_, initErr := clientJSONConn.Call(ctx, protocol.MethodInitialize, &protocol.InitializeParams{
-		RootURI: uri.New("file://" + testWorkspaceDir),
+		RootURI: uri.New(testWorkspaceDir),
 		Capabilities: protocol.ClientCapabilities{
 			TextDocument: &protocol.TextDocumentClientCapabilities{},
 		},
