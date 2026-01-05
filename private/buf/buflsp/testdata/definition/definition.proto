@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package definition.v1;
+
+// Account represents a user account.
+message Account {
+  // The account ID.
+  string id = 1;
+
+  // The account type.
+  AccountType type = 2;
+
+  // The account owner.
+  Person owner = 3;
+}
+
+// Person represents an individual.
+message Person {
+  // The person's name.
+  string name = 1;
+
+  // The person's email.
+  string email = 2;
+
+  // The person's address.
+  Address address = 3;
+}
+
+// Address represents a physical address.
+message Address {
+  // The street address.
+  string street = 1;
+
+  // The city.
+  string city = 2;
+
+  // The country code.
+  CountryCode country = 3;
+}
+
+// AccountType represents the type of account.
+enum AccountType {
+  // The account type is not specified.
+  ACCOUNT_TYPE_UNSPECIFIED = 0;
+
+  // A personal account.
+  ACCOUNT_TYPE_PERSONAL = 1;
+
+  // A business account.
+  ACCOUNT_TYPE_BUSINESS = 2;
+}
+
+// CountryCode represents an ISO country code.
+enum CountryCode {
+  // The country code is not specified.
+  COUNTRY_CODE_UNSPECIFIED = 0;
+
+  // United States.
+  COUNTRY_CODE_US = 1;
+
+  // Canada.
+  COUNTRY_CODE_CA = 2;
+}
+
+// AccountService provides operations for managing accounts.
+service AccountService {
+  // GetAccount retrieves an account by ID.
+  rpc GetAccount(GetAccountRequest) returns (GetAccountResponse);
+
+  // CreateAccount creates a new account.
+  rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
+}
+
+// GetAccountRequest is the request for GetAccount.
+message GetAccountRequest {
+  // The account ID to retrieve.
+  string account_id = 1;
+}
+
+// GetAccountResponse is the response for GetAccount.
+message GetAccountResponse {
+  // The retrieved account.
+  Account account = 1;
+}
+
+// CreateAccountRequest is the request for CreateAccount.
+message CreateAccountRequest {
+  // The account to create.
+  Account account = 1;
+
+  // The account type.
+  AccountType type = 2;
+}
+
+// CreateAccountResponse is the response for CreateAccount.
+message CreateAccountResponse {
+  // The created account.
+  Account account = 1;
+}
