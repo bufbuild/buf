@@ -84,7 +84,7 @@ func TestHover(t *testing.T) {
 			// We don't want the hover info to include the floating comment that is separated by newlines
 			// from the comment above the option.
 			// Ref: https://buf.build/protocolbuffers/wellknowntypes/file/main:google/protobuf/descriptor.proto#L946
-			expectedNotContains: "1 through 32",
+			expectedNotContains: "Buffers.", // From last line of the previous floating comment.
 			expectedContains:    "Is this method deprecated?",
 		},
 		{
