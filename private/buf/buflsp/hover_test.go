@@ -156,14 +156,17 @@ func TestHover(t *testing.T) {
 
 			if tt.expectNoHover {
 				assert.Nil(t, hover, "expected no hover information")
-			} else if tt.expectedContains != "" {
-				require.NotNil(t, hover, "expected hover to be non-nil")
-				assert.Equal(t, protocol.Markdown, hover.Contents.Kind)
-				assert.Contains(t, hover.Contents.Value, tt.expectedContains)
-			} else if tt.expectedNotContains != "" {
-				require.NotNil(t, hover, "expected hover to be non-nil")
-				assert.Equal(t, protocol.Markdown, hover.Contents.Kind)
-				assert.NotContains(t, hover.Contents.Value, tt.expectedNotContains)
+			} else {
+				if tt.expectedContains != "" {
+					require.NotNil(t, hover, "expected hover to be non-nil")
+					assert.Equal(t, protocol.Markdown, hover.Contents.Kind)
+					assert.Contains(t, hover.Contents.Value, tt.expectedContains)
+				}
+				if tt.expectedNotContains != "" {
+					require.NotNil(t, hover, "expected hover to be non-nil")
+					assert.Equal(t, protocol.Markdown, hover.Contents.Kind)
+					assert.NotContains(t, hover.Contents.Value, tt.expectedNotContains)
+				}
 			}
 		})
 	}
