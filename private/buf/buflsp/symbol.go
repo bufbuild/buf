@@ -453,32 +453,29 @@ func (s *symbol) getDocsFromComments() string {
 
 	var comments []string
 	// We drop the other side of "Around" because we only care about the beginning -- we're
-	// traversing backwards for leading comemnts only.
-	_, start := def.Context().Stream().Around(def.Span().Start)
-	cursor := token.NewCursorAt(start)
-	t := cursor.PrevSkippable()
-	var addNewline bool
-	for !t.IsZero() {
-		switch t.Kind() {
-		case token.Comment:
-			text := t.Text()
-			if addNewline {
+	// traversing backwards for leading comments only.
+	tok, _ := def.Context().Stream().Around(def.Span().Start)
+	cursor := token.NewCursorAt(tok)
+	var seenNewline bool
+	for {
+		t := cursor.PrevSkippable()
+		if t.Kind() == token.Comment {
+			text := commentToMarkdown(t.Text())
+			if seenNewline {
 				text += "\n"
-				addNewline = false
 			}
-			comments = append(comments, commentToMarkdown(text))
-		case token.Space:
-			// If the space token only contains spaces (e.g. code indentation), then we drop it.
-			// If the space token ends in a new-line, we append it to the comment above for formatting.
-			if strings.HasSuffix(t.Text(), "\n") {
-				addNewline = true
+			seenNewline = false
+			comments = append(comments, text)
+		} else if t.Kind() == token.Space {
+			if strings.Contains(t.Text(), "\n") {
+				if seenNewline {
+					break
+				}
+				seenNewline = true
 			}
-		}
-		prev := cursor.PeekPrevSkippable()
-		if !prev.Kind().IsSkippable() {
+		} else {
 			break
 		}
-		t = cursor.PrevSkippable()
 	}
 	comments = lineUpComments(comments)
 	// Reverse the list and return joined.

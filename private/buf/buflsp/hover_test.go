@@ -34,17 +34,18 @@ func TestHover(t *testing.T) {
 	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
 
 	tests := []struct {
-		name             string
-		line             uint32
-		character        uint32
-		expectedContains string
-		expectNoHover    bool
+		name                string
+		line                uint32
+		character           uint32
+		expectedContains    string
+		expectedNotContains string
+		expectNoHover       bool
 	}{
 		{
 			name:             "hover_on_user_message",
-			line:             7, // Line with "message User {"
-			character:        8, // On the word "User"
-			expectedContains: "User represents a user in the system",
+			line:             7,               // Line with "message User {"
+			character:        8,               // On the word "User"
+			expectedContains: "system.\nThis", // Ensure newline between comment lines
 		},
 		{
 			name:             "hover_on_id_field",
@@ -77,6 +78,16 @@ func TestHover(t *testing.T) {
 			expectedContains: "GetUser retrieves a user by their ID",
 		},
 		{
+			name:      "hover_on_deprecated_option",
+			line:      37, // Line with "option deprecated = true;"
+			character: 11, // On "deprecated"
+			// We don't want the hover info to include the floating comment that is separated by newlines
+			// from the comment above the option.
+			// Ref: https://buf.build/protocolbuffers/wellknowntypes/file/main:google/protobuf/descriptor.proto#L946
+			expectedNotContains: "Buffers.", // From last line of the previous floating comment.
+			expectedContains:    "Is this method deprecated?",
+		},
+		{
 			name:             "hover_on_status_type_reference",
 			line:             15, // Line with "Status status = 3;"
 			character:        2,  // On "Status" type
@@ -84,7 +95,7 @@ func TestHover(t *testing.T) {
 		},
 		{
 			name:             "hover_on_user_type_reference",
-			line:             45, // Line with "User user = 1;"
+			line:             50, // Line with "User user = 1;"
 			character:        2,  // On "User" type
 			expectedContains: "User represents a user in the system",
 		},
@@ -145,10 +156,17 @@ func TestHover(t *testing.T) {
 
 			if tt.expectNoHover {
 				assert.Nil(t, hover, "expected no hover information")
-			} else if tt.expectedContains != "" {
-				require.NotNil(t, hover, "expected hover to be non-nil")
-				assert.Equal(t, protocol.Markdown, hover.Contents.Kind)
-				assert.Contains(t, hover.Contents.Value, tt.expectedContains)
+			} else {
+				if tt.expectedContains != "" {
+					require.NotNil(t, hover, "expected hover to be non-nil")
+					assert.Equal(t, protocol.Markdown, hover.Contents.Kind)
+					assert.Contains(t, hover.Contents.Value, tt.expectedContains)
+				}
+				if tt.expectedNotContains != "" {
+					require.NotNil(t, hover, "expected hover to be non-nil")
+					assert.Equal(t, protocol.Markdown, hover.Contents.Kind)
+					assert.NotContains(t, hover.Contents.Value, tt.expectedNotContains)
+				}
 			}
 		})
 	}
