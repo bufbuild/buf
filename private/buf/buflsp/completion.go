@@ -36,10 +36,8 @@ import (
 	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
 	"go.lsp.dev/protocol"
+	"google.golang.org/protobuf/encoding/protowire"
 )
-
-// Ref: https://protobuf.com/docs/language-spec#field-numbers
-const maxProtobufFieldNumber = 536_870_911
 
 // getCompletionItems returns completion items for the given position in the file.
 //
@@ -1721,10 +1719,20 @@ func completionItemsForFieldNumber(
 		}
 	}
 
+	// Find the next available field number, skipping:
+	// 1. Numbers already used or reserved in the message
+	// 2. The protobuf reserved range (19000-19999)
 	nextNumber := uint64(1)
-	for usedOrReservedFieldNumbers[nextNumber] {
+	for {
+		// Check if this number is available
+		if !usedOrReservedFieldNumbers[nextNumber] {
+			// Check if it's outside the protobuf reserved range
+			if nextNumber < uint64(protowire.FirstReservedNumber) || nextNumber > uint64(protowire.LastReservedNumber) {
+				break
+			}
+		}
 		nextNumber++
-		if nextNumber > maxProtobufFieldNumber {
+		if nextNumber > uint64(protowire.MaxValidNumber) {
 			// Don't suggest numbers beyond the valid range
 			return nil
 		}

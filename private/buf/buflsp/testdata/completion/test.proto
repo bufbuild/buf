@@ -40,3 +40,9 @@ message ReservedFieldTestTwo {
   string blah = 1;
   User user = ; // complete_field_number_after_reserved_with_semicolon
 }
+
+message ProtobufReservedRangeTest {
+  reserved 1 to 18999;
+
+  User user = ; // complete_field_number_skips_protobuf_reserved_range
+}
