@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package example.v1;
+
+// complete_builtin_toplevel
+m {}
+
+message User {
+  string id = 1;
+  // complete_message_field_types
+}
+
+service UserService {
+  rpc GetUser(Get) returns (Get); // complete_rpc_request_type, complete_rpc_response_type
+  // complete_builtin_service
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
