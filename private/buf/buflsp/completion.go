@@ -1676,9 +1676,8 @@ func getOptionValueType(file *file, ctx context.Context, optionValue ir.MessageV
 func completionItemsForFieldNumber(
 	parentDef ast.DeclDef,
 ) []protocol.CompletionItem {
-	// Collect all used field numbers in the parent message
-	usedNumbers := make(map[uint64]bool)
-	reservedNumbers := make(map[uint64]bool)
+	// Collect all used or reserved field numbers in the parent message
+	usedOrReservedFieldNumbers := make(map[uint64]bool)
 
 	for decl := range seq.Values(parentDef.AsMessage().Body.Decls()) {
 		if decl.IsZero() {
@@ -1689,7 +1688,7 @@ func completionItemsForFieldNumber(
 		if def := decl.AsDef(); !def.IsZero() && def.Classify() == ast.DefKindField {
 			if lit := def.AsField().Tag.AsLiteral(); !lit.IsZero() {
 				if tagNum, exact := lit.Token.AsNumber().Int(); exact {
-					usedNumbers[tagNum] = true
+					usedOrReservedFieldNumbers[tagNum] = true
 				}
 			}
 		}
@@ -1705,7 +1704,7 @@ func completionItemsForFieldNumber(
 						if startNum, exactStart := startLit.Token.AsNumber().Int(); exactStart {
 							if endNum, exactEnd := endLit.Token.AsNumber().Int(); exactEnd {
 								for i := startNum; i <= endNum; i++ {
-									reservedNumbers[i] = true
+									usedOrReservedFieldNumbers[i] = true
 								}
 							}
 						}
@@ -1713,7 +1712,7 @@ func completionItemsForFieldNumber(
 				} else if lit := rangeExpr.AsLiteral(); !lit.IsZero() {
 					// It's a single number (string field names are ignored)
 					if num, exact := lit.Token.AsNumber().Int(); exact {
-						reservedNumbers[num] = true
+						usedOrReservedFieldNumbers[num] = true
 					}
 				}
 			}
@@ -1721,7 +1720,7 @@ func completionItemsForFieldNumber(
 	}
 
 	nextNumber := uint64(1)
-	for usedNumbers[nextNumber] || reservedNumbers[nextNumber] {
+	for usedOrReservedFieldNumbers[nextNumber] {
 		nextNumber++
 		if nextNumber > maxProtobufFieldNumber {
 			// Don't suggest numbers beyond the valid range
