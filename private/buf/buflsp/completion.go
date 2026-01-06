@@ -1527,13 +1527,10 @@ func isAfterEqualsSign(file *file, offset int) bool {
 	before, _ := file.ir.AST().Stream().Around(offset)
 	cursor := token.NewCursorAt(before)
 
-	// Skip backwards over whitespace to find the previous non-whitespace token
-	for !before.IsZero() && before.Kind() == token.Space {
+	if isTokenSpace(before) {
 		before = cursor.PrevSkippable()
 	}
-
-	// Check if the first non-whitespace token is an equals sign
-	return !before.IsZero() && before.Kind() == token.Keyword && before.Text() == "="
+	return isTokenEqual(before)
 }
 
 // isTokenType returns true if the tokens are valid for a type declaration e.g "buf.registry.Type".
@@ -1552,6 +1549,11 @@ func isTokenParen(tok token.Token) bool {
 	return tok.Kind() == token.Keyword &&
 		(strings.HasPrefix(tok.Text(), "(") ||
 			strings.HasSuffix(tok.Text(), ")"))
+}
+
+// isTokenEqual returns true for '=' tokens.
+func isTokenEqual(tok token.Token) bool {
+	return tok.Kind() == token.Keyword && tok.Text() == "="
 }
 
 // isTokenTypeDelimiter returns true if the token represents a delimiter for completion.
