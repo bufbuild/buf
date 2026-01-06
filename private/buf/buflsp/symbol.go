@@ -458,6 +458,7 @@ func (s *symbol) getDocsFromComments() string {
 	cursor := token.NewCursorAt(start)
 	t := cursor.PrevSkippable()
 	var addNewline bool
+	var lastWasNewline bool
 	for !t.IsZero() {
 		if t.Kind() == token.Comment {
 			text := t.Text()
@@ -466,15 +467,19 @@ func (s *symbol) getDocsFromComments() string {
 				addNewline = false
 			}
 			comments = append(comments, commentToMarkdown(text))
+			lastWasNewline = false
 		} else if t.Kind() == token.Space {
-			// If the space token contains multiple newlines (blank line), stop collecting
-			// comments since they are separated and not part of the same documentation block.
-			if strings.Count(t.Text(), "\n") > 1 {
+			// If we see a newline-only space after already seeing a newline, it's a blank line
+			// separating comment blocks, so stop collecting comments.
+			if lastWasNewline && strings.TrimSpace(t.Text()) == "" && strings.Contains(t.Text(), "\n") {
 				break
 			}
-			// If the space ends with a newline, append it to the next comment for formatting.
+			// Track if this space ends with a newline for the next iteration.
 			if strings.HasSuffix(t.Text(), "\n") {
 				addNewline = true
+				lastWasNewline = true
+			} else {
+				lastWasNewline = false
 			}
 		}
 		prev := cursor.PeekPrevSkippable()
