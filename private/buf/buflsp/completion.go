@@ -1690,14 +1690,18 @@ func completionItemsForFieldNumber(
 	if !irType.IsZero() {
 		// Collect field numbers from members
 		for member := range seq.Values(irType.Members()) {
-			usedOrReservedFieldNumbers[uint64(member.Number())] = true
+			if num := member.Number(); num > 0 {
+				usedOrReservedFieldNumbers[uint64(num)] = true
+			}
 		}
 
 		// Collect reserved ranges
 		for reservedRange := range seq.Values(irType.ReservedRanges()) {
 			start, end := reservedRange.Range()
 			for i := start; i <= end; i++ {
-				usedOrReservedFieldNumbers[uint64(i)] = true
+				if i > 0 {
+					usedOrReservedFieldNumbers[uint64(i)] = true
+				}
 			}
 		}
 	}
