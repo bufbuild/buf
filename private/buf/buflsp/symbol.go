@@ -453,40 +453,24 @@ func (s *symbol) getDocsFromComments() string {
 
 	var comments []string
 	// We drop the other side of "Around" because we only care about the beginning -- we're
-	// traversing backwards for leading comemnts only.
-	_, start := def.Context().Stream().Around(def.Span().Start)
-	cursor := token.NewCursorAt(start)
-	t := cursor.PrevSkippable()
-	var addNewline bool
-	var lastWasNewline bool
-	for !t.IsZero() {
+	// traversing backwards for leading comments only.
+	tok, _ := def.Context().Stream().Around(def.Span().Start)
+	cursor := token.NewCursorAt(tok)
+	var seenNewline bool
+	for {
+		t := cursor.PrevSkippable()
 		if t.Kind() == token.Comment {
-			text := t.Text()
-			if addNewline {
-				text += "\n"
-				addNewline = false
-			}
-			comments = append(comments, commentToMarkdown(text))
-			lastWasNewline = false
+			seenNewline = false
+			comments = append(comments, commentToMarkdown(t.Text()))
 		} else if t.Kind() == token.Space {
-			// If we see a newline-only space after already seeing a newline, it's a blank line
-			// separating comment blocks, so stop collecting comments.
-			if lastWasNewline && strings.TrimSpace(t.Text()) == "" && strings.Contains(t.Text(), "\n") {
+			isNewline := strings.Contains(t.Text(), "\n")
+			if isNewline && seenNewline {
 				break
 			}
-			// Track if this space ends with a newline for the next iteration.
-			if strings.HasSuffix(t.Text(), "\n") {
-				addNewline = true
-				lastWasNewline = true
-			} else {
-				lastWasNewline = false
-			}
-		}
-		prev := cursor.PeekPrevSkippable()
-		if !prev.Kind().IsSkippable() {
+			seenNewline = seenNewline || isNewline
+		} else {
 			break
 		}
-		t = cursor.PrevSkippable()
 	}
 	comments = lineUpComments(comments)
 	// Reverse the list and return joined.
