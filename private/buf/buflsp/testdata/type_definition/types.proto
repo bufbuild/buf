@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package type_definition.v1;
+
+// Priority represents the priority level.
+enum Priority {
+  // The priority is not specified.
+  PRIORITY_UNSPECIFIED = 0;
+
+  // Low priority.
+  PRIORITY_LOW = 1;
+
+  // High priority.
+  PRIORITY_HIGH = 2;
+}
+
+// Audit represents audit information.
+message Audit {
+  // The user who created this.
+  string created_by = 1;
+
+  // The timestamp of creation.
+  int64 created_at = 2;
+}

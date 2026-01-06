@@ -633,31 +633,34 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 
 		input, _ := irSymbol.AsMethod().Input()
 		// Method input must be a single message type.
-		inputAST := irSymbol.AsMethod().AST().AsMethod().Signature.Inputs().At(0)
-		inputSym := &symbol{
-			ir:   irSymbol,
-			file: f,
-			span: inputAST.RemovePrefixes().Span(), // We always strip prefixes in case of streaming.
-			kind: &reference{
-				def:      input.AST(), // Only messages can be method inputs and outputs
-				fullName: input.FullName(),
-			},
+		if astInputs := irSymbol.AsMethod().AST().AsMethod().Signature.Inputs(); astInputs.Len() == 1 {
+			inputAST := astInputs.At(0)
+			inputSym := &symbol{
+				ir:   irSymbol,
+				file: f,
+				span: inputAST.RemovePrefixes().Span(), // We always strip prefixes in case of streaming.
+				kind: &reference{
+					def:      input.AST(), // Only messages can be method inputs and outputs
+					fullName: input.FullName(),
+				},
+			}
+			unresolved = append(unresolved, inputSym)
 		}
-		unresolved = append(unresolved, inputSym)
-
 		output, _ := irSymbol.AsMethod().Output()
 		// Method output must be a single message type.
-		outputAST := irSymbol.AsMethod().AST().AsMethod().Signature.Outputs().At(0)
-		outputSym := &symbol{
-			ir:   irSymbol,
-			file: f,
-			span: outputAST.RemovePrefixes().Span(), // We always strip prefixes in case of streaming.
-			kind: &reference{
-				def:      output.AST(), // Only messages can be method inputs and outputs
-				fullName: output.FullName(),
-			},
+		if astOutputs := irSymbol.AsMethod().AST().AsMethod().Signature.Outputs(); astOutputs.Len() == 1 {
+			outputAST := astOutputs.At(0)
+			outputSym := &symbol{
+				ir:   irSymbol,
+				file: f,
+				span: outputAST.RemovePrefixes().Span(), // We always strip prefixes in case of streaming.
+				kind: &reference{
+					def:      output.AST(), // Only messages can be method inputs and outputs
+					fullName: output.FullName(),
+				},
+			}
+			unresolved = append(unresolved, outputSym)
 		}
-		unresolved = append(unresolved, outputSym)
 		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMethod().Options())...)
 	}
 	return resolved, unresolved
