@@ -649,13 +649,7 @@ func completionItemsForOptions(
 	}
 	// Complete options within the value or the path.
 	if offsetInSpan(offset, def.Value().Span()) == 0 {
-		var parentType ir.Type
-		for irType := range seq.Values(file.ir.AllTypes()) {
-			if irType.AST().Span() == parentDef.Span() {
-				parentType = irType
-				break
-			}
-		}
+		parentType := findTypeBySpan(file, parentDef.Span())
 		optionType, isOptionType := getOptionValueType(file, ctx, parentType.Options(), offset)
 		if !isOptionType {
 			file.lsp.logger.DebugContext(
@@ -1457,16 +1451,14 @@ func defToOptionMessage(file *file, def ast.DeclDef) ir.MessageValue {
 	defSpan := def.Span()
 	switch kind := def.Classify(); kind {
 	case ast.DefKindMessage:
-		for irType := range seq.Values(file.ir.AllTypes()) {
-			if irType.AST().Span() == defSpan {
-				return irType.Options()
-			}
+		irType := findTypeBySpan(file, defSpan)
+		if !irType.IsZero() {
+			return irType.Options()
 		}
 	case ast.DefKindEnum:
-		for irType := range seq.Values(file.ir.AllTypes()) {
-			if irType.AST().Span() == defSpan {
-				return irType.Options()
-			}
+		irType := findTypeBySpan(file, defSpan)
+		if !irType.IsZero() {
+			return irType.Options()
 		}
 	case ast.DefKindField:
 		for irType := range seq.Values(file.ir.AllTypes()) {
@@ -1631,18 +1623,30 @@ func isProto2(file *file) bool {
 	return file.ir.Syntax() == syntax.Proto2
 }
 
+// findTypeBySpan returns the IR Type that corresponds to the given AST span.
+// Returns a zero Type if no matching type is found.
+func findTypeBySpan(file *file, span source.Span) ir.Type {
+	if span.IsZero() {
+		return ir.Type{}
+	}
+	for t := range seq.Values(file.ir.AllTypes()) {
+		if t.AST().Span() == span {
+			return t
+		}
+	}
+	return ir.Type{}
+}
+
 // findTypeFullName simply loops through and finds the type definition name.
 func findTypeFullName(file *file, declDef ast.DeclDef) ir.FullName {
 	declDefSpan := declDef.Span()
 	if declDefSpan.IsZero() {
 		return ""
 	}
-	for irType := range seq.Values(file.ir.AllTypes()) {
-		typeSpan := irType.AST().Span()
-		if typeSpan.Start == declDefSpan.Start && typeSpan.End == declDefSpan.End {
-			file.lsp.logger.Debug("completion: found parent type", slog.String("parent", string(irType.FullName())))
-			return irType.FullName()
-		}
+	irType := findTypeBySpan(file, declDefSpan)
+	if !irType.IsZero() {
+		file.lsp.logger.Debug("completion: found parent type", slog.String("parent", string(irType.FullName())))
+		return irType.FullName()
 	}
 	return ""
 }
@@ -1681,13 +1685,7 @@ func completionItemsForFieldNumber(
 	usedOrReservedFieldNumbers := make(map[uint64]bool)
 
 	// Find the IR Type corresponding to this AST definition
-	var irType ir.Type
-	for t := range seq.Values(file.ir.AllTypes()) {
-		if t.AST().Span() == parentDef.Span() {
-			irType = t
-			break
-		}
-	}
+	irType := findTypeBySpan(file, parentDef.Span())
 
 	if !irType.IsZero() {
 		// Collect field numbers from members
