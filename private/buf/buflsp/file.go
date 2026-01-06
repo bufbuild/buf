@@ -629,7 +629,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 
 		input, _ := irSymbol.AsMethod().Input()
 		// Method input must be a single message type.
-		if astInputs := irSymbol.AsMethod().AST().AsMethod().Signature.Inputs(); !astInputs.IsZero() {
+		if astInputs := irSymbol.AsMethod().AST().AsMethod().Signature.Inputs(); astInputs.Len() == 1 {
 			inputAST := astInputs.At(0)
 			inputSym := &symbol{
 				ir:   irSymbol,
@@ -644,7 +644,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		output, _ := irSymbol.AsMethod().Output()
 		// Method output must be a single message type.
-		if astOutputs := irSymbol.AsMethod().AST().AsMethod().Signature.Outputs(); !astOutputs.IsZero() {
+		if astOutputs := irSymbol.AsMethod().AST().AsMethod().Signature.Outputs(); astOutputs.Len() == 1 {
 			outputAST := astOutputs.At(0)
 			outputSym := &symbol{
 				ir:   irSymbol,
