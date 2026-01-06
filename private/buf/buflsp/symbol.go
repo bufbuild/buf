@@ -459,17 +459,20 @@ func (s *symbol) getDocsFromComments() string {
 	t := cursor.PrevSkippable()
 	var addNewline bool
 	for !t.IsZero() {
-		switch t.Kind() {
-		case token.Comment:
+		if t.Kind() == token.Comment {
 			text := t.Text()
 			if addNewline {
 				text += "\n"
 				addNewline = false
 			}
 			comments = append(comments, commentToMarkdown(text))
-		case token.Space:
-			// If the space token only contains spaces (e.g. code indentation), then we drop it.
-			// If the space token ends in a new-line, we append it to the comment above for formatting.
+		} else if t.Kind() == token.Space {
+			// If the space token contains multiple newlines (blank line), stop collecting
+			// comments since they are separated and not part of the same documentation block.
+			if strings.Count(t.Text(), "\n") > 1 {
+				break
+			}
+			// If the space ends with a newline, append it to the next comment for formatting.
 			if strings.HasSuffix(t.Text(), "\n") {
 				addNewline = true
 			}
