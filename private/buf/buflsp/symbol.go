@@ -457,26 +457,22 @@ func (s *symbol) getDocsFromComments() string {
 	tok, _ := def.Context().Stream().Around(def.Span().Start)
 	cursor := token.NewCursorAt(tok)
 	var seenNewline bool
-	var addNewline bool
 	for {
 		t := cursor.PrevSkippable()
 		if t.Kind() == token.Comment {
 			text := commentToMarkdown(t.Text())
-			if addNewline {
+			if seenNewline {
 				text += "\n"
-				addNewline = false
 			}
 			seenNewline = false
 			comments = append(comments, text)
 		} else if t.Kind() == token.Space {
-			isNewline := strings.Contains(t.Text(), "\n")
-			if isNewline && seenNewline {
-				break
+			if strings.Contains(t.Text(), "\n") {
+				if seenNewline {
+					break
+				}
+				seenNewline = true
 			}
-			if isNewline {
-				addNewline = true
-			}
-			seenNewline = seenNewline || isNewline
 		} else {
 			break
 		}
