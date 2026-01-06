@@ -71,6 +71,18 @@ func TestCompletion(t *testing.T) {
 			character:        uint32(len("  rpc GetUser(Get) returns (Get") - 1),
 			expectedContains: []string{"GetUserRequest", "GetUserResponse"},
 		},
+		{
+			name:             "complete_field_number_after_reserved",
+			line:             31, // Line with "User user ="
+			character:        14, // After "  User user = "
+			expectedContains: []string{"6"},
+		},
+		{
+			name:             "complete_field_number_after_reserved_with_semicolon",
+			line:             40, // Line with "User user = ;"
+			character:        14, // After "  User user = "
+			expectedContains: []string{"6"},
+		},
 	}
 
 	for _, tt := range tests {

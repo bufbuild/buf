@@ -23,6 +23,7 @@ import (
 	"log/slog"
 	"math"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -36,6 +37,9 @@ import (
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
 	"go.lsp.dev/protocol"
 )
+
+// Ref: https://protobuf.com/docs/language-spec#field-numbers
+const maxProtobufFieldNumber = 536_870_911
 
 // getCompletionItems returns completion items for the given position in the file.
 //
@@ -326,6 +330,22 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		slog.Bool("has_field_modifier", hasTypeModifier),
 		slog.Bool("has_declaration", hasDeclaration),
 	)
+	// Special case: field number completion
+	if !hasStart && parentDef.Classify() == ast.DefKindMessage {
+		// Case 1: Valid field definition with type and name but no tag
+		// e.g., `string name = |;\n`
+		if def.Classify() == ast.DefKindField {
+			field := def.AsField()
+			if !field.Type.IsZero() && !field.Name.IsZero() && field.Tag.IsZero() {
+				return completionItemsForFieldNumber(parentDef)
+			}
+		}
+		// Case 2: Invalid definition (e.g., missing semicolon) but cursor is after equals sign
+		// e.g., `string name = |`
+		if def.Classify() == ast.DefKindInvalid && isAfterEqualsSign(file, offset) {
+			return completionItemsForFieldNumber(parentDef)
+		}
+	}
 	if !hasStart {
 		file.lsp.logger.DebugContext(
 			ctx,
@@ -1497,6 +1517,25 @@ func defToOptionMessage(file *file, def ast.DeclDef) ir.MessageValue {
 	return ir.MessageValue{}
 }
 
+// isAfterEqualsSign checks if the cursor offset is positioned after an equals sign,
+// which would indicate we're completing a field number.
+func isAfterEqualsSign(file *file, offset int) bool {
+	if file.ir.AST() == nil || file.ir.AST().Stream() == nil {
+		return false
+	}
+
+	before, _ := file.ir.AST().Stream().Around(offset)
+	cursor := token.NewCursorAt(before)
+
+	// Skip backwards over whitespace to find the previous non-whitespace token
+	for !before.IsZero() && before.Kind() == token.Space {
+		before = cursor.PrevSkippable()
+	}
+
+	// Check if the first non-whitespace token is an equals sign
+	return !before.IsZero() && before.Kind() == token.Keyword && before.Text() == "="
+}
+
 // isTokenType returns true if the tokens are valid for a type declaration e.g "buf.registry.Type".
 func isTokenType(tok token.Token) bool {
 	kind := tok.Kind()
@@ -1632,6 +1671,75 @@ func getOptionValueType(file *file, ctx context.Context, optionValue ir.MessageV
 		}
 	}
 	return ir.Type{}, false
+}
+
+func completionItemsForFieldNumber(
+	parentDef ast.DeclDef,
+) []protocol.CompletionItem {
+	// Collect all used field numbers in the parent message
+	usedNumbers := make(map[int32]bool)
+	reservedNumbers := make(map[int32]bool)
+
+	for decl := range seq.Values(parentDef.AsMessage().Body.Decls()) {
+		if decl.IsZero() {
+			continue
+		}
+
+		// Collect field numbers from field definitions
+		if def := decl.AsDef(); !def.IsZero() && def.Classify() == ast.DefKindField {
+			if lit := def.AsField().Tag.AsLiteral(); !lit.IsZero() {
+				if tagNum, exact := lit.Token.AsNumber().Int(); exact {
+					usedNumbers[int32(tagNum)] = true
+				}
+			}
+		}
+
+		// Collect field numbers from reserved statements
+		if rangeDecl := decl.AsRange(); !rangeDecl.IsZero() && rangeDecl.IsReserved() {
+			for rangeExpr := range seq.Values(rangeDecl.Ranges()) {
+				if exprRange := rangeExpr.AsRange(); !exprRange.IsZero() {
+					// It's a range (e.g., "reserved 2 to 10")
+					start, end := exprRange.Bounds()
+					startLit, endLit := start.AsLiteral(), end.AsLiteral()
+					if !startLit.IsZero() && !endLit.IsZero() {
+						if startNum, exactStart := startLit.Token.AsNumber().Int(); exactStart {
+							if endNum, exactEnd := endLit.Token.AsNumber().Int(); exactEnd {
+								for i := startNum; i <= endNum; i++ {
+									reservedNumbers[int32(i)] = true
+								}
+							}
+						}
+					}
+				} else if lit := rangeExpr.AsLiteral(); !lit.IsZero() {
+					// It's a single number (string field names are ignored)
+					if num, exact := lit.Token.AsNumber().Int(); exact {
+						reservedNumbers[int32(num)] = true
+					}
+				}
+			}
+		}
+	}
+
+	nextNumber := int32(1)
+	for {
+		if !usedNumbers[nextNumber] && !reservedNumbers[nextNumber] {
+			break
+		}
+		nextNumber++
+		if nextNumber > maxProtobufFieldNumber {
+			// Don't suggest numbers beyond the valid range
+			return nil
+		}
+	}
+
+	next := strconv.FormatInt(int64(nextNumber), 10)
+	return []protocol.CompletionItem{
+		{
+			Label:      next,
+			Kind:       protocol.CompletionItemKindValue,
+			InsertText: next,
+		},
+	}
 }
 
 // resolveCompletionItem resolves additional details for a completion item.
