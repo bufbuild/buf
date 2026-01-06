@@ -26,10 +26,6 @@ import (
 func TestHover(t *testing.T) {
 	t.Parallel()
 
-	// if runtime.GOOS == "windows" {
-	// 	t.Skip("Skipping on Windows")
-	// }
-
 	ctx := t.Context()
 
 	testProtoPath, err := filepath.Abs("testdata/hover/test.proto")

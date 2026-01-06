@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package definition.v1;
+
+// Status represents the status of an entity.
+enum Status {
+  // The status is not specified.
+  STATUS_UNSPECIFIED = 0;
+
+  // The entity is active.
+  STATUS_ACTIVE = 1;
+
+  // The entity is inactive.
+  STATUS_INACTIVE = 2;
+}
+
+// Timestamp represents a point in time.
+message Timestamp {
+  // Seconds since epoch.
+  int64 seconds = 1;
+
+  // Nanoseconds.
+  int32 nanos = 2;
+}
