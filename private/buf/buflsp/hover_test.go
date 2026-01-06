@@ -43,8 +43,8 @@ func TestHover(t *testing.T) {
 	}{
 		{
 			name:             "hover_on_user_message",
-			line:             7, // Line with "message User {"
-			character:        8, // On the word "User"
+			line:             7,               // Line with "message User {"
+			character:        8,               // On the word "User"
 			expectedContains: "system.\nThis", // Ensure newline between comment lines
 		},
 		{
