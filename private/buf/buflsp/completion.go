@@ -23,6 +23,7 @@ import (
 	"log/slog"
 	"math"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -35,6 +36,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
 	"go.lsp.dev/protocol"
+	"google.golang.org/protobuf/encoding/protowire"
 )
 
 // getCompletionItems returns completion items for the given position in the file.
@@ -326,6 +328,22 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		slog.Bool("has_field_modifier", hasTypeModifier),
 		slog.Bool("has_declaration", hasDeclaration),
 	)
+	// Special case: field number completion
+	if !hasStart && parentDef.Classify() == ast.DefKindMessage {
+		// Case 1: Valid field definition with type and name but no tag
+		// e.g., `string name = |;\n`
+		if def.Classify() == ast.DefKindField {
+			field := def.AsField()
+			if !field.Type.IsZero() && !field.Name.IsZero() && field.Tag.IsZero() {
+				return completionItemsForFieldNumber(file, parentDef)
+			}
+		}
+		// Case 2: Invalid definition (e.g., missing semicolon) but cursor is after equals sign
+		// e.g., `string name = |`
+		if def.Classify() == ast.DefKindInvalid && isAfterEqualsSign(file, offset) {
+			return completionItemsForFieldNumber(file, parentDef)
+		}
+	}
 	if !hasStart {
 		file.lsp.logger.DebugContext(
 			ctx,
@@ -631,13 +649,7 @@ func completionItemsForOptions(
 	}
 	// Complete options within the value or the path.
 	if offsetInSpan(offset, def.Value().Span()) == 0 {
-		var parentType ir.Type
-		for irType := range seq.Values(file.ir.AllTypes()) {
-			if irType.AST().Span() == parentDef.Span() {
-				parentType = irType
-				break
-			}
-		}
+		parentType := findTypeBySpan(file, parentDef.Span())
 		optionType, isOptionType := getOptionValueType(file, ctx, parentType.Options(), offset)
 		if !isOptionType {
 			file.lsp.logger.DebugContext(
@@ -1439,16 +1451,14 @@ func defToOptionMessage(file *file, def ast.DeclDef) ir.MessageValue {
 	defSpan := def.Span()
 	switch kind := def.Classify(); kind {
 	case ast.DefKindMessage:
-		for irType := range seq.Values(file.ir.AllTypes()) {
-			if irType.AST().Span() == defSpan {
-				return irType.Options()
-			}
+		irType := findTypeBySpan(file, defSpan)
+		if !irType.IsZero() {
+			return irType.Options()
 		}
 	case ast.DefKindEnum:
-		for irType := range seq.Values(file.ir.AllTypes()) {
-			if irType.AST().Span() == defSpan {
-				return irType.Options()
-			}
+		irType := findTypeBySpan(file, defSpan)
+		if !irType.IsZero() {
+			return irType.Options()
 		}
 	case ast.DefKindField:
 		for irType := range seq.Values(file.ir.AllTypes()) {
@@ -1497,6 +1507,22 @@ func defToOptionMessage(file *file, def ast.DeclDef) ir.MessageValue {
 	return ir.MessageValue{}
 }
 
+// isAfterEqualsSign checks if the cursor offset is positioned after an equals sign,
+// which would indicate we're completing a field number.
+func isAfterEqualsSign(file *file, offset int) bool {
+	if file.ir.AST() == nil || file.ir.AST().Stream() == nil {
+		return false
+	}
+
+	before, _ := file.ir.AST().Stream().Around(offset)
+	cursor := token.NewCursorAt(before)
+
+	if isTokenSpace(before) {
+		before = cursor.PrevSkippable()
+	}
+	return isTokenEqual(before)
+}
+
 // isTokenType returns true if the tokens are valid for a type declaration e.g "buf.registry.Type".
 func isTokenType(tok token.Token) bool {
 	kind := tok.Kind()
@@ -1513,6 +1539,11 @@ func isTokenParen(tok token.Token) bool {
 	return tok.Kind() == token.Keyword &&
 		(strings.HasPrefix(tok.Text(), "(") ||
 			strings.HasSuffix(tok.Text(), ")"))
+}
+
+// isTokenEqual returns true for '=' tokens.
+func isTokenEqual(tok token.Token) bool {
+	return tok.Kind() == token.Keyword && tok.Keyword() == keyword.Assign
 }
 
 // isTokenTypeDelimiter returns true if the token represents a delimiter for completion.
@@ -1592,18 +1623,30 @@ func isProto2(file *file) bool {
 	return file.ir.Syntax() == syntax.Proto2
 }
 
+// findTypeBySpan returns the IR Type that corresponds to the given AST span.
+// Returns a zero Type if no matching type is found.
+func findTypeBySpan(file *file, span source.Span) ir.Type {
+	if span.IsZero() {
+		return ir.Type{}
+	}
+	for t := range seq.Values(file.ir.AllTypes()) {
+		if t.AST().Span() == span {
+			return t
+		}
+	}
+	return ir.Type{}
+}
+
 // findTypeFullName simply loops through and finds the type definition name.
 func findTypeFullName(file *file, declDef ast.DeclDef) ir.FullName {
 	declDefSpan := declDef.Span()
 	if declDefSpan.IsZero() {
 		return ""
 	}
-	for irType := range seq.Values(file.ir.AllTypes()) {
-		typeSpan := irType.AST().Span()
-		if typeSpan.Start == declDefSpan.Start && typeSpan.End == declDefSpan.End {
-			file.lsp.logger.Debug("completion: found parent type", slog.String("parent", string(irType.FullName())))
-			return irType.FullName()
-		}
+	irType := findTypeBySpan(file, declDefSpan)
+	if !irType.IsZero() {
+		file.lsp.logger.Debug("completion: found parent type", slog.String("parent", string(irType.FullName())))
+		return irType.FullName()
 	}
 	return ""
 }
@@ -1632,6 +1675,64 @@ func getOptionValueType(file *file, ctx context.Context, optionValue ir.MessageV
 		}
 	}
 	return ir.Type{}, false
+}
+
+func completionItemsForFieldNumber(
+	file *file,
+	parentDef ast.DeclDef,
+) []protocol.CompletionItem {
+	// Collect all used or reserved field numbers in the parent message
+	usedOrReservedFieldNumbers := make(map[uint64]bool)
+
+	// Find the IR Type corresponding to this AST definition
+	irType := findTypeBySpan(file, parentDef.Span())
+
+	if !irType.IsZero() {
+		// Collect field numbers from members
+		for member := range seq.Values(irType.Members()) {
+			if num := member.Number(); num > 0 {
+				usedOrReservedFieldNumbers[uint64(num)] = true
+			}
+		}
+
+		// Collect reserved ranges
+		for reservedRange := range seq.Values(irType.ReservedRanges()) {
+			start, end := reservedRange.Range()
+			for i := start; i <= end; i++ {
+				if i > 0 {
+					usedOrReservedFieldNumbers[uint64(i)] = true
+				}
+			}
+		}
+	}
+
+	// Find the next available field number, skipping:
+	// 1. Numbers already used or reserved in the message
+	// 2. The protobuf reserved range (19000-19999)
+	nextNumber := uint64(1)
+	for {
+		// Check if this number is available
+		if !usedOrReservedFieldNumbers[nextNumber] {
+			// Check if it's outside the protobuf reserved range
+			if nextNumber < uint64(protowire.FirstReservedNumber) || nextNumber > uint64(protowire.LastReservedNumber) {
+				break
+			}
+		}
+		nextNumber++
+		if nextNumber > uint64(protowire.MaxValidNumber) {
+			// Don't suggest numbers beyond the valid range
+			return nil
+		}
+	}
+
+	next := strconv.FormatUint(nextNumber, 10)
+	return []protocol.CompletionItem{
+		{
+			Label:      next,
+			Kind:       protocol.CompletionItemKindValue,
+			InsertText: next,
+		},
+	}
 }
 
 // resolveCompletionItem resolves additional details for a completion item.

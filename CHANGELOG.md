@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Update `PROTOVALIDATE` lint rule to support field mask rules.
+- Add LSP completion for field numbers.
 
 ## [v1.62.1] - 2025-12-29
 

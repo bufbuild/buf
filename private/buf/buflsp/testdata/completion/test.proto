@@ -22,3 +22,27 @@ message GetUserRequest {
 message GetUserResponse {
   User user = 1;
 }
+
+message ReservedFieldTest {
+  reserved 2;
+  reserved 3 to 5;
+  reserved 7 to 10;
+
+  string blah = 1;
+  User user =  // complete_field_number_after_reserved
+}
+
+message ReservedFieldTestTwo {
+  reserved 2;
+  reserved 3 to 5;
+  reserved 7 to 10;
+
+  string blah = 1;
+  User user = ; // complete_field_number_after_reserved_with_semicolon
+}
+
+message ProtobufReservedRangeTest {
+  reserved 1 to 18999;
+
+  User user = ; // complete_field_number_skips_protobuf_reserved_range
+}
