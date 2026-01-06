@@ -335,13 +335,13 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		if def.Classify() == ast.DefKindField {
 			field := def.AsField()
 			if !field.Type.IsZero() && !field.Name.IsZero() && field.Tag.IsZero() {
-				return completionItemsForFieldNumber(parentDef)
+				return completionItemsForFieldNumber(file, parentDef)
 			}
 		}
 		// Case 2: Invalid definition (e.g., missing semicolon) but cursor is after equals sign
 		// e.g., `string name = |`
 		if def.Classify() == ast.DefKindInvalid && isAfterEqualsSign(file, offset) {
-			return completionItemsForFieldNumber(parentDef)
+			return completionItemsForFieldNumber(file, parentDef)
 		}
 	}
 	if !hasStart {
@@ -1674,47 +1674,32 @@ func getOptionValueType(file *file, ctx context.Context, optionValue ir.MessageV
 }
 
 func completionItemsForFieldNumber(
+	file *file,
 	parentDef ast.DeclDef,
 ) []protocol.CompletionItem {
 	// Collect all used or reserved field numbers in the parent message
 	usedOrReservedFieldNumbers := make(map[uint64]bool)
 
-	for decl := range seq.Values(parentDef.AsMessage().Body.Decls()) {
-		if decl.IsZero() {
-			continue
+	// Find the IR Type corresponding to this AST definition
+	var irType ir.Type
+	for t := range seq.Values(file.ir.AllTypes()) {
+		if t.AST().Span() == parentDef.Span() {
+			irType = t
+			break
+		}
+	}
+
+	if !irType.IsZero() {
+		// Collect field numbers from members
+		for member := range seq.Values(irType.Members()) {
+			usedOrReservedFieldNumbers[uint64(member.Number())] = true
 		}
 
-		// Collect field numbers from field definitions
-		if def := decl.AsDef(); !def.IsZero() && def.Classify() == ast.DefKindField {
-			if lit := def.AsField().Tag.AsLiteral(); !lit.IsZero() {
-				if tagNum, exact := lit.Token.AsNumber().Int(); exact {
-					usedOrReservedFieldNumbers[tagNum] = true
-				}
-			}
-		}
-
-		// Collect field numbers from reserved statements
-		if rangeDecl := decl.AsRange(); !rangeDecl.IsZero() && rangeDecl.IsReserved() {
-			for rangeExpr := range seq.Values(rangeDecl.Ranges()) {
-				if exprRange := rangeExpr.AsRange(); !exprRange.IsZero() {
-					// It's a range (e.g., "reserved 2 to 10")
-					start, end := exprRange.Bounds()
-					startLit, endLit := start.AsLiteral(), end.AsLiteral()
-					if !startLit.IsZero() && !endLit.IsZero() {
-						if startNum, exactStart := startLit.Token.AsNumber().Int(); exactStart {
-							if endNum, exactEnd := endLit.Token.AsNumber().Int(); exactEnd {
-								for i := startNum; i <= endNum; i++ {
-									usedOrReservedFieldNumbers[i] = true
-								}
-							}
-						}
-					}
-				} else if lit := rangeExpr.AsLiteral(); !lit.IsZero() {
-					// It's a single number (string field names are ignored)
-					if num, exact := lit.Token.AsNumber().Int(); exact {
-						usedOrReservedFieldNumbers[num] = true
-					}
-				}
+		// Collect reserved ranges
+		for reservedRange := range seq.Values(irType.ReservedRanges()) {
+			start, end := reservedRange.Range()
+			for i := start; i <= end; i++ {
+				usedOrReservedFieldNumbers[uint64(i)] = true
 			}
 		}
 	}
