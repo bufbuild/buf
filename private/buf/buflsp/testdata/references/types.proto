@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package references.v1;
+
+enum Color {
+  COLOR_UNSPECIFIED = 0;
+  COLOR_RED = 1;
+  COLOR_BLUE = 2;
+}
+
+message Label {
+  string key = 1;
+  string value = 2;
+}
