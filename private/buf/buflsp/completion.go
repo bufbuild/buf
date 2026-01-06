@@ -1575,7 +1575,7 @@ func offsetInSpan(offset int, span source.Span) int {
 	if offset < span.Start {
 		return -1
 	} else if offset > span.End {
-		// End is inclusive for completions	_
+		// End is inclusive for completions
 		return 1
 	}
 	return 0

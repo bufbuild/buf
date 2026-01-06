@@ -62,8 +62,6 @@ type file struct {
 	objectInfo storage.ObjectInfo // Info in the context of the workspace.
 
 	ir                   *ir.File
-	irQuery              queries.IR
-	fileQuery            queries.File
 	referenceableSymbols map[ir.FullName]*symbol
 	referenceSymbols     []*symbol
 	symbols              []*symbol
@@ -101,9 +99,7 @@ func (f *file) Reset(ctx context.Context) {
 	}
 	// Evict the query key if there is a query cached on the file. We cache the [queries.File]
 	// query since this allows the executor to evict all dependent queries, e.g. AST and IR.
-	if f.fileQuery.Path != "" {
-		f.lsp.queryExecutor.Evict(f.fileQuery.Key())
-	}
+	f.lsp.queryExecutor.Evict(f.queryFileKeys()...)
 	// Clear the file as nothing should use it after reset. This asserts that.
 	*f = file{}
 }
@@ -245,21 +241,9 @@ func (f *file) RefreshIR(ctx context.Context) {
 		// update the opener and set a new query.
 		if current == nil || current.Text() != file.file.Text() {
 			openerMap[path] = file.file
-			// Add the query key for eviction if there is a query cached on the file. We cache
-			// the [queries.File] query since this allows the executor to evict all dependent
-			// queries, e.g. AST and IR.
-			if file.fileQuery.Path != "" {
-				evictQueryKeys = append(evictQueryKeys, file.fileQuery.Key())
-			}
-			file.fileQuery = queries.File{
-				Opener:      file.lsp.opener,
-				Path:        path,
-				ReportError: true, // [queries.AST] sets this to be true.
-			}
-			file.irQuery = queries.IR{
-				Opener:  file.lsp.opener,
-				Path:    file.objectInfo.Path(),
-				Session: file.lsp.irSession,
+			if current != nil {
+				// This indicates the file content has changed, so we evict the query file keys.
+				evictQueryKeys = append(evictQueryKeys, file.queryFileKeys()...)
 			}
 		}
 		files = append(files, file)
@@ -273,7 +257,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 	f.lsp.queryExecutor.Evict(evictQueryKeys...)
 
 	queries := xslices.Map(files, func(file *file) incremental.Query[*ir.File] {
-		return file.irQuery
+		return file.queryIR()
 	})
 
 	results, diagnosticReport, err := incremental.Run(
@@ -317,6 +301,40 @@ func (f *file) RefreshIR(ctx context.Context) {
 		slog.String("uri", f.uri.Filename()),
 		slog.Int("count", len(f.diagnostics)),
 	)
+}
+
+// queryIR returns the [queries.IR] for the current file.
+func (f *file) queryIR() incremental.Query[*ir.File] {
+	if f.objectInfo == nil {
+		return nil
+	}
+	return queries.IR{
+		Opener:  f.lsp.opener,
+		Path:    f.objectInfo.Path(),
+		Session: f.lsp.irSession,
+	}
+}
+
+// queryFileKeys returns the keys for [queries.File] with ReportError set to true and false.
+// This is because [queries.AST] depends on ReportError set to true and [queries.IR] depends
+// on ReportError set to false, so we need both keys when evicting cached [queries.File]
+// results for stale file states.
+func (f *file) queryFileKeys() []any {
+	if f.objectInfo == nil {
+		return nil
+	}
+	return []any{
+		queries.File{
+			Opener:      f.lsp.opener,
+			Path:        f.objectInfo.Path(),
+			ReportError: true,
+		}.Key(),
+		queries.File{
+			Opener:      f.lsp.opener,
+			Path:        f.objectInfo.Path(),
+			ReportError: false,
+		}.Key(),
+	}
 }
 
 // IndexSymbols processes the IR of a file and generates symbols for each symbol in
