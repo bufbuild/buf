@@ -1551,7 +1551,7 @@ func isTokenParen(tok token.Token) bool {
 
 // isTokenEqual returns true for '=' tokens.
 func isTokenEqual(tok token.Token) bool {
-	return tok.Kind() == token.Keyword && tok.Text() == "="
+	return tok.Kind() == token.Keyword && tok.Keyword() == keyword.Assign
 }
 
 // isTokenTypeDelimiter returns true if the token represents a delimiter for completion.
