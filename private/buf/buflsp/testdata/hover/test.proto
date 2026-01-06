@@ -32,6 +32,11 @@ enum Status {
 service UserService {
   // GetUser retrieves a user by their ID.
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // DeleteUser deletes a user by their ID.
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {
+    option deprecated = true;
+  }
 }
 
 // GetUserRequest is the request message for GetUser.
@@ -44,4 +49,16 @@ message GetUserRequest {
 message GetUserResponse {
   // The retrieved user.
   User user = 1;
+}
+
+// DeleteUserRequest is the request message for DeleteUser.
+message DeleteUserRequest {
+  // The ID of the user to delete.
+  string user_id = 1;
+}
+
+// DeleteUserResponse is the response message for DeleteUser.
+message DeleteUserResponse {
+  // Whether the deletion was successful.
+  bool success = 1;
 }
