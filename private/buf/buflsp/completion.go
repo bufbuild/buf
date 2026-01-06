@@ -1677,8 +1677,8 @@ func completionItemsForFieldNumber(
 	parentDef ast.DeclDef,
 ) []protocol.CompletionItem {
 	// Collect all used field numbers in the parent message
-	usedNumbers := make(map[int32]bool)
-	reservedNumbers := make(map[int32]bool)
+	usedNumbers := make(map[uint64]bool)
+	reservedNumbers := make(map[uint64]bool)
 
 	for decl := range seq.Values(parentDef.AsMessage().Body.Decls()) {
 		if decl.IsZero() {
@@ -1689,7 +1689,7 @@ func completionItemsForFieldNumber(
 		if def := decl.AsDef(); !def.IsZero() && def.Classify() == ast.DefKindField {
 			if lit := def.AsField().Tag.AsLiteral(); !lit.IsZero() {
 				if tagNum, exact := lit.Token.AsNumber().Int(); exact {
-					usedNumbers[int32(tagNum)] = true
+					usedNumbers[tagNum] = true
 				}
 			}
 		}
@@ -1705,7 +1705,7 @@ func completionItemsForFieldNumber(
 						if startNum, exactStart := startLit.Token.AsNumber().Int(); exactStart {
 							if endNum, exactEnd := endLit.Token.AsNumber().Int(); exactEnd {
 								for i := startNum; i <= endNum; i++ {
-									reservedNumbers[int32(i)] = true
+									reservedNumbers[i] = true
 								}
 							}
 						}
@@ -1713,18 +1713,15 @@ func completionItemsForFieldNumber(
 				} else if lit := rangeExpr.AsLiteral(); !lit.IsZero() {
 					// It's a single number (string field names are ignored)
 					if num, exact := lit.Token.AsNumber().Int(); exact {
-						reservedNumbers[int32(num)] = true
+						reservedNumbers[num] = true
 					}
 				}
 			}
 		}
 	}
 
-	nextNumber := int32(1)
-	for {
-		if !usedNumbers[nextNumber] && !reservedNumbers[nextNumber] {
-			break
-		}
+	nextNumber := uint64(1)
+	for usedNumbers[nextNumber] || reservedNumbers[nextNumber] {
 		nextNumber++
 		if nextNumber > maxProtobufFieldNumber {
 			// Don't suggest numbers beyond the valid range
@@ -1732,7 +1729,7 @@ func completionItemsForFieldNumber(
 		}
 	}
 
-	next := strconv.FormatInt(int64(nextNumber), 10)
+	next := strconv.FormatUint(nextNumber, 10)
 	return []protocol.CompletionItem{
 		{
 			Label:      next,
