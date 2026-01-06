@@ -242,7 +242,8 @@ func (f *file) RefreshIR(ctx context.Context) {
 		if current == nil || current.Text() != file.file.Text() {
 			openerMap[path] = file.file
 			if current != nil {
-				evictQueryKeys = append(evictQueryKeys, current.queryFileKeys()...)
+				// This indicates the file content has changed, so we evict the query file keys.
+				evictQueryKeys = append(evictQueryKeys, file.queryFileKeys()...)
 			}
 		}
 		files = append(files, file)
