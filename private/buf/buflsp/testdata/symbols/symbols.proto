@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package symbols.v1;
+
+message Document {
+  string id = 1;
+  string title = 2;
+  Status status = 3;
+  Metadata metadata = 4;
+  message Metadata {
+    string author = 1;
+    int64 created_at = 2;
+  }
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_DRAFT = 1;
+  STATUS_PUBLISHED = 2;
+}
+
+service DocumentService {
+  rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse);
+  rpc CreateDocument(CreateDocumentRequest) returns (CreateDocumentResponse);
+}
+
+message GetDocumentRequest {
+  string document_id = 1;
+}
+
+message GetDocumentResponse {
+  Document document = 1;
+}
+
+message CreateDocumentRequest {
+  Document document = 1;
+}
+
+message CreateDocumentResponse {
+  Document document = 1;
+}
+
+message LegacyDocument {
+  option deprecated = true;
+  string id = 1;
+}

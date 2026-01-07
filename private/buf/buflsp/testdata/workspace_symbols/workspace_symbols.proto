@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package workspace_symbols.v1;
+
+import "types.proto";
+
+message Item {
+  string id = 1;
+  Color color = 2;
+  Label label = 3;
+  repeated Item related = 4;
+}
+
+message Container {
+  string name = 1;
+  repeated Item items = 2;
+  Color default_color = 3;
+}
+
+service ItemService {
+  rpc GetItem(GetItemRequest) returns (GetItemResponse);
+  rpc ListItems(ListItemsRequest) returns (ListItemsResponse);
+}
+
+message GetItemRequest {
+  string item_id = 1;
+}
+
+message GetItemResponse {
+  Item item = 1;
+}
+
+message ListItemsRequest {
+  string container_name = 1;
+}
+
+message ListItemsResponse {
+  repeated Item items = 1;
+}
+
+message LegacyItem {
+  option deprecated = true;
+  string id = 1;
+}
