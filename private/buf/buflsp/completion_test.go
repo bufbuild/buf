@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"buf.build/go/standard/xslices"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
@@ -124,4 +125,64 @@ func TestCompletion(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCompletionAfterUpdate(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+	testProtoPath, err := filepath.Abs("testdata/completion/update_test.proto")
+	require.NoError(t, err)
+
+	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
+
+	// Send a didChange notification to mutate the file state.
+	// This simulates a user typing "str" on a new field line within the User message.
+	// We replace the entire content with an updated version that has "  str" added.
+	updatedContent := `syntax = "proto3";
+
+package example.v1;
+
+message User {
+  string id = 1;
+  str
+}
+`
+	err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidChange, &protocol.DidChangeTextDocumentParams{
+		TextDocument: protocol.VersionedTextDocumentIdentifier{
+			TextDocumentIdentifier: protocol.TextDocumentIdentifier{
+				URI: testURI,
+			},
+			Version: 2,
+		},
+		ContentChanges: []protocol.TextDocumentContentChangeEvent{
+			{
+				Text: updatedContent,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	// Now request completions at the position where we just inserted "str"
+	// This should return completions for "string" and other types starting with "str"
+	var completionList *protocol.CompletionList
+	_, completionErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
+		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+			TextDocument: protocol.TextDocumentIdentifier{
+				URI: testURI,
+			},
+			Position: protocol.Position{
+				Line:      6,
+				Character: 5, // After "  str"
+			},
+		},
+	}, &completionList)
+	require.NoError(t, completionErr)
+	require.NotNil(t, completionList, "expected completion list to be non-nil after file update")
+
+	// Check that we get "string" as a completion option
+	labels := xslices.Map(completionList.Items, func(item protocol.CompletionItem) string {
+		return item.Label
+	})
+	assert.Contains(t, labels, "string", "expected completion list to contain 'string' after partial edit")
 }
