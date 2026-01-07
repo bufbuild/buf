@@ -27,15 +27,11 @@ import (
 
 func TestRename(t *testing.T) {
 	t.Parallel()
-
 	ctx := t.Context()
-
 	testProtoPath, err := filepath.Abs("testdata/rename/rename.proto")
 	require.NoError(t, err)
-
 	typesProtoPath, err := filepath.Abs("testdata/rename/types.proto")
 	require.NoError(t, err)
-
 	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
 	typesURI := uri.New(typesProtoPath)
 
@@ -226,7 +222,6 @@ func TestRename(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
 			var workspaceEdit protocol.WorkspaceEdit
 			_, renameErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentRename, protocol.RenameParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
@@ -241,10 +236,10 @@ func TestRename(t *testing.T) {
 				NewName: tt.newName,
 			}, &workspaceEdit)
 			if tt.expectError {
-				require.Error(t, renameErr, "expected error when renaming to existing symbol")
+				require.Error(t, renameErr)
 			} else {
 				require.NoError(t, renameErr)
-				require.NotNil(t, workspaceEdit.Changes, "expected workspace edit changes")
+				require.NotNil(t, workspaceEdit.Changes)
 				var allEdits []editLocation
 				for uri, edits := range workspaceEdit.Changes {
 					for _, edit := range edits {
@@ -262,8 +257,8 @@ func TestRename(t *testing.T) {
 						return e.uri == expectedEdit.uri && e.line == expectedEdit.line && e.startCharacter == expectedEdit.startCharacter
 					})
 					require.NotEqual(t, -1, idx, "expected edit at %s:%d:%d not found", expectedEdit.uri, expectedEdit.line, expectedEdit.startCharacter)
-					assert.Equal(t, expectedEdit.startCharacter, allEdits[idx].startCharacter, "wrong start character for edit at %s:%d", expectedEdit.uri, expectedEdit.line)
-					assert.Equal(t, expectedEdit.endCharacter, allEdits[idx].endCharacter, "wrong end character for edit at %s:%d", expectedEdit.uri, expectedEdit.line)
+					assert.Equal(t, expectedEdit.startCharacter, allEdits[idx].startCharacter)
+					assert.Equal(t, expectedEdit.endCharacter, allEdits[idx].endCharacter)
 				}
 			}
 		})
@@ -272,12 +267,9 @@ func TestRename(t *testing.T) {
 
 func TestPrepareRename(t *testing.T) {
 	t.Parallel()
-
 	ctx := t.Context()
-
 	testProtoPath, err := filepath.Abs("testdata/rename/rename.proto")
 	require.NoError(t, err)
-
 	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
 
 	tests := []struct {
@@ -345,7 +337,6 @@ func TestPrepareRename(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
 			var rnge *protocol.Range
 			_, prepareErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentPrepareRename, protocol.PrepareRenameParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
@@ -359,13 +350,12 @@ func TestPrepareRename(t *testing.T) {
 				},
 			}, &rnge)
 			require.NoError(t, prepareErr)
-
 			if tt.expectRange {
-				require.NotNil(t, rnge, "expected a range for prepare rename")
-				assert.Equal(t, tt.expectedStart, rnge.Start, "wrong start position")
-				assert.Equal(t, tt.expectedEnd, rnge.End, "wrong end position")
+				require.NotNil(t, rnge)
+				assert.Equal(t, tt.expectedStart, rnge.Start)
+				assert.Equal(t, tt.expectedEnd, rnge.End)
 			} else {
-				require.Nil(t, rnge, "expected no range for prepare rename")
+				require.Nil(t, rnge)
 			}
 		})
 	}
