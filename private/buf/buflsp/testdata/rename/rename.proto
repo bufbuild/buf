@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package rename.v1;
+
+import "types.proto";
+
+message Product {
+  string id = 1;
+  string name = 2;
+  Category category = 3;
+  repeated Product related = 4;
+}
+
+message Catalog {
+  string title = 1;
+  repeated Product products = 2;
+  Category default_category = 3;
+}
+
+service ProductService {
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse);
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+}
+
+message GetProductRequest {
+  string product_id = 1;
+}
+
+message GetProductResponse {
+  Product product = 1;
+}
+
+message ListProductsRequest {
+  string catalog_name = 1;
+}
+
+message ListProductsResponse {
+  repeated Product products = 1;
+}
+message Order {
+  message Item {
+    string product_id = 1;
+    int32 quantity = 2;
+  }
+  repeated Item items = 1;
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_PENDING = 1;
+    STATUS_SHIPPED = 2;
+  }
+  Status status = 2;
+  oneof payment {
+    string credit_card = 3;
+    string paypal_email = 4;
+  }
+}
+message Outer {
+  message Inner {
+    string title = 1;
+  }
+  message Container {
+    Inner inner = 1;
+  }
+  Container data = 1;
+}
