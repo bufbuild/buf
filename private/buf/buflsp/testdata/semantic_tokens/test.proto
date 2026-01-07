@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package test.v1;
+
+message User {
+  string id = 1;
+  string name = 2;
+  Role role = 3;
+}
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_ADMIN = 1;
+  ROLE_USER = 2;
+}
+
+service UserService {
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message LegacyUser {
+  option deprecated = true;
+  string id = 1;
+}
