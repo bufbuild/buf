@@ -291,7 +291,11 @@ func (s *server) Formatting(
 }
 
 // computeTextEdits computes the minimal set of text edits to transform oldText to newText.
+// It uses a line-based diff algorithm to identify changed regions and converts them into
+// LSP TextEdit objects that specify which ranges to replace with new text.
 func computeTextEdits(oldText, newText string) []protocol.TextEdit {
+	// Get line-by-line diff edits. Each edit represents a single line that was either
+	// matched, deleted from oldText, or inserted into newText.
 	edits := textdiff.Edits(oldText, newText)
 
 	var textEdits []protocol.TextEdit
@@ -299,34 +303,44 @@ func computeTextEdits(oldText, newText string) []protocol.TextEdit {
 	for i < len(edits) {
 		edit := edits[i]
 
+		// Skip lines that match between old and new text.
 		if edit.Op == diff.Match {
 			i++
 			continue
 		}
 
-		// Collect consecutive deletes and inserts
+		// Group consecutive Delete and Insert operations into a single TextEdit.
+		// This creates minimal edits rather than one edit per line.
 		var deleteStart, deleteEnd int = -1, -1
 		var insertLines []string
 
 		for i < len(edits) && edits[i].Op != diff.Match {
 			if edits[i].Op == diff.Delete {
+				// Track the range of lines being deleted from oldText.
+				// LineNoX is the line number in the old text.
 				if deleteStart == -1 {
 					deleteStart = edits[i].LineNoX
 				}
 				deleteEnd = edits[i].LineNoX
 			} else if edits[i].Op == diff.Insert {
+				// Collect lines being inserted into newText.
+				// Note: edit.Line already includes the newline character.
 				insertLines = append(insertLines, string(edits[i].Line))
 			}
 			i++
 		}
 
-		// Create the TextEdit
+		// Compute the LSP Range for this edit.
 		var start, end protocol.Position
 		if deleteStart != -1 {
+			// If we're deleting lines, the range spans from the first deleted line
+			// to the start of the line after the last deleted line.
 			start = protocol.Position{Line: uint32(deleteStart), Character: 0}
 			end = protocol.Position{Line: uint32(deleteEnd + 1), Character: 0}
 		} else {
-			// Pure insert - insert at the position indicated by the first insert
+			// Pure insertion with no deletions. Find the line number where we should insert.
+			// We look back through the edits to find the last matched line before this group
+			// of inserts, and insert after it.
 			insertPos := 0
 			if i > 0 {
 				insertPos = i - len(insertLines)
@@ -338,6 +352,8 @@ func computeTextEdits(oldText, newText string) []protocol.TextEdit {
 			end = start
 		}
 
+		// Build the new text from collected insert lines.
+		// Each line already has its newline, so we just concatenate.
 		newText := ""
 		if len(insertLines) > 0 {
 			newText = strings.Join(insertLines, "")
