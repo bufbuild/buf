@@ -253,7 +253,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		return nil
 	case ast.DefKindOption:
 		return completionItemsForOptions(ctx, file, parentDef, def, offset)
-	case ast.DefKindField, ast.DefKindMethod, ast.DefKindInvalid:
+	case ast.DefKindField, ast.DefKindMethod, ast.DefKindInvalid, ast.DefKindEnumValue:
 		// Use these kinds as completion starts.
 		// An invalid kind is caused from partial values, which may be any kind.
 	default:
@@ -697,22 +697,16 @@ func completionItemsForCompactOptions(
 	}
 	// Search for the option message in the IR.
 	optionMessage := defToOptionMessage(file, def)
-	if optionMessage.IsZero() {
-		file.lsp.logger.DebugContext(
-			ctx,
-			"completion: unable to find containing option message",
-			slog.String("kind", def.Classify().String()),
-		)
-		return nil
-	}
-	// Check the position within the option value.
-	if optionValueType, isOptionValue := getOptionValueType(file, ctx, optionMessage, offset); isOptionValue {
-		if optionValueType.IsZero() {
-			file.lsp.logger.DebugContext(ctx, "completion: unknown option value type")
-			return nil
+	if !optionMessage.IsZero() {
+		// Check the position within the option value.
+		if optionValueType, isOptionValue := getOptionValueType(file, ctx, optionMessage, offset); isOptionValue {
+			if optionValueType.IsZero() {
+				file.lsp.logger.DebugContext(ctx, "completion: unknown option value type")
+				return nil
+			}
+			// Generate completions for fields in the options value at this position.
+			return slices.Collect(messageFieldCompletionItems(file, optionValueType, optionSpan, offset, true))
 		}
-		// Generate completions for fields in the options value at this position.
-		return slices.Collect(messageFieldCompletionItems(file, optionValueType, optionSpan, offset, true))
 	}
 	// Find the options message type in the workspace by looking through all types.
 	var optionsType ir.Type
@@ -1365,22 +1359,23 @@ func parseOptionSpan(file *file, offset int) (source.Span, []source.Span) {
 	typeSpan := extractAroundOffset(
 		file, offset,
 		func(tok token.Token) bool {
-			// A gap is only allowed if the preceding token is the "option" token.
-			// This is the start of an option declaration.
-			if hasGap {
-				hasStart = tok.Keyword() == keyword.Option
-				return false
-			}
-			if isTokenSpace(tok) {
-				hasGap = true
-				return true
-			}
-			if isTokenTypeDelimiter(tok) {
+			switch {
+			case isTokenTypeDelimiter(tok):
 				hasStart = true
 				return false
+			case isTokenSpace(tok):
+				hasGap = true
+				return true
+			default:
+				// A gap is only allowed if the preceding token is the "option" token.
+				// This is the start of an option declaration.
+				if hasGap {
+					hasStart = tok.Keyword() == keyword.Option
+					return false
+				}
+				tokens = append(tokens, tok)
+				return isTokenType(tok) || isTokenParen(tok)
 			}
-			tokens = append(tokens, tok)
-			return isTokenType(tok) || isTokenParen(tok)
 		},
 		isTokenType,
 	)
@@ -1427,6 +1422,8 @@ func parseOptionSpan(file *file, offset int) (source.Span, []source.Span) {
 // defKindToOptionType returns the option type associated with the decl.
 func defKindToOptionType(kind ast.DefKind) (ir.FullName, ir.OptionTarget) {
 	switch kind {
+	case ast.DefKindInvalid:
+		return "google.protobuf.FileOptions", ir.OptionTargetFile
 	case ast.DefKindMessage:
 		return "google.protobuf.MessageOptions", ir.OptionTargetMessage
 	case ast.DefKindEnum:

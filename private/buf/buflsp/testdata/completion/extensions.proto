@@ -1,0 +1,53 @@
+syntax = "proto2";
+
+package example.options;
+
+import "google/protobuf/descriptor.proto";
+
+// Custom options for testing completions
+extend google.protobuf.FileOptions {
+  optional string custom_file_option = 50001;
+}
+
+extend google.protobuf.MessageOptions {
+  optional string custom_message_option = 50002;
+}
+
+extend google.protobuf.FieldOptions {
+  optional string custom_field_option = 50003;
+  optional FieldRules field = 50009;
+}
+
+extend google.protobuf.OneofOptions {
+  optional string custom_oneof_option = 50004;
+}
+
+extend google.protobuf.EnumOptions {
+  optional string custom_enum_option = 50005;
+}
+
+extend google.protobuf.EnumValueOptions {
+  optional string custom_enum_value_option = 50006;
+}
+
+extend google.protobuf.ServiceOptions {
+  optional string custom_service_option = 50007;
+}
+
+extend google.protobuf.MethodOptions {
+  optional string custom_method_option = 50008;
+}
+
+enum FieldEnum {
+  FIELD_ENUM_UNSPECIFIED = 0;
+  FIELD_ENUM_ONE = 1;
+  FIELD_ENUM_TWO = 2;
+}
+
+message FieldRules {
+  optional FieldRules recurse = 1;
+  repeated string strings = 2;
+  optional bool required = 3;
+  optional int64 number = 4;
+  optional FieldEnum enum = 5;
+}

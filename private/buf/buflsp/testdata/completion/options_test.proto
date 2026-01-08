@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package example.options;
+
+import "extensions.proto";
+
+option d = false;
+option (e) = false;
+
+// Test message options
+message TestMessage {
+  option d // complete_message_options_builtin: position after 'd'
+  option () // complete_message_options_custom: position after '('
+
+  string test_field = 1 [d] // complete_field_options_builtin: position after 'd'
+  string test_field2 = 2 [()] // complete_field_options_custom: position after '('
+  string test_field = 3 [
+    d // complete_field_options_newline_builtin: position after 'd'
+  ] 
+  string test_field2 = 2 [
+    () // complete_field_options_newline_custom: position after '('
+  ]
+}
+
+// Test enum options
+enum TestEnum {
+  option a // complete_enum_options_builtin: position after 'a'
+  option () // complete_enum_options_custom: position after '('
+
+  TEST_VALUE = 0 [d] // complete_enum_value_options_builtin: position after 'd'
+  TEST_VALUE2 = 1 [()] // complete_enum_value_options_custom: position after '('
+}
+
+// Test service and method options
+message Empty {}
+
+service TestService {
+  option d // complete_service_options_builtin: position after 'd'
+  option () // complete_service_options_custom: position after '('
+
+  rpc TestMethod(Empty) returns (Empty) {
+    option i // complete_method_options_builtin: position after 'i'
+    option () // complete_method_options_custom: position after '('
+  }
+}
+
+message TestPathCompletion {
+  string test_field = 1 [
+    (example.options.field). // complete_path_field_1
+    (example.options.field).recurse. // complete_path_field_2
+  ]
+}

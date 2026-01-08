@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package example.v1;
+
+message User {
+  string id = 1;
+}
