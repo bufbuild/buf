@@ -80,7 +80,7 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.Rea
 	return readWriteBucket, nil
 }
 
-// FormatFileNode formats the given file node and writ the result to dest.
+// FormatFileNode formats the given file node and writes the result to dest.
 func FormatFileNode(dest io.Writer, fileNode *ast.FileNode) error {
 	// Construct the file descriptor to ensure the AST is valid. This will
 	// capture unknown syntax like edition "2024" which at the current time is

@@ -51,6 +51,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	mvdan.cc/xurls/v2 v2.6.0
 	pluginrpc.com/pluginrpc v0.5.0
+	znkr.io/diff v1.0.0-beta.4
 )
 
 require (
