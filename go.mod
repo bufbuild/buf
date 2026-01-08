@@ -49,6 +49,7 @@ require (
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
 	pluginrpc.com/pluginrpc v0.5.0
+	znkr.io/diff v1.0.0-beta.4
 )
 
 require (

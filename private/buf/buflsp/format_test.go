@@ -16,7 +16,9 @@ package buflsp_test
 
 import (
 	"context"
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufformat"
@@ -33,22 +35,76 @@ func TestFormatting(t *testing.T) {
 	ctx := t.Context()
 
 	tests := []struct {
-		name           string
-		protoFile      string
-		expectEdits    bool
-		expectNumEdits int
+		name          string
+		protoFile     string
+		expectedEdits []protocol.TextEdit
 	}{
 		{
-			name:           "format_unformatted_file",
-			protoFile:      "unformatted.proto",
-			expectEdits:    true,
-			expectNumEdits: 1,
+			name:      "format_unformatted_file",
+			protoFile: "unformatted.proto",
+			expectedEdits: []protocol.TextEdit{
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 4, Character: 0},
+						End:   protocol.Position{Line: 5, Character: 0},
+					},
+					NewText: "",
+				},
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 6, Character: 0},
+						End:   protocol.Position{Line: 8, Character: 0},
+					},
+					NewText: "  string name = 1;\n  uint32 price = 2;\n",
+				},
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 13, Character: 0},
+						End:   protocol.Position{Line: 15, Character: 0},
+					},
+					NewText: "  STATUS_ACTIVE = 1;\n  STATUS_INACTIVE = 2;\n",
+				},
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 18, Character: 0},
+						End:   protocol.Position{Line: 20, Character: 0},
+					},
+					NewText: "  rpc GetProduct(GetProductRequest) returns (GetProductResponse);\n  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);\n",
+				},
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 23, Character: 0},
+						End:   protocol.Position{Line: 24, Character: 0},
+					},
+					NewText: "  string id = 1;\n",
+				},
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 26, Character: 0},
+						End:   protocol.Position{Line: 27, Character: 0},
+					},
+					NewText: "message GetProductResponse {\n",
+				},
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 31, Character: 0},
+						End:   protocol.Position{Line: 32, Character: 0},
+					},
+					NewText: "  uint32 page_size = 1;\n",
+				},
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 36, Character: 0},
+						End:   protocol.Position{Line: 38, Character: 0},
+					},
+					NewText: "  repeated Product products = 1;\n  string next_page_token = 2;\n",
+				},
+			},
 		},
 		{
-			name:           "format_already_formatted_file",
-			protoFile:      "formatted.proto",
-			expectEdits:    false,
-			expectNumEdits: 0,
+			name:          "format_already_formatted_file",
+			protoFile:     "formatted.proto",
+			expectedEdits: nil,
 		},
 	}
 
@@ -65,15 +121,32 @@ func TestFormatting(t *testing.T) {
 				},
 			}, &textEdits)
 			require.NoError(t, formatErr)
-			assert.Len(t, textEdits, tt.expectNumEdits)
-			if tt.expectEdits {
-				expectedFormatted := getExpectedFormattedContent(t, ctx, testProtoPath)
-				assert.Equal(t, expectedFormatted, textEdits[0].NewText)
-				assert.Equal(t, uint32(0), textEdits[0].Range.Start.Line)
-				assert.Equal(t, uint32(0), textEdits[0].Range.Start.Character)
-			}
+			assert.Equal(t, tt.expectedEdits, textEdits)
+			originalContent, err := os.ReadFile(testProtoPath)
+			require.NoError(t, err)
+			result := applyTextEdits(string(originalContent), textEdits)
+			expectedFormatted := getExpectedFormattedContent(t, ctx, testProtoPath)
+			assert.Equal(t, expectedFormatted, result)
 		})
 	}
+}
+
+func applyTextEdits(text string, edits []protocol.TextEdit) string {
+	lines := strings.Split(text, "\n")
+	for i := len(edits) - 1; i >= 0; i-- {
+		edit := edits[i]
+		startLine := int(edit.Range.Start.Line)
+		endLine := int(edit.Range.End.Line)
+		var newLines []string
+		if edit.NewText != "" {
+			newLines = strings.Split(edit.NewText, "\n")
+			if len(newLines) > 0 && newLines[len(newLines)-1] == "" {
+				newLines = newLines[:len(newLines)-1]
+			}
+		}
+		lines = append(lines[:startLine], append(newLines, lines[endLine:]...)...)
+	}
+	return strings.Join(lines, "\n")
 }
 
 func getExpectedFormattedContent(t *testing.T, ctx context.Context, protoPath string) string {

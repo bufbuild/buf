@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"runtime/debug"
 	"strings"
-	"unicode/utf16"
 
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufformat"
@@ -28,6 +27,8 @@ import (
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
 	"go.lsp.dev/protocol"
+	"znkr.io/diff"
+	"znkr.io/diff/textdiff"
 )
 
 const (
@@ -298,27 +299,69 @@ func (s *server) Formatting(
 		return nil, nil
 	}
 
-	// Calculate the end location for the file range.
-	endLine := strings.Count(file.file.Text(), "\n")
-	endCharacter := 0
-	for _, char := range file.file.Text()[strings.LastIndexByte(file.file.Text(), '\n')+1:] {
-		endCharacter += utf16.RuneLen(char)
-	}
-	return []protocol.TextEdit{
-		{
-			Range: protocol.Range{
-				Start: protocol.Position{
-					Line:      0,
-					Character: 0,
-				},
-				End: protocol.Position{
-					Line:      uint32(endLine),
-					Character: uint32(endCharacter),
-				},
-			},
+	return computeTextEdits(file.file.Text(), newText), nil
+}
+
+// computeTextEdits computes the minimal set of text edits to transform oldText to newText.
+func computeTextEdits(oldText, newText string) []protocol.TextEdit {
+	edits := textdiff.Edits(oldText, newText)
+
+	var textEdits []protocol.TextEdit
+	i := 0
+	for i < len(edits) {
+		edit := edits[i]
+
+		if edit.Op == diff.Match {
+			i++
+			continue
+		}
+
+		// Collect consecutive deletes and inserts
+		var deleteStart, deleteEnd int = -1, -1
+		var insertLines []string
+
+		for i < len(edits) && edits[i].Op != diff.Match {
+			if edits[i].Op == diff.Delete {
+				if deleteStart == -1 {
+					deleteStart = edits[i].LineNoX
+				}
+				deleteEnd = edits[i].LineNoX
+			} else if edits[i].Op == diff.Insert {
+				insertLines = append(insertLines, string(edits[i].Line))
+			}
+			i++
+		}
+
+		// Create the TextEdit
+		var start, end protocol.Position
+		if deleteStart != -1 {
+			start = protocol.Position{Line: uint32(deleteStart), Character: 0}
+			end = protocol.Position{Line: uint32(deleteEnd + 1), Character: 0}
+		} else {
+			// Pure insert - insert at the position indicated by the first insert
+			insertPos := 0
+			if i > 0 {
+				insertPos = i - len(insertLines)
+				if insertPos > 0 && edits[insertPos-1].Op == diff.Match {
+					insertPos = edits[insertPos-1].LineNoX + 1
+				}
+			}
+			start = protocol.Position{Line: uint32(insertPos), Character: 0}
+			end = start
+		}
+
+		newText := ""
+		if len(insertLines) > 0 {
+			newText = strings.Join(insertLines, "")
+		}
+
+		textEdits = append(textEdits, protocol.TextEdit{
+			Range:   protocol.Range{Start: start, End: end},
 			NewText: newText,
-		},
-	}, nil
+		})
+	}
+
+	return textEdits
 }
 
 // DidClose is called whenever the client closes a document.
