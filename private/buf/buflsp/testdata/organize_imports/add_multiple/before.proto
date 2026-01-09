@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package example.v1;
+
+import "types_b.proto";
+import "types_d.proto";
+
+message MyMessage {
+  TypeA field_a = 1;
+  TypeB field_b = 2;
+  TypeC field_c = 3;
+  TypeD field_d = 4;
+  TypeE field_e = 5;
+}

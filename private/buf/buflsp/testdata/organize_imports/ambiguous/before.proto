@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package example.v1;
+
+import "types_a.proto";
+
+message MyMessage {
+  TypeA field_a = 1;
+  TypeD field_d = 2;
+}

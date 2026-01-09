@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package example.v1;
+
+import "types_a.proto";
+import "types_b.proto";
+import "types_c.proto";
+
+message MyMessage {
+  // Fully qualified with leading dot
+  .example.v1.TypeA field_a = 1;
+
+  // Fully qualified without leading dot
+  example.v1.TypeB field_b = 2;
+
+  // Regular unqualified reference
+  TypeC field_c = 3;
+}

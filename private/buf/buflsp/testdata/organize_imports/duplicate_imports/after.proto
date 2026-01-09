@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package example.v1;
+
+// Leading comment for first import
+// Leading comment for duplicate
+import "types_a.proto"; // trailing comment
+import "types_b.proto";
+
+message MyMessage {
+  TypeA field_a = 1;
+  TypeB field_b = 2;
+}

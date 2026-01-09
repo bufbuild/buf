@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package example.v1;
+
+message OuterMessage {
+  // Field in outer message
+  TypeA field_a = 1;
+
+  message NestedMessage {
+    // Field in nested message
+    TypeB field_b = 1;
+
+    message DeeplyNestedMessage {
+      // Field in deeply nested message
+      TypeC field_c = 1;
+    }
+  }
+
+  // Another field in outer message
+  TypeD field_d = 2;
+}

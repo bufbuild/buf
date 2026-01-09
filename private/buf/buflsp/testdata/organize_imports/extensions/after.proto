@@ -1,0 +1,16 @@
+syntax = "proto2";
+
+package example.v1;
+
+import "types_a.proto";
+import "types_b.proto";
+
+message BaseMessage {
+  extensions 100 to 199;
+}
+
+// Extend with custom types
+extend BaseMessage {
+  optional TypeA extension_a = 100;
+  optional TypeB extension_b = 101;
+}

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package example.v1;
+
+import "types_a.proto";
+import "types_b.proto";
+import "types_c.proto";
+
+message MyMessage {
+  TypeA field = 1;
+  map<string, TypeB> map_field = 2;
+}

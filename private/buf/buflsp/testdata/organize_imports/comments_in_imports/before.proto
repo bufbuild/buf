@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package example.v1;
+
+// TypeC is imported but not used, but this comment should be preserved
+import "types_c.proto"; // trailing comment on TypeC
+// Comment about TypeA - explains why we need it
+// This should move with the import when sorted
+import "types_a.proto"; // trailing on TypeA
+/* Multi-line comment about TypeB
+   explaining its usage */
+import "types_b.proto";
+
+message MyMessage {
+  TypeA field_a = 1;
+  TypeB field_b = 2;
+}

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package example.v1;
+
+message MyMessage {
+  // Regular field
+  TypeA field_a = 1;
+
+  // Map field with custom value type
+  map<string, TypeB> map_field = 2;
+
+  // Oneof with custom type
+  oneof choice {
+    TypeC option_c = 3;
+    TypeD option_d = 4;
+  }
+}
+
+service MyService {
+  // RPC with custom request and response types
+  rpc MyMethod(TypeE) returns (TypeA);
+}

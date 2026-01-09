@@ -164,6 +164,11 @@ func (s *server) Initialize(
 			},
 			WorkspaceSymbolProvider: true,
 			DocumentSymbolProvider:  true,
+			CodeActionProvider: &protocol.CodeActionOptions{
+				CodeActionKinds: []protocol.CodeActionKind{
+					protocol.SourceOrganizeImports,
+				},
+			},
 		},
 		ServerInfo: info,
 	}, nil
@@ -252,6 +257,80 @@ func (s *server) DidSave(
 	return nil
 }
 
+// CodeAction is called when the client requests code actions for a given range.
+func (s *server) CodeAction(
+	ctx context.Context,
+	params *protocol.CodeActionParams,
+) ([]protocol.CodeAction, error) {
+	// Check if the client is requesting organize imports
+	requestOrganizeImports := false
+	if len(params.Context.Only) == 0 {
+		// If no specific kinds requested, provide all
+		requestOrganizeImports = true
+	} else {
+		for _, kind := range params.Context.Only {
+			if kind == protocol.SourceOrganizeImports {
+				requestOrganizeImports = true
+				break
+			}
+		}
+	}
+
+	if !requestOrganizeImports {
+		return nil, nil
+	}
+
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, fmt.Errorf("received code action request for file that was not open: %q", params.TextDocument.URI)
+	}
+
+	// Parse the file to get the AST
+	var errorsWithPos []reporter.ErrorWithPos
+	var warningErrorsWithPos []reporter.ErrorWithPos
+	handler := reporter.NewHandler(reporter.NewReporter(
+		func(errorWithPos reporter.ErrorWithPos) error {
+			errorsWithPos = append(errorsWithPos, errorWithPos)
+			return nil
+		},
+		func(errorWithPos reporter.ErrorWithPos) {
+			warningErrorsWithPos = append(warningErrorsWithPos, errorWithPos)
+		},
+	))
+	parsed, err := parser.Parse(file.uri.Filename(), strings.NewReader(file.file.Text()), handler)
+	if err != nil {
+		return nil, err
+	}
+	if parsed == nil {
+		// Can't organize imports if we can't parse the file
+		return nil, nil
+	}
+
+	// Compute organized imports
+	edits, err := s.computeOrganizeImportsEdits(ctx, file, parsed)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(edits) == 0 {
+		// No changes needed
+		return nil, nil
+	}
+
+	changes := make(map[protocol.DocumentURI][]protocol.TextEdit)
+	changes[params.TextDocument.URI] = edits
+
+	return []protocol.CodeAction{
+		{
+			Title: "Organize Imports",
+			Kind:  protocol.SourceOrganizeImports,
+			Edit: &protocol.WorkspaceEdit{
+				Changes: changes,
+			},
+		},
+	}, nil
+}
+
 // Formatting is called whenever the user explicitly requests formatting.
 //
 // NOTE: this still uses the current compiler since formatting is not yet implemented with
@@ -298,27 +377,31 @@ func (s *server) Formatting(
 		return nil, nil
 	}
 
+	return []protocol.TextEdit{fullFileEdit(file.file.Text(), newText)}, nil
+}
+
+// fullFileEdit creates a text edit that replaces the entire file contents.
+func fullFileEdit(oldText, newText string) protocol.TextEdit {
 	// Calculate the end location for the file range.
-	endLine := strings.Count(file.file.Text(), "\n")
+	endLine := strings.Count(oldText, "\n")
 	endCharacter := 0
-	for _, char := range file.file.Text()[strings.LastIndexByte(file.file.Text(), '\n')+1:] {
+	for _, char := range oldText[strings.LastIndexByte(oldText, '\n')+1:] {
 		endCharacter += utf16.RuneLen(char)
 	}
-	return []protocol.TextEdit{
-		{
-			Range: protocol.Range{
-				Start: protocol.Position{
-					Line:      0,
-					Character: 0,
-				},
-				End: protocol.Position{
-					Line:      uint32(endLine),
-					Character: uint32(endCharacter),
-				},
+
+	return protocol.TextEdit{
+		Range: protocol.Range{
+			Start: protocol.Position{
+				Line:      0,
+				Character: 0,
 			},
-			NewText: newText,
+			End: protocol.Position{
+				Line:      uint32(endLine),
+				Character: uint32(endCharacter),
+			},
 		},
-	}, nil
+		NewText: newText,
+	}
 }
 
 // DidClose is called whenever the client closes a document.
