@@ -917,11 +917,16 @@ func typeReferencesToCompletionItems(
 	}
 	parentPrefix := string(parentFullName) + "."
 	packagePrefix := string(current.ir.Package()) + "."
+	// Check if we're completing an absolute type reference (starting with '.').
+	isAbsoluteReference := strings.HasPrefix(span.Text(), ".")
 	return func(yield func(protocol.CompletionItem) bool) {
 		editRange := reportSpanToProtocolRange(span)
 		prefix, _ := splitSpan(span, offset)
-		// Prefix filter on the trigger character '.', if present.
-		prefix = prefix[:strings.LastIndexByte(prefix, '.')+1]
+		// For relative references, filter on the trigger character '.' if present.
+		// For absolute references, use the full prefix to match (e.g., ".goo" matches ".google").
+		if !isAbsoluteReference {
+			prefix = prefix[:strings.LastIndexByte(prefix, '.')+1]
+		}
 		for _, symbol := range fileSymbolTypesIter {
 			// We only support types in this completion instance, and not scalar values, which leaves us
 			// with messages and enums.
@@ -938,10 +943,16 @@ func typeReferencesToCompletionItems(
 				continue // Unsupported kind, skip it.
 			}
 			label := string(symbol.ir.FullName())
-			if len(parentFullName) > 0 && strings.HasPrefix(label, parentPrefix) {
-				label = label[len(parentPrefix):]
-			} else if strings.HasPrefix(label, packagePrefix) {
-				label = label[len(packagePrefix):]
+			if isAbsoluteReference {
+				// For absolute references, prepend '.' to make the label fully qualified.
+				label = "." + label
+			} else {
+				// For relative references, strip parent or package prefix to suggest short names.
+				if len(parentFullName) > 0 && strings.HasPrefix(label, parentPrefix) {
+					label = label[len(parentPrefix):]
+				} else if strings.HasPrefix(label, packagePrefix) {
+					label = label[len(packagePrefix):]
+				}
 			}
 			if !strings.HasPrefix(label, prefix) {
 				continue

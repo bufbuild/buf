@@ -90,6 +90,13 @@ func TestCompletion(t *testing.T) {
 			character:        14, // After "  User user = "
 			expectedContains: []string{"20000"},
 		},
+		{
+			name:                "complete_absolute_type_reference",
+			line:                50, // Line with ".goo field_name = 1;"
+			character:           4,  // After ".goo"
+			expectedContains:    []string{".google.protobuf.Timestamp", ".google.protobuf.Duration", ".google.protobuf.Any"},
+			expectedNotContains: []string{".example.v1.User", ".example.v1.GetUserRequest"},
+		},
 	}
 
 	for _, tt := range tests {
