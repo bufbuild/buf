@@ -61,8 +61,11 @@ func TestDocumentHighlight(t *testing.T) {
 				{line: 7, startCharacter: 8, endCharacter: 15, kind: protocol.DocumentHighlightKindText},   // message Product (definition)
 				{line: 11, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText}, // repeated Product related
 				{line: 16, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText}, // repeated Product products in Catalog
-				{line: 30, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},   // Product product in GetProductResponse
-				{line: 38, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText}, // repeated Product products in ListProductsResponse
+				{line: 33, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},   // Product product in GetProductResponse
+				{line: 41, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText}, // repeated Product products in ListProductsResponse
+				{line: 49, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},   // Product product in StreamProductsResponse
+				{line: 53, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},   // Product product in UploadProductsRequest
+				{line: 65, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},   // Product product in DownloadProductsResponse
 			},
 		},
 		{
@@ -74,8 +77,11 @@ func TestDocumentHighlight(t *testing.T) {
 				{line: 7, startCharacter: 8, endCharacter: 15, kind: protocol.DocumentHighlightKindText},   // message Product (definition)
 				{line: 11, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText}, // repeated Product related
 				{line: 16, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText}, // repeated Product products in Catalog
-				{line: 30, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},   // Product product in GetProductResponse
-				{line: 38, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText}, // repeated Product products in ListProductsResponse
+				{line: 33, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},   // Product product in GetProductResponse
+				{line: 41, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText}, // repeated Product products in ListProductsResponse
+				{line: 49, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},   // Product product in StreamProductsResponse
+				{line: 53, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},   // Product product in UploadProductsRequest
+				{line: 65, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},   // Product product in DownloadProductsResponse
 			},
 		},
 		{
@@ -120,10 +126,10 @@ func TestDocumentHighlight(t *testing.T) {
 		{
 			name:      "highlight_request_message",
 			targetURI: testURI,
-			line:      25,
+			line:      28,
 			character: 8,
 			expectedHighlights: []highlightLocation{
-				{line: 25, startCharacter: 8, endCharacter: 25, kind: protocol.DocumentHighlightKindText},  // message GetProductRequest (definition)
+				{line: 28, startCharacter: 8, endCharacter: 25, kind: protocol.DocumentHighlightKindText},  // message GetProductRequest (definition)
 				{line: 21, startCharacter: 17, endCharacter: 34, kind: protocol.DocumentHighlightKindText}, // GetProductRequest in rpc
 			},
 		},
@@ -137,34 +143,34 @@ func TestDocumentHighlight(t *testing.T) {
 		{
 			name:      "highlight_nested_message",
 			targetURI: testURI,
-			line:      42,
+			line:      69,
 			character: 10,
 			expectedHighlights: []highlightLocation{
-				{line: 42, startCharacter: 10, endCharacter: 14, kind: protocol.DocumentHighlightKindText}, // message Item (definition)
-				{line: 46, startCharacter: 11, endCharacter: 15, kind: protocol.DocumentHighlightKindText}, // repeated Item items (reference)
+				{line: 69, startCharacter: 10, endCharacter: 14, kind: protocol.DocumentHighlightKindText}, // message Item (definition)
+				{line: 73, startCharacter: 11, endCharacter: 15, kind: protocol.DocumentHighlightKindText}, // repeated Item items (reference)
 			},
 		},
 		{
 			name:      "highlight_nested_enum",
 			targetURI: testURI,
-			line:      47,
+			line:      74,
 			character: 7,
 			expectedHighlights: []highlightLocation{
-				{line: 47, startCharacter: 7, endCharacter: 13, kind: protocol.DocumentHighlightKindText}, // enum Status (definition)
-				{line: 52, startCharacter: 2, endCharacter: 8, kind: protocol.DocumentHighlightKindText},  // Status status (reference)
+				{line: 74, startCharacter: 7, endCharacter: 13, kind: protocol.DocumentHighlightKindText}, // enum Status (definition)
+				{line: 79, startCharacter: 2, endCharacter: 8, kind: protocol.DocumentHighlightKindText},  // Status status (reference)
 			},
 		},
 		{
 			name:               "no_highlight_on_nested_enum_value",
 			targetURI:          testURI,
-			line:               49,
+			line:               76,
 			character:          4,
 			expectedHighlights: nil, // Enum values should not be highlighted
 		},
 		{
 			name:               "no_highlight_on_oneof_field",
 			targetURI:          testURI,
-			line:               54,
+			line:               81,
 			character:          11,
 			expectedHighlights: nil, // Oneof field names should not be highlighted
 		},
@@ -188,6 +194,89 @@ func TestDocumentHighlight(t *testing.T) {
 			line:               8,
 			character:          14,
 			expectedHighlights: nil,
+		},
+		{
+			name:      "highlight_fully_qualified_reference",
+			targetURI: testURI,
+			line:      105, // Line 106 in file (1-indexed) = line 105 (0-indexed)
+			character: 8,
+			expectedHighlights: []highlightLocation{
+				{line: 105, startCharacter: 8, endCharacter: 16, kind: protocol.DocumentHighlightKindText}, // message Metadata (definition)
+				{line: 111, startCharacter: 2, endCharacter: 10, kind: protocol.DocumentHighlightKindText}, // Metadata short_reference
+				{line: 112, startCharacter: 2, endCharacter: 23, kind: protocol.DocumentHighlightKindText}, // highlight.v1.Metadata qualified_reference (entire span)
+			},
+		},
+		{
+			name:      "highlight_from_short_reference",
+			targetURI: testURI,
+			line:      111, // Line 112 in file (1-indexed) = line 111 (0-indexed)
+			character: 2,
+			expectedHighlights: []highlightLocation{
+				{line: 105, startCharacter: 8, endCharacter: 16, kind: protocol.DocumentHighlightKindText}, // message Metadata (definition)
+				{line: 111, startCharacter: 2, endCharacter: 10, kind: protocol.DocumentHighlightKindText}, // Metadata short_reference
+				{line: 112, startCharacter: 2, endCharacter: 23, kind: protocol.DocumentHighlightKindText}, // highlight.v1.Metadata qualified_reference (entire span)
+			},
+		},
+		{
+			name:      "highlight_from_qualified_reference",
+			targetURI: testURI,
+			line:      112, // Line 113 in file (1-indexed) = line 112 (0-indexed)
+			character: 20,
+			expectedHighlights: []highlightLocation{
+				{line: 105, startCharacter: 8, endCharacter: 16, kind: protocol.DocumentHighlightKindText}, // message Metadata (definition)
+				{line: 111, startCharacter: 2, endCharacter: 10, kind: protocol.DocumentHighlightKindText}, // Metadata short_reference
+				{line: 112, startCharacter: 2, endCharacter: 23, kind: protocol.DocumentHighlightKindText}, // highlight.v1.Metadata qualified_reference (entire span)
+			},
+		},
+		{
+			name:      "highlight_streaming_rpc_input_excludes_stream_keyword",
+			targetURI: testURI,
+			line:      23, // Line 24: rpc StreamProducts(stream StreamProductsRequest)
+			character: 30,
+			expectedHighlights: []highlightLocation{
+				{line: 44, startCharacter: 8, endCharacter: 29, kind: protocol.DocumentHighlightKindText},  // message StreamProductsRequest (definition)
+				{line: 23, startCharacter: 28, endCharacter: 49, kind: protocol.DocumentHighlightKindText}, // StreamProductsRequest in RPC input (excluding "stream ")
+			},
+		},
+		{
+			name:      "highlight_streaming_rpc_output_excludes_stream_keyword",
+			targetURI: testURI,
+			line:      23, // Line 24: returns (stream StreamProductsResponse)
+			character: 70,
+			expectedHighlights: []highlightLocation{
+				{line: 48, startCharacter: 8, endCharacter: 30, kind: protocol.DocumentHighlightKindText},  // message StreamProductsResponse (definition)
+				{line: 23, startCharacter: 67, endCharacter: 89, kind: protocol.DocumentHighlightKindText}, // StreamProductsResponse in RPC output (excluding "stream ")
+			},
+		},
+		{
+			name:      "highlight_from_streaming_request_definition",
+			targetURI: testURI,
+			line:      44, // message StreamProductsRequest
+			character: 8,
+			expectedHighlights: []highlightLocation{
+				{line: 44, startCharacter: 8, endCharacter: 29, kind: protocol.DocumentHighlightKindText},  // message StreamProductsRequest (definition)
+				{line: 23, startCharacter: 28, endCharacter: 49, kind: protocol.DocumentHighlightKindText}, // StreamProductsRequest in RPC (excluding "stream ")
+			},
+		},
+		{
+			name:      "highlight_client_streaming_rpc_input",
+			targetURI: testURI,
+			line:      24, // Line 25: rpc UploadProducts(stream UploadProductsRequest)
+			character: 30,
+			expectedHighlights: []highlightLocation{
+				{line: 52, startCharacter: 8, endCharacter: 29, kind: protocol.DocumentHighlightKindText},  // message UploadProductsRequest (definition)
+				{line: 24, startCharacter: 28, endCharacter: 49, kind: protocol.DocumentHighlightKindText}, // UploadProductsRequest in RPC (excluding "stream ")
+			},
+		},
+		{
+			name:      "highlight_server_streaming_rpc_output",
+			targetURI: testURI,
+			line:      25, // Line 26: returns (stream DownloadProductsResponse)
+			character: 70,
+			expectedHighlights: []highlightLocation{
+				{line: 64, startCharacter: 8, endCharacter: 32, kind: protocol.DocumentHighlightKindText},  // message DownloadProductsResponse (definition)
+				{line: 25, startCharacter: 64, endCharacter: 88, kind: protocol.DocumentHighlightKindText}, // DownloadProductsResponse in RPC (excluding "stream ")
+			},
 		},
 	}
 

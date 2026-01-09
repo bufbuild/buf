@@ -21,6 +21,9 @@ message Catalog {
 service ProductService {
   rpc GetProduct(GetProductRequest) returns (GetProductResponse);
   rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  rpc StreamProducts(stream StreamProductsRequest) returns (stream StreamProductsResponse);
+  rpc UploadProducts(stream UploadProductsRequest) returns (UploadProductsResponse);
+  rpc DownloadProducts(DownloadProductsRequest) returns (stream DownloadProductsResponse);
 }
 
 message GetProductRequest {
@@ -37,6 +40,30 @@ message ListProductsRequest {
 
 message ListProductsResponse {
   repeated Product products = 1;
+}
+
+message StreamProductsRequest {
+  string query = 1;
+}
+
+message StreamProductsResponse {
+  Product product = 1;
+}
+
+message UploadProductsRequest {
+  Product product = 1;
+}
+
+message UploadProductsResponse {
+  int32 uploaded_count = 1;
+}
+
+message DownloadProductsRequest {
+  string filter = 1;
+}
+
+message DownloadProductsResponse {
+  Product product = 1;
 }
 
 message Order {
@@ -74,4 +101,14 @@ extend google.protobuf.MessageOptions {
 message WithExtension {
   option (custom_message_option) = "test";
   string field = 1;
+}
+
+message Metadata {
+  string key = 1;
+  string value = 2;
+}
+
+message FullyQualifiedReferenceTest {
+  Metadata short_reference = 1;
+  highlight.v1.Metadata qualified_reference = 2;
 }

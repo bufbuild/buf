@@ -562,12 +562,16 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		resolved = append(resolved, tag)
 		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options())...)
 	case ir.SymbolKindField:
+		// Get the type span. We prefer AsPath() which excludes modifiers like "repeated"
+		// while keeping package qualifiers, but fallback to RemovePrefixes() if AsPath is zero.
+		typeSpan := irSymbol.AsMember().TypeAST().AsPath().Span()
+		if typeSpan.IsZero() {
+			typeSpan = irSymbol.AsMember().TypeAST().RemovePrefixes().Span()
+		}
 		typ := &symbol{
 			ir:   irSymbol,
 			file: f,
-			// We remove prefixes from the type, since we want to exclude the prefix from the
-			// symbol, e.g. repeated string values = 1;, we want to capture the symbol for "string".
-			span: irSymbol.AsMember().TypeAST().RemovePrefixes().Span(),
+			span: typeSpan,
 		}
 		kind, needsResolution := getKindForMember(irSymbol.AsMember())
 		typ.kind = kind
@@ -649,10 +653,15 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		// Method input must be a single message type.
 		if astInputs := irSymbol.AsMethod().AST().AsMethod().Signature.Inputs(); astInputs.Len() == 1 {
 			inputAST := astInputs.At(0)
+			// Get the type span, preferring AsPath() but falling back to RemovePrefixes().
+			inputSpan := inputAST.AsPath().Span()
+			if inputSpan.IsZero() {
+				inputSpan = inputAST.RemovePrefixes().Span()
+			}
 			inputSym := &symbol{
 				ir:   irSymbol,
 				file: f,
-				span: inputAST.RemovePrefixes().Span(), // We always strip prefixes in case of streaming.
+				span: inputSpan,
 				kind: &reference{
 					def:      input.AST(), // Only messages can be method inputs and outputs
 					fullName: input.FullName(),
@@ -664,10 +673,15 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		// Method output must be a single message type.
 		if astOutputs := irSymbol.AsMethod().AST().AsMethod().Signature.Outputs(); astOutputs.Len() == 1 {
 			outputAST := astOutputs.At(0)
+			// Get the type span, preferring AsPath() but falling back to RemovePrefixes().
+			outputSpan := outputAST.AsPath().Span()
+			if outputSpan.IsZero() {
+				outputSpan = outputAST.RemovePrefixes().Span()
+			}
 			outputSym := &symbol{
 				ir:   irSymbol,
 				file: f,
-				span: outputAST.RemovePrefixes().Span(), // We always strip prefixes in case of streaming.
+				span: outputSpan,
 				kind: &reference{
 					def:      output.AST(), // Only messages can be method inputs and outputs
 					fullName: output.FullName(),
