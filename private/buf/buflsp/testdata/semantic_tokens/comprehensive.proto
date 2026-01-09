@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+// This is a comment
+package test.v1;
+
+import public "google/protobuf/descriptor.proto";
+import weak "other.proto"; // NOTE: file doesn't exist; not resolved in semantic tokens
+
+// Message with deprecated option
+message User {
+  option deprecated = true;
+
+  // Built-in type (property with defaultLibrary)
+  string name = 1;
+  int32 age = 2;
+  // Optional field
+  optional string nickname = 5;
+
+  // Custom type (variable -> struct reference)
+  Role role = 3;
+
+  // Field with repeated modifier
+  repeated string tags = 4;
+
+  // Map field
+  map<string, int32> attributes = 22;
+
+  // Reserved fields and ranges
+  reserved 5;
+  reserved 10 to 15;
+  reserved "old_field";
+
+  // Oneof
+  oneof contact {
+    string email = 20;
+    string phone = 21;
+  }
+}
+
+// Enum with members
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_ADMIN = 1;
+}
+
+// Service with RPC methods
+service UserService {
+  // RPC with stream modifiers
+  rpc GetUser(stream GetUserRequest) returns (stream GetUserResponse);
+  // RPC without stream modifiers
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message ListUsersRequest {
+  string query = 1;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+}
