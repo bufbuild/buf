@@ -46,3 +46,7 @@ message ProtobufReservedRangeTest {
 
   User user = ; // complete_field_number_skips_protobuf_reserved_range
 }
+
+message AbsoluteTypeReferenceTest {
+  .goo field_name = 1; // complete_absolute_type_reference
+}
