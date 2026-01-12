@@ -15,9 +15,11 @@
 package buflsp_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -531,4 +533,160 @@ func TestPrepareRename(t *testing.T) {
 			}
 		})
 	}
+}
+func TestRenameMinimalEdits(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+	testProtoPath, err := filepath.Abs("testdata/rename/rename.proto")
+	require.NoError(t, err)
+
+	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
+
+	// Read original content
+	originalContent, err := os.ReadFile(testProtoPath)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name      string
+		line      uint32
+		character uint32
+		newName   string
+	}{
+		{
+			name:      "rename_message",
+			line:      15,
+			character: 8,
+			newName:   "RenamedProduct",
+		},
+		{
+			name:      "rename_field",
+			line:      16,
+			character: 2,
+			newName:   "renamed_id",
+		},
+		{
+			name:      "rename_enum",
+			line:      21,
+			character: 5,
+			newName:   "RenamedStatus",
+		},
+		{
+			name:      "rename_service",
+			line:      35,
+			character: 8,
+			newName:   "RenamedProductService",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var workspaceEdit protocol.WorkspaceEdit
+			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentRename, protocol.RenameParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: testURI,
+					},
+					Position: protocol.Position{
+						Line:      tt.line,
+						Character: tt.character,
+					},
+				},
+				NewName: tt.newName,
+			}, &workspaceEdit)
+			require.NoError(t, err)
+
+			require.NotNil(t, workspaceEdit.Changes, "workspace edit should have changes")
+			allEdits := []protocol.TextEdit{}
+			for _, edits := range workspaceEdit.Changes {
+				allEdits = append(allEdits, edits...)
+			}
+
+			require.NotEmpty(t, allEdits, "should have at least one edit")
+
+			// Verify edits are minimal
+			assertRenameEditsAreMinimal(t, string(originalContent), allEdits, tt.newName)
+		})
+	}
+}
+
+// assertRenameEditsAreMinimal verifies that rename edits are minimal
+func assertRenameEditsAreMinimal(t *testing.T, original string, edits []protocol.TextEdit, newName string) {
+	t.Helper()
+
+	// Verify edits don't overlap
+	for i := 0; i < len(edits); i++ {
+		for j := i + 1; j < len(edits); j++ {
+			assert.Falsef(t, rangesOverlapRename(edits[i].Range, edits[j].Range),
+				"edits %d and %d overlap: %s and %s",
+				i, j,
+				formatRangeRename(edits[i].Range),
+				formatRangeRename(edits[j].Range))
+		}
+	}
+
+	// Verify all edits have the expected new text (the new name)
+	for i, edit := range edits {
+		assert.Equal(t, newName, edit.NewText,
+			"edit %d should rename to %q", i, newName)
+	}
+
+	// Verify edits only touch the necessary text (no surrounding context)
+	lines := strings.Split(original, "\n")
+	for i, edit := range edits {
+		startLine := int(edit.Range.Start.Line)
+		startChar := int(edit.Range.Start.Character)
+		endLine := int(edit.Range.End.Line)
+		endChar := int(edit.Range.End.Character)
+
+		if startLine >= len(lines) {
+			continue
+		}
+
+		// For single-line renames, verify the edit range matches the symbol being renamed
+		if startLine == endLine && startLine < len(lines) {
+			line := lines[startLine]
+			if endChar <= len(line) {
+				replacedText := line[startChar:endChar]
+				// The replaced text should not be identical to newName (that would be redundant)
+				assert.NotEqual(t, newName, replacedText,
+					"edit %d replaces text with identical text (not minimal)", i)
+
+				// The edit should not include extra whitespace or punctuation
+				assert.NotContains(t, replacedText, " ",
+					"edit %d includes whitespace in replaced text: %q", i, replacedText)
+				assert.NotContains(t, replacedText, "\t",
+					"edit %d includes tab in replaced text: %q", i, replacedText)
+			}
+		}
+	}
+
+	// Verify total edit count is reasonable (each symbol should be renamed once)
+	// For a simple rename, we expect a small number of edits relative to file size
+	linesCount := len(lines)
+	assert.LessOrEqualf(t, len(edits), linesCount,
+		"rename generated %d edits which seems excessive for a file with %d lines",
+		len(edits), linesCount)
+}
+
+// rangesOverlapRename returns true if two LSP ranges overlap.
+func rangesOverlapRename(r1, r2 protocol.Range) bool {
+	return positionLessRename(r1.Start, r2.End) && positionLessRename(r2.Start, r1.End)
+}
+
+// positionLessRename returns true if p1 is before p2 in the document.
+func positionLessRename(p1, p2 protocol.Position) bool {
+	if p1.Line != p2.Line {
+		return p1.Line < p2.Line
+	}
+	return p1.Character < p2.Character
+}
+
+// formatRangeRename returns a human-readable string representation of an LSP range.
+func formatRangeRename(r protocol.Range) string {
+	return fmt.Sprintf("[%d:%d-%d:%d]",
+		r.Start.Line, r.Start.Character,
+		r.End.Line, r.End.Character)
 }

@@ -15,7 +15,10 @@
 package buflsp_test
 
 import (
+	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -376,4 +379,176 @@ func testCodeActionOrganizeImports(t *testing.T, filename string, expectedEdits 
 			assert.Equal(t, expected.NewText, actual.NewText, "edit %d: newText mismatch", i)
 		}
 	})
+}
+
+func TestOrganizeImportsMinimalEdits(t *testing.T) {
+	t.Parallel()
+
+	testFiles := []string{
+		"testdata/organize_imports/import_test.proto",
+		"testdata/organize_imports/comments_test.proto",
+		"testdata/organize_imports/modifier_test.proto",
+		"testdata/organize_imports/duplicate_test.proto",
+	}
+
+	for _, testFile := range testFiles {
+		testFile := testFile
+		t.Run(testFile, func(t *testing.T) {
+			t.Parallel()
+
+			testProtoPath, err := filepath.Abs(testFile)
+			require.NoError(t, err)
+
+			clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
+
+			// Get original content
+			originalContent, err := os.ReadFile(testProtoPath)
+			require.NoError(t, err)
+
+			// Request organize imports code action
+			var codeActions []protocol.CodeAction
+			_, err = clientJSONConn.Call(t.Context(), protocol.MethodTextDocumentCodeAction, protocol.CodeActionParams{
+				TextDocument: protocol.TextDocumentIdentifier{
+					URI: testURI,
+				},
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 0, Character: 0},
+					End:   protocol.Position{Line: 0, Character: 0},
+				},
+				Context: protocol.CodeActionContext{
+					Only: []protocol.CodeActionKind{
+						protocol.SourceOrganizeImports,
+					},
+				},
+			}, &codeActions)
+			require.NoError(t, err)
+
+			// Find the "Organize imports" code action
+			var organizeImportsAction *protocol.CodeAction
+			for _, codeAction := range codeActions {
+				if codeAction.Title == "Organize imports" {
+					organizeImportsAction = &codeAction
+					break
+				}
+			}
+
+			// Some files may not need any changes
+			if organizeImportsAction == nil {
+				return
+			}
+
+			require.NotNil(t, organizeImportsAction.Edit, "code action should have a workspace edit")
+			require.NotNil(t, organizeImportsAction.Edit.Changes, "workspace edit should have changes")
+
+			actualEdits, ok := organizeImportsAction.Edit.Changes[testURI]
+			require.True(t, ok, "workspace edit should have changes for the current file")
+
+			if len(actualEdits) == 0 {
+				return
+			}
+
+			// Verify edits are minimal
+			assertOrganizeImportsEditsAreMinimal(t, string(originalContent), actualEdits)
+		})
+	}
+}
+
+// assertOrganizeImportsEditsAreMinimal verifies that organize imports edits are minimal
+func assertOrganizeImportsEditsAreMinimal(t *testing.T, original string, edits []protocol.TextEdit) {
+	t.Helper()
+
+	// Verify edits don't overlap
+	for i := 0; i < len(edits); i++ {
+		for j := i + 1; j < len(edits); j++ {
+			assert.Falsef(t, rangesOverlapImports(edits[i].Range, edits[j].Range),
+				"edits %d and %d overlap: %s and %s",
+				i, j,
+				formatRangeImports(edits[i].Range),
+				formatRangeImports(edits[j].Range))
+		}
+	}
+
+	// Verify total edit size is reasonable
+	totalEditSize := 0
+	for _, edit := range edits {
+		totalEditSize += len(edit.NewText)
+	}
+
+	// For organize imports, we expect the edit size to be related to the import section size
+	// not the full file, so this is a sanity check rather than a strict requirement
+	assert.LessOrEqualf(t, totalEditSize, len(original),
+		"edits size %d should not exceed original file size %d",
+		totalEditSize, len(original))
+
+	// Verify no edit is entirely unchanged (replacing text with identical text)
+	assertNoRedundantEditsOrganizeImports(t, original, edits)
+}
+
+// assertNoRedundantEditsOrganizeImports verifies no edit replaces text with identical text
+func assertNoRedundantEditsOrganizeImports(t *testing.T, original string, edits []protocol.TextEdit) {
+	t.Helper()
+
+	lines := strings.Split(original, "\n")
+	for i, edit := range edits {
+		startLine := int(edit.Range.Start.Line)
+		startChar := int(edit.Range.Start.Character)
+		endLine := int(edit.Range.End.Line)
+		endChar := int(edit.Range.End.Character)
+
+		if startLine >= len(lines) || endLine > len(lines) {
+			continue
+		}
+
+		// Extract the text being replaced
+		var replacedText string
+		if startLine == endLine {
+			// Single line edit
+			if startLine < len(lines) && endChar <= len(lines[startLine]) {
+				replacedText = lines[startLine][startChar:endChar]
+			}
+		} else {
+			// Multi-line edit
+			var parts []string
+			for line := startLine; line < endLine; line++ {
+				if line >= len(lines) {
+					break
+				}
+				if line == startLine {
+					parts = append(parts, lines[line][startChar:])
+				} else if line < endLine-1 || (line == endLine-1 && endChar == 0) {
+					parts = append(parts, lines[line])
+				} else {
+					parts = append(parts, lines[line][:endChar])
+				}
+			}
+			replacedText = strings.Join(parts, "\n")
+			if endLine > startLine && endChar == 0 {
+				replacedText += "\n"
+			}
+		}
+
+		assert.NotEqualf(t, edit.NewText, replacedText,
+			"edit %d replaces text with identical text (not minimal): range %s",
+			i, formatRangeImports(edit.Range))
+	}
+}
+
+// rangesOverlapImports returns true if two LSP ranges overlap.
+func rangesOverlapImports(r1, r2 protocol.Range) bool {
+	return positionLessImports(r1.Start, r2.End) && positionLessImports(r2.Start, r1.End)
+}
+
+// positionLessImports returns true if p1 is before p2 in the document.
+func positionLessImports(p1, p2 protocol.Position) bool {
+	if p1.Line != p2.Line {
+		return p1.Line < p2.Line
+	}
+	return p1.Character < p2.Character
+}
+
+// formatRangeImports returns a human-readable string representation of an LSP range.
+func formatRangeImports(r protocol.Range) string {
+	return fmt.Sprintf("[%d:%d-%d:%d]",
+		r.Start.Line, r.Start.Character,
+		r.End.Line, r.End.Character)
 }

@@ -1,0 +1,34 @@
+syntax = "proto2";
+
+package example.v1;
+
+import "google/protobuf/descriptor.proto";
+
+message Product {
+    required string name = 1;
+       optional uint32 price = 2;
+  repeated string tags = 3;
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+    STATUS_ACTIVE = 1;
+      STATUS_INACTIVE = 2;
+}
+
+extend google.protobuf.MessageOptions {
+    optional string my_option = 51234;
+}
+
+service ProductService {
+    rpc GetProduct(GetProductRequest) returns (GetProductResponse);
+  rpc ListProducts(ListProductsRequest) returns   (ListProductsResponse);
+}
+
+message GetProductRequest {
+      required string id = 1;
+}
+
+message GetProductResponse{
+  optional Product product = 1;
+}
