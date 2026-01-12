@@ -24,7 +24,6 @@ import (
 
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufformat"
-	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
 	"go.lsp.dev/protocol"
@@ -34,49 +33,6 @@ const (
 	serverName = "buf-lsp"
 
 	maxSymbolResults = 1000
-)
-
-// The subset of SemanticTokenTypes that we support.
-// Must match the order of [semanticTypeLegend].
-// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_semanticTokens
-const (
-	semanticTypeType = iota
-	semanticTypeStruct
-	semanticTypeVariable
-	semanticTypeEnum
-	semanticTypeEnumMember
-	semanticTypeInterface
-	semanticTypeMethod
-	semanticTypeDecorator
-	semanticTypeNamespace
-)
-
-// The subset of SemanticTokenModifiers that we support.
-// Must match the order of [semanticModifierLegend].
-// Semantic modifiers are encoded as a bitset, hence the shifted iota.
-// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_semanticTokens
-const (
-	semanticModifierDeprecated = 1 << iota
-	semanticModifierDefaultLibrary
-)
-
-var (
-	// These slices must match the order of the indices in the above const blocks.
-	semanticTypeLegend = []string{
-		"type",
-		"struct",
-		"variable",
-		"enum",
-		"enumMember",
-		"interface",
-		"method",
-		"decorator",
-		"namespace",
-	}
-	semanticModifierLegend = []string{
-		"deprecated",
-		"defaultLibrary", // maps to builtin values
-	}
 )
 
 // server is an implementation of [protocol.Server].
@@ -440,90 +396,7 @@ func (s *server) SemanticTokensFull(
 	ctx context.Context,
 	params *protocol.SemanticTokensParams,
 ) (*protocol.SemanticTokens, error) {
-	file := s.fileManager.Get(params.TextDocument.URI)
-	if file == nil {
-		return nil, nil
-	}
-	// In the case where there are no symbols for the file, we return nil for SemanticTokensFull.
-	// This is based on the specification for the method textDocument/semanticTokens/full,
-	// the expected response is the union type `SemanticTokens | null`.
-	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_semanticTokens
-	if len(file.symbols) == 0 {
-		return nil, nil
-	}
-	// This fairly painful encoding is described in detail here:
-	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_semanticTokens
-	var (
-		encoded           []uint32
-		prevLine, prevCol uint32
-	)
-	for _, symbol := range file.symbols {
-		var semanticType uint32
-		var semanticModifier uint32
-		_, ok := symbol.kind.(*option)
-		if ok {
-			semanticType = semanticTypeDecorator
-		} else {
-			switch symbol.ir.Kind() {
-			case ir.SymbolKindPackage:
-				semanticType = semanticTypeNamespace
-			case ir.SymbolKindMessage:
-				semanticType = semanticTypeStruct
-			case ir.SymbolKindEnum:
-				semanticType = semanticTypeEnum
-			case ir.SymbolKindField:
-				// For predeclared types, we set semanticType to semanticTypeType
-				if symbol.IsBuiltIn() {
-					semanticType = semanticTypeType
-					semanticModifier += semanticModifierDefaultLibrary
-				} else {
-					semanticType = semanticTypeVariable
-				}
-			case ir.SymbolKindEnumValue:
-				semanticType = semanticTypeEnumMember
-			case ir.SymbolKindExtension:
-				semanticType = semanticTypeVariable
-			case ir.SymbolKindService:
-				semanticType = semanticTypeInterface
-			case ir.SymbolKindMethod:
-				semanticType = semanticTypeMethod
-			default:
-				continue
-			}
-		}
-		if _, ok := symbol.ir.Deprecated().AsBool(); ok {
-			semanticModifier += semanticModifierDeprecated
-		}
-
-		startLocation := symbol.span.Location(symbol.span.Start, positionalEncoding)
-		endLocation := symbol.span.Location(symbol.span.End, positionalEncoding)
-
-		for i := startLocation.Line; i <= endLocation.Line; i++ {
-			newLine := uint32(i - 1)
-			var newCol uint32
-			if i == startLocation.Line {
-				newCol = uint32(startLocation.Column - 1)
-				if prevLine == newLine {
-					newCol -= prevCol
-				}
-			}
-			symbolLen := uint32(endLocation.Column - 1)
-			if i == startLocation.Line {
-				symbolLen -= uint32(startLocation.Column - 1)
-			}
-			encoded = append(encoded, newLine-prevLine, newCol, symbolLen, semanticType, semanticModifier)
-			prevLine = newLine
-			if i == startLocation.Line {
-				prevCol = uint32(startLocation.Column - 1)
-			} else {
-				prevCol = 0
-			}
-		}
-	}
-	if len(encoded) == 0 {
-		return nil, nil
-	}
-	return &protocol.SemanticTokens{Data: encoded}, nil
+	return semanticTokensFull(s.fileManager.Get(params.TextDocument.URI))
 }
 
 // Symbols is the entry point for workspace-wide symbol search.
