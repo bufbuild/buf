@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+import "other.proto";
+
+package example.v1;
+
+message Product {
+    string name = 1;
+       Other other = 2;
+  repeated string tags = 3;
+}
+
+message Response {
+  Other data = 1;
+      string status = 2;
+}

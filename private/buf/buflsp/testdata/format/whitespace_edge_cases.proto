@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+
+
+package example.v1;
+
+
+message Product {
+
+
+    string name = 1;
+
+
+       uint32 price = 2;
+
+
+  repeated string tags = 3;
+
+
+}
+
+
+enum Status {
+
+
+  STATUS_UNSPECIFIED = 0;
+
+
+    STATUS_ACTIVE = 1;
+
+
+}
+
+message Response {
+  string data = 1;
+    uint32 code = 2;
+}

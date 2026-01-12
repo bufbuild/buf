@@ -1,0 +1,38 @@
+// Copyright 2025 Example Inc.
+// Licensed under Apache License 2.0
+
+syntax = "proto3";
+
+package example.v1;
+
+// Product represents an item in the catalog
+message Product {
+  // The unique name of the product
+    string name = 1;
+  // Price in cents
+       uint32 price = 2; // inline comment
+  repeated string tags = 3;
+}
+
+// Status represents the current state
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+    STATUS_ACTIVE = 1; // Currently active
+      STATUS_INACTIVE = 2; // Not active anymore
+}
+
+// ProductService handles product operations
+service ProductService {
+  // GetProduct retrieves a single product
+    rpc GetProduct(GetProductRequest) returns (GetProductResponse);
+  // ListProducts retrieves multiple products
+  rpc ListProducts(ListProductsRequest) returns   (ListProductsResponse);
+}
+
+message GetProductRequest {
+      string id = 1;
+}
+
+message GetProductResponse{
+  Product product = 1;
+}

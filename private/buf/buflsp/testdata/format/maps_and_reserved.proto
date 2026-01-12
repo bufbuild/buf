@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package example.v1;
+
+message Product {
+    reserved 2, 15, 9 to 11;
+  reserved "old_field", "deprecated_name";
+    string name = 1;
+  map<string, string> attributes = 3;
+      map<int32, Product> related = 4;
+  repeated string tags = 5;
+}
+
+message Inventory {
+  reserved 1;
+    map<string, uint32> quantities = 2;
+      map<string, string> locations = 3;
+}
+
+enum Status {
+    reserved 2, 15, 9 to 11;
+  reserved "OLD_STATUS";
+  STATUS_UNSPECIFIED = 0;
+    STATUS_ACTIVE = 1;
+}

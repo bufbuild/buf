@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package example.v1;
+
+message Product {
+    string name = 1;
+  message Metadata {
+        string key = 1;
+    string value = 2;
+  }
+    repeated Metadata metadata = 2;
+
+  message Price {
+      uint32 amount = 1;
+        string currency = 2;
+  }
+  Price price = 3;
+}
+
+message SearchRequest {
+    oneof query {
+        string text = 1;
+      uint32 id = 2;
+    }
+
+  oneof filter {
+      bool active_only = 3;
+        string category = 4;
+  }
+}
+
+message Response {
+  oneof result {
+      Product product = 1;
+    string error = 2;
+  }
+}
