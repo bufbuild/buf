@@ -68,12 +68,12 @@ func TestSemanticTokensKeywords(t *testing.T) {
 				{4, 8, 6, semanticTypeStruct, "'Person' struct"},
 				// required modifier
 				{5, 2, 8, semanticTypeModifier, "'required' modifier"},
-				{5, 11, 6, semanticTypeProperty, "'string' as property"},
+				{5, 11, 6, semanticTypeType, "'string' as type"},
 				{5, 18, 4, semanticTypeProperty, "'name' as property"},
 				{5, 25, 1, semanticTypeNumber, "'1' field tag"},
 				// optional modifier
 				{6, 2, 8, semanticTypeModifier, "'optional' modifier"},
-				{6, 11, 5, semanticTypeProperty, "'int32' as property"},
+				{6, 11, 5, semanticTypeType, "'int32' as type"},
 				{6, 17, 3, semanticTypeProperty, "'age' as property"},
 				{6, 23, 1, semanticTypeNumber, "'2' field tag"},
 			},
@@ -91,6 +91,11 @@ func TestSemanticTokensKeywords(t *testing.T) {
 				// message declaration
 				{4, 0, 7, semanticTypeKeyword, "'message' keyword"},
 				{4, 8, 7, semanticTypeStruct, "'Product' struct"},
+				// string fields
+				{5, 2, 6, semanticTypeType, "'string' as type"},
+				{5, 9, 2, semanticTypeProperty, "'id' as property"},
+				{6, 2, 6, semanticTypeType, "'string' as type"},
+				{6, 9, 4, semanticTypeProperty, "'name' as property"},
 			},
 		},
 		{
@@ -108,13 +113,15 @@ func TestSemanticTokensKeywords(t *testing.T) {
 				// decorator (option)
 				{10, 9, 10, semanticTypeDecorator, "'deprecated' as decorator"},
 				// built-in type
-				{13, 2, 6, semanticTypeProperty, "'string' as property"},
+				{13, 2, 6, semanticTypeType, "'string' as type"},
 				// field name
 				{13, 9, 4, semanticTypeProperty, "'name' as property"},
 				{13, 16, 1, semanticTypeNumber, "'1' field tag"},
+				{14, 2, 5, semanticTypeType, "'int32' as type"},
+				{14, 8, 3, semanticTypeProperty, "'age' as property"},
 				// optional field
 				{16, 2, 8, semanticTypeModifier, "'optional' modifier"},
-				{16, 11, 6, semanticTypeProperty, "'string' as property"},
+				{16, 11, 6, semanticTypeType, "'string' as type"},
 				{16, 18, 8, semanticTypeProperty, "'nickname' as property"},
 				{16, 29, 1, semanticTypeNumber, "'5' field tag"},
 				// custom type
@@ -122,10 +129,12 @@ func TestSemanticTokensKeywords(t *testing.T) {
 				{19, 7, 4, semanticTypeProperty, "'role' as property"},
 				// repeated modifier
 				{22, 2, 8, semanticTypeModifier, "'repeated' modifier"},
+				{22, 11, 6, semanticTypeType, "'string' as type"},
+				{22, 18, 4, semanticTypeProperty, "'tags' as property"},
 				// map field (line 26 in file = line 25 in 0-indexed)
 				{25, 2, 18, semanticTypeProperty, "'map<string, int32>' map type"},
-				{25, 6, 6, semanticTypeProperty, "'string' scalar"},
-				{25, 14, 5, semanticTypeProperty, "'int32' scalar"},
+				{25, 6, 6, semanticTypeType, "'string' scalar"},
+				{25, 14, 5, semanticTypeType, "'int32' scalar"},
 				{25, 21, 10, semanticTypeProperty, "'attributes' property"},
 				{25, 34, 2, semanticTypeNumber, "'22' field tag"},
 				// reserved keyword (single field)
@@ -240,6 +249,7 @@ const (
 	semanticTypeComment    = 11
 	semanticTypeString     = 12
 	semanticTypeNumber     = 13
+	semanticTypeType       = 14
 )
 
 // semanticToken represents a decoded semantic token for easier testing.

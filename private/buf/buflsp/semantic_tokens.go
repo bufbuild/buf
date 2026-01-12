@@ -44,6 +44,7 @@ const (
 	semanticTypeComment
 	semanticTypeString
 	semanticTypeNumber
+	semanticTypeType
 )
 
 // The subset of SemanticTokenModifiers that we support.
@@ -73,6 +74,7 @@ var (
 		string(protocol.SemanticTokenComment),
 		string(protocol.SemanticTokenString),
 		string(protocol.SemanticTokenNumber),
+		string(protocol.SemanticTokenType),
 	}
 	semanticModifierLegend = []string{
 		string(protocol.SemanticTokenModifierDeprecated),
@@ -219,9 +221,11 @@ func semanticTokensFull(file *file) (*protocol.SemanticTokens, error) {
 				if !fieldDef.Tag.Span().IsZero() {
 					collectToken(fieldDef.Tag.Span(), semanticTypeNumber, 0, keyword.Unknown)
 				}
-				semanticType = semanticTypeProperty
 				if symbol.IsBuiltIn() {
+					semanticType = semanticTypeType
 					semanticModifier += semanticModifierDefaultLibrary
+				} else {
+					semanticType = semanticTypeProperty
 				}
 			case ir.SymbolKindEnumValue:
 				enumValueDef := symbol.ir.AsMember().AST().AsEnumValue()
@@ -234,7 +238,7 @@ func semanticTokensFull(file *file) (*protocol.SemanticTokens, error) {
 				semanticType = semanticTypeVariable
 			case ir.SymbolKindScalar:
 				// Scalars are built-in types like int32, string, etc.
-				semanticType = semanticTypeProperty
+				semanticType = semanticTypeType
 				semanticModifier += semanticModifierDefaultLibrary
 			case ir.SymbolKindService:
 				// Collect "service" keyword
