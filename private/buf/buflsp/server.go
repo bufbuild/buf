@@ -106,6 +106,7 @@ func (s *server) Initialize(
 			DefinitionProvider:         &protocol.DefinitionOptions{},
 			TypeDefinitionProvider:     &protocol.TypeDefinitionOptions{},
 			DocumentFormattingProvider: true,
+			DocumentHighlightProvider:  true,
 			HoverProvider:              true,
 			ReferencesProvider:         &protocol.ReferenceOptions{},
 			RenameProvider: &protocol.RenameOptions{
@@ -433,6 +434,19 @@ func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSy
 		}
 	}
 	return anyResults, nil
+}
+
+// DocumentHighlight is the entry point for highlighting occurrences of a symbol within a file.
+//
+// Supported symbol types for highlighting are [referenceable] and [reference] (messages, enums,
+// extensions, and their references). All highlights use Text kind.
+// Services, RPC methods, enum values, and field names are not highlighted.
+func (s *server) DocumentHighlight(ctx context.Context, params *protocol.DocumentHighlightParams) ([]protocol.DocumentHighlight, error) {
+	symbol := s.getSymbol(ctx, params.TextDocument.URI, params.Position)
+	if symbol == nil {
+		return nil, nil
+	}
+	return symbol.DocumentHighlights(), nil
 }
 
 // PrepareRename is the entry point for checking workspace wide renaming of a symbol.

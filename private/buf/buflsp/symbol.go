@@ -189,6 +189,61 @@ func (s *symbol) References(includeDeclaration bool) []protocol.Location {
 	return references
 }
 
+// DocumentHighlights returns document highlights for the symbol within the current file.
+// This includes the definition (if in the same file) and all references in the same file.
+// All highlights use the [protocol.DocumentHighlightKindText] kind.
+func (s *symbol) DocumentHighlights() []protocol.DocumentHighlight {
+	// Don't highlight static symbols (services, methods, enum values)
+	if _, ok := s.kind.(*static); ok {
+		return nil
+	}
+
+	// Get the referenceable kind to find all references
+	referenceableKind, ok := s.kind.(*referenceable)
+	if !ok && s.def != nil {
+		// If the symbol isn't referenceable itself, but has a referenceable definition, use the
+		// definition for the references.
+		referenceableKind, ok = s.def.kind.(*referenceable)
+	}
+	if !ok {
+		return nil
+	}
+
+	// Don't highlight field names. Field names have referenceable kind directly on the symbol,
+	// whereas field type references have reference kind and reference a referenceable definition.
+	// Both have ir.SymbolKindField, so we distinguish by checking if s.kind is referenceable.
+	if _, isRefKind := s.kind.(*referenceable); isRefKind && s.ir.Kind() == ir.SymbolKindField {
+		return nil
+	}
+
+	var highlights []protocol.DocumentHighlight
+	// Add all references in the same file
+	for _, reference := range referenceableKind.references {
+		if reference.file.uri == s.file.uri {
+			highlights = append(highlights, protocol.DocumentHighlight{
+				Range: reference.Range(),
+				Kind:  protocol.DocumentHighlightKindText,
+			})
+		}
+	}
+
+	// Add the definition if it's in the same file
+	if s.def != nil && s.def.file.uri == s.file.uri {
+		highlights = append(highlights, protocol.DocumentHighlight{
+			Range: s.def.Range(),
+			Kind:  protocol.DocumentHighlightKindText,
+		})
+	} else if s.def == nil {
+		// If there's no separate definition, the symbol itself is the definition
+		highlights = append(highlights, protocol.DocumentHighlight{
+			Range: s.Range(),
+			Kind:  protocol.DocumentHighlightKindText,
+		})
+	}
+
+	return highlights
+}
+
 // LogValue provides the log value for a symbol.
 func (s *symbol) LogValue() slog.Value {
 	if s == nil {

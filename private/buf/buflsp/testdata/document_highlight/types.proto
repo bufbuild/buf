@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package highlight.v1;
+
+enum Category {
+  CATEGORY_UNSPECIFIED = 0;
+  CATEGORY_ELECTRONICS = 1;
+  CATEGORY_BOOKS = 2;
+}
+
+message Metadata {
+  string key = 1;
+  string value = 2;
+}
