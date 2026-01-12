@@ -25,6 +25,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"unicode/utf16"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/protocompile/experimental/ast"
@@ -542,6 +543,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 			(offsetInSpan(offset, defMethod.Signature.Inputs().Span()) == 0 ||
 				offsetInSpan(offset, defMethod.Signature.Outputs().Span()) == 0)
 
+		iters = append(iters, rpcRequestResponseSnippetCompletionItem(file, parentDef, tokenSpan))
 		if showKeywords {
 			// If both showKeywords and showTypes is set, we are in a services method args.
 			if showTypes {
@@ -561,7 +563,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 						tokenSpan,
 						offset,
 					),
-					rpcRequestResponseSnippetCompletionItem(parentDef, tokenSpan),
+					rpcRequestResponseSnippetCompletionItem(file, parentDef, tokenSpan),
 				)
 			}
 		} else if showReturnKeyword {
@@ -1033,21 +1035,38 @@ func keywordToCompletionItem(
 // rpcRequestResponseSnippetCompletionItem returns a completion item for the common RPC pattern.
 // This generates an RPC method declaration with Request/Response message types.
 func rpcRequestResponseSnippetCompletionItem(
+	file *file,
 	parentDef ast.DeclDef,
 	tokenSpan source.Span,
 ) iter.Seq[protocol.CompletionItem] {
 	return func(yield func(protocol.CompletionItem) bool) {
 		// The snippet uses ${1:Name} for linked placeholders.
 		// Because everything is in one TextEdit, placeholders work across RPC and messages.
-		// var sb strings.Builder
-		// sb.WriteString("rpc ${1:Name}(${1:Name}Request) returns (${1:Name}Response);")
-		// sb.WriteString(body)
-		// sb.WriteString("\n\nmessage ${1:Name}Request {}\n\nmessage ${1:Name}Response {}")
+
+		// Calculate the end of the file for inserting message definitions.
+		text := file.file.Text()
+		endLine := strings.Count(text, "\n")
+		endCharacter := 0
+		for _, char := range text[strings.LastIndexByte(text, '\n')+1:] {
+			endCharacter += utf16.RuneLen(char)
+		}
+
+		endOfFileRange := protocol.Range{
+			Start: protocol.Position{
+				Line:      uint32(endLine),
+				Character: uint32(endCharacter),
+			},
+			End: protocol.Position{
+				Line:      uint32(endLine),
+				Character: uint32(endCharacter),
+			},
+		}
 
 		yield(protocol.CompletionItem{
 			Label:            "rpc Name(NameRequest) returns (NameResponse)",
 			Kind:             protocol.CompletionItemKindSnippet,
 			InsertTextFormat: protocol.InsertTextFormatSnippet,
+			InsertText:       "blah",
 			InsertTextMode:   protocol.InsertTextModeAsIs,
 			Detail:           "Insert RPC method with Request and Response messages",
 			Documentation:    "Creates an RPC method declaration and corresponding Request/Response message types",
@@ -1055,12 +1074,12 @@ func rpcRequestResponseSnippetCompletionItem(
 				Range:   reportSpanToProtocolRange(tokenSpan),
 				NewText: "rpc ${1:Name}(${1:Name}Request) returns (${1:Name}Response);",
 			},
-			// AdditionalTextEdits: []protocol.TextEdit{
-			// 	{
-			// 		Range:   reportSpanToProtocolRange(expandedSpan),
-			// 		NewText: "", // Delete from cursor to end of service
-			// 	},
-			// },
+			AdditionalTextEdits: []protocol.TextEdit{
+				{
+					Range:   endOfFileRange,
+					NewText: "\n\nmessage ${1:Name}Request {}\n\nmessage ${1:Name}Response {}",
+				},
+			},
 		})
 	}
 }
