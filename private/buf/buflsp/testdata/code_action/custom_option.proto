@@ -1,0 +1,14 @@
+syntax = "proto2";
+
+package example.options;
+
+import "google/protobuf/descriptor.proto";
+
+// Custom option for messages
+extend google.protobuf.MessageOptions {
+  optional CustomOptionType custom_option = 50001;
+}
+
+message CustomOptionType {
+  optional string value = 1;
+}

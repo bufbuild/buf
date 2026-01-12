@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package example.models;
+
+// Product represents a product in the catalog
+message Product {
+  string id = 1;
+  string name = 2;
+  int32 price = 3;
+}
+
+// Order represents a customer order
+message Order {
+  string id = 1;
+  string customer_id = 2;
+  repeated string product_ids = 3;
+}
+
+// Status represents order status
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_PENDING = 1;
+  STATUS_SHIPPED = 2;
+  STATUS_DELIVERED = 3;
+}
