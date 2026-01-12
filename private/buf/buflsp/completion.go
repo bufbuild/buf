@@ -1037,21 +1037,12 @@ func rpcRequestResponseSnippetCompletionItem(
 	tokenSpan source.Span,
 ) iter.Seq[protocol.CompletionItem] {
 	return func(yield func(protocol.CompletionItem) bool) {
-		// Create expanded span from cursor (offset) to end of service
-		serviceEndOffset := parentDef.Span().End
-		expandedSpan := source.Span{
-			File:  tokenSpan.File,
-			Start: tokenSpan.End,
-			End:   serviceEndOffset,
-		}
-		body := expandedSpan.Text()
-
 		// The snippet uses ${1:Name} for linked placeholders.
 		// Because everything is in one TextEdit, placeholders work across RPC and messages.
-		var sb strings.Builder
-		sb.WriteString("rpc ${1:Name}(${1:Name}Request) returns (${1:Name}Response);")
-		sb.WriteString(body)
-		sb.WriteString("\n\nmessage ${1:Name}Request {}\n\nmessage ${1:Name}Response {}")
+		// var sb strings.Builder
+		// sb.WriteString("rpc ${1:Name}(${1:Name}Request) returns (${1:Name}Response);")
+		// sb.WriteString(body)
+		// sb.WriteString("\n\nmessage ${1:Name}Request {}\n\nmessage ${1:Name}Response {}")
 
 		yield(protocol.CompletionItem{
 			Label:            "rpc Name(NameRequest) returns (NameResponse)",
@@ -1062,14 +1053,14 @@ func rpcRequestResponseSnippetCompletionItem(
 			Documentation:    "Creates an RPC method declaration and corresponding Request/Response message types",
 			TextEdit: &protocol.TextEdit{
 				Range:   reportSpanToProtocolRange(tokenSpan),
-				NewText: sb.String(),
+				NewText: "rpc ${1:Name}(${1:Name}Request) returns (${1:Name}Response);",
 			},
-			AdditionalTextEdits: []protocol.TextEdit{
-				{
-					Range:   reportSpanToProtocolRange(expandedSpan),
-					NewText: "", // Delete from cursor to end of service
-				},
-			},
+			// AdditionalTextEdits: []protocol.TextEdit{
+			// 	{
+			// 		Range:   reportSpanToProtocolRange(expandedSpan),
+			// 		NewText: "", // Delete from cursor to end of service
+			// 	},
+			// },
 		})
 	}
 }
