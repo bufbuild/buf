@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package rename.v1;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.MessageOptions {
+  Testing testing = 89181;
+}
+
+message Testing {
+  bool test = 1;
+  Nested nested = 2;
+
+  message Nested {
+    bool value = 1;
+  }
+}

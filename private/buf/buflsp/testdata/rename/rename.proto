@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package rename.v1;
 
+import "extensions.proto";
+import "subpkg/options.proto";
 import "types.proto";
 
 message Product {
@@ -62,4 +64,20 @@ message Outer {
     Inner inner = 1;
   }
   Container data = 1;
+}
+
+message UploadRequest {
+  option (testing).test = true;
+  bytes data = 1;
+}
+
+message DeleteRequest {
+  option (testing).test = false;
+  option (testing).nested.value = true;
+  string id = 1;
+}
+
+message CreateRequest {
+  option (subpkg.testing).test = true;
+  string name = 1;
 }
