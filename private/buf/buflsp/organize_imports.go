@@ -189,6 +189,7 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 	}
 }
 
+// symbolInFiles searches through the files exported types.
 func symbolInFile(fullName ir.FullName, file *file) bool {
 	for _, typ := range seq.All(file.ir.AllTypes()) {
 		if typ.FullName() == fullName {

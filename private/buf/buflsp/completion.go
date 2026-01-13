@@ -873,36 +873,6 @@ func keywordToCompletionItem(
 	}
 }
 
-// findImportInsertLine finds the line number where imports should be inserted and returns
-// the set of import paths that already exist in the file. Returns the line after the last
-// existing import, or after the package/syntax declaration if no imports exist.
-func findImportInsertLine(file *file) (uint32, map[string]struct{}) {
-	var lastImportLine uint32
-	currentImportPaths := map[string]struct{}{}
-	for currentFileImport := range seq.Values(file.ir.Imports()) {
-		lastImportLine = max(lastImportLine, uint32(currentFileImport.Decl.Span().EndLoc().Line))
-		currentImportPaths[currentFileImport.Path()] = struct{}{}
-	}
-	if lastImportLine != 0 {
-		// Insert on the line after the last import (to preserve blank lines and spacing)
-		return lastImportLine + 1, currentImportPaths
-	}
-	// If lastImportLine is 0, we have no imports in this file; put it after `package`, if
-	// package exists. Otherwise, after `syntax`, if it exists. Otherwise, balk.
-	// NOTE: We simply want to add the import on the next line (which may not be how `buf
-	// format` would format the file); we leave the overall file formatting to `buf format`.
-	var insertLine uint32
-	switch {
-	case !file.ir.AST().Package().IsZero():
-		insertLine = uint32(file.ir.AST().Package().Span().EndLoc().Line)
-	case !file.ir.AST().Syntax().IsZero():
-		insertLine = uint32(file.ir.AST().Syntax().Span().EndLoc().Line)
-	default:
-		insertLine = 0 // Default at top of file.
-	}
-	return insertLine, currentImportPaths
-}
-
 // typeReferencesToCompletionItems returns completion items for user-defined types (messages, enums, etc).
 func typeReferencesToCompletionItems(
 	current *file,
@@ -920,9 +890,29 @@ func typeReferencesToCompletionItems(
 			}
 		}
 	}
-	lastImportLine, currentImportPaths := findImportInsertLine(current)
+	var lastImportLine int64
+	currentImportPaths := map[string]struct{}{}
+	for currentFileImport := range seq.Values(current.ir.Imports()) {
+		lastImportLine = max(lastImportLine, int64(currentFileImport.Decl.Span().EndLoc().Line))
+		currentImportPaths[currentFileImport.Path()] = struct{}{}
+	}
+	if lastImportLine == 0 {
+		// If lastImportLine is 0, we have no imports in this file; put it after `package`, if
+		// package exists. Otherwise, after `syntax`, if it exists. Otherwise, balk.
+		// NOTE: We simply want to add the import on the next line (which may not be how `buf
+		// format` would format the file); we leave the overall file formatting to `buf format`.
+		switch {
+		case !current.ir.AST().Package().IsZero():
+			lastImportLine = int64(current.ir.AST().Package().Span().EndLoc().Line)
+		case !current.ir.AST().Syntax().IsZero():
+			lastImportLine = int64(current.ir.AST().Syntax().Span().EndLoc().Line)
+		}
+	}
+	if lastImportLine < 0 || lastImportLine > math.MaxUint32 {
+		lastImportLine = 0 // Default to insert at top of page.
+	}
 	importInsertPosition := protocol.Position{
-		Line:      lastImportLine,
+		Line:      uint32(lastImportLine),
 		Character: 0,
 	}
 	parentPrefix := string(parentFullName) + "."
