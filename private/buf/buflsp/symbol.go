@@ -423,32 +423,29 @@ func renameChangesForReferenceableSymbol(s *symbol, newName string) (map[protoco
 	if ok {
 		for _, reference := range referenceableKind.references {
 			newText := newName
-			// For option references (extension usages), preserve package qualification and parentheses.
-			// e.g., if renaming "(subpkg.testing)" to "validated", result should be "(subpkg.validated)"
-			if _, isOption := reference.kind.(*option); isOption {
+			// For option references (extension usages), use the fully-qualified package name from
+			// defFullName and preserve parentheses.
+			// e.g., if renaming "(testing)" to "validated", result is "(rename.v1.validated)"
+			// e.g., if renaming "(subpkg.testing)" to "validated", result is "(rename.v1.subpkg.validated)"
+			if opt, isOption := reference.kind.(*option); isOption {
 				spanText := reference.span.Text()
-				// Extract components: prefix (opening paren + package), suffix (closing paren)
+				// Extract parentheses
 				prefix := ""
 				suffix := ""
-				nameOnly := spanText
-
-				// Check for opening parenthesis
 				if strings.HasPrefix(spanText, "(") {
 					prefix = "("
-					nameOnly = nameOnly[1:]
 				}
-				// Check for closing parenthesis
-				if strings.HasSuffix(nameOnly, ")") {
+				if strings.HasSuffix(spanText, ")") {
 					suffix = ")"
-					nameOnly = nameOnly[:len(nameOnly)-1]
 				}
-				// Check if there's package qualification (contains a dot)
-				if lastDot := strings.LastIndex(nameOnly, "."); lastDot != -1 {
-					// Preserve the package qualification
-					packageQualification := nameOnly[:lastDot+1]
-					newText = prefix + packageQualification + newName + suffix
+
+				// Use the defFullName to construct the new qualified name
+				parent := opt.defFullName.Parent()
+				if parent != "" {
+					// Has package qualification
+					newText = prefix + string(parent) + "." + newName + suffix
 				} else {
-					// No package qualification, just preserve parens
+					// No package qualification
 					newText = prefix + newName + suffix
 				}
 			}

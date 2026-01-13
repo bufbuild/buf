@@ -232,10 +232,10 @@ func TestRename(t *testing.T) {
 			newName:   "validated",
 			expectedEdits: []editLocation{
 				{uri: extensionsURI, line: 7, startCharacter: 10, endCharacter: 17, newText: "validated"},
-				{uri: testURI, line: 69, startCharacter: 9, endCharacter: 18, newText: "(validated)"},
-				{uri: testURI, line: 74, startCharacter: 9, endCharacter: 18, newText: "(validated)"},
-				{uri: testURI, line: 75, startCharacter: 9, endCharacter: 18, newText: "(validated)"},
-				{uri: testURI, line: 75, startCharacter: 9, endCharacter: 18, newText: "(validated)"}, // appears twice on this line: (testing).test and (testing).nested.value
+				{uri: testURI, line: 69, startCharacter: 9, endCharacter: 18, newText: "(rename.v1.validated)"},
+				{uri: testURI, line: 74, startCharacter: 9, endCharacter: 18, newText: "(rename.v1.validated)"},
+				{uri: testURI, line: 75, startCharacter: 9, endCharacter: 18, newText: "(rename.v1.validated)"},
+				{uri: testURI, line: 75, startCharacter: 9, endCharacter: 18, newText: "(rename.v1.validated)"}, // appears twice on this line: (testing).test and (testing).nested.value
 			},
 		},
 		{
@@ -269,7 +269,7 @@ func TestRename(t *testing.T) {
 			newName:   "validated",
 			expectedEdits: []editLocation{
 				{uri: subpkgOptionsURI, line: 7, startCharacter: 10, endCharacter: 17, newText: "validated"},
-				{uri: testURI, line: 80, startCharacter: 9, endCharacter: 25, newText: "(subpkg.validated)"},
+				{uri: testURI, line: 80, startCharacter: 9, endCharacter: 25, newText: "(rename.v1.subpkg.validated)"},
 			},
 		},
 		{
