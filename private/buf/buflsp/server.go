@@ -456,7 +456,6 @@ func (s *server) DocumentHighlight(ctx context.Context, params *protocol.Documen
 
 // CodeAction is called when the client requests code actions for a given range.
 func (s *server) CodeAction(ctx context.Context, params *protocol.CodeActionParams) ([]protocol.CodeAction, error) {
-	// TODO: respond with code actions...
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {
 		return nil, nil
