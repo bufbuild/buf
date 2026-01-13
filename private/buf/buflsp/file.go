@@ -602,7 +602,25 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		resolved = append(resolved, tag)
 		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options())...)
 	case ir.SymbolKindExtension:
-		// The symbol only includes the extension field name.
+		// Track the type reference for the extension field (e.g., "Testing" in "Testing testing = 89181;")
+		typeSpan := irSymbol.AsMember().TypeAST().AsPath().Span()
+		if typeSpan.IsZero() {
+			typeSpan = irSymbol.AsMember().TypeAST().RemovePrefixes().Span()
+		}
+		typ := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: typeSpan,
+		}
+		kind, needsResolution := getKindForMember(irSymbol.AsMember())
+		typ.kind = kind
+		if needsResolution {
+			unresolved = append(unresolved, typ)
+		} else {
+			resolved = append(resolved, typ)
+		}
+
+		// Track the extension field name itself.
 		ext := &symbol{
 			ir:   irSymbol,
 			file: f,
@@ -783,6 +801,7 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 				// Otherwise, we get the component for the corresponding index.
 				span = components[index].Span()
 			}
+			span = trimLeadingDot(span)
 			sym := &symbol{
 				// NOTE: no [ir.Symbol] for option elements
 				file: f,
@@ -809,9 +828,10 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 					if component.IsLast() {
 						continue
 					}
+					componentSpan := trimLeadingDot(component.Span())
 					found := false
 					for _, parent := range parents {
-						if parent.span == component.Span() {
+						if parent.span == componentSpan {
 							found = true
 							break
 						}
@@ -820,7 +840,7 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 						sym := &symbol{
 							// NOTE: no [ir.Symbol] for option elements
 							file: f,
-							span: component.Span(),
+							span: componentSpan,
 							kind: &option{
 								def:             parentType.AsValue().Field().AST(),
 								defFullName:     parentType.AsValue().Field().FullName(),
@@ -1082,4 +1102,22 @@ func (f *file) GetSymbols(query string) iter.Seq[protocol.SymbolInformation] {
 			}
 		}
 	}
+}
+
+// trimLeadingDot removes the leading dot from a span if present.
+//
+// Option field references in protobuf use dot notation like "(extension).field",
+// but the AST component span includes the dot separator (e.g., ".field" instead
+// of "field"). We need to trim this to get the correct symbol span for renaming,
+// otherwise we'd end up renaming ".field" to ".newname", resulting in invalid
+// syntax like "(extension)newname" instead of "(extension).newname".
+func trimLeadingDot(span source.Span) source.Span {
+	if span.Text() != "" && span.Text()[0] == '.' {
+		return source.Span{
+			File:  span.File,
+			Start: span.Start + 1,
+			End:   span.End,
+		}
+	}
+	return span
 }

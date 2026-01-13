@@ -413,11 +413,48 @@ func renameChangesForReferenceableSymbol(s *symbol, newName string) (map[protoco
 			NewText: newName,
 		}},
 	}
-	if def, ok := s.def.kind.(*referenceable); ok {
-		for _, reference := range def.references {
+	// Get the referenceable kind to find all references
+	referenceableKind, ok := s.kind.(*referenceable)
+	if !ok && s.def != nil {
+		// If the symbol isn't referenceable itself, but has a referenceable definition, use the
+		// definition for the references.
+		referenceableKind, ok = s.def.kind.(*referenceable)
+	}
+	if ok {
+		for _, reference := range referenceableKind.references {
+			newText := newName
+			// For option references (extension usages), preserve package qualification and parentheses.
+			// e.g., if renaming "(subpkg.testing)" to "validated", result should be "(subpkg.validated)"
+			if _, isOption := reference.kind.(*option); isOption {
+				spanText := reference.span.Text()
+				// Extract components: prefix (opening paren + package), suffix (closing paren)
+				prefix := ""
+				suffix := ""
+				nameOnly := spanText
+
+				// Check for opening parenthesis
+				if strings.HasPrefix(spanText, "(") {
+					prefix = "("
+					nameOnly = nameOnly[1:]
+				}
+				// Check for closing parenthesis
+				if strings.HasSuffix(nameOnly, ")") {
+					suffix = ")"
+					nameOnly = nameOnly[:len(nameOnly)-1]
+				}
+				// Check if there's package qualification (contains a dot)
+				if lastDot := strings.LastIndex(nameOnly, "."); lastDot != -1 {
+					// Preserve the package qualification
+					packageQualification := nameOnly[:lastDot+1]
+					newText = prefix + packageQualification + newName + suffix
+				} else {
+					// No package qualification, just preserve parens
+					newText = prefix + newName + suffix
+				}
+			}
 			changes[reference.file.uri] = append(changes[reference.file.uri], protocol.TextEdit{
 				Range:   reportSpanToProtocolRange(reference.span),
-				NewText: newName,
+				NewText: newText,
 			})
 		}
 	} else {

@@ -32,14 +32,21 @@ func TestRename(t *testing.T) {
 	require.NoError(t, err)
 	typesProtoPath, err := filepath.Abs("testdata/rename/types.proto")
 	require.NoError(t, err)
+	extensionsProtoPath, err := filepath.Abs("testdata/rename/extensions.proto")
+	require.NoError(t, err)
+	subpkgOptionsProtoPath, err := filepath.Abs("testdata/rename/subpkg/options.proto")
+	require.NoError(t, err)
 	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
 	typesURI := uri.New(typesProtoPath)
+	extensionsURI := uri.New(extensionsProtoPath)
+	subpkgOptionsURI := uri.New(subpkgOptionsProtoPath)
 
 	type editLocation struct {
 		uri            protocol.URI
 		line           uint32
 		startCharacter uint32
 		endCharacter   uint32
+		newText        string // Optional: if set, verify the NewText matches
 	}
 	tests := []struct {
 		name          string
@@ -53,15 +60,15 @@ func TestRename(t *testing.T) {
 		{
 			name:      "rename_product_message",
 			targetURI: testURI,
-			line:      6,
+			line:      8,
 			character: 8,
 			newName:   "Item",
 			expectedEdits: []editLocation{
-				{uri: testURI, line: 6, startCharacter: 8, endCharacter: 15},
-				{uri: testURI, line: 10, startCharacter: 11, endCharacter: 18},
-				{uri: testURI, line: 15, startCharacter: 11, endCharacter: 18},
-				{uri: testURI, line: 29, startCharacter: 2, endCharacter: 9},
-				{uri: testURI, line: 37, startCharacter: 11, endCharacter: 18},
+				{uri: testURI, line: 8, startCharacter: 8, endCharacter: 15},
+				{uri: testURI, line: 12, startCharacter: 11, endCharacter: 18},
+				{uri: testURI, line: 17, startCharacter: 11, endCharacter: 18},
+				{uri: testURI, line: 31, startCharacter: 2, endCharacter: 9},
+				{uri: testURI, line: 39, startCharacter: 11, endCharacter: 18},
 			},
 		},
 		{
@@ -72,8 +79,8 @@ func TestRename(t *testing.T) {
 			newName:   "Type",
 			expectedEdits: []editLocation{
 				{uri: typesURI, line: 4, startCharacter: 5, endCharacter: 13},
-				{uri: testURI, line: 9, startCharacter: 2, endCharacter: 10},
-				{uri: testURI, line: 16, startCharacter: 2, endCharacter: 10},
+				{uri: testURI, line: 11, startCharacter: 2, endCharacter: 10},
+				{uri: testURI, line: 18, startCharacter: 2, endCharacter: 10},
 			},
 		},
 		{
@@ -89,42 +96,42 @@ func TestRename(t *testing.T) {
 		{
 			name:      "rename_name_field",
 			targetURI: testURI,
-			line:      8,
+			line:      10,
 			character: 9,
 			newName:   "title",
 			expectedEdits: []editLocation{
-				{uri: testURI, line: 8, startCharacter: 9, endCharacter: 13},
+				{uri: testURI, line: 10, startCharacter: 9, endCharacter: 13},
 			},
 		},
 		{
 			name:      "rename_service",
 			targetURI: testURI,
-			line:      19,
+			line:      21,
 			character: 8,
 			newName:   "ItemService",
 			expectedEdits: []editLocation{
-				{uri: testURI, line: 19, startCharacter: 8, endCharacter: 22},
+				{uri: testURI, line: 21, startCharacter: 8, endCharacter: 22},
 			},
 		},
 		{
 			name:      "rename_rpc_method",
 			targetURI: testURI,
-			line:      20,
+			line:      22,
 			character: 6,
 			newName:   "FetchProduct",
 			expectedEdits: []editLocation{
-				{uri: testURI, line: 20, startCharacter: 6, endCharacter: 16},
+				{uri: testURI, line: 22, startCharacter: 6, endCharacter: 16},
 			},
 		},
 		{
 			name:      "rename_request_message",
 			targetURI: testURI,
-			line:      24,
+			line:      26,
 			character: 8,
 			newName:   "FetchProductRequest",
 			expectedEdits: []editLocation{
-				{uri: testURI, line: 24, startCharacter: 8, endCharacter: 25},
-				{uri: testURI, line: 20, startCharacter: 17, endCharacter: 34},
+				{uri: testURI, line: 26, startCharacter: 8, endCharacter: 25},
+				{uri: testURI, line: 22, startCharacter: 17, endCharacter: 34},
 			},
 		},
 		{
@@ -140,71 +147,71 @@ func TestRename(t *testing.T) {
 		{
 			name:      "rename_nested_message",
 			targetURI: testURI,
-			line:      40,
+			line:      42,
 			character: 10,
 			newName:   "OrderItem",
 			expectedEdits: []editLocation{
-				{uri: testURI, line: 40, startCharacter: 10, endCharacter: 14},
-				{uri: testURI, line: 44, startCharacter: 11, endCharacter: 15},
+				{uri: testURI, line: 42, startCharacter: 10, endCharacter: 14},
+				{uri: testURI, line: 46, startCharacter: 11, endCharacter: 15},
 			},
 		},
 		{
 			name:      "rename_nested_enum",
 			targetURI: testURI,
-			line:      45,
+			line:      47,
 			character: 7,
 			newName:   "State",
 			expectedEdits: []editLocation{
-				{uri: testURI, line: 45, startCharacter: 7, endCharacter: 13},
-				{uri: testURI, line: 50, startCharacter: 2, endCharacter: 8},
+				{uri: testURI, line: 47, startCharacter: 7, endCharacter: 13},
+				{uri: testURI, line: 52, startCharacter: 2, endCharacter: 8},
 			},
 		},
 		{
 			name:      "rename_nested_enum_value",
 			targetURI: testURI,
-			line:      47,
+			line:      49,
 			character: 4,
 			newName:   "STATE_PENDING",
 			expectedEdits: []editLocation{
-				{uri: testURI, line: 47, startCharacter: 4, endCharacter: 18},
+				{uri: testURI, line: 49, startCharacter: 4, endCharacter: 18},
 			},
 		},
 		{
 			name:      "rename_oneof_field",
 			targetURI: testURI,
-			line:      52,
+			line:      54,
 			character: 11,
 			newName:   "card_number",
 			expectedEdits: []editLocation{
-				{uri: testURI, line: 52, startCharacter: 11, endCharacter: 22},
+				{uri: testURI, line: 54, startCharacter: 11, endCharacter: 22},
 			},
 		},
 		{
 			name:      "rename_deeply_nested_message",
 			targetURI: testURI,
-			line:      57,
+			line:      59,
 			character: 10,
 			newName:   "InnerData",
 			expectedEdits: []editLocation{
-				{uri: testURI, line: 57, startCharacter: 10, endCharacter: 15},
-				{uri: testURI, line: 61, startCharacter: 4, endCharacter: 9},
+				{uri: testURI, line: 59, startCharacter: 10, endCharacter: 15},
+				{uri: testURI, line: 63, startCharacter: 4, endCharacter: 9},
 			},
 		},
 		{
 			name:      "rename_nested_message_used_in_sibling",
 			targetURI: testURI,
-			line:      60,
+			line:      62,
 			character: 10,
 			newName:   "Wrapper",
 			expectedEdits: []editLocation{
-				{uri: testURI, line: 60, startCharacter: 10, endCharacter: 19},
-				{uri: testURI, line: 63, startCharacter: 2, endCharacter: 11},
+				{uri: testURI, line: 62, startCharacter: 10, endCharacter: 19},
+				{uri: testURI, line: 65, startCharacter: 2, endCharacter: 11},
 			},
 		},
 		{
 			name:        "rename_to_existing_message",
 			targetURI:   testURI,
-			line:        6,
+			line:        8,
 			character:   8,
 			newName:     "Catalog",
 			expectError: true,
@@ -212,10 +219,80 @@ func TestRename(t *testing.T) {
 		{
 			name:        "rename_to_existing_service",
 			targetURI:   testURI,
-			line:        13,
+			line:        15,
 			character:   10,
 			newName:     "ProductService",
 			expectError: true,
+		},
+		{
+			name:      "rename_custom_extension",
+			targetURI: extensionsURI,
+			line:      7,
+			character: 10,
+			newName:   "validated",
+			expectedEdits: []editLocation{
+				{uri: extensionsURI, line: 7, startCharacter: 10, endCharacter: 17, newText: "validated"},
+				{uri: testURI, line: 69, startCharacter: 9, endCharacter: 18, newText: "(validated)"},
+				{uri: testURI, line: 74, startCharacter: 9, endCharacter: 18, newText: "(validated)"},
+				{uri: testURI, line: 75, startCharacter: 9, endCharacter: 18, newText: "(validated)"},
+				{uri: testURI, line: 75, startCharacter: 9, endCharacter: 18, newText: "(validated)"}, // appears twice on this line: (testing).test and (testing).nested.value
+			},
+		},
+		{
+			name:      "rename_extension_field",
+			targetURI: extensionsURI,
+			line:      11,
+			character: 7,
+			newName:   "blah",
+			expectedEdits: []editLocation{
+				{uri: extensionsURI, line: 11, startCharacter: 7, endCharacter: 11},
+				{uri: testURI, line: 69, startCharacter: 19, endCharacter: 23},
+				{uri: testURI, line: 74, startCharacter: 19, endCharacter: 23},
+			},
+		},
+		{
+			name:      "rename_nested_extension_field",
+			targetURI: extensionsURI,
+			line:      15,
+			character: 9,
+			newName:   "val",
+			expectedEdits: []editLocation{
+				{uri: extensionsURI, line: 15, startCharacter: 9, endCharacter: 14},
+				{uri: testURI, line: 75, startCharacter: 26, endCharacter: 31},
+			},
+		},
+		{
+			name:      "rename_subpackage_extension",
+			targetURI: subpkgOptionsURI,
+			line:      7,
+			character: 10,
+			newName:   "validated",
+			expectedEdits: []editLocation{
+				{uri: subpkgOptionsURI, line: 7, startCharacter: 10, endCharacter: 17, newText: "validated"},
+				{uri: testURI, line: 80, startCharacter: 9, endCharacter: 25, newText: "(subpkg.validated)"},
+			},
+		},
+		{
+			name:      "rename_subpackage_extension_field",
+			targetURI: subpkgOptionsURI,
+			line:      11,
+			character: 7,
+			newName:   "blah",
+			expectedEdits: []editLocation{
+				{uri: subpkgOptionsURI, line: 11, startCharacter: 7, endCharacter: 11},
+				{uri: testURI, line: 80, startCharacter: 26, endCharacter: 30},
+			},
+		},
+		{
+			name:      "rename_extension_message_type",
+			targetURI: extensionsURI,
+			line:      10,
+			character: 8,
+			newName:   "Test",
+			expectedEdits: []editLocation{
+				{uri: extensionsURI, line: 10, startCharacter: 8, endCharacter: 15},
+				{uri: extensionsURI, line: 7, startCharacter: 2, endCharacter: 9},
+			},
 		},
 	}
 
@@ -248,7 +325,14 @@ func TestRename(t *testing.T) {
 							line:           edit.Range.Start.Line,
 							startCharacter: edit.Range.Start.Character,
 							endCharacter:   edit.Range.End.Character,
+							newText:        edit.NewText,
 						})
+					}
+				}
+				if len(allEdits) != len(tt.expectedEdits) {
+					t.Logf("Expected %d edits, got %d", len(tt.expectedEdits), len(allEdits))
+					for _, e := range allEdits {
+						t.Logf("  actual: %s:%d:%d-%d (newText: %q)", e.uri, e.line, e.startCharacter, e.endCharacter, e.newText)
 					}
 				}
 				require.Len(t, allEdits, len(tt.expectedEdits))
@@ -259,6 +343,9 @@ func TestRename(t *testing.T) {
 					require.NotEqual(t, -1, idx, "expected edit at %s:%d:%d not found", expectedEdit.uri, expectedEdit.line, expectedEdit.startCharacter)
 					assert.Equal(t, expectedEdit.startCharacter, allEdits[idx].startCharacter)
 					assert.Equal(t, expectedEdit.endCharacter, allEdits[idx].endCharacter)
+					if expectedEdit.newText != "" {
+						assert.Equal(t, expectedEdit.newText, allEdits[idx].newText, "NewText mismatch at %s:%d:%d", expectedEdit.uri, expectedEdit.line, expectedEdit.startCharacter)
+					}
 				}
 			}
 		})
@@ -282,54 +369,78 @@ func TestPrepareRename(t *testing.T) {
 	}{
 		{
 			name:        "prepare_rename_product_message",
-			line:        6,
+			line:        8,
 			character:   8,
 			expectRange: true,
 			expectedStart: protocol.Position{
-				Line:      6,
+				Line:      8,
 				Character: 8,
 			},
 			expectedEnd: protocol.Position{
-				Line:      6,
+				Line:      8,
 				Character: 15,
 			},
 		},
 		{
 			name:        "prepare_rename_field",
-			line:        8,
+			line:        10,
 			character:   9,
 			expectRange: true,
 			expectedStart: protocol.Position{
-				Line:      8,
+				Line:      10,
 				Character: 9,
 			},
 			expectedEnd: protocol.Position{
-				Line:      8,
+				Line:      10,
 				Character: 13,
 			},
 		},
 		{
 			name:        "prepare_rename_on_keyword",
-			line:        6,
+			line:        8,
 			character:   0,
 			expectRange: false,
 		},
 		{
 			name:        "prepare_rename_on_primitive_type",
-			line:        7,
+			line:        9,
 			character:   2,
 			expectRange: false,
 		},
 		{
 			name:        "prepare_rename_on_field_number",
-			line:        7,
+			line:        9,
 			character:   14,
 			expectRange: false,
 		},
 		{
 			name:        "prepare_rename_on_whitespace",
-			line:        7,
+			line:        9,
 			character:   0,
+			expectRange: false,
+		},
+		{
+			name:        "prepare_rename_on_extension_usage",
+			line:        69,
+			character:   11,
+			expectRange: false,
+		},
+		{
+			name:        "prepare_rename_on_extension_field_usage",
+			line:        69,
+			character:   20,
+			expectRange: false,
+		},
+		{
+			name:        "prepare_rename_on_qualified_extension_usage",
+			line:        80,
+			character:   18,
+			expectRange: false,
+		},
+		{
+			name:        "prepare_rename_on_qualified_extension_field_usage",
+			line:        80,
+			character:   27,
 			expectRange: false,
 		},
 	}
