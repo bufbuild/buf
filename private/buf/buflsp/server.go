@@ -121,6 +121,7 @@ func (s *server) Initialize(
 			},
 			WorkspaceSymbolProvider: true,
 			DocumentSymbolProvider:  true,
+			DocumentLinkProvider:    &protocol.DocumentLinkOptions{},
 		},
 		ServerInfo: info,
 	}, nil
@@ -479,6 +480,18 @@ func (s *server) Rename(
 		return nil, nil
 	}
 	return symbol.Rename(params.NewName)
+}
+
+// DocumentLink is the entry point for document links, which makes imports and URLs clickable.
+func (s *server) DocumentLink(
+	ctx context.Context,
+	params *protocol.DocumentLinkParams,
+) ([]protocol.DocumentLink, error) {
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, nil
+	}
+	return documentLink(file), nil
 }
 
 // getSymbol is a helper function that gets the *[symbol] for the given [protocol.URI] and
