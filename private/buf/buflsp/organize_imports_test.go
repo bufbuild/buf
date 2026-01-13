@@ -130,16 +130,6 @@ import "types/toplevel_field.proto";
 		t,
 		"testdata/organize_imports/modifier_test.proto",
 		[]protocol.TextEdit{
-			// Delete #1: Remove public import with comment (file lines 8-9)
-			// Deletes: `// Comment on public import\nimport public "types/modifier_public.proto";`
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 7, Character: 0},
-					End:   protocol.Position{Line: 9, Character: 0},
-				},
-				NewText: "",
-			},
-			// Delete #2: Remove unused weak import (file line 5)
 			// Deletes: `import weak "google/protobuf/cpp_features.proto"; // unused import\n`
 			{
 				Range: protocol.Range{
@@ -148,7 +138,6 @@ import "types/toplevel_field.proto";
 				},
 				NewText: "",
 			},
-			// Delete #3: Remove weak import with comment (file lines 6-7)
 			// Deletes: `// Comment on weak import\nimport weak "types/modifier_weak.proto";\n`
 			{
 				Range: protocol.Range{
@@ -157,7 +146,14 @@ import "types/toplevel_field.proto";
 				},
 				NewText: "",
 			},
-			// Delete #4: Remove existing_field import (file lines 10-11)
+			// Deletes: `// Comment on public import\nimport public "types/modifier_public.proto";`
+			{
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 7, Character: 0},
+					End:   protocol.Position{Line: 9, Character: 0},
+				},
+				NewText: "",
+			},
 			// Deletes: `import "types/existing_field.proto";\n\n`
 			{
 				Range: protocol.Range{
@@ -239,12 +235,15 @@ import "types/toplevel_field.proto";
 		t,
 		"testdata/organize_imports/unknown_test.proto",
 		[]protocol.TextEdit{
-			// Remove unknown import.
+			// Delete unknown import (file lines 3-4)
+			// Deletes: `import "types/unknown.proto";\n\n`
+			// File doesn't exist, not resolved by IR, so it's removed
 			{
 				Range: protocol.Range{
 					Start: protocol.Position{Line: 2, Character: 0},
 					End:   protocol.Position{Line: 4, Character: 0},
 				},
+				NewText: "",
 			},
 		},
 	)
@@ -253,37 +252,53 @@ import "types/toplevel_field.proto";
 		t,
 		"testdata/organize_imports/duplicate_test.proto",
 		[]protocol.TextEdit{
-			// TODO: 5 deletes, 1 insert.
+			// Delete duplicate #1 (file line 5)
+			// Deletes: `import "types/existing_field.proto";\n`
 			{
 				Range: protocol.Range{
 					Start: protocol.Position{Line: 4, Character: 0},
 					End:   protocol.Position{Line: 5, Character: 0},
 				},
+				NewText: "",
 			},
+			// Delete duplicate #2 (file lines 6-7)
+			// Deletes: `// A duplicate comment\nimport "types/existing_field.proto";\n`
 			{
 				Range: protocol.Range{
 					Start: protocol.Position{Line: 5, Character: 0},
 					End:   protocol.Position{Line: 7, Character: 0},
 				},
+				NewText: "",
 			},
+			// Delete duplicate #3 (file line 8)
+			// Deletes: `import "types/existing_field.proto"; // this also has a trailing comment\n`
 			{
 				Range: protocol.Range{
 					Start: protocol.Position{Line: 7, Character: 0},
 					End:   protocol.Position{Line: 8, Character: 0},
 				},
+				NewText: "",
 			},
+			// Delete duplicate #4 (file line 9)
+			// Deletes: `import "types/existing_field.proto";\n`
 			{
 				Range: protocol.Range{
 					Start: protocol.Position{Line: 8, Character: 0},
 					End:   protocol.Position{Line: 9, Character: 0},
 				},
+				NewText: "",
 			},
+			// Delete duplicate #5 (file lines 10-12)
+			// Deletes: `// A duplicate comment\nimport "types/existing_field.proto";\n\n`
 			{
 				Range: protocol.Range{
 					Start: protocol.Position{Line: 9, Character: 0},
 					End:   protocol.Position{Line: 12, Character: 0},
 				},
+				NewText: "",
 			},
+			// Insert deduplicated imports (keeps unique versions by text content)
+			// After deduplication: plain import, import with trailing comment, import with leading comment
 			{
 				Range: protocol.Range{
 					Start: protocol.Position{Line: 3, Character: 0},
