@@ -34,10 +34,10 @@ import (
 	"go.lsp.dev/protocol"
 )
 
+// importInfo represents an import statement to be included in the organized imports.
 type importInfo struct {
-	path                   string
-	importDecl             ast.DeclImport
-	importWithCommentsSpan source.Span
+	path string // The import path (e.g., "acme/foo.proto")
+	text string // The full import declaration including comments (e.g. "// Foo\nimport "acme/foo.proto";)
 }
 
 // getOrganizeImportsCodeAction generates a code action for organizing imports.
@@ -50,8 +50,8 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 	s.logger.Debug("code action: checking IR diagnostics", "count", len(file.irReport.Diagnostics))
 
 	// Find all unresolved type references and unused imports from the IR diagnostics
-	unresolvedRefs := make(map[ir.FullName]bool) // full type name -> bool
-	unusedImports := make(map[string]bool)       // import path -> bool
+	unresolvedRefs := make(map[ir.FullName]bool)
+	unusedImports := make(map[string]bool)
 
 	for _, diag := range file.irReport.Diagnostics {
 		if diag.Primary().Path() != file.file.Path() {
@@ -90,7 +90,7 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 	s.logger.Debug("code action: found unused imports", "count", len(unusedImports))
 
 	// Find imports needed for each unresolved type
-	importsToAdd := make(map[string]bool) // import path -> bool
+	importsToAdd := make(map[string]bool)
 	for typeFullName := range unresolvedRefs {
 		// Search for this type in all workspace files
 		for _, workspaceFile := range file.workspace.PathToFile() {
@@ -115,7 +115,6 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 	)
 	for currentFileImport := range seq.Values(file.ir.Imports()) {
 		importPath := currentFileImport.Path()
-		importDecl := currentFileImport.Decl
 		importWithCommentsSpan := captureImportSpan(currentFileImport.Decl)
 		edits = append(edits, protocol.TextEdit{
 			Range:   reportSpanToProtocolRange(importWithCommentsSpan),
@@ -124,16 +123,18 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 		if unusedImports[importPath] {
 			continue
 		}
+		text := importWithCommentsSpan.Text()
+		text = strings.TrimRightFunc(text, unicode.IsSpace)
 		imports = append(imports, importInfo{
-			path:                   importPath,
-			importDecl:             importDecl,
-			importWithCommentsSpan: importWithCommentsSpan,
+			path: importPath,
+			text: text,
 		})
 	}
 	// Add new imports.
 	for importPath := range importsToAdd {
 		imports = append(imports, importInfo{
 			path: importPath,
+			text: fmt.Sprintf("%s %q;", keyword.Import, importPath),
 		})
 	}
 	slices.SortFunc(imports, func(a, b importInfo) int {
@@ -146,13 +147,7 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 		importText.WriteString("\n")
 	}
 	for _, info := range imports {
-		if info.importWithCommentsSpan.IsZero() {
-			fmt.Fprintf(&importText, "%s %q;\n", keyword.Import, info.path)
-			continue
-		}
-		text := info.importWithCommentsSpan.Text()
-		text = strings.TrimRightFunc(text, unicode.IsSpace)
-		importText.WriteString(text + "\n")
+		importText.WriteString(info.text + "\n")
 	}
 
 	// Find the insert position after the package or syntax declaration
@@ -166,8 +161,8 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 		insertLine = 1 // Default at top of file.
 	}
 	// Compare to the insert offset, at the newline (so increment 1)
-	insertOffset := file.file.InverseLocation(insertLine, 0, length.Bytes).Offset
-	if strings.HasPrefix(file.file.Text()[insertOffset+1:], importText.String()) {
+	insertOffset := file.file.InverseLocation(insertLine, 0, length.Bytes).Offset + 1
+	if insertOffset < len(file.file.Text()) && strings.HasPrefix(file.file.Text()[insertOffset:], importText.String()) {
 		return nil // Matches, no changes needed.
 	}
 
