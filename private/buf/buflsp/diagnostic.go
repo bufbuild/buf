@@ -18,7 +18,6 @@ package buflsp
 
 import (
 	"encoding/json"
-	"log"
 	"strings"
 
 	"github.com/bufbuild/protocompile/experimental/report"
@@ -52,8 +51,6 @@ var reportLevelToDiagnosticSeverity = map[report.Level]protocol.DiagnosticSeveri
 func reportDiagnosticToProtocolDiagnostic(
 	reportDiagnostic report.Diagnostic,
 ) (protocol.Diagnostic, error) {
-	log.Println("DIAGNOSTIC", reportDiagnostic)
-
 	diagnostic := protocol.Diagnostic{
 		Source:   serverName,
 		Severity: reportLevelToDiagnosticSeverity[reportDiagnostic.Level()],
