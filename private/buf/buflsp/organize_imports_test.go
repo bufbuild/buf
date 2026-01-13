@@ -234,6 +234,70 @@ import "types/toplevel_field.proto";
 		"testdata/organize_imports/nochanges_test.proto",
 		nil, // No changes are expected.
 	)
+
+	testCodeActionOrganizeImports(
+		t,
+		"testdata/organize_imports/unknown_test.proto",
+		[]protocol.TextEdit{
+			// Remove unknown import.
+			{
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 2, Character: 0},
+					End:   protocol.Position{Line: 4, Character: 0},
+				},
+			},
+		},
+	)
+
+	testCodeActionOrganizeImports(
+		t,
+		"testdata/organize_imports/duplicate_test.proto",
+		[]protocol.TextEdit{
+			// TODO: 5 deletes, 1 insert.
+			{
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 4, Character: 0},
+					End:   protocol.Position{Line: 5, Character: 0},
+				},
+			},
+			{
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 5, Character: 0},
+					End:   protocol.Position{Line: 7, Character: 0},
+				},
+			},
+			{
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 7, Character: 0},
+					End:   protocol.Position{Line: 8, Character: 0},
+				},
+			},
+			{
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 8, Character: 0},
+					End:   protocol.Position{Line: 9, Character: 0},
+				},
+			},
+			{
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 9, Character: 0},
+					End:   protocol.Position{Line: 12, Character: 0},
+				},
+			},
+			{
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 3, Character: 0},
+					End:   protocol.Position{Line: 3, Character: 0},
+				},
+				NewText: `
+import "types/existing_field.proto"; // this also has a trailing comment
+// A duplicate comment
+import "types/existing_field.proto";
+import "types/existing_field.proto";
+`,
+			},
+		},
+	)
 }
 
 func testCodeActionOrganizeImports(t *testing.T, filename string, expectedEdits []protocol.TextEdit) {

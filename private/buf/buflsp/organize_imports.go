@@ -109,37 +109,74 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 		}
 	}
 
+	// Build a map of resolved imports from the IR (these exist and were successfully parsed)
+	resolvedImports := make(map[string]bool)
+	for currentFileImport := range seq.Values(file.ir.Imports()) {
+		resolvedImports[currentFileImport.Path()] = true
+	}
+
 	var (
 		imports []importInfo
 		edits   []protocol.TextEdit
+		dirty   bool
 	)
-	for currentFileImport := range seq.Values(file.ir.Imports()) {
-		importPath := currentFileImport.Path()
-		importWithCommentsSpan := captureImportSpan(currentFileImport.Decl)
+
+	// Iterate over ALL imports in the AST (including unknown/unresolved ones)
+	for importDecl := range file.ir.AST().Imports() {
+		importPathExpr := importDecl.ImportPath()
+		if importPathExpr.IsZero() {
+			continue
+		}
+		importPath := strings.Trim(importPathExpr.Span().Text(), "\"")
+		importWithCommentsSpan := captureImportSpan(importDecl)
 		edits = append(edits, protocol.TextEdit{
 			Range:   reportSpanToProtocolRange(importWithCommentsSpan),
 			NewText: "", // delete
 		})
+
 		if unusedImports[importPath] {
+			dirty = true
 			continue
 		}
+		if !resolvedImports[importPath] {
+			dirty = true
+			continue
+		}
+
 		text := importWithCommentsSpan.Text()
 		text = strings.TrimRightFunc(text, unicode.IsSpace)
-		imports = append(imports, importInfo{
+
+		importInfo := importInfo{
 			path: importPath,
 			text: text,
-		})
+		}
+		imports = append(imports, importInfo)
 	}
+
 	// Add new imports.
 	for importPath := range importsToAdd {
 		imports = append(imports, importInfo{
 			path: importPath,
 			text: fmt.Sprintf("%s %q;", keyword.Import, importPath),
 		})
+		dirty = true
 	}
 	slices.SortFunc(imports, func(a, b importInfo) int {
-		return strings.Compare(a.path, b.path)
+		if compare := strings.Compare(a.path, b.path); compare != 0 {
+			return compare
+		}
+		return len(b.text) - len(a.text) // Prefer commented imports
 	})
+	// Remove duplicates by text content (compare with previous)
+	deduped := imports[:0]
+	var prev string
+	for _, info := range imports {
+		if info.text != prev {
+			deduped = append(deduped, info)
+			prev = info.text
+		}
+	}
+	imports = deduped
 
 	// Build the new import text
 	var importText strings.Builder
@@ -162,17 +199,20 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 	}
 	// Compare to the insert offset, at the newline (so increment 1)
 	insertOffset := file.file.InverseLocation(insertLine, 0, length.Bytes).Offset + 1
-	if insertOffset < len(file.file.Text()) && strings.HasPrefix(file.file.Text()[insertOffset:], importText.String()) {
+	if !dirty && insertOffset < len(file.file.Text()) &&
+		strings.HasPrefix(file.file.Text()[insertOffset:], importText.String()) {
 		return nil // Matches, no changes needed.
 	}
 
-	edits = append(edits, protocol.TextEdit{
-		Range: protocol.Range{
-			Start: protocol.Position{Line: uint32(insertLine - 1)},
-			End:   protocol.Position{Line: uint32(insertLine - 1)},
-		},
-		NewText: importText.String(),
-	})
+	if importText.Len() > 0 {
+		edits = append(edits, protocol.TextEdit{
+			Range: protocol.Range{
+				Start: protocol.Position{Line: uint32(insertLine - 1)},
+				End:   protocol.Position{Line: uint32(insertLine - 1)},
+			},
+			NewText: importText.String(),
+		})
+	}
 	return &protocol.CodeAction{
 		Title: "Organize imports",
 		Kind:  protocol.SourceOrganizeImports,
