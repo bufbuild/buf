@@ -15,8 +15,6 @@
 package buflsp
 
 import (
-	"strings"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/protocompile/experimental/ast"
@@ -29,7 +27,7 @@ import (
 // For imports from BSR modules, this creates links to <remote>/<owner>/<module>/docs/main:<package-name>.
 // For local imports without module names, it links to the local file.
 // For https:// URLs found in comments, it creates clickable links to those URLs.
-func documentLink(file *file) []protocol.DocumentLink {
+func (s *server) documentLink(file *file) []protocol.DocumentLink {
 	var links []protocol.DocumentLink
 
 	// Create links for import statements
@@ -62,7 +60,7 @@ func documentLink(file *file) []protocol.DocumentLink {
 	// Add links for URLs in comments
 	if file.ir != nil {
 		if astFile := file.ir.AST(); astFile != nil {
-			links = append(links, findURLLinksInComments(astFile)...)
+			links = append(links, s.findURLLinksInComments(astFile)...)
 		}
 	}
 
@@ -97,13 +95,8 @@ func bsrDocsURL(module bufmodule.Module, packageName string, anchor string) stri
 	return url
 }
 
-// isURLTerminator returns true if the character should terminate a URL in a comment.
-func isURLTerminator(ch byte) bool {
-	return ch == ' ' || ch == '\n' || ch == '\r' || ch == '\t' || ch == ')' || ch == ']' || ch == '>'
-}
-
 // findURLLinksInComments extracts document links for https:// URLs found in comments.
-func findURLLinksInComments(astFile *ast.File) []protocol.DocumentLink {
+func (s *server) findURLLinksInComments(astFile *ast.File) []protocol.DocumentLink {
 	var links []protocol.DocumentLink
 
 	for tok := range astFile.Stream().All() {
@@ -114,21 +107,11 @@ func findURLLinksInComments(astFile *ast.File) []protocol.DocumentLink {
 		commentSpan := tok.Span()
 		commentText := commentSpan.Text()
 
-		// Find all https:// URLs in this comment
-		offset := 0
-		for {
-			idx := strings.Index(commentText[offset:], "https://")
-			if idx == -1 {
-				break
-			}
-
-			urlStart := offset + idx
-			urlEnd := urlStart + len("https://")
-
-			// Find the end of the URL
-			for urlEnd < len(commentText) && !isURLTerminator(commentText[urlEnd]) {
-				urlEnd++
-			}
+		// Find all https:// URLs in this comment using the regex
+		matches := s.httpsURLRegex.FindAllStringIndex(commentText, -1)
+		for _, match := range matches {
+			urlStart := match[0]
+			urlEnd := match[1]
 
 			url := commentText[urlStart:urlEnd]
 			urlSpan := source.Span{
@@ -141,8 +124,6 @@ func findURLLinksInComments(astFile *ast.File) []protocol.DocumentLink {
 				Range:  reportSpanToProtocolRange(urlSpan),
 				Target: protocol.DocumentURI(url),
 			})
-
-			offset = urlEnd
 		}
 	}
 

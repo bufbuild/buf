@@ -48,6 +48,7 @@ require (
 	golang.org/x/tools v0.40.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
+	mvdan.cc/xurls/v2 v2.6.0
 	pluginrpc.com/pluginrpc v0.5.0
 )
 
