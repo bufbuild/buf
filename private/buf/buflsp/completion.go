@@ -1066,7 +1066,6 @@ func rpcRequestResponseSnippetCompletionItem(
 			Label:            "rpc Name(NameRequest) returns (NameResponse)",
 			Kind:             protocol.CompletionItemKindSnippet,
 			InsertTextFormat: protocol.InsertTextFormatSnippet,
-			InsertText:       "blah",
 			InsertTextMode:   protocol.InsertTextModeAsIs,
 			Detail:           "Insert RPC method with Request and Response messages",
 			Documentation:    "Creates an RPC method declaration and corresponding Request/Response message types",
