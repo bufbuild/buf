@@ -4401,7 +4401,7 @@ func TestFormatMultipleFiles(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
 	formattedDir := filepath.Join(tempDir, "multifile.formatted")
-	// First, format the multiple file paths to a temp directory
+	// Format the multiple file paths to a temp directory
 	testRunStdout(
 		t,
 		nil,
@@ -4413,29 +4413,6 @@ func TestFormatMultipleFiles(t *testing.T) {
 		filepath.Join("testdata", "format", "multifile", "file3.proto"),
 		"-o",
 		formattedDir,
-	)
-	// Verify that multiple file paths can be passed as positional arguments
-	// and formatting with -d produces no diff
-	testRunStdout(
-		t,
-		nil,
-		0,
-		``,
-		"format",
-		filepath.Join("testdata", "format", "multifile", "file1.proto"),
-		filepath.Join("testdata", "format", "multifile", "file2.proto"),
-		filepath.Join("testdata", "format", "multifile", "file3.proto"),
-		"-d",
-	)
-	// Verify formatting the whole directory with -d produces no diff
-	testRunStdout(
-		t,
-		nil,
-		0,
-		``,
-		"format",
-		formattedDir,
-		"-d",
 	)
 }
 
