@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package codelens.v1;
+
+// Status enum has 2 references
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+  STATUS_INACTIVE = 2;
+}
+
+// Priority enum has 1 reference
+enum Priority {
+  PRIORITY_UNSPECIFIED = 0;
+  PRIORITY_LOW = 1;
+  PRIORITY_HIGH = 2;
+}
+
+// Unused enum has 0 references
+enum Unused {
+  UNUSED_UNSPECIFIED = 0;
+  UNUSED_VALUE = 1;
+}
+
+// User message has 3 references
+message User {
+  string name = 1;
+  Status status = 2;
+}
+
+// Task message has 1 reference
+message Task {
+  string title = 1;
+  Priority priority = 2;
+  User assigned_to = 3;
+}
+
+// Project message has 1 reference
+message Project {
+  string name = 1;
+  repeated Task tasks = 2;
+}
+
+// UnusedMessage has 0 references
+message UnusedMessage {
+  string unused_field = 1;
+}
+
+// Service definition
+service UserService {
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc CreateUser(CreateUserRequest) returns (User);
+}
+
+// GetUserRequest has 1 reference (in the service)
+message GetUserRequest {
+  string user_id = 1;
+}
+
+// CreateUserRequest has 1 reference (in the service)
+message CreateUserRequest {
+  string name = 1;
+  Status status = 2;
+}
+
+// Response message has 1 reference
+message Response {
+  Project project = 1;
+}
+
+// Message with oneof for testing
+message Contact {
+  string id = 1;
+  oneof contact_method {
+    string email = 2;
+    string phone = 3;
+  }
+}

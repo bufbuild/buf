@@ -163,6 +163,9 @@ func (s *server) Initialize(
 				},
 				Full: true,
 			},
+			CodeLensProvider: &protocol.CodeLensOptions{
+				ResolveProvider: false,
+			},
 			WorkspaceSymbolProvider: true,
 			DocumentSymbolProvider:  true,
 			FoldingRangeProvider:    true,
@@ -572,6 +575,27 @@ func (s *server) CompletionResolve(
 	params *protocol.CompletionItem,
 ) (*protocol.CompletionItem, error) {
 	return resolveCompletionItem(ctx, params)
+}
+
+// CodeLens is the entry point for code lens requests.
+// Returns code lenses for all referenceable symbols in a file.
+func (s *server) CodeLens(
+	ctx context.Context,
+	params *protocol.CodeLensParams,
+) ([]protocol.CodeLens, error) {
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, nil
+	}
+	return getCodeLenses(file), nil
+}
+
+// CodeLensResolve is the entry point for resolving a code lens with a command.
+func (s *server) CodeLensResolve(
+	ctx context.Context,
+	params *protocol.CodeLens,
+) (*protocol.CodeLens, error) {
+	return resolveCodeLens(params)
 }
 
 // SemanticTokensFull is called to render semantic token information on the client.
