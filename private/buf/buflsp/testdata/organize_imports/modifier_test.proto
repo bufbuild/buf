@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package example.main;
+
+import weak "google/protobuf/cpp_features.proto"; // unused import
+// Comment on weak import
+import weak "types/modifier_weak.proto";
+// Comment on public import
+import public "types/modifier_public.proto";
+import "types/existing_field.proto";
+
+message TestImportModifiers {
+  example.types.TopLevelField field = 1; // Missing import: toplevel_field.proto
+  example.types.ExistingField imported = 2;
+  example.types.NotFound not_found = 3; // Invalid import: ignore
+  example.types.ModifierPublic modifier_public = 4;
+  example.types.ModifierWeak modifier_weak = 5;
+}

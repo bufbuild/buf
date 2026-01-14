@@ -27,6 +27,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
@@ -591,29 +592,46 @@ func (s *symbol) getDocsFromComments() string {
 			hasAnchor = isExtension
 		}
 
-		var bsrHost, bsrAnchor string
+		var module bufmodule.Module
+		var bsrHost string
 		if s.def.file.IsWKT() {
-			bsrHost = "buf.build/protocolbuffers/wellknowntypes"
+			bsrHost = bufconnect.DefaultRemote + "/protocolbuffers/wellknowntypes"
 		} else if fileInfo, ok := s.def.file.objectInfo.(bufmodule.FileInfo); ok {
-			bsrHost = fileInfo.Module().FullName().String()
+			module = fileInfo.Module()
+			bsrHost = module.FullName().String()
 		}
+
 		defFullName := s.def.ir.FullName()
 		if !hasAnchor {
 			defFullName = defFullName.Parent()
 		}
-		bsrAnchor = string(defFullName)
+		bsrAnchor := string(defFullName)
 		// For extensions, we use the anchor for the extensions section in the BSR docs.
 		if isExtension {
 			bsrAnchor = "extensions"
 		}
+
 		if bsrHost != "" {
-			docs.WriteString(fmt.Sprintf(
-				"\n[`%s` on the Buf Schema Registry](https://%s/docs/main:%s#%s)",
-				defFullName,
-				bsrHost,
-				s.def.file.ir.Package(),
-				bsrAnchor,
-			))
+			packageName := string(s.def.file.ir.Package())
+			var url string
+			if s.def.file.IsWKT() {
+				// WKT uses special bsrHost format
+				url = "https://" + bsrHost + "/docs/main:" + packageName
+				if bsrAnchor != "" {
+					url += "#" + bsrAnchor
+				}
+			} else {
+				// Use bsrURL for non-WKT modules
+				url = bsrURL(module, packageName, bsrAnchor, bsrTabTypeDocs)
+			}
+			if url != "" {
+				fmt.Fprintf(
+					&docs,
+					"\n[`%s` on the Buf Schema Registry](%s)\n",
+					defFullName,
+					url,
+				)
+			}
 		}
 	}
 	return docs.String()

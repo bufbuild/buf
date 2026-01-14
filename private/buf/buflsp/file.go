@@ -65,7 +65,8 @@ type file struct {
 	referenceableSymbols map[ir.FullName]*symbol
 	referenceSymbols     []*symbol
 	symbols              []*symbol
-	diagnostics          []protocol.Diagnostic
+	irReport             *report.Report        // IR diagnostic report for code actions
+	diagnostics          []protocol.Diagnostic // Converted LSP diagnostics
 	cancelChecks         func()
 }
 
@@ -228,6 +229,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 	)
 	f.diagnostics = nil
 	f.ir = nil
+	f.irReport = nil
 
 	// Opener creates a cached view of all files in the workspace.
 	pathToFiles := f.workspace.PathToFile()
@@ -281,6 +283,9 @@ func (f *file) RefreshIR(ctx context.Context) {
 			file.IndexSymbols(ctx)
 		}
 	}
+	// Store the IR report for code actions
+	f.irReport = diagnosticReport
+
 	// Only hold on to diagnostics where the primary span is for this path.
 	fileDiagnostics := xslices.Filter(diagnosticReport.Diagnostics, func(d report.Diagnostic) bool {
 		return d.Primary().Path() == f.objectInfo.Path()

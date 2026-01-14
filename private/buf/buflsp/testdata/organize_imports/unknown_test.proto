@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+import "types/unknown.proto";
+
+message UnknownImport {}

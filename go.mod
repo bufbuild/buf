@@ -16,7 +16,7 @@ require (
 	buf.build/go/standard v0.1.0
 	connectrpc.com/connect v1.19.1
 	connectrpc.com/otelconnect v0.9.0
-	github.com/bufbuild/protocompile v0.14.2-0.20260106165238-a57debf10671
+	github.com/bufbuild/protocompile v0.14.2-0.20260112210810-6167f8d98f80
 	github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1
 	github.com/cli/browser v1.3.0
 	github.com/docker/docker v28.5.2+incompatible
@@ -48,6 +48,7 @@ require (
 	golang.org/x/tools v0.40.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
+	mvdan.cc/xurls/v2 v2.6.0
 	pluginrpc.com/pluginrpc v0.5.0
 )
 
@@ -84,7 +85,7 @@ require (
 	github.com/morikuni/aec v1.1.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
-	github.com/petermattis/goid v0.0.0-20251121121749-a11dd1a45f9a // indirect
+	github.com/petermattis/goid v0.0.0-20260113132338-7c7de50cc741 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect

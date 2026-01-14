@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package document_link.v1;
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+  STATUS_INACTIVE = 2;
+}

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package example.main;
+
+import "types/existing_field.proto";
+// A duplicate comment
+import "types/existing_field.proto";
+import "types/existing_field.proto"; // this also has a trailing comment
+import "types/existing_field.proto";
+// A duplicate comment
+import "types/existing_field.proto";
+
+message DuplicateTest {
+  example.types.ExistingField imported = 1;
+}

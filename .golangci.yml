@@ -99,12 +99,12 @@ linters:
           - staticcheck
         # No need to require embedded fields from selector expression, they could help with
         # more expressive code.
-        text: 'QF1008'
+        text: "QF1008"
       - linters:
           - staticcheck
         # Whether or not to apply De Morgan's law is contextual and should be handled during
         # code review.
-        text: 'QF1001'
+        text: "QF1001"
       - linters:
           - paralleltest
         # We use chdir in these tests.
@@ -147,52 +147,62 @@ linters:
         # G101 checks for hardcoded credentials, and the variables named "*Password*
         # trip this off.
         path: private/buf/bufcli/env.go
-        text: 'G101:'
+        text: "G101:"
       - linters:
           - gosec
         # G404 checks for use of the ordinary non-CPRNG.
         path: private/buf/buflsp/progress.go
-        text: 'G404:'
+        text: "G404:"
       - linters:
           - gosec
         # G115 checks for use of truncating conversions.
         path: private/buf/buflsp/file.go
-        text: 'G115:'
+        text: "G115:"
       - linters:
           - gosec
         # G115 checks for use of truncating conversions.
         path: private/buf/buflsp/diagnostic.go
-        text: 'G115:'
+        text: "G115:"
       - linters:
           - gosec
         # G115 checks for use of truncating conversions.
         path: private/buf/buflsp/image.go
-        text: 'G115:'
+        text: "G115:"
       - linters:
           - gosec
         # G115 checks for use of truncating conversions.
         path: private/buf/buflsp/report.go
-        text: 'G115:'
+        text: "G115:"
       - linters:
           - gosec
         # G115 checks for use of truncating conversions.
         path: private/buf/buflsp/server.go
-        text: 'G115:'
+        text: "G115:"
       - linters:
           - gosec
         # G115 checks for use of truncating conversions.
         path: private/buf/buflsp/symbol.go
-        text: 'G115:'
+        text: "G115:"
       - linters:
           - gosec
         # G115 checks for use of truncating conversions.
         path: private/buf/buflsp/semantic_tokens.go
-        text: 'G115:'
+        text: "G115:"
       - linters:
           - gosec
         # G115 checks for use of truncating conversions.
         path: private/buf/buflsp/folding_range.go
-        text: 'G115:'
+        text: "G115:"
+      - linters:
+          - gosec
+        # G115 checks for use of truncating conversions.
+        path: private/buf/buflsp/completion.go
+        text: "G115:"
+      - linters:
+          - gosec
+        # G115 checks for use of truncating conversions.
+        path: private/buf/buflsp/organize_imports.go
+        text: "G115:"
       - linters:
           - containedctx
         # Type must implement an interface whose methods do not accept context. But this
@@ -203,7 +213,7 @@ linters:
           - gosec
         # We verify manually so that we can emit verbose output while doing so.
         path: private/buf/bufcurl/tls.go
-        text: 'G402:'
+        text: "G402:"
       - linters:
           - paralleltest
         # This test shouldn't run in parallel as it needs osext.Getwd.
@@ -228,7 +238,7 @@ linters:
         # We don't need a cryptographically secure RNG for these tests, and a
         # deterministic RNG is actually nice for test repeatability.
         path: private/bufpkg/bufimage/bufimageutil/.*_test\.go
-        text: 'G404:'
+        text: "G404:"
       - linters:
           - paralleltest
         # This test shouldn't run in parallel as it allocates a lot of memory.
@@ -271,13 +281,13 @@ linters:
           - gosec
         # G204 checks that exec.Command is not called with non-constants.
         path: private/pkg/standard/xos/xexec/xexec.go
-        text: 'G204:'
+        text: "G204:"
       - linters:
           - gosec
         # We should be able to use net/http/cgi in a unit test, in addition the CVE mentions
         # only versions of go < 1.6.3 are affected.
         path: private/pkg/git/git_test.go
-        text: 'G504:'
+        text: "G504:"
       - linters:
           - wastedassign
         # netrc/internal is a library largely copied in from an external repository with attribution.
@@ -326,7 +336,7 @@ linters:
         path: private/pkg/transport/http/httpserver/httpserver.go
       - linters:
           - staticcheck
-        text: 'ST1005:'
+        text: "ST1005:"
       - linters:
           - gochecknoinits
         # we actually want to use this init
@@ -357,7 +367,7 @@ linters:
         # G101 checks for hardcoded credentials, and the variables named "*Token*
         # trip this off.
         path: private/pkg/oauth2/device.go
-        text: 'G101:'
+        text: "G101:"
       # G115 checks for integer overflow from integer conversions. There are known false
       # positives from the check (https://github.com/securego/gosec/issues/1212) that are
       # actively being worked on. Each exemption below is a false positive or for a safe operation,
@@ -366,52 +376,52 @@ linters:
           - gosec
         # Loop index conversion to uint64.
         path: private/buf/bufgen/features.go
-        text: 'G115:'
+        text: "G115:"
       - linters:
           - gosec
         # Converting result from utf8.RuneCountInString to uint64.
         path: private/bufpkg/bufcheck/bufcheckserver/internal/buflintvalidate/field.go
-        text: 'G115:'
+        text: "G115:"
       - linters:
           - gosec
         # PluginReference revision is validated with a bounds check at construction time.
         path: private/bufpkg/bufremoteplugin/bufremoteplugin.go
-        text: 'G115:'
+        text: "G115:"
       - linters:
           - gosec
         # A bounds check has been added for int32 -> uint32 conversion this is being flagged
         # as a false positive.
         path: private/buf/bufcurl/reflection_resolver.go
-        text: 'G115:'
+        text: "G115:"
       - linters:
           - gosec
         # bufprotosource converts indices to int32 to form the source path. Since it is parsing
         # from the fileDescriptor set, the operation should be safe.
         path: private/bufpkg/bufprotosource/paths.go
-        text: 'G115:'
+        text: "G115:"
       - linters:
           - gosec
         # Bounds checks have been added with assertion statements to ensure safe int -> int32
         # conversions, this is a false positive.
         path: private/bufpkg/bufprotosource/option_extension_descriptor_test.go
-        text: 'G115:'
+        text: "G115:"
       - linters:
           - gosec
         # This converts results from strconv.ParseInt with the bit size set to 32 to int32,
         # so it should be a safe conversion, this is a false positive.
         path: private/buf/bufprotopluginexec/version.go
-        text: 'G115:'
+        text: "G115:"
       - linters:
           - gosec
         # This checks the cel constraints from an Image, and converts loop indices to int32
         # to set the source path for the location, this operation should be safe.
         path: private/bufpkg/bufcheck/bufcheckserver/internal/buflintvalidate/cel.go
-        text: 'G115:'
+        text: "G115:"
       # No obvious deprecated replacement.
       - linters:
           - staticcheck
         path: private/pkg/protoencoding/reparse_extensions_test.go
-        text: 'SA1019:'
+        text: "SA1019:"
       - linters:
           - staticcheck
         # We still need to strip the "weak" option from fields until it is fully deprecated
@@ -454,13 +464,13 @@ linters:
         # This checks the cel constraints for predefined rules from an Image, and converts loop indices to int32
         # to set the source path for the location, this operation should be safe.
         path: private/bufpkg/bufcheck/bufcheckserver/internal/buflintvalidate/predefined_rules.go
-        text: 'G115:'
+        text: "G115:"
       - linters:
           - govet
         # We print command.Short to markdown, which is controlled and set by each command
         # and should be considered safe.
         path: private/bufpkg/bufcobra/markdown.go
-        text: 'printf: non-constant format string in call to p'
+        text: "printf: non-constant format string in call to p"
 
 issues:
   max-same-issues: 0

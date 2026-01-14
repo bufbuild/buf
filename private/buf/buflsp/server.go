@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"runtime/debug"
 	"strings"
 	"unicode/utf16"
@@ -27,6 +28,7 @@ import (
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
 	"go.lsp.dev/protocol"
+	"mvdan.cc/xurls/v2"
 )
 
 const (
@@ -48,11 +50,21 @@ type server struct {
 
 	// We embed the LSP pointer as well, since it only has private members.
 	*lsp
+
+	// httpsURLRegex is used to find https:// URLs in comments for document links.
+	httpsURLRegex *regexp.Regexp
 }
 
 // newServer creates a protocol.Server implementation out of an lsp.
-func newServer(lsp *lsp) protocol.Server {
-	return &server{lsp: lsp}
+func newServer(lsp *lsp) (protocol.Server, error) {
+	httpsURLRegex, err := xurls.StrictMatchingScheme("https://")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create HTTPS URL regex: %w", err)
+	}
+	return &server{
+		lsp:           lsp,
+		httpsURLRegex: httpsURLRegex,
+	}, nil
 }
 
 // Methods for server are grouped according to the groups in the LSP protocol specification.
@@ -99,6 +111,11 @@ func (s *server) Initialize(
 					IncludeText: false,
 				},
 			},
+			CodeActionProvider: &protocol.CodeActionOptions{
+				CodeActionKinds: []protocol.CodeActionKind{
+					protocol.SourceOrganizeImports,
+				},
+			},
 			CompletionProvider: &protocol.CompletionOptions{
 				ResolveProvider:   true,
 				TriggerCharacters: []string{".", "\"", "/"},
@@ -122,6 +139,7 @@ func (s *server) Initialize(
 			WorkspaceSymbolProvider: true,
 			DocumentSymbolProvider:  true,
 			FoldingRangeProvider:    true,
+			DocumentLinkProvider:    &protocol.DocumentLinkOptions{},
 		},
 		ServerInfo: info,
 	}, nil
@@ -450,6 +468,23 @@ func (s *server) DocumentHighlight(ctx context.Context, params *protocol.Documen
 	return symbol.DocumentHighlights(), nil
 }
 
+// CodeAction is called when the client requests code actions for a given range.
+func (s *server) CodeAction(ctx context.Context, params *protocol.CodeActionParams) ([]protocol.CodeAction, error) {
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, nil
+	}
+	codeActionSet := xslices.ToStructMap(params.Context.Only)
+
+	var actions []protocol.CodeAction
+	if _, ok := codeActionSet[protocol.SourceOrganizeImports]; len(codeActionSet) == 0 || ok {
+		if organizeImportsAction := s.getOrganizeImportsCodeAction(ctx, file); organizeImportsAction != nil {
+			actions = append(actions, *organizeImportsAction)
+		}
+	}
+	return actions, nil
+}
+
 // PrepareRename is the entry point for checking workspace wide renaming of a symbol.
 //
 // If a symbol can be renamed, PrepareRename will return the range for the rename. Returning
@@ -492,6 +527,18 @@ func (s *server) FoldingRanges(
 		return nil, nil
 	}
 	return s.foldingRange(file), nil
+}
+
+// DocumentLink is the entry point for document links, which makes imports and URLs clickable.
+func (s *server) DocumentLink(
+	ctx context.Context,
+	params *protocol.DocumentLinkParams,
+) ([]protocol.DocumentLink, error) {
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, nil
+	}
+	return s.documentLink(file), nil
 }
 
 // getSymbol is a helper function that gets the *[symbol] for the given [protocol.URI] and
