@@ -210,7 +210,6 @@ func TestFoldingRange(t *testing.T) {
 			}, &ranges)
 			require.NoError(t, err)
 
-
 			// Run custom assertions
 			tt.expectedAssertion(t, ranges)
 
