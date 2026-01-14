@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package example.main;
+
+// All imports are present and in the correct order.
+import "google/protobuf/timestamp.proto";
+import "types/existing_field.proto"; // trailing comment
+
+message NoChangesTest {
+  example.types.ExistingField imported = 2;
+  google.protobuf.Timestamp present_too = 3;
+}

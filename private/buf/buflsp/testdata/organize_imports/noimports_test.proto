@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package example.main;
+
+message TestNoImports {
+  example.types.TopLevelField field = 1; // Missing import: toplevel_field.proto
+  example.types.ExistingField imported = 2;
+  example.types.NotFound not_found = 3; // Invalid import: ignore
+}

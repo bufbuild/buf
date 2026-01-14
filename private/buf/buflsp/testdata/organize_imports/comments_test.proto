@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package example.main;
+
+// A comment about this
+import "types/existing_field.proto"; // trailing comment
+/* MultiComment
+ * 
+ */
+import "google/protobuf/timestamp.proto";
+
+message CommentsTest {
+  example.types.TopLevelField field = 1; // Missing import: toplevel_field.proto
+  example.types.ExistingField imported = 2;
+  example.types.NotAtTop field2 = 3;
+  google.protobuf.Timestamp timestamp_field = 4;
+}
+
+// Import is not at top of file
+import "types/notattop_import.proto"; // another trailing comment

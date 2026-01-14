@@ -99,6 +99,11 @@ func (s *server) Initialize(
 					IncludeText: false,
 				},
 			},
+			CodeActionProvider: &protocol.CodeActionOptions{
+				CodeActionKinds: []protocol.CodeActionKind{
+					protocol.SourceOrganizeImports,
+				},
+			},
 			CompletionProvider: &protocol.CompletionOptions{
 				ResolveProvider:   true,
 				TriggerCharacters: []string{".", "\"", "/"},
@@ -447,6 +452,23 @@ func (s *server) DocumentHighlight(ctx context.Context, params *protocol.Documen
 		return nil, nil
 	}
 	return symbol.DocumentHighlights(), nil
+}
+
+// CodeAction is called when the client requests code actions for a given range.
+func (s *server) CodeAction(ctx context.Context, params *protocol.CodeActionParams) ([]protocol.CodeAction, error) {
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, nil
+	}
+	codeActionSet := xslices.ToStructMap(params.Context.Only)
+
+	var actions []protocol.CodeAction
+	if _, ok := codeActionSet[protocol.SourceOrganizeImports]; len(codeActionSet) == 0 || ok {
+		if organizeImportsAction := s.getOrganizeImportsCodeAction(ctx, file); organizeImportsAction != nil {
+			actions = append(actions, *organizeImportsAction)
+		}
+	}
+	return actions, nil
 }
 
 // PrepareRename is the entry point for checking workspace wide renaming of a symbol.
