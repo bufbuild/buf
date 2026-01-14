@@ -70,7 +70,11 @@ func Serve(
 	off := protocol.TraceOff
 	lsp.traceValue.Store(&off)
 
-	conn.Go(ctx, lsp.newHandler())
+	handler, err := lsp.newHandler()
+	if err != nil {
+		return nil, err
+	}
+	conn.Go(ctx, handler)
 	return conn, nil
 }
 
@@ -127,8 +131,12 @@ func (l *lsp) init(_ context.Context, params *protocol.InitializeParams) error {
 
 // newHandler constructs an RPC handler that wraps the default one from jsonrpc2. This allows us
 // to inject debug logging, tracing, and timeouts to requests.
-func (l *lsp) newHandler() jsonrpc2.Handler {
-	actual := protocol.ServerHandler(newServer(l), nil)
+func (l *lsp) newHandler() (jsonrpc2.Handler, error) {
+	server, err := newServer(l)
+	if err != nil {
+		return nil, err
+	}
+	actual := protocol.ServerHandler(server, nil)
 	return jsonrpc2.AsyncHandler(func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) error {
 		l.logger.Debug(
 			"handling request",
@@ -160,5 +168,5 @@ func (l *lsp) newHandler() jsonrpc2.Handler {
 			)
 		}
 		return nil
-	})
+	}), nil
 }

@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package document_link.v1;
+
+import "types.proto";
+
+// Request message for the API.
+// See https://example.com/docs for more info.
+// Also check https://github.com/example/repo for source code.
+message Request {
+  string id = 1;
+  Status status = 2; // Field status - see https://example.com/status
+}

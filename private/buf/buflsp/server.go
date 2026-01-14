@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"runtime/debug"
 	"strings"
 	"unicode/utf16"
@@ -27,6 +28,7 @@ import (
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
 	"go.lsp.dev/protocol"
+	"mvdan.cc/xurls/v2"
 )
 
 const (
@@ -48,11 +50,21 @@ type server struct {
 
 	// We embed the LSP pointer as well, since it only has private members.
 	*lsp
+
+	// httpsURLRegex is used to find https:// URLs in comments for document links.
+	httpsURLRegex *regexp.Regexp
 }
 
 // newServer creates a protocol.Server implementation out of an lsp.
-func newServer(lsp *lsp) protocol.Server {
-	return &server{lsp: lsp}
+func newServer(lsp *lsp) (protocol.Server, error) {
+	httpsURLRegex, err := xurls.StrictMatchingScheme("https://")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create HTTPS URL regex: %w", err)
+	}
+	return &server{
+		lsp:           lsp,
+		httpsURLRegex: httpsURLRegex,
+	}, nil
 }
 
 // Methods for server are grouped according to the groups in the LSP protocol specification.
@@ -126,6 +138,7 @@ func (s *server) Initialize(
 			},
 			WorkspaceSymbolProvider: true,
 			DocumentSymbolProvider:  true,
+			DocumentLinkProvider:    &protocol.DocumentLinkOptions{},
 		},
 		ServerInfo: info,
 	}, nil
@@ -501,6 +514,18 @@ func (s *server) Rename(
 		return nil, nil
 	}
 	return symbol.Rename(params.NewName)
+}
+
+// DocumentLink is the entry point for document links, which makes imports and URLs clickable.
+func (s *server) DocumentLink(
+	ctx context.Context,
+	params *protocol.DocumentLinkParams,
+) ([]protocol.DocumentLink, error) {
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, nil
+	}
+	return s.documentLink(file), nil
 }
 
 // getSymbol is a helper function that gets the *[symbol] for the given [protocol.URI] and
