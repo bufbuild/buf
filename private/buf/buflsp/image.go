@@ -23,7 +23,6 @@ import (
 	"strings"
 
 	"buf.build/go/standard/xlog/xslog"
-	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/experimental/source"
@@ -61,7 +60,7 @@ func buildImage(
 	path string,
 	logger *slog.Logger,
 	opener fileOpener,
-) (bufimage.Image, []protocol.Diagnostic) {
+) bufimage.Image {
 	var errorsWithPos []reporter.ErrorWithPos
 	var warningErrorsWithPos []reporter.ErrorWithPos
 	var symbols linker.Symbols
@@ -80,18 +79,12 @@ func buildImage(
 		),
 	}
 
-	var diagnostics []protocol.Diagnostic
 	compiled, err := compiler.Compile(ctx, path)
 	if err != nil {
 		logger.Warn("error building image", slog.String("path", path), xslog.ErrorAttr(err))
-		if len(errorsWithPos) > 0 {
-			diagnostics = xslices.Map(errorsWithPos, func(errorWithPos reporter.ErrorWithPos) protocol.Diagnostic {
-				return newDiagnostic(errorWithPos, false, opener, logger)
-			})
-		}
 	}
 	if len(compiled) == 0 || compiled[0] == nil {
-		return nil, diagnostics // Image failed to build.
+		return nil // Image failed to build.
 	}
 	compiledFile := compiled[0]
 
@@ -171,19 +164,17 @@ func buildImage(
 		imageFiles = append(imageFiles, imageFile)
 		logger.Debug(fmt.Sprintf("added image file for %s", descriptor.Path()))
 	}
-
 	if err != nil {
 		logger.Warn("could not build image", slog.String("path", path), xslog.ErrorAttr(err))
-		return nil, diagnostics
+		return nil
 	}
 
 	image, err := bufimage.NewImage(imageFiles)
 	if err != nil {
 		logger.Warn("could not build image", slog.String("path", path), xslog.ErrorAttr(err))
-		return nil, diagnostics
+		return nil
 	}
-
-	return image, diagnostics
+	return image
 }
 
 // newDiagnostic converts a protocompile error into a diagnostic.

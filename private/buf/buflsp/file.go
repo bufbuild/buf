@@ -65,8 +65,8 @@ type file struct {
 	referenceableSymbols map[ir.FullName]*symbol
 	referenceSymbols     []*symbol
 	symbols              []*symbol
-	irReport             *report.Report        // IR diagnostic report for code actions
-	diagnostics          []protocol.Diagnostic // Converted LSP diagnostics
+	irReport             *report.Report // IR diagnostic report for code actions
+	diagnostics          []protocol.Diagnostic
 	cancelChecks         func()
 }
 
@@ -227,9 +227,9 @@ func (f *file) RefreshIR(ctx context.Context) {
 		slog.String("uri", string(f.uri)),
 		slog.Int("version", int(f.version)),
 	)
+	f.irReport = nil
 	f.diagnostics = nil
 	f.ir = nil
-	f.irReport = nil
 
 	// Opener creates a cached view of all files in the workspace.
 	pathToFiles := f.workspace.PathToFile()
@@ -286,9 +286,9 @@ func (f *file) RefreshIR(ctx context.Context) {
 	// Store the IR report for code actions
 	f.irReport = diagnosticReport
 
-	// Only hold on to diagnostics where the primary span is for this path.
+	// Only hold on to diagnostics which is associated directly with this file.
 	fileDiagnostics := xslices.Filter(diagnosticReport.Diagnostics, func(d report.Diagnostic) bool {
-		return d.Primary().Path() == f.objectInfo.Path()
+		return d.File() == f.objectInfo.LocalPath()
 	})
 	diagnostics, err := xslices.MapError(
 		fileDiagnostics,
@@ -300,12 +300,12 @@ func (f *file) RefreshIR(ctx context.Context) {
 			xslog.ErrorAttr(err),
 		)
 	}
-	f.diagnostics = diagnostics
 	f.lsp.logger.DebugContext(
 		ctx, "ir diagnostic(s)",
 		slog.String("uri", f.uri.Filename()),
-		slog.Int("count", len(f.diagnostics)),
+		slog.Int("count", len(diagnostics)),
 	)
+	f.diagnostics = diagnostics
 }
 
 // queryIR returns the [queries.IR] for the current file.
@@ -934,11 +934,11 @@ func (f *file) RunChecks(ctx context.Context) {
 	}
 	f.CancelChecks(ctx)
 
-	for _, diagnostic := range f.diagnostics {
-		if diagnostic.Severity == protocol.DiagnosticSeverityError {
+	for _, diagnostic := range f.irReport.Diagnostics {
+		if diagnostic.Level() <= report.Error {
 			f.lsp.logger.DebugContext(
-				ctx, "checks skipped on diagnostic severity",
-				slog.String("severity", diagnostic.Severity.String()),
+				ctx, "checks skipped on diagnostic level",
+				slog.Int("severity", int(diagnostic.Level())),
 			)
 			return // Skip on not buildable images.
 		}
@@ -964,7 +964,7 @@ func (f *file) RunChecks(ctx context.Context) {
 
 	go func() {
 		var annotations []bufanalysis.FileAnnotation
-		image, diagnostics := buildImage(ctx, path, f.lsp.logger, opener)
+		image := buildImage(ctx, path, f.lsp.logger, opener)
 		if image != nil {
 			f.lsp.logger.DebugContext(ctx, "checks running lint", slog.String("uri", f.uri.Filename()), slog.String("module", module.OpaqueID()))
 			if err := checkClient.Lint(
@@ -1010,11 +1010,6 @@ func (f *file) RunChecks(ctx context.Context) {
 		default:
 		}
 
-		// Update diagnostics and publish.
-		if len(diagnostics) != 0 {
-			// TODO: prefer diagnostics from the old compiler to the new compiler to remove duplicates from both.
-			f.diagnostics = diagnostics
-		}
 		f.appendAnnotations("buf lint", annotations)
 		f.PublishDiagnostics(ctx)
 	}()
@@ -1048,7 +1043,6 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 		// client.
 		return
 	}
-
 	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
 	// NOTE: We need to avoid sending a JSON null here, so we replace it with
