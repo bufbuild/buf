@@ -344,6 +344,22 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 			return completionItemsForFieldNumber(file, parentDef)
 		}
 	}
+	// Special case: enum value number completion
+	if !hasStart && parentDef.Classify() == ast.DefKindEnum {
+		// Case 1: Valid enum value definition with name but no tag
+		// e.g., `STATUS_ACTIVE = |;\n`
+		if def.Classify() == ast.DefKindEnumValue {
+			enumValue := def.AsEnumValue()
+			if !enumValue.Name.IsZero() && enumValue.Tag.IsZero() {
+				return completionItemsForEnumNumber(file, parentDef)
+			}
+		}
+		// Case 2: Invalid definition (e.g., missing semicolon) but cursor is after equals sign
+		// e.g., `STATUS_ACTIVE = |`
+		if def.Classify() == ast.DefKindInvalid && isAfterEqualsSign(file, offset) {
+			return completionItemsForEnumNumber(file, parentDef)
+		}
+	}
 	if !hasStart {
 		file.lsp.logger.DebugContext(
 			ctx,
@@ -1738,12 +1754,63 @@ func completionItemsForFieldNumber(
 		}
 	}
 
-	next := strconv.FormatUint(nextNumber, 10)
 	return []protocol.CompletionItem{
 		{
-			Label:      next,
-			Kind:       protocol.CompletionItemKindValue,
-			InsertText: next,
+			Label: strconv.FormatUint(nextNumber, 10),
+			Kind:  protocol.CompletionItemKindValue,
+		},
+	}
+}
+
+// completionItemsForEnumNumber suggests the next available, non-reserved enum number in the enum
+// for completion.
+//
+// Enum values are _any_ int32 value, but we make the assumption here that the user is using the
+// "typical" incrementing from 0 approach and suggest the next available positive int32 value.
+//
+// Ref: https://protobuf.com/docs/language-spec#enum-values
+func completionItemsForEnumNumber(
+	file *file,
+	parentDef ast.DeclDef,
+) []protocol.CompletionItem {
+	// Collect all used or reserved enum value numbers in the parent enum
+	usedOrReservedEnumNumbers := make(map[int32]bool)
+
+	// Find the IR Type corresponding to this AST definition
+	irType := findTypeBySpan(file, parentDef.Span())
+
+	if !irType.IsZero() {
+		// Collect enum value numbers from members
+		for member := range seq.Values(irType.Members()) {
+			// For enums, all numbers are valid including 0 (unlike fields where 0 is invalid)
+			num := member.Number()
+			usedOrReservedEnumNumbers[num] = true
+		}
+
+		// Collect reserved ranges
+		for reservedRange := range seq.Values(irType.ReservedRanges()) {
+			start, end := reservedRange.Range()
+			for i := start; i <= end; i++ {
+				usedOrReservedEnumNumbers[i] = true
+			}
+		}
+	}
+
+	// Find the next available enum number
+	// Enum values typically start at 0 and increment, but can be any int32 value
+	var nextNumber int32
+	for usedOrReservedEnumNumbers[nextNumber] {
+		nextNumber++
+		if nextNumber == math.MaxInt32 {
+			// Bail at the maximum enum value.
+			return nil
+		}
+	}
+
+	return []protocol.CompletionItem{
+		{
+			Label: strconv.FormatInt(int64(nextNumber), 10),
+			Kind:  protocol.CompletionItemKindValue,
 		},
 	}
 }
@@ -1752,7 +1819,7 @@ func completionItemsForFieldNumber(
 //
 // This function is called by the CompletionResolve handler in server.go.
 func resolveCompletionItem(
-	ctx context.Context,
+	_ context.Context,
 	item *protocol.CompletionItem,
 ) (*protocol.CompletionItem, error) {
 	// TODO: Implement completion resolution logic.

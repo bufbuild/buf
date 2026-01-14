@@ -50,3 +50,26 @@ message ProtobufReservedRangeTest {
 message AbsoluteTypeReferenceTest {
   .goo field_name = 1; // complete_absolute_type_reference
 }
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+  STATUS_NEW =  // complete_enum_number_basic
+}
+
+enum StatusWithGaps {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+  STATUS_PAUSED = 3;
+  STATUS_NEW = ; // complete_enum_number_with_gaps
+}
+
+enum StatusWithReserved {
+  reserved 2;
+  reserved 3 to 5;
+  reserved 7 to 10;
+
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+  STATUS_NEW = ; // complete_enum_number_with_reserved
+}
