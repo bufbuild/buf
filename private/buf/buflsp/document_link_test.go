@@ -30,9 +30,9 @@ func TestDocumentLink(t *testing.T) {
 	ctx := t.Context()
 
 	tests := []struct {
-		name           string
-		protoFile      string
-		expectedLinks  []expectedLink
+		name          string
+		protoFile     string
+		expectedLinks []expectedLink
 	}{
 		{
 			name:      "local_import_and_comment_urls",
@@ -105,7 +105,7 @@ func TestDocumentLink(t *testing.T) {
 
 			for i, expected := range tt.expectedLinks {
 				link := links[i]
-				assert.Equal(t, uint32(expected.line), link.Range.Start.Line, "link %d (%s): wrong line", i, expected.description)
+				assert.Equal(t, expected.line, link.Range.Start.Line, "link %d (%s): wrong line", i, expected.description)
 
 				switch expected.targetType {
 				case linkTargetTypeLocal:
