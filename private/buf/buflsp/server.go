@@ -138,6 +138,7 @@ func (s *server) Initialize(
 			},
 			WorkspaceSymbolProvider: true,
 			DocumentSymbolProvider:  true,
+			FoldingRangeProvider:    true,
 			DocumentLinkProvider:    &protocol.DocumentLinkOptions{},
 		},
 		ServerInfo: info,
@@ -514,6 +515,18 @@ func (s *server) Rename(
 		return nil, nil
 	}
 	return symbol.Rename(params.NewName)
+}
+
+// FoldingRanges is the entry point for folding ranges, which allows collapsing/expanding blocks of code.
+func (s *server) FoldingRanges(
+	ctx context.Context,
+	params *protocol.FoldingRangeParams,
+) ([]protocol.FoldingRange, error) {
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, nil
+	}
+	return s.foldingRange(file), nil
 }
 
 // DocumentLink is the entry point for document links, which makes imports and URLs clickable.

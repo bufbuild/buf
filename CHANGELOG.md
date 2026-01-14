@@ -9,6 +9,7 @@
 - Add LSP organize imports code action to add missing imports, remove unused
   imports, and sort imports alphabetically.
 - Add LSP document link support.
+- Add LSP folding range support.
 
 ## [v1.63.0] - 2026-01-06
 

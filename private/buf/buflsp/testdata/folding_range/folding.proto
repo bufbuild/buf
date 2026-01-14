@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package folding.v1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+// This is a multi-line comment
+// that should be foldable.
+// It spans several lines.
+message User {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+  STATUS_INACTIVE = 2;
+}
+
+service UserService {
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+
+  // Multi-line RPC with options
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse) {
+    option deprecated = true;
+    option idempotency_level = IDEMPOTENT;
+  }
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message CreateUserRequest {
+  string name = 1;
+  string email = 2;
+}
+
+message CreateUserResponse {
+  User user = 1;
+}
+
+message UpdateUserRequest {
+  User user = 1;
+}
+
+message UpdateUserResponse {
+  User user = 1;
+}
+
+// Message with multi-line message-level options
+message Config {
+  option deprecated = true;
+
+  string name = 1;
+  int32 value = 2;
+}
+
+message Repository {
+  string commit_id = 1 [
+    deprecated = true,
+    json_name = "commitId"
+  ];
+
+  string branch = 2 [deprecated = true];
+}
+
+message Profile {
+  oneof contact {
+    string email = 1;
+    string phone = 2;
+  }
+
+  // Nested message for testing
+  message Address {
+    string street = 1;
+    string city = 2;
+    string country = 3;
+  }
+}

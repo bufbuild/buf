@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package folding.v1;
+
+// Message with multi-line field options
+message FieldOptions {
+  // Field with many options
+  string field1 = 1 [
+    json_name = "field1",
+    deprecated = true
+  ];
+
+  // Field with single-line options (not foldable)
+  string field2 = 2 [json_name = "field2"];
+
+  // Field with deeply nested options
+  string field3 = 3 [
+    json_name = "field3",
+    deprecated = false
+  ];
+}
+
+// Enum with options
+enum Status {
+  option allow_alias = true;
+
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1 [deprecated = true];
+  STATUS_INACTIVE = 2;
+  STATUS_UNKNOWN = 0;  // Alias due to allow_alias
+}
+
+// Service with method options
+service OptionsService {
+  rpc Method1(Request) returns (Response) {
+    option deprecated = true;
+  }
+
+  rpc Method2(Request) returns (Response) {
+    option idempotency_level = IDEMPOTENT;
+    option deprecated = false;
+  }
+}
+
+message Request {
+  string query = 1;
+}
+
+message Response {
+  string result = 1;
+}
+
+// Multiple options on same message
+message MultiOptions {
+  string field1 = 1 [
+    json_name = "f1",
+    deprecated = true
+  ];
+
+  string field2 = 2 [
+    json_name = "f2",
+    deprecated = false
+  ];
+
+  string field3 = 3 [
+    json_name = "f3"
+  ];
+}

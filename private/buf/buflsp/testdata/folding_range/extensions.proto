@@ -1,0 +1,45 @@
+syntax = "proto2";
+
+package folding.v1;
+
+// Base message with extension range
+message User {
+  optional string id = 1;
+  optional string name = 2;
+  extensions 100 to 199;
+}
+
+// Extend block with a message that has nested content
+extend User {
+  optional UserMetadata metadata = 100;
+  optional Preferences preferences = 101;
+}
+
+// Message used in extension with nested message
+message UserMetadata {
+  optional string created_by = 1;
+  optional int64 created_at = 2;
+
+  // Nested message inside extension message
+  message AuditInfo {
+    optional string ip_address = 1;
+    optional string user_agent = 2;
+    optional string location = 3;
+  }
+
+  optional AuditInfo audit = 3;
+}
+
+// Another message for extension
+message Preferences {
+  optional string theme = 1;
+  optional string language = 2;
+}
+
+// Multi-line field with options in proto2
+message Settings {
+  optional string api_key = 1 [
+    deprecated = true,
+    default = "default_key"
+  ];
+}
