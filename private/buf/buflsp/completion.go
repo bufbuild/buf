@@ -1542,7 +1542,7 @@ func isTokenSpace(tok token.Token) bool {
 	return tok.Kind() == token.Space && strings.IndexByte(tok.Text(), '\n') == -1
 }
 
-// isTokenNewline returns true for spaces, excluding newlines.
+// isTokenNewline returns true if tok is a newline.
 func isTokenNewline(tok token.Token) bool {
 	return tok.Kind() == token.Space && strings.Count(tok.Text(), "\n") == 1
 }

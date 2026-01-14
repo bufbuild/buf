@@ -47,8 +47,6 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 		return nil
 	}
 
-	s.logger.Debug("code action: checking IR diagnostics", "count", len(file.irReport.Diagnostics))
-
 	// Find all unresolved type references and unused imports from the IR diagnostics
 	unresolvedRefs := make(map[ir.FullName]bool)
 	unusedImports := make(map[string]bool)
@@ -62,13 +60,10 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 		if diag.Tag() == tags.UnknownSymbol {
 			// Get the exact symbol name as written in the source
 			missingType := diag.Primary().Text()
-			s.logger.Debug("code action: unknown symbol", "missingType", missingType, "message", diag.Message())
-
 			if missingType != "" {
 				// The text may have a leading dot for absolute paths, remove it
 				typeName := strings.TrimPrefix(missingType, ".")
 				unresolvedRefs[ir.FullName(typeName)] = true
-				s.logger.Debug("code action: found unresolved type", "typeName", typeName)
 			}
 		}
 
@@ -76,18 +71,13 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 		if diag.Tag() == tags.UnusedImport {
 			// The diagnostic text contains the import path
 			unusedImportPath := diag.Primary().Text()
-			s.logger.Debug("code action: unused import", "importPath", unusedImportPath, "message", diag.Message())
 			if unusedImportPath != "" {
 				// Remove quotes if present
 				unusedImportPath = strings.Trim(unusedImportPath, "\"")
 				unusedImports[unusedImportPath] = true
-				s.logger.Debug("code action: found unused import", "importPath", unusedImportPath)
 			}
 		}
 	}
-
-	s.logger.Debug("code action: found unresolved references", "count", len(unresolvedRefs))
-	s.logger.Debug("code action: found unused imports", "count", len(unusedImports))
 
 	// Find imports needed for each unresolved type
 	importsToAdd := make(map[string]bool)
@@ -101,9 +91,6 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 			if symbolInFile(typeFullName, workspaceFile) {
 				importPath := workspaceFile.objectInfo.Path()
 				importsToAdd[importPath] = true
-				s.logger.Debug("code action: found type in file",
-					"typeFullName", typeFullName,
-					"importPath", importPath)
 				break
 			}
 		}
