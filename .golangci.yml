@@ -189,6 +189,11 @@ linters:
         path: private/buf/buflsp/semantic_tokens.go
         text: 'G115:'
       - linters:
+          - gosec
+        # G115 checks for use of truncating conversions.
+        path: private/buf/buflsp/folding_range.go
+        text: 'G115:'
+      - linters:
           - containedctx
         # Type must implement an interface whose methods do not accept context. But this
         # implementation makes RPC calls, which need a context. So we allow creator of the

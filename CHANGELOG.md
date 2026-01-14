@@ -6,6 +6,7 @@
 - Add LSP document highlighting support.
 - Add LSP completion for fully-qualified type references.
 - Improve LSP semantic tokens implementation (for syntax highlighting).
+- Add LSP folding range support.
 
 ## [v1.63.0] - 2026-01-06
 
