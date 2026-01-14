@@ -4333,6 +4333,39 @@ func TestFormatInvalidIncludePackageFiles(t *testing.T) {
 	)
 }
 
+func TestFormatInvalidMultipleFileArguments(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	// Test that multiple positional arguments cannot be combined with --path flags
+	testRunStderrContainsNoWarn(
+		t,
+		nil,
+		1,
+		[]string{
+			"Failure: cannot specify both positional file arguments and --path flags",
+		},
+		"format",
+		"--path",
+		filepath.Join("testdata", "format", "multifile", "file1.proto"),
+		filepath.Join("testdata", "format", "multifile", "file2.proto"),
+		filepath.Join("testdata", "format", "multifile", "file3.proto"),
+	)
+	// Test that multiple files require directory output (not single file)
+	testRunStderrContainsNoWarn(
+		t,
+		nil,
+		1,
+		[]string{
+			"Failure: --output must be a directory when formatting multiple files",
+		},
+		"format",
+		"-o",
+		filepath.Join(tempDir, "output.proto"),
+		filepath.Join("testdata", "format", "multifile", "file1.proto"),
+		filepath.Join("testdata", "format", "multifile", "file2.proto"),
+	)
+}
+
 func TestFormatInvalidInputDoesNotCreateDirectory(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
@@ -4362,6 +4395,48 @@ func TestFormatInvalidInputDoesNotCreateDirectory(t *testing.T) {
 	)
 	_, err = os.Stat(filepath.Join(tempDir, "formatted", "invalid"))
 	assert.True(t, os.IsNotExist(err))
+}
+
+func TestFormatMultipleFiles(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	formattedDir := filepath.Join(tempDir, "multifile.formatted")
+	// First, format the multiple file paths to a temp directory
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"format",
+		filepath.Join("testdata", "format", "multifile", "file1.proto"),
+		filepath.Join("testdata", "format", "multifile", "file2.proto"),
+		filepath.Join("testdata", "format", "multifile", "file3.proto"),
+		"-o",
+		formattedDir,
+	)
+	// Verify that multiple file paths can be passed as positional arguments
+	// and formatting with -d produces no diff
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"format",
+		filepath.Join("testdata", "format", "multifile", "file1.proto"),
+		filepath.Join("testdata", "format", "multifile", "file2.proto"),
+		filepath.Join("testdata", "format", "multifile", "file3.proto"),
+		"-d",
+	)
+	// Verify formatting the whole directory with -d produces no diff
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"format",
+		formattedDir,
+		"-d",
+	)
 }
 
 func TestConvertRoundTrip(t *testing.T) {

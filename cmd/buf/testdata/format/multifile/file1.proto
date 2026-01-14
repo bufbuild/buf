@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package multifile;
+
+message Object1 {
+    string key = 1;
+   bytes value = 2;
+}
