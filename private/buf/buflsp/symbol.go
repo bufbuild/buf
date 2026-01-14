@@ -613,23 +613,23 @@ func (s *symbol) getDocsFromComments() string {
 
 		if bsrHost != "" {
 			packageName := string(s.def.file.ir.Package())
-			var bsrURL string
+			var url string
 			if s.def.file.IsWKT() {
 				// WKT uses special bsrHost format
-				bsrURL = "https://" + bsrHost + "/docs/main:" + packageName
+				url = "https://" + bsrHost + "/docs/main:" + packageName
 				if bsrAnchor != "" {
-					bsrURL += "#" + bsrAnchor
+					url += "#" + bsrAnchor
 				}
 			} else {
-				// Use the helper function for non-WKT modules
-				bsrURL = bsrDocsURL(module, packageName, bsrAnchor)
+				// Use bsrURL for non-WKT modules
+				url = bsrURL(module, packageName, bsrAnchor, bsrTabTypeDocs)
 			}
-			if bsrURL != "" {
+			if url != "" {
 				fmt.Fprintf(
 					&docs,
 					"\n[`%s` on the Buf Schema Registry](%s)\n",
 					defFullName,
-					bsrURL,
+					url,
 				)
 			}
 		}

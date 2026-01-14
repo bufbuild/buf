@@ -23,8 +23,16 @@ import (
 	"go.lsp.dev/protocol"
 )
 
+const (
+	// bsrTabTypeDocs is the BSR docs tab type.
+	bsrTabTypeDocs = "docs"
+	// bsrTabTypeFile is the BSR file (code) tab type.
+	bsrTabTypeFile = "file"
+)
+
 // documentLink generates document links for imports and URLs in comments.
-// For imports from BSR modules, this creates links to <remote>/<owner>/<module>/docs/main:<package-name>.
+// For imports from BSR modules, this creates links to <remote>/<owner>/<module>/file/main:<file-path>.
+// For WKT imports, this creates links to buf.build/protocolbuffers/wellknowntypes/file/main:<file-path>.
 // For local imports without module names, it links to the local file.
 // For https:// URLs found in comments, it creates clickable links to those URLs.
 func (s *server) documentLink(file *file) []protocol.DocumentLink {
@@ -35,13 +43,19 @@ func (s *server) documentLink(file *file) []protocol.DocumentLink {
 		if imported, ok := symbol.kind.(*imported); ok && imported.file != nil {
 			var targetURI protocol.DocumentURI
 
-			// Try to get BSR module information
-			if file.workspace != nil && imported.file.ir != nil {
+			// Check if this is a Well-Known Type (WKT)
+			if imported.file.IsWKT() && imported.file.objectInfo != nil {
+				bsrHost := bufconnect.DefaultRemote + "/protocolbuffers/wellknowntypes"
+				filePath := imported.file.objectInfo.Path()
+				url := "https://" + bsrHost + "/file/main:" + filePath
+				targetURI = protocol.DocumentURI(url)
+			} else if file.workspace != nil && imported.file.objectInfo != nil {
+				// Try to get BSR module information for non-WKT imports
 				module := file.workspace.GetModule(imported.file.uri)
-				packageName := string(imported.file.ir.Package())
-				bsrURL := bsrDocsURL(module, packageName, "")
-				if bsrURL != "" {
-					targetURI = protocol.DocumentURI(bsrURL)
+				filePath := imported.file.objectInfo.Path()
+				url := bsrURL(module, filePath, "", bsrTabTypeFile)
+				if url != "" {
+					targetURI = protocol.DocumentURI(url)
 				}
 			}
 
@@ -67,10 +81,12 @@ func (s *server) documentLink(file *file) []protocol.DocumentLink {
 	return links
 }
 
-// bsrDocsURL constructs a BSR documentation URL for a module and package.
+// bsrURL constructs a BSR URL for a module.
 // Returns an empty string if the module has no FullName.
-// Format: https://remote/owner/name/docs/main:package#anchor
-func bsrDocsURL(module bufmodule.Module, packageName string, anchor string) string {
+// tabType should be bsrTabTypeDocs or bsrTabTypeFile.
+// For docs tab: https://remote/owner/name/docs/main:package#anchor
+// For file tab: https://remote/owner/name/file/main:filePath
+func bsrURL(module bufmodule.Module, pathOrPackage string, anchor string, tabType string) string {
 	if module == nil {
 		return ""
 	}
@@ -88,7 +104,7 @@ func bsrDocsURL(module bufmodule.Module, packageName string, anchor string) stri
 		registry = bufconnect.DefaultRemote
 	}
 
-	url := "https://" + registry + "/" + owner + "/" + name + "/docs/main:" + packageName
+	url := "https://" + registry + "/" + owner + "/" + name + "/" + tabType + "/main:" + pathOrPackage
 	if anchor != "" {
 		url += "#" + anchor
 	}

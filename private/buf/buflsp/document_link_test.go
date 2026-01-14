@@ -29,56 +29,114 @@ func TestDocumentLink(t *testing.T) {
 
 	ctx := t.Context()
 
-	mainProtoPath, err := filepath.Abs("testdata/document_link/main.proto")
-	require.NoError(t, err)
-
-	typesProtoPath, err := filepath.Abs("testdata/document_link/types.proto")
-	require.NoError(t, err)
-
-	clientJSONConn, mainURI := setupLSPServer(t, mainProtoPath)
-	typesURI := uri.New(typesProtoPath)
-
-	var links []protocol.DocumentLink
-	_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentLink, protocol.DocumentLinkParams{
-		TextDocument: protocol.TextDocumentIdentifier{
-			URI: mainURI,
+	tests := []struct {
+		name           string
+		protoFile      string
+		expectedLinks  []expectedLink
+	}{
+		{
+			name:      "local_import_and_comment_urls",
+			protoFile: "testdata/document_link/main.proto",
+			expectedLinks: []expectedLink{
+				{
+					line:        4, // import "types.proto" on line 5 (0-indexed line 4)
+					description: "local import to types.proto",
+					targetType:  linkTargetTypeLocal,
+					localPath:   "testdata/document_link/types.proto",
+				},
+				{
+					line:        7, // https://example.com/docs on line 8
+					description: "comment URL 1",
+					targetType:  linkTargetTypeURL,
+					targetURL:   "https://example.com/docs",
+				},
+				{
+					line:        8, // https://github.com/example/repo on line 9
+					description: "comment URL 2",
+					targetType:  linkTargetTypeURL,
+					targetURL:   "https://github.com/example/repo",
+				},
+				{
+					line:        11, // https://example.com/status on line 12
+					description: "comment URL 3",
+					targetType:  linkTargetTypeURL,
+					targetURL:   "https://example.com/status",
+				},
+			},
 		},
-	}, &links)
-	require.NoError(t, err)
+		{
+			name:      "wkt_imports",
+			protoFile: "testdata/document_link/wkt.proto",
+			expectedLinks: []expectedLink{
+				{
+					line:        4, // import "google/protobuf/timestamp.proto" on line 5
+					description: "WKT Timestamp import",
+					targetType:  linkTargetTypeURL,
+					targetURL:   "https://buf.build/protocolbuffers/wellknowntypes/file/main:google/protobuf/timestamp.proto",
+				},
+				{
+					line:        5, // import "google/protobuf/duration.proto" on line 6
+					description: "WKT Duration import",
+					targetType:  linkTargetTypeURL,
+					targetURL:   "https://buf.build/protocolbuffers/wellknowntypes/file/main:google/protobuf/duration.proto",
+				},
+			},
+		},
+	}
 
-	// main.proto has one import: "types.proto" at line 5
-	// and three URLs in comments at lines 8, 9, and 12
-	require.Len(t, links, 4, "expected exactly four document links")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	// First link should be the import
-	importLink := links[0]
-	// The import statement is on line 5 (0-indexed is line 4)
-	assert.Equal(t, uint32(4), importLink.Range.Start.Line)
-	// Should link to types.proto local file (since the test module has no FullName).
-	// When importing from BSR modules with FullName set, the link would be to
-	// https://buf.build/owner/module/docs/main:package.name (using bufconnect.DefaultRemote)
-	assert.Equal(t, typesURI, importLink.Target)
+			protoPath, err := filepath.Abs(tt.protoFile)
+			require.NoError(t, err)
 
-	// Second link should be the first URL in the comment
-	urlLink1 := links[1]
-	// The URL is on line 8 (0-indexed is line 7)
-	assert.Equal(t, uint32(7), urlLink1.Range.Start.Line)
-	assert.Equal(t, protocol.DocumentURI("https://example.com/docs"), urlLink1.Target)
+			clientJSONConn, testURI := setupLSPServer(t, protoPath)
 
-	// Third link should be the second URL in the comment
-	urlLink2 := links[2]
-	// The URL is on line 9 (0-indexed is line 8)
-	assert.Equal(t, uint32(8), urlLink2.Range.Start.Line)
-	assert.Equal(t, protocol.DocumentURI("https://github.com/example/repo"), urlLink2.Target)
+			var links []protocol.DocumentLink
+			_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentLink, protocol.DocumentLinkParams{
+				TextDocument: protocol.TextDocumentIdentifier{
+					URI: testURI,
+				},
+			}, &links)
+			require.NoError(t, err)
 
-	// Fourth link should be the third URL in the inline comment
-	urlLink3 := links[3]
-	// The URL is on line 12 (0-indexed is line 11)
-	assert.Equal(t, uint32(11), urlLink3.Range.Start.Line)
-	assert.Equal(t, protocol.DocumentURI("https://example.com/status"), urlLink3.Target)
+			require.Len(t, links, len(tt.expectedLinks), "unexpected number of document links")
 
-	// Verify no overlapping ranges
-	assertNoOverlappingRanges(t, links)
+			for i, expected := range tt.expectedLinks {
+				link := links[i]
+				assert.Equal(t, uint32(expected.line), link.Range.Start.Line, "link %d (%s): wrong line", i, expected.description)
+
+				switch expected.targetType {
+				case linkTargetTypeLocal:
+					localPath, err := filepath.Abs(expected.localPath)
+					require.NoError(t, err)
+					expectedURI := uri.New(localPath)
+					assert.Equal(t, expectedURI, link.Target, "link %d (%s): wrong target", i, expected.description)
+				case linkTargetTypeURL:
+					assert.Equal(t, protocol.DocumentURI(expected.targetURL), link.Target, "link %d (%s): wrong target", i, expected.description)
+				}
+			}
+
+			// Verify no overlapping ranges
+			assertNoOverlappingRanges(t, links)
+		})
+	}
+}
+
+type linkTargetType int
+
+const (
+	linkTargetTypeLocal linkTargetType = iota
+	linkTargetTypeURL
+)
+
+type expectedLink struct {
+	line        uint32
+	description string
+	targetType  linkTargetType
+	localPath   string // used when targetType is linkTargetTypeLocal
+	targetURL   string // used when targetType is linkTargetTypeURL
 }
 
 // assertNoOverlappingRanges verifies that no two document link ranges overlap.

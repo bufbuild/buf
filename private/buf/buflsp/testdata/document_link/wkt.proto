@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package document_link.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+message Event {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Duration timeout = 2;
+}
