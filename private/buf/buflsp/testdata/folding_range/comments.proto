@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package folding.v1;
+
+// Single-line comment (should not be foldable)
+
+// Multi-line comment block 1
+// that spans multiple lines
+// and should be foldable
+
+message CommentTest {
+  string name = 1; // Inline comment (not foldable)
+}
+
+// Another multi-line comment
+// with consecutive lines
+// should be foldable too
+
+message AnotherMessage {
+  // Comment inside message
+  // also multi-line
+  // should fold
+  string field = 1;
+}
+
+// Separated comments
+
+// Should not group together
+
+message SeparatedComments {
+  string field = 1;
+}
+
+// Large comment block
+// Line 1
+// Line 2
+// Line 3
+// Line 4
+// Line 5
+// Line 6
+// Line 7
+// Line 8
+// Line 9
+// Line 10
+
+message LargeCommentBlock {
+  string field = 1;
+}

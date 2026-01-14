@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package folding.v1;
+
+// Deeply nested message structure
+message Level1 {
+  string name = 1;
+
+  message Level2 {
+    string name = 1;
+
+    message Level3 {
+      string name = 1;
+
+      message Level4 {
+        string name = 1;
+        int32 value = 2;
+      }
+
+      Level4 deeply_nested = 2;
+    }
+
+    Level3 nested = 2;
+  }
+
+  Level2 nested = 2;
+}
+
+// Message with complex oneof
+message ComplexOneof {
+  oneof payment_method {
+    string credit_card = 1;
+    string debit_card = 2;
+    string paypal = 3;
+    string bitcoin = 4;
+    string bank_transfer = 5;
+    string cash = 6;
+    string check = 7;
+    string wire_transfer = 8;
+  }
+}
+
+// Nested oneofs
+message NestedOneofs {
+  message Address {
+    oneof location_type {
+      string home = 1;
+      string work = 2;
+      string other = 3;
+    }
+    string street = 4;
+  }
+
+  oneof contact {
+    string email = 1;
+    string phone = 2;
+    Address address = 3;
+  }
+}

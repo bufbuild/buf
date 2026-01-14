@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package folding.v1;
+
+// Single-line comment that should not be foldable
+message Simple {
+  string name = 1;
+}

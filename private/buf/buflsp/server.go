@@ -121,6 +121,7 @@ func (s *server) Initialize(
 			},
 			WorkspaceSymbolProvider: true,
 			DocumentSymbolProvider:  true,
+			FoldingRangeProvider:    true,
 		},
 		ServerInfo: info,
 	}, nil
@@ -479,6 +480,18 @@ func (s *server) Rename(
 		return nil, nil
 	}
 	return symbol.Rename(params.NewName)
+}
+
+// FoldingRanges is the entry point for folding ranges, which allows collapsing/expanding blocks of code.
+func (s *server) FoldingRanges(
+	ctx context.Context,
+	params *protocol.FoldingRangeParams,
+) ([]protocol.FoldingRange, error) {
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, nil
+	}
+	return s.foldingRange(file), nil
 }
 
 // getSymbol is a helper function that gets the *[symbol] for the given [protocol.URI] and
