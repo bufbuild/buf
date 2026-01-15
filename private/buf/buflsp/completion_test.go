@@ -115,6 +115,12 @@ func TestCompletion(t *testing.T) {
 			character:        15, // After "  STATUS_NEW = "
 			expectedContains: []string{"6"},
 		},
+		{
+			name:             "complete_enum_number_empty",
+			line:             77, // Line with "STATUS_FIRST = ;" in EmptyStatus (0-indexed from line 78)
+			character:        17, // After "  STATUS_FIRST = "
+			expectedContains: []string{"0"},
+		},
 	}
 
 	for _, tt := range tests {

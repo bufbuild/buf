@@ -73,3 +73,7 @@ enum StatusWithReserved {
   STATUS_ACTIVE = 1;
   STATUS_NEW = ; // complete_enum_number_with_reserved
 }
+
+enum EmptyStatus {
+  STATUS_FIRST = ; // complete_enum_number_empty
+}

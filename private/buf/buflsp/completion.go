@@ -351,13 +351,13 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		if def.Classify() == ast.DefKindEnumValue {
 			enumValue := def.AsEnumValue()
 			if !enumValue.Name.IsZero() && enumValue.Tag.IsZero() {
-				return completionItemsForEnumNumber(file, parentDef)
+				return completionItemsForEnumNumber(file, parentDef, enumValue)
 			}
 		}
 		// Case 2: Invalid definition (e.g., missing semicolon) but cursor is after equals sign
 		// e.g., `STATUS_ACTIVE = |`
 		if def.Classify() == ast.DefKindInvalid && isAfterEqualsSign(file, offset) {
-			return completionItemsForEnumNumber(file, parentDef)
+			return completionItemsForEnumNumber(file, parentDef, ast.DefEnumValue{})
 		}
 	}
 	if !hasStart {
@@ -1710,48 +1710,63 @@ func completionItemsForFieldNumber(
 	file *file,
 	parentDef ast.DeclDef,
 ) []protocol.CompletionItem {
-	// Collect all used or reserved field numbers in the parent message
-	usedOrReservedFieldNumbers := make(map[uint64]bool)
-
 	// Find the IR Type corresponding to this AST definition
 	irType := findTypeBySpan(file, parentDef.Span())
-
-	if !irType.IsZero() {
-		// Collect field numbers from members
-		for member := range seq.Values(irType.Members()) {
-			if num := member.Number(); num > 0 {
-				usedOrReservedFieldNumbers[uint64(num)] = true
-			}
-		}
-
-		// Collect reserved ranges
-		for reservedRange := range seq.Values(irType.ReservedRanges()) {
-			start, end := reservedRange.Range()
-			for i := start; i <= end; i++ {
-				if i > 0 {
-					usedOrReservedFieldNumbers[uint64(i)] = true
-				}
-			}
-		}
-	}
 
 	// Find the next available field number, skipping:
 	// 1. Numbers already used or reserved in the message
 	// 2. The protobuf reserved range (19000-19999)
 	nextNumber := uint64(1)
 	for {
-		// Check if this number is available
-		if !usedOrReservedFieldNumbers[nextNumber] {
-			// Check if it's outside the protobuf reserved range
-			if nextNumber < uint64(protowire.FirstReservedNumber) || nextNumber > uint64(protowire.LastReservedNumber) {
-				break
-			}
-		}
-		nextNumber++
 		if nextNumber > uint64(protowire.MaxValidNumber) {
 			// Don't suggest numbers beyond the valid range
 			return nil
 		}
+
+		// Check if this number is in the protobuf reserved range
+		if nextNumber >= uint64(protowire.FirstReservedNumber) && nextNumber <= uint64(protowire.LastReservedNumber) {
+			nextNumber = uint64(protowire.LastReservedNumber) + 1
+			continue
+		}
+
+		// Check if this number is used by any member
+		isUsed := false
+		if !irType.IsZero() {
+			for member := range seq.Values(irType.Members()) {
+				if uint64(member.Number()) == nextNumber {
+					isUsed = true
+					break
+				}
+			}
+		}
+		if isUsed {
+			nextNumber++
+			continue
+		}
+
+		// Check if this number is in any reserved range
+		inReservedRange := false
+		if !irType.IsZero() {
+			for reservedRange := range seq.Values(irType.ReservedRanges()) {
+				start, end := reservedRange.Range()
+				if nextNumber >= uint64(start) && nextNumber <= uint64(end) {
+					// Jump to the end of this reserved range to avoid iterating through large ranges
+					if end == math.MaxInt32 {
+						// If the reserved range goes to MaxInt32, we can't find a next value
+						return nil
+					}
+					nextNumber = uint64(end) + 1
+					inReservedRange = true
+					break
+				}
+			}
+		}
+		if inReservedRange {
+			continue
+		}
+
+		// This number is available
+		break
 	}
 
 	return []protocol.CompletionItem{
@@ -1772,39 +1787,81 @@ func completionItemsForFieldNumber(
 func completionItemsForEnumNumber(
 	file *file,
 	parentDef ast.DeclDef,
+	currentEnumValue ast.DefEnumValue,
 ) []protocol.CompletionItem {
-	// Collect all used or reserved enum value numbers in the parent enum
-	usedOrReservedEnumNumbers := make(map[int32]bool)
-
 	// Find the IR Type corresponding to this AST definition
 	irType := findTypeBySpan(file, parentDef.Span())
 
-	if !irType.IsZero() {
-		// Collect enum value numbers from members
-		for member := range seq.Values(irType.Members()) {
-			// For enums, all numbers are valid including 0 (unlike fields where 0 is invalid)
-			num := member.Number()
-			usedOrReservedEnumNumbers[num] = true
-		}
-
-		// Collect reserved ranges
-		for reservedRange := range seq.Values(irType.ReservedRanges()) {
-			start, end := reservedRange.Range()
-			for i := start; i <= end; i++ {
-				usedOrReservedEnumNumbers[i] = true
-			}
+	if irType.IsZero() {
+		return []protocol.CompletionItem{
+			{
+				Label: "0",
+				Kind:  protocol.CompletionItemKindValue,
+			},
 		}
 	}
 
-	// Find the next available enum number
+	// Get the span of the current enum value we're completing, if any
+	var currentEnumValueNameSpan source.Span
+	if !currentEnumValue.Name.IsZero() {
+		currentEnumValueNameSpan = currentEnumValue.Name.Span()
+	}
+
+	// Find the next available enum number by checking each candidate
 	// Enum values typically start at 0 and increment, but can be any int32 value
 	var nextNumber int32
-	for usedOrReservedEnumNumbers[nextNumber] {
-		nextNumber++
+	for {
 		if nextNumber == math.MaxInt32 {
 			// Bail at the maximum enum value.
 			return nil
 		}
+
+		// Check if this number is used by any member
+		// Exclude the current enum value being completed, as it may have a default value in the IR
+		isUsed := false
+		for member := range seq.Values(irType.Members()) {
+			// Skip the member if it's the one we're currently completing
+			// Compare the AST definition spans to identify the same enum value
+			if !currentEnumValueNameSpan.IsZero() {
+				memberAST := member.AST()
+				if memberAST.Classify() == ast.DefKindEnumValue {
+					memberEnumValue := memberAST.AsEnumValue()
+					if !memberEnumValue.Name.IsZero() && memberEnumValue.Name.Span() == currentEnumValueNameSpan {
+						continue
+					}
+				}
+			}
+			if member.Number() == nextNumber {
+				isUsed = true
+				break
+			}
+		}
+		if isUsed {
+			nextNumber++
+			continue
+		}
+
+		// Check if this number is in any reserved range
+		inReservedRange := false
+		for reservedRange := range seq.Values(irType.ReservedRanges()) {
+			start, end := reservedRange.Range()
+			if nextNumber >= start && nextNumber <= end {
+				// Jump to the end of this reserved range to avoid iterating through large ranges
+				if end == math.MaxInt32 {
+					// If the reserved range goes to MaxInt32, we can't find a next value
+					return nil
+				}
+				nextNumber = end + 1
+				inReservedRange = true
+				break
+			}
+		}
+		if inReservedRange {
+			continue
+		}
+
+		// This number is available
+		break
 	}
 
 	return []protocol.CompletionItem{
