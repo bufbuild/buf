@@ -39,6 +39,12 @@ import (
 	"google.golang.org/protobuf/encoding/protowire"
 )
 
+// numberRange represents a range of numbers (inclusive) used for field/enum number completion.
+type numberRange[T int32 | uint64] struct {
+	start T
+	end   T
+}
+
 // getCompletionItems returns completion items for the given position in the file.
 //
 // This function is called by the Completion handler in server.go.
@@ -342,6 +348,22 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		// e.g., `string name = |`
 		if def.Classify() == ast.DefKindInvalid && isAfterEqualsSign(file, offset) {
 			return completionItemsForFieldNumber(file, parentDef)
+		}
+	}
+	// Special case: enum value number completion
+	if !hasStart && parentDef.Classify() == ast.DefKindEnum {
+		// Case 1: Valid enum value definition with name but no tag
+		// e.g., `STATUS_ACTIVE = |;\n`
+		if def.Classify() == ast.DefKindEnumValue {
+			enumValue := def.AsEnumValue()
+			if !enumValue.Name.IsZero() && enumValue.Tag.IsZero() {
+				return completionItemsForEnumNumber(file, parentDef, enumValue)
+			}
+		}
+		// Case 2: Invalid definition (e.g., missing semicolon) but cursor is after equals sign
+		// e.g., `STATUS_ACTIVE = |`
+		if def.Classify() == ast.DefKindInvalid && isAfterEqualsSign(file, offset) {
+			return completionItemsForEnumNumber(file, parentDef, ast.DefEnumValue{})
 		}
 	}
 	if !hasStart {
@@ -1694,56 +1716,184 @@ func completionItemsForFieldNumber(
 	file *file,
 	parentDef ast.DeclDef,
 ) []protocol.CompletionItem {
-	// Collect all used or reserved field numbers in the parent message
-	usedOrReservedFieldNumbers := make(map[uint64]bool)
-
 	// Find the IR Type corresponding to this AST definition
 	irType := findTypeBySpan(file, parentDef.Span())
 
+	var ranges []numberRange[uint64]
+
+	// Add protobuf reserved range
+	ranges = append(ranges, numberRange[uint64]{
+		start: uint64(protowire.FirstReservedNumber),
+		end:   uint64(protowire.LastReservedNumber),
+	})
+
 	if !irType.IsZero() {
-		// Collect field numbers from members
+		// Add each member as a range of one
 		for member := range seq.Values(irType.Members()) {
-			if num := member.Number(); num > 0 {
-				usedOrReservedFieldNumbers[uint64(num)] = true
+			num := uint64(member.Number())
+			if num > 0 {
+				ranges = append(ranges, numberRange[uint64]{start: num, end: num})
 			}
 		}
 
-		// Collect reserved ranges
+		// Add reserved ranges
 		for reservedRange := range seq.Values(irType.ReservedRanges()) {
 			start, end := reservedRange.Range()
-			for i := start; i <= end; i++ {
-				if i > 0 {
-					usedOrReservedFieldNumbers[uint64(i)] = true
+			if end == math.MaxInt32 {
+				// Can't allocate beyond open-ended range
+				return nil
+			}
+			if start > 0 {
+				ranges = append(ranges, numberRange[uint64]{
+					start: uint64(start),
+					end:   uint64(end),
+				})
+			}
+		}
+	}
+
+	// Sort by start position
+	slices.SortFunc(ranges, func(a, b numberRange[uint64]) int {
+		if a.start < b.start {
+			return -1
+		} else if a.start > b.start {
+			return 1
+		}
+		return 0
+	})
+
+	// Find first gap starting from 1
+	nextNumber := uint64(1)
+	for _, r := range ranges {
+		if nextNumber < r.start {
+			// Found a gap before this range
+			return []protocol.CompletionItem{
+				{
+					Label: strconv.FormatUint(nextNumber, 10),
+					Kind:  protocol.CompletionItemKindValue,
+				},
+			}
+		}
+		// Move past this range
+		if r.end >= nextNumber {
+			nextNumber = r.end + 1
+		}
+	}
+
+	// Check if we're still within valid range
+	if nextNumber <= uint64(protowire.MaxValidNumber) {
+		return []protocol.CompletionItem{
+			{
+				Label: strconv.FormatUint(nextNumber, 10),
+				Kind:  protocol.CompletionItemKindValue,
+			},
+		}
+	}
+
+	return nil
+}
+
+// completionItemsForEnumNumber suggests the next available, non-reserved enum number in the enum
+// for completion.
+//
+// Enum values are _any_ int32 value, but we make the assumption here that the user is using the
+// "typical" incrementing from 0 approach and suggest the next available positive int32 value.
+//
+// Ref: https://protobuf.com/docs/language-spec#enum-values
+func completionItemsForEnumNumber(
+	file *file,
+	parentDef ast.DeclDef,
+	currentEnumValue ast.DefEnumValue,
+) []protocol.CompletionItem {
+	// Find the IR Type corresponding to this AST definition
+	irType := findTypeBySpan(file, parentDef.Span())
+
+	if irType.IsZero() {
+		return []protocol.CompletionItem{
+			{
+				Label: "0",
+				Kind:  protocol.CompletionItemKindValue,
+			},
+		}
+	}
+
+	// Get the span of the current enum value we're completing, if any
+	var currentEnumValueNameSpan source.Span
+	if !currentEnumValue.Name.IsZero() {
+		currentEnumValueNameSpan = currentEnumValue.Name.Span()
+	}
+
+	var ranges []numberRange[int32]
+
+	// Add each member as a range of one
+	// Exclude the current enum value being completed, as it may have a default value in the IR
+	for member := range seq.Values(irType.Members()) {
+		// Skip the member if it's the one we're currently completing
+		// Compare the AST definition spans to identify the same enum value
+		if !currentEnumValueNameSpan.IsZero() {
+			memberAST := member.AST()
+			if memberAST.Classify() == ast.DefKindEnumValue {
+				memberEnumValue := memberAST.AsEnumValue()
+				if !memberEnumValue.Name.IsZero() && memberEnumValue.Name.Span() == currentEnumValueNameSpan {
+					continue
 				}
 			}
 		}
+		num := member.Number()
+		ranges = append(ranges, numberRange[int32]{start: num, end: num})
 	}
 
-	// Find the next available field number, skipping:
-	// 1. Numbers already used or reserved in the message
-	// 2. The protobuf reserved range (19000-19999)
-	nextNumber := uint64(1)
-	for {
-		// Check if this number is available
-		if !usedOrReservedFieldNumbers[nextNumber] {
-			// Check if it's outside the protobuf reserved range
-			if nextNumber < uint64(protowire.FirstReservedNumber) || nextNumber > uint64(protowire.LastReservedNumber) {
-				break
-			}
-		}
-		nextNumber++
-		if nextNumber > uint64(protowire.MaxValidNumber) {
-			// Don't suggest numbers beyond the valid range
+	// Add reserved ranges
+	for reservedRange := range seq.Values(irType.ReservedRanges()) {
+		start, end := reservedRange.Range()
+		if end == math.MaxInt32 {
+			// Can't allocate beyond open-ended range
 			return nil
 		}
+		ranges = append(ranges, numberRange[int32]{
+			start: start,
+			end:   end,
+		})
 	}
 
-	next := strconv.FormatUint(nextNumber, 10)
+	// Sort by start position
+	slices.SortFunc(ranges, func(a, b numberRange[int32]) int {
+		if a.start < b.start {
+			return -1
+		} else if a.start > b.start {
+			return 1
+		}
+		return 0
+	})
+
+	// Find first gap starting from 0
+	// Enum values typically start at 0 and increment, but can be any int32 value
+	var nextNumber int32
+	for _, r := range ranges {
+		if nextNumber < r.start {
+			// Found a gap before this range
+			return []protocol.CompletionItem{
+				{
+					Label: strconv.FormatInt(int64(nextNumber), 10),
+					Kind:  protocol.CompletionItemKindValue,
+				},
+			}
+		}
+		// Move past this range
+		if r.end >= nextNumber {
+			if r.end == math.MaxInt32 {
+				// Can't find next value after MaxInt32
+				return nil
+			}
+			nextNumber = r.end + 1
+		}
+	}
+
+	// If we've checked all ranges and still have a valid number, return it
 	return []protocol.CompletionItem{
 		{
-			Label:      next,
-			Kind:       protocol.CompletionItemKindValue,
-			InsertText: next,
+			Label: strconv.FormatInt(int64(nextNumber), 10),
+			Kind:  protocol.CompletionItemKindValue,
 		},
 	}
 }
@@ -1752,7 +1902,7 @@ func completionItemsForFieldNumber(
 //
 // This function is called by the CompletionResolve handler in server.go.
 func resolveCompletionItem(
-	ctx context.Context,
+	_ context.Context,
 	item *protocol.CompletionItem,
 ) (*protocol.CompletionItem, error) {
 	// TODO: Implement completion resolution logic.
