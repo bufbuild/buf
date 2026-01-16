@@ -130,3 +130,64 @@ func testFormatError(t *testing.T, path string, errContains string) {
 		require.ErrorContains(t, err, errContains)
 	})
 }
+
+func TestFormatterWithDeprecation(t *testing.T) {
+	t.Parallel()
+	// Test basic deprecation with prefix matching
+	testDeprecateNoDiff(t, "basic", "testdata/deprecate", []string{"test.deprecate"},
+		[]string{"already_deprecated.proto", "nested_types.proto"})
+	// Test field deprecation with exact match
+	testDeprecateNoDiff(t, "field", "testdata/deprecate", []string{"test.deprecate", "test.deprecate.MyMessage.id"},
+		[]string{"field_deprecation.proto"})
+	// Test enum value deprecation with exact match
+	testDeprecateNoDiff(t, "enum_value", "testdata/deprecate", []string{
+		"test.deprecate",
+		"test.deprecate.STATUS_ACTIVE",
+		"test.deprecate.STATUS_INACTIVE",
+		"test.deprecate.OuterMessage.NESTED_STATUS_ACTIVE",
+	}, []string{"enum_value_deprecation.proto"})
+}
+
+func testDeprecateNoDiff(t *testing.T, name string, path string, deprecatePrefixes []string, files []string) {
+	t.Run(name, func(t *testing.T) {
+		ctx := context.Background()
+		bucket, err := storageos.NewProvider().NewReadWriteBucket(path)
+		require.NoError(t, err)
+		var opts []FormatOption
+		for _, prefix := range deprecatePrefixes {
+			opts = append(opts, WithDeprecate(prefix))
+		}
+		var matchers []storage.Matcher
+		for _, file := range files {
+			matchers = append(matchers, storage.MatchPathEqual(file))
+		}
+		filteredBucket := storage.FilterReadBucket(bucket, storage.MatchOr(matchers...))
+		assertGolden := func(formatBucket storage.ReadBucket) {
+			err := storage.WalkReadObjects(
+				ctx,
+				formatBucket,
+				"",
+				func(formattedFile storage.ReadObject) error {
+					formattedData, err := io.ReadAll(formattedFile)
+					require.NoError(t, err)
+					expectedPath := strings.Replace(formattedFile.Path(), ".proto", ".golden", 1)
+					expectedData, err := storage.ReadPath(ctx, bucket, expectedPath)
+					require.NoError(t, err)
+					fileDiff, err := diff.Diff(ctx, expectedData, formattedData, expectedPath, formattedFile.Path()+" (formatted)")
+					require.NoError(t, err)
+					require.Empty(t, string(fileDiff), "formatted output differs from golden file for %s", formattedFile.Path())
+					return nil
+				},
+			)
+			require.NoError(t, err)
+		}
+		// First pass: format with deprecation options
+		formatBucket, err := FormatBucket(ctx, filteredBucket, opts...)
+		require.NoError(t, err)
+		assertGolden(formatBucket)
+		// Second pass: re-format the already-formatted output to verify stability
+		reformatBucket, err := FormatBucket(ctx, formatBucket, opts...)
+		require.NoError(t, err)
+		assertGolden(reformatBucket)
+	})
+}

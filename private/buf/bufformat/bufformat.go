@@ -28,8 +28,25 @@ import (
 	"github.com/bufbuild/protocompile/reporter"
 )
 
+// FormatOption is an option for formatting.
+type FormatOption func(*formatOptions)
+
+// formatOptions contains options for formatting.
+type formatOptions struct {
+	deprecatePrefixes []string
+}
+
+// WithDeprecate adds a deprecation prefix. All types whose fully-qualified name
+// starts with this prefix will have the deprecated option added to them.
+// For fields and enum values, only exact matches are deprecated.
+func WithDeprecate(fqnPrefix string) FormatOption {
+	return func(opts *formatOptions) {
+		opts.deprecatePrefixes = append(opts.deprecatePrefixes, fqnPrefix)
+	}
+}
+
 // FormatModuleSet formats and writes the target files into a read bucket.
-func FormatModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) (_ storage.ReadBucket, retErr error) {
+func FormatModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet, opts ...FormatOption) (_ storage.ReadBucket, retErr error) {
 	return FormatBucket(
 		ctx,
 		bufmodule.ModuleReadBucketToStorageReadBucket(
@@ -37,11 +54,16 @@ func FormatModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) (_ stor
 				bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFilesForTargetModules(moduleSet),
 			),
 		),
+		opts...,
 	)
 }
 
 // FormatBucket formats the .proto files in the bucket and returns a new bucket with the formatted files.
-func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.ReadBucket, retErr error) {
+func FormatBucket(ctx context.Context, bucket storage.ReadBucket, opts ...FormatOption) (_ storage.ReadBucket, retErr error) {
+	options := &formatOptions{}
+	for _, opt := range opts {
+		opt(options)
+	}
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	paths, err := storage.AllPaths(ctx, storage.FilterReadBucket(bucket, storage.MatchPathExt(".proto")), "")
 	if err != nil {
@@ -68,7 +90,7 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.Rea
 			defer func() {
 				retErr = errors.Join(retErr, writeObjectCloser.Close())
 			}()
-			if err := FormatFileNode(writeObjectCloser, fileNode); err != nil {
+			if err := formatFileNode(writeObjectCloser, fileNode, options); err != nil {
 				return err
 			}
 			return writeObjectCloser.SetExternalPath(readObjectCloser.ExternalPath())
@@ -80,14 +102,19 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.Rea
 	return readWriteBucket, nil
 }
 
-// FormatFileNode formats the given file node and writ the result to dest.
+// FormatFileNode formats the given file node and writes the result to dest.
 func FormatFileNode(dest io.Writer, fileNode *ast.FileNode) error {
+	return formatFileNode(dest, fileNode, &formatOptions{})
+}
+
+// formatFileNode formats the given file node with options and writes the result to dest.
+func formatFileNode(dest io.Writer, fileNode *ast.FileNode, options *formatOptions) error {
 	// Construct the file descriptor to ensure the AST is valid. This will
 	// capture unknown syntax like edition "2024" which at the current time is
 	// not supported.
 	if _, err := parser.ResultFromAST(fileNode, true, reporter.NewHandler(nil)); err != nil {
 		return err
 	}
-	formatter := newFormatter(dest, fileNode)
+	formatter := newFormatter(dest, fileNode, options)
 	return formatter.Run()
 }
