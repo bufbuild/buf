@@ -511,6 +511,15 @@ func (s *server) PrepareRename(ctx context.Context, params *protocol.PrepareRena
 	}
 	switch symbol.kind.(type) {
 	case *referenceable, *static, *reference:
+		// Don't allow renaming symbols defined in non-local files (e.g., WKTs from ~/.cache)
+		// Check the definition if available, otherwise check the symbol's own file
+		defFile := symbol.file
+		if symbol.def != nil && symbol.def.file != nil {
+			defFile = symbol.def.file
+		}
+		if defFile != nil && !defFile.IsLocal() {
+			return nil, fmt.Errorf("cannot rename a symbol in a non-local file")
+		}
 		rnge := reportSpanToProtocolRange(symbol.span)
 		return &rnge, nil
 	}
@@ -525,6 +534,15 @@ func (s *server) Rename(
 	symbol := s.getSymbol(ctx, params.TextDocument.URI, params.Position)
 	if symbol == nil {
 		return nil, nil
+	}
+	// Don't allow renaming symbols defined in non-local files (e.g., WKTs from ~/.cache)
+	// Check the definition if available, otherwise check the symbol's own file
+	defFile := symbol.file
+	if symbol.def != nil && symbol.def.file != nil {
+		defFile = symbol.def.file
+	}
+	if defFile != nil && !defFile.IsLocal() {
+		return nil, fmt.Errorf("cannot rename a symbol in a non-local file")
 	}
 	return symbol.Rename(params.NewName)
 }

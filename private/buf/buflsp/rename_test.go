@@ -15,6 +15,7 @@
 package buflsp_test
 
 import (
+	"os"
 	"path/filepath"
 	"slices"
 	"testing"
@@ -357,18 +358,24 @@ func TestPrepareRename(t *testing.T) {
 	ctx := t.Context()
 	testProtoPath, err := filepath.Abs("testdata/rename/rename.proto")
 	require.NoError(t, err)
+	wktProtoPath, err := filepath.Abs("testdata/rename/wkt.proto")
+	require.NoError(t, err)
 	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
+	wktURI := uri.New(wktProtoPath)
 
 	tests := []struct {
 		name          string
+		protoFile     string
 		line          uint32
 		character     uint32
 		expectRange   bool
+		expectError   bool
 		expectedStart protocol.Position
 		expectedEnd   protocol.Position
 	}{
 		{
 			name:        "prepare_rename_product_message",
+			protoFile:   "testdata/rename/rename.proto",
 			line:        8,
 			character:   8,
 			expectRange: true,
@@ -383,6 +390,7 @@ func TestPrepareRename(t *testing.T) {
 		},
 		{
 			name:        "prepare_rename_field",
+			protoFile:   "testdata/rename/rename.proto",
 			line:        10,
 			character:   9,
 			expectRange: true,
@@ -397,62 +405,111 @@ func TestPrepareRename(t *testing.T) {
 		},
 		{
 			name:        "prepare_rename_on_keyword",
+			protoFile:   "testdata/rename/rename.proto",
 			line:        8,
 			character:   0,
 			expectRange: false,
 		},
 		{
 			name:        "prepare_rename_on_primitive_type",
+			protoFile:   "testdata/rename/rename.proto",
 			line:        9,
 			character:   2,
 			expectRange: false,
 		},
 		{
 			name:        "prepare_rename_on_field_number",
+			protoFile:   "testdata/rename/rename.proto",
 			line:        9,
 			character:   14,
 			expectRange: false,
 		},
 		{
 			name:        "prepare_rename_on_whitespace",
+			protoFile:   "testdata/rename/rename.proto",
 			line:        9,
 			character:   0,
 			expectRange: false,
 		},
 		{
 			name:        "prepare_rename_on_extension_usage",
+			protoFile:   "testdata/rename/rename.proto",
 			line:        69,
 			character:   11,
 			expectRange: false,
 		},
 		{
 			name:        "prepare_rename_on_extension_field_usage",
+			protoFile:   "testdata/rename/rename.proto",
 			line:        69,
 			character:   20,
 			expectRange: false,
 		},
 		{
 			name:        "prepare_rename_on_qualified_extension_usage",
+			protoFile:   "testdata/rename/rename.proto",
 			line:        80,
 			character:   18,
 			expectRange: false,
 		},
 		{
 			name:        "prepare_rename_on_qualified_extension_field_usage",
+			protoFile:   "testdata/rename/rename.proto",
 			line:        80,
 			character:   27,
 			expectRange: false,
+		},
+		{
+			name:        "prepare_rename_on_wkt_timestamp_type",
+			protoFile:   "testdata/rename/wkt.proto",
+			line:        7,     // Line with "google.protobuf.Timestamp created_at = 1;"
+			character:   23,    // On "Timestamp"
+			expectRange: false, // Should not allow rename of WKT
+			expectError: true,  // Should return error for non-local file
+		},
+		{
+			name:        "prepare_rename_on_wkt_package",
+			protoFile:   "testdata/rename/wkt.proto",
+			line:        7,     // Line with "google.protobuf.Timestamp created_at = 1;"
+			character:   2,     // On "google"
+			expectRange: false, // Should not allow rename of WKT package
+			expectError: true,  // Should return error for non-local file
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
+			// Determine which URI to use based on protoFile
+			var targetURI protocol.URI
+			switch tt.protoFile {
+			case "testdata/rename/rename.proto":
+				targetURI = testURI
+			case "testdata/rename/wkt.proto":
+				targetURI = wktURI
+				// Open the wkt.proto file so symbols get resolved to their definitions in WKT files.
+				// Without this, symbol.def won't point to the non-local WKT file and IsLocal() won't work.
+				wktProtoContent, err := os.ReadFile(wktProtoPath)
+				require.NoError(t, err)
+				err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidOpen, &protocol.DidOpenTextDocumentParams{
+					TextDocument: protocol.TextDocumentItem{
+						URI:        wktURI,
+						LanguageID: "protobuf",
+						Version:    1,
+						Text:       string(wktProtoContent),
+					},
+				})
+				require.NoError(t, err)
+			default:
+				require.Fail(t, "unknown protoFile", tt.protoFile)
+			}
+
 			var rnge *protocol.Range
 			_, prepareErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentPrepareRename, protocol.PrepareRenameParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
-						URI: testURI,
+						URI: targetURI,
 					},
 					Position: protocol.Position{
 						Line:      tt.line,
@@ -460,6 +517,10 @@ func TestPrepareRename(t *testing.T) {
 					},
 				},
 			}, &rnge)
+			if tt.expectError {
+				require.Error(t, prepareErr, "expected error for non-local file")
+				return
+			}
 			require.NoError(t, prepareErr)
 			if tt.expectRange {
 				require.NotNil(t, rnge)

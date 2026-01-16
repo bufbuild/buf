@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package rename.v1;
+
+import "google/protobuf/timestamp.proto";
+
+message Event {
+  google.protobuf.Timestamp created_at = 1;
+}
