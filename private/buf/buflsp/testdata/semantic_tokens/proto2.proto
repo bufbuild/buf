@@ -5,4 +5,10 @@ package test.v1;
 message Person {
   required string name = 1;
   optional int32 age = 2;
+  optional double height = 3;
+  optional float weight = 4;
+  optional bool active = 5;
+  optional bytes data = 6;
+  optional int64 big_number = 7;
+  optional uint32 counter = 8;
 }

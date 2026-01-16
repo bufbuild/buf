@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package test.v1;
+
+import "buf/validate/validate.proto";
+
+message Address {
+  string street = 1;
+  string city = 2;
+}
+
+message AdvancedUser {
+  // Test reserved keywords: in operator
+  string email = 1 [(buf.validate.field).cel = {
+    id: "email.contains"
+    expression: "'@' in this"
+  }];
+
+  // Test type conversion functions: int(), string()
+  string age_str = 2 [(buf.validate.field).cel = {
+    id: "age.convert"
+    expression: "int(this) > 0 && string(int(this)) == this"
+  }];
+
+  // Test hexadecimal and unsigned literals
+  int32 hex_value = 3 [(buf.validate.field).cel = {
+    id: "hex.value"
+    expression: "this == 0xFF || this == 255u"
+  }];
+
+  // Test float with exponent
+  double scientific = 4 [(buf.validate.field).cel = {
+    id: "scientific.notation"
+    expression: "this > 1e-10 && this < 1.5e3"
+  }];
+
+  // Test has() macro
+  Address address = 5 [(buf.validate.field).cel = {
+    id: "address.has"
+    expression: "has(this.street) && has(this.city)"
+  }];
+
+  // Test all() and exists() macros
+  repeated string tags = 6 [(buf.validate.field).cel = {
+    id: "tags.all"
+    expression: "this.all(tag, tag.size() > 0) && this.exists(tag, tag == 'valid')"
+  }];
+
+  // Test ternary operator (? :)
+  int32 status = 7 [(buf.validate.field).cel = {
+    id: "status.ternary"
+    expression: "this > 0 ? true : false"
+  }];
+
+  // Test map() macro
+  repeated int32 numbers = 8 [(buf.validate.field).cel = {
+    id: "numbers.map"
+    expression: "this.map(n, n * 2).size() > 0"
+  }];
+
+  // Test filter() macro and exists_one()
+  repeated string items = 9 [(buf.validate.field).cel = {
+    id: "items.filter"
+    expression: "this.filter(i, i.startsWith('test')).exists_one(i, i == 'test1')"
+  }];
+}
+
+// Ref: https://protovalidate.com/schemas/custom-rules/#ternary-expressions
+message Triangle {
+  option (buf.validate.message).cel = {
+    id: "triangle.distinct_points"
+    expression:
+      "this.point_a == this.point_b ? 'point A and point B cannot be the same'"
+      ": this.point_b == this.point_c ? 'point B and point C cannot be the same'"
+      ": this.point_a == this.point_c ? 'point A and point C cannot be the same'"
+      ": ''"
+  };
+  option (buf.validate.message).cel = {
+    id: "triangle.non_linear_points"
+    message: "three points must not be on the same line"
+    expression:
+      "(this.point_a.y - this.point_b.y) * (this.point_a.x - this.point_c.x)"
+      "!= (this.point_a.y - this.point_c.y) * (this.point_a.x - this.point_b.x)"
+  };
+
+  Point point_a = 1;
+  Point point_b = 2;
+  Point point_c = 3;
+}
+
+message Point {
+  double x = 1;
+  double y = 2;
+}

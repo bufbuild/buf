@@ -71,11 +71,29 @@ func TestSemanticTokensKeywords(t *testing.T) {
 				{5, 11, 6, semanticTypeType, "'string' as type"},
 				{5, 18, 4, semanticTypeProperty, "'name' as property"},
 				{5, 25, 1, semanticTypeNumber, "'1' field tag"},
-				// optional modifier
+				// optional modifier + scalar types
 				{6, 2, 8, semanticTypeModifier, "'optional' modifier"},
 				{6, 11, 5, semanticTypeType, "'int32' as type"},
 				{6, 17, 3, semanticTypeProperty, "'age' as property"},
 				{6, 23, 1, semanticTypeNumber, "'2' field tag"},
+				{7, 2, 8, semanticTypeModifier, "'optional' modifier"},
+				{7, 11, 6, semanticTypeType, "'double' as type"},
+				{7, 18, 6, semanticTypeProperty, "'height' as property"},
+				{8, 2, 8, semanticTypeModifier, "'optional' modifier"},
+				{8, 11, 5, semanticTypeType, "'float' as type"},
+				{8, 17, 6, semanticTypeProperty, "'weight' as property"},
+				{9, 2, 8, semanticTypeModifier, "'optional' modifier"},
+				{9, 11, 4, semanticTypeType, "'bool' as type"},
+				{9, 16, 6, semanticTypeProperty, "'active' as property"},
+				{10, 2, 8, semanticTypeModifier, "'optional' modifier"},
+				{10, 11, 5, semanticTypeType, "'bytes' as type"},
+				{10, 17, 4, semanticTypeProperty, "'data' as property"},
+				{11, 2, 8, semanticTypeModifier, "'optional' modifier"},
+				{11, 11, 5, semanticTypeType, "'int64' as type"},
+				{11, 17, 10, semanticTypeProperty, "'big_number' as property"},
+				{12, 2, 8, semanticTypeModifier, "'optional' modifier"},
+				{12, 11, 6, semanticTypeType, "'uint32' as type"},
+				{12, 18, 7, semanticTypeProperty, "'counter' as property"},
 			},
 		},
 		{
@@ -108,6 +126,7 @@ func TestSemanticTokensKeywords(t *testing.T) {
 				{5, 0, 6, semanticTypeKeyword, "'import' keyword"},
 				{5, 7, 6, semanticTypeModifier, "'public' modifier"},
 				{5, 14, 34, semanticTypeString, "import path string"},
+				// Note: weak import on line 6 is not tokenized because the file doesn't exist
 				// option keyword
 				{10, 2, 6, semanticTypeKeyword, "'option' keyword"},
 				// decorator (option)
@@ -153,6 +172,12 @@ func TestSemanticTokensKeywords(t *testing.T) {
 				// enum member
 				{41, 2, 16, semanticTypeEnumMember, "'ROLE_UNSPECIFIED' as enumMember"},
 				{41, 21, 1, semanticTypeNumber, "'0' enum value"},
+				// message type references
+				{58, 2, 4, semanticTypeStruct, "'User' message type reference"},
+				{58, 7, 4, semanticTypeProperty, "'user' property"},
+				{66, 2, 8, semanticTypeModifier, "'repeated' modifier"},
+				{66, 11, 4, semanticTypeStruct, "'User' message type reference (repeated)"},
+				{66, 16, 5, semanticTypeProperty, "'users' property"},
 				// service declaration
 				{46, 0, 7, semanticTypeKeyword, "'service' keyword"},
 				{46, 8, 11, semanticTypeInterface, "'UserService' interface"},
@@ -181,6 +206,165 @@ func TestSemanticTokensKeywords(t *testing.T) {
 				{13, 17, 1, semanticTypeKeyword, "';' should not be keyword"},
 				// Invalid import should not have string token (only resolved imports get string tokens)
 				{6, 12, 13, semanticTypeString, "invalid import path should not have string token"},
+			},
+		},
+		{
+			name: "cel_expressions",
+			file: "testdata/semantic_tokens/cel.proto",
+			expectedTokens: []expectedToken{
+				// Line 10: expression: "this.startsWith('foo') && this.size() > 5"
+				// "this" keyword
+				{10, 17, 4, semanticTypeKeyword, "'this' keyword in CEL"},
+				// "startsWith" method
+				{10, 22, 10, semanticTypeMethod, "'startsWith' method in CEL"},
+				// 'foo' string literal
+				{10, 33, 5, semanticTypeString, "'foo' string in CEL"},
+				// "&&" operator
+				{10, 40, 2, semanticTypeOperator, "'&&' operator in CEL"},
+				// "size" method
+				{10, 48, 4, semanticTypeMethod, "'size' method in CEL"},
+				// ">" operator
+				{10, 55, 1, semanticTypeOperator, "'>' operator in CEL"},
+				// "5" number
+				{10, 57, 1, semanticTypeNumber, "'5' number in CEL"},
+
+				// Line 16: expression: "this > 0"
+				// "this" keyword
+				{16, 17, 4, semanticTypeKeyword, "'this' keyword in CEL"},
+				// ">" operator
+				{16, 22, 1, semanticTypeOperator, "'>' operator in CEL"},
+				// "0" number
+				{16, 24, 1, semanticTypeNumber, "'0' number in CEL"},
+
+				// Line 21: cel_expression (array form): "'@' in this"
+				// '@' string literal
+				{20, 59, 3, semanticTypeString, "'@' string in CEL"},
+				// "in" operator
+				{20, 63, 2, semanticTypeOperator, "'in' operator in CEL"},
+				// "this" keyword
+				{20, 66, 4, semanticTypeKeyword, "'this' keyword in CEL"},
+
+				// Line 29: message-level .cel expression: "this.value > 0"
+				// "this" keyword
+				{28, 17, 4, semanticTypeKeyword, "'this' keyword in message CEL"},
+				// "value" property
+				{28, 22, 5, semanticTypeProperty, "'value' property in message CEL"},
+				// ">" operator
+				{28, 28, 1, semanticTypeOperator, "'>' operator in message CEL"},
+				// "0" number
+				{28, 30, 1, semanticTypeNumber, "'0' number in message CEL"},
+
+				// Line 37: message-level cel_expression: "this.count < 100"
+				// "this" keyword
+				{36, 50, 4, semanticTypeKeyword, "'this' keyword in message cel_expression"},
+				// "count" property
+				{36, 55, 5, semanticTypeProperty, "'count' property in message cel_expression"},
+				// "<" operator
+				{36, 61, 1, semanticTypeOperator, "'<' operator in message cel_expression"},
+				// "100" number
+				{36, 63, 3, semanticTypeNumber, "'100' number in message cel_expression"},
+			},
+		},
+		{
+			name: "cel_advanced",
+			file: "testdata/semantic_tokens/cel_advanced.proto",
+			expectedTokens: []expectedToken{
+				// Line 16 (file) = line 15 (0-indexed): expression: "'@' in this"
+				// Test 'in' operator
+				{15, 21, 2, semanticTypeOperator, "'in' operator"},
+				{15, 24, 4, semanticTypeKeyword, "'this' keyword (with in operator)"},
+
+				// Line 22 (file) = line 21 (0-indexed): expression: "int(this) > 0 && string(int(this)) == this"
+				// Test type conversion functions (built-in type functions)
+				{21, 17, 3, semanticTypeType, "'int' type conversion function"},
+				{21, 21, 4, semanticTypeKeyword, "'this' keyword (in int call)"},
+
+				// Line 40 (file) = line 39 (0-indexed): expression: "has(this.street) && has(this.city)"
+				// Test has() macro highlighting
+				{39, 17, 3, semanticTypeMacro, "'has' macro"},
+				{39, 37, 3, semanticTypeMacro, "'has' macro (second occurrence)"},
+				{39, 21, 4, semanticTypeKeyword, "'this' keyword (in has call)"},
+				{39, 41, 4, semanticTypeKeyword, "'this' keyword (in second has call)"},
+
+				// Line 46 (file) = line 45 (0-indexed): expression: "this.all(tag, tag.size() > 0) && this.exists(tag, tag == 'valid')"
+				// Test all() and exists() macro highlighting + comprehension variables
+				{45, 17, 4, semanticTypeKeyword, "'this' keyword (before all)"},
+				{45, 22, 3, semanticTypeMacro, "'all' macro"},
+				{45, 31, 3, semanticTypeVariable, "'tag' comprehension variable (2nd use)"},
+				{45, 50, 4, semanticTypeKeyword, "'this' keyword (before exists)"},
+				{45, 55, 6, semanticTypeMacro, "'exists' macro"},
+				// Note: Other 'tag' uses in exists are at different positions due to expansion
+
+				// Line 52 (file) = line 51 (0-indexed): expression: "this > 0 ? true : false"
+				{51, 17, 4, semanticTypeKeyword, "'this' keyword"},
+				{51, 22, 1, semanticTypeOperator, "'>' operator"},
+				{51, 24, 1, semanticTypeNumber, "'0' number"},
+				{51, 26, 1, semanticTypeOperator, "'?' ternary operator"},
+				{51, 28, 4, semanticTypeKeyword, "'true' keyword"},
+				{51, 35, 5, semanticTypeKeyword, "'false' keyword"},
+
+				// Line 58 (file) = line 57 (0-indexed): expression: "this.map(n, n * 2).size() > 0"
+				// Test map() macro highlighting + comprehension variables
+				{57, 17, 4, semanticTypeKeyword, "'this' keyword (before map)"},
+				{57, 22, 3, semanticTypeMacro, "'map' macro"},
+				{57, 29, 1, semanticTypeVariable, "'n' comprehension variable (2nd use)"},
+
+				// Line 64 (file) = line 63 (0-indexed): expression: "this.filter(i, i.startsWith('test')).exists_one(i, i == 'test1')"
+				// Test filter() and exists_one() macro highlighting + comprehension variables
+				{63, 17, 4, semanticTypeKeyword, "'this' keyword (before filter)"},
+				{63, 22, 6, semanticTypeMacro, "'filter' macro"},
+				{63, 32, 1, semanticTypeVariable, "'i' comprehension variable (2nd use in filter)"},
+				{63, 54, 10, semanticTypeMacro, "'exists_one' macro"},
+				// Note: Other 'i' uses in exists_one are at different positions due to expansion
+
+				// Multi-line expression test 1 (lines 72-75)
+				// Line 72: "this.point_a == this.point_b ? 'point A and point B cannot be the same'"
+				{72, 7, 4, semanticTypeKeyword, "'this' keyword in multi-line expression"},
+				{72, 12, 7, semanticTypeProperty, "'point_a' property in multi-line expression"},
+				{72, 20, 2, semanticTypeOperator, "'==' operator in multi-line expression"},
+				{72, 36, 1, semanticTypeOperator, "'?' ternary operator in multi-line expression"},
+
+				// Multi-line expression test 2 (lines 81-82)
+				// Line 81: "(this.point_a.y - this.point_b.y) * (this.point_a.x - this.point_c.x)"
+				{81, 8, 4, semanticTypeKeyword, "'this' keyword in multi-line arithmetic"},
+				{81, 13, 7, semanticTypeProperty, "'point_a' property in multi-line arithmetic"},
+				// Line 82: "!= (this.point_a.y - this.point_c.y) * (this.point_a.x - this.point_b.x)"
+				{82, 7, 2, semanticTypeOperator, "'!=' operator in multi-line arithmetic"},
+				{82, 11, 4, semanticTypeKeyword, "'this' keyword on line 2 of multi-line arithmetic"},
+			},
+		},
+		{
+			name: "cel_invalid",
+			file: "testdata/semantic_tokens/cel_invalid.proto",
+			// Invalid CEL expressions should not be highlighted at all.
+			// When CEL parsing fails, we skip highlighting and treat them as plain protobuf strings.
+			// This test verifies that we don't crash or highlight invalid syntax.
+			expectedTokens: []expectedToken{},
+		},
+		{
+			name: "extensions",
+			file: "testdata/semantic_tokens/extensions.proto",
+			expectedTokens: []expectedToken{
+				// syntax declaration
+				{0, 0, 6, semanticTypeKeyword, "'syntax' keyword"},
+				{0, 9, 8, semanticTypeString, "'\"proto2\"' string"},
+				// package declaration
+				{2, 0, 7, semanticTypeKeyword, "'package' keyword"},
+				{2, 8, 7, semanticTypeNamespace, "'test.v1' namespace"},
+				// message with extensions
+				{5, 0, 7, semanticTypeKeyword, "'message' keyword"},
+				{5, 8, 3, semanticTypeStruct, "'Foo' message"},
+				// extensions keyword
+				{6, 2, 10, semanticTypeKeyword, "'extensions' keyword"},
+				// extend keyword
+				{11, 0, 6, semanticTypeKeyword, "'extend' keyword"},
+				{11, 7, 3, semanticTypeStruct, "'Foo' (being extended)"},
+				// extension field (my_extension)
+				{12, 18, 12, semanticTypeVariable, "'my_extension' extension field"},
+				{12, 33, 3, semanticTypeNumber, "'101' extension number"},
+				// extension field (another_extension)
+				{13, 17, 17, semanticTypeVariable, "'another_extension' extension field"},
+				{13, 37, 3, semanticTypeNumber, "'102' extension number"},
 			},
 		},
 	}
@@ -242,14 +426,17 @@ const (
 	semanticTypeEnumMember = 4
 	semanticTypeInterface  = 5
 	semanticTypeMethod     = 6
-	semanticTypeDecorator  = 7
-	semanticTypeNamespace  = 8
-	semanticTypeKeyword    = 9
-	semanticTypeModifier   = 10
-	semanticTypeComment    = 11
-	semanticTypeString     = 12
-	semanticTypeNumber     = 13
-	semanticTypeType       = 14
+	semanticTypeFunction   = 7
+	semanticTypeDecorator  = 8
+	semanticTypeMacro      = 9
+	semanticTypeNamespace  = 10
+	semanticTypeKeyword    = 11
+	semanticTypeModifier   = 12
+	semanticTypeComment    = 13
+	semanticTypeString     = 14
+	semanticTypeNumber     = 15
+	semanticTypeType       = 16
+	semanticTypeOperator   = 17
 )
 
 // semanticToken represents a decoded semantic token for easier testing.

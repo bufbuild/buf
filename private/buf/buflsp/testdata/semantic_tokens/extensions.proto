@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+package test.v1;
+
+// Message with extension range
+message Foo {
+  extensions 100 to 199;
+  optional string name = 1;
+}
+
+// Extension declaration
+extend Foo {
+  optional string my_extension = 101;
+  optional int32 another_extension = 102;
+}
+
+// Message using the extended type
+message Bar {
+  optional Foo foo = 1;
+}
