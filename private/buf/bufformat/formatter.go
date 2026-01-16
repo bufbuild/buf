@@ -68,18 +68,28 @@ type formatter struct {
 	// Records all errors that occur during the formatting process. Nearly any
 	// non-nil error represents a bug in the implementation.
 	err error
+
+	// deprecation tracks which types should have deprecated options injected.
+	deprecation *deprecationChecker
+	// packageFQN holds the current package's fully-qualified name components.
+	packageFQN []string
 }
 
 // newFormatter returns a new formatter for the given file.
 func newFormatter(
 	writer io.Writer,
 	fileNode *ast.FileNode,
+	options *formatOptions,
 ) *formatter {
-	return &formatter{
+	f := &formatter{
 		writer:                   writer,
 		fileNode:                 fileNode,
 		overrideTrailingComments: map[ast.Node]ast.Comments{},
 	}
+	if options != nil && len(options.deprecatePrefixes) > 0 {
+		f.deprecation = newDeprecationChecker(options.deprecatePrefixes)
+	}
+	return f
 }
 
 // Run runs the formatter and writes the file's content to the formatter's writer.
@@ -247,6 +257,10 @@ func (f *formatter) writeFileHeader() {
 			continue
 		}
 	}
+	// Extract package FQN for deprecation tracking
+	if packageNode != nil {
+		f.packageFQN = packageNameToComponents(packageNode.Name)
+	}
 	if f.fileNode.Syntax == nil && f.fileNode.Edition == nil &&
 		packageNode == nil && importNodes == nil && optionNodes == nil {
 		// There aren't any header values, so we can return early.
@@ -330,6 +344,13 @@ func (f *formatter) writeFileHeader() {
 		}
 		f.writeFileOption(optionNode, i > 0, first)
 		first = false
+	}
+	// Inject file-level deprecated option if needed
+	if f.shouldInjectDeprecation(f.packageFQN) && !hasDeprecatedOption(optionNodes) {
+		if len(optionNodes) == 0 && f.previousNode != nil {
+			f.P("")
+		}
+		f.writeDeprecatedOption()
 	}
 }
 
@@ -577,12 +598,26 @@ func (f *formatter) writeOptionName(optionNameNode *ast.OptionNameNode) {
 //	  Baz baz = 2;
 //	}
 func (f *formatter) writeMessage(messageNode *ast.MessageNode) {
+	// Track FQN for deprecation
+	popFQN := f.pushFQN(messageNode.Name.Val)
+	defer popFQN()
+
 	var elementWriterFunc func()
 	if len(messageNode.Decls) != 0 {
+		// Check if we need to inject deprecation
+		needsDeprecation := f.shouldInjectDeprecation(f.currentFQN()) && !hasDeprecatedOption(messageNode.Decls)
 		elementWriterFunc = func() {
+			if needsDeprecation {
+				f.writeDeprecatedOption()
+			}
 			for _, decl := range messageNode.Decls {
 				f.writeNode(decl)
 			}
+		}
+	} else if f.shouldInjectDeprecation(f.currentFQN()) {
+		// Empty message that needs deprecation
+		elementWriterFunc = func() {
+			f.writeDeprecatedOption()
 		}
 	}
 	f.writeStart(messageNode.Keyword, false)
@@ -848,12 +883,26 @@ func (f *formatter) writeMessageFieldPrefix(messageFieldNode *ast.MessageFieldNo
 //	  FOO_UNSPECIFIED = 0;
 //	}
 func (f *formatter) writeEnum(enumNode *ast.EnumNode) {
+	// Track FQN for deprecation
+	popFQN := f.pushFQN(enumNode.Name.Val)
+	defer popFQN()
+
 	var elementWriterFunc func()
 	if len(enumNode.Decls) > 0 {
+		// Check if we need to inject deprecation
+		needsDeprecation := f.shouldInjectDeprecation(f.currentFQN()) && !hasDeprecatedOption(enumNode.Decls)
 		elementWriterFunc = func() {
+			if needsDeprecation {
+				f.writeDeprecatedOption()
+			}
 			for _, decl := range enumNode.Decls {
 				f.writeNode(decl)
 			}
+		}
+	} else if f.shouldInjectDeprecation(f.currentFQN()) {
+		// Empty enum that needs deprecation
+		elementWriterFunc = func() {
+			f.writeDeprecatedOption()
 		}
 	}
 	f.writeStart(enumNode.Keyword, false)
@@ -1005,12 +1054,26 @@ func (f *formatter) writeExtend(extendNode *ast.ExtendNode) {
 //
 //	  rpc Foo(FooRequest) returns (FooResponse) {};
 func (f *formatter) writeService(serviceNode *ast.ServiceNode) {
+	// Track FQN for deprecation
+	popFQN := f.pushFQN(serviceNode.Name.Val)
+	defer popFQN()
+
 	var elementWriterFunc func()
 	if len(serviceNode.Decls) > 0 {
+		// Check if we need to inject deprecation
+		needsDeprecation := f.shouldInjectDeprecation(f.currentFQN()) && !hasDeprecatedOption(serviceNode.Decls)
 		elementWriterFunc = func() {
+			if needsDeprecation {
+				f.writeDeprecatedOption()
+			}
 			for _, decl := range serviceNode.Decls {
 				f.writeNode(decl)
 			}
+		}
+	} else if f.shouldInjectDeprecation(f.currentFQN()) {
+		// Empty service that needs deprecation
+		elementWriterFunc = func() {
+			f.writeDeprecatedOption()
 		}
 	}
 	f.writeStart(serviceNode.Keyword, false)
@@ -1033,12 +1096,25 @@ func (f *formatter) writeService(serviceNode *ast.ServiceNode) {
 //	  option deprecated = true;
 //	};
 func (f *formatter) writeRPC(rpcNode *ast.RPCNode) {
+	// Track FQN for deprecation (RPCs are children of services)
+	popFQN := f.pushFQN(rpcNode.Name.Val)
+	defer popFQN()
+
+	needsDeprecation := f.shouldInjectDeprecation(f.currentFQN()) && !hasDeprecatedOption(rpcNode.Decls)
+
 	var elementWriterFunc func()
 	if len(rpcNode.Decls) > 0 {
 		elementWriterFunc = func() {
+			if needsDeprecation {
+				f.writeDeprecatedOption()
+			}
 			for _, decl := range rpcNode.Decls {
 				f.writeNode(decl)
 			}
+		}
+	} else if needsDeprecation {
+		elementWriterFunc = func() {
+			f.writeDeprecatedOption()
 		}
 	}
 	f.writeStart(rpcNode.Keyword, false)
@@ -1049,21 +1125,37 @@ func (f *formatter) writeRPC(rpcNode *ast.RPCNode) {
 	f.writeInline(rpcNode.Returns)
 	f.Space()
 	f.writeInline(rpcNode.Output)
-	if rpcNode.OpenBrace == nil {
-		// This RPC doesn't have any elements, so we prefer the
-		// ';' form.
+	if rpcNode.OpenBrace == nil && !needsDeprecation {
+		// This RPC doesn't have any elements and doesn't need deprecation,
+		// so we prefer the ';' form.
 		//
 		//  rpc Ping(PingRequest) returns (PingResponse);
 		//
 		f.writeLineEnd(rpcNode.Semicolon)
 		return
 	}
+	// If we need to add deprecation to an RPC without a body, we need to
+	// create a body for it.
 	f.Space()
-	f.writeCompositeTypeBody(
-		rpcNode.OpenBrace,
-		rpcNode.CloseBrace,
-		elementWriterFunc,
-	)
+	if rpcNode.OpenBrace != nil {
+		f.writeCompositeTypeBody(
+			rpcNode.OpenBrace,
+			rpcNode.CloseBrace,
+			elementWriterFunc,
+		)
+	} else {
+		// RPC had no body but needs deprecation - create synthetic body
+		f.WriteString("{")
+		f.P("")
+		f.In()
+		if elementWriterFunc != nil {
+			elementWriterFunc()
+		}
+		f.Out()
+		f.Indent(nil)
+		f.WriteString("}")
+		f.P("")
+	}
 }
 
 // writeRPCType writes the RPC type node (e.g. (stream foo.Bar)).
@@ -2490,4 +2582,34 @@ func messageLiteralClose(msg *ast.MessageLiteralNode) *ast.RuneNode {
 	// If it's not "}" then this message literal used "<" and ">" to enclose it.
 	// For consistent formatted output, change it to "}".
 	return ast.NewRuneNode('}', node.Token())
+}
+
+// writeDeprecatedOption writes "option deprecated = true;" on its own line.
+// This is used to inject deprecation options for types that should be deprecated.
+func (f *formatter) writeDeprecatedOption() {
+	f.Indent(nil)
+	f.WriteString("option deprecated = true;")
+	f.P("")
+}
+
+// currentFQN returns the current fully-qualified name by combining package and type path.
+func (f *formatter) currentFQN() []string {
+	return f.packageFQN
+}
+
+// pushFQN appends a name component to the current FQN and returns a function to restore it.
+func (f *formatter) pushFQN(name string) func() {
+	originalLen := len(f.packageFQN)
+	f.packageFQN = append(f.packageFQN, name)
+	return func() {
+		f.packageFQN = f.packageFQN[:originalLen]
+	}
+}
+
+// shouldInjectDeprecation returns true if the given FQN should have a deprecated option injected.
+func (f *formatter) shouldInjectDeprecation(fqn []string) bool {
+	if f.deprecation == nil || f.deprecation.isEmpty() {
+		return false
+	}
+	return f.deprecation.shouldDeprecate(fqn)
 }

@@ -116,6 +116,7 @@ import (
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/sdk/sdkinfo"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/sdk/version"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/whoami"
+	sourceedit "github.com/bufbuild/buf/cmd/buf/internal/command/source/edit"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/stats"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
@@ -174,6 +175,13 @@ func newRootCommand(name string) *appcmd.Command {
 					configlslintrules.NewCommand("ls-lint-rules", builder),
 					configlsbreakingrules.NewCommand("ls-breaking-rules", builder),
 					configlsmodules.NewCommand("ls-modules", builder),
+				},
+			},
+			{
+				Use:   "source",
+				Short: "Work with Protobuf source files",
+				SubCommands: []*appcmd.Command{
+					sourceedit.NewCommand("edit", builder),
 				},
 			},
 			{
