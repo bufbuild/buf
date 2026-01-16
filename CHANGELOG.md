@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Add `buf registry policy {commit,create,delete,info,label,settings}` commands to manage BSR policies.
+- Add LSP deprecate code action to add the deprecated option on types and symbols.
 
 ## [v1.64.0] - 2026-01-19
 

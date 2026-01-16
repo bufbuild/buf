@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package test.deprecate.nested;
+
+message Outer {
+  string outer_field = 1;
+
+  message Inner {
+    string inner_field = 1;
+
+    enum NestedEnum {
+      NESTED_ENUM_UNSPECIFIED = 0;
+    }
+  }
+
+  enum OuterEnum {
+    OUTER_ENUM_UNSPECIFIED = 0;
+  }
+}
