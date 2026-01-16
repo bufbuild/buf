@@ -104,6 +104,19 @@ func hasDeprecatedOption[T any](decls []T) bool {
 	return false
 }
 
+// hasCompactDeprecatedOption checks if a CompactOptionsNode contains deprecated = true.
+func hasCompactDeprecatedOption(opts *ast.CompactOptionsNode) bool {
+	if opts == nil {
+		return false
+	}
+	for _, opt := range opts.Options {
+		if isDeprecatedOptionNode(opt) {
+			return true
+		}
+	}
+	return false
+}
+
 // isDeprecatedOptionNode checks if an option node is "deprecated = true".
 func isDeprecatedOptionNode(opt *ast.OptionNode) bool {
 	if opt.Name == nil || len(opt.Name.Parts) != 1 {

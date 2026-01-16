@@ -116,7 +116,7 @@ import (
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/sdk/sdkinfo"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/sdk/version"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/whoami"
-	sourceedit "github.com/bufbuild/buf/cmd/buf/internal/command/source/edit"
+	"github.com/bufbuild/buf/cmd/buf/internal/command/source/sourceedit"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/stats"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"

@@ -73,6 +73,9 @@ type formatter struct {
 	deprecation *deprecationChecker
 	// packageFQN holds the current package's fully-qualified name components.
 	packageFQN []string
+	// injectCompactDeprecation is set when the next compact options should have
+	// deprecated = true injected at the beginning.
+	injectCompactDeprecation bool
 }
 
 // newFormatter returns a new formatter for the given file.
@@ -930,9 +933,19 @@ func (f *formatter) writeEnumValue(enumValueNode *ast.EnumValueNode) {
 	f.writeInline(enumValueNode.Equals)
 	f.Space()
 	f.writeInline(enumValueNode.Number)
+	// Check if we need to inject deprecation for this enum value (exact match only)
+	enumValueFQN := append(f.currentFQN(), enumValueNode.Name.Val)
+	needsDeprecation := f.shouldInjectDeprecationExact(enumValueFQN) &&
+		!hasCompactDeprecatedOption(enumValueNode.Options)
 	if enumValueNode.Options != nil {
 		f.Space()
+		if needsDeprecation {
+			f.injectCompactDeprecation = true
+		}
 		f.writeNode(enumValueNode.Options)
+		f.injectCompactDeprecation = false
+	} else if needsDeprecation {
+		f.writeCompactDeprecatedOption()
 	}
 	f.writeLineEnd(enumValueNode.Semicolon)
 }
@@ -973,9 +986,19 @@ func (f *formatter) writeField(fieldNode *ast.FieldNode) {
 	if fieldNode.Tag != nil {
 		f.writeInline(fieldNode.Tag)
 	}
+	// Check if we need to inject deprecation for this field (exact match only)
+	fieldFQN := append(f.currentFQN(), fieldNode.Name.Val)
+	needsDeprecation := f.shouldInjectDeprecationExact(fieldFQN) &&
+		!hasCompactDeprecatedOption(fieldNode.Options)
 	if fieldNode.Options != nil {
 		f.Space()
+		if needsDeprecation {
+			f.injectCompactDeprecation = true
+		}
 		f.writeNode(fieldNode.Options)
+		f.injectCompactDeprecation = false
+	} else if needsDeprecation {
+		f.writeCompactDeprecatedOption()
 	}
 	f.writeLineEnd(fieldNode.Semicolon)
 }
@@ -1340,7 +1363,9 @@ func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNo
 	defer func() {
 		f.inCompactOptions = false
 	}()
-	if len(compactOptionsNode.Options) == 1 &&
+	// If we need to inject deprecation, we must use multiline format
+	injectDeprecation := f.injectCompactDeprecation
+	if len(compactOptionsNode.Options) == 1 && !injectDeprecation &&
 		!f.hasInteriorComments(compactOptionsNode.OpenBracket, compactOptionsNode.Options[0].Name) {
 		// If there's only a single compact scalar option without comments, we can write it
 		// in-line. For example:
@@ -1374,8 +1399,16 @@ func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNo
 		return
 	}
 	var elementWriterFunc func()
-	if len(compactOptionsNode.Options) > 0 {
+	if len(compactOptionsNode.Options) > 0 || injectDeprecation {
 		elementWriterFunc = func() {
+			// If we need to inject deprecation, write it first
+			if injectDeprecation {
+				if len(compactOptionsNode.Options) > 0 {
+					f.P("deprecated = true,")
+				} else {
+					f.P("deprecated = true")
+				}
+			}
 			for i, opt := range compactOptionsNode.Options {
 				if i == len(compactOptionsNode.Options)-1 {
 					// The last element won't have a trailing comma.
@@ -2612,4 +2645,18 @@ func (f *formatter) shouldInjectDeprecation(fqn []string) bool {
 		return false
 	}
 	return f.deprecation.shouldDeprecate(fqn)
+}
+
+// shouldInjectDeprecationExact returns true if the given FQN should have a deprecated option
+// injected using exact matching (for fields and enum values).
+func (f *formatter) shouldInjectDeprecationExact(fqn []string) bool {
+	if f.deprecation == nil || f.deprecation.isEmpty() {
+		return false
+	}
+	return f.deprecation.shouldDeprecateExact(fqn)
+}
+
+// writeCompactDeprecatedOption writes " [deprecated = true]" for compact options.
+func (f *formatter) writeCompactDeprecatedOption() {
+	f.WriteString(" [deprecated = true]")
 }
