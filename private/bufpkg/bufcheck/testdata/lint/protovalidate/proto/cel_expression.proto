@@ -1,0 +1,26 @@
+syntax = "proto2";
+
+import "buf/validate/validate.proto";
+
+// Test cel_expression validation
+message TestCelExpression {
+  // Valid expression
+  optional string valid_field = 1 [(buf.validate.field).cel_expression = "this.size() > 5"];
+
+  // Invalid expression - type error
+  optional string invalid_type = 2 [(buf.validate.field).cel_expression = "this > 5"];
+
+  // Invalid expression - syntax error
+  optional int32 invalid_syntax = 3 [(buf.validate.field).cel_expression = "this +"];
+
+  // Multiple expressions, some valid, some invalid
+  optional string mixed = 4 [
+    (buf.validate.field).cel_expression = "this.size() > 0",
+    (buf.validate.field).cel_expression = "this * 2"
+  ];
+
+  // Message-level cel_expression
+  optional string foo = 5;
+  option (buf.validate.message).cel_expression = "this.foo.size() > 0";
+  option (buf.validate.message).cel_expression = "this.foo > 5";
+}
