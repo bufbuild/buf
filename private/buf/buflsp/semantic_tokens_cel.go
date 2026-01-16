@@ -298,9 +298,10 @@ func collectMacroTokens(
 		} else {
 			// Standalone function call - CEL position points to opening paren, look backwards
 			funcStart := int(celOffset) - len(funcName)
-			if funcStart >= 0 && funcStart+len(funcName) <= len(exprString) {
-				if exprString[funcStart:funcStart+len(funcName)] == funcName {
-					tokenSpan := createCELSpan(int32(funcStart), int32(funcStart+len(funcName)), exprLiteralSpan)
+			funcEnd := funcStart + len(funcName)
+			if funcStart >= 0 && funcEnd <= len(exprString) {
+				if exprString[funcStart:funcEnd] == funcName {
+					tokenSpan := createCELSpan(int32(funcStart), int32(funcEnd), exprLiteralSpan)
 					if !tokenSpan.IsZero() {
 						collectToken(tokenSpan, semanticTypeMacro, 0, keyword.Unknown)
 					}
@@ -355,7 +356,7 @@ func walkCELExprWithVars(
 		}
 
 		if offsetRange, ok := offsetRanges[expr.Id]; ok {
-			tokenSpan = createCELSpan(int32(offsetRange.Start), int32(offsetRange.Stop), exprLiteralSpan)
+			tokenSpan = createCELSpan(offsetRange.Start, offsetRange.Stop, exprLiteralSpan)
 			if !tokenSpan.IsZero() {
 				collectToken(tokenSpan, tokenType, tokenModifier, keyword.Unknown)
 			}
@@ -396,7 +397,7 @@ func walkCELExprWithVars(
 		if _, isOperator := celOperatorSymbol(funcName); isOperator {
 			// This is an operator - use offset ranges from CEL's native AST
 			if offsetRange, ok := offsetRanges[expr.Id]; ok {
-				tokenSpan = createCELSpan(int32(offsetRange.Start), int32(offsetRange.Stop), exprLiteralSpan)
+				tokenSpan = createCELSpan(offsetRange.Start, offsetRange.Stop, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeOperator, 0, keyword.Unknown)
 				}
@@ -434,9 +435,10 @@ func walkCELExprWithVars(
 				// Standalone function call (no target)
 				// CEL's position typically points to the opening paren, so look backwards for the function name
 				funcStart := int(celOffset) - len(funcName)
-				if funcStart >= 0 && funcStart+len(funcName) <= len(exprString) {
-					if exprString[funcStart:funcStart+len(funcName)] == funcName {
-						tokenSpan = createCELSpan(int32(funcStart), int32(funcStart+len(funcName)), exprLiteralSpan)
+				funcEnd := funcStart + len(funcName)
+				if funcStart >= 0 && funcEnd <= len(exprString) {
+					if exprString[funcStart:funcEnd] == funcName {
+						tokenSpan = createCELSpan(int32(funcStart), int32(funcEnd), exprLiteralSpan)
 						if !tokenSpan.IsZero() {
 							collectToken(tokenSpan, tokenType, tokenModifier, keyword.Unknown)
 						}
@@ -458,7 +460,7 @@ func walkCELExprWithVars(
 		case *exprpb.Constant_StringValue:
 			// String literal - use offset ranges from CEL's native AST
 			if offsetRange, ok := offsetRanges[expr.Id]; ok {
-				tokenSpan = createCELSpan(int32(offsetRange.Start), int32(offsetRange.Stop), exprLiteralSpan)
+				tokenSpan = createCELSpan(offsetRange.Start, offsetRange.Stop, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeString, 0, keyword.Unknown)
 				}
@@ -467,7 +469,7 @@ func walkCELExprWithVars(
 		case *exprpb.Constant_Int64Value, *exprpb.Constant_Uint64Value, *exprpb.Constant_DoubleValue:
 			// Number literal - use offset ranges from CEL's native AST
 			if offsetRange, ok := offsetRanges[expr.Id]; ok {
-				tokenSpan = createCELSpan(int32(offsetRange.Start), int32(offsetRange.Stop), exprLiteralSpan)
+				tokenSpan = createCELSpan(offsetRange.Start, offsetRange.Stop, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeNumber, 0, keyword.Unknown)
 				}
@@ -476,7 +478,7 @@ func walkCELExprWithVars(
 		case *exprpb.Constant_BoolValue:
 			// Boolean literal - use offset ranges from CEL's native AST
 			if offsetRange, ok := offsetRanges[expr.Id]; ok {
-				tokenSpan = createCELSpan(int32(offsetRange.Start), int32(offsetRange.Stop), exprLiteralSpan)
+				tokenSpan = createCELSpan(offsetRange.Start, offsetRange.Stop, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeKeyword, 0, keyword.Unknown)
 				}
