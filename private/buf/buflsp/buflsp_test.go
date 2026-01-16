@@ -61,7 +61,7 @@ func setupLSPServer(
 
 	ctx := t.Context()
 
-	logger := slogtestext.NewLogger(t)
+	logger := slogtestext.NewLogger(t, slogtestext.WithLogLevel(appext.LogLevelInfo))
 
 	appContainer, err := app.NewContainerForOS()
 	require.NoError(t, err)

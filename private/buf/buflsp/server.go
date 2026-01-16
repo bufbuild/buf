@@ -23,10 +23,12 @@ import (
 	"strings"
 	"unicode/utf16"
 
+	celpv "buf.build/go/protovalidate/cel"
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufformat"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
+	"github.com/google/cel-go/cel"
 	"go.lsp.dev/protocol"
 	"mvdan.cc/xurls/v2"
 )
@@ -53,6 +55,8 @@ type server struct {
 
 	// httpsURLRegex is used to find https:// URLs in comments for document links.
 	httpsURLRegex *regexp.Regexp
+	// celEnv is the CEL environment used for parsing protovalidate expressions.
+	celEnv *cel.Env
 }
 
 // newServer creates a protocol.Server implementation out of an lsp.
@@ -61,9 +65,17 @@ func newServer(lsp *lsp) (protocol.Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create HTTPS URL regex: %w", err)
 	}
+	celEnv, err := cel.NewEnv(
+		cel.Lib(celpv.NewLibrary()),
+		cel.EnableMacroCallTracking(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create CEL environment: %w", err)
+	}
 	return &server{
 		lsp:           lsp,
 		httpsURLRegex: httpsURLRegex,
+		celEnv:        celEnv,
 	}, nil
 }
 
@@ -415,7 +427,7 @@ func (s *server) SemanticTokensFull(
 	ctx context.Context,
 	params *protocol.SemanticTokensParams,
 ) (*protocol.SemanticTokens, error) {
-	return semanticTokensFull(s.fileManager.Get(params.TextDocument.URI))
+	return semanticTokensFull(s.fileManager.Get(params.TextDocument.URI), s.celEnv)
 }
 
 // Symbols is the entry point for workspace-wide symbol search.

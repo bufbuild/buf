@@ -22,9 +22,6 @@ message User {
   // Field with repeated modifier
   repeated string tags = 4;
 
-  // Map field
-  map<string, int32> attributes = 22;
-
   // Reserved fields and ranges
   reserved 5;
   reserved 10 to 15;

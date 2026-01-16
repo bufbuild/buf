@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
+	"github.com/google/cel-go/cel"
 	"go.lsp.dev/protocol"
 )
 
@@ -37,7 +38,9 @@ const (
 	semanticTypeEnumMember
 	semanticTypeInterface
 	semanticTypeMethod
+	semanticTypeFunction
 	semanticTypeDecorator
+	semanticTypeMacro
 	semanticTypeNamespace
 	semanticTypeKeyword
 	semanticTypeModifier
@@ -45,6 +48,7 @@ const (
 	semanticTypeString
 	semanticTypeNumber
 	semanticTypeType
+	semanticTypeOperator
 )
 
 // The subset of SemanticTokenModifiers that we support.
@@ -67,7 +71,9 @@ var (
 		string(protocol.SemanticTokenEnumMember),
 		string(protocol.SemanticTokenInterface),
 		string(protocol.SemanticTokenMethod),
+		string(protocol.SemanticTokenFunction),
 		"decorator", // Added in LSP 3.17.0; not in our protocol library yet.
+		string(protocol.SemanticTokenMacro),
 		string(protocol.SemanticTokenNamespace),
 		string(protocol.SemanticTokenKeyword),
 		string(protocol.SemanticTokenModifier),
@@ -75,6 +81,7 @@ var (
 		string(protocol.SemanticTokenString),
 		string(protocol.SemanticTokenNumber),
 		string(protocol.SemanticTokenType),
+		string(protocol.SemanticTokenOperator),
 	}
 	semanticModifierLegend = []string{
 		string(protocol.SemanticTokenModifierDeprecated),
@@ -82,7 +89,7 @@ var (
 	}
 )
 
-func semanticTokensFull(file *file) (*protocol.SemanticTokens, error) {
+func semanticTokensFull(file *file, celEnv *cel.Env) (*protocol.SemanticTokens, error) {
 	if file == nil {
 		return nil, nil
 	}
@@ -133,7 +140,7 @@ func semanticTokensFull(file *file) (*protocol.SemanticTokens, error) {
 		kw := tok.Keyword()
 		switch kw {
 		// These keywords seemingly are not easy to reach via the IR.
-		case keyword.Option, keyword.Reserved, keyword.To, keyword.Returns:
+		case keyword.Option, keyword.Reserved, keyword.To, keyword.Returns, keyword.Extend, keyword.Extensions:
 			collectToken(tok.Span(), semanticTypeKeyword, 0, kw)
 		}
 	}
@@ -286,6 +293,21 @@ func semanticTokensFull(file *file) (*protocol.SemanticTokens, error) {
 
 		collectToken(symbol.span, semanticType, semanticModifier, keyword.Unknown)
 	}
+
+	// Collect CEL tokens from protovalidate expressions
+	for _, symbol := range file.symbols {
+		// Skip option symbols themselves - we want the symbols that HAVE options
+		if _, isOption := symbol.kind.(*option); isOption {
+			continue
+		}
+
+		// Extract CEL expressions from buf.validate options if present
+		celExprs := extractCELExpressions(file, symbol)
+		for _, celExpr := range celExprs {
+			collectCELTokens(celEnv, celExpr, collectToken)
+		}
+	}
+
 	// When multiple tokens share the same span, prefer more specific types over generic keywords.
 	// For example, "string" appears as both a keyword and a built-in type; we want the type.
 	seen := make(map[source.Span]int)

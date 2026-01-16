@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package test.v1;
+
+import "buf/validate/validate.proto";
+
+// Test that invalid CEL expressions are not highlighted (treated as plain strings)
+message InvalidCel {
+  // Syntax error - unclosed operator
+  string field1 = 1 [(buf.validate.field).cel = {
+    id: "invalid.1"
+    message: "invalid"
+    expression: "this >"
+  }];
+
+  // Syntax error - malformed expression
+  string field2 = 2 [(buf.validate.field).cel = {
+    id: "invalid.2"
+    message: "invalid"
+    expression: "&&& ||"
+  }];
+
+  // Syntax error - unclosed parenthesis
+  string field3 = 3 [(buf.validate.field).cel_expression = "this.startsWith("];
+
+  // Syntax error - invalid token sequence
+  string field4 = 4 [(buf.validate.field).cel_expression = ".. ..."];
+}

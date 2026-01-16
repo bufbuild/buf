@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package test.v1;
+
+import "buf/validate/validate.proto";
+
+message User {
+  string name = 1 [(buf.validate.field).cel = {
+    id: "user.name"
+    message: "name must start with foo"
+    expression: "this.startsWith('foo') && this.size() > 5"
+  }];
+
+  int32 age = 2 [(buf.validate.field).cel = {
+    id: "user.age"
+    message: "age must be positive"
+    expression: "this > 0"
+  }];
+
+  // Test cel_expression instead of cel.expression
+  string email = 3 [(buf.validate.field).cel_expression = "'@' in this"];
+}
+
+// Test message-level options with .cel form
+message ValidatedMessage {
+  option (buf.validate.message).cel = {
+    id: "message.valid"
+    message: "message must be valid"
+    expression: "this.value > 0"
+  };
+
+  int32 value = 1;
+}
+
+// Test message-level options with .cel_expression form (array)
+message AnotherValidatedMessage {
+  option (buf.validate.message).cel_expression = "this.count < 100";
+
+  int32 count = 1;
+}
