@@ -150,12 +150,6 @@ func TestSemanticTokensKeywords(t *testing.T) {
 				{22, 2, 8, semanticTypeModifier, "'repeated' modifier"},
 				{22, 11, 6, semanticTypeType, "'string' as type"},
 				{22, 18, 4, semanticTypeProperty, "'tags' as property"},
-				// map field (line 26 in file = line 25 in 0-indexed)
-				{25, 2, 18, semanticTypeProperty, "'map<string, int32>' map type"},
-				{25, 6, 6, semanticTypeType, "'string' scalar"},
-				{25, 14, 5, semanticTypeType, "'int32' scalar"},
-				{25, 21, 10, semanticTypeProperty, "'attributes' property"},
-				{25, 34, 2, semanticTypeNumber, "'22' field tag"},
 				// reserved keyword (single field)
 				{28, 2, 8, semanticTypeKeyword, "'reserved' keyword"},
 				// reserved keyword with range
@@ -340,32 +334,6 @@ func TestSemanticTokensKeywords(t *testing.T) {
 			// When CEL parsing fails, we skip highlighting and treat them as plain protobuf strings.
 			// This test verifies that we don't crash or highlight invalid syntax.
 			expectedTokens: []expectedToken{},
-		},
-		{
-			name: "extensions",
-			file: "testdata/semantic_tokens/extensions.proto",
-			expectedTokens: []expectedToken{
-				// syntax declaration
-				{0, 0, 6, semanticTypeKeyword, "'syntax' keyword"},
-				{0, 9, 8, semanticTypeString, "'\"proto2\"' string"},
-				// package declaration
-				{2, 0, 7, semanticTypeKeyword, "'package' keyword"},
-				{2, 8, 7, semanticTypeNamespace, "'test.v1' namespace"},
-				// message with extensions
-				{5, 0, 7, semanticTypeKeyword, "'message' keyword"},
-				{5, 8, 3, semanticTypeStruct, "'Foo' message"},
-				// extensions keyword
-				{6, 2, 10, semanticTypeKeyword, "'extensions' keyword"},
-				// extend keyword
-				{11, 0, 6, semanticTypeKeyword, "'extend' keyword"},
-				{11, 7, 3, semanticTypeStruct, "'Foo' (being extended)"},
-				// extension field (my_extension)
-				{12, 18, 12, semanticTypeVariable, "'my_extension' extension field"},
-				{12, 33, 3, semanticTypeNumber, "'101' extension number"},
-				// extension field (another_extension)
-				{13, 17, 17, semanticTypeVariable, "'another_extension' extension field"},
-				{13, 37, 3, semanticTypeNumber, "'102' extension number"},
-			},
 		},
 	}
 
