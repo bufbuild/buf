@@ -114,6 +114,7 @@ func checkPredefinedRuleExtension(
 				args...,
 			)
 		},
+		false,
 	)
 	return nil
 }

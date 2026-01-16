@@ -32,6 +32,10 @@ const (
 	celFieldNumberInFieldRules = 23
 	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.MessageRules
 	celFieldNumberInMessageRules = 3
+	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.MessageRules
+	celExpressionFieldNumberInMessageRules = 5
+	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.FieldRules
+	celExpressionFieldNumberInFieldRules = 29
 )
 
 func checkCELForMessage(
@@ -40,6 +44,9 @@ func checkCELForMessage(
 	messageDescriptor protoreflect.MessageDescriptor,
 	message bufprotosource.Message,
 ) error {
+	if len(messageRules.GetCel()) == 0 && len(messageRules.GetCelExpression()) == 0 {
+		return nil
+	}
 	celEnv, err := cel.NewEnv(
 		cel.Lib(celpv.NewLibrary()),
 	)
@@ -67,7 +74,32 @@ func checkCELForMessage(
 			)
 			add(message, messageRulesOptionLocation, nil, format, args...)
 		},
+		false, // isCELExpression
 	)
+	if len(messageRules.GetCelExpression()) > 0 {
+		celExpressionRules := make([]*validate.Rule, len(messageRules.GetCelExpression()))
+		for i, expr := range messageRules.GetCelExpression() {
+			celExpressionRules[i] = &validate.Rule{
+				Expression: &expr,
+			}
+		}
+		checkCEL(
+			celEnv,
+			celExpressionRules,
+			fmt.Sprintf("message %q", message.Name()),
+			fmt.Sprintf("Message %q", message.Name()),
+			"(buf.validate.message).cel_expression",
+			func(index int, format string, args ...any) {
+				messageRulesOptionLocation := message.OptionExtensionLocation(
+					validate.E_Message,
+					celExpressionFieldNumberInMessageRules,
+					int32(index),
+				)
+				add(message, messageRulesOptionLocation, nil, format, args...)
+			},
+			true, // isCELExpression
+		)
+	}
 	return nil
 }
 
@@ -78,7 +110,7 @@ func checkCELForField(
 	// forItems is true if the CEL rule is defined on a non-repeated field or on each item of a repeated field.
 	forItems bool,
 ) error {
-	if len(fieldRules.GetCel()) == 0 {
+	if len(fieldRules.GetCel()) == 0 && len(fieldRules.GetCelExpression()) == 0 {
 		return nil
 	}
 	celEnv, err := cel.NewEnv(
@@ -109,7 +141,31 @@ func checkCELForField(
 				args...,
 			)
 		},
+		false, // isCELExpression
 	)
+	if len(fieldRules.GetCelExpression()) > 0 {
+		celExpressionRules := make([]*validate.Rule, len(fieldRules.GetCelExpression()))
+		for i, expr := range fieldRules.GetCelExpression() {
+			celExpressionRules[i] = &validate.Rule{
+				Expression: &expr,
+			}
+		}
+		checkCEL(
+			celEnv,
+			celExpressionRules,
+			fmt.Sprintf("field %q", adder.fieldName()),
+			fmt.Sprintf("Field %q", adder.fieldName()),
+			adder.getFieldRuleName(celExpressionFieldNumberInFieldRules),
+			func(index int, format string, args ...any) {
+				adder.addForPathf(
+					[]int32{celExpressionFieldNumberInFieldRules, int32(index)},
+					format,
+					args...,
+				)
+			},
+			true, // isCELExpression
+		)
+	}
 	return nil
 }
 
@@ -121,9 +177,14 @@ func checkCEL(
 	parentNameCapitalized string,
 	celName string,
 	add func(int, string, ...any),
+	isCELExpression bool,
 ) bool {
 	allCelExpressionsCompile := true
 	idToConstraintIndices := make(map[string][]int, len(celRules))
+	expressionField := celName + ".expression"
+	if isCELExpression {
+		expressionField = celName
+	}
 	for i, celConstraint := range celRules {
 		if celID := celConstraint.GetId(); celID != "" {
 			for _, char := range celID {
@@ -147,7 +208,7 @@ func checkCEL(
 			idToConstraintIndices[celID] = append(idToConstraintIndices[celID], i)
 		}
 		if len(strings.TrimSpace(celConstraint.GetExpression())) == 0 {
-			add(i, "%s has an empty %s.expression. Expressions should always be specified.", parentNameCapitalized, celName)
+			add(i, "%s has an empty %s. Expressions should always be specified.", parentNameCapitalized, expressionField)
 			continue
 		}
 		ast, compileIssues := celEnv.Compile(celConstraint.GetExpression())
@@ -168,8 +229,8 @@ func checkCEL(
 		default:
 			add(
 				i,
-				"%s.expression on %s evaluates to a %s, only string and boolean are allowed.",
-				celName,
+				"%s on %s evaluates to a %s, only string and boolean are allowed.",
+				expressionField,
 				parentName,
 				cel.FormatCELType(ast.OutputType()),
 			)
@@ -179,8 +240,8 @@ func checkCEL(
 			for _, parsedIssue := range parseCelIssuesText(compileIssues.Err().Error()) {
 				add(
 					i,
-					"%s.expression on %s fails to compile: %s",
-					celName,
+					"%s on %s fails to compile: %s",
+					expressionField,
 					parentName,
 					parsedIssue,
 				)
