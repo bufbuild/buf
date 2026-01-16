@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package multifile;
+
+message Object3 {
+      string description = 1;
+  bool active = 2;
+}

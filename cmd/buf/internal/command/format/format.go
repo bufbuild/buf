@@ -60,7 +60,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <source>",
+		Use:   name + " [<source>...]",
 		Short: "Format Protobuf files",
 		Long: `
 By default, the source is the current directory and the formatted content is written to stdout.
@@ -145,6 +145,10 @@ Rewrite a single file in-place:
 
     $ buf format simple.proto -w
 
+Rewrite multiple files in-place:
+
+    $ buf format file1.proto file2.proto file3.proto -w
+
 Rewrite an entire directory in-place:
 
     $ buf format proto -w
@@ -158,7 +162,6 @@ Write a diff and rewrite the file(s) in-place:
 
 The -w and -o flags cannot be used together in a single invocation.
 `,
-		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -243,9 +246,40 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) (retErr error) {
-	source, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
-	if err != nil {
-		return err
+	// Handle multiple positional arguments
+	var source string
+	numArgs := container.NumArgs()
+
+	// Special case: check for inputHashtag flag
+	if flags.InputHashtag != "" {
+		if numArgs > 0 {
+			return appcmd.NewInvalidArgumentErrorf("only 1 argument allowed but %d arguments specified", numArgs+1)
+		}
+		source = "-#" + flags.InputHashtag
+	} else if numArgs == 0 {
+		// No arguments provided, use default
+		source = "."
+	} else if numArgs == 1 {
+		// Single argument - use as source
+		arg := container.Arg(0)
+		if arg == "" {
+			return appcmd.NewInvalidArgumentError("first argument is present but empty")
+		}
+		source = arg
+	} else {
+		// Multiple arguments - treat all as file paths within the current directory
+		if len(flags.Paths) > 0 {
+			return appcmd.NewInvalidArgumentError("cannot specify both positional file arguments and --path flags")
+		}
+		source = "."
+		// Collect all arguments as paths
+		for i := range numArgs {
+			arg := container.Arg(i)
+			if arg == "" {
+				return appcmd.NewInvalidArgumentErrorf("argument %d is present but empty", i+1)
+			}
+			flags.Paths = append(flags.Paths, arg)
+		}
 	}
 	// We use getDirOrProtoFileRef to see if we have a valid DirOrProtoFileRef, and if so,
 	// whether or not we have IncludePackageFiles Set.
@@ -286,6 +320,12 @@ func run(
 	}
 	if err := validateNoIncludePackageFiles(dirOrProtoFileRef); err != nil {
 		return err
+	}
+	// When formatting multiple files, output must be a directory
+	if numArgs > 1 && flags.Output != "-" {
+		if _, ok := dirOrProtoFileRef.(buffetch.DirRef); !ok {
+			return appcmd.NewInvalidArgumentErrorf("--%s must be a directory when formatting multiple files", outputFlagName)
+		}
 	}
 
 	controller, err := bufcli.NewController(
