@@ -10,6 +10,7 @@
   imports, and sort imports alphabetically.
 - Add LSP document link support.
 - Add LSP folding range support.
+- Update `PROTOVALIDATE` lint rule to support checking `cel_expression` fields for valid CEL.
 
 ## [v1.63.0] - 2026-01-06
 
