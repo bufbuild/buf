@@ -19,8 +19,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os/exec"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"buf.build/go/app"
 	"buf.build/go/standard/xslices"
@@ -195,7 +197,62 @@ func (g *generator) generateCode(
 	if err := responseWriter.Close(); err != nil {
 		return err
 	}
+	if err := g.runPostCommands(ctx, baseOutDir, pluginConfigs); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (g *generator) runPostCommands(
+	ctx context.Context,
+	baseOutDir string,
+	pluginConfigs []bufconfig.GeneratePluginConfig,
+) error {
+	for _, pluginConfig := range pluginConfigs {
+		postCommands := pluginConfig.PostCommands()
+		if len(postCommands) == 0 {
+			continue
+		}
+		out := pluginConfig.Out()
+		if baseOutDir != "" && baseOutDir != "." {
+			out = filepath.Join(baseOutDir, out)
+		}
+		for _, command := range postCommands {
+			substitutedCommand := substitutePostCommandVariables(command, pluginConfig, out)
+			if err := g.executePostCommand(ctx, substitutedCommand); err != nil {
+				return fmt.Errorf("plugin %s post-processing command %q failed: %w", pluginConfig.Name(), command, err)
+			}
+		}
+	}
+	return nil
+}
+
+func substitutePostCommandVariables(command string, pluginConfig bufconfig.GeneratePluginConfig, resolvedOut string) string {
+	result := command
+	result = strings.ReplaceAll(result, "$out", resolvedOut)
+	result = strings.ReplaceAll(result, "$name", pluginConfig.Name())
+	result = strings.ReplaceAll(result, "$opt", pluginConfig.Opt())
+	result = strings.ReplaceAll(result, "$path", strings.Join(pluginConfig.Path(), " "))
+	var strategyStr string
+	switch pluginConfig.Strategy() {
+	case bufconfig.GenerateStrategyDirectory:
+		strategyStr = "directory"
+	case bufconfig.GenerateStrategyAll:
+		strategyStr = "all"
+	}
+	result = strings.ReplaceAll(result, "$strategy", strategyStr)
+	return result
+}
+
+func (g *generator) executePostCommand(ctx context.Context, command string) error {
+	parts := strings.Fields(command)
+	if len(parts) == 0 {
+		return nil
+	}
+	cmd := exec.CommandContext(ctx, parts[0], parts[1:]...)
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	return cmd.Run()
 }
 
 func (g *generator) execPlugins(

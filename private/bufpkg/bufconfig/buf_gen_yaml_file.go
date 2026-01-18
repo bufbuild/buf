@@ -281,11 +281,12 @@ type externalBufGenYAMLFileV1Beta1 struct {
 
 // externalGeneratePluginConfigV1Beta1 represents a single plugin config in a v1beta1 buf.gen.yaml file.
 type externalGeneratePluginConfigV1Beta1 struct {
-	Name     string `json:"name,omitempty" yaml:"name,omitempty"`
-	Out      string `json:"out,omitempty" yaml:"out,omitempty"`
-	Opt      any    `json:"opt,omitempty" yaml:"opt,omitempty"`
-	Path     string `json:"path,omitempty" yaml:"path,omitempty"`
-	Strategy string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+	Name           string   `json:"name,omitempty" yaml:"name,omitempty"`
+	Out            string   `json:"out,omitempty" yaml:"out,omitempty"`
+	Opt            any      `json:"opt,omitempty" yaml:"opt,omitempty"`
+	Path           string   `json:"path,omitempty" yaml:"path,omitempty"`
+	Strategy       string   `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+	PostprocessCmd []string `json:"postprocess_cmd,omitempty" yaml:"postprocess_cmd,omitempty"`
 }
 
 // externalGenerateManagedConfigV1Beta1 represents the options (for managed mode) config in a v1beta1 buf.gen.yaml file.
@@ -316,9 +317,10 @@ type externalGeneratePluginConfigV1 struct {
 	// Opt can be one string or multiple strings.
 	Opt any `json:"opt,omitempty" yaml:"opt,omitempty"`
 	// Path can be one string or multiple strings.
-	Path       any    `json:"path,omitempty" yaml:"path,omitempty"`
-	ProtocPath any    `json:"protoc_path,omitempty" yaml:"protoc_path,omitempty"`
-	Strategy   string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+	Path           any      `json:"path,omitempty" yaml:"path,omitempty"`
+	ProtocPath     any      `json:"protoc_path,omitempty" yaml:"protoc_path,omitempty"`
+	Strategy       string   `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+	PostprocessCmd []string `json:"postprocess_cmd,omitempty" yaml:"postprocess_cmd,omitempty"`
 }
 
 // externalGenerateManagedConfigV1 represents the managed mode config in a v1 buf.gen.yaml file.
@@ -533,6 +535,9 @@ type externalGeneratePluginConfigV2 struct {
 	Types []string `json:"types,omitempty" yaml:"types,omitempty"`
 	// ExcludeTypes removes types from the image.
 	ExcludeTypes []string `json:"exclude_types,omitempty" yaml:"exclude_types,omitempty"`
+	// PostprocessCmd is a list of commands to run after code generation for this plugin.
+	// Variables like $out, $name, $opt, $path, $strategy can be used and will be substituted.
+	PostprocessCmd []string `json:"postprocess_cmd,omitempty" yaml:"postprocess_cmd,omitempty"`
 }
 
 // externalGenerateManagedConfigV2 represents the managed mode config in a v2 buf.gen.yaml file.
