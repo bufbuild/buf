@@ -305,6 +305,65 @@ inputs:
 	)
 }
 
+func TestBufGenYAMLFilePostprocessCmd(t *testing.T) {
+	t.Parallel()
+
+	testReadWriteBufGenYAMLFileRoundTrip(
+		t,
+		// input v2 with postprocess_cmd
+		`version: v2
+plugins:
+  - local: protoc-gen-go
+    out: gen/go
+    postprocess_cmd:
+      - "gofmt -w $out"
+      - "goimports -w $out"
+`,
+		// expected output
+		`version: v2
+plugins:
+  - local: protoc-gen-go
+    out: gen/go
+    postprocess_cmd:
+      - gofmt -w $out
+      - goimports -w $out
+`,
+	)
+
+	testReadWriteBufGenYAMLFileRoundTrip(
+		t,
+		// input v1 with postprocess_cmd
+		`version: v1
+plugins:
+  - plugin: go
+    out: gen/go
+    postprocess_cmd:
+      - "ruff --fix $out"
+`,
+		// expected output
+		`version: v2
+plugins:
+  - local: protoc-gen-go
+    out: gen/go
+    postprocess_cmd:
+      - ruff --fix $out
+`,
+	)
+
+	bufGenYAMLFile := testReadBufGenYAMLFile(t, `version: v2
+plugins:
+  - local: protoc-gen-python
+    out: gen/python
+    opt: paths=source_relative
+    postprocess_cmd:
+      - "ruff --fix $out"
+      - "black $out"
+`)
+	pluginConfigs := bufGenYAMLFile.GenerateConfig().GeneratePluginConfigs()
+	require.Len(t, pluginConfigs, 1)
+	require.Equal(t, []string{"ruff --fix $out", "black $out"}, pluginConfigs[0].PostCommands())
+}
+
 func TestBufGenYAMLFileManagedErrors(t *testing.T) {
 	t.Parallel()
 
