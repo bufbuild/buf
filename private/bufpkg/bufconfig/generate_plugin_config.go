@@ -116,6 +116,9 @@ type GeneratePluginConfig interface {
 	IncludeTypes() []string
 	// ExcludeTypes returns the types to exclude.
 	ExcludeTypes() []string
+	// PostCommands returns the post-processing commands to run after generation.
+	// Variables like $out, $name, $opt, $path, $strategy can be used and will be substituted.
+	PostCommands() []string
 
 	isGeneratePluginConfig()
 }
@@ -140,6 +143,7 @@ func NewRemoteGeneratePluginConfig(
 		includeTypes,
 		excludeTypes,
 		revision,
+		nil,
 	)
 }
 
@@ -163,6 +167,7 @@ func NewLocalOrProtocBuiltinGeneratePluginConfig(
 		includeTypes,
 		excludeTypes,
 		strategy,
+		nil,
 	)
 }
 
@@ -188,6 +193,7 @@ func NewLocalGeneratePluginConfig(
 		excludeTypes,
 		strategy,
 		path,
+		nil,
 	)
 }
 
@@ -214,6 +220,7 @@ func NewProtocBuiltinGeneratePluginConfig(
 		excludeTypes,
 		strategy,
 		protocPath,
+		nil,
 	)
 }
 
@@ -254,6 +261,7 @@ type generatePluginConfig struct {
 	protocPath               []string
 	remoteHost               string
 	revision                 int
+	postCommands             []string
 }
 
 func newGeneratePluginConfigFromExternalV1Beta1(
@@ -284,6 +292,7 @@ func newGeneratePluginConfigFromExternalV1Beta1(
 			nil,
 			strategy,
 			[]string{externalConfig.Path},
+			externalConfig.PostprocessCmd,
 		)
 	}
 	return newLocalOrProtocBuiltinGeneratePluginConfig(
@@ -295,6 +304,7 @@ func newGeneratePluginConfigFromExternalV1Beta1(
 		nil,
 		nil,
 		strategy,
+		externalConfig.PostprocessCmd,
 	)
 }
 
@@ -356,6 +366,7 @@ func newGeneratePluginConfigFromExternalV1(
 			nil,
 			nil,
 			externalConfig.Revision,
+			externalConfig.PostprocessCmd,
 		)
 	}
 	// At this point the plugin must be local, regardless whether it's specified
@@ -371,6 +382,7 @@ func newGeneratePluginConfigFromExternalV1(
 			nil,
 			strategy,
 			path,
+			externalConfig.PostprocessCmd,
 		)
 	}
 	if externalConfig.ProtocPath != nil {
@@ -384,6 +396,7 @@ func newGeneratePluginConfigFromExternalV1(
 			nil,
 			strategy,
 			protocPath,
+			externalConfig.PostprocessCmd,
 		)
 	}
 	// It could be either local or protoc built-in. We defer to the plugin executor
@@ -397,6 +410,7 @@ func newGeneratePluginConfigFromExternalV1(
 		nil,
 		nil,
 		strategy,
+		externalConfig.PostprocessCmd,
 	)
 }
 
@@ -455,6 +469,7 @@ func newGeneratePluginConfigFromExternalV2(
 			externalConfig.Types,
 			externalConfig.ExcludeTypes,
 			revision,
+			externalConfig.PostprocessCmd,
 		)
 	case externalConfig.Local != nil:
 		path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Local)
@@ -478,6 +493,7 @@ func newGeneratePluginConfigFromExternalV2(
 			externalConfig.ExcludeTypes,
 			parsedStrategy,
 			path,
+			externalConfig.PostprocessCmd,
 		)
 	case externalConfig.ProtocBuiltin != nil:
 		protocPath, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.ProtocPath)
@@ -497,6 +513,7 @@ func newGeneratePluginConfigFromExternalV2(
 			externalConfig.ExcludeTypes,
 			parsedStrategy,
 			protocPath,
+			externalConfig.PostprocessCmd,
 		)
 	default:
 		return nil, syserror.Newf("must specify one of remote, binary and protoc_builtin")
@@ -512,6 +529,7 @@ func newRemoteGeneratePluginConfig(
 	includeTypes []string,
 	excludeTypes []string,
 	revision int,
+	postCommands []string,
 ) (*generatePluginConfig, error) {
 	if includeWKT && !includeImports {
 		return nil, errors.New("cannot include well-known types without including imports")
@@ -534,6 +552,7 @@ func newRemoteGeneratePluginConfig(
 		includeWKT:               includeWKT,
 		includeTypes:             includeTypes,
 		excludeTypes:             excludeTypes,
+		postCommands:             postCommands,
 	}, nil
 }
 
@@ -546,6 +565,7 @@ func newLocalOrProtocBuiltinGeneratePluginConfig(
 	includeTypes []string,
 	excludeTypes []string,
 	strategy *GenerateStrategy,
+	postCommands []string,
 ) (*generatePluginConfig, error) {
 	if includeWKT && !includeImports {
 		return nil, errors.New("cannot include well-known types without including imports")
@@ -560,6 +580,7 @@ func newLocalOrProtocBuiltinGeneratePluginConfig(
 		includeWKT:               includeWKT,
 		includeTypes:             includeTypes,
 		excludeTypes:             excludeTypes,
+		postCommands:             postCommands,
 	}, nil
 }
 
@@ -573,6 +594,7 @@ func newLocalGeneratePluginConfig(
 	excludeTypes []string,
 	strategy *GenerateStrategy,
 	path []string,
+	postCommands []string,
 ) (*generatePluginConfig, error) {
 	if len(path) == 0 {
 		return nil, errors.New("must specify a path to the plugin")
@@ -591,6 +613,7 @@ func newLocalGeneratePluginConfig(
 		includeWKT:               includeWKT,
 		includeTypes:             includeTypes,
 		excludeTypes:             excludeTypes,
+		postCommands:             postCommands,
 	}, nil
 }
 
@@ -604,6 +627,7 @@ func newProtocBuiltinGeneratePluginConfig(
 	excludeTypes []string,
 	strategy *GenerateStrategy,
 	protocPath []string,
+	postCommands []string,
 ) (*generatePluginConfig, error) {
 	if includeWKT && !includeImports {
 		return nil, errors.New("cannot include well-known types without including imports")
@@ -619,6 +643,7 @@ func newProtocBuiltinGeneratePluginConfig(
 		includeWKT:               includeWKT,
 		includeTypes:             includeTypes,
 		excludeTypes:             excludeTypes,
+		postCommands:             postCommands,
 	}, nil
 }
 
@@ -677,6 +702,10 @@ func (p *generatePluginConfig) Revision() int {
 	return p.revision
 }
 
+func (p *generatePluginConfig) PostCommands() []string {
+	return p.postCommands
+}
+
 func (p *generatePluginConfig) isGeneratePluginConfig() {}
 
 func newExternalGeneratePluginConfigV2FromPluginConfig(
@@ -690,6 +719,7 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 		Out:            generatePluginConfig.Out(),
 		IncludeImports: generatePluginConfig.IncludeImports(),
 		IncludeWKT:     generatePluginConfig.IncludeWKT(),
+		PostprocessCmd: generatePluginConfig.PostCommands(),
 	}
 	opts := generatePluginConfig.opts
 	switch {
