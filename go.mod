@@ -28,7 +28,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jdx/go-netrc v1.0.0
 	github.com/jhump/protoreflect/v2 v2.0.0-beta.2
-	github.com/klauspost/compress v1.18.2
+	github.com/klauspost/compress v1.18.3
 	github.com/klauspost/pgzip v1.2.6
 	github.com/mattn/go-colorable v0.1.14
 	github.com/quic-go/quic-go v0.59.0
