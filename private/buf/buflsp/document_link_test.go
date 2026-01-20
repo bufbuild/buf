@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
@@ -151,7 +152,7 @@ func assertNoOverlappingRanges(t *testing.T, links []protocol.DocumentLink) {
 			// Check if ranges overlap
 			assert.False(
 				t,
-				rangesOverlap(range1, range2),
+				buflsp.RangesOverlap(range1, range2),
 				"Document link ranges overlap:\nLink %d (target=%s): Line %d:%d to %d:%d\nLink %d (target=%s): Line %d:%d to %d:%d",
 				i, links[i].Target,
 				range1.Start.Line, range1.Start.Character,
@@ -165,14 +166,6 @@ func assertNoOverlappingRanges(t *testing.T, links []protocol.DocumentLink) {
 }
 
 // rangesOverlap returns true if two ranges overlap.
-func rangesOverlap(r1, r2 protocol.Range) bool {
-	// A range ends before another starts if r1.End <= r2.Start
-	// Ranges don't overlap if one ends before the other starts
-	if positionLessOrEqual(r1.End, r2.Start) || positionLessOrEqual(r2.End, r1.Start) {
-		return false
-	}
-	return true
-}
 
 // positionLessOrEqual returns true if pos1 <= pos2.
 func positionLessOrEqual(pos1, pos2 protocol.Position) bool {

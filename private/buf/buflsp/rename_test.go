@@ -15,13 +15,13 @@
 package buflsp_test
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
@@ -557,23 +557,23 @@ func TestRenameMinimalEdits(t *testing.T) {
 			name:      "rename_message",
 			line:      15,
 			character: 8,
-			newName:   "RenamedProduct",
+			newName:   "RenamedCatalog",
 		},
 		{
 			name:      "rename_field",
-			line:      16,
-			character: 2,
+			line:      9,
+			character: 10,
 			newName:   "renamed_id",
 		},
 		{
 			name:      "rename_enum",
-			line:      21,
-			character: 5,
+			line:      47,
+			character: 7,
 			newName:   "RenamedStatus",
 		},
 		{
 			name:      "rename_service",
-			line:      35,
+			line:      21,
 			character: 8,
 			newName:   "RenamedProductService",
 		},
@@ -619,11 +619,11 @@ func assertRenameEditsAreMinimal(t *testing.T, original string, edits []protocol
 	// Verify edits don't overlap
 	for i := 0; i < len(edits); i++ {
 		for j := i + 1; j < len(edits); j++ {
-			assert.Falsef(t, rangesOverlapRename(edits[i].Range, edits[j].Range),
+			assert.Falsef(t, buflsp.RangesOverlap(edits[i].Range, edits[j].Range),
 				"edits %d and %d overlap: %s and %s",
 				i, j,
-				formatRangeRename(edits[i].Range),
-				formatRangeRename(edits[j].Range))
+				buflsp.FormatRange(edits[i].Range),
+				buflsp.FormatRange(edits[j].Range))
 		}
 	}
 
@@ -671,22 +671,4 @@ func assertRenameEditsAreMinimal(t *testing.T, original string, edits []protocol
 		len(edits), linesCount)
 }
 
-// rangesOverlapRename returns true if two LSP ranges overlap.
-func rangesOverlapRename(r1, r2 protocol.Range) bool {
-	return positionLessRename(r1.Start, r2.End) && positionLessRename(r2.Start, r1.End)
-}
-
-// positionLessRename returns true if p1 is before p2 in the document.
-func positionLessRename(p1, p2 protocol.Position) bool {
-	if p1.Line != p2.Line {
-		return p1.Line < p2.Line
-	}
-	return p1.Character < p2.Character
-}
-
-// formatRangeRename returns a human-readable string representation of an LSP range.
-func formatRangeRename(r protocol.Range) string {
-	return fmt.Sprintf("[%d:%d-%d:%d]",
-		r.Start.Line, r.Start.Character,
-		r.End.Line, r.End.Character)
-}
+// RangesOverlap returns true if two LSP ranges overlap.

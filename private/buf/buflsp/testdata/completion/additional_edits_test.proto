@@ -1,0 +1,7 @@
+syntax = ""
+
+package example.v1;
+
+message Test {
+  string name = 1;
+}

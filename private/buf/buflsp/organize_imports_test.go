@@ -15,12 +15,12 @@
 package buflsp_test
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
@@ -460,11 +460,11 @@ func assertOrganizeImportsEditsAreMinimal(t *testing.T, original string, edits [
 	// Verify edits don't overlap
 	for i := 0; i < len(edits); i++ {
 		for j := i + 1; j < len(edits); j++ {
-			assert.Falsef(t, rangesOverlapImports(edits[i].Range, edits[j].Range),
+			assert.Falsef(t, buflsp.RangesOverlap(edits[i].Range, edits[j].Range),
 				"edits %d and %d overlap: %s and %s",
 				i, j,
-				formatRangeImports(edits[i].Range),
-				formatRangeImports(edits[j].Range))
+				buflsp.FormatRange(edits[i].Range),
+				buflsp.FormatRange(edits[j].Range))
 		}
 	}
 
@@ -529,26 +529,8 @@ func assertNoRedundantEditsOrganizeImports(t *testing.T, original string, edits 
 
 		assert.NotEqualf(t, edit.NewText, replacedText,
 			"edit %d replaces text with identical text (not minimal): range %s",
-			i, formatRangeImports(edit.Range))
+			i, buflsp.FormatRange(edit.Range))
 	}
 }
 
-// rangesOverlapImports returns true if two LSP ranges overlap.
-func rangesOverlapImports(r1, r2 protocol.Range) bool {
-	return positionLessImports(r1.Start, r2.End) && positionLessImports(r2.Start, r1.End)
-}
-
-// positionLessImports returns true if p1 is before p2 in the document.
-func positionLessImports(p1, p2 protocol.Position) bool {
-	if p1.Line != p2.Line {
-		return p1.Line < p2.Line
-	}
-	return p1.Character < p2.Character
-}
-
-// formatRangeImports returns a human-readable string representation of an LSP range.
-func formatRangeImports(r protocol.Range) string {
-	return fmt.Sprintf("[%d:%d-%d:%d]",
-		r.Start.Line, r.Start.Character,
-		r.End.Line, r.End.Character)
-}
+// RangesOverlap returns true if two LSP ranges overlap.

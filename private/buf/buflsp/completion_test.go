@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"buf.build/go/standard/xslices"
+	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
@@ -412,3 +413,102 @@ func TestCompletionOptions(t *testing.T) {
 		})
 	}
 }
+func TestCompletionAdditionalTextEdits(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+
+	testProtoPath, err := filepath.Abs("testdata/completion/additional_edits_test.proto")
+	require.NoError(t, err)
+
+	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
+
+	tests := []struct {
+		name                 string
+		line                 uint32
+		character            uint32
+		triggerCompletion    string // Text to search for in completions
+		expectAdditionalEdit bool
+		validateEdit         func(t *testing.T, edit protocol.TextEdit)
+	}{
+		{
+			name:                 "syntax_completion_adds_semicolon",
+			line:                 0,
+			character:            10, // Inside the quotes: syntax = "|"
+			triggerCompletion:    "proto3",
+			expectAdditionalEdit: true,
+			validateEdit: func(t *testing.T, edit protocol.TextEdit) {
+				// Should add ";" at end of line since the file is missing it
+				assert.Equal(t, ";", edit.NewText, "should add semicolon")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var completionList protocol.CompletionList
+			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: testURI,
+					},
+					Position: protocol.Position{
+						Line:      tt.line,
+						Character: tt.character,
+					},
+				},
+			}, &completionList)
+			require.NoError(t, err)
+
+			// Find the completion item we're looking for
+			var foundItem *protocol.CompletionItem
+			for _, item := range completionList.Items {
+				if item.Label == tt.triggerCompletion ||
+					(item.TextEdit != nil && item.TextEdit.NewText == tt.triggerCompletion) {
+					foundItem = &item
+					break
+				}
+			}
+
+			require.NotNil(t, foundItem, "should find completion item %q", tt.triggerCompletion)
+
+			if tt.expectAdditionalEdit {
+				require.NotEmpty(t, foundItem.AdditionalTextEdits, "should have additional text edits")
+
+				// Validate edits are minimal
+				for i, edit := range foundItem.AdditionalTextEdits {
+					// Additional edits should be small and targeted
+					assert.LessOrEqual(t, len(edit.NewText), 100,
+						"additional edit %d should be small (got %d chars)", i, len(edit.NewText))
+
+					// Validate specific edit properties if provided
+					if tt.validateEdit != nil {
+						tt.validateEdit(t, edit)
+					}
+
+					// Additional edits should not overlap with the main edit
+					if foundItem.TextEdit != nil {
+						assert.False(t, buflsp.RangesOverlap(foundItem.TextEdit.Range, edit.Range),
+							"additional edit %d should not overlap with main edit", i)
+					}
+				}
+
+				// Verify edits don't overlap with each other
+				for i := 0; i < len(foundItem.AdditionalTextEdits); i++ {
+					for j := i + 1; j < len(foundItem.AdditionalTextEdits); j++ {
+						assert.False(t, buflsp.RangesOverlap(
+							foundItem.AdditionalTextEdits[i].Range,
+							foundItem.AdditionalTextEdits[j].Range),
+							"additional edits %d and %d should not overlap", i, j)
+					}
+				}
+			} else {
+				assert.Empty(t, foundItem.AdditionalTextEdits, "should not have additional text edits")
+			}
+		})
+	}
+}
+
+// RangesOverlap returns true if two LSP ranges overlap.
