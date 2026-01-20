@@ -36,9 +36,10 @@ type bucket struct {
 	rootPath         string
 	absoluteRootPath string
 	symlinks         bool
+	readOnlyFiles    bool
 }
 
-func newBucket(rootPath string, symlinks bool) (*bucket, error) {
+func newBucket(rootPath string, symlinks bool, readOnlyFiles bool) (*bucket, error) {
 	rootPath = normalpath.Unnormalize(rootPath)
 	if err := validateDirPathExists(rootPath, symlinks); err != nil {
 		return nil, err
@@ -54,6 +55,7 @@ func newBucket(rootPath string, symlinks bool) (*bucket, error) {
 		rootPath:         rootPath,
 		absoluteRootPath: absoluteRootPath,
 		symlinks:         symlinks,
+		readOnlyFiles:    readOnlyFiles,
 	}, nil
 }
 
@@ -204,6 +206,7 @@ func (b *bucket) Put(ctx context.Context, path string, options ...storage.PutOpt
 	return newWriteObjectCloser(
 		file,
 		finalPath,
+		b.readOnlyFiles,
 	), nil
 }
 
@@ -361,15 +364,19 @@ type writeObjectCloser struct {
 	// writeErr contains the first non-nil error caught by a call to Write.
 	// This is returned in Close for atomic writes to prevent writing an incomplete file.
 	writeErr onceError
+	// readOnlyFiles indicates whether the file should be set to read-only permissions on close.
+	readOnlyFiles bool
 }
 
 func newWriteObjectCloser(
 	file *os.File,
 	path string,
+	readOnlyFiles bool,
 ) *writeObjectCloser {
 	return &writeObjectCloser{
-		file: file,
-		path: path,
+		file:          file,
+		path:          path,
+		readOnlyFiles: readOnlyFiles,
 	}
 }
 
@@ -398,8 +405,21 @@ func (w *writeObjectCloser) Close() error {
 		if atomicWriteErr != nil {
 			return toStorageError(errors.Join(atomicWriteErr, os.Remove(w.file.Name())))
 		}
+		// Set the file to read-only permissions before renaming if requested
+		if w.readOnlyFiles {
+			if err := os.Chmod(w.file.Name(), 0444); err != nil {
+				return toStorageError(errors.Join(err, os.Remove(w.file.Name())))
+			}
+		}
 		if err := os.Rename(w.file.Name(), w.path); err != nil {
 			return toStorageError(errors.Join(err, os.Remove(w.file.Name())))
+		}
+	} else if w.readOnlyFiles {
+		// For non-atomic writes, set read-only permissions after closing
+		if err == nil {
+			if chmodErr := os.Chmod(w.file.Name(), 0444); chmodErr != nil {
+				return toStorageError(chmodErr)
+			}
 		}
 	}
 	return err

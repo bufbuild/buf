@@ -102,6 +102,148 @@ func TestOS(t *testing.T) {
 		_, err = bucket.Get(ctx, "baz.txt")
 		require.ErrorIs(t, err, fs.ErrNotExist)
 	})
+
+	t.Run("read_only_files_non_atomic", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+		tempDir := t.TempDir()
+
+		// Create bucket with read-only files option
+		bucket, err := storageos.NewProvider().NewReadWriteBucket(
+			tempDir,
+			storageos.ReadWriteBucketWithReadOnlyFiles(),
+		)
+		require.NoError(t, err)
+
+		// Write a file without atomic option (non-atomic write)
+		writeObjectCloser, err := bucket.Put(ctx, "test.txt")
+		require.NoError(t, err)
+		_, err = writeObjectCloser.Write([]byte("test data"))
+		require.NoError(t, err)
+		require.NoError(t, writeObjectCloser.Close())
+
+		// Check file permissions
+		filePath := filepath.Join(tempDir, "test.txt")
+		fileInfo, err := os.Stat(filePath)
+		require.NoError(t, err)
+		require.Equal(t, fs.FileMode(0444), fileInfo.Mode().Perm(), "file should have read-only permissions (0444)")
+
+		// Verify we can still read the file through the bucket
+		readObjectCloser, err := bucket.Get(ctx, "test.txt")
+		require.NoError(t, err)
+		require.NoError(t, readObjectCloser.Close())
+	})
+
+	t.Run("read_only_files_atomic", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+		tempDir := t.TempDir()
+
+		// Create bucket with read-only files option
+		bucket, err := storageos.NewProvider().NewReadWriteBucket(
+			tempDir,
+			storageos.ReadWriteBucketWithReadOnlyFiles(),
+		)
+		require.NoError(t, err)
+
+		// Write a file with atomic option
+		writeObjectCloser, err := bucket.Put(ctx, "test.txt", storage.PutWithAtomic())
+		require.NoError(t, err)
+		_, err = writeObjectCloser.Write([]byte("test data"))
+		require.NoError(t, err)
+		require.NoError(t, writeObjectCloser.Close())
+
+		// Check file permissions
+		filePath := filepath.Join(tempDir, "test.txt")
+		fileInfo, err := os.Stat(filePath)
+		require.NoError(t, err)
+		require.Equal(t, fs.FileMode(0444), fileInfo.Mode().Perm(), "file should have read-only permissions (0444)")
+
+		// Verify we can still read the file through the bucket
+		readObjectCloser, err := bucket.Get(ctx, "test.txt")
+		require.NoError(t, err)
+		require.NoError(t, readObjectCloser.Close())
+	})
+
+	t.Run("read_only_files_nested_directories", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+		tempDir := t.TempDir()
+
+		// Create bucket with read-only files option
+		bucket, err := storageos.NewProvider().NewReadWriteBucket(
+			tempDir,
+			storageos.ReadWriteBucketWithReadOnlyFiles(),
+		)
+		require.NoError(t, err)
+
+		// Write a file in nested directories
+		writeObjectCloser, err := bucket.Put(ctx, "subdir/nested/test.txt", storage.PutWithAtomic())
+		require.NoError(t, err)
+		_, err = writeObjectCloser.Write([]byte("test data"))
+		require.NoError(t, err)
+		require.NoError(t, writeObjectCloser.Close())
+
+		// Check file permissions
+		filePath := filepath.Join(tempDir, "subdir", "nested", "test.txt")
+		fileInfo, err := os.Stat(filePath)
+		require.NoError(t, err)
+		require.Equal(t, fs.FileMode(0444), fileInfo.Mode().Perm(), "file should have read-only permissions (0444)")
+	})
+
+	t.Run("normal_files_without_read_only_option", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+		tempDir := t.TempDir()
+
+		// Create bucket WITHOUT read-only files option
+		bucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+		require.NoError(t, err)
+
+		// Write a file
+		writeObjectCloser, err := bucket.Put(ctx, "test.txt")
+		require.NoError(t, err)
+		_, err = writeObjectCloser.Write([]byte("test data"))
+		require.NoError(t, err)
+		require.NoError(t, writeObjectCloser.Close())
+
+		// Check file permissions - should NOT be 0444
+		filePath := filepath.Join(tempDir, "test.txt")
+		fileInfo, err := os.Stat(filePath)
+		require.NoError(t, err)
+		require.NotEqual(t, fs.FileMode(0444), fileInfo.Mode().Perm(), "file should NOT have read-only permissions when option is not set")
+	})
+
+	t.Run("read_only_files_multiple_files", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+		tempDir := t.TempDir()
+
+		// Create bucket with read-only files option
+		bucket, err := storageos.NewProvider().NewReadWriteBucket(
+			tempDir,
+			storageos.ReadWriteBucketWithReadOnlyFiles(),
+		)
+		require.NoError(t, err)
+
+		// Write multiple files
+		files := []string{"file1.txt", "dir/file2.txt", "dir/nested/file3.txt"}
+		for _, file := range files {
+			writeObjectCloser, err := bucket.Put(ctx, file, storage.PutWithAtomic())
+			require.NoError(t, err)
+			_, err = writeObjectCloser.Write([]byte("test data"))
+			require.NoError(t, err)
+			require.NoError(t, writeObjectCloser.Close())
+		}
+
+		// Check all files have read-only permissions
+		for _, file := range files {
+			filePath := filepath.Join(tempDir, filepath.FromSlash(file))
+			fileInfo, err := os.Stat(filePath)
+			require.NoError(t, err)
+			require.Equal(t, fs.FileMode(0444), fileInfo.Mode().Perm(), "file %s should have read-only permissions (0444)", file)
+		}
+	})
 }
 
 func testNewReadBucket(t *testing.T, dirPath string, storageosProvider storageos.Provider) (storage.ReadBucket, storagetesting.GetExternalPathFunc) {

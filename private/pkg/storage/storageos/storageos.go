@@ -54,6 +54,15 @@ func ReadWriteBucketWithSymlinksIfSupported() ReadWriteBucketOption {
 	}
 }
 
+// ReadWriteBucketWithReadOnlyFiles returns a ReadWriteBucketOption that results in
+// all files written to the bucket being set to read-only permissions (0444).
+// This is useful for cache directories where files should not be modified after writing.
+func ReadWriteBucketWithReadOnlyFiles() ReadWriteBucketOption {
+	return func(readWriteBucketOptions *readWriteBucketOptions) {
+		readWriteBucketOptions.readOnlyFiles = true
+	}
+}
+
 // ProviderWithSymlinks returns a ProviderOption that results in symlink support.
 //
 // Note that ReadWriteBucketWithSymlinksIfSupported still needs to be passed for a given

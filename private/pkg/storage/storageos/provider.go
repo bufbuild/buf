@@ -37,6 +37,7 @@ func (p *provider) NewReadWriteBucket(rootPath string, options ...ReadWriteBucke
 	return newBucket(
 		rootPath,
 		p.symlinks && readWriteBucketOptions.symlinksIfSupported,
+		readWriteBucketOptions.readOnlyFiles,
 	)
 }
 
@@ -45,6 +46,7 @@ func (p *provider) NewReadWriteBucket(rootPath string, options ...ReadWriteBucke
 // so there's no potential issues in newBucket
 type readWriteBucketOptions struct {
 	symlinksIfSupported bool
+	readOnlyFiles       bool
 }
 
 func newReadWriteBucketOptions() *readWriteBucketOptions {

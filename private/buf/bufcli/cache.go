@@ -231,7 +231,10 @@ func NewWKTStore(container appext.Container) (bufwktstore.Store, error) {
 	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CacheWKTRelDirPath)
 	// No symlinks.
 	storageosProvider := storageos.NewProvider()
-	cacheBucket, err := storageosProvider.NewReadWriteBucket(fullCacheDirPath)
+	cacheBucket, err := storageosProvider.NewReadWriteBucket(
+		fullCacheDirPath,
+		storageos.ReadWriteBucketWithReadOnlyFiles(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +260,10 @@ func newModuleDataProvider(
 	)
 	// No symlinks.
 	storageosProvider := storageos.NewProvider()
-	cacheBucket, err := storageosProvider.NewReadWriteBucket(fullCacheDirPath)
+	cacheBucket, err := storageosProvider.NewReadWriteBucket(
+		fullCacheDirPath,
+		storageos.ReadWriteBucketWithReadOnlyFiles(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +297,10 @@ func newCommitProvider(
 	delegateReader := bufmoduleapi.NewCommitProvider(container.Logger(), moduleClientProvider, ownerClientProvider)
 	// No symlinks.
 	storageosProvider := storageos.NewProvider()
-	cacheBucket, err := storageosProvider.NewReadWriteBucket(fullCacheDirPath)
+	cacheBucket, err := storageosProvider.NewReadWriteBucket(
+		fullCacheDirPath,
+		storageos.ReadWriteBucketWithReadOnlyFiles(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -322,7 +331,10 @@ func newPluginDataProvider(
 	}
 	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CachePluginRelDirPath)
 	storageosProvider := storageos.NewProvider() // No symlinks.
-	cacheBucket, err := storageosProvider.NewReadWriteBucket(fullCacheDirPath)
+	cacheBucket, err := storageosProvider.NewReadWriteBucket(
+		fullCacheDirPath,
+		storageos.ReadWriteBucketWithReadOnlyFiles(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -349,7 +361,10 @@ func newPolicyDataProvider(
 	}
 	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CachePolicyRelDirPath)
 	storageosProvider := storageos.NewProvider() // No symlinks.
-	cacheBucket, err := storageosProvider.NewReadWriteBucket(fullCacheDirPath)
+	cacheBucket, err := storageosProvider.NewReadWriteBucket(
+		fullCacheDirPath,
+		storageos.ReadWriteBucketWithReadOnlyFiles(),
+	)
 	if err != nil {
 		return nil, err
 	}
