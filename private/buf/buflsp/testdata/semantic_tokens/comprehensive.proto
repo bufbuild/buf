@@ -14,7 +14,7 @@ message User {
   string name = 1;
   int32 age = 2;
   // Optional field
-  optional string nickname = 5;
+  optional string nickname = 6;
 
   // Custom type (variable -> struct reference)
   Role role = 3;
@@ -32,6 +32,13 @@ message User {
     string email = 20;
     string phone = 21;
   }
+
+  // Map field with builtin value type
+  map<string, int32> attributes = 30;
+  // Map field with custom enum value type
+  map<string, Role> role_map = 31;
+  // Map field with custom message value type
+  map<int32, User> user_map = 32;
 }
 
 // Enum with members

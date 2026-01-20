@@ -53,7 +53,7 @@ func TestDefinition(t *testing.T) {
 			line:               12, // Line with "AccountType type = 2;"
 			character:          2,  // On "AccountType" type
 			expectedDefURI:     testURI,
-			expectedDefLine:    49, // enum AccountType definition
+			expectedDefLine:    52, // enum AccountType definition (line 53 in file)
 			expectedDefCharMin: 5,
 			expectedDefCharMax: 16,
 		},
@@ -62,49 +62,49 @@ func TestDefinition(t *testing.T) {
 			line:               15, // Line with "Person owner = 3;"
 			character:          2,  // On "Person" type
 			expectedDefURI:     testURI,
-			expectedDefLine:    25, // message Person definition
+			expectedDefLine:    28, // message Person definition (line 29 in file)
 			expectedDefCharMin: 8,
 			expectedDefCharMax: 14,
 		},
 		{
 			name:               "definition_of_address_type_reference",
-			line:               33, // Line with "Address address = 3;"
+			line:               36, // Line with "Address address = 3;"
 			character:          2,  // On "Address" type
 			expectedDefURI:     testURI,
-			expectedDefLine:    37, // message Address definition
+			expectedDefLine:    40, // message Address definition (line 41 in file)
 			expectedDefCharMin: 8,
 			expectedDefCharMax: 15,
 		},
 		{
 			name:               "definition_of_country_code_reference",
-			line:               45, // Line with "CountryCode country = 3;"
+			line:               48, // Line with "CountryCode country = 3;"
 			character:          2,  // On "CountryCode" type
 			expectedDefURI:     testURI,
-			expectedDefLine:    61, // enum CountryCode definition
+			expectedDefLine:    64, // enum CountryCode definition (line 65 in file)
 			expectedDefCharMin: 5,
 			expectedDefCharMax: 16,
 		},
 		{
 			name:               "definition_of_rpc_request_type",
-			line:               75, // Line with "rpc GetAccount(GetAccountRequest)"
+			line:               78, // Line with "rpc GetAccount(GetAccountRequest)"
 			character:          18, // On "GetAccountRequest"
 			expectedDefURI:     testURI,
-			expectedDefLine:    82, // message GetAccountRequest definition
+			expectedDefLine:    85, // message GetAccountRequest definition (line 86 in file)
 			expectedDefCharMin: 8,
 			expectedDefCharMax: 25,
 		},
 		{
 			name:               "definition_of_rpc_response_type",
-			line:               75, // Line with "returns (GetAccountResponse)"
+			line:               78, // Line with "returns (GetAccountResponse)"
 			character:          45, // On "GetAccountResponse"
 			expectedDefURI:     testURI,
-			expectedDefLine:    88, // message GetAccountResponse definition
+			expectedDefLine:    91, // message GetAccountResponse definition (line 92 in file)
 			expectedDefCharMin: 8,
 			expectedDefCharMax: 26,
 		},
 		{
 			name:               "definition_of_account_field_in_request",
-			line:               96, // Line with "Account account = 1;" in CreateAccountRequest
+			line:               99, // Line with "Account account = 1;" in CreateAccountRequest
 			character:          2,  // On "Account" type
 			expectedDefURI:     testURI,
 			expectedDefLine:    7, // message Account definition
@@ -122,10 +122,10 @@ func TestDefinition(t *testing.T) {
 		},
 		{
 			name:               "definition_of_service",
-			line:               73, // Line with "service AccountService {"
+			line:               76, // Line with "service AccountService {"
 			character:          8,  // On "AccountService"
 			expectedDefURI:     testURI,
-			expectedDefLine:    73,
+			expectedDefLine:    76, // service AccountService (line 77 in file)
 			expectedDefCharMin: 8,
 			expectedDefCharMax: 22,
 		},
@@ -164,6 +164,15 @@ func TestDefinition(t *testing.T) {
 			line:               2, // Line with "package definition.v1;"
 			character:          8, // On "definition"
 			expectNoDefinition: true,
+		},
+		{
+			name:               "definition_of_map_value_type",
+			line:               24, // Line with "map<string, Person> metadata = 6;"
+			character:          16, // On "Person" in map value type
+			expectedDefURI:     testURI,
+			expectedDefLine:    28, // message Person definition
+			expectedDefCharMin: 8,
+			expectedDefCharMax: 14,
 		},
 	}
 

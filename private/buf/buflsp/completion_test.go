@@ -49,75 +49,81 @@ func TestCompletion(t *testing.T) {
 			expectedContains: []string{"message"},
 		},
 		{
+			name:             "complete_message_field_modifiers",
+			line:             9, // Empty line in User message where field modifier would go
+			character:        2, // Indented position where field modifier would be
+			expectedContains: []string{"map", "repeated", "optional"},
+		},
+		{
 			name:             "complete_message_field_types",
-			line:             9, // Empty line in User message where field would go
-			character:        2, // Indented position where field type would be
+			line:             10, // Empty line in User message where field would go
+			character:        2,  // Indented position where field type would be
 			expectedContains: []string{"string", "int32", "int64", "bool", "bytes", "User", "GetUserRequest", "GetUserResponse"},
 		},
 		{
 			name:             "complete_builtin_service",
-			line:             14,
+			line:             15,
 			character:        2, // Indented position where "rpc" would be
 			expectedContains: []string{"rpc", "option"},
 		},
 		{
 			name:             "complete_rpc_request_type",
-			line:             13,
+			line:             14,
 			character:        uint32(len("  rpc GetUser(Get") - 1),
 			expectedContains: []string{"GetUserRequest", "GetUserResponse"},
 		},
 		{
 			name:             "complete_rpc_response_type",
-			line:             13,
+			line:             14,
 			character:        uint32(len("  rpc GetUser(Get) returns (Get") - 1),
 			expectedContains: []string{"GetUserRequest", "GetUserResponse"},
 		},
 		{
 			name:             "complete_field_number_after_reserved",
-			line:             31, // Line with "User user ="
+			line:             32, // Line with "User user ="
 			character:        14, // After "  User user = "
 			expectedContains: []string{"6"},
 		},
 		{
 			name:             "complete_field_number_after_reserved_with_semicolon",
-			line:             40, // Line with "User user = ;"
+			line:             41, // Line with "User user = ;"
 			character:        14, // After "  User user = "
 			expectedContains: []string{"6"},
 		},
 		{
 			name:             "complete_field_number_skips_protobuf_reserved_range",
-			line:             46, // Line with "User user = ;"
+			line:             47, // Line with "User user = ;"
 			character:        14, // After "  User user = "
 			expectedContains: []string{"20000"},
 		},
 		{
 			name:                "complete_absolute_type_reference",
-			line:                50, // Line with ".goo field_name = 1;"
+			line:                51, // Line with ".goo field_name = 1;"
 			character:           4,  // After ".goo"
 			expectedContains:    []string{".google.protobuf.Timestamp", ".google.protobuf.Duration", ".google.protobuf.Any"},
 			expectedNotContains: []string{".example.v1.User", ".example.v1.GetUserRequest"},
 		},
 		{
 			name:             "complete_enum_number_basic",
-			line:             56, // Line with "STATUS_NEW = " (0-indexed)
+			line:             57, // Line with "STATUS_NEW = " (0-indexed)
 			character:        15, // After "  STATUS_NEW = "
 			expectedContains: []string{"2"},
 		},
 		{
 			name:             "complete_enum_number_with_gaps",
-			line:             63, // Line with "STATUS_NEW = ;" (0-indexed)
+			line:             64, // Line with "STATUS_NEW = ;" (0-indexed)
 			character:        15, // After "  STATUS_NEW = "
 			expectedContains: []string{"2"},
 		},
 		{
 			name:             "complete_enum_number_with_reserved",
-			line:             73, // Line with "STATUS_NEW = ;" (0-indexed from line 74)
+			line:             74, // Line with "STATUS_NEW = ;" (0-indexed from line 74)
 			character:        15, // After "  STATUS_NEW = "
 			expectedContains: []string{"6"},
 		},
 		{
 			name:             "complete_enum_number_empty",
-			line:             77, // Line with "STATUS_FIRST = ;" in EmptyStatus (0-indexed from line 78)
+			line:             78, // Line with "STATUS_FIRST = ;" in EmptyStatus (0-indexed from line 78)
 			character:        17, // After "  STATUS_FIRST = "
 			expectedContains: []string{"0"},
 		},
@@ -216,6 +222,95 @@ message User {
 		return item.Label
 	})
 	assert.Contains(t, labels, "string", "expected completion list to contain 'string' after partial edit")
+}
+
+func TestCompletionMaps(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+
+	testProtoPath, err := filepath.Abs("testdata/completion/map_test.proto")
+	require.NoError(t, err)
+
+	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
+
+	tests := []struct {
+		name                string
+		line                uint32
+		character           uint32
+		expectedContains    []string
+		expectedNotContains []string
+	}{
+		{
+			name:                "complete_map_key_type_all",
+			line:                16, // Line with "map<int32, string> field0 = 10;"
+			character:           6,  // After "  map<" (no prefix)
+			expectedContains:    []string{"int32", "int64", "bool", "string", "uint32", "sint32"},
+			expectedNotContains: []string{"float", "double", "bytes"}, // Not allowed for map keys
+		},
+		{
+			name:                "complete_map_key_type_prefix",
+			line:                19,                                   // Line with "map<int32, string> field1 = 1;"
+			character:           7,                                    // After "  map<i"
+			expectedContains:    []string{"int32", "int64"},           // Types starting with "i"
+			expectedNotContains: []string{"float", "double", "bytes"}, // Not allowed for map keys
+		},
+		{
+			name:             "complete_map_value_type_builtin",
+			line:             22, // Line with "map<int32, string> field2 = 2;"
+			character:        13, // After "  map<int32, s"
+			expectedContains: []string{"string", "sint32", "sint64"},
+		},
+		{
+			name:             "complete_map_value_type_custom",
+			line:             25, // Line with "map<string, User> field3 = 3;"
+			character:        16, // After "  map<string, U"
+			expectedContains: []string{"User"},
+		},
+		{
+			name:                "complete_map_key_type_no_enums_or_messages",
+			line:                28,                                              // Line with "map<int32, string> field4 = 4;"
+			character:           6,                                               // After "  map<" (no prefix)
+			expectedContains:    []string{"int32", "bool"},                       // Valid map key types
+			expectedNotContains: []string{"User", "Status", "MapCompletionTest"}, // Enums and messages not allowed
+		},
+		{
+			name:                "complete_map_key_type_incomplete_syntax",
+			line:                31,                                              // Line with "map<, int32> attributes = 30;"
+			character:           6,                                               // Right after "  map<" (at comma, since no space)
+			expectedContains:    []string{"int32", "bool", "string"},             // Valid map key types
+			expectedNotContains: []string{"User", "Status", "MapCompletionTest"}, // Enums and messages not allowed
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			var completionList *protocol.CompletionList
+			_, completionErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: testURI,
+					},
+					Position: protocol.Position{
+						Line:      tt.line,
+						Character: tt.character,
+					},
+				},
+			}, &completionList)
+			require.NoError(t, completionErr)
+			require.NotNil(t, completionList, "expected completion list to be non-nil")
+			labels := xslices.Map(completionList.Items, func(item protocol.CompletionItem) string {
+				return item.Label
+			})
+			for _, expected := range tt.expectedContains {
+				assert.Contains(t, labels, expected, "expected completion list to contain %q", expected)
+			}
+			for _, notExpected := range tt.expectedNotContains {
+				assert.NotContains(t, labels, notExpected, "expected completion list to not contain %q", notExpected)
+			}
+		})
+	}
 }
 
 func TestCompletionOptions(t *testing.T) {

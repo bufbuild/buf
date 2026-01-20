@@ -201,6 +201,20 @@ func semanticTokensFull(file *file, celEnv *cel.Env) (*protocol.SemanticTokens, 
 			}
 		default:
 			// Declaration symbols
+
+			// Collect field metadata (modifiers, tag) for all field-related symbols
+			if symbol.ir.Kind() == ir.SymbolKindField {
+				fieldDef := symbol.ir.AsMember().AST().AsField()
+				for prefix := range fieldDef.Type.Prefixes() {
+					if prefixTok := prefix.PrefixToken(); !prefixTok.IsZero() {
+						collectToken(prefixTok.Span(), semanticTypeModifier, 0, keyword.Unknown)
+					}
+				}
+				if !fieldDef.Tag.Span().IsZero() {
+					collectToken(fieldDef.Tag.Span(), semanticTypeNumber, 0, keyword.Unknown)
+				}
+			}
+
 			switch symbol.ir.Kind() {
 			case ir.SymbolKindPackage:
 				semanticType = semanticTypeNamespace
@@ -217,21 +231,16 @@ func semanticTokensFull(file *file, celEnv *cel.Env) (*protocol.SemanticTokens, 
 				}
 				semanticType = semanticTypeEnum
 			case ir.SymbolKindField:
-				fieldDef := symbol.ir.AsMember().AST().AsField()
-				// Collect field modifiers (repeated, optional, required)
-				for prefix := range fieldDef.Type.Prefixes() {
-					if prefixTok := prefix.PrefixToken(); !prefixTok.IsZero() {
-						collectToken(prefixTok.Span(), semanticTypeModifier, 0, keyword.Unknown)
-					}
-				}
-				// Collect the field tag number
-				if !fieldDef.Tag.Span().IsZero() {
-					collectToken(fieldDef.Tag.Span(), semanticTypeNumber, 0, keyword.Unknown)
-				}
-				if symbol.IsBuiltIn() {
+				// Determine semantic type based on symbol kind
+				if _, isReferenceable := symbol.kind.(*referenceable); isReferenceable {
+					// Field name symbols are always properties
+					semanticType = semanticTypeProperty
+				} else if symbol.IsBuiltIn() {
+					// Builtin type symbols (like "map", "int32") are types
 					semanticType = semanticTypeType
 					semanticModifier += semanticModifierDefaultLibrary
 				} else {
+					// Other field-related symbols are properties
 					semanticType = semanticTypeProperty
 				}
 			case ir.SymbolKindEnumValue:

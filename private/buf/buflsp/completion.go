@@ -320,6 +320,13 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		},
 	)
 	typePrefix, typeSuffix := splitSpan(typeSpan, offset)
+
+	// Check if cursor is inside map type parameters (e.g., map<int32, |>)
+	insideMapType, isMapKeyPosition := isInsideMapType(file, def, offset)
+	file.lsp.logger.DebugContext(ctx, "completion: map type detection",
+		slog.Bool("inside_map", insideMapType),
+		slog.Bool("is_key_pos", isMapKeyPosition))
+
 	file.lsp.logger.DebugContext(
 		ctx, "completion: definition value",
 		slog.String("token", tokenSpan.Text()),
@@ -333,6 +340,8 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		slog.Bool("has_start", hasStart),
 		slog.Bool("has_field_modifier", hasTypeModifier),
 		slog.Bool("has_declaration", hasDeclaration),
+		slog.Bool("inside_map_type", insideMapType),
+		slog.Bool("is_map_key_position", isMapKeyPosition),
 	)
 	// Special case: field number completion
 	if !hasStart && parentDef.Classify() == ast.DefKindMessage {
@@ -366,7 +375,9 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 			return completionItemsForEnumNumber(file, parentDef, ast.DefEnumValue{})
 		}
 	}
-	if !hasStart {
+	// Allow completions when inside map types even if hasStart is false
+	// (this handles completion after comma, e.g., "map<int32, |")
+	if !hasStart && !insideMapType {
 		file.lsp.logger.DebugContext(
 			ctx,
 			"completion: ignoring definition type unable to find start",
@@ -408,10 +419,11 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 	switch parentDef.Classify() {
 	case ast.DefKindMessage:
 		// Limit completions based on the following heuristics:
-		// - Show keywords for the first values
+		// - Show keywords for the first values (but not when inside map key position)
 		// - Show types if no type declaration and at first, or second position with field modifier.
-		showKeywords := beforeCount == 0
-		showTypes := !hasDeclaration && (beforeCount == 0 || (hasTypeModifier && beforeCount == 1))
+		// - Always show types if cursor is inside map<...> angle brackets
+		showKeywords := beforeCount == 0 && !(insideMapType && isMapKeyPosition)
+		showTypes := insideMapType || (!hasDeclaration && (beforeCount == 0 || (hasTypeModifier && beforeCount == 1)))
 		if showKeywords {
 			isProto2 := isProto2(file)
 			iters = append(iters,
@@ -430,21 +442,50 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 			)
 		}
 		if showTypes {
-			iters = append(iters,
-				keywordToCompletionItem(
-					predeclaredTypeKeywords(),
-					protocol.CompletionItemKindKeyword,
-					tokenSpan,
-					offset,
-				),
-				typeReferencesToCompletionItems(
-					file,
-					findTypeFullName(file, parentDef),
-					tokenSpan,
-					offset,
-					true, // Allow enums.
-				),
-			)
+			// When inside map angle brackets, use only the prefix of the tokenSpan for filtering
+			completionSpan := tokenSpan
+			if insideMapType {
+				// Use only the prefix part for filtering when inside map<>
+				completionSpan = source.Span{
+					File:  tokenSpan.File,
+					Start: tokenSpan.Start,
+					End:   offset,
+				}
+			}
+
+			// For map key position, only show valid map key types
+			if insideMapType && isMapKeyPosition {
+				file.lsp.logger.DebugContext(ctx, "completion: map key position detected, showing only valid map key types")
+				iters = append(iters,
+					keywordToCompletionItem(
+						mapKeyTypeKeywords(),
+						protocol.CompletionItemKindKeyword,
+						completionSpan,
+						offset,
+					),
+				)
+			} else {
+				file.lsp.logger.DebugContext(ctx, "completion: showing all types",
+					slog.Bool("inside_map", insideMapType),
+					slog.Bool("is_key_pos", isMapKeyPosition),
+				)
+				// Regular type completions or map value position
+				iters = append(iters,
+					keywordToCompletionItem(
+						predeclaredTypeKeywords(),
+						protocol.CompletionItemKindKeyword,
+						completionSpan,
+						offset,
+					),
+					typeReferencesToCompletionItems(
+						file,
+						findTypeFullName(file, parentDef),
+						completionSpan,
+						offset,
+						true, // Allow enums.
+					),
+				)
+			}
 		}
 	case ast.DefKindService:
 		// Method types are only shown within args of the method definition.
@@ -792,7 +833,7 @@ func topLevelKeywords() iter.Seq[keyword.Keyword] {
 	}
 }
 
-// messageLevelFieldKeywords returns keywords for messages.
+// messageLevelKeywords returns keywords for messages.
 func messageLevelKeywords(isProto2 bool) iter.Seq[keyword.Keyword] {
 	return func(yield func(keyword.Keyword) bool) {
 		ok := yield(keyword.Message) &&
@@ -801,7 +842,8 @@ func messageLevelKeywords(isProto2 bool) iter.Seq[keyword.Keyword] {
 			yield(keyword.Extend) &&
 			yield(keyword.Oneof) &&
 			yield(keyword.Extensions) &&
-			yield(keyword.Reserved)
+			yield(keyword.Reserved) &&
+			yield(keyword.Map)
 		_ = ok && isProto2 &&
 			yield(keyword.Group)
 	}
@@ -834,6 +876,26 @@ func predeclaredTypeKeywords() iter.Seq[keyword.Keyword] {
 			yield(keyword.Bool) &&
 			yield(keyword.String) &&
 			yield(keyword.Bytes)
+	}
+}
+
+// mapKeyTypeKeywords returns keywords for valid map key types.
+// Map keys can only be integral types, bool, or string (not floating point or bytes).
+// See https://protobuf.com/docs/language-spec#maps
+func mapKeyTypeKeywords() iter.Seq[keyword.Keyword] {
+	return func(yield func(keyword.Keyword) bool) {
+		_ = yield(keyword.Int32) &&
+			yield(keyword.Int64) &&
+			yield(keyword.Uint32) &&
+			yield(keyword.Uint64) &&
+			yield(keyword.Sint32) &&
+			yield(keyword.Sint64) &&
+			yield(keyword.Fixed32) &&
+			yield(keyword.Fixed64) &&
+			yield(keyword.Sfixed32) &&
+			yield(keyword.Sfixed64) &&
+			yield(keyword.Bool) &&
+			yield(keyword.String)
 	}
 }
 
@@ -1588,6 +1650,72 @@ func isTokenTypeDelimiter(tok token.Token) bool {
 	return (kind == token.Unrecognized && tok.IsZero()) ||
 		(kind == token.Space && strings.IndexByte(tok.Text(), '\n') != -1) ||
 		(kind == token.Comment && strings.HasSuffix(tok.Text(), "\n"))
+}
+
+// isInsideMapType checks if the cursor is inside map type parameters (e.g., map<int32, |>).
+// Returns (insideMap, isKeyPosition) where isKeyPosition is true if before the comma.
+func isInsideMapType(file *file, def ast.DeclDef, offset int) (bool, bool) {
+	// Try AST-based detection first for valid field declarations
+	if def.Classify() == ast.DefKindField {
+		field := def.AsField()
+		genericType := field.Type.RemovePrefixes().AsGeneric()
+		if !genericType.IsZero() {
+			// Check if offset is within the generic type's angle brackets
+			span := genericType.Span()
+			if offset > span.Start && offset <= span.End {
+				// Cursor is inside the generic type - now determine if before/after comma
+				keyType, valueType := genericType.AsMap()
+				if !keyType.IsZero() {
+					keySpan := keyType.Span()
+					// If cursor is before or in the key type, it's the key position
+					if offset <= keySpan.End {
+						return true, true
+					}
+				}
+				// Check if cursor is in the value type position
+				if !valueType.IsZero() {
+					valueSpan := valueType.Span()
+					if offset >= valueSpan.Start {
+						return true, false
+					}
+					// Cursor is before the value type, so it's in the key position
+					return true, true
+				}
+				// No value type or between key and value
+				return true, true
+			}
+		}
+	}
+
+	// Fall back to character scanning for incomplete/invalid field declarations
+	sourceText := file.file.Text()
+	if offset <= 0 || offset > len(sourceText) {
+		return false, false
+	}
+
+	angleDepth := 0
+	commaFound := false
+
+	for i := offset - 1; i >= 0; i-- {
+		ch := sourceText[i]
+		switch ch {
+		case '>':
+			angleDepth++
+		case '<':
+			if angleDepth == 0 {
+				return true, !commaFound
+			}
+			angleDepth--
+		case ',':
+			if angleDepth == 0 {
+				commaFound = true
+			}
+		case '\n', ';':
+			return false, false
+		}
+	}
+
+	return false, false
 }
 
 // extractAroundOffset extracts the value around the offset by querying the token stream.

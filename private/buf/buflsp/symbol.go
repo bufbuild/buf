@@ -290,12 +290,18 @@ func (s *symbol) FormatDocs() string {
 		builtin, _ := s.kind.(*builtin)
 		comments, ok := builtinDocs[builtin.predeclared.String()]
 		if ok {
+			// Use specific anchor for map, generic anchor for other builtins
+			anchor := "field-types"
+			if builtin.predeclared.String() == "map" {
+				anchor = "maps"
+			}
 			comments = append(
 				comments,
 				"",
 				fmt.Sprintf(
-					"`%s` is a Protobuf builtin. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#field-types)",
+					"`%s` is a Protobuf builtin. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#%s)",
 					builtin.predeclared,
+					anchor,
 				),
 			)
 			return strings.Join(comments, "\n")

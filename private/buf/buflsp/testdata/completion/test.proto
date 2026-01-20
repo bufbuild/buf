@@ -7,6 +7,7 @@ m {}
 
 message User {
   string id = 1;
+  // complete_message_field_modifiers
   // complete_message_field_types
 }
 

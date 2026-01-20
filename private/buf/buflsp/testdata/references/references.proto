@@ -15,6 +15,7 @@ message Container {
   string name = 1;
   repeated Item items = 2;
   Color default_color = 3;
+  map<string, Item> items_by_id = 4;
 }
 
 service ItemService {

@@ -105,4 +105,8 @@ var builtinDocs = map[string][]string{
 		"Unlike every other option on a field, this does not have a corresponding field in",
 		"`google.protobuf.FieldOptions`; it is implemented by compiler magic.",
 	},
+
+	"map": {
+		"A set of distinct keys, each of which is associated with a value.",
+	},
 }
