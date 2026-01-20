@@ -520,6 +520,21 @@ func (f *file) indexSymbols() ([]*symbol, []*symbol) {
 //   - The second slice contains symbols that resolution for their defs
 func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 	var resolved, unresolved []*symbol
+
+	// Skip synthetic fields that belong to MapEntry messages (key/value fields)
+	if irSymbol.Kind() == ir.SymbolKindField {
+		if irSymbol.AsMember().IsSynthetic() {
+			return nil, nil
+		}
+	}
+
+	// Skip synthetic MapEntry messages created for map fields
+	if irSymbol.Kind() == ir.SymbolKindMessage {
+		if irSymbol.AsType().IsMapEntry() {
+			return nil, nil
+		}
+	}
+
 	switch irSymbol.Kind() {
 	case ir.SymbolKindMessage:
 		msg := &symbol{
@@ -567,23 +582,82 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		resolved = append(resolved, tag)
 		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsMember().Options())...)
 	case ir.SymbolKindField:
-		// Get the type span. We prefer AsPath() which excludes modifiers like "repeated"
-		// while keeping package qualifiers, but fallback to RemovePrefixes() if AsPath is zero.
-		typeSpan := irSymbol.AsMember().TypeAST().AsPath().Span()
-		if typeSpan.IsZero() {
-			typeSpan = irSymbol.AsMember().TypeAST().RemovePrefixes().Span()
-		}
-		typ := &symbol{
-			ir:   irSymbol,
-			file: f,
-			span: typeSpan,
-		}
-		kind, needsResolution := getKindForMember(irSymbol.AsMember())
-		typ.kind = kind
-		if needsResolution {
-			unresolved = append(unresolved, typ)
+		// Check if this is a map field by looking for a generic type
+		typeWithoutPrefixes := irSymbol.AsMember().TypeAST().RemovePrefixes()
+		if genericType := typeWithoutPrefixes.AsGeneric(); !genericType.IsZero() {
+			// This is a map field - create symbols for "map" keyword, key type, and value type
+			keyType, valueType := genericType.AsMap()
+
+			// Create symbol for "map" keyword itself
+			if mapPath := genericType.Path(); !mapPath.IsZero() && !mapPath.Span().IsZero() {
+				mapSymbol := &symbol{
+					ir:   irSymbol,
+					file: f,
+					span: mapPath.Span(),
+					kind: &builtin{predeclared: predeclared.Map},
+				}
+				resolved = append(resolved, mapSymbol)
+			}
+
+			// Create symbol for key type
+			if !keyType.IsZero() {
+				if keyPath := keyType.RemovePrefixes().AsPath(); !keyPath.IsZero() && !keyPath.Span().IsZero() {
+					keySymbol := &symbol{
+						ir:   irSymbol,
+						file: f,
+						span: keyPath.Span(),
+					}
+					kind, needsResolution := getKindForMapType(keyType, irSymbol.AsMember(), true)
+					if kind != nil {
+						keySymbol.kind = kind
+						if needsResolution {
+							unresolved = append(unresolved, keySymbol)
+						} else {
+							resolved = append(resolved, keySymbol)
+						}
+					}
+				}
+			}
+
+			// Create symbol for value type
+			if !valueType.IsZero() {
+				if valuePath := valueType.RemovePrefixes().AsPath(); !valuePath.IsZero() && !valuePath.Span().IsZero() {
+					valueSymbol := &symbol{
+						ir:   irSymbol,
+						file: f,
+						span: valuePath.Span(),
+					}
+					kind, needsResolution := getKindForMapType(valueType, irSymbol.AsMember(), false)
+					if kind != nil {
+						valueSymbol.kind = kind
+						if needsResolution {
+							unresolved = append(unresolved, valueSymbol)
+						} else {
+							resolved = append(resolved, valueSymbol)
+						}
+					}
+				}
+			}
 		} else {
-			resolved = append(resolved, typ)
+			// Regular non-map field - use existing logic
+			// Get the type span. We prefer AsPath() which excludes modifiers like "repeated"
+			// while keeping package qualifiers, but fallback to RemovePrefixes() if AsPath is zero.
+			typeSpan := irSymbol.AsMember().TypeAST().AsPath().Span()
+			if typeSpan.IsZero() {
+				typeSpan = irSymbol.AsMember().TypeAST().RemovePrefixes().Span()
+			}
+			typ := &symbol{
+				ir:   irSymbol,
+				file: f,
+				span: typeSpan,
+			}
+			kind, needsResolution := getKindForMember(irSymbol.AsMember())
+			typ.kind = kind
+			if needsResolution {
+				unresolved = append(unresolved, typ)
+			} else {
+				resolved = append(resolved, typ)
+			}
 		}
 
 		field := &symbol{
@@ -732,6 +806,45 @@ func getKindForMember(member ir.Member) (kind, bool) {
 		def:      member.Element().AST(),
 		fullName: member.Element().FullName(),
 	}, true
+}
+
+// getKindForMapType returns the kind for a map key or value type.
+// For map fields, member.Element() returns the synthetic MapEntry message,
+// so we need to look up the actual type through the MapEntry's key/value fields.
+func getKindForMapType(typeAST ast.TypeAny, mapField ir.Member, isKey bool) (kind, bool) {
+	typePath := typeAST.RemovePrefixes().AsPath()
+	if typePath.IsZero() {
+		return nil, false
+	}
+
+	// Check if it's a predeclared type
+	if typePath.AsPredeclared() != predeclared.Unknown {
+		return &builtin{predeclared: typePath.AsPredeclared()}, false
+	}
+
+	// For custom types, navigate through the MapEntry to find the key/value field
+	elem := mapField.Element()
+	if elem.IsZero() || !elem.IsMessage() {
+		return &static{ast: mapField.AST()}, false
+	}
+
+	fieldName := "value"
+	if isKey {
+		fieldName = "key"
+	}
+
+	// Look for the key or value field in the MapEntry message
+	for i := range elem.Members().Len() {
+		if field := elem.Members().At(i); field.Name() == fieldName {
+			return &reference{
+				def:      field.Element().AST(),
+				fullName: field.Element().FullName(),
+			}, true
+		}
+	}
+
+	// Fallback if we couldn't resolve
+	return &static{ast: mapField.AST()}, false
 }
 
 // importToSymbol takes an [ir.Import] and returns a symbol for it.

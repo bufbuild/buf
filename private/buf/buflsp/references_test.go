@@ -61,8 +61,9 @@ func TestReferences(t *testing.T) {
 				{uri: testURI, line: 6},  // message Item
 				{uri: testURI, line: 10}, // repeated Item related
 				{uri: testURI, line: 15}, // repeated Item items in Container
-				{uri: testURI, line: 29}, // Item item in GetItemResponse
-				{uri: testURI, line: 37}, // repeated Item items in ListItemsResponse
+				{uri: testURI, line: 17}, // map<string, Item> items_by_id in Container
+				{uri: testURI, line: 30}, // Item item in GetItemResponse
+				{uri: testURI, line: 38}, // repeated Item items in ListItemsResponse
 			},
 		},
 		{
@@ -74,8 +75,9 @@ func TestReferences(t *testing.T) {
 			expectedReferences: []refLocation{
 				{uri: testURI, line: 10}, // repeated Item related
 				{uri: testURI, line: 15}, // repeated Item items in Container
-				{uri: testURI, line: 29}, // Item item in GetItemResponse
-				{uri: testURI, line: 37}, // repeated Item items in ListItemsResponse
+				{uri: testURI, line: 17}, // map<string, Item> items_by_id in Container
+				{uri: testURI, line: 30}, // Item item in GetItemResponse
+				{uri: testURI, line: 38}, // repeated Item items in ListItemsResponse
 			},
 		},
 		{
@@ -114,22 +116,22 @@ func TestReferences(t *testing.T) {
 		{
 			name:               "references_to_get_item_request",
 			targetURI:          testURI,
-			line:               24,
+			line:               25,
 			character:          8,
 			includeDeclaration: true,
 			expectedReferences: []refLocation{
-				{uri: testURI, line: 24}, // message GetItemRequest
-				{uri: testURI, line: 20}, // rpc GetItem(GetItemRequest)
+				{uri: testURI, line: 25}, // message GetItemRequest
+				{uri: testURI, line: 21}, // rpc GetItem(GetItemRequest)
 			},
 		},
 		{
 			name:               "references_to_service",
 			targetURI:          testURI,
-			line:               19,
+			line:               20,
 			character:          8,
 			includeDeclaration: true,
 			expectedReferences: []refLocation{
-				{uri: testURI, line: 19}, // service ItemService
+				{uri: testURI, line: 20}, // service ItemService
 			},
 		},
 	}

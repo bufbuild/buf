@@ -112,3 +112,9 @@ message FullyQualifiedReferenceTest {
   Metadata short_reference = 1;
   highlight.v1.Metadata qualified_reference = 2;
 }
+
+message MapFieldsTest {
+  map<string, int32> attributes = 1;
+  map<string, Product> product_map = 2;
+  map<int32, Metadata> metadata_by_id = 3;
+}

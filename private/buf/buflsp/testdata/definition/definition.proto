@@ -20,6 +20,9 @@ message Account {
 
   // The creation timestamp.
   Timestamp created_at = 5;
+
+  // Map of metadata by key.
+  map<string, Person> metadata = 6;
 }
 
 // Person represents an individual.

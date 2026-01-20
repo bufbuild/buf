@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package example.v1;
+
+message User {
+  string id = 1;
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+  STATUS_INACTIVE = 2;
+}
+
+message MapCompletionTest {
+  // Test all map key types: cursor at "map<"
+  map<int32, string> field0 = 10;
+
+  // Test map key type completion: cursor at "map<i"
+  map<int32, string> field1 = 1;
+
+  // Test map value type completion (builtin): cursor at "map<int32, s"
+  map<int32, string> field2 = 2;
+
+  // Test map value type completion (custom): cursor at "map<string, U"
+  map<string, User> field3 = 3;
+
+  // Test map key type cannot be enum or message: cursor at "map<"
+  map<int32, string> field4 = 4;
+
+  // Test map key type with incomplete field (missing key type): cursor at "map<"
+  map<, int32> attributes = 30;
+
+  // Test map value type with incomplete field (missing value type): cursor after "map<int32, "
+  map<int32, > attributes2 = 31;
+}

@@ -160,6 +160,13 @@ func TestHover(t *testing.T) {
 			character:        9, // On "Duration" type
 			expectedContains: "https://buf.build/protocolbuffers/wellknowntypes/docs/main:google.protobuf#google.protobuf.Duration",
 		},
+		{
+			name:             "hover_on_map_keyword",
+			protoFile:        "testdata/completion/map_test.proto",
+			line:             16, // Line with "map<int32, string> field0 = 10;"
+			character:        3,  // On "map" keyword
+			expectedContains: "language-spec#maps",
+		},
 	}
 
 	for _, tt := range tests {
