@@ -30,4 +30,7 @@ message MapCompletionTest {
 
   // Test map key type with incomplete field (missing key type): cursor at "map<"
   map<, int32> attributes = 30;
+
+  // Test map value type with incomplete field (missing value type): cursor after "map<int32, "
+  map<int32, > attributes2 = 31;
 }

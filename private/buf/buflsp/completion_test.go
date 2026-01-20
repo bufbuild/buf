@@ -281,6 +281,13 @@ func TestCompletionMaps(t *testing.T) {
 			expectedContains:    []string{"int32", "bool", "string"},             // Valid map key types
 			expectedNotContains: []string{"User", "Status", "MapCompletionTest"}, // Enums and messages not allowed
 		},
+		{
+			name:                "complete_map_value_type_incomplete_syntax",
+			line:                34,                                    // Line with "map<int32, > attributes2 = 31;"
+			character:           13,                                    // Right after "  map<int32, " (before >)
+			expectedContains:    []string{"User", "Status", "string"},  // All types allowed for value
+			expectedNotContains: []string{},                            // No restrictions on value types
+		},
 	}
 
 	for _, tt := range tests {

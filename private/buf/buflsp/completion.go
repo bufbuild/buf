@@ -1660,29 +1660,25 @@ func isInsideMapType(file *file, def ast.DeclDef, offset int) (bool, bool) {
 		field := def.AsField()
 		genericType := field.Type.RemovePrefixes().AsGeneric()
 		if !genericType.IsZero() {
-			// Check if offset is within the generic type's angle brackets
-			span := genericType.Span()
-			if offset > span.Start && offset <= span.End {
-				// Cursor is inside the generic type - now determine if before/after comma
-				keyType, valueType := genericType.AsMap()
-				if !keyType.IsZero() {
+			keyType, valueType := genericType.AsMap()
+			// Only use AST-based detection when both key and value types are valid
+			// For incomplete syntax (missing key or value), fall through to character scanning
+			if !keyType.IsZero() && !valueType.IsZero() {
+				span := genericType.Span()
+				if offset > span.Start && offset <= span.End {
 					keySpan := keyType.Span()
-					// If cursor is before or in the key type, it's the key position
-					if offset <= keySpan.End {
-						return true, true
-					}
-				}
-				// Check if cursor is in the value type position
-				if !valueType.IsZero() {
 					valueSpan := valueType.Span()
-					if offset >= valueSpan.Start {
-						return true, false
+
+					// Determine position based on key/value spans
+					if offset <= keySpan.End {
+						return true, true // In key type
 					}
-					// Cursor is before the value type, so it's in the key position
-					return true, true
+					if offset >= valueSpan.Start {
+						return true, false // In value type
+					}
+					// Between key and value (after comma, before value start)
+					return true, false
 				}
-				// No value type or between key and value
-				return true, true
 			}
 		}
 	}
