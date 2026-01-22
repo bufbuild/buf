@@ -341,7 +341,19 @@ func (s *server) Hover(
 	ctx context.Context,
 	params *protocol.HoverParams,
 ) (*protocol.Hover, error) {
-	symbol := s.getSymbol(ctx, params.TextDocument.URI, params.Position)
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, nil
+	}
+
+	// First, try to get CEL hover documentation
+	celHover := getCELHover(file, params.Position, s.celEnv)
+	if celHover != nil {
+		return celHover, nil
+	}
+
+	// Fall back to regular symbol hover
+	symbol := file.SymbolAt(ctx, params.Position)
 	if symbol == nil {
 		return nil, nil
 	}

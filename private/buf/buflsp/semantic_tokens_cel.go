@@ -16,7 +16,6 @@ package buflsp
 
 import (
 	"maps"
-	"strings"
 
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/experimental/seq"
@@ -24,7 +23,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/ast"
-	"github.com/google/cel-go/common/operators"
+	"github.com/google/cel-go/common/overloads"
 	exprpb "google.golang.org/genproto/googleapis/api/expr/v1alpha1"
 )
 
@@ -192,68 +191,6 @@ func collectCELTokens(
 	collectMacroTokens(sourceInfo, exprInfo.span, exprInfo.expression, collectToken)
 }
 
-// createCELSpan creates a source.Span for a CEL token given its start and end offsets within the CEL expression.
-// The exprLiteralSpan is the span of the string literal containing the CEL expression (including quotes).
-func createCELSpan(celStart, celEnd int32, exprLiteralSpan source.Span) source.Span {
-	// Check if this is a multi-line span (covers multiple string literals)
-	startLoc := exprLiteralSpan.StartLoc()
-	endLoc := exprLiteralSpan.EndLoc()
-	if startLoc.Line != endLoc.Line {
-		// Multi-line span - use special handling for concatenated literals
-		return createCELSpanMultiline(celStart, celEnd, exprLiteralSpan)
-	}
-
-	// For single-line literals, use simple offset calculation
-	literalText := exprLiteralSpan.Text()
-	if len(literalText) < 2 {
-		return source.Span{}
-	}
-
-	// Calculate offset from start of file
-	// exprLiteralSpan.Start is the byte offset of the opening quote
-	// Add 1 for the quote, then add the CEL offset
-	fileStart := exprLiteralSpan.Start + 1 + int(celStart)
-	fileEnd := exprLiteralSpan.Start + 1 + int(celEnd)
-
-	// Validate bounds
-	if fileEnd > exprLiteralSpan.End {
-		return source.Span{}
-	}
-
-	return source.Span{File: exprLiteralSpan.File, Start: fileStart, End: fileEnd}
-}
-
-// createCELSpanMultiline handles CEL token spans for multi-line expressions.
-// Multi-line spans contain multiple quoted strings like: "first" "second"
-// CEL concatenates them into: "firstsecond"
-// This function maps CEL offsets back to file positions.
-func createCELSpanMultiline(celStart, celEnd int32, multilineSpan source.Span) source.Span {
-	spanText := multilineSpan.Text()
-	celPos := 0 // Current position in concatenated CEL string
-
-	// Walk through the span text, tracking both file position and CEL position
-	for i := 0; i < len(spanText); i++ {
-		if spanText[i] != '"' {
-			continue
-		}
-
-		// Found opening quote - scan the string content
-		i++
-		for i < len(spanText) && spanText[i] != '"' {
-			// Check if we've found the token start
-			if celPos == int(celStart) {
-				fileStart := multilineSpan.Start + i
-				fileEnd := fileStart + int(celEnd-celStart)
-				return source.Span{File: multilineSpan.File, Start: fileStart, End: fileEnd}
-			}
-			celPos++
-			i++
-		}
-	}
-
-	return source.Span{}
-}
-
 // collectMacroTokens processes CEL macro calls to highlight macro function names.
 // Macros like has(), all(), exists(), map(), filter() are expanded in the main AST,
 // but CEL preserves the original macro calls in sourceInfo.MacroCalls.
@@ -301,7 +238,7 @@ func collectMacroTokens(
 			funcEnd := funcStart + len(funcName)
 			if funcStart >= 0 && funcEnd <= len(exprString) {
 				if exprString[funcStart:funcEnd] == funcName {
-					tokenSpan := createCELSpan(int32(funcStart), int32(funcEnd), exprLiteralSpan)
+					tokenSpan := createCELSpan(funcStart, funcEnd, exprLiteralSpan)
 					if !tokenSpan.IsZero() {
 						collectToken(tokenSpan, semanticTypeMacro, 0, keyword.Unknown)
 					}
@@ -356,7 +293,7 @@ func walkCELExprWithVars(
 		}
 
 		if offsetRange, ok := offsetRanges[expr.Id]; ok {
-			tokenSpan = createCELSpan(offsetRange.Start, offsetRange.Stop, exprLiteralSpan)
+			tokenSpan = createCELSpan(int(offsetRange.Start), int(offsetRange.Stop), exprLiteralSpan)
 			if !tokenSpan.IsZero() {
 				collectToken(tokenSpan, tokenType, tokenModifier, keyword.Unknown)
 			}
@@ -397,7 +334,7 @@ func walkCELExprWithVars(
 		if _, isOperator := celOperatorSymbol(funcName); isOperator {
 			// This is an operator - use offset ranges from CEL's native AST
 			if offsetRange, ok := offsetRanges[expr.Id]; ok {
-				tokenSpan = createCELSpan(offsetRange.Start, offsetRange.Stop, exprLiteralSpan)
+				tokenSpan = createCELSpan(int(offsetRange.Start), int(offsetRange.Stop), exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeOperator, 0, keyword.Unknown)
 				}
@@ -411,7 +348,7 @@ func walkCELExprWithVars(
 			if isCELMacroFunction(funcName) {
 				// Macro functions (has, all, exists, map, filter)
 				tokenType = semanticTypeMacro
-			} else if isCELBuiltinTypeFunction(funcName) {
+			} else if overloads.IsTypeConversionFunction(funcName) {
 				// Built-in type conversion functions (int, uint, string, etc.)
 				tokenType = semanticTypeType
 				tokenModifier = semanticModifierDefaultLibrary
@@ -438,7 +375,7 @@ func walkCELExprWithVars(
 				funcEnd := funcStart + len(funcName)
 				if funcStart >= 0 && funcEnd <= len(exprString) {
 					if exprString[funcStart:funcEnd] == funcName {
-						tokenSpan = createCELSpan(int32(funcStart), int32(funcEnd), exprLiteralSpan)
+						tokenSpan = createCELSpan(funcStart, funcEnd, exprLiteralSpan)
 						if !tokenSpan.IsZero() {
 							collectToken(tokenSpan, tokenType, tokenModifier, keyword.Unknown)
 						}
@@ -460,7 +397,7 @@ func walkCELExprWithVars(
 		case *exprpb.Constant_StringValue:
 			// String literal - use offset ranges from CEL's native AST
 			if offsetRange, ok := offsetRanges[expr.Id]; ok {
-				tokenSpan = createCELSpan(offsetRange.Start, offsetRange.Stop, exprLiteralSpan)
+				tokenSpan = createCELSpan(int(offsetRange.Start), int(offsetRange.Stop), exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeString, 0, keyword.Unknown)
 				}
@@ -469,7 +406,7 @@ func walkCELExprWithVars(
 		case *exprpb.Constant_Int64Value, *exprpb.Constant_Uint64Value, *exprpb.Constant_DoubleValue:
 			// Number literal - use offset ranges from CEL's native AST
 			if offsetRange, ok := offsetRanges[expr.Id]; ok {
-				tokenSpan = createCELSpan(offsetRange.Start, offsetRange.Stop, exprLiteralSpan)
+				tokenSpan = createCELSpan(int(offsetRange.Start), int(offsetRange.Stop), exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeNumber, 0, keyword.Unknown)
 				}
@@ -478,7 +415,7 @@ func walkCELExprWithVars(
 		case *exprpb.Constant_BoolValue:
 			// Boolean literal - use offset ranges from CEL's native AST
 			if offsetRange, ok := offsetRanges[expr.Id]; ok {
-				tokenSpan = createCELSpan(offsetRange.Start, offsetRange.Stop, exprLiteralSpan)
+				tokenSpan = createCELSpan(int(offsetRange.Start), int(offsetRange.Stop), exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeKeyword, 0, keyword.Unknown)
 				}
@@ -547,86 +484,4 @@ func walkCELExprWithVars(
 			walkCELExprWithVars(comp.Result, sourceInfo, offsetRanges, exprLiteralSpan, exprString, collectToken, extendedVars)
 		}
 	}
-}
-
-// isCELKeyword returns true if the identifier is a CEL reserved keyword.
-// See https://github.com/google/cel-spec/blob/master/doc/langdef.md#syntax
-func isCELKeyword(name string) bool {
-	keywords := map[string]bool{
-		// Literals
-		"true":  true,
-		"false": true,
-		"null":  true,
-		// Special identifiers
-		"this": true,
-	}
-	return keywords[name]
-}
-
-// isCELBuiltinTypeFunction returns true if the function name is a CEL built-in type conversion function.
-// See https://github.com/google/cel-spec/blob/master/doc/langdef.md#gradual-type-checking
-func isCELBuiltinTypeFunction(funcName string) bool {
-	builtins := map[string]bool{
-		"int":       true,
-		"uint":      true,
-		"double":    true,
-		"bool":      true,
-		"string":    true,
-		"bytes":     true,
-		"duration":  true,
-		"timestamp": true,
-		"dyn":       true,
-		"type":      true,
-	}
-	return builtins[funcName]
-}
-
-// isCELMacroFunction returns true if the function name is a CEL macro (comprehension or special function).
-// See https://github.com/google/cel-spec/blob/master/doc/langdef.md#macros
-func isCELMacroFunction(funcName string) bool {
-	return funcName == operators.Has ||
-		funcName == operators.All ||
-		funcName == operators.Exists ||
-		funcName == operators.ExistsOne ||
-		funcName == operators.Map ||
-		funcName == operators.Filter
-	// Note: "size" is intentionally excluded as it's more commonly used as a method
-}
-
-// celOperatorSymbol maps CEL operator function names to their operator symbols.
-// CEL represents operators as function calls with names like _&&_, _||_, _>_, etc.
-// Returns the operator symbol and true if the function name represents an operator.
-// See https://github.com/google/cel-spec/blob/master/doc/langdef.md#operators
-func celOperatorSymbol(funcName string) (string, bool) {
-	// Use cel-go's operators.FindReverse to get the display symbol
-	if symbol, found := operators.FindReverse(funcName); found {
-		return symbol, true
-	}
-
-	// Special case: ternary operator doesn't have a text representation in FindReverse
-	// We highlight the '?' part of the ternary operator
-	if funcName == operators.Conditional {
-		return "?", true
-	}
-
-	return "", false
-}
-
-// findNameAfterDot searches for ".name" after targetOffset and returns the span of just the name (without the dot).
-// Returns zero span if not found.
-func findNameAfterDot(
-	targetOffset int32,
-	name string,
-	exprString string,
-	exprLiteralSpan source.Span,
-) source.Span {
-	searchStart := int(targetOffset)
-	searchRegion := exprString[searchStart:]
-
-	if idx := strings.Index(searchRegion, "."+name); idx >= 0 {
-		nameStart := searchStart + idx + 1 // +1 to skip the dot
-		nameEnd := nameStart + len(name)
-		return createCELSpan(int32(nameStart), int32(nameEnd), exprLiteralSpan)
-	}
-	return source.Span{}
 }
