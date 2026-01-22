@@ -76,6 +76,82 @@ func TestFormatting(t *testing.T) {
 	}
 }
 
+func TestOnTypeFormatting(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+
+	tests := []struct {
+		name        string
+		protoFile   string
+		triggerChar string
+		position    protocol.Position
+		expectEdits bool
+	}{
+		{
+			name:        "format_on_closing_brace",
+			protoFile:   "unformatted.proto",
+			triggerChar: "}",
+			position: protocol.Position{
+				Line:      9, // After the Product message closing brace
+				Character: 1,
+			},
+			expectEdits: true,
+		},
+		{
+			name:        "format_on_semicolon",
+			protoFile:   "unformatted.proto",
+			triggerChar: ";",
+			position: protocol.Position{
+				Line:      7, // After "string name = 1;"
+				Character: 20,
+			},
+			expectEdits: true,
+		},
+		{
+			name:        "no_format_needed",
+			protoFile:   "formatted.proto",
+			triggerChar: "}",
+			position: protocol.Position{
+				Line:      6,
+				Character: 1,
+			},
+			expectEdits: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			testProtoPath, err := filepath.Abs(filepath.Join("testdata/format", tt.protoFile))
+			require.NoError(t, err)
+			clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
+			var textEdits []protocol.TextEdit
+			_, formatErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentOnTypeFormatting, protocol.DocumentOnTypeFormattingParams{
+				TextDocument: protocol.TextDocumentIdentifier{
+					URI: testURI,
+				},
+				Position: tt.position,
+				Ch:       tt.triggerChar,
+				Options: protocol.FormattingOptions{
+					TabSize:      2,
+					InsertSpaces: true,
+				},
+			}, &textEdits)
+			require.NoError(t, formatErr)
+
+			if tt.expectEdits {
+				assert.NotEmpty(t, textEdits, "Expected formatting edits but got none")
+				// Verify that the formatting produces the expected result
+				expectedFormatted := getExpectedFormattedContent(t, ctx, testProtoPath)
+				assert.Equal(t, expectedFormatted, textEdits[0].NewText, "Formatted text should match expected output")
+			} else {
+				assert.Empty(t, textEdits, "Expected no formatting edits but got some")
+			}
+		})
+	}
+}
+
 func getExpectedFormattedContent(t *testing.T, ctx context.Context, protoPath string) string {
 	t.Helper()
 	dir := filepath.Dir(protoPath)

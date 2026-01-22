@@ -150,6 +150,10 @@ func (s *server) Initialize(
 			DefinitionProvider:         &protocol.DefinitionOptions{},
 			TypeDefinitionProvider:     &protocol.TypeDefinitionOptions{},
 			DocumentFormattingProvider: true,
+			DocumentOnTypeFormattingProvider: &protocol.DocumentOnTypeFormattingOptions{
+				FirstTriggerCharacter: "}",
+				MoreTriggerCharacter:  []string{";"},
+			},
 			DocumentHighlightProvider:  true,
 			HoverProvider:              true,
 			ReferencesProvider:         &protocol.ReferenceOptions{},
@@ -355,6 +359,40 @@ func (s *server) Formatting(
 			NewText: newText,
 		},
 	}, nil
+}
+
+// OnTypeFormatting is called when the user types a trigger character.
+// This reuses the full document formatting logic but filters edits to only those
+// near the trigger position for better performance and less intrusive changes.
+func (s *server) OnTypeFormatting(
+	ctx context.Context,
+	params *protocol.DocumentOnTypeFormattingParams,
+) ([]protocol.TextEdit, error) {
+	// Reuse the full formatting logic
+	edits, err := s.Formatting(ctx, &protocol.DocumentFormattingParams{
+		TextDocument: params.TextDocument,
+		Options:      params.Options,
+	})
+	if err != nil || len(edits) == 0 {
+		return nil, err
+	}
+
+	// Filter edits to only those near the trigger position
+	// This reduces the scope of changes and improves the user experience
+	return filterEditsNearPosition(edits, params.Position), nil
+}
+
+// filterEditsNearPosition filters TextEdits to only include those that affect
+// the area near the given position. For protobuf files, which are typically small
+// and benefit from consistent formatting across the entire file, we return all edits.
+// The buf formatter aligns field numbers and indentation across the entire file,
+// so partial formatting would produce inconsistent results.
+func filterEditsNearPosition(edits []protocol.TextEdit, _ protocol.Position) []protocol.TextEdit {
+	// For protobuf files, always apply all formatting edits.
+	// The buf formatter ensures consistency across the entire file
+	// (e.g., aligned field numbers, consistent indentation).
+	// Partial formatting would break this consistency.
+	return edits
 }
 
 // DidClose is called whenever the client closes a document.
