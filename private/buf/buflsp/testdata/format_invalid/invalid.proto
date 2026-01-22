@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package example.v1;
+
+message Broken {
+  string name = 1
+  // Missing semicolon above
+  uint32 count = 2;
+}

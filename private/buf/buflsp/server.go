@@ -20,13 +20,9 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"unicode/utf16"
 
 	celpv "buf.build/go/protovalidate/cel"
 	"buf.build/go/standard/xslices"
-	"github.com/bufbuild/buf/private/buf/bufformat"
-	"github.com/bufbuild/protocompile/parser"
-	"github.com/bufbuild/protocompile/reporter"
 	"github.com/google/cel-go/cel"
 	"go.lsp.dev/protocol"
 	"mvdan.cc/xurls/v2"
@@ -145,12 +141,13 @@ func (s *server) Initialize(
 				ResolveProvider:   true,
 				TriggerCharacters: []string{".", "\"", "/"},
 			},
-			DefinitionProvider:         &protocol.DefinitionOptions{},
-			TypeDefinitionProvider:     &protocol.TypeDefinitionOptions{},
-			DocumentFormattingProvider: true,
-			DocumentHighlightProvider:  true,
-			HoverProvider:              true,
-			ReferencesProvider:         &protocol.ReferenceOptions{},
+			DefinitionProvider:              &protocol.DefinitionOptions{},
+			TypeDefinitionProvider:          &protocol.TypeDefinitionOptions{},
+			DocumentFormattingProvider:      true,
+			DocumentRangeFormattingProvider: true,
+			DocumentHighlightProvider:       true,
+			HoverProvider:                   true,
+			ReferencesProvider:              &protocol.ReferenceOptions{},
 			RenameProvider: &protocol.RenameOptions{
 				PrepareProvider: true,
 			},
@@ -264,62 +261,61 @@ func (s *server) Formatting(
 ) ([]protocol.TextEdit, error) {
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {
-		// Format for a file we don't know about? Seems bad!
 		return nil, fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
 	}
-	var errorsWithPos []reporter.ErrorWithPos
-	var warningErrorsWithPos []reporter.ErrorWithPos
-	handler := reporter.NewHandler(reporter.NewReporter(
-		func(errorWithPos reporter.ErrorWithPos) error {
-			errorsWithPos = append(errorsWithPos, errorWithPos)
-			return nil
-		},
-		func(errorWithPos reporter.ErrorWithPos) {
-			warningErrorsWithPos = append(warningErrorsWithPos, errorWithPos)
-		},
-	))
-	parsed, err := parser.Parse(file.uri.Filename(), strings.NewReader(file.file.Text()), handler)
-	if err == nil {
-		_, _ = parser.ResultFromAST(parsed, true, handler)
-	}
-	if len(errorsWithPos) > 0 {
-		return nil, fmt.Errorf("cannot format file %q, %v error(s) found", file.uri.Filename(), len(errorsWithPos))
-	}
-	// Currently we have no way to honor any of the parameters.
-	_ = params
-	if parsed == nil {
-		return nil, nil
-	}
-	var out strings.Builder
-	if err := bufformat.FormatFileNode(&out, parsed); err != nil {
+
+	edit, err := formatFullFile(file.file.Text(), file.uri.Filename())
+	if err != nil {
 		return nil, err
 	}
-	newText := out.String()
-	if newText == file.file.Text() {
+	if edit == nil {
+		return nil, nil
+	}
+	return []protocol.TextEdit{*edit}, nil
+}
+
+// RangeFormatting is called when the user requests formatting for a selected range.
+// We format the entire file to maintain consistency (aligned field numbers, etc.),
+// then return only the edit for the symbol-bounded range.
+func (s *server) RangeFormatting(
+	ctx context.Context,
+	params *protocol.DocumentRangeFormattingParams,
+) ([]protocol.TextEdit, error) {
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, fmt.Errorf("received format request for file that was not open: %q", params.TextDocument.URI)
+	}
+
+	fileText := file.file.Text()
+
+	// Parse the file to get the AST for range formatting
+	parsed, err := parseProtoFileSimple(file.uri.Filename(), fileText)
+	if err != nil {
+		return nil, err
+	}
+
+	// Clamp and convert range to offsets
+	rangeEnd := clampPositionToFile(file, params.Range.End)
+	startOffset := positionToOffset(file, params.Range.Start)
+	endOffset := positionToOffset(file, rangeEnd)
+
+	// Format the range
+	formattedSegment, origStart, origEnd, err := formatRange(
+		parsed, fileText, file.uri.Filename(),
+		startOffset, endOffset,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("formatting range: %w", err)
+	}
+	if formattedSegment == "" {
 		return nil, nil
 	}
 
-	// Calculate the end location for the file range.
-	endLine := strings.Count(file.file.Text(), "\n")
-	endCharacter := 0
-	for _, char := range file.file.Text()[strings.LastIndexByte(file.file.Text(), '\n')+1:] {
-		endCharacter += utf16.RuneLen(char)
-	}
-	return []protocol.TextEdit{
-		{
-			Range: protocol.Range{
-				Start: protocol.Position{
-					Line:      0,
-					Character: 0,
-				},
-				End: protocol.Position{
-					Line:      uint32(endLine),
-					Character: uint32(endCharacter),
-				},
-			},
-			NewText: newText,
-		},
-	}, nil
+	// Convert offsets back to positions
+	return []protocol.TextEdit{{
+		Range:   offsetsToRange(file, origStart, origEnd),
+		NewText: formattedSegment,
+	}}, nil
 }
 
 // DidClose is called whenever the client closes a document.

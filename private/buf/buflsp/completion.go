@@ -1771,12 +1771,6 @@ func offsetInSpan(offset int, span source.Span) int {
 	return 0
 }
 
-// positionToOffset returns the offset from the protocol position.
-func positionToOffset(file *file, position protocol.Position) int {
-	positionLocation := file.file.InverseLocation(int(position.Line)+1, int(position.Character)+1, positionalEncoding)
-	return positionLocation.Offset
-}
-
 // isProto2 returns true if the file has a syntax declaration of proto2.
 func isProto2(file *file) bool {
 	return file.ir.Syntax() == syntax.Proto2

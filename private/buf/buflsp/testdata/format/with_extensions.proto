@@ -1,0 +1,17 @@
+syntax = "proto2";
+
+package example.v1;
+
+message User {
+  optional string id = 1;
+  extensions 100 to 199;
+}
+
+extend User {
+optional string email = 100;
+    optional int32 age = 101;
+}
+
+message Product {
+  optional string name = 1;
+}

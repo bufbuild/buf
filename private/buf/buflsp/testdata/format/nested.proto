@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package example.v1;
+
+message Outer {
+  string outer_field = 1;
+
+  message Nested {
+      string nested_field = 1;
+        uint32 nested_number = 2;
+  }
+
+  Nested nested = 2;
+
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+      STATUS_ACTIVE = 1;
+  }
+
+  Status status = 3;
+}
