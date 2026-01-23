@@ -124,6 +124,7 @@ func setupLSPServer(
 	go func() {
 		conn, err := buflsp.Serve(
 			ctx,
+			"test",
 			wktBucket,
 			appextContainer,
 			controller,

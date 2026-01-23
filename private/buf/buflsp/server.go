@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"runtime/debug"
 	"strings"
 	"unicode/utf16"
 
@@ -93,9 +92,22 @@ func (s *server) Initialize(
 		return nil, err
 	}
 
-	info := &protocol.ServerInfo{Name: serverName}
-	if buildInfo, ok := debug.ReadBuildInfo(); ok {
-		info.Version = buildInfo.Main.Version
+	if params.ClientInfo != nil {
+		s.logger.Info(
+			"client attached",
+			"client_name", params.ClientInfo.Name,
+			"client_version", params.ClientInfo.Version,
+		)
+	}
+
+	// Set initial trace value, if provided.
+	if params.Trace != "" {
+		s.lsp.traceValue.Store(&params.Trace)
+	}
+
+	info := &protocol.ServerInfo{
+		Name:    serverName,
+		Version: s.lsp.bufVersion,
 	}
 
 	// The LSP protocol library doesn't actually provide SemanticTokensOptions
