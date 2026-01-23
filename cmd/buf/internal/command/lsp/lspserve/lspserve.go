@@ -120,6 +120,7 @@ func run(
 
 	conn, err := buflsp.Serve(
 		ctx,
+		bufcli.Version,
 		wktBucket,
 		container,
 		controller,

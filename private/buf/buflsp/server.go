@@ -107,7 +107,7 @@ func (s *server) Initialize(
 
 	info := &protocol.ServerInfo{
 		Name:    serverName,
-		Version: s.lsp.version,
+		Version: s.lsp.bufVersion,
 	}
 
 	// The LSP protocol library doesn't actually provide SemanticTokensOptions

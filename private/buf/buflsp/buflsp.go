@@ -27,7 +27,6 @@ import (
 
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xlog/xslog"
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/wasm"
@@ -44,6 +43,7 @@ import (
 // Returns a context for managing the server.
 func Serve(
 	ctx context.Context,
+	bufVersion string,
 	wktBucket storage.ReadBucket,
 	container appext.Container,
 	controller bufctl.Controller,
@@ -51,14 +51,13 @@ func Serve(
 	stream jsonrpc2.Stream,
 	queryExecutor *incremental.Executor,
 ) (jsonrpc2.Conn, error) {
-	// Get buf version - prefer build info, fall back to bufcli.Version
-	version := bufcli.Version
+	// Prefer build info version if available
 	if buildInfo, ok := debug.ReadBuildInfo(); ok && buildInfo.Main.Version != "" {
-		version = buildInfo.Main.Version
+		bufVersion = buildInfo.Main.Version
 	}
 
 	logger := container.Logger()
-	logger = logger.With(slog.String("buf_version", version))
+	logger = logger.With(slog.String("buf_version", bufVersion))
 	logger.Info("starting LSP server")
 
 	conn := jsonrpc2.NewConn(stream)
@@ -70,7 +69,7 @@ func Serve(
 		),
 		container:     container,
 		logger:        logger,
-		version:       version,
+		bufVersion:    bufVersion,
 		controller:    controller,
 		wasmRuntime:   wasmRuntime,
 		wktBucket:     wktBucket,
@@ -106,7 +105,7 @@ type lsp struct {
 	container appext.Container
 
 	logger           *slog.Logger
-	version          string // buf version, set at server creation
+	bufVersion       string // buf version, set at server creation
 	controller       bufctl.Controller
 	wasmRuntime      wasm.Runtime
 	fileManager      *fileManager
