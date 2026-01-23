@@ -55,20 +55,10 @@ func Serve(
 	if buildInfo, ok := debug.ReadBuildInfo(); ok && buildInfo.Main.Version != "" {
 		bufVersion = buildInfo.Main.Version
 	}
-
-	logger := container.Logger()
-	logger = logger.With(slog.String("buf_version", bufVersion))
-	logger.Info("starting LSP server")
-
 	conn := jsonrpc2.NewConn(stream)
 	lsp := &lsp{
-		conn: conn,
-		client: protocol.ClientDispatcher(
-			&connWrapper{Conn: conn, logger: logger},
-			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
-		),
+		conn:          conn,
 		container:     container,
-		logger:        logger,
 		bufVersion:    bufVersion,
 		controller:    controller,
 		wasmRuntime:   wasmRuntime,
@@ -81,6 +71,18 @@ func Serve(
 	lsp.workspaceManager = newWorkspaceManager(lsp)
 	off := protocol.TraceOff
 	lsp.traceValue.Store(&off)
+	// Set up trace handler to forward logs to the client when tracing is enabled.
+	// The trace handler wraps the existing logger's handler and sends $/logTrace
+	// notifications to the client based on the trace level.
+	logger := container.Logger()
+	traceHandler := newTraceHandler(logger.Handler(), conn, &lsp.traceValue)
+	logger = slog.New(traceHandler)
+	logger = logger.With(slog.String("buf_version", bufVersion))
+	lsp.logger = logger
+	lsp.client = protocol.ClientDispatcher(
+		&connWrapper{Conn: conn, logger: logger},
+		zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
+	)
 
 	handler, err := lsp.newHandler()
 	if err != nil {
@@ -133,11 +135,11 @@ func (l *lsp) init(_ context.Context, params *protocol.InitializeParams) error {
 	if l.initParams.Load() != nil {
 		return fmt.Errorf("called the %q method more than once", protocol.MethodInitialize)
 	}
+	// Set initial trace value, if provided.
 	l.initParams.Store(params)
-
-	// TODO: set up logging. We need to forward everything from server.logger through to
-	// the client, if tracing is turned on. The right way to do this is with an extra
-	// goroutine and some channels.
+	if params.Trace != "" {
+		l.traceValue.Store(&params.Trace)
+	}
 
 	return nil
 }

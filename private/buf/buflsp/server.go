@@ -100,11 +100,6 @@ func (s *server) Initialize(
 		)
 	}
 
-	// Set initial trace value, if provided.
-	if params.Trace != "" {
-		s.lsp.traceValue.Store(&params.Trace)
-	}
-
 	info := &protocol.ServerInfo{
 		Name:    serverName,
 		Version: s.lsp.bufVersion,
