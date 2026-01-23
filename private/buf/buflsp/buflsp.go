@@ -21,11 +21,13 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xlog/xslog"
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/wasm"
@@ -49,15 +51,26 @@ func Serve(
 	stream jsonrpc2.Stream,
 	queryExecutor *incremental.Executor,
 ) (jsonrpc2.Conn, error) {
+	// Get buf version - prefer build info, fall back to bufcli.Version
+	version := bufcli.Version
+	if buildInfo, ok := debug.ReadBuildInfo(); ok && buildInfo.Main.Version != "" {
+		version = buildInfo.Main.Version
+	}
+
+	logger := container.Logger()
+	logger = logger.With(slog.String("buf_version", version))
+	logger.Info("starting LSP server")
+
 	conn := jsonrpc2.NewConn(stream)
 	lsp := &lsp{
 		conn: conn,
 		client: protocol.ClientDispatcher(
-			&connWrapper{Conn: conn, logger: container.Logger()},
+			&connWrapper{Conn: conn, logger: logger},
 			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
 		container:     container,
-		logger:        container.Logger(),
+		logger:        logger,
+		version:       version,
 		controller:    controller,
 		wasmRuntime:   wasmRuntime,
 		wktBucket:     wktBucket,
@@ -93,6 +106,7 @@ type lsp struct {
 	container appext.Container
 
 	logger           *slog.Logger
+	version          string // buf version, set at server creation
 	controller       bufctl.Controller
 	wasmRuntime      wasm.Runtime
 	fileManager      *fileManager
