@@ -352,7 +352,6 @@ func newRootCommand(name string) *appcmd.Command {
 					{
 						Use:    "policy",
 						Short:  "Manage BSR policies",
-						Hidden: true,
 						SubCommands: []*appcmd.Command{
 							{
 								Use:   "commit",
