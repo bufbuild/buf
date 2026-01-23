@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `buf registry policy {commit,create,delete,info,label,settings}` commands to manage BSR policies.
 
 ## [v1.64.0] - 2026-01-19
 
