@@ -214,6 +214,10 @@ func examineExtend(statsBuilder *statsBuilder, extendNode *ast.ExtendNode) {
 }
 
 func isDeprecated(node ast.NodeWithOptions) bool {
+	// GroupNode's Options can be nil.
+	if groupNode, ok := node.(*ast.GroupNode); ok && groupNode.Options == nil {
+		return false
+	}
 	deprecated := false
 	node.RangeOptions(func(opt *ast.OptionNode) bool {
 		// Check if this is the "deprecated" option (simple name, not extension)

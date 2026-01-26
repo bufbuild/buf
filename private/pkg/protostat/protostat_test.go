@@ -120,6 +120,19 @@ func TestGetStatsDeprecatedTypes(t *testing.T) {
 			expectedDeprecatedTypes: 1, // MyGroup
 		},
 		{
+			name: "group without options",
+			content: `
+				syntax = "proto2";
+				message Foo {
+					optional group MyGroup = 1 {
+						optional string name = 2;
+					}
+				}
+			`,
+			expectedTypes:           2,
+			expectedDeprecatedTypes: 0,
+		},
+		{
 			name: "all nested types deprecated",
 			content: `
 				syntax = "proto3";
