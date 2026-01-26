@@ -4,10 +4,10 @@ buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go v1.36.11-2025010916
 buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go v1.36.11-20250109164928-1da0de137947.1/go.mod h1:8PRKXhgNes29Tjrnv8KdZzg3I1QceOkzibW1QK7EXv0=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20251209175733-2a1774d88802.1 h1:j9yeqTWEFrtimt8Nng2MIeRrpoCvQzM9/g25XTvqUGg=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20251209175733-2a1774d88802.1/go.mod h1:tvtbpgaVXZX4g6Pn+AnzFycuRK3MOz5HJfEGeEllXYM=
-buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.1-20260122161138-ab4e39a3c3bc.2 h1:cMzWbIukJ5uk1M58CtqmBE7Ojacg/t2nAg4AbS78uX8=
-buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.1-20260122161138-ab4e39a3c3bc.2/go.mod h1:GL3rFhQQsaI3PCBa0y5X71UHs6q5E/Xf9Q8WXBxE7a8=
-buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260122161138-ab4e39a3c3bc.1 h1:yWmrELGX6l1GphG9kPVcrMQLjWfXGI5bLDxwE+SfbDw=
-buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260122161138-ab4e39a3c3bc.1/go.mod h1:1JJi9jvOqRxSMa+JxiZSm57doB+db/1WYCIa2lHfc40=
+buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.1-20260126144947-819582968857.2 h1:XPrWCd9ydEo5Ofv1aNJVJaxndMXLQjRO9vVzsJG3jL8=
+buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.1-20260126144947-819582968857.2/go.mod h1:mpsjeEaxOYPIJV2cz4IagLghZufRvx+NPVtInjEeoQ8=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260126144947-819582968857.1 h1:Yreby6Ypa58wdQUEm9Fnc5g8n/jP487Dq3aK5yBYwfk=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260126144947-819582968857.1/go.mod h1:1JJi9jvOqRxSMa+JxiZSm57doB+db/1WYCIa2lHfc40=
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.11-20241007202033-cf42259fcbfc.1 h1:iGPvEJltOXUMANWf0zajcRcbiOXLD90ZwPUFvbcuv6Q=
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.11-20241007202033-cf42259fcbfc.1/go.mod h1:nWVKKRA29zdt4uvkjka3i/y4mkrswyWwiu0TbdX0zts=
 buf.build/go/app v0.2.0 h1:NYaH13A+RzPb7M5vO8uZYZ2maBZI5+MS9A9tQm66fy8=
