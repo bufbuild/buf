@@ -126,7 +126,7 @@ func (s *server) Initialize(
 			CodeActionProvider: &protocol.CodeActionOptions{
 				CodeActionKinds: []protocol.CodeActionKind{
 					protocol.SourceOrganizeImports,
-					CodeActionKindSourceDeprecate,
+					protocol.RefactorRewrite,
 				},
 			},
 			CompletionProvider: &protocol.CompletionOptions{
@@ -495,7 +495,7 @@ func (s *server) CodeAction(ctx context.Context, params *protocol.CodeActionPara
 			actions = append(actions, *organizeImportsAction)
 		}
 	}
-	if _, ok := codeActionSet[CodeActionKindSourceDeprecate]; len(codeActionSet) == 0 || ok {
+	if _, ok := codeActionSet[protocol.RefactorRewrite]; len(codeActionSet) == 0 || ok {
 		if deprecateAction := s.getDeprecateCodeAction(ctx, file, params); deprecateAction != nil {
 			actions = append(actions, *deprecateAction)
 		}

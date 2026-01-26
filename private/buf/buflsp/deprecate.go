@@ -29,9 +29,6 @@ import (
 	"go.lsp.dev/protocol"
 )
 
-// CodeActionKindSourceDeprecate is the custom code action kind for deprecation.
-const CodeActionKindSourceDeprecate protocol.CodeActionKind = "source.deprecate"
-
 // getDeprecateCodeAction generates a code action for deprecating the symbol at the given range.
 // It returns nil if no deprecation action is available for the position.
 func (s *server) getDeprecateCodeAction(
@@ -82,7 +79,7 @@ func (s *server) getDeprecateCodeAction(
 	)
 	return &protocol.CodeAction{
 		Title: title,
-		Kind:  CodeActionKindSourceDeprecate,
+		Kind:  protocol.RefactorRewrite,
 		Edit:  &protocol.WorkspaceEdit{Changes: edits},
 	}
 }

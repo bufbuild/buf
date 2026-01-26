@@ -18,7 +18,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
@@ -409,7 +408,7 @@ func testCodeActionDeprecate(
 			},
 			Context: protocol.CodeActionContext{
 				Only: []protocol.CodeActionKind{
-					buflsp.CodeActionKindSourceDeprecate,
+					protocol.RefactorRewrite,
 				},
 			},
 		}, &codeActions)
@@ -418,7 +417,7 @@ func testCodeActionDeprecate(
 		// Find the deprecate code action
 		var deprecateAction *protocol.CodeAction
 		for _, codeAction := range codeActions {
-			if codeAction.Kind == buflsp.CodeActionKindSourceDeprecate {
+			if codeAction.Kind == protocol.RefactorRewrite {
 				deprecateAction = &codeAction
 				break
 			}
@@ -432,7 +431,7 @@ func testCodeActionDeprecate(
 
 		require.NotNil(t, deprecateAction, "expected deprecate code action, got none")
 		assert.Equal(t, expectedTitle, deprecateAction.Title)
-		assert.Equal(t, buflsp.CodeActionKindSourceDeprecate, deprecateAction.Kind)
+		assert.Equal(t, protocol.RefactorRewrite, deprecateAction.Kind)
 
 		require.NotNil(t, deprecateAction.Edit, "code action should have workspace edit")
 		require.NotNil(t, deprecateAction.Edit.Changes, "workspace edit should have changes")
@@ -475,7 +474,7 @@ func testCodeActionDeprecateNoEdit(
 			},
 			Context: protocol.CodeActionContext{
 				Only: []protocol.CodeActionKind{
-					buflsp.CodeActionKindSourceDeprecate,
+					protocol.RefactorRewrite,
 				},
 			},
 		}, &codeActions)
@@ -484,7 +483,7 @@ func testCodeActionDeprecateNoEdit(
 		// Find the deprecate code action
 		var deprecateAction *protocol.CodeAction
 		for _, codeAction := range codeActions {
-			if codeAction.Kind == buflsp.CodeActionKindSourceDeprecate {
+			if codeAction.Kind == protocol.RefactorRewrite {
 				deprecateAction = &codeAction
 				break
 			}
