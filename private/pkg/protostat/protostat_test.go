@@ -27,10 +27,12 @@ import (
 func TestGetStatsDeprecatedTypes(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
-		name                    string
-		content                 string
-		expectedTypes           int
-		expectedDeprecatedTypes int
+		name                       string
+		content                    string
+		expectedTypes              int
+		expectedDeprecatedMessages int
+		expectedDeprecatedEnums    int
+		expectedDeprecatedRPCs     int
 	}{
 		{
 			name: "no deprecated types",
@@ -39,8 +41,10 @@ func TestGetStatsDeprecatedTypes(t *testing.T) {
 				message Foo {}
 				enum Bar { BAR_UNSPECIFIED = 0; }
 			`,
-			expectedTypes:           2,
-			expectedDeprecatedTypes: 0,
+			expectedTypes:              2,
+			expectedDeprecatedMessages: 0,
+			expectedDeprecatedEnums:    0,
+			expectedDeprecatedRPCs:     0,
 		},
 		{
 			name: "deprecated message",
@@ -51,8 +55,10 @@ func TestGetStatsDeprecatedTypes(t *testing.T) {
 				}
 				message Bar {}
 			`,
-			expectedTypes:           2,
-			expectedDeprecatedTypes: 1,
+			expectedTypes:              2,
+			expectedDeprecatedMessages: 1,
+			expectedDeprecatedEnums:    0,
+			expectedDeprecatedRPCs:     0,
 		},
 		{
 			name: "deprecated enum",
@@ -63,8 +69,10 @@ func TestGetStatsDeprecatedTypes(t *testing.T) {
 					STATUS_UNSPECIFIED = 0;
 				}
 			`,
-			expectedTypes:           1,
-			expectedDeprecatedTypes: 1,
+			expectedTypes:              1,
+			expectedDeprecatedMessages: 0,
+			expectedDeprecatedEnums:    1,
+			expectedDeprecatedRPCs:     0,
 		},
 		{
 			name: "deprecated RPC",
@@ -78,8 +86,25 @@ func TestGetStatsDeprecatedTypes(t *testing.T) {
 					}
 				}
 			`,
-			expectedTypes:           3,
-			expectedDeprecatedTypes: 1,
+			expectedTypes:              3,
+			expectedDeprecatedMessages: 0,
+			expectedDeprecatedEnums:    0,
+			expectedDeprecatedRPCs:     1,
+		},
+		{
+			name: "RPC without options",
+			content: `
+				syntax = "proto3";
+				message Request {}
+				message Response {}
+				service MyService {
+					rpc GetData(Request) returns (Response);
+				}
+			`,
+			expectedTypes:              3,
+			expectedDeprecatedMessages: 0,
+			expectedDeprecatedEnums:    0,
+			expectedDeprecatedRPCs:     0,
 		},
 		{
 			name: "nested deprecated message",
@@ -91,8 +116,10 @@ func TestGetStatsDeprecatedTypes(t *testing.T) {
 					}
 				}
 			`,
-			expectedTypes:           2,
-			expectedDeprecatedTypes: 1,
+			expectedTypes:              2,
+			expectedDeprecatedMessages: 1,
+			expectedDeprecatedEnums:    0,
+			expectedDeprecatedRPCs:     0,
 		},
 		{
 			name: "outer deprecated but nested not",
@@ -103,8 +130,10 @@ func TestGetStatsDeprecatedTypes(t *testing.T) {
 					message Inner {}
 				}
 			`,
-			expectedTypes:           2,
-			expectedDeprecatedTypes: 1,
+			expectedTypes:              2,
+			expectedDeprecatedMessages: 1,
+			expectedDeprecatedEnums:    0,
+			expectedDeprecatedRPCs:     0,
 		},
 		{
 			name: "deprecated group",
@@ -116,8 +145,10 @@ func TestGetStatsDeprecatedTypes(t *testing.T) {
 					}
 				}
 			`,
-			expectedTypes:           2, // Foo, MyGroup (group is also a message type)
-			expectedDeprecatedTypes: 1, // MyGroup
+			expectedTypes:              2, // Foo, MyGroup (group is also a message type)
+			expectedDeprecatedMessages: 1, // MyGroup
+			expectedDeprecatedEnums:    0,
+			expectedDeprecatedRPCs:     0,
 		},
 		{
 			name: "group without options",
@@ -129,8 +160,10 @@ func TestGetStatsDeprecatedTypes(t *testing.T) {
 					}
 				}
 			`,
-			expectedTypes:           2,
-			expectedDeprecatedTypes: 0,
+			expectedTypes:              2,
+			expectedDeprecatedMessages: 0,
+			expectedDeprecatedEnums:    0,
+			expectedDeprecatedRPCs:     0,
 		},
 		{
 			name: "all nested types deprecated",
@@ -147,8 +180,10 @@ func TestGetStatsDeprecatedTypes(t *testing.T) {
 					}
 				}
 			`,
-			expectedTypes:           3,
-			expectedDeprecatedTypes: 3,
+			expectedTypes:              3,
+			expectedDeprecatedMessages: 2, // Outer, Inner
+			expectedDeprecatedEnums:    1, // Status
+			expectedDeprecatedRPCs:     0,
 		},
 		{
 			name: "all types deprecated",
@@ -169,8 +204,10 @@ func TestGetStatsDeprecatedTypes(t *testing.T) {
 					}
 				}
 			`,
-			expectedTypes:           5, // Foo, Bar, Request, Response, RPC
-			expectedDeprecatedTypes: 3, // Foo, Bar, RPC
+			expectedTypes:              5, // Foo, Bar, Request, Response, RPC
+			expectedDeprecatedMessages: 1, // Foo
+			expectedDeprecatedEnums:    1, // Bar
+			expectedDeprecatedRPCs:     1, // RPC
 		},
 	}
 
@@ -181,7 +218,9 @@ func TestGetStatsDeprecatedTypes(t *testing.T) {
 			stats, err := GetStats(context.Background(), walker)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedTypes, stats.Types, "Types count mismatch")
-			assert.Equal(t, tc.expectedDeprecatedTypes, stats.DeprecatedTypes, "DeprecatedTypes count mismatch")
+			assert.Equal(t, tc.expectedDeprecatedMessages, stats.DeprecatedMessages, "DeprecatedMessages count mismatch")
+			assert.Equal(t, tc.expectedDeprecatedEnums, stats.DeprecatedEnums, "DeprecatedEnums count mismatch")
+			assert.Equal(t, tc.expectedDeprecatedRPCs, stats.DeprecatedRPCs, "DeprecatedRPCs count mismatch")
 		})
 	}
 }
@@ -210,8 +249,10 @@ func TestGetStatsMultipleFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, 2, stats.Files)
-	assert.Equal(t, 3, stats.Types) // DeprecatedFoo, DeprecatedBar, DeprecatedEnum
-	assert.Equal(t, 3, stats.DeprecatedTypes)
+	assert.Equal(t, 3, stats.Types)              // DeprecatedFoo, DeprecatedBar, DeprecatedEnum
+	assert.Equal(t, 2, stats.DeprecatedMessages) // DeprecatedFoo, DeprecatedBar
+	assert.Equal(t, 1, stats.DeprecatedEnums)    // DeprecatedEnum
+	assert.Equal(t, 0, stats.DeprecatedRPCs)
 }
 
 // testFileWalker is a mock FileWalker that provides proto content from strings.
@@ -231,35 +272,41 @@ func (w *testFileWalker) Walk(ctx context.Context, f func(io.Reader) error) erro
 func TestMergeStats(t *testing.T) {
 	t.Parallel()
 	stats1 := &Stats{
-		Files:           2,
-		Types:           10,
-		DeprecatedTypes: 5,
-		Messages:        5,
-		Fields:          10,
-		Enums:           3,
-		EnumValues:      9,
-		Services:        2,
-		RPCs:            4,
-		Extensions:      3,
+		Files:              2,
+		Types:              10,
+		DeprecatedMessages: 3,
+		DeprecatedEnums:    1,
+		DeprecatedRPCs:     1,
+		Messages:           5,
+		Fields:             10,
+		Enums:              3,
+		EnumValues:         9,
+		Services:           2,
+		RPCs:               4,
+		Extensions:         3,
 	}
 	stats2 := &Stats{
-		Files:           1,
-		Types:           6,
-		DeprecatedTypes: 3,
-		Messages:        3,
-		Fields:          6,
-		Enums:           2,
-		EnumValues:      6,
-		Services:        1,
-		RPCs:            1,
-		Extensions:      2,
+		Files:              1,
+		Types:              6,
+		DeprecatedMessages: 2,
+		DeprecatedEnums:    1,
+		DeprecatedRPCs:     0,
+		Messages:           3,
+		Fields:             6,
+		Enums:              2,
+		EnumValues:         6,
+		Services:           1,
+		RPCs:               1,
+		Extensions:         2,
 	}
 
 	merged := MergeStats(stats1, stats2)
 
 	assert.Equal(t, 3, merged.Files)
 	assert.Equal(t, 16, merged.Types)
-	assert.Equal(t, 8, merged.DeprecatedTypes)
+	assert.Equal(t, 5, merged.DeprecatedMessages)
+	assert.Equal(t, 2, merged.DeprecatedEnums)
+	assert.Equal(t, 1, merged.DeprecatedRPCs)
 	assert.Equal(t, 8, merged.Messages)
 	assert.Equal(t, 16, merged.Fields)
 	assert.Equal(t, 5, merged.Enums)
