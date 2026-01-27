@@ -70,9 +70,9 @@ type formatter struct {
 	err error
 
 	// deprecation tracks which types should have deprecated options injected.
-	deprecation *deprecationChecker
-	// packageFQN holds the current package's fully-qualified name components.
-	packageFQN []string
+	deprecation *fullNameMatcher
+	// packageFQN holds the current fully-qualified name.
+	packageFQN string
 	// injectCompactDeprecation is set when the next compact options should have
 	// deprecated = true injected at the beginning.
 	injectCompactDeprecation bool
@@ -90,7 +90,7 @@ func newFormatter(
 		overrideTrailingComments: map[ast.Node]ast.Comments{},
 	}
 	if options != nil && len(options.deprecatePrefixes) > 0 {
-		f.deprecation = newDeprecationChecker(options.deprecatePrefixes)
+		f.deprecation = newFullNameMatcher(options.deprecatePrefixes...)
 	}
 	return f
 }
@@ -262,7 +262,7 @@ func (f *formatter) writeFileHeader() {
 	}
 	// Extract package FQN for deprecation tracking
 	if packageNode != nil {
-		f.packageFQN = packageNameToComponents(packageNode.Name)
+		f.packageFQN = packageNameToString(packageNode.Name)
 	}
 	if f.fileNode.Syntax == nil && f.fileNode.Edition == nil &&
 		packageNode == nil && importNodes == nil && optionNodes == nil {
@@ -936,8 +936,7 @@ func (f *formatter) writeEnumValue(enumValueNode *ast.EnumValueNode) {
 	// Check if we need to inject deprecation for this enum value (exact match only)
 	// Enum values are scoped to their parent (message or package), NOT the enum itself.
 	// So we use the parent FQN (without the enum name) + the enum value name.
-	parentFQN := f.packageFQN[:len(f.packageFQN)-1]
-	enumValueFQN := append(parentFQN[:len(parentFQN):len(parentFQN)], enumValueNode.Name.Val)
+	enumValueFQN := parentFQN(f.packageFQN) + "." + enumValueNode.Name.Val
 	needsDeprecation := f.shouldInjectDeprecationExact(enumValueFQN) &&
 		!hasCompactDeprecatedOption(enumValueNode.Options)
 	if enumValueNode.Options != nil {
@@ -990,7 +989,7 @@ func (f *formatter) writeField(fieldNode *ast.FieldNode) {
 		f.writeInline(fieldNode.Tag)
 	}
 	// Check if we need to inject deprecation for this field (exact match only)
-	fieldFQN := append(f.currentFQN(), fieldNode.Name.Val)
+	fieldFQN := f.currentFQN() + "." + fieldNode.Name.Val
 	needsDeprecation := f.shouldInjectDeprecationExact(fieldFQN) &&
 		!hasCompactDeprecatedOption(fieldNode.Options)
 	if fieldNode.Options != nil {
@@ -2628,35 +2627,39 @@ func (f *formatter) writeDeprecatedOption() {
 	f.P("")
 }
 
-// currentFQN returns the current fully-qualified name by combining package and type path.
-func (f *formatter) currentFQN() []string {
+// currentFQN returns the current fully-qualified name.
+func (f *formatter) currentFQN() string {
 	return f.packageFQN
 }
 
 // pushFQN appends a name component to the current FQN and returns a function to restore it.
 func (f *formatter) pushFQN(name string) func() {
-	originalLen := len(f.packageFQN)
-	f.packageFQN = append(f.packageFQN, name)
+	original := f.packageFQN
+	if f.packageFQN == "" {
+		f.packageFQN = name
+	} else {
+		f.packageFQN = f.packageFQN + "." + name
+	}
 	return func() {
-		f.packageFQN = f.packageFQN[:originalLen]
+		f.packageFQN = original
 	}
 }
 
 // shouldInjectDeprecation returns true if the given FQN should have a deprecated option injected.
-func (f *formatter) shouldInjectDeprecation(fqn []string) bool {
-	if f.deprecation == nil || f.deprecation.isEmpty() {
+func (f *formatter) shouldInjectDeprecation(fqn string) bool {
+	if f.deprecation == nil {
 		return false
 	}
-	return f.deprecation.shouldDeprecate(fqn)
+	return f.deprecation.matchesPrefix(fqn)
 }
 
 // shouldInjectDeprecationExact returns true if the given FQN should have a deprecated option
 // injected using exact matching (for fields and enum values).
-func (f *formatter) shouldInjectDeprecationExact(fqn []string) bool {
-	if f.deprecation == nil || f.deprecation.isEmpty() {
+func (f *formatter) shouldInjectDeprecationExact(fqn string) bool {
+	if f.deprecation == nil {
 		return false
 	}
-	return f.deprecation.shouldDeprecateExact(fqn)
+	return f.deprecation.matchesExact(fqn)
 }
 
 // writeCompactDeprecatedOption writes " [deprecated = true]" for compact options.
