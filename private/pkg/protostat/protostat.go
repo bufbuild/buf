@@ -30,14 +30,16 @@ import (
 type Stats struct {
 	Files                 int `json:"files" yaml:"files"`
 	Types                 int `json:"types" yaml:"types"`
-	DeprecatedTypes       int `json:"deprecated_types" yaml:"deprecated_types"`
 	Packages              int `json:"packages" yaml:"packages"`
 	Messages              int `json:"messages" yaml:"messages"`
+	DeprecatedMessages    int `json:"deprecated_messages" yaml:"deprecated_messages"`
 	Fields                int `json:"fields" yaml:"fields"`
 	Enums                 int `json:"enums" yaml:"enums"`
+	DeprecatedEnums       int `json:"deprecated_enums" yaml:"deprecated_enums"`
 	EnumValues            int `json:"evalues" yaml:"evalues"`
 	Services              int `json:"services" yaml:"services"`
 	RPCs                  int `json:"rpcs" yaml:"rpcs"`
+	DeprecatedRPCs        int `json:"deprecated_rpcs" yaml:"deprecated_rpcs"`
 	Extensions            int `json:"extensions" yaml:"extensions"`
 	FilesWithSyntaxErrors int `json:"-" yaml:"-"`
 }
@@ -99,13 +101,15 @@ func MergeStats(statsSlice ...*Stats) *Stats {
 		resultStats.FilesWithSyntaxErrors += stats.FilesWithSyntaxErrors
 		resultStats.Packages += stats.Packages
 		resultStats.Types += stats.Types
-		resultStats.DeprecatedTypes += stats.DeprecatedTypes
 		resultStats.Messages += stats.Messages
+		resultStats.DeprecatedMessages += stats.DeprecatedMessages
 		resultStats.Fields += stats.Fields
 		resultStats.Enums += stats.Enums
+		resultStats.DeprecatedEnums += stats.DeprecatedEnums
 		resultStats.EnumValues += stats.EnumValues
 		resultStats.Services += stats.Services
 		resultStats.RPCs += stats.RPCs
+		resultStats.DeprecatedRPCs += stats.DeprecatedRPCs
 		resultStats.Extensions += stats.Extensions
 	}
 	return resultStats
@@ -144,7 +148,7 @@ func examineFile(statsBuilder *statsBuilder, fileNode *ast.FileNode) {
 					statsBuilder.RPCs++
 					statsBuilder.Types++
 					if isDeprecated(rpcNode) {
-						statsBuilder.DeprecatedTypes++
+						statsBuilder.DeprecatedRPCs++
 					}
 				}
 			}
@@ -158,7 +162,7 @@ func examineMessage(statsBuilder *statsBuilder, messageBody *ast.MessageBody, no
 	statsBuilder.Messages++
 	statsBuilder.Types++
 	if node != nil && isDeprecated(node) {
-		statsBuilder.DeprecatedTypes++
+		statsBuilder.DeprecatedMessages++
 	}
 	for _, decl := range messageBody.Decls {
 		switch decl := decl.(type) {
@@ -191,7 +195,7 @@ func examineEnum(statsBuilder *statsBuilder, enumNode *ast.EnumNode) {
 	statsBuilder.Enums++
 	statsBuilder.Types++
 	if isDeprecated(enumNode) {
-		statsBuilder.DeprecatedTypes++
+		statsBuilder.DeprecatedEnums++
 	}
 	for _, decl := range enumNode.Decls {
 		_, ok := decl.(*ast.EnumValueNode)
