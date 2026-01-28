@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package test.deprecate.edge;
+
+// Empty body on single line
+message EmptyMessage {}
+
+// Empty body with space
+message EmptyWithSpace { }
+
+// Already deprecated
+message AlreadyDeprecated {
+  option deprecated = true;
+}
+
+// Deprecated set to false
+message DeprecatedFalse {
+  option deprecated = false;
+}
+
+// Has other options
+message HasOtherOptions {
+  option (custom_option) = "value";
+}
+
+// Nested empty
+message OuterWithEmpty {
+  message NestedEmpty {}
+}
+
+// Empty enum
+enum EmptyEnum {
+  EMPTY_ENUM_UNSPECIFIED = 0;
+}
+
+// Enum with multi-line options on value
+enum MultiLineOptions {
+  MULTI_LINE_OPTIONS_UNSPECIFIED = 0;
+  MULTI_LINE_OPTIONS_ONE = 1 [
+    debug_redact = true
+  ];
+}
+
+// Field with multi-line options
+message FieldWithMultiLineOptions {
+  string name = 1 [
+    json_name = "userName",
+    debug_redact = true
+  ];
+}
+
+// Single-line options (for comparison)
+enum SingleLineOptions {
+  SINGLE_LINE_OPTIONS_UNSPECIFIED = 0;
+  SINGLE_LINE_OPTIONS_ONE = 1 [debug_redact = true];
+}
