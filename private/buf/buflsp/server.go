@@ -138,6 +138,7 @@ func (s *server) Initialize(
 			CodeActionProvider: &protocol.CodeActionOptions{
 				CodeActionKinds: []protocol.CodeActionKind{
 					protocol.SourceOrganizeImports,
+					protocol.RefactorRewrite,
 				},
 			},
 			CompletionProvider: &protocol.CompletionOptions{
@@ -504,6 +505,11 @@ func (s *server) CodeAction(ctx context.Context, params *protocol.CodeActionPara
 	if _, ok := codeActionSet[protocol.SourceOrganizeImports]; len(codeActionSet) == 0 || ok {
 		if organizeImportsAction := s.getOrganizeImportsCodeAction(ctx, file); organizeImportsAction != nil {
 			actions = append(actions, *organizeImportsAction)
+		}
+	}
+	if _, ok := codeActionSet[protocol.RefactorRewrite]; len(codeActionSet) == 0 || ok {
+		if deprecateAction := s.getDeprecateCodeAction(ctx, file, params); deprecateAction != nil {
+			actions = append(actions, *deprecateAction)
 		}
 	}
 	return actions, nil
