@@ -76,6 +76,9 @@ type formatter struct {
 	// injectCompactDeprecation is set when the next compact options should have
 	// deprecated = true injected at the beginning.
 	injectCompactDeprecation bool
+	// deprecationMatched is set to true when any type matches the deprecation prefix,
+	// regardless of whether it was already deprecated.
+	deprecationMatched bool
 }
 
 // newFormatter returns a new formatter for the given file.
@@ -2646,20 +2649,30 @@ func (f *formatter) pushFQN(name string) func() {
 }
 
 // shouldInjectDeprecation returns true if the given FQN should have a deprecated option injected.
+// It also sets deprecationMatched to true if the FQN matches the prefix.
 func (f *formatter) shouldInjectDeprecation(fqn string) bool {
 	if f.deprecation == nil {
 		return false
 	}
-	return f.deprecation.matchesPrefix(fqn)
+	if f.deprecation.matchesPrefix(fqn) {
+		f.deprecationMatched = true
+		return true
+	}
+	return false
 }
 
 // shouldInjectDeprecationExact returns true if the given FQN should have a deprecated option
 // injected using exact matching (for fields and enum values).
+// It also sets deprecationMatched to true if the FQN matches exactly.
 func (f *formatter) shouldInjectDeprecationExact(fqn string) bool {
 	if f.deprecation == nil {
 		return false
 	}
-	return f.deprecation.matchesExact(fqn)
+	if f.deprecation.matchesExact(fqn) {
+		f.deprecationMatched = true
+		return true
+	}
+	return false
 }
 
 // writeCompactDeprecatedOption writes " [deprecated = true]" for compact options.

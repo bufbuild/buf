@@ -2,9 +2,9 @@ syntax = "proto2";
 
 package test.deprecate;
 
+option cc_enable_arenas = true;
 // File already has deprecated option - should not add duplicate.
 option deprecated = true;
-option cc_enable_arenas = true;
 
 // Message already deprecated - should not add duplicate.
 message AlreadyDeprecatedMessage {

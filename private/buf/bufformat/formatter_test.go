@@ -191,3 +191,14 @@ func testDeprecateNoDiff(t *testing.T, name string, path string, deprecatePrefix
 		assertGolden(reformatBucket)
 	})
 }
+
+func TestFormatBucketNoTypesMatchedError(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	bucket, err := storageos.NewProvider().NewReadWriteBucket("testdata/deprecate")
+	require.NoError(t, err)
+	// Use a prefix that won't match anything in the deprecate testdata
+	_, err = FormatBucket(ctx, bucket, WithDeprecate("nonexistent.package"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no types matched")
+}

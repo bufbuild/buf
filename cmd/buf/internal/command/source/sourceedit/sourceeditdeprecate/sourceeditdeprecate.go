@@ -44,7 +44,7 @@ const (
 	errorFormatFlagName     = "error-format"
 	excludePathsFlagName    = "exclude-path"
 	pathsFlagName           = "path"
-	nameFlagName            = "name"
+	prefixFlagName          = "prefix"
 )
 
 // NewCommand returns a new Command.
@@ -59,10 +59,13 @@ func NewCommand(
 		Long: `
 Deprecate Protobuf types by adding the 'deprecated = true' option.
 
-The --name flag is required and specifies the fully-qualified name prefix of the
+The --prefix flag is required and specifies the fully-qualified name prefix of the
 types to deprecate. All types whose fully-qualified name starts with this prefix
 will have the 'deprecated = true' option added. For fields and enum values, only
 exact matches are deprecated.
+
+Returns an error if no types match the specified prefixes. If matching types are
+already deprecated, no changes are made and the command succeeds.
 
 By default, the source is the current directory and files are formatted and rewritten in-place.
 
@@ -70,23 +73,23 @@ Examples:
 
 Deprecate all types under a package prefix:
 
-    $ buf source edit deprecate --name foo.bar
+    $ buf source edit deprecate --prefix foo.bar
 
 Deprecate a specific message and all nested types:
 
-    $ buf source edit deprecate --name foo.bar.MyMessage
+    $ buf source edit deprecate --prefix foo.bar.MyMessage
 
 Deprecate a specific field:
 
-    $ buf source edit deprecate --name foo.bar.MyMessage.my_field
+    $ buf source edit deprecate --prefix foo.bar.MyMessage.my_field
 
-Multiple --name flags can be specified:
+Multiple --prefix flags can be specified:
 
-    $ buf source edit deprecate --name foo.bar --name baz.qux
+    $ buf source edit deprecate --prefix foo.bar --prefix baz.qux
 
 Display a diff of the changes instead of rewriting files:
 
-    $ buf source edit deprecate --name foo.bar -d
+    $ buf source edit deprecate --prefix foo.bar -d
 `,
 		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -105,7 +108,7 @@ type flags struct {
 	ErrorFormat     string
 	ExcludePaths    []string
 	Paths           []string
-	Names           []string
+	Prefixes        []string
 	// special
 	InputHashtag string
 }
@@ -142,12 +145,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		`The buf.yaml file or data to use for configuration`,
 	)
 	flagSet.StringSliceVar(
-		&f.Names,
-		nameFlagName,
+		&f.Prefixes,
+		prefixFlagName,
 		nil,
-		`Required. The fully-qualified name prefix of the types to deprecate. May be specified multiple times.`,
+		`Required. The fully-qualified name prefix of types to deprecate. May be specified multiple times.`,
 	)
-	_ = appcmd.MarkFlagRequired(flagSet, nameFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, prefixFlagName)
 }
 
 func run(
@@ -194,10 +197,10 @@ func run(
 	)
 	originalReadBucket := bufmodule.ModuleReadBucketToStorageReadBucket(moduleReadBucket)
 
-	// Build format options from all name prefixes
+	// Build format options from all prefixes
 	var formatOpts []bufformat.FormatOption
-	for _, name := range flags.Names {
-		formatOpts = append(formatOpts, bufformat.WithDeprecate(name))
+	for _, prefix := range flags.Prefixes {
+		formatOpts = append(formatOpts, bufformat.WithDeprecate(prefix))
 	}
 
 	formattedReadBucket, err := bufformat.FormatBucket(ctx, originalReadBucket, formatOpts...)
@@ -205,10 +208,15 @@ func run(
 		return err
 	}
 
-	diffBuffer := bytes.NewBuffer(nil)
+	// Find changed files. Only generate diff text if displaying diff.
+	var diffBuffer bytes.Buffer
+	var diffWriter io.Writer = io.Discard
+	if flags.Diff {
+		diffWriter = &diffBuffer
+	}
 	changedPaths, err := storage.DiffWithFilenames(
 		ctx,
-		diffBuffer,
+		diffWriter,
 		originalReadBucket,
 		formattedReadBucket,
 		storage.DiffWithExternalPaths(),
@@ -216,13 +224,15 @@ func run(
 	if err != nil {
 		return err
 	}
-	diffExists := diffBuffer.Len() > 0
 
+	// If no files changed, the matched types were already deprecated. This is not an error.
+	// Note: if no types matched the prefix at all, FormatBucket already returned an error above.
+	if len(changedPaths) == 0 {
+		return nil
+	}
 	if flags.Diff {
-		if diffExists {
-			if _, err := io.Copy(container.Stdout(), diffBuffer); err != nil {
-				return err
-			}
+		if _, err := io.Copy(container.Stdout(), &diffBuffer); err != nil {
+			return err
 		}
 		return nil
 	}

@@ -11,9 +11,7 @@ extend google.protobuf.EnumValueOptions {
 enum Status {
   STATUS_UNSPECIFIED = 0;
   STATUS_ACTIVE = 1;
-  STATUS_INACTIVE = 2 [
-    (string_name) = "display_value"
-  ];
+  STATUS_INACTIVE = 2 [(string_name) = "display_value"];
 }
 
 // Message with nested enum to test nested enum value FQN.
