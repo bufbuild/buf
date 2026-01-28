@@ -210,7 +210,7 @@ func run(
 
 	// Find changed files. Only generate diff text if displaying diff.
 	var diffBuffer bytes.Buffer
-	var diffWriter io.Writer = io.Discard
+	diffWriter := io.Discard
 	if flags.Diff {
 		diffWriter = &diffBuffer
 	}

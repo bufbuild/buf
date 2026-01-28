@@ -117,8 +117,7 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket, opts ...Format
 
 // FormatFileNode formats the given file node and writes the result to dest.
 func FormatFileNode(dest io.Writer, fileNode *ast.FileNode) error {
-	_, err := formatFileNodeWithMatch(dest, fileNode, &formatOptions{})
-	return err
+	return formatFileNode(dest, fileNode, &formatOptions{})
 }
 
 // formatFileNode formats the given file node with options and writes the result to dest.
