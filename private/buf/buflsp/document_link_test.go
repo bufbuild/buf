@@ -40,24 +40,32 @@ func TestDocumentLink(t *testing.T) {
 			expectedLinks: []expectedLink{
 				{
 					line:        4, // import "types.proto" on line 5 (0-indexed line 4)
+					startChar:   7, // Start of "types.proto" (including opening quote)
+					endChar:     20, // End of "types.proto" (after closing quote)
 					description: "local import to types.proto",
 					targetType:  linkTargetTypeLocal,
 					localPath:   "testdata/document_link/types.proto",
 				},
 				{
 					line:        7, // https://example.com/docs on line 8
+					startChar:   7,
+					endChar:     31,
 					description: "comment URL 1",
 					targetType:  linkTargetTypeURL,
 					targetURL:   "https://example.com/docs",
 				},
 				{
 					line:        8, // https://github.com/example/repo on line 9
+					startChar:   14,
+					endChar:     45,
 					description: "comment URL 2",
 					targetType:  linkTargetTypeURL,
 					targetURL:   "https://github.com/example/repo",
 				},
 				{
 					line:        11, // https://example.com/status on line 12
+					startChar:   43,
+					endChar:     69,
 					description: "comment URL 3",
 					targetType:  linkTargetTypeURL,
 					targetURL:   "https://example.com/status",
@@ -70,12 +78,16 @@ func TestDocumentLink(t *testing.T) {
 			expectedLinks: []expectedLink{
 				{
 					line:        4, // import "google/protobuf/timestamp.proto" on line 5
+					startChar:   7, // Start of "google/protobuf/timestamp.proto" (including opening quote)
+					endChar:     40, // End of "google/protobuf/timestamp.proto" (after closing quote)
 					description: "WKT Timestamp import",
 					targetType:  linkTargetTypeURL,
 					targetURL:   "https://buf.build/protocolbuffers/wellknowntypes/file/main:google/protobuf/timestamp.proto",
 				},
 				{
 					line:        5, // import "google/protobuf/duration.proto" on line 6
+					startChar:   7, // Start of "google/protobuf/duration.proto" (including opening quote)
+					endChar:     39, // End of "google/protobuf/duration.proto" (after closing quote)
 					description: "WKT Duration import",
 					targetType:  linkTargetTypeURL,
 					targetURL:   "https://buf.build/protocolbuffers/wellknowntypes/file/main:google/protobuf/duration.proto",
@@ -105,7 +117,10 @@ func TestDocumentLink(t *testing.T) {
 
 			for i, expected := range tt.expectedLinks {
 				link := links[i]
-				assert.Equal(t, expected.line, link.Range.Start.Line, "link %d (%s): wrong line", i, expected.description)
+				assert.Equal(t, expected.line, link.Range.Start.Line, "link %d (%s): wrong start line", i, expected.description)
+				assert.Equal(t, expected.startChar, link.Range.Start.Character, "link %d (%s): wrong start character", i, expected.description)
+				assert.Equal(t, expected.line, link.Range.End.Line, "link %d (%s): wrong end line", i, expected.description)
+				assert.Equal(t, expected.endChar, link.Range.End.Character, "link %d (%s): wrong end character", i, expected.description)
 
 				switch expected.targetType {
 				case linkTargetTypeLocal:
@@ -133,6 +148,8 @@ const (
 
 type expectedLink struct {
 	line        uint32
+	startChar   uint32 // expected starting character position
+	endChar     uint32 // expected ending character position
 	description string
 	targetType  linkTargetType
 	localPath   string // used when targetType is linkTargetTypeLocal
