@@ -39,8 +39,8 @@ func TestDocumentLink(t *testing.T) {
 			protoFile: "testdata/document_link/main.proto",
 			expectedLinks: []expectedLink{
 				{
-					line:        4, // import "types.proto" on line 5 (0-indexed line 4)
-					startChar:   7, // Start of "types.proto" (including opening quote)
+					line:        4,  // import "types.proto" on line 5 (0-indexed line 4)
+					startChar:   7,  // Start of "types.proto" (including opening quote)
 					endChar:     20, // End of "types.proto" (after closing quote)
 					description: "local import to types.proto",
 					targetType:  linkTargetTypeLocal,
@@ -77,16 +77,16 @@ func TestDocumentLink(t *testing.T) {
 			protoFile: "testdata/document_link/wkt.proto",
 			expectedLinks: []expectedLink{
 				{
-					line:        4, // import "google/protobuf/timestamp.proto" on line 5
-					startChar:   7, // Start of "google/protobuf/timestamp.proto" (including opening quote)
+					line:        4,  // import "google/protobuf/timestamp.proto" on line 5
+					startChar:   7,  // Start of "google/protobuf/timestamp.proto" (including opening quote)
 					endChar:     40, // End of "google/protobuf/timestamp.proto" (after closing quote)
 					description: "WKT Timestamp import",
 					targetType:  linkTargetTypeURL,
 					targetURL:   "https://buf.build/protocolbuffers/wellknowntypes/file/main:google/protobuf/timestamp.proto",
 				},
 				{
-					line:        5, // import "google/protobuf/duration.proto" on line 6
-					startChar:   7, // Start of "google/protobuf/duration.proto" (including opening quote)
+					line:        5,  // import "google/protobuf/duration.proto" on line 6
+					startChar:   7,  // Start of "google/protobuf/duration.proto" (including opening quote)
 					endChar:     39, // End of "google/protobuf/duration.proto" (after closing quote)
 					description: "WKT Duration import",
 					targetType:  linkTargetTypeURL,
