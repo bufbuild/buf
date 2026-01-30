@@ -174,6 +174,13 @@ func TestHover(t *testing.T) {
 			character:     8, // On "TestTopLevel"
 			expectNoHover: true,
 		},
+		{
+			name:          "hover_on_message_after_import_with_trailing_comment_no_blank_line",
+			protoFile:     "testdata/hover/unused_import_no_blank_line.proto",
+			line:          3, // Line with "message TestTopLevel {}"
+			character:     8, // On "TestTopLevel"
+			expectNoHover: true,
+		},
 	}
 
 	for _, tt := range tests {
