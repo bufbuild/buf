@@ -15,9 +15,13 @@
 package buflsp_test
 
 import (
+	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 
+	"github.com/bufbuild/protocompile/experimental/source"
+	"github.com/bufbuild/protocompile/experimental/source/length"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
@@ -63,30 +67,21 @@ func TestCodeAction_Deprecate(t *testing.T) {
 	)
 
 	// Test: Deprecate service at cursor on "MyService" (line 15)
-	// Service deprecation also deprecates the method
+	// Service deprecation also deprecates the method.
+	// Line-based diff produces single edit replacing both changed lines.
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/message_test.proto",
 		14, 8, // Line 15, on "MyService" (0-indexed: line 14)
 		"Deprecate service test.deprecate.MyService",
 		[]protocol.TextEdit{
-			// Insert "option deprecated = true;" in service body
-			// Line 15: "service MyService {" - { is at char 18, insert at 19
+			// Lines 15-16 both change, so diff replaces them together
 			{
 				Range: protocol.Range{
-					Start: protocol.Position{Line: 14, Character: 19},
-					End:   protocol.Position{Line: 14, Character: 19},
+					Start: protocol.Position{Line: 14, Character: 0},
+					End:   protocol.Position{Line: 16, Character: 0},
 				},
-				NewText: "\n  option deprecated = true;",
-			},
-			// Replace method semicolon with body containing deprecation
-			// Line 16: "  rpc GetMessage(MyMessage) returns (MyMessage);" - ; is at char 47
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 15, Character: 47},
-					End:   protocol.Position{Line: 15, Character: 48},
-				},
-				NewText: " {\n    option deprecated = true;\n  }",
+				NewText: "service MyService {\n  option deprecated = true;\n  rpc GetMessage(MyMessage) returns (MyMessage) {\n    option deprecated = true;\n  }\n",
 			},
 		},
 	)
@@ -193,14 +188,13 @@ func TestCodeAction_Deprecate(t *testing.T) {
 		2, 8, // Line 3, on package name (0-indexed: line 2)
 		"Deprecate package test.deprecate.nested",
 		[]protocol.TextEdit{
-			// File-level deprecated option (after package declaration with blank line)
-			// Line 3: "package test.deprecate.nested;" - insert at 30
+			// File-level deprecated option after package declaration.
 			{
 				Range: protocol.Range{
 					Start: protocol.Position{Line: 2, Character: 30},
 					End:   protocol.Position{Line: 2, Character: 30},
 				},
-				NewText: "\n\noption deprecated = true;",
+				NewText: "\noption deprecated = true;",
 			},
 			// Outer message - Line 5: "message Outer {" - insert at 15
 			{
@@ -256,7 +250,7 @@ func TestCodeAction_Deprecate(t *testing.T) {
 		},
 	)
 
-	// Test: Empty body with space `{ }` - similar handling
+	// Test: Empty body with space `{ }`.
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/edge_cases_test.proto",
@@ -266,9 +260,9 @@ func TestCodeAction_Deprecate(t *testing.T) {
 			{
 				Range: protocol.Range{
 					Start: protocol.Position{Line: 8, Character: 24},
-					End:   protocol.Position{Line: 8, Character: 24},
+					End:   protocol.Position{Line: 8, Character: 26},
 				},
-				NewText: "\n  option deprecated = true;\n",
+				NewText: "\n  option deprecated = true;\n}",
 			},
 		},
 	)
@@ -287,68 +281,54 @@ func TestCodeAction_Deprecate(t *testing.T) {
 		16, 8, // Line 17, on "DeprecatedFalse" (0-indexed: line 16)
 	)
 
-	// Test: Nested empty body message
+	// Test: Nested empty body message.
+	// Line-based diff replaces both lines 27-28 together.
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/edge_cases_test.proto",
 		26, 8, // Line 27, on "OuterWithEmpty" (0-indexed: line 26)
 		"Deprecate message test.deprecate.edge.OuterWithEmpty",
 		[]protocol.TextEdit{
-			// OuterWithEmpty - Line 27: "message OuterWithEmpty {" - insert at 24
 			{
 				Range: protocol.Range{
-					Start: protocol.Position{Line: 26, Character: 24},
-					End:   protocol.Position{Line: 26, Character: 24},
+					Start: protocol.Position{Line: 26, Character: 0},
+					End:   protocol.Position{Line: 28, Character: 0},
 				},
-				NewText: "\n  option deprecated = true;",
-			},
-			// NestedEmpty - Line 28: "  message NestedEmpty {}" - insert at 23
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 27, Character: 23},
-					End:   protocol.Position{Line: 27, Character: 23},
-				},
-				NewText: "\n    option deprecated = true;\n  ",
+				NewText: "message OuterWithEmpty {\n  option deprecated = true;\n  message NestedEmpty {\n    option deprecated = true;\n  }\n",
 			},
 		},
 	)
 
-	// Test: Multi-line options on enum value (no trailing comma)
-	// Should add comma after last option and insert on new line
+	// Test: Multi-line options on enum value - appends on same line.
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/edge_cases_test.proto",
 		38, 2, // Line 39, on "MULTI_LINE_OPTIONS_ONE" (0-indexed: line 38)
 		"Deprecate enum value test.deprecate.edge.MULTI_LINE_OPTIONS_ONE",
 		[]protocol.TextEdit{
-			// Insert after "debug_redact = true" on line 40
-			// Line 40: "    debug_redact = true" - ends at char 23
 			{
 				Range: protocol.Range{
 					Start: protocol.Position{Line: 39, Character: 23},
 					End:   protocol.Position{Line: 39, Character: 23},
 				},
-				NewText: ",\n    deprecated = true",
+				NewText: ", deprecated = true",
 			},
 		},
 	)
 
-	// Test: Multi-line options on field (no trailing comma on last option)
-	// Should add comma after last option and insert on new line
+	// Test: Multi-line options on field - appends on same line.
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/edge_cases_test.proto",
 		45, 9, // Line 46, on "name" field (0-indexed: line 45)
 		"Deprecate field test.deprecate.edge.FieldWithMultiLineOptions.name",
 		[]protocol.TextEdit{
-			// Insert after "debug_redact = true" on line 48
-			// Line 48: "    debug_redact = true" - ends at char 23
 			{
 				Range: protocol.Range{
 					Start: protocol.Position{Line: 47, Character: 23},
 					End:   protocol.Position{Line: 47, Character: 23},
 				},
-				NewText: ",\n    deprecated = true",
+				NewText: ", deprecated = true",
 			},
 		},
 	)
@@ -378,6 +358,10 @@ func TestCodeAction_Deprecate(t *testing.T) {
 // testCodeActionDeprecate tests that a deprecation code action at the given position
 // produces the expected edits. Use expectedTitle="" and expectedEdits=nil to test
 // that no action is offered.
+//
+// Instead of checking exact edit positions, this verifies that applying the actual
+// edits produces the same result as applying the expected edits. This makes the
+// tests robust to different edit formats (character-based vs line-based).
 func testCodeActionDeprecate(
 	t *testing.T,
 	filename string,
@@ -440,12 +424,53 @@ func testCodeActionDeprecate(
 		require.True(t, ok, "workspace edit should have changes for current file")
 		require.Len(t, actualEdits, len(expectedEdits), "edit count mismatch")
 
-		for i, expected := range expectedEdits {
-			actual := actualEdits[i]
-			assert.Equal(t, expected.Range, actual.Range, "edit %d: range mismatch", i)
-			assert.Equal(t, expected.NewText, actual.NewText, "edit %d: newText mismatch", i)
-		}
+		// Read original file content
+		originalContent, err := os.ReadFile(testProtoPath)
+		require.NoError(t, err)
+
+		// Create source file for position conversion
+		srcFile := source.NewFile(testProtoPath, string(originalContent))
+
+		// Apply expected edits to get expected result
+		expectedResult := applyTextEdits(srcFile, string(originalContent), expectedEdits)
+
+		// Apply actual edits to get actual result
+		actualResult := applyTextEdits(srcFile, string(originalContent), actualEdits)
+
+		// Compare results (both approaches should produce the same final content)
+		assert.Equal(t, expectedResult, actualResult, "applied edits should produce the same result")
 	})
+}
+
+// applyTextEdits applies LSP text edits to a string and returns the result.
+// Edits are applied in reverse order to preserve positions.
+func applyTextEdits(srcFile *source.File, content string, edits []protocol.TextEdit) string {
+	// Sort edits by position in reverse order (later positions first)
+	sortedEdits := make([]protocol.TextEdit, len(edits))
+	copy(sortedEdits, edits)
+	sort.Slice(sortedEdits, func(i, j int) bool {
+		if sortedEdits[i].Range.Start.Line != sortedEdits[j].Range.Start.Line {
+			return sortedEdits[i].Range.Start.Line > sortedEdits[j].Range.Start.Line
+		}
+		return sortedEdits[i].Range.Start.Character > sortedEdits[j].Range.Start.Character
+	})
+
+	// Apply edits in reverse order
+	for _, edit := range sortedEdits {
+		// Convert LSP positions (0-based) to protocompile positions (1-based)
+		startLoc := srcFile.InverseLocation(
+			int(edit.Range.Start.Line)+1,
+			int(edit.Range.Start.Character)+1,
+			length.UTF16,
+		)
+		endLoc := srcFile.InverseLocation(
+			int(edit.Range.End.Line)+1,
+			int(edit.Range.End.Character)+1,
+			length.UTF16,
+		)
+		content = content[:startLoc.Offset] + edit.NewText + content[endLoc.Offset:]
+	}
+	return content
 }
 
 // testCodeActionDeprecateNoEdit tests that a deprecation code action is either not offered
