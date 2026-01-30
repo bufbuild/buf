@@ -851,7 +851,7 @@ func getKindForMapType(typeAST ast.TypeAny, mapField ir.Member, isKey bool) (kin
 func (f *file) importToSymbol(imp ir.Import) *symbol {
 	return &symbol{
 		file: f,
-		span: imp.Decl.Span(),
+		span: imp.Decl.ImportPath().Span(),
 		kind: &imported{
 			file: f.workspace.PathToFile()[imp.File.Path()],
 		},
