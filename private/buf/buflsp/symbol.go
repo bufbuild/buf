@@ -567,10 +567,10 @@ func (s *symbol) getDocsFromComments() string {
 	for {
 		t := cursor.PrevSkippable()
 		if t.Kind() == token.Comment {
-			text := commentToMarkdown(t.Text())
-			if newlinesSeen > 0 {
-				text += "\n"
+			if isTrailingComment(t) {
+				break
 			}
+			text := commentToMarkdown(t.Text()) + "\n"
 			newlinesSeen = 0
 			comments = append(comments, text)
 		} else if t.Kind() == token.Space {
@@ -800,4 +800,20 @@ func plural(i int) string {
 		return ""
 	}
 	return "s"
+}
+
+// isTrailingComment returns true if the comment has code on the same line before it.
+func isTrailingComment(t token.Token) bool {
+	if t.Kind() != token.Comment {
+		return false
+	}
+	for c := token.NewCursorAt(t); ; {
+		p := c.PrevSkippable()
+		if p.IsZero() || strings.Contains(p.Text(), "\n") {
+			return false
+		}
+		if p.Kind() != token.Space {
+			return true
+		}
+	}
 }
