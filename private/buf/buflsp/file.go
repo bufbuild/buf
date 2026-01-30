@@ -1139,7 +1139,7 @@ func (f *file) appendAnnotations(source string, annotations []bufanalysis.FileAn
 		startLocation := f.file.InverseLocation(annotation.StartLine(), annotation.StartColumn(), positionalEncoding)
 		endLocation := f.file.InverseLocation(annotation.EndLine(), annotation.EndColumn(), positionalEncoding)
 		protocolRange := reportLocationsToProtocolRange(startLocation, endLocation)
-		f.diagnostics = append(f.diagnostics, protocol.Diagnostic{
+		diagnostic := protocol.Diagnostic{
 			Range: protocolRange,
 			Code:  annotation.Type(),
 			CodeDescription: &protocol.CodeDescription{
@@ -1148,7 +1148,13 @@ func (f *file) appendAnnotations(source string, annotations []bufanalysis.FileAn
 			Severity: protocol.DiagnosticSeverityWarning,
 			Source:   source,
 			Message:  annotation.Message(),
-		})
+		}
+		if annotation.Type() == "IMPORT_USED" {
+			diagnostic.Tags = []protocol.DiagnosticTag{
+				protocol.DiagnosticTagUnnecessary,
+			}
+		}
+		f.diagnostics = append(f.diagnostics, diagnostic)
 	}
 }
 
