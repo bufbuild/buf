@@ -1,0 +1,23 @@
+syntax = "proto2";
+
+package test.deprecate;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.EnumValueOptions {
+  optional string string_name = 123456789;
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+  STATUS_INACTIVE = 2 [(string_name) = "display_value"];
+}
+
+// Message with nested enum to test nested enum value FQN.
+message OuterMessage {
+  enum NestedStatus {
+    NESTED_STATUS_UNSPECIFIED = 0;
+    NESTED_STATUS_ACTIVE = 1;
+  }
+}

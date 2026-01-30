@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package test.deprecate;
+
+option deprecated = true;
+
+// Outer message - should be deprecated.
+message OuterMessage {
+  option deprecated = true;
+  string name = 1;
+
+  // Nested message - should also be deprecated.
+  message NestedMessage {
+    option deprecated = true;
+    string value = 1;
+  }
+
+  // Nested enum - should also be deprecated.
+  enum NestedEnum {
+    option deprecated = true;
+    NESTED_ENUM_UNSPECIFIED = 0;
+    NESTED_ENUM_VALUE = 1;
+  }
+}
+
+// Top-level enum - should be deprecated.
+enum TopLevelEnum {
+  option deprecated = true;
+  TOP_LEVEL_ENUM_UNSPECIFIED = 0;
+  TOP_LEVEL_ENUM_VALUE = 1;
+}
+
+// Service - should be deprecated.
+service TestService {
+  option deprecated = true;
+  rpc GetMessage(OuterMessage) returns (OuterMessage) {
+    option deprecated = true;
+  }
+}

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package test.deprecate;
+
+option deprecated = true;
+
+message MyMessage {
+  option deprecated = true;
+  string name = 1;
+  int32 id = 2 [deprecated = true];
+  bool active = 3;
+}
