@@ -555,22 +555,28 @@ func (s *symbol) getDocsFromComments() string {
 	// traversing backwards for leading comments only.
 	tok, _ := def.Context().Stream().Around(def.Span().Start)
 	cursor := token.NewCursorAt(tok)
-	var seenNewline bool
+	// Count consecutive newlines. If we accumulate 2+ without encountering a comment,
+	// there's a blank line separating the comments from the symbol.
+	newlinesSeen := 0
+	if tok.Kind() == token.Space {
+		newlinesSeen = strings.Count(tok.Text(), "\n")
+		if newlinesSeen >= 2 {
+			return ""
+		}
+	}
 	for {
 		t := cursor.PrevSkippable()
 		if t.Kind() == token.Comment {
 			text := commentToMarkdown(t.Text())
-			if seenNewline {
+			if newlinesSeen > 0 {
 				text += "\n"
 			}
-			seenNewline = false
+			newlinesSeen = 0
 			comments = append(comments, text)
 		} else if t.Kind() == token.Space {
-			if strings.Contains(t.Text(), "\n") {
-				if seenNewline {
-					break
-				}
-				seenNewline = true
+			newlinesSeen += strings.Count(t.Text(), "\n")
+			if newlinesSeen >= 2 {
+				break
 			}
 		} else {
 			break
