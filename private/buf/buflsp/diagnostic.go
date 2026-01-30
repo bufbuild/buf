@@ -70,6 +70,29 @@ func reportDiagnosticToProtocolDiagnostic(
 			},
 		}
 	}
+	for _, relatedSpan := range reportDiagnostic.RelatedSpans() {
+		if relatedSpan.IsZero() {
+			continue
+		}
+		startLocation := relatedSpan.Location(relatedSpan.Start, positionalEncoding)
+		endLocation := relatedSpan.Location(relatedSpan.End, positionalEncoding)
+		diagnostic.RelatedInformation = append(diagnostic.RelatedInformation, protocol.DiagnosticRelatedInformation{
+			// TODO: this needs to be the RelatedSpan's annotation's message.
+			Message: diagnostic.Message,
+			Location: protocol.Location{
+				Range: protocol.Range{
+					Start: protocol.Position{
+						Line:      uint32(startLocation.Line - 1),
+						Character: uint32(startLocation.Column - 1),
+					},
+					End: protocol.Position{
+						Line:      uint32(endLocation.Line - 1),
+						Character: uint32(endLocation.Column - 1),
+					},
+				},
+			},
+		})
+	}
 	data := diagnosticData{
 		Notes: strings.Join(reportDiagnostic.Notes(), "\n"),
 		Help:  strings.Join(reportDiagnostic.Help(), "\n"),
