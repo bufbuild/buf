@@ -1,0 +1,4 @@
+syntax = "proto3";
+
+import "google/protobuf/cpp_features.proto"; // unused import
+message TestTopLevel {}
