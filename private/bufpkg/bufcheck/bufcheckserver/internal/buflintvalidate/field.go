@@ -453,6 +453,15 @@ func checkRepeatedRules(
 		)
 	}
 	itemAdder := baseAdder.cloneWithNewBasePath(repeatedRulesFieldNumber, itemsFieldNumberInRepeatedRules)
+	if repeatedRules.Items != nil && repeatedRules.Items.GetRequired() {
+		itemAdder.addForPathf(
+			[]int32{requiredFieldNumber},
+			"Field %q has %s on repeated item rules, which is unenforceable. The %s constraint cannot be applied to individual items in a repeated field.",
+			baseAdder.fieldName(),
+			itemAdder.getFieldRuleName(requiredFieldNumber),
+			itemAdder.getFieldRuleName(requiredFieldNumber),
+		)
+	}
 	return checkRulesForField(itemAdder, repeatedRules.Items, containingMessageDescriptor, nil, fieldDescriptor, false, extensionTypeResolver)
 }
 
@@ -493,11 +502,29 @@ func checkMapRules(
 		)
 	}
 	keyAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, keysFieldNumberInMapRules)
+	if mapRules.Keys != nil && mapRules.Keys.GetRequired() {
+		keyAdder.addForPathf(
+			[]int32{requiredFieldNumber},
+			"Field %q has %s on map key rules, which is unenforceable. The %s constraint cannot be applied to map keys.",
+			baseAdder.fieldName(),
+			keyAdder.getFieldRuleName(requiredFieldNumber),
+			keyAdder.getFieldRuleName(requiredFieldNumber),
+		)
+	}
 	err := checkRulesForField(keyAdder, mapRules.Keys, containingMessageDescriptor, fieldDescriptor, fieldDescriptor.MapKey(), false, extensionTypeResolver)
 	if err != nil {
 		return err
 	}
 	valueAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, valuesFieldNumberInMapRules)
+	if mapRules.Values != nil && mapRules.Values.GetRequired() {
+		valueAdder.addForPathf(
+			[]int32{requiredFieldNumber},
+			"Field %q has %s on map value rules, which is unenforceable. The %s constraint cannot be applied to map values.",
+			baseAdder.fieldName(),
+			valueAdder.getFieldRuleName(requiredFieldNumber),
+			valueAdder.getFieldRuleName(requiredFieldNumber),
+		)
+	}
 	return checkRulesForField(valueAdder, mapRules.Values, containingMessageDescriptor, fieldDescriptor, fieldDescriptor.MapValue(), false, extensionTypeResolver)
 }
 

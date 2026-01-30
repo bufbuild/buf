@@ -86,4 +86,8 @@ message MapTest {
     (buf.validate.field).map.keys.string.example = "bad",
     (buf.validate.field).map.values.int64.example = -1
   ];
+  // invalid: required cannot be set on map keys
+  map<string, int32> invalid_required_on_keys = 19 [(buf.validate.field).map.keys.required = true];
+  // invalid: required cannot be set on map values
+  map<int32, string> invalid_required_on_values = 20 [(buf.validate.field).map.values.required = true];
 }
