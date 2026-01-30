@@ -40,7 +40,7 @@ var reportLevelToDiagnosticSeverity = map[report.Level]protocol.DiagnosticSeveri
 // corresponding [protocol.Diagnostic].
 func reportDiagnosticToProtocolDiagnostic(
 	reportDiagnostic report.Diagnostic,
-) (protocol.Diagnostic, error) {
+) protocol.Diagnostic {
 	diagnostic := protocol.Diagnostic{
 		Source:   serverName,
 		Severity: reportLevelToDiagnosticSeverity[reportDiagnostic.Level()],
@@ -70,5 +70,5 @@ func reportDiagnosticToProtocolDiagnostic(
 			protocol.DiagnosticTagDeprecated,
 		}
 	}
-	return diagnostic, nil
+	return diagnostic
 }

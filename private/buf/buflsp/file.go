@@ -290,17 +290,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 	fileDiagnostics := xslices.Filter(diagnosticReport.Diagnostics, func(d report.Diagnostic) bool {
 		return d.Primary().Path() == f.objectInfo.Path()
 	})
-	diagnostics, err := xslices.MapError(
-		fileDiagnostics,
-		reportDiagnosticToProtocolDiagnostic,
-	)
-	if err != nil {
-		f.lsp.logger.Error(
-			"failed to parse report diagnostics",
-			xslog.ErrorAttr(err),
-		)
-	}
-	f.diagnostics = diagnostics
+	f.diagnostics = xslices.Map(fileDiagnostics, reportDiagnosticToProtocolDiagnostic)
 	f.lsp.logger.DebugContext(
 		ctx, "ir diagnostic(s)",
 		slog.String("uri", f.uri.Filename()),
