@@ -167,6 +167,13 @@ func TestHover(t *testing.T) {
 			character:        3,  // On "map" keyword
 			expectedContains: "language-spec#maps",
 		},
+		{
+			name:          "hover_on_message_after_import_with_trailing_comment",
+			protoFile:     "testdata/hover/unused_import.proto",
+			line:          4, // Line with "message TestTopLevel {"
+			character:     8, // On "TestTopLevel"
+			expectNoHover: true,
+		},
 	}
 
 	for _, tt := range tests {
