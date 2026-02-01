@@ -364,8 +364,10 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 		Kind:          kind,
 		Location:      location,
 		ContainerName: containerName,
-		// TODO: Use Tags with a protocol.CompletionItemTagDeprecated if the client supports tags.
-		Deprecated: isDeprecated,
+		Deprecated:    isDeprecated,
+		Tags: []protocol.SymbolTag{
+			protocol.SymbolTagDeprecated,
+		},
 	}
 }
 

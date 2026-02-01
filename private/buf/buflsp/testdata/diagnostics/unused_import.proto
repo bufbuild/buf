@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package diagnostics.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// timestamp is imported but not used - should trigger unused import diagnostic
+message TestMessage {
+  string name = 1;
+}
