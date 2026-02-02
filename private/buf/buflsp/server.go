@@ -128,10 +128,10 @@ func (s *server) Initialize(
 			// For now, incomplete features are explicitly disabled here as TODOs.
 			TextDocumentSync: &protocol.TextDocumentSyncOptions{
 				OpenClose: true,
-				// Request that whole files be sent to us. Protobuf IDL files don't
-				// usually get especially huge, so this simplifies our logic without
-				// necessarily making the LSP slow.
-				Change: protocol.TextDocumentSyncKindFull,
+				// Use incremental sync to receive only document changes (deltas) rather
+				// than the full document content on each edit. This is more efficient
+				// for the client and reduces bandwidth.
+				Change: protocol.TextDocumentSyncKindIncremental,
 				Save: &protocol.SaveOptions{
 					IncludeText: false,
 				},
@@ -250,8 +250,8 @@ func (s *server) DidOpen(
 	return nil
 }
 
-// DidChange is called whenever the client opens a document. This is our signal to parse
-// the file.
+// DidChange is called whenever the client sends document changes. This is our signal to
+// update and re-parse the file.
 func (s *server) DidChange(
 	ctx context.Context,
 	params *protocol.DidChangeTextDocumentParams,
@@ -279,7 +279,7 @@ func (s *server) DidChange(
 		return fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
 	}
 
-	file.Update(ctx, params.TextDocument.Version, params.ContentChanges[0].Text)
+	file.ApplyChanges(ctx, params.TextDocument.Version, params.ContentChanges)
 	return nil
 }
 

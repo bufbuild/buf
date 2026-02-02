@@ -26,6 +26,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode/utf16"
 
 	"buf.build/go/standard/xlog/xslog"
 	"buf.build/go/standard/xslices"
@@ -159,6 +160,91 @@ func (f *file) ReadFromWorkspace(ctx context.Context) (err error) {
 	f.file = source.NewFile(fileName, text)
 	f.hasText = true
 	return nil
+}
+
+// ApplyChanges applies a list of text document content changes to this file.
+// It supports both full document sync (when Range is nil) and incremental sync
+// (when Range is present).
+func (f *file) ApplyChanges(ctx context.Context, version int32, changes []protocol.TextDocumentContentChangeEvent) {
+	if len(changes) == 0 {
+		return
+	}
+
+	// Get the current text content
+	currentText := ""
+	if f.hasText {
+		currentText = f.file.Text()
+	}
+
+	// Apply each change in order
+	for _, change := range changes {
+		// According to LSP spec: "If range and rangeLength are omitted the new text
+		// is considered to be the full content of the document."
+		// Check if this is a full document sync (range is zero-valued and rangeLength is 0)
+		isFullSync := change.Range.Start.Line == 0 &&
+			change.Range.Start.Character == 0 &&
+			change.Range.End.Line == 0 &&
+			change.Range.End.Character == 0 &&
+			change.RangeLength == 0
+
+		if isFullSync {
+			// Full document sync: replace entire content
+			currentText = change.Text
+		} else {
+			// Incremental sync: apply the range-based edit
+			startOffset := f.positionToByteOffset(change.Range.Start, currentText)
+			endOffset := f.positionToByteOffset(change.Range.End, currentText)
+
+			if startOffset < 0 || endOffset < 0 || startOffset > len(currentText) || endOffset > len(currentText) || startOffset > endOffset {
+				f.lsp.logger.WarnContext(ctx, "invalid range for incremental update",
+					slog.String("uri", f.uri.Filename()),
+					slog.Int("start_offset", startOffset),
+					slog.Int("end_offset", endOffset),
+					slog.Int("text_length", len(currentText)))
+				continue
+			}
+
+			// Apply the edit: before + new text + after
+			currentText = currentText[:startOffset] + change.Text + currentText[endOffset:]
+		}
+	}
+
+	f.Update(ctx, version, currentText)
+}
+
+// positionToByteOffset converts an LSP position to a byte offset in the given text.
+// Returns -1 if the position is invalid.
+func (f *file) positionToByteOffset(position protocol.Position, text string) int {
+	line := int(position.Line)
+	character := int(position.Character)
+
+	currentLine := 0
+	currentCol := 0
+
+	for i, ch := range text {
+		if currentLine == line && currentCol == character {
+			return i
+		}
+
+		if currentLine > line {
+			return -1 // Line not found
+		}
+
+		if ch == '\n' {
+			currentLine++
+			currentCol = 0
+		} else {
+			// LSP uses UTF-16 code units for character positions
+			currentCol += utf16.RuneLen(ch)
+		}
+	}
+
+	// Check if we've reached the target position at the end of the file
+	if currentLine == line && currentCol == character {
+		return len(text)
+	}
+
+	return -1
 }
 
 // Update updates the contents of this file with the given text received from
