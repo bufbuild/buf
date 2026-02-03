@@ -1,0 +1,108 @@
+syntax = "proto2";
+
+package test.deprecate;
+
+option cc_enable_arenas = true;
+// File already has deprecated option - should not add duplicate.
+option deprecated = true;
+
+// Message already deprecated - should not add duplicate.
+message AlreadyDeprecatedMessage {
+  option deprecated = true;
+  optional string name = 1;
+}
+
+// Message with other options but not deprecated - should add deprecated.
+message MessageWithOtherOptions {
+  option no_standard_descriptor_accessor = true;
+  optional string name = 1;
+}
+
+// Message with deprecated and other options - should not add duplicate.
+message MessageWithDeprecatedAndOtherOptions {
+  option deprecated = true;
+  option no_standard_descriptor_accessor = true;
+  optional string name = 1;
+}
+
+// Message to test field deprecation.
+message MessageWithFields {
+  option deprecated = true;
+  // Field already deprecated - should not add duplicate.
+  optional string already_deprecated_field = 1 [deprecated = true];
+  // Field with other options but not deprecated - stays as is (not in exact match list).
+  optional NestedMessage field_with_other_options = 2 [lazy = true];
+  // Field with deprecated and other options - should not add duplicate.
+  optional NestedMessage field_with_deprecated_and_other_options = 3 [
+    deprecated = true,
+    lazy = true
+  ];
+  // Nested message for lazy fields.
+  message NestedMessage {
+    option deprecated = true;
+    optional string value = 1;
+  }
+}
+
+// Enum already deprecated - should not add duplicate.
+enum AlreadyDeprecatedEnum {
+  option deprecated = true;
+  ALREADY_DEPRECATED_ENUM_UNSPECIFIED = 0;
+  ALREADY_DEPRECATED_ENUM_VALUE = 1;
+}
+
+// Enum with other options but not deprecated - should add deprecated.
+enum EnumWithOtherOptions {
+  option allow_alias = true;
+  ENUM_WITH_OTHER_OPTIONS_UNSPECIFIED = 0;
+  ENUM_WITH_OTHER_OPTIONS_VALUE = 1;
+  ENUM_WITH_OTHER_OPTIONS_ALIAS = 1;
+}
+
+// Enum with deprecated and other options - should not add duplicate.
+enum EnumWithDeprecatedAndOtherOptions {
+  option deprecated = true;
+  option allow_alias = true;
+  ENUM_WITH_DEPRECATED_AND_OTHER_OPTIONS_UNSPECIFIED = 0;
+  ENUM_WITH_DEPRECATED_AND_OTHER_OPTIONS_VALUE = 1;
+  ENUM_WITH_DEPRECATED_AND_OTHER_OPTIONS_ALIAS = 1;
+}
+
+// Enum to test enum value deprecation.
+enum EnumWithValues {
+  option deprecated = true;
+  ENUM_WITH_VALUES_UNSPECIFIED = 0;
+  // Enum value already deprecated - should not add duplicate.
+  ENUM_WITH_VALUES_ALREADY_DEPRECATED = 1 [deprecated = true];
+  // Enum value with other options - stays as is (not in exact match list).
+  ENUM_WITH_VALUES_WITH_OTHER_OPTIONS = 2 [debug_redact = true];
+  // Enum value with deprecated and other options - should not add duplicate.
+  ENUM_WITH_VALUES_WITH_DEPRECATED_AND_OTHER = 3 [
+    deprecated = true,
+    debug_redact = true
+  ];
+}
+
+// Service already deprecated - should not add duplicate.
+service AlreadyDeprecatedService {
+  option deprecated = true;
+  rpc GetData(AlreadyDeprecatedMessage) returns (AlreadyDeprecatedMessage);
+}
+
+// Service with other methods to test method deprecation.
+service ServiceWithMethods {
+  option deprecated = true;
+  // Method already deprecated - should not add duplicate.
+  rpc AlreadyDeprecatedMethod(AlreadyDeprecatedMessage) returns (AlreadyDeprecatedMessage) {
+    option deprecated = true;
+  }
+  // Method with other options but not deprecated - should add deprecated.
+  rpc MethodWithOtherOptions(AlreadyDeprecatedMessage) returns (AlreadyDeprecatedMessage) {
+    option idempotency_level = IDEMPOTENT;
+  }
+  // Method with deprecated and other options - should not add duplicate.
+  rpc MethodWithDeprecatedAndOtherOptions(AlreadyDeprecatedMessage) returns (AlreadyDeprecatedMessage) {
+    option deprecated = true;
+    option idempotency_level = IDEMPOTENT;
+  }
+}
