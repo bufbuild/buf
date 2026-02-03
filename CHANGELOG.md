@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.65.0] - 2026-02-03
 
 - Add `buf registry policy {commit,create,delete,info,label,settings}` commands to manage BSR policies.
@@ -1484,6 +1488,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.65.0...HEAD
 [v1.65.0]: https://github.com/bufbuild/buf/compare/v1.64.0...v1.65.0
 [v1.64.0]: https://github.com/bufbuild/buf/compare/v1.63.0...v1.64.0
 [v1.63.0]: https://github.com/bufbuild/buf/compare/v1.62.1...v1.63.0
