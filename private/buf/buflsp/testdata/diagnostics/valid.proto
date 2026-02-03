@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package diagnostics.v1;
+
+// A valid proto file with no issues
+message TestMessage {
+  string name = 1;
+  int32 age = 2;
+}

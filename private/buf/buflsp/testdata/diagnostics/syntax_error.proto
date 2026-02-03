@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package diagnostics.v1;
+
+// This file has a syntax error for testing diagnostics
+message TestMessage {
+  string name = 1
+  // Missing semicolon above
+}
