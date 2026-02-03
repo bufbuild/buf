@@ -121,26 +121,20 @@ func setupLSPServer(
 
 	stream := jsonrpc2.NewStream(serverConn)
 
-	go func() {
-		conn, err := buflsp.Serve(
-			ctx,
-			"test",
-			wktBucket,
-			appextContainer,
-			controller,
-			wasmRuntime,
-			stream,
-			queryExecutor,
-		)
-		if err != nil {
-			t.Errorf("Failed to start server: %v", err)
-			return
-		}
-		t.Cleanup(func() {
-			require.NoError(t, conn.Close())
-		})
-		<-ctx.Done()
-	}()
+	conn, err := buflsp.Serve(
+		ctx,
+		"test",
+		wktBucket,
+		appextContainer,
+		controller,
+		wasmRuntime,
+		stream,
+		queryExecutor,
+	)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, conn.Close())
+	})
 
 	clientStream := jsonrpc2.NewStream(clientConn)
 	clientJSONConn := jsonrpc2.NewConn(clientStream)

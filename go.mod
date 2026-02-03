@@ -16,13 +16,13 @@ require (
 	buf.build/go/standard v0.1.0
 	connectrpc.com/connect v1.19.1
 	connectrpc.com/otelconnect v0.9.0
-	github.com/bufbuild/protocompile v0.14.2-0.20260121154354-91940cd2bca3
+	github.com/bufbuild/protocompile v0.14.2-0.20260130195850-5c64bed4577e
 	github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1
 	github.com/cli/browser v1.3.0
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/go-chi/chi/v5 v5.2.4
 	github.com/gofrs/flock v0.13.0
-	github.com/google/cel-go v0.26.1
+	github.com/google/cel-go v0.27.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-containerregistry v0.20.7
 	github.com/google/uuid v1.6.0
@@ -46,7 +46,7 @@ require (
 	golang.org/x/sync v0.19.0
 	golang.org/x/term v0.39.0
 	golang.org/x/tools v0.41.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20260122232226-8e98ce8d340d
+	google.golang.org/genproto/googleapis/api v0.0.0-20260128011058-8636f8732409
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
 	mvdan.cc/xurls/v2 v2.6.0
@@ -69,7 +69,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/cli v29.1.5+incompatible // indirect
+	github.com/docker/cli v29.2.0+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.5 // indirect
 	github.com/docker/go-connections v0.6.0 // indirect
@@ -95,7 +95,6 @@ require (
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/segmentio/encoding v0.5.3 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
-	github.com/stoewer/go-strcase v1.3.1 // indirect
 	github.com/tidwall/btree v1.8.1 // indirect
 	github.com/vbatts/tar-split v0.12.2 // indirect
 	go.lsp.dev/pkg v0.0.0-20210717090340-384b27a52fb2 // indirect
@@ -112,6 +111,6 @@ require (
 	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260122232226-8e98ce8d340d // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260128011058-8636f8732409 // indirect
 	google.golang.org/grpc v1.75.1 // indirect
 )

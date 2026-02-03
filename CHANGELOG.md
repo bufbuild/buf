@@ -4,8 +4,9 @@
 
 - Add `buf registry policy {commit,create,delete,info,label,settings}` commands to manage BSR policies.
 - Add LSP deprecate code action to add the deprecated option on types and symbols.
+- Fix import LSP document link to not include `import` keyword.
+- Update `PROTOVALIDATE` lint rule to support checking unenforceable `required` rules on `repeated.items`, `map.keys` and `map.values`.
 - Add `buf source edit deprecate` command to deprecate types by setting the `deprecate = true` option.
-- Fix import LSP document link to not include `import` keyword
 
 ## [v1.64.0] - 2026-01-19
 

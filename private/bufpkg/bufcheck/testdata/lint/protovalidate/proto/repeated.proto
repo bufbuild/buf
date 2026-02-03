@@ -66,4 +66,6 @@ message RepeatedTest {
   ];
   repeated string valid_no_constraint_example = 21 [(buf.validate.field).repeated.items.string.example = "proto"];
   repeated string invalid_no_constraint_example = 22 [(buf.validate.field).repeated.items.bool.example = true];
+  // invalid: required cannot be set on repeated items
+  repeated string invalid_required_on_items = 23 [(buf.validate.field).repeated.items.required = true];
 }

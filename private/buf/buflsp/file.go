@@ -290,17 +290,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 	fileDiagnostics := xslices.Filter(diagnosticReport.Diagnostics, func(d report.Diagnostic) bool {
 		return d.Primary().Path() == f.objectInfo.Path()
 	})
-	diagnostics, err := xslices.MapError(
-		fileDiagnostics,
-		reportDiagnosticToProtocolDiagnostic,
-	)
-	if err != nil {
-		f.lsp.logger.Error(
-			"failed to parse report diagnostics",
-			xslog.ErrorAttr(err),
-		)
-	}
-	f.diagnostics = diagnostics
+	f.diagnostics = xslices.Map(fileDiagnostics, reportDiagnosticToProtocolDiagnostic)
 	f.lsp.logger.DebugContext(
 		ctx, "ir diagnostic(s)",
 		slog.String("uri", f.uri.Filename()),
@@ -1139,7 +1129,7 @@ func (f *file) appendAnnotations(source string, annotations []bufanalysis.FileAn
 		startLocation := f.file.InverseLocation(annotation.StartLine(), annotation.StartColumn(), positionalEncoding)
 		endLocation := f.file.InverseLocation(annotation.EndLine(), annotation.EndColumn(), positionalEncoding)
 		protocolRange := reportLocationsToProtocolRange(startLocation, endLocation)
-		f.diagnostics = append(f.diagnostics, protocol.Diagnostic{
+		diagnostic := protocol.Diagnostic{
 			Range: protocolRange,
 			Code:  annotation.Type(),
 			CodeDescription: &protocol.CodeDescription{
@@ -1148,7 +1138,13 @@ func (f *file) appendAnnotations(source string, annotations []bufanalysis.FileAn
 			Severity: protocol.DiagnosticSeverityWarning,
 			Source:   source,
 			Message:  annotation.Message(),
-		})
+		}
+		if annotation.Type() == "IMPORT_USED" {
+			diagnostic.Tags = []protocol.DiagnosticTag{
+				protocol.DiagnosticTagUnnecessary,
+			}
+		}
+		f.diagnostics = append(f.diagnostics, diagnostic)
 	}
 }
 

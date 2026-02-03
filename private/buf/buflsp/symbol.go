@@ -364,8 +364,10 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 		Kind:          kind,
 		Location:      location,
 		ContainerName: containerName,
-		// TODO: Use Tags with a protocol.CompletionItemTagDeprecated if the client supports tags.
-		Deprecated: isDeprecated,
+		Deprecated:    isDeprecated,
+		Tags: []protocol.SymbolTag{
+			protocol.SymbolTagDeprecated,
+		},
 	}
 }
 
@@ -555,22 +557,28 @@ func (s *symbol) getDocsFromComments() string {
 	// traversing backwards for leading comments only.
 	tok, _ := def.Context().Stream().Around(def.Span().Start)
 	cursor := token.NewCursorAt(tok)
-	var seenNewline bool
+	// Count consecutive newlines. If we accumulate 2+ without encountering a comment,
+	// there's a blank line separating the comments from the symbol.
+	newlinesSeen := 0
+	if tok.Kind() == token.Space {
+		newlinesSeen = strings.Count(tok.Text(), "\n")
+		if newlinesSeen >= 2 {
+			return ""
+		}
+	}
 	for {
 		t := cursor.PrevSkippable()
 		if t.Kind() == token.Comment {
-			text := commentToMarkdown(t.Text())
-			if seenNewline {
-				text += "\n"
+			if isTrailingComment(t) {
+				break
 			}
-			seenNewline = false
+			text := commentToMarkdown(t.Text()) + "\n"
+			newlinesSeen = 0
 			comments = append(comments, text)
 		} else if t.Kind() == token.Space {
-			if strings.Contains(t.Text(), "\n") {
-				if seenNewline {
-					break
-				}
-				seenNewline = true
+			newlinesSeen += strings.Count(t.Text(), "\n")
+			if newlinesSeen >= 2 {
+				break
 			}
 		} else {
 			break
@@ -794,4 +802,20 @@ func plural(i int) string {
 		return ""
 	}
 	return "s"
+}
+
+// isTrailingComment returns true if the comment has code on the same line before it.
+func isTrailingComment(t token.Token) bool {
+	if t.Kind() != token.Comment {
+		return false
+	}
+	for c := token.NewCursorAt(t); ; {
+		p := c.PrevSkippable()
+		if p.IsZero() || strings.Contains(p.Text(), "\n") {
+			return false
+		}
+		if p.Kind() != token.Space {
+			return true
+		}
+	}
 }
