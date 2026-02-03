@@ -225,8 +225,8 @@ message User {
 		ContentChanges: []protocol.TextDocumentContentChangeEvent{
 			{
 				Range: protocol.Range{
-					Start: protocol.Position{Line: 5, Character: 2},  // Start of "string"
-					End:   protocol.Position{Line: 5, Character: 8},  // End of "string"
+					Start: protocol.Position{Line: 5, Character: 2}, // Start of "string"
+					End:   protocol.Position{Line: 5, Character: 8}, // End of "string"
 				},
 				Text: "int32",
 			},

@@ -19,6 +19,7 @@ package buflsp
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -182,6 +183,55 @@ func (l *lsp) init(_ context.Context, params *protocol.InitializeParams) error {
 
 // newHandler constructs an RPC handler that wraps the default one from jsonrpc2. This allows us
 // to inject debug logging, tracing, and timeouts to requests.
+// handleDidChangeWithRangeDetection handles textDocument/didChange with custom unmarshaling
+// to detect whether Range fields were present in the JSON (for incremental sync) vs omitted
+// (for full document sync).
+func (l *lsp) handleDidChangeWithRangeDetection(
+	ctx context.Context,
+	replier jsonrpc2.Replier,
+	req jsonrpc2.Request,
+	server *server,
+) error {
+	// Parse params to get the raw contentChanges
+	var rawParams struct {
+		TextDocument struct {
+			URI     protocol.DocumentURI `json:"uri"`
+			Version int32                `json:"version"`
+		} `json:"textDocument"`
+		ContentChanges []json.RawMessage `json:"contentChanges"`
+	}
+	if err := json.Unmarshal(req.Params(), &rawParams); err != nil {
+		return replier(ctx, nil, fmt.Errorf("failed to unmarshal didChange params: %w", err))
+	}
+
+	// Detect which changes have range present
+	rangePresent, err := detectRangePresence(rawParams.ContentChanges)
+	if err != nil {
+		l.logger.Warn("failed to detect range presence, falling back to heuristic", xslog.ErrorAttr(err))
+		// Fall back to normal handling which uses heuristic
+		var params protocol.DidChangeTextDocumentParams
+		if err := json.Unmarshal(req.Params(), &params); err != nil {
+			return replier(ctx, nil, fmt.Errorf("failed to unmarshal didChange params: %w", err))
+		}
+		return server.DidChange(ctx, &params)
+	}
+
+	// Unmarshal the full params
+	var params protocol.DidChangeTextDocumentParams
+	if err := json.Unmarshal(req.Params(), &params); err != nil {
+		return replier(ctx, nil, fmt.Errorf("failed to unmarshal didChange params: %w", err))
+	}
+
+	// Get the file and apply changes with range info
+	file := l.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return replier(ctx, nil, fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI))
+	}
+
+	file.ApplyChangesWithRangeInfo(ctx, params.TextDocument.Version, params.ContentChanges, rangePresent)
+	return replier(ctx, nil, nil)
+}
+
 func (l *lsp) newHandler() (jsonrpc2.Handler, error) {
 	server, err := newServer(l)
 	if err != nil {
@@ -208,6 +258,11 @@ func (l *lsp) newHandler() (jsonrpc2.Handler, error) {
 			// Verify that the server has been initialized if this isn't the initialization
 			// request.
 			err = replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize))
+		} else if req.Method() == protocol.MethodTextDocumentDidChange {
+			// Special handling for textDocument/didChange to detect range presence
+			l.lock.Lock()
+			err = l.handleDidChangeWithRangeDetection(ctx, replier, req, server)
+			l.lock.Unlock()
 		} else {
 			l.lock.Lock()
 			err = actual(ctx, replier, req)

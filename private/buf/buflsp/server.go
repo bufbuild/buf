@@ -60,7 +60,7 @@ type server struct {
 }
 
 // newServer creates a protocol.Server implementation out of an lsp.
-func newServer(lsp *lsp) (protocol.Server, error) {
+func newServer(lsp *lsp) (*server, error) {
 	httpsURLRegex, err := xurls.StrictMatchingScheme("https://")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create HTTPS URL regex: %w", err)

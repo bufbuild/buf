@@ -18,6 +18,7 @@ package buflsp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -162,11 +163,74 @@ func (f *file) ReadFromWorkspace(ctx context.Context) (err error) {
 	return nil
 }
 
+// contentChange wraps a protocol.TextDocumentContentChangeEvent with additional metadata
+// about whether the Range field was present in the original JSON.
+type contentChange struct {
+	protocol.TextDocumentContentChangeEvent
+	rangePresent bool
+}
+
+// detectRangePresence analyzes the raw JSON of ContentChanges to determine which
+// changes have Range fields present (for incremental sync) vs omitted (for full sync).
+//
+// This is necessary because go.lsp.dev/protocol uses a non-pointer Range field, making
+// it impossible to distinguish between an omitted range (full document sync) and an
+// explicitly zero-valued range (incremental edit at position 0,0).
+func detectRangePresence(rawChanges []json.RawMessage) ([]bool, error) {
+	rangePresent := make([]bool, len(rawChanges))
+	for i, rawChange := range rawChanges {
+		var raw map[string]json.RawMessage
+		if err := json.Unmarshal(rawChange, &raw); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal content change: %w", err)
+		}
+		_, rangePresent[i] = raw["range"]
+	}
+	return rangePresent, nil
+}
+
 // ApplyChanges applies a list of text document content changes to this file.
-// It supports both full document sync (when Range is nil) and incremental sync
+// It supports both full document sync (when Range is omitted) and incremental sync
 // (when Range is present).
+//
+// This method uses a heuristic to detect full document sync. For more accurate detection,
+// use ApplyChangesWithRangeInfo.
 func (f *file) ApplyChanges(ctx context.Context, version int32, changes []protocol.TextDocumentContentChangeEvent) {
+	// Create a default rangePresent slice - assume range is present unless it's clearly not
+	rangePresent := make([]bool, len(changes))
+	for i, change := range changes {
+		// Heuristic: if Range is zero-valued AND RangeLength is 0 AND text is suspiciously
+		// long (more than 100 chars), it's likely a full document sync.
+		// Otherwise, assume it's an incremental change to avoid breaking valid edits at 0,0.
+		isLikelyFullSync := change.Range.Start.Line == 0 &&
+			change.Range.Start.Character == 0 &&
+			change.Range.End.Line == 0 &&
+			change.Range.End.Character == 0 &&
+			change.RangeLength == 0 &&
+			len(change.Text) > 100
+		rangePresent[i] = !isLikelyFullSync
+	}
+	f.ApplyChangesWithRangeInfo(ctx, version, changes, rangePresent)
+}
+
+// ApplyChangesWithRangeInfo applies content changes with explicit knowledge of whether
+// each change had a Range field in the original JSON.
+func (f *file) ApplyChangesWithRangeInfo(
+	ctx context.Context,
+	version int32,
+	changes []protocol.TextDocumentContentChangeEvent,
+	rangePresent []bool,
+) {
 	if len(changes) == 0 {
+		return
+	}
+
+	if len(rangePresent) != len(changes) {
+		f.lsp.logger.WarnContext(ctx, "rangePresent length mismatch",
+			slog.String("uri", f.uri.Filename()),
+			slog.Int("changes", len(changes)),
+			slog.Int("rangePresent", len(rangePresent)))
+		// Fall back to default behavior
+		f.ApplyChanges(ctx, version, changes)
 		return
 	}
 
@@ -177,17 +241,10 @@ func (f *file) ApplyChanges(ctx context.Context, version int32, changes []protoc
 	}
 
 	// Apply each change in order
-	for _, change := range changes {
+	for i, change := range changes {
 		// According to LSP spec: "If range and rangeLength are omitted the new text
 		// is considered to be the full content of the document."
-		// Check if this is a full document sync (range is zero-valued and rangeLength is 0)
-		isFullSync := change.Range.Start.Line == 0 &&
-			change.Range.Start.Character == 0 &&
-			change.Range.End.Line == 0 &&
-			change.Range.End.Character == 0 &&
-			change.RangeLength == 0
-
-		if isFullSync {
+		if !rangePresent[i] {
 			// Full document sync: replace entire content
 			currentText = change.Text
 		} else {
