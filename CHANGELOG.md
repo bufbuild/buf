@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.65.0] - 2026-02-03
 
 - Add `buf registry policy {commit,create,delete,info,label,settings}` commands to manage BSR policies.
 - Add LSP deprecate code action to add the deprecated option on types and symbols.
@@ -1484,7 +1484,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.64.0...HEAD
+[v1.65.0]: https://github.com/bufbuild/buf/compare/v1.64.0...v1.65.0
 [v1.64.0]: https://github.com/bufbuild/buf/compare/v1.63.0...v1.64.0
 [v1.63.0]: https://github.com/bufbuild/buf/compare/v1.62.1...v1.63.0
 [v1.62.1]: https://github.com/bufbuild/buf/compare/v1.62.0...v1.62.1
