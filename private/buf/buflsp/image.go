@@ -16,6 +16,7 @@ package buflsp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -88,6 +89,13 @@ func buildImage(
 			diagnostics = xslices.Map(errorsWithPos, func(errorWithPos reporter.ErrorWithPos) protocol.Diagnostic {
 				return newDiagnostic(errorWithPos, false, opener, logger)
 			})
+		} else {
+			// If no errors were reported via the reporter callback but compilation failed,
+			// the error itself might be an ErrorWithPos (e.g., unresolved import).
+			var errorWithPos reporter.ErrorWithPos
+			if errors.As(err, &errorWithPos) {
+				diagnostics = []protocol.Diagnostic{newDiagnostic(errorWithPos, false, opener, logger)}
+			}
 		}
 	}
 	if len(compiled) == 0 || compiled[0] == nil {
@@ -191,18 +199,23 @@ func buildImage(
 // Unfortunately, protocompile's errors are currently too meagre to provide full code
 // spans; that will require a fix in the compiler.
 func newDiagnostic(err reporter.ErrorWithPos, isWarning bool, opener fileOpener, logger *slog.Logger) protocol.Diagnostic {
-	// Read the file text for the error's filename to convert byte offset to UTF-16 column.
-	position := err.GetPosition()
-	filename := position.Filename
+	startPos := err.Start()
+	endPos := err.End()
+	filename := startPos.Filename
+
+	// Convert positions to UTF-16 encoding for LSP.
 	// Fallback to byte-based column (will be wrong for non-ASCII).
-	utf16Col := err.GetPosition().Col - 1
+	startUtf16Col := startPos.Col - 1
+	endUtf16Col := endPos.Col - 1
 
 	// TODO: this is a temporary workaround for old diagnostic errors.
 	// When using the new compiler these conversions will be already handled.
 	if text, ok := opener[filename]; ok {
 		file := source.NewFile(filename, text)
-		loc := file.Location(position.Offset, positionalEncoding)
-		utf16Col = loc.Column - 1
+		startLoc := file.Location(startPos.Offset, positionalEncoding)
+		endLoc := file.Location(endPos.Offset, positionalEncoding)
+		startUtf16Col = startLoc.Column - 1
+		endUtf16Col = endLoc.Column - 1
 	} else {
 		logger.Warn(
 			"failed to open file for diagnostic position encoding",
@@ -210,9 +223,13 @@ func newDiagnostic(err reporter.ErrorWithPos, isWarning bool, opener fileOpener,
 		)
 	}
 
-	pos := protocol.Position{
-		Line:      uint32(err.GetPosition().Line - 1),
-		Character: uint32(utf16Col),
+	start := protocol.Position{
+		Line:      uint32(startPos.Line - 1),
+		Character: uint32(startUtf16Col),
+	}
+	end := protocol.Position{
+		Line:      uint32(endPos.Line - 1),
+		Character: uint32(endUtf16Col),
 	}
 
 	severity := protocol.DiagnosticSeverityError
@@ -221,9 +238,7 @@ func newDiagnostic(err reporter.ErrorWithPos, isWarning bool, opener fileOpener,
 	}
 
 	return protocol.Diagnostic{
-		// TODO: The compiler currently does not record spans for diagnostics. This is
-		// essentially a bug that will result in worse diagnostics until fixed.
-		Range:    protocol.Range{Start: pos, End: pos},
+		Range:    protocol.Range{Start: start, End: end},
 		Severity: severity,
 		Message:  err.Unwrap().Error(),
 		Source:   serverName,

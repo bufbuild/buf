@@ -222,6 +222,21 @@ func TestDiagnostics(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:      "unresolved_import_diagnostic",
+			protoFile: "testdata/diagnostics/unresolved_import.proto",
+			expectedDiagnostics: []protocol.Diagnostic{
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 5, Character: 7},
+						End:   protocol.Position{Line: 5, Character: 28},
+					},
+					Severity: protocol.DiagnosticSeverityError,
+					Source:   "buf-lsp",
+					Message:  `does/not/exist.proto: file does not exist`,
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
