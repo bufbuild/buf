@@ -21,6 +21,7 @@ import (
 	"io"
 	"io/fs"
 	"log/slog"
+	"slices"
 	"strings"
 
 	"buf.build/go/standard/xlog/xslog"
@@ -85,17 +86,14 @@ func buildImage(
 	compiled, err := compiler.Compile(ctx, path)
 	if err != nil {
 		logger.Warn("error building image", slog.String("path", path), xslog.ErrorAttr(err))
+		var errorWithPos reporter.ErrorWithPos
+		if errors.As(err, &errorWithPos) {
+			diagnostics = []protocol.Diagnostic{newDiagnostic(errorWithPos, false, opener, logger)}
+		}
 		if len(errorsWithPos) > 0 {
-			diagnostics = xslices.Map(errorsWithPos, func(errorWithPos reporter.ErrorWithPos) protocol.Diagnostic {
+			diagnostics = slices.Concat(diagnostics, xslices.Map(errorsWithPos, func(errorWithPos reporter.ErrorWithPos) protocol.Diagnostic {
 				return newDiagnostic(errorWithPos, false, opener, logger)
-			})
-		} else {
-			// If no errors were reported via the reporter callback but compilation failed,
-			// the error itself might be an ErrorWithPos (e.g., unresolved import).
-			var errorWithPos reporter.ErrorWithPos
-			if errors.As(err, &errorWithPos) {
-				diagnostics = []protocol.Diagnostic{newDiagnostic(errorWithPos, false, opener, logger)}
-			}
+			}))
 		}
 	}
 	if len(compiled) == 0 || compiled[0] == nil {
