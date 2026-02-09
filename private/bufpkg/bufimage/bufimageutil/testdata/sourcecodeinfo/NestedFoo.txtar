@@ -243,17 +243,6 @@ message Foo {
     },
     {
       "path": [
-        11,
-        0
-      ],
-      "span": [
-        13,
-        7,
-        11
-      ]
-    },
-    {
-      "path": [
         3,
         0
       ],
@@ -263,6 +252,17 @@ message Foo {
         40
       ],
       "leadingComments": " Keep if NestedFoo: comment on import any.proto\n"
+    },
+    {
+      "path": [
+        11,
+        0
+      ],
+      "span": [
+        16,
+        7,
+        11
+      ]
     },
     {
       "path": [

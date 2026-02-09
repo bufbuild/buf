@@ -415,17 +415,6 @@ extend google.protobuf.MessageOptions {
     },
     {
       "path": [
-        11,
-        0
-      ],
-      "span": [
-        13,
-        7,
-        11
-      ]
-    },
-    {
-      "path": [
         7
       ],
       "span": [

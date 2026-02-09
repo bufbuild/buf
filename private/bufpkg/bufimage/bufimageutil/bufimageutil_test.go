@@ -562,8 +562,9 @@ func runFilterImage(t *testing.T, image bufimage.Image, opts ...ImageFilterOptio
 
 	// We may have filtered out custom options from the set in the step above. However, the options messages
 	// still contain extension fields that refer to the custom options, as a result of building the image.
-	// So we serialize and then de-serialize, and use only the filtered results to parse extensions. That way, the result will omit custom options that aren't present in the filtered set (as they will be
-	// considered unrecognized fields).
+	// So we serialize and then de-serialize, and use only the filtered results to parse extensions. That way,
+	// the result will omit custom options that aren't present in the filtered set (as they will be considered
+	// unrecognized fields).
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{
 		File: xslices.Map(filteredImage.Files(), func(imageFile bufimage.ImageFile) *descriptorpb.FileDescriptorProto {
 			return imageFile.FileDescriptorProto()
