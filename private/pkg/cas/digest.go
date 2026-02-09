@@ -16,6 +16,7 @@ package cas
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -32,14 +33,23 @@ const (
 	//
 	// This is both the default and the only currently-known value for DigestType.
 	DigestTypeShake256 DigestType = iota + 1
+	// DigestTypeSha256 represents the sha256 digest type.
+	DigestTypeSha256
+
+	sha256DigestLength = 32
 )
 
 var (
+	// AllDigestTypes are all DigestTypes.
+	AllDigestTypes = []DigestType{DigestTypeShake256, DigestTypeSha256}
+
 	digestTypeToString = map[DigestType]string{
 		DigestTypeShake256: "shake256",
+		DigestTypeSha256:   "sha256",
 	}
 	stringToDigestType = map[string]DigestType{
 		"shake256": DigestTypeShake256,
+		"sha256":   DigestTypeSha256,
 	}
 )
 
@@ -108,6 +118,9 @@ func NewDigest(value []byte, options ...DigestOption) (Digest, error) {
 			return nil, err
 		}
 		return newDigest(DigestTypeShake256, shake256Digest.Value()), nil
+	case DigestTypeSha256:
+		sha256Digest := sha256.Sum256(value)
+		return newDigest(DigestTypeSha256, sha256Digest[:]), nil
 	default:
 		// This is a system error.
 		return nil, syserror.Newf("unknown DigestType: %v", digestOptions.digestType)
@@ -134,6 +147,12 @@ func NewDigestForContent(reader io.Reader, options ...DigestOption) (Digest, err
 			return nil, err
 		}
 		return newDigest(DigestTypeShake256, shake256Digest.Value()), nil
+	case DigestTypeSha256:
+		hash := sha256.New()
+		if _, err := io.Copy(hash, reader); err != nil {
+			return nil, err
+		}
+		return newDigest(DigestTypeSha256, hash.Sum(nil)[:]), nil
 	default:
 		// This is a system error.
 		return nil, syserror.Newf("unknown DigestType: %v", digestOptions.digestType)
@@ -264,6 +283,10 @@ func validateDigestParameters(digestType DigestType, value []byte) error {
 		_, err := shake256.NewDigest(value)
 		if err != nil {
 			return err
+		}
+	case DigestTypeSha256:
+		if len(value) != sha256DigestLength {
+			return fmt.Errorf("invalid shake256 digest value: expected %d bytes, got %d", sha256DigestLength, len(value))
 		}
 	default:
 		// This is really always a system error, but little harm in including it here, even

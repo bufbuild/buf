@@ -33,12 +33,22 @@ func TestNewDigestForContent(t *testing.T) {
 	t.Parallel()
 	digest, err := cas.NewDigestForContent(bytes.NewBuffer(nil))
 	require.NoError(t, err)
-	assert.NotEqual(t, cas.DigestType(0), digest.Type())
+	assert.Equal(t, cas.DigestTypeShake256, digest.Type())
 	assert.NotEmpty(t, digest.Value())
 
 	digest, err = cas.NewDigestForContent(strings.NewReader("some content"))
 	require.NoError(t, err)
-	assert.NotEqual(t, cas.DigestType(0), digest.Type())
+	assert.Equal(t, cas.DigestTypeShake256, digest.Type())
+	assert.NotEmpty(t, digest.Value())
+
+	digest, err = cas.NewDigestForContent(bytes.NewBuffer(nil), cas.DigestWithDigestType(cas.DigestTypeSha256))
+	require.NoError(t, err)
+	assert.Equal(t, cas.DigestTypeSha256, digest.Type())
+	assert.NotEmpty(t, digest.Value())
+
+	digest, err = cas.NewDigestForContent(strings.NewReader("some content"), cas.DigestWithDigestType(cas.DigestTypeSha256))
+	require.NoError(t, err)
+	assert.Equal(t, cas.DigestTypeSha256, digest.Type())
 	assert.NotEmpty(t, digest.Value())
 
 	// failing digesting content
@@ -54,6 +64,8 @@ func TestParseDigestError(t *testing.T) {
 	testParseDigestError(t, "foo", true)
 	testParseDigestError(t, "shake256 foo", true)
 	testParseDigestError(t, "shake256:_", true)
+	testParseDigestError(t, "sha256 foo", true)
+	testParseDigestError(t, "sha256:_", true)
 	validDigest, err := cas.NewDigestForContent(bytes.NewBuffer(nil))
 	require.NoError(t, err)
 	validDigestHex := hex.EncodeToString(validDigest.Value())
@@ -70,9 +82,16 @@ func TestDigestEqual(t *testing.T) {
 	require.NoError(t, err)
 	d3, err := cas.NewDigestForContent(strings.NewReader(fileContent + "foo"))
 	require.NoError(t, err)
+	d4, err := cas.NewDigestForContent(strings.NewReader(fileContent), cas.DigestWithDigestType(cas.DigestTypeSha256))
+	require.NoError(t, err)
+	d5, err := cas.NewDigestForContent(strings.NewReader(fileContent), cas.DigestWithDigestType(cas.DigestTypeSha256))
+	require.NoError(t, err)
 	assert.True(t, cas.DigestEqual(d1, d2))
+	assert.True(t, cas.DigestEqual(d4, d5))
 	assert.False(t, cas.DigestEqual(d1, d3))
+	assert.False(t, cas.DigestEqual(d1, d4))
 	assert.False(t, cas.DigestEqual(d2, d3))
+	assert.False(t, cas.DigestEqual(d2, d4))
 }
 
 func testParseDigestError(t *testing.T, digestString string, expectParseError bool) {
