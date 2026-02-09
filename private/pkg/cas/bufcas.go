@@ -12,8 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
-
-package bufcas
-
-import _ "buf.build/go/bufprivateusage"
+package cas

@@ -19,7 +19,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/pkg/cas"
 )
 
 // PluginData presents the raw Plugin data read by PluginKey.
@@ -80,13 +80,13 @@ func newPluginData(
 		if err != nil {
 			return err
 		}
-		bufcasDigest, err := bufcas.NewDigestForContent(
+		casDigest, err := cas.NewDigestForContent(
 			bytes.NewReader(pluginData),
 		)
 		if err != nil {
 			return err
 		}
-		actualDigest, err := NewDigest(DigestTypeP1, bufcasDigest)
+		actualDigest, err := NewDigest(DigestTypeP1, casDigest)
 		if err != nil {
 			return err
 		}
