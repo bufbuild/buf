@@ -1,3 +1,18 @@
+-- test.proto --
+// Keep 1: comment on syntax
+syntax = "proto2";
+// Keep 2: comment on package
+package foo.bar;
+// Keep 3: comment on option
+option go_package = "foo.bar/baz";
+// "Keep if Baz" and "Keep if Quz" are also kept for Bar, Svc, and Svc.Do
+// since those elements depend on Baz and Quz.
+// Keep if Baz: comment on enum Baz
+enum Baz {
+  // Keep if Baz: comment on enum value BAZ_UNSPECIFIED
+  BAZ_UNSPECIFIED = 0;
+}
+-- source_code_info.json --
 {
   "location": [
     {

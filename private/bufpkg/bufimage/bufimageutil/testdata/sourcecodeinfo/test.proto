@@ -14,7 +14,7 @@ import "google/protobuf/descriptor.proto";
 import weak "google/protobuf/struct.proto";
 
 // Keep if NestedFoo: comment on import any.proto
-import weak "google/protobuf/any.proto";
+import weak "google/protobuf/any.proto";  
 
 // Keep if ext: comment on extend block
 extend google.protobuf.MessageOptions {

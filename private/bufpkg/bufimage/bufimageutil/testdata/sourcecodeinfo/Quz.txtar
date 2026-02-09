@@ -1,3 +1,16 @@
+-- test.proto --
+// Keep 1: comment on syntax
+syntax = "proto2";
+// Keep 2: comment on package
+package foo.bar;
+// Keep 3: comment on option
+option go_package = "foo.bar/baz";
+// Keep if Quz: comment on enum Quz
+enum Quz {
+  // Keep if Quz: comment on enum value QUZ_UNSPECIFIED
+  QUZ_UNSPECIFIED = 0;
+}
+-- source_code_info.json --
 {
   "location": [
     {
