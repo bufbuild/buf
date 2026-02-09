@@ -21,7 +21,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -90,7 +89,7 @@ func TestParseManifestError(t *testing.T) {
 func testParseManifestError(t *testing.T, manifestString string) {
 	_, err := ParseManifest(manifestString)
 	assert.Error(t, err)
-	parseError := &bufparse.ParseError{}
+	parseError := &ParseError{}
 	isParseError := errors.As(err, &parseError)
 	assert.True(t, isParseError)
 	assert.Equal(t, manifestString, parseError.Input())

@@ -23,7 +23,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/shake256"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -60,11 +59,11 @@ func (d DigestType) String() string {
 //
 // This reverses DigestType.String().
 //
-// Returns an error of type *bufparse.ParseError if the string could not be parsed.
+// Returns an error of type *ParseError if the string could not be parsed.
 func ParseDigestType(s string) (DigestType, error) {
 	d, ok := stringToDigestType[s]
 	if !ok {
-		return 0, bufparse.NewParseError(
+		return 0, newParseError(
 			"digest type",
 			s,
 			fmt.Errorf("unknown type: %q", s),
@@ -168,7 +167,7 @@ func ParseDigest(s string) (Digest, error) {
 	}
 	digestTypeString, hexValue, ok := strings.Cut(s, ":")
 	if !ok {
-		return nil, bufparse.NewParseError(
+		return nil, newParseError(
 			"digest",
 			s,
 			errors.New(`must in the form "digest_type:digest_hex_value"`),
@@ -176,7 +175,7 @@ func ParseDigest(s string) (Digest, error) {
 	}
 	digestType, err := ParseDigestType(digestTypeString)
 	if err != nil {
-		return nil, bufparse.NewParseError(
+		return nil, newParseError(
 			"digest",
 			s,
 			err,
@@ -184,14 +183,14 @@ func ParseDigest(s string) (Digest, error) {
 	}
 	value, err := hex.DecodeString(hexValue)
 	if err != nil {
-		return nil, bufparse.NewParseError(
+		return nil, newParseError(
 			"digest",
 			s,
 			errors.New(`could not parse hex: must in the form "digest_type:digest_hex_value"`),
 		)
 	}
 	if err := validateDigestParameters(digestType, value); err != nil {
-		return nil, bufparse.NewParseError(
+		return nil, newParseError(
 			"digest",
 			s,
 			err,

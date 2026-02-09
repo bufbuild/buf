@@ -25,7 +25,6 @@ import (
 	"testing/iotest"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
-	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -79,7 +78,7 @@ func TestDigestEqual(t *testing.T) {
 func testParseDigestError(t *testing.T, digestString string, expectParseError bool) {
 	_, err := bufcas.ParseDigest(digestString)
 	assert.Error(t, err)
-	parseError := &bufparse.ParseError{}
+	parseError := &bufcas.ParseError{}
 	isParseError := errors.As(err, &parseError)
 	if expectParseError {
 		assert.True(t, isParseError)
