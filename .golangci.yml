@@ -232,10 +232,6 @@ linters:
         text: missing the call to method parallel
       - linters:
           - gochecknoinits
-        # we actually want to use this init to create a protovalidate.Validator
-        path: private/bufpkg/bufcas/proto.go
-      - linters:
-          - gochecknoinits
         # we actually want to use init here
         path: private/bufpkg/bufconfig/module_config.go
       - linters:

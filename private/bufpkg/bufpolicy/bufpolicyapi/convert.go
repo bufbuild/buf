@@ -20,9 +20,9 @@ import (
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
 	"buf.build/go/bufplugin/option"
 	"buf.build/go/standard/xslices"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
+	"github.com/bufbuild/buf/private/pkg/cas"
 )
 
 var (
@@ -40,11 +40,11 @@ func V1Beta1ProtoToDigest(protoDigest *policyv1beta1.Digest) (bufpolicy.Digest, 
 	if err != nil {
 		return nil, err
 	}
-	bufcasDigest, err := bufcas.NewDigest(protoDigest.Value)
+	casDigest, err := cas.NewDigest(protoDigest.Value)
 	if err != nil {
 		return nil, err
 	}
-	return bufpolicy.NewDigest(digestType, bufcasDigest)
+	return bufpolicy.NewDigest(digestType, casDigest)
 }
 
 // V1Beta1ProtoToPolicyConfig converts the given proto PolicyConfig to a PolicyConfig.

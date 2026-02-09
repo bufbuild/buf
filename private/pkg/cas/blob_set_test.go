@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcas
+package cas
 
 import (
 	"fmt"
@@ -25,25 +25,35 @@ import (
 
 func TestNewBlobSet(t *testing.T) {
 	t.Parallel()
-	blobs := testNewBlobs(t, 10)
-	blobSet, err := NewBlobSet(blobs)
-	require.NoError(t, err)
-	testAssertBlobsEqual(t, blobs, blobSet.Blobs())
-	assert.Equal(t, blobs[0], blobSet.GetBlob(blobs[0].Digest()))
+	for _, digestType := range AllDigestTypes {
+		t.Run(digestType.String(), func(t *testing.T) {
+			t.Parallel()
+			blobs := testNewBlobs(t, 10, digestType)
+			blobSet, err := NewBlobSet(blobs)
+			require.NoError(t, err)
+			testAssertBlobsEqual(t, blobs, blobSet.Blobs())
+			assert.Equal(t, blobs[0], blobSet.GetBlob(blobs[0].Digest()))
+		})
+	}
 }
 
 func TestNewBlobSetDuplicatesValid(t *testing.T) {
 	t.Parallel()
-	blobs := testNewBlobs(t, 10)
-	_, err := NewBlobSet(append(blobs, blobs[0]))
-	require.NoError(t, err)
+	for _, digestType := range AllDigestTypes {
+		t.Run(digestType.String(), func(t *testing.T) {
+			t.Parallel()
+			blobs := testNewBlobs(t, 10, digestType)
+			_, err := NewBlobSet(append(blobs, blobs[0]))
+			require.NoError(t, err)
+		})
+	}
 }
 
-func testNewBlobs(t *testing.T, size int) []Blob {
+func testNewBlobs(t *testing.T, size int, digestType DigestType) []Blob {
 	var blobs []Blob
 	for i := range size {
 		content := fmt.Sprintf("some file content %d", i)
-		blob, err := NewBlobForContent(strings.NewReader(content))
+		blob, err := NewBlobForContent(strings.NewReader(content), BlobWithDigestType(digestType))
 		require.NoError(t, err)
 		blobs = append(blobs, blob)
 	}

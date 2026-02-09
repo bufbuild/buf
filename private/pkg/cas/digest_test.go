@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Making sure that ParseErrors work outside of the bufcas package.
-package bufcas_test
+// Making sure that ParseErrors work outside of the cas package.
+package cas_test
 
 import (
 	"bytes"
@@ -24,27 +24,36 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
-	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/pkg/cas"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewDigestForContent(t *testing.T) {
 	t.Parallel()
-	digest, err := bufcas.NewDigestForContent(bytes.NewBuffer(nil))
+	digest, err := cas.NewDigestForContent(bytes.NewBuffer(nil))
 	require.NoError(t, err)
-	assert.NotEqual(t, bufcas.DigestType(0), digest.Type())
+	assert.Equal(t, cas.DigestTypeShake256, digest.Type())
 	assert.NotEmpty(t, digest.Value())
 
-	digest, err = bufcas.NewDigestForContent(strings.NewReader("some content"))
+	digest, err = cas.NewDigestForContent(strings.NewReader("some content"))
 	require.NoError(t, err)
-	assert.NotEqual(t, bufcas.DigestType(0), digest.Type())
+	assert.Equal(t, cas.DigestTypeShake256, digest.Type())
+	assert.NotEmpty(t, digest.Value())
+
+	digest, err = cas.NewDigestForContent(bytes.NewBuffer(nil), cas.DigestWithDigestType(cas.DigestTypeSha256))
+	require.NoError(t, err)
+	assert.Equal(t, cas.DigestTypeSha256, digest.Type())
+	assert.NotEmpty(t, digest.Value())
+
+	digest, err = cas.NewDigestForContent(strings.NewReader("some content"), cas.DigestWithDigestType(cas.DigestTypeSha256))
+	require.NoError(t, err)
+	assert.Equal(t, cas.DigestTypeSha256, digest.Type())
 	assert.NotEmpty(t, digest.Value())
 
 	// failing digesting content
 	expectedErr := errors.New("testing error")
-	digest, err = bufcas.NewDigestForContent(iotest.ErrReader(expectedErr))
+	digest, err = cas.NewDigestForContent(iotest.ErrReader(expectedErr))
 	assert.ErrorIs(t, err, expectedErr)
 	assert.Nil(t, digest)
 }
@@ -55,7 +64,9 @@ func TestParseDigestError(t *testing.T) {
 	testParseDigestError(t, "foo", true)
 	testParseDigestError(t, "shake256 foo", true)
 	testParseDigestError(t, "shake256:_", true)
-	validDigest, err := bufcas.NewDigestForContent(bytes.NewBuffer(nil))
+	testParseDigestError(t, "sha256 foo", true)
+	testParseDigestError(t, "sha256:_", true)
+	validDigest, err := cas.NewDigestForContent(bytes.NewBuffer(nil))
 	require.NoError(t, err)
 	validDigestHex := hex.EncodeToString(validDigest.Value())
 	testParseDigestError(t, fmt.Sprintf("%s:%s", validDigest.Type(), validDigestHex[:10]), true)
@@ -65,21 +76,28 @@ func TestParseDigestError(t *testing.T) {
 func TestDigestEqual(t *testing.T) {
 	t.Parallel()
 	fileContent := "one line\nanother line\nyet another one\n"
-	d1, err := bufcas.NewDigestForContent(strings.NewReader(fileContent))
+	d1, err := cas.NewDigestForContent(strings.NewReader(fileContent))
 	require.NoError(t, err)
-	d2, err := bufcas.NewDigestForContent(strings.NewReader(fileContent))
+	d2, err := cas.NewDigestForContent(strings.NewReader(fileContent))
 	require.NoError(t, err)
-	d3, err := bufcas.NewDigestForContent(strings.NewReader(fileContent + "foo"))
+	d3, err := cas.NewDigestForContent(strings.NewReader(fileContent + "foo"))
 	require.NoError(t, err)
-	assert.True(t, bufcas.DigestEqual(d1, d2))
-	assert.False(t, bufcas.DigestEqual(d1, d3))
-	assert.False(t, bufcas.DigestEqual(d2, d3))
+	d4, err := cas.NewDigestForContent(strings.NewReader(fileContent), cas.DigestWithDigestType(cas.DigestTypeSha256))
+	require.NoError(t, err)
+	d5, err := cas.NewDigestForContent(strings.NewReader(fileContent), cas.DigestWithDigestType(cas.DigestTypeSha256))
+	require.NoError(t, err)
+	assert.True(t, cas.DigestEqual(d1, d2))
+	assert.True(t, cas.DigestEqual(d4, d5))
+	assert.False(t, cas.DigestEqual(d1, d3))
+	assert.False(t, cas.DigestEqual(d1, d4))
+	assert.False(t, cas.DigestEqual(d2, d3))
+	assert.False(t, cas.DigestEqual(d2, d4))
 }
 
 func testParseDigestError(t *testing.T, digestString string, expectParseError bool) {
-	_, err := bufcas.ParseDigest(digestString)
+	_, err := cas.ParseDigest(digestString)
 	assert.Error(t, err)
-	parseError := &bufparse.ParseError{}
+	parseError := &cas.ParseError{}
 	isParseError := errors.As(err, &parseError)
 	if expectParseError {
 		assert.True(t, isParseError)

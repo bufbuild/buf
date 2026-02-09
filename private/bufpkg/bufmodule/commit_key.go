@@ -42,7 +42,7 @@ type CommitKey interface {
 	CommitID() uuid.UUID
 	// DigestType returns the DigestType of the Commit.
 	//
-	// Note this is *not* a bufcas.Digest - this is a Digest. bufcas.Digests are a lower-level
+	// Note this is *not* a cas.Digest - this is a Digest. cas.Digests are a lower-level
 	// type that just deal in terms of files and content. A ModuleDigest is a specific algorithm
 	// applied to a set of files and dependencies.
 	DigestType() DigestType

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcas
+package cas
 
 import (
 	"bytes"
@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-
-	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 )
 
 // Manifest is a set of FileNodes.
@@ -74,13 +72,13 @@ func NewManifest(fileNodes []FileNode) (Manifest, error) {
 //
 // This reverses Manifest.String().
 //
-// Returns an error of type *bufparse.ParseError if the string could not be parsed.
+// Returns an error of type *ParseError if the string could not be parsed.
 func ParseManifest(s string) (Manifest, error) {
 	var fileNodes []FileNode
 	original := s
 	if len(s) > 0 {
 		if s[len(s)-1] != '\n' {
-			return nil, bufparse.NewParseError(
+			return nil, newParseError(
 				"manifest",
 				original,
 				errors.New("did not end with newline"),
@@ -90,7 +88,7 @@ func ParseManifest(s string) (Manifest, error) {
 		for i, line := range strings.Split(s, "\n") {
 			fileNode, err := ParseFileNode(line)
 			if err != nil {
-				return nil, bufparse.NewParseError(
+				return nil, newParseError(
 					"manifest",
 					original,
 					fmt.Errorf("line %d: %w", i, err),
@@ -104,7 +102,7 @@ func ParseManifest(s string) (Manifest, error) {
 	// Validation occurs within getAndValidateManifestPathToFileNode, so we pass nil to that.
 	pathToFileNode, err := getAndValidateManifestPathToFileNode(fileNodes)
 	if err != nil {
-		return nil, bufparse.NewParseError(
+		return nil, newParseError(
 			"manifest",
 			original,
 			err,
@@ -123,15 +121,15 @@ func ManifestToBlob(manifest Manifest) (Blob, error) {
 // ManifestToDigest converts the string representation of the given Manifest into a Digest.
 //
 // The Manifest is assumed to be non-nil.
-func ManifestToDigest(manifest Manifest) (Digest, error) {
-	return NewDigestForContent(strings.NewReader(manifest.String()))
+func ManifestToDigest(manifest Manifest, options ...DigestOption) (Digest, error) {
+	return NewDigestForContent(strings.NewReader(manifest.String()), options...)
 }
 
 // BlobToManifest converts the given Blob representing the string representation of a Manifest into a Manifest.
 //
 // # The Blob is assumed to be non-nil
 //
-// This function returns an error of type *bufparse.ParseError since this is
+// This function returns an error of type *ParseError since this is
 // effectively parsing the blob.
 func BlobToManifest(blob Blob) (Manifest, error) {
 	return ParseManifest(string(blob.Content()))

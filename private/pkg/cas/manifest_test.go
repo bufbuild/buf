@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcas
+package cas
 
 import (
 	"errors"
@@ -21,46 +21,50 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestManifest(t *testing.T) {
 	t.Parallel()
-	var digests []Digest
-	var fileNodes []FileNode
-	for i := range 10 {
-		digest, err := NewDigestForContent(strings.NewReader(fmt.Sprintf("content%d", i)))
-		require.NoError(t, err)
-		digests = append(digests, digest)
-		fileNode, err := NewFileNode(fmt.Sprintf("%d", i), digest)
-		require.NoError(t, err)
-		fileNodes = append(fileNodes, fileNode)
+	for _, digestType := range AllDigestTypes {
+		t.Run(digestType.String(), func(t *testing.T) {
+			t.Parallel()
+			var digests []Digest
+			var fileNodes []FileNode
+			for i := range 10 {
+				digest, err := NewDigestForContent(strings.NewReader(fmt.Sprintf("content%d", i)), DigestWithDigestType(digestType))
+				require.NoError(t, err)
+				digests = append(digests, digest)
+				fileNode, err := NewFileNode(fmt.Sprintf("%d", i), digest)
+				require.NoError(t, err)
+				fileNodes = append(fileNodes, fileNode)
+			}
+			manifest, err := NewManifest(fileNodes)
+			require.NoError(t, err)
+
+			sort.Slice(
+				fileNodes,
+				func(i int, j int) bool {
+					return fileNodes[i].Path() < fileNodes[j].Path()
+				},
+			)
+			manifestFileNodes := manifest.FileNodes()
+			for i := range 10 {
+				digest := manifest.GetDigest(fmt.Sprintf("%d", i))
+				require.NotNil(t, digest)
+				assert.Equal(t, digests[i], digest)
+				assert.Equal(t, fileNodes[i], manifestFileNodes[i])
+			}
+
+			manifestString := manifest.String()
+			parsedManifest, err := ParseManifest(manifestString)
+			require.NoError(t, err)
+
+			// Do not use fileNodes, FileNodes() are sorted.
+			assert.Equal(t, manifestFileNodes, parsedManifest.FileNodes())
+		})
 	}
-	manifest, err := NewManifest(fileNodes)
-	require.NoError(t, err)
-
-	sort.Slice(
-		fileNodes,
-		func(i int, j int) bool {
-			return fileNodes[i].Path() < fileNodes[j].Path()
-		},
-	)
-	manifestFileNodes := manifest.FileNodes()
-	for i := range 10 {
-		digest := manifest.GetDigest(fmt.Sprintf("%d", i))
-		require.NotNil(t, digest)
-		assert.Equal(t, digests[i], digest)
-		assert.Equal(t, fileNodes[i], manifestFileNodes[i])
-	}
-
-	manifestString := manifest.String()
-	parsedManifest, err := ParseManifest(manifestString)
-	require.NoError(t, err)
-
-	// Do not use fileNodes, FileNodes() are sorted.
-	assert.Equal(t, manifestFileNodes, parsedManifest.FileNodes())
 }
 
 func TestEmptyManifest(t *testing.T) {
@@ -90,7 +94,7 @@ func TestParseManifestError(t *testing.T) {
 func testParseManifestError(t *testing.T, manifestString string) {
 	_, err := ParseManifest(manifestString)
 	assert.Error(t, err)
-	parseError := &bufparse.ParseError{}
+	parseError := &ParseError{}
 	isParseError := errors.As(err, &parseError)
 	assert.True(t, isParseError)
 	assert.Equal(t, manifestString, parseError.Input())

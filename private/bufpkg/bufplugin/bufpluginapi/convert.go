@@ -18,8 +18,8 @@ import (
 	"fmt"
 
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/pkg/cas"
 )
 
 var (
@@ -37,11 +37,11 @@ func V1Beta1ProtoToDigest(protoDigest *pluginv1beta1.Digest) (bufplugin.Digest, 
 	if err != nil {
 		return nil, err
 	}
-	bufcasDigest, err := bufcas.NewDigest(protoDigest.Value)
+	casDigest, err := cas.NewDigest(protoDigest.Value)
 	if err != nil {
 		return nil, err
 	}
-	return bufplugin.NewDigest(digestType, bufcasDigest)
+	return bufplugin.NewDigest(digestType, casDigest)
 }
 
 // *** PRIVATE ***

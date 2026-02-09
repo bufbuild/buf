@@ -22,9 +22,9 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"buf.build/go/standard/xslices"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/pkg/cas"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
@@ -71,11 +71,11 @@ func V1ProtoToDigest(protoDigest *modulev1.Digest) (bufmodule.Digest, error) {
 	if err != nil {
 		return nil, err
 	}
-	bufcasDigest, err := bufcas.NewDigest(protoDigest.Value)
+	casDigest, err := cas.NewDigest(protoDigest.Value)
 	if err != nil {
 		return nil, err
 	}
-	return bufmodule.NewDigest(digestType, bufcasDigest)
+	return bufmodule.NewDigest(digestType, casDigest)
 }
 
 // DigestToV1Beta1Proto converts the given Digest to a proto Digest.
@@ -99,11 +99,11 @@ func V1Beta1ProtoToDigest(protoDigest *modulev1beta1.Digest) (bufmodule.Digest, 
 	if err != nil {
 		return nil, err
 	}
-	bufcasDigest, err := bufcas.NewDigest(protoDigest.Value)
+	casDigest, err := cas.NewDigest(protoDigest.Value)
 	if err != nil {
 		return nil, err
 	}
-	return bufmodule.NewDigest(digestType, bufcasDigest)
+	return bufmodule.NewDigest(digestType, casDigest)
 }
 
 // *** PRIVATE ***

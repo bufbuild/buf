@@ -25,8 +25,8 @@ import (
 	"strings"
 
 	"buf.build/go/standard/xslices"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/pkg/cas"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -109,17 +109,17 @@ type Digest interface {
 }
 
 // NewDigest creates a new Digest.
-func NewDigest(digestType DigestType, bufcasDigest bufcas.Digest) (Digest, error) {
+func NewDigest(digestType DigestType, casDigest cas.Digest) (Digest, error) {
 	switch digestType {
 	case DigestTypeB4, DigestTypeB5:
-		if bufcasDigest.Type() != bufcas.DigestTypeShake256 {
+		if casDigest.Type() != cas.DigestTypeShake256 {
 			return nil, syserror.Newf(
 				"trying to create a %v Digest for a cas Digest of type %v",
 				digestType,
-				bufcasDigest.Type(),
+				casDigest.Type(),
 			)
 		}
-		return newDigest(digestType, bufcasDigest), nil
+		return newDigest(digestType, casDigest), nil
 	default:
 		// This is a system error.
 		return nil, syserror.Newf("unknown DigestType: %v", digestType)
@@ -165,11 +165,11 @@ func ParseDigest(s string) (Digest, error) {
 	}
 	switch digestType {
 	case DigestTypeB4, DigestTypeB5:
-		bufcasDigest, err := bufcas.NewDigest(value)
+		casDigest, err := cas.NewDigest(value)
 		if err != nil {
 			return nil, err
 		}
-		return NewDigest(digestType, bufcasDigest)
+		return NewDigest(digestType, casDigest)
 	default:
 		return nil, syserror.Newf("unknown DigestType: %v", digestType)
 	}
@@ -196,19 +196,19 @@ func DigestEqual(a Digest, b Digest) bool {
 /// *** PRIVATE ***
 
 type digest struct {
-	digestType   DigestType
-	bufcasDigest bufcas.Digest
+	digestType DigestType
+	casDigest  cas.Digest
 	// Cache as we call String pretty often.
 	// We could do this lazily but not worth it.
 	stringValue string
 }
 
 // validation should occur outside of this function.
-func newDigest(digestType DigestType, bufcasDigest bufcas.Digest) *digest {
+func newDigest(digestType DigestType, casDigest cas.Digest) *digest {
 	return &digest{
-		digestType:   digestType,
-		bufcasDigest: bufcasDigest,
-		stringValue:  digestType.String() + ":" + hex.EncodeToString(bufcasDigest.Value()),
+		digestType:  digestType,
+		casDigest:   casDigest,
+		stringValue: digestType.String() + ":" + hex.EncodeToString(casDigest.Value()),
 	}
 }
 
@@ -217,7 +217,7 @@ func (d *digest) Type() DigestType {
 }
 
 func (d *digest) Value() []byte {
-	return d.bufcasDigest.Value()
+	return d.casDigest.Value()
 }
 
 func (d *digest) String() string {
@@ -232,7 +232,7 @@ func getB4Digest(
 	v1BufYAMLObjectData ObjectData,
 	v1BufLockObjectData ObjectData,
 ) (Digest, error) {
-	var fileNodes []bufcas.FileNode
+	var fileNodes []cas.FileNode
 	if err := storage.WalkReadObjects(
 		ctx,
 		// This is extreme defensive programming. We've gone out of our way to make sure
@@ -240,11 +240,11 @@ func getB4Digest(
 		storage.FilterReadBucket(bucketWithStorageMatcherApplied, getStorageMatcher(ctx, bucketWithStorageMatcherApplied)),
 		"",
 		func(readObject storage.ReadObject) error {
-			digest, err := bufcas.NewDigestForContent(readObject)
+			digest, err := cas.NewDigestForContent(readObject)
 			if err != nil {
 				return err
 			}
-			fileNode, err := bufcas.NewFileNode(readObject.Path(), digest)
+			fileNode, err := cas.NewFileNode(readObject.Path(), digest)
 			if err != nil {
 				return err
 			}
@@ -262,25 +262,25 @@ func getB4Digest(
 			// We may not have object data for one of these files, this is valid.
 			continue
 		}
-		digest, err := bufcas.NewDigestForContent(bytes.NewReader(objectData.Data()))
+		digest, err := cas.NewDigestForContent(bytes.NewReader(objectData.Data()))
 		if err != nil {
 			return nil, err
 		}
-		fileNode, err := bufcas.NewFileNode(objectData.Name(), digest)
+		fileNode, err := cas.NewFileNode(objectData.Name(), digest)
 		if err != nil {
 			return nil, err
 		}
 		fileNodes = append(fileNodes, fileNode)
 	}
-	manifest, err := bufcas.NewManifest(fileNodes)
+	manifest, err := cas.NewManifest(fileNodes)
 	if err != nil {
 		return nil, err
 	}
-	bufcasDigest, err := bufcas.ManifestToDigest(manifest)
+	casDigest, err := cas.ManifestToDigest(manifest)
 	if err != nil {
 		return nil, err
 	}
-	return NewDigest(DigestTypeB4, bufcasDigest)
+	return NewDigest(DigestTypeB4, casDigest)
 }
 
 func getB5DigestForBucketAndModuleDeps(
@@ -321,8 +321,8 @@ func getB5DigestForBucketAndDepModuleKeys(
 //
 // A Digest is a composite digest of all Module Files, and all Module dependencies.
 //
-// All Files are added to a bufcas.Manifest, which is then turned into a bufcas.Digest.
-// The file bufcas.Digest, along with all Digests of the dependencies, are then sorted,
+// All Files are added to a cas.Manifest, which is then turned into a cas.Digest.
+// The file cas.Digest, along with all Digests of the dependencies, are then sorted,
 // and then digested themselves as content.
 //
 // Note that the name of the Module and any of its dependencies has no effect on the Digest.
@@ -331,13 +331,13 @@ func getB5DigestForBucketAndDepDigests(
 	bucketWithStorageMatcherApplied storage.ReadBucket,
 	depDigests []Digest,
 ) (Digest, error) {
-	// First, compute the shake256 bufcas.Digest of the files. This will include a
+	// First, compute the shake256 cas.Digest of the files. This will include a
 	// sorted list of file names and their digests.
 	filesDigest, err := getFilesDigestForB5Digest(ctx, bucketWithStorageMatcherApplied)
 	if err != nil {
 		return nil, err
 	}
-	if filesDigest.Type() != bufcas.DigestTypeShake256 {
+	if filesDigest.Type() != cas.DigestTypeShake256 {
 		return nil, syserror.Newf("trying to compute b5 Digest with files digest of type %v", filesDigest.Type())
 	}
 	// Next, we get the b5 digests of all the dependencies and sort their string representations.
@@ -359,7 +359,7 @@ func getB5DigestForBucketAndDepDigests(
 	// Now, place the file digest first, then the sorted dependency digests afterwards.
 	digestStrings := append([]string{filesDigest.String()}, depDigestStrings...)
 	// Join these strings together with newlines, and make a new shake256 digest.
-	digestOfDigests, err := bufcas.NewDigestForContent(strings.NewReader(strings.Join(digestStrings, "\n")))
+	digestOfDigests, err := cas.NewDigestForContent(strings.NewReader(strings.Join(digestStrings, "\n")))
 	if err != nil {
 		return nil, err
 	}
@@ -371,8 +371,8 @@ func getB5DigestForBucketAndDepDigests(
 func getFilesDigestForB5Digest(
 	ctx context.Context,
 	bucketWithStorageMatcherApplied storage.ReadBucket,
-) (bufcas.Digest, error) {
-	var fileNodes []bufcas.FileNode
+) (cas.Digest, error) {
+	var fileNodes []cas.FileNode
 	if err := storage.WalkReadObjects(
 		ctx,
 		// This is extreme defensive programming. We've gone out of our way to make sure
@@ -380,11 +380,11 @@ func getFilesDigestForB5Digest(
 		storage.FilterReadBucket(bucketWithStorageMatcherApplied, getStorageMatcher(ctx, bucketWithStorageMatcherApplied)),
 		"",
 		func(readObject storage.ReadObject) error {
-			digest, err := bufcas.NewDigestForContent(readObject)
+			digest, err := cas.NewDigestForContent(readObject)
 			if err != nil {
 				return err
 			}
-			fileNode, err := bufcas.NewFileNode(readObject.Path(), digest)
+			fileNode, err := cas.NewFileNode(readObject.Path(), digest)
 			if err != nil {
 				return err
 			}
@@ -394,9 +394,9 @@ func getFilesDigestForB5Digest(
 	); err != nil {
 		return nil, err
 	}
-	manifest, err := bufcas.NewManifest(fileNodes)
+	manifest, err := cas.NewManifest(fileNodes)
 	if err != nil {
 		return nil, err
 	}
-	return bufcas.ManifestToDigest(manifest)
+	return cas.ManifestToDigest(manifest)
 }

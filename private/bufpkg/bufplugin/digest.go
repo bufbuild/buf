@@ -22,8 +22,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/pkg/cas"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -96,17 +96,17 @@ type Digest interface {
 }
 
 // NewDigest creates a new Digest.
-func NewDigest(digestType DigestType, bufcasDigest bufcas.Digest) (Digest, error) {
+func NewDigest(digestType DigestType, casDigest cas.Digest) (Digest, error) {
 	switch digestType {
 	case DigestTypeP1:
-		if bufcasDigest.Type() != bufcas.DigestTypeShake256 {
+		if casDigest.Type() != cas.DigestTypeShake256 {
 			return nil, syserror.Newf(
 				"trying to create a %v Digest for a cas Digest of type %v",
 				digestType,
-				bufcasDigest.Type(),
+				casDigest.Type(),
 			)
 		}
-		return newDigest(digestType, bufcasDigest), nil
+		return newDigest(digestType, casDigest), nil
 	default:
 		// This is a system error.
 		return nil, syserror.Newf("unknown DigestType: %v", digestType)
@@ -152,11 +152,11 @@ func ParseDigest(s string) (Digest, error) {
 	}
 	switch digestType {
 	case DigestTypeP1:
-		bufcasDigest, err := bufcas.NewDigest(value)
+		casDigest, err := cas.NewDigest(value)
 		if err != nil {
 			return nil, err
 		}
-		return NewDigest(digestType, bufcasDigest)
+		return NewDigest(digestType, casDigest)
 	default:
 		return nil, syserror.Newf("unknown DigestType: %v", digestType)
 	}
@@ -183,19 +183,19 @@ func DigestEqual(a Digest, b Digest) bool {
 /// *** PRIVATE ***
 
 type digest struct {
-	digestType   DigestType
-	bufcasDigest bufcas.Digest
+	digestType DigestType
+	casDigest  cas.Digest
 	// Cache as we call String pretty often.
 	// We could do this lazily but not worth it.
 	stringValue string
 }
 
 // validation should occur outside of this function.
-func newDigest(digestType DigestType, bufcasDigest bufcas.Digest) *digest {
+func newDigest(digestType DigestType, casDigest cas.Digest) *digest {
 	return &digest{
-		digestType:   digestType,
-		bufcasDigest: bufcasDigest,
-		stringValue:  digestType.String() + ":" + hex.EncodeToString(bufcasDigest.Value()),
+		digestType:  digestType,
+		casDigest:   casDigest,
+		stringValue: digestType.String() + ":" + hex.EncodeToString(casDigest.Value()),
 	}
 }
 
@@ -204,7 +204,7 @@ func (d *digest) Type() DigestType {
 }
 
 func (d *digest) Value() []byte {
-	return d.bufcasDigest.Value()
+	return d.casDigest.Value()
 }
 
 func (d *digest) String() string {

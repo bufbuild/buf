@@ -22,9 +22,9 @@ import (
 	"log/slog"
 
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy/bufpolicyapi"
+	"github.com/bufbuild/buf/private/pkg/cas"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -127,7 +127,7 @@ func (p *policyDataStore) getPolicyDataForPolicyKey(
 			return nil, err
 		}
 		// Validate the digest, before parsing the config.
-		bufcasDigest, err := bufcas.NewDigestForContent(bytes.NewReader(data))
+		casDigest, err := cas.NewDigestForContent(bytes.NewReader(data))
 		if err != nil {
 			return nil, err
 		}
@@ -135,7 +135,7 @@ func (p *policyDataStore) getPolicyDataForPolicyKey(
 		if err != nil {
 			return nil, err
 		}
-		actualDigest, err := bufpolicy.NewDigest(expectedDigest.Type(), bufcasDigest)
+		actualDigest, err := bufpolicy.NewDigest(expectedDigest.Type(), casDigest)
 		if err != nil {
 			return nil, err
 		}

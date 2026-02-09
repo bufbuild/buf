@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcas
+package cas
 
 import (
 	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
@@ -63,7 +62,7 @@ func NewFileNode(path string, digest Digest) (FileNode, error) {
 func ParseFileNode(s string) (FileNode, error) {
 	split := strings.Split(s, "  ")
 	if len(split) != 2 {
-		return nil, bufparse.NewParseError(
+		return nil, newParseError(
 			"file node",
 			s,
 			errors.New(`must in the form "digest[SP][SP]path"`),
@@ -71,7 +70,7 @@ func ParseFileNode(s string) (FileNode, error) {
 	}
 	digest, err := ParseDigest(split[0])
 	if err != nil {
-		return nil, bufparse.NewParseError(
+		return nil, newParseError(
 			"file node",
 			s,
 			err,
@@ -79,7 +78,7 @@ func ParseFileNode(s string) (FileNode, error) {
 	}
 	path := split[1]
 	if err := validateFileNodeParameters(path, digest); err != nil {
-		return nil, bufparse.NewParseError(
+		return nil, newParseError(
 			"file node",
 			s,
 			err,
