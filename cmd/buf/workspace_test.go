@@ -141,11 +141,30 @@ func TestWorkspaceDir(t *testing.T) {
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 		)
+		dirImportError := fmt.Sprintf(`error: imported file does not exist
+--> %[1]s/proto/rpc.proto:5:1
+|
+5 | import "request.proto";
+| ^^^^^^^^^^^^^^^^^^^^^^^ imported here
+
+error: cannot find %[2]s in this scope
+--> %[1]s/proto/rpc.proto:8:5
+|
+8 |     request.Request req = 1;
+|     ^^^^^^^^^^^^^^^ not found in this scope
+|
+= help: the full name of this scope is %[3]s
+
+encountered 2 errors`,
+			filepath.FromSlash("testdata/workspace/success/"+baseDirPath),
+			"`request.Request`",
+			"`example.RPC`",
+		)
 		testRunStdoutStderrNoWarn(
 			t,
 			nil,
 			bufctl.ExitCodeFileAnnotation,
-			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:5:8:import "request.proto": file does not exist`),
+			dirImportError,
 			"",
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
@@ -156,7 +175,7 @@ func TestWorkspaceDir(t *testing.T) {
 			t,
 			nil,
 			bufctl.ExitCodeFileAnnotation,
-			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:5:8:import "request.proto": file does not exist`),
+			dirImportError,
 			"",
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
@@ -366,12 +385,31 @@ func TestWorkspaceDetached(t *testing.T) {
 		// we'd consider this a bug: you specified the proto directory, and no controlling workspace
 		// was discovered, therefore you build as if proto was the input directory, which results in
 		// request.proto not existing as an import.
+		detachedImportError := fmt.Sprintf(`error: imported file does not exist
+--> %[1]s/proto/rpc.proto:5:1
+|
+5 | import "request.proto";
+| ^^^^^^^^^^^^^^^^^^^^^^^ imported here
+
+error: cannot find %[2]s in this scope
+--> %[1]s/proto/rpc.proto:8:5
+|
+8 |     request.Request req = 1;
+|     ^^^^^^^^^^^^^^^ not found in this scope
+|
+= help: the full name of this scope is %[3]s
+
+encountered 2 errors`,
+			filepath.FromSlash("testdata/workspace/success/"+dirPath),
+			"`request.Request`",
+			"`example.RPC`",
+		)
 		testRunStdoutStderrNoWarn(
 			t,
 			nil,
 			bufctl.ExitCodeFileAnnotation,
 			``,
-			filepath.FromSlash(`testdata/workspace/success/`+dirPath+`/proto/rpc.proto:5:8:import "request.proto": file does not exist`),
+			detachedImportError,
 			"build",
 			filepath.Join("testdata", "workspace", "success", dirPath, "proto"),
 		)
@@ -392,7 +430,7 @@ func TestWorkspaceDetached(t *testing.T) {
 			t,
 			nil,
 			bufctl.ExitCodeFileAnnotation,
-			filepath.FromSlash(`testdata/workspace/success/`+dirPath+`/proto/rpc.proto:5:8:import "request.proto": file does not exist`),
+			detachedImportError,
 			``,
 			"lint",
 			filepath.Join("testdata", "workspace", "success", dirPath, "proto"),

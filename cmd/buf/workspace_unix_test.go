@@ -17,6 +17,7 @@
 package main
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -26,24 +27,39 @@ import (
 func TestWorkspaceSymlinkFail(t *testing.T) {
 	t.Parallel()
 	// The workspace includes a symlink that isn't buildable.
-	testRunStdoutStderrNoWarn(
-		t,
-		nil,
-		bufctl.ExitCodeFileAnnotation,
-		``,
-		filepath.FromSlash(`testdata/workspace/fail/symlink/b/b.proto:5:8:import "c.proto": file does not exist`),
-		"build",
-		filepath.Join("testdata", "workspace", "fail", "symlink"),
-	)
-	testRunStdoutStderrNoWarn(
-		t,
-		nil,
-		bufctl.ExitCodeFileAnnotation,
-		``,
-		filepath.FromSlash(`testdata/workspace/fail/v2/symlink/b/b.proto:5:8:import "c.proto": file does not exist`),
-		"build",
-		filepath.Join("testdata", "workspace", "fail", "v2", "symlink"),
-	)
+	for _, dirPath := range []string{
+		"symlink",
+		"v2/symlink",
+	} {
+		symlinkImportError := fmt.Sprintf(`error: imported file does not exist
+--> %[1]s/b/b.proto:5:1
+|
+5 | import "c.proto";
+| ^^^^^^^^^^^^^^^^^ imported here
+
+error: cannot find %[2]s in this scope
+--> %[1]s/b/b.proto:8:5
+|
+8 |     c.C c = 1;
+|     ^^^ not found in this scope
+|
+= help: the full name of this scope is %[3]s
+
+encountered 2 errors`,
+			filepath.FromSlash("testdata/workspace/fail/"+dirPath),
+			"`c.C`",
+			"`b.B`",
+		)
+		testRunStdoutStderrNoWarn(
+			t,
+			nil,
+			bufctl.ExitCodeFileAnnotation,
+			``,
+			symlinkImportError,
+			"build",
+			filepath.Join("testdata", "workspace", "fail", filepath.FromSlash(dirPath)),
+		)
+	}
 }
 
 func TestWorkspaceSymlink(t *testing.T) {

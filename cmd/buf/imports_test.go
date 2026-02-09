@@ -148,7 +148,13 @@ func TestInvalidNonexistentImport(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
 		t, nil, bufctl.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/imports/failure/people/people/v1/people1.proto:5:8:import "nonexistent.proto": file does not exist`),
+		`error: imported file does not exist
+--> testdata/imports/failure/people/people/v1/people1.proto:5:1
+|
+5 | import "nonexistent.proto";
+| ^^^^^^^^^^^^^^^^^^^^^^^^^^^ imported here
+
+encountered 1 error`,
 		"build",
 		filepath.Join("testdata", "imports", "failure", "people"),
 	)
@@ -158,7 +164,21 @@ func TestInvalidNonexistentImportFromDirectDep(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
 		t, nil, bufctl.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/imports/failure/students/students/v1/students.proto:`)+`6:8:import "people/v1/people_nonexistent.proto": file does not exist`,
+		`error: imported file does not exist
+--> testdata/imports/failure/students/students/v1/students.proto:6:1
+|
+6 | import "people/v1/people_nonexistent.proto"; // but nonexistent file in explicit direct import
+| ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ imported here
+
+error: cannot find `+"`people.v1.Person2`"+` in this scope
+--> testdata/imports/failure/students/students/v1/students.proto:10:3
+|
+10 |   people.v1.Person2 person2 = 2;
+|   ^^^^^^^^^^^^^^^^^ not found in this scope
+|
+= help: the full name of this scope is `+"`students.v1.Student`"+`
+
+encountered 2 errors`,
 		"build",
 		filepath.Join("testdata", "imports", "failure", "students"),
 	)

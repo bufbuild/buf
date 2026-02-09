@@ -168,7 +168,7 @@ func run(
 		}
 	}
 	if len(allFileAnnotations) > 0 {
-		allFileAnnotationSet := bufanalysis.NewFileAnnotationSet(allFileAnnotations...)
+		allFileAnnotationSet := bufanalysis.NewFileAnnotationSet(nil, allFileAnnotations...)
 		if flags.ErrorFormat == "config-ignore-yaml" {
 			if err := bufcli.PrintFileAnnotationSetLintConfigIgnoreYAMLV1(
 				container.Stdout(),

@@ -143,20 +143,6 @@ service Svc {
         4,
         0,
         2,
-        0
-      ],
-      "span": [
-        49,
-        2,
-        27
-      ],
-      "leadingComments": " Keep if Foo: comment on field name\n"
-    },
-    {
-      "path": [
-        4,
-        0,
-        2,
         0,
         4
       ],
@@ -165,6 +151,20 @@ service Svc {
         2,
         10
       ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        0
+      ],
+      "span": [
+        49,
+        2,
+        27
+      ],
+      "leadingComments": " Keep if Foo: comment on field name\n"
     },
     {
       "path": [
@@ -213,20 +213,6 @@ service Svc {
         4,
         0,
         2,
-        1
-      ],
-      "span": [
-        51,
-        2,
-        26
-      ],
-      "leadingComments": " Keep if Foo: comment on field bits\n"
-    },
-    {
-      "path": [
-        4,
-        0,
-        2,
         1,
         4
       ],
@@ -235,6 +221,20 @@ service Svc {
         2,
         10
       ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        1
+      ],
+      "span": [
+        51,
+        2,
+        26
+      ],
+      "leadingComments": " Keep if Foo: comment on field bits\n"
     },
     {
       "path": [
@@ -296,19 +296,6 @@ service Svc {
         4,
         0,
         9,
-        0
-      ],
-      "span": [
-        54,
-        11,
-        19
-      ]
-    },
-    {
-      "path": [
-        4,
-        0,
-        9,
         0,
         1
       ],
@@ -316,6 +303,19 @@ service Svc {
         54,
         11,
         13
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        9,
+        0
+      ],
+      "span": [
+        54,
+        11,
+        19
       ]
     },
     {
@@ -402,19 +402,6 @@ service Svc {
         4,
         0,
         5,
-        0
-      ],
-      "span": [
-        58,
-        13,
-        23
-      ]
-    },
-    {
-      "path": [
-        4,
-        0,
-        5,
         0,
         1
       ],
@@ -422,6 +409,19 @@ service Svc {
         58,
         13,
         16
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        5,
+        0
+      ],
+      "span": [
+        58,
+        13,
+        23
       ]
     },
     {
@@ -471,20 +471,6 @@ service Svc {
         4,
         1,
         2,
-        0
-      ],
-      "span": [
-        97,
-        2,
-        23
-      ],
-      "leadingComments": " Keep if Bar: comment on field foo\n"
-    },
-    {
-      "path": [
-        4,
-        1,
-        2,
         0,
         4
       ],
@@ -493,6 +479,20 @@ service Svc {
         2,
         10
       ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        2,
+        0
+      ],
+      "span": [
+        97,
+        2,
+        23
+      ],
+      "leadingComments": " Keep if Bar: comment on field foo\n"
     },
     {
       "path": [
@@ -570,20 +570,6 @@ service Svc {
         4,
         1,
         2,
-        1
-      ],
-      "span": [
-        101,
-        4,
-        16
-      ],
-      "leadingComments": " Keep if Bar: comment on field baz\n"
-    },
-    {
-      "path": [
-        4,
-        1,
-        2,
         1,
         6
       ],
@@ -592,6 +578,20 @@ service Svc {
         4,
         7
       ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        2,
+        1
+      ],
+      "span": [
+        101,
+        4,
+        16
+      ],
+      "leadingComments": " Keep if Bar: comment on field baz\n"
     },
     {
       "path": [
@@ -626,20 +626,6 @@ service Svc {
         4,
         1,
         2,
-        2
-      ],
-      "span": [
-        103,
-        4,
-        16
-      ],
-      "leadingComments": " Keep if Bar: comment on field quz\n"
-    },
-    {
-      "path": [
-        4,
-        1,
-        2,
         2,
         6
       ],
@@ -648,6 +634,20 @@ service Svc {
         4,
         7
       ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        2,
+        2
+      ],
+      "span": [
+        103,
+        4,
+        16
+      ],
+      "leadingComments": " Keep if Bar: comment on field quz\n"
     },
     {
       "path": [
@@ -710,20 +710,6 @@ service Svc {
         5,
         0,
         2,
-        0
-      ],
-      "span": [
-        113,
-        2,
-        22
-      ],
-      "leadingComments": " Keep if Baz: comment on enum value BAZ_UNSPECIFIED\n"
-    },
-    {
-      "path": [
-        5,
-        0,
-        2,
         0,
         1
       ],
@@ -732,6 +718,20 @@ service Svc {
         2,
         17
       ]
+    },
+    {
+      "path": [
+        5,
+        0,
+        2,
+        0
+      ],
+      "span": [
+        113,
+        2,
+        22
+      ],
+      "leadingComments": " Keep if Baz: comment on enum value BAZ_UNSPECIFIED\n"
     },
     {
       "path": [
@@ -777,20 +777,6 @@ service Svc {
         5,
         1,
         2,
-        0
-      ],
-      "span": [
-        119,
-        2,
-        22
-      ],
-      "leadingComments": " Keep if Quz: comment on enum value QUZ_UNSPECIFIED\n"
-    },
-    {
-      "path": [
-        5,
-        1,
-        2,
         0,
         1
       ],
@@ -799,6 +785,20 @@ service Svc {
         2,
         17
       ]
+    },
+    {
+      "path": [
+        5,
+        1,
+        2,
+        0
+      ],
+      "span": [
+        119,
+        2,
+        22
+      ],
+      "leadingComments": " Keep if Quz: comment on enum value QUZ_UNSPECIFIED\n"
     },
     {
       "path": [

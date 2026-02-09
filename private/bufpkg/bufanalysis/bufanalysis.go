@@ -19,6 +19,8 @@ import (
 	"io"
 	"strconv"
 	"strings"
+
+	"github.com/bufbuild/protocompile/experimental/report"
 )
 
 const (
@@ -207,14 +209,27 @@ type FileAnnotationSet interface {
 	// These will be deduplicated and sorted.
 	FileAnnotations() []FileAnnotation
 
+	// diagnosticReport returns the diagnostic [report.Report] for the [FileAnnotationSet],
+	// if set.
+	//
+	// This may be nil. If non-nil, it will be used as the output for
+	// [PrintFileAnnotationSet] when the format is set to "text", rendered
+	// with a [report.Renderer] configured by the given print options.
+	diagnosticReport() *report.Report
+
 	isFileAnnotationSet()
 }
 
 // NewFileAnnotationSet returns a new FileAnnotationSet.
 //
 // If len(fileAnnotations) is 0, this returns nil.
-func NewFileAnnotationSet(fileAnnotations ...FileAnnotation) FileAnnotationSet {
-	return newFileAnnotationSet(fileAnnotations)
+//
+// The diagnosticReport is the [report.Report] from the compiler, if available.
+// If non-nil, it will be rendered by [PrintFileAnnotationSet] when the format
+// is "text". Otherwise, the individual file annotations will be used, same as
+// all other print formats.
+func NewFileAnnotationSet(diagnosticReport *report.Report, fileAnnotations ...FileAnnotation) FileAnnotationSet {
+	return newFileAnnotationSet(diagnosticReport, fileAnnotations)
 }
 
 // PrintFileAnnotationSet prints the file annotations separated by newlines.
@@ -226,6 +241,11 @@ func PrintFileAnnotationSet(writer io.Writer, fileAnnotationSet FileAnnotationSe
 
 	switch format {
 	case FormatText:
+		if diagnosticReport := fileAnnotationSet.diagnosticReport(); diagnosticReport != nil {
+			renderer := report.Renderer{}
+			_, _, err := renderer.Render(diagnosticReport, writer)
+			return err
+		}
 		return printAsText(writer, fileAnnotationSet.FileAnnotations())
 	case FormatJSON:
 		return printAsJSON(writer, fileAnnotationSet.FileAnnotations())

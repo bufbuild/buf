@@ -253,7 +253,7 @@ linters:
       - linters:
           - containedctx
         # we actually want to embed a context here
-        path: private/bufpkg/bufimage/parser_accessor_handler.go
+        path: private/bufpkg/bufimage/module_file_resolver.go
       - linters:
           - containedctx
         # we actually want to embed a context here
