@@ -472,6 +472,12 @@ linters:
         # and should be considered safe.
         path: private/bufpkg/bufcobra/markdown.go
         text: "printf: non-constant format string in call to p"
+      - linters:
+          - gosec
+        # This converts slice indexes in a FileDescriptorProto to int32,
+        # which are not an actual risk of overflow.
+        path: private/bufpkg/bufimage/bufimageutil/image_filter.go
+        text: "G115:"
 
 issues:
   max-same-issues: 0

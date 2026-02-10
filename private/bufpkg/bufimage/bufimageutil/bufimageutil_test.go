@@ -274,17 +274,17 @@ func TestOptionImports(t *testing.T) {
 
 	t.Run("exclude_foo", func(t *testing.T) {
 		t.Parallel()
-		generated := runFilterImage(t, image, WithExcludeTypes("message_foo"))
+		generated, _ := runFilterImage(t, image, WithExcludeTypes("message_foo"))
 		checkExpectation(t, context.Background(), generated, bucket, "foo.txtar")
 	})
 	t.Run("exclude_foo_bar", func(t *testing.T) {
 		t.Parallel()
-		generated := runFilterImage(t, image, WithExcludeTypes("message_foo", "message_bar"))
+		generated, _ := runFilterImage(t, image, WithExcludeTypes("message_foo", "message_bar"))
 		checkExpectation(t, context.Background(), generated, bucket, "foo_bar.txtar")
 	})
 	t.Run("exclude_bar", func(t *testing.T) {
 		t.Parallel()
-		generated := runFilterImage(t, image, WithIncludeTypes("pkg.Foo"), WithExcludeTypes("message_bar"))
+		generated, _ := runFilterImage(t, image, WithIncludeTypes("pkg.Foo"), WithExcludeTypes("message_bar"))
 		checkExpectation(t, context.Background(), generated, bucket, "bar.txtar")
 	})
 }
@@ -541,11 +541,11 @@ func runDiffTest(t *testing.T, testdataDir string, expectedFile string, opts ...
 	ctx := context.Background()
 	bucket, image, err := getImage(ctx, slogtestext.NewLogger(t), testdataDir, bufimage.WithExcludeSourceCodeInfo())
 	require.NoError(t, err)
-	generated := runFilterImage(t, image, opts...)
+	generated, _ := runFilterImage(t, image, opts...)
 	checkExpectation(t, ctx, generated, bucket, expectedFile)
 }
 
-func runFilterImage(t *testing.T, image bufimage.Image, opts ...ImageFilterOption) []byte {
+func runFilterImage(t *testing.T, image bufimage.Image, opts ...ImageFilterOption) ([]byte, bufimage.Image) {
 	filteredImage, err := FilterImage(image, opts...)
 	require.NoError(t, err)
 	assert.NotNil(t, filteredImage)
@@ -562,8 +562,9 @@ func runFilterImage(t *testing.T, image bufimage.Image, opts ...ImageFilterOptio
 
 	// We may have filtered out custom options from the set in the step above. However, the options messages
 	// still contain extension fields that refer to the custom options, as a result of building the image.
-	// So we serialize and then de-serialize, and use only the filtered results to parse extensions. That way, the result will omit custom options that aren't present in the filtered set (as they will be
-	// considered unrecognized fields).
+	// So we serialize and then de-serialize, and use only the filtered results to parse extensions. That way,
+	// the result will omit custom options that aren't present in the filtered set (as they will be considered
+	// unrecognized fields).
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{
 		File: xslices.Map(filteredImage.Files(), func(imageFile bufimage.ImageFile) *descriptorpb.FileDescriptorProto {
 			return imageFile.FileDescriptorProto()
@@ -594,7 +595,7 @@ func runFilterImage(t *testing.T, image bufimage.Image, opts ...ImageFilterOptio
 		return archive.Files[i].Name < archive.Files[j].Name
 	})
 	generated := txtar.Format(archive)
-	return generated
+	return generated, filteredImage
 }
 
 func checkExpectation(t *testing.T, ctx context.Context, actual []byte, bucket storage.ReadWriteBucket, expectedFile string) {
@@ -618,15 +619,19 @@ func runSourceCodeInfoTest(t *testing.T, typename string, expectedFile string, o
 	bucket, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/sourcecodeinfo")
 	require.NoError(t, err)
 
-	filteredImage, err := FilterImage(image, append(opts, WithIncludeTypes(typename))...)
+	opts = append(opts, WithIncludeTypes(typename))
+	generated, image := runFilterImage(t, image, opts...)
+	filteredImage, err := FilterImage(image, opts...)
 	require.NoError(t, err)
 
 	imageFile := filteredImage.GetFile("test.proto")
 	sourceCodeInfo := imageFile.FileDescriptorProto().GetSourceCodeInfo()
 	actual, err := protoencoding.NewJSONMarshaler(nil, protoencoding.JSONMarshalerWithIndent()).Marshal(sourceCodeInfo)
 	require.NoError(t, err)
+	generated = append(generated, []byte("-- source_code_info.json --\n")...)
+	generated = append(generated, actual...)
 
-	checkExpectation(t, ctx, actual, bucket, expectedFile)
+	checkExpectation(t, ctx, generated, bucket, expectedFile)
 
 	resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(filteredImage)...)
 	require.NoError(t, err)

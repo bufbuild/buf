@@ -15,6 +15,7 @@
 package bufimageutil
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 	"sort"
@@ -254,6 +255,10 @@ func (b *sourcePathsBuilder) remapDependencies(
 	dependencies := fileDescriptor.GetDependency()
 	publicDependencies := fileDescriptor.GetPublicDependency()
 	weakDependencies := fileDescriptor.GetWeakDependency()
+	// TODO: Add support for option dependencies when buf CLI supports edition 2024.
+	if len(fileDescriptor.GetOptionDependency()) > 0 {
+		return nil, nil, nil, false, errors.New("edition 2024 not yet supported: cannot filter a file descriptor with option dependencies")
+	}
 
 	// Check if the imports need to be remapped.
 	importsRequired := b.closure.imports[fileDescriptor.GetName()]
@@ -271,14 +276,15 @@ func (b *sourcePathsBuilder) remapDependencies(
 		return dependencies, publicDependencies, weakDependencies, false, nil
 	}
 
-	indexFrom, indexTo := int32(0), int32(0)
 	var newDependencies []string
 	if b.options.mutateInPlace {
 		newDependencies = dependencies[:0]
 	}
 	dependencyPath := append(sourcePath, fileDependencyTag)
 	dependencyChanges := make([]int32, len(dependencies))
-	for _, importPath := range dependencies {
+	indexTo := int32(0)
+	for i, importPath := range dependencies {
+		indexFrom := int32(i)
 		path := append(dependencyPath, indexFrom)
 		if _, ok := importsRequired[importPath]; ok {
 			dependencyChanges[indexFrom] = indexTo
@@ -293,7 +299,6 @@ func (b *sourcePathsBuilder) remapDependencies(
 			sourcePathsRemap.markDeleted(path)
 			dependencyChanges[indexFrom] = -1
 		}
-		indexFrom++
 	}
 	// Add imports picked up via a public import. The filtered files do not use public imports.
 	if publicImportCount := len(importsRequired); publicImportCount > 0 {
@@ -314,14 +319,16 @@ func (b *sourcePathsBuilder) remapDependencies(
 			newWeakDependencies = weakDependencies[:0]
 		}
 		weakDependencyPath := append(sourcePath, fileWeakDependencyTag)
-		for _, indexFrom := range weakDependencies {
-			path := append(weakDependencyPath, indexFrom)
+		for i, indexFrom := range weakDependencies {
+			weakFrom := int32(i)
+			path := append(weakDependencyPath, weakFrom)
 			indexTo := dependencyChanges[indexFrom]
 			if indexTo == -1 {
 				sourcePathsRemap.markDeleted(path)
 			} else {
-				if indexTo != indexFrom {
-					sourcePathsRemap.markMoved(path, indexTo)
+				weakTo := int32(len(newWeakDependencies))
+				if weakTo != weakFrom {
+					sourcePathsRemap.markMoved(path, weakTo)
 				}
 				newWeakDependencies = append(newWeakDependencies, indexTo)
 			}

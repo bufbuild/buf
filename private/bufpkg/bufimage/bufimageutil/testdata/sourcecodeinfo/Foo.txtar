@@ -1,3 +1,26 @@
+-- test.proto --
+// Keep 1: comment on syntax
+syntax = "proto2";
+// Keep 2: comment on package
+package foo.bar;
+// Keep 3: comment on option
+option go_package = "foo.bar/baz";
+// "Keep if Foo" are also kept for Bar, Svc, and Svc.Do since those
+// elements depend on Foo.
+// Keep if Foo: comment on message Foo
+message Foo {
+  // We keep the following comment for NestedFoo because we don't
+  // discard options or option comments even if we're only retaining
+  // a message as a namespace for another retained element.
+  // Keep if Foo: comment on field name
+  optional string name = 1;
+  // Keep if Foo: comment on field bits
+  repeated int64 bits = 2;
+  extensions 100 to max;
+  reserved 10 to 20;
+  reserved "abc", "def", "ghi";
+}
+-- source_code_info.json --
 {
   "location": [
     {
@@ -51,17 +74,6 @@
         34
       ],
       "leadingComments": " Keep 3: comment on option\n"
-    },
-    {
-      "path": [
-        11,
-        0
-      ],
-      "span": [
-        13,
-        7,
-        11
-      ]
     },
     {
       "path": [
