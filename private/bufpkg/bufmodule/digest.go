@@ -276,7 +276,7 @@ func getB4Digest(
 	if err != nil {
 		return nil, err
 	}
-	casDigest, err := cas.ManifestToDigest(manifest)
+	casDigest, err := cas.ManifestToDigest(manifest, cas.DigestTypeShake256)
 	if err != nil {
 		return nil, err
 	}
@@ -372,31 +372,11 @@ func getFilesDigestForB5Digest(
 	ctx context.Context,
 	bucketWithStorageMatcherApplied storage.ReadBucket,
 ) (cas.Digest, error) {
-	var fileNodes []cas.FileNode
-	if err := storage.WalkReadObjects(
+	return cas.BucketToDigest(
 		ctx,
 		// This is extreme defensive programming. We've gone out of our way to make sure
 		// that the bucket is already filtered, but it's just too important to mess up here.
 		storage.FilterReadBucket(bucketWithStorageMatcherApplied, getStorageMatcher(ctx, bucketWithStorageMatcherApplied)),
-		"",
-		func(readObject storage.ReadObject) error {
-			digest, err := cas.NewDigestForContent(readObject)
-			if err != nil {
-				return err
-			}
-			fileNode, err := cas.NewFileNode(readObject.Path(), digest)
-			if err != nil {
-				return err
-			}
-			fileNodes = append(fileNodes, fileNode)
-			return nil
-		},
-	); err != nil {
-		return nil, err
-	}
-	manifest, err := cas.NewManifest(fileNodes)
-	if err != nil {
-		return nil, err
-	}
-	return cas.ManifestToDigest(manifest)
+		cas.DigestTypeShake256,
+	)
 }
