@@ -243,9 +243,8 @@ func TestDefinitionURLEncoding(t *testing.T) {
 	location := locations[0]
 
 	// Construct the expected URI with @ encoded as %40
-	expectedURIPath := filepath.ToSlash(testProtoPath)
-	expectedURIPath = strings.ReplaceAll(expectedURIPath, "@", "%40")
-	expectedURI := protocol.URI("file://" + expectedURIPath)
+	// Use uri.File() to get the correct URI format for the platform (e.g., file:/// on Windows)
+	expectedURI := protocol.URI(strings.ReplaceAll(string(uri.File(testProtoPath)), "@", "%40"))
 
 	assert.Equal(t, expectedURI, location.URI, "returned URI should have @ encoded as %40")
 
