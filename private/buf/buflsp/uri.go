@@ -31,12 +31,10 @@ import (
 // When URIs don't match exactly, LSP operations like go-to-definition fail because
 // the client's URI (with %40) doesn't match the server's URI (with @).
 func normalizeURI(u protocol.URI) protocol.URI {
-	s := string(u)
-	s = strings.ReplaceAll(s, "@", "%40")
-	return protocol.URI(s)
+	return protocol.URI(strings.ReplaceAll(string(u), "@", "%40"))
 }
 
 // filePathToURI converts a file path to a properly encoded URI.
 func filePathToURI(path string) protocol.URI {
-	return normalizeURI(protocol.URI(uri.File(path)))
+	return normalizeURI(uri.File(path))
 }
