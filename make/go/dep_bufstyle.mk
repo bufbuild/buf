@@ -8,11 +8,15 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 $(call _assert_var,BUF_VERSION)
 
+# We want to ensure we rebuild bufstyle every time we require a new Go minor version.
+# Otherwise, the cached version may not support the latest language features.
+BUFSTYLE_GO_VERSION := $(shell go list -m -f '{{.GoVersion}}' | cut -d'.' -f1-2)
+
 # Settable
 # https://github.com/bufbuild/bufstyle-go/releases
 BUFSTYLE_VERSION ?= v0.5.0
 
-BUFSTYLE := $(CACHE_VERSIONS)/bufstyle/$(BUFSTYLE_VERSION)
+BUFSTYLE := $(CACHE_VERSIONS)/bufstyle/$(BUFSTYLE_VERSION)-go$(BUFSTYLE_GO_VERSION)
 $(BUFSTYLE):
 	@rm -f $(CACHE_BIN)/bufstyle
 	GOBIN=$(CACHE_BIN) go install buf.build/go/bufstyle@$(BUFSTYLE_VERSION)
