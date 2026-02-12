@@ -20,7 +20,7 @@ TMP := .tmp
 
 # Settable
 # These are exact file paths that are added to .gitignore and .dockerignore
-FILE_IGNORES := $(FILE_IGNORES) $(ENV_DIR)/ $(TMP)/
+FILE_IGNORES := $(FILE_IGNORES) $(ENV_DIR)/ $(TMP)/ .claude/settings.local.json
 # Settable
 # These will be added without any modification to .gitignore
 GIT_FILE_IGNORES ?=
