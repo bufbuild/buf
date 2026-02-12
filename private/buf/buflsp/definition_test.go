@@ -16,6 +16,7 @@ package buflsp_test
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -205,4 +206,49 @@ func TestDefinition(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestDefinitionURLEncoding verifies that file paths with special characters
+// like '@' are properly URL-encoded in the URI responses.
+func TestDefinitionURLEncoding(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+
+	// Use a file from a directory with '@' in the path
+	testProtoPath, err := filepath.Abs("testdata/uri@encode/test.proto")
+	require.NoError(t, err)
+
+	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
+
+	// Note: The client may send URIs with unencoded @ symbols, but the LSP
+	// server normalizes them internally to ensure consistency
+
+	// Test definition lookup for a type reference within the same file
+	var locations []protocol.Location
+	_, defErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentDefinition, protocol.DefinitionParams{
+		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+			TextDocument: protocol.TextDocumentIdentifier{
+				URI: testURI,
+			},
+			Position: protocol.Position{
+				Line:      13, // Line with "Status status = 3;" (0-indexed, line 14 in file)
+				Character: 2,  // On "Status" type
+			},
+		},
+	}, &locations)
+	require.NoError(t, defErr)
+
+	require.Len(t, locations, 1, "expected exactly one definition location")
+	location := locations[0]
+
+	// Construct the expected URI with @ encoded as %40
+	expectedURIPath := filepath.ToSlash(testProtoPath)
+	expectedURIPath = strings.ReplaceAll(expectedURIPath, "@", "%40")
+	expectedURI := protocol.URI("file://" + expectedURIPath)
+
+	assert.Equal(t, expectedURI, location.URI, "returned URI should have @ encoded as %40")
+
+	// Verify it points to the correct location in the file
+	assert.Equal(t, uint32(17), location.Range.Start.Line, "should point to Status enum definition (0-indexed, line 18 in file)")
 }
