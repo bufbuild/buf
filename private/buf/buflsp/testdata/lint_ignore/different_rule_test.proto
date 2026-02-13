@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package test.lint_ignore;
+
+message TestMessage {
+  // buf:lint:ignore SOME_OTHER_RULE
+  string BadFieldName = 1; // Has ignore for different rule, should still offer FIELD_LOWER_SNAKE_CASE
+}

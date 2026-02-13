@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package test.lint_ignore;
+
+message TestMessage {
+  // buf:lint:ignore FIELD_LOWER_SNAKE_CASE
+  string BadFieldName = 1; // This field already has an ignore comment
+}

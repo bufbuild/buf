@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add LSP comment ignore code action to add comment ignores for lint errors.
 
 ## [v1.65.0] - 2026-02-03
 

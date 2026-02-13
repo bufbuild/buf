@@ -139,6 +139,7 @@ func (s *server) Initialize(
 				CodeActionKinds: []protocol.CodeActionKind{
 					protocol.SourceOrganizeImports,
 					protocol.RefactorRewrite,
+					protocol.QuickFix,
 				},
 			},
 			CompletionProvider: &protocol.CompletionOptions{
@@ -511,6 +512,10 @@ func (s *server) CodeAction(ctx context.Context, params *protocol.CodeActionPara
 		if deprecateAction := s.getDeprecateCodeAction(ctx, file, params); deprecateAction != nil {
 			actions = append(actions, *deprecateAction)
 		}
+	}
+	if _, ok := codeActionSet[protocol.QuickFix]; len(codeActionSet) == 0 || ok {
+		lintIgnoreActions := s.getLintIgnoreCodeActions(ctx, file, params)
+		actions = append(actions, lintIgnoreActions...)
 	}
 	return actions, nil
 }

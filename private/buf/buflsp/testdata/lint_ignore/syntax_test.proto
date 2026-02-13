@@ -1,0 +1,3 @@
+syntax = "proto3";
+
+package wrong.path; // PACKAGE_DIRECTORY_MATCH violation
