@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.lsp.dev/protocol"
-	"go.lsp.dev/uri"
 )
 
 // errUnresolvableWorkspace is an unsupported workspace error.
@@ -248,7 +247,7 @@ func (w *workspace) indexFiles(ctx context.Context) {
 	for fileInfo := range w.fileInfos(ctx) {
 		file, ok := previous[fileInfo.Path()]
 		if !ok {
-			fileURI := uri.File(fileInfo.LocalPath())
+			fileURI := filePathToURI(fileInfo.LocalPath())
 			file = w.lsp.fileManager.Track(fileURI)
 			w.lsp.logger.Debug("workspace: index track file", slog.String("path", file.uri.Filename()))
 		}

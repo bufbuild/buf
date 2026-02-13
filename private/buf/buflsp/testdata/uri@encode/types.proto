@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package uri.encode.v1;
+
+// Address represents a physical address.
+message Address {
+  string street = 1;
+  string city = 2;
+  string state = 3;
+  string zip_code = 4;
+}

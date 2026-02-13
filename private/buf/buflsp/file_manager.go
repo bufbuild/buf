@@ -40,17 +40,18 @@ func newFileManager(lsp *lsp) *fileManager {
 //
 // This will increment the file's refcount.
 func (fm *fileManager) Track(uri protocol.URI) *file {
-	file, found := fm.uriToFile.Insert(uri)
+	normalizedURI := normalizeURI(uri)
+	file, found := fm.uriToFile.Insert(normalizedURI)
 	if !found {
 		file.lsp = fm.lsp
-		file.uri = uri
+		file.uri = normalizedURI
 	}
 	return file
 }
 
 // Get finds a file with the given URI, or returns nil.
 func (fm *fileManager) Get(uri protocol.URI) *file {
-	return fm.uriToFile.Get(uri)
+	return fm.uriToFile.Get(normalizeURI(uri))
 }
 
 // Close marks a file as closed.
@@ -58,7 +59,7 @@ func (fm *fileManager) Get(uri protocol.URI) *file {
 // This will not necessarily evict the file, since there may be more than one user
 // for this file.
 func (fm *fileManager) Close(ctx context.Context, uri protocol.URI) {
-	if deleted := fm.uriToFile.Delete(uri); deleted != nil {
+	if deleted := fm.uriToFile.Delete(normalizeURI(uri)); deleted != nil {
 		deleted.Reset(ctx)
 	}
 }
