@@ -452,12 +452,15 @@ func filterImageWithConfigsNotInAgainstImages(
 	var filteredImageWithConfigs []bufctl.ImageWithConfig
 	for _, imageWithConfig := range imageWithConfigs {
 		for _, imageFile := range imageWithConfig.Files() {
+			if imageFile.IsImport() {
+				continue
+			}
 			var foundImage bufimage.Image
 			for i, againstImage := range againstImages {
 				if _, ok := foundAgainstImageIndices[i]; ok {
 					continue
 				}
-				if againstImage.GetFile(imageFile.Path()) != nil {
+				if againstFile := againstImage.GetFile(imageFile.Path()); againstFile != nil && !againstFile.IsImport() {
 					foundAgainstImageIndices[i] = struct{}{}
 					foundImage = againstImage
 					break
