@@ -24,6 +24,7 @@ import (
 	"sync"
 
 	"github.com/mattn/go-colorable"
+	"golang.org/x/term"
 )
 
 const (
@@ -46,18 +47,20 @@ type color uint8
 
 type consoleHandlerOption func(*consoleHandlerOptions)
 
-// withConsoleColor enables or disables color output for the console handler.
+// withConsoleColor explicitly enables or disables color output, bypassing TTY detection.
+// Without this option, color is enabled only if the writer is a TTY.
 //
-// If set to true, the console handler will use colors for log levels.
 // If the environment variable NO_COLOR is set, colors will be disabled regardless of this setting.
 func withConsoleColor(enable bool) consoleHandlerOption {
 	return func(options *consoleHandlerOptions) {
 		options.enableColor = enable
+		options.colorExplicit = true
 	}
 }
 
 type consoleHandlerOptions struct {
-	enableColor bool
+	enableColor   bool
+	colorExplicit bool
 }
 
 func newConsoleHandlerOptions() *consoleHandlerOptions {
@@ -84,9 +87,13 @@ func newConsoleHandler(out io.Writer, logLevel slog.Level, options ...consoleHan
 	for _, option := range options {
 		option(consoleHandlerOptions)
 	}
-	// Disable color if the environment variable NO_COLOR is set.
+	// If color was not explicitly set, auto-detect based on whether the writer is a TTY.
 	enableColor := consoleHandlerOptions.enableColor
-	if e := os.Getenv("NO_COLOR"); e != "" {
+	if !consoleHandlerOptions.colorExplicit {
+		enableColor = isWriterTTY(out)
+	}
+	// NO_COLOR always wins.
+	if os.Getenv("NO_COLOR") != "" {
 		enableColor = false
 	}
 	// Wrap the output writer with colorable if it's os.Stdout or os.Stderr
@@ -190,6 +197,19 @@ func colorize(s string, color color) string {
 		return s
 	}
 	return fmt.Sprintf("\x1b[%dm%s\x1b[0m", color, s)
+}
+
+// isWriterTTY checks if the given writer is connected to a TTY.
+// It tries to extract a file descriptor from the writer and check if it's a terminal.
+func isWriterTTY(w io.Writer) bool {
+	type fdGetter interface {
+		Fd() uintptr
+	}
+	if fdOut, ok := w.(fdGetter); ok {
+		return term.IsTerminal(int(fdOut.Fd()))
+	}
+	// Can't determine, default to false (no TTY)
+	return false
 }
 
 // consoleReplaceAttr is a custom ReplaceAttr function for consoleHandler.
