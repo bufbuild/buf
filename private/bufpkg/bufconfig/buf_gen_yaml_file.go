@@ -276,7 +276,7 @@ type externalBufGenYAMLFileV1Beta1 struct {
 	// Managed is whether managed mode is enabled.
 	Managed bool                                  `json:"managed,omitempty" yaml:"managed,omitempty"`
 	Plugins []externalGeneratePluginConfigV1Beta1 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
-	Options externalGenerateManagedConfigV1Beta1  `json:"options,omitempty" yaml:"options,omitempty"`
+	Options externalGenerateManagedConfigV1Beta1  `json:"options" yaml:"options,omitempty"`
 }
 
 // externalGeneratePluginConfigV1Beta1 represents a single plugin config in a v1beta1 buf.gen.yaml file.
@@ -299,8 +299,8 @@ type externalGenerateManagedConfigV1Beta1 struct {
 type externalBufGenYAMLFileV1 struct {
 	Version string                           `json:"version,omitempty" yaml:"version,omitempty"`
 	Plugins []externalGeneratePluginConfigV1 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
-	Managed externalGenerateManagedConfigV1  `json:"managed,omitempty" yaml:"managed,omitempty"`
-	Types   externalTypesConfigV1            `json:"types,omitempty" yaml:"types,omitempty"`
+	Managed externalGenerateManagedConfigV1  `json:"managed" yaml:"managed,omitempty"`
+	Types   externalTypesConfigV1            `json:"types" yaml:"types,omitempty"`
 }
 
 // externalGeneratePluginConfigV1 represents a single plugin config in a v1 buf.gen.yaml file.
@@ -327,13 +327,13 @@ type externalGenerateManagedConfigV1 struct {
 	CcEnableArenas      *bool                             `json:"cc_enable_arenas,omitempty" yaml:"cc_enable_arenas,omitempty"`
 	JavaMultipleFiles   *bool                             `json:"java_multiple_files,omitempty" yaml:"java_multiple_files,omitempty"`
 	JavaStringCheckUtf8 *bool                             `json:"java_string_check_utf8,omitempty" yaml:"java_string_check_utf8,omitempty"`
-	JavaPackagePrefix   externalJavaPackagePrefixConfigV1 `json:"java_package_prefix,omitempty" yaml:"java_package_prefix,omitempty"`
-	CsharpNamespace     externalCsharpNamespaceConfigV1   `json:"csharp_namespace,omitempty" yaml:"csharp_namespace,omitempty"`
-	OptimizeFor         externalOptimizeForConfigV1       `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
-	GoPackagePrefix     externalGoPackagePrefixConfigV1   `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
-	ObjcClassPrefix     externalObjcClassPrefixConfigV1   `json:"objc_class_prefix,omitempty" yaml:"objc_class_prefix,omitempty"`
-	RubyPackage         externalRubyPackageConfigV1       `json:"ruby_package,omitempty" yaml:"ruby_package,omitempty"`
-	SwiftPrefix         externalSwiftPrefixConfigV1       `json:"swift_prefix,omitempty" yaml:"swift_prefix,omitempty"`
+	JavaPackagePrefix   externalJavaPackagePrefixConfigV1 `json:"java_package_prefix" yaml:"java_package_prefix,omitempty"`
+	CsharpNamespace     externalCsharpNamespaceConfigV1   `json:"csharp_namespace" yaml:"csharp_namespace,omitempty"`
+	OptimizeFor         externalOptimizeForConfigV1       `json:"optimize_for" yaml:"optimize_for,omitempty"`
+	GoPackagePrefix     externalGoPackagePrefixConfigV1   `json:"go_package_prefix" yaml:"go_package_prefix,omitempty"`
+	ObjcClassPrefix     externalObjcClassPrefixConfigV1   `json:"objc_class_prefix" yaml:"objc_class_prefix,omitempty"`
+	RubyPackage         externalRubyPackageConfigV1       `json:"ruby_package" yaml:"ruby_package,omitempty"`
+	SwiftPrefix         externalSwiftPrefixConfigV1       `json:"swift_prefix" yaml:"swift_prefix,omitempty"`
 	// Override maps from a file option to a file path then to the value.
 	Override map[string]map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
 }
@@ -497,7 +497,7 @@ type externalTypesConfigV1 struct {
 // externalBufGenYAMLFileV2 represents the v2 buf.gen.yaml file.
 type externalBufGenYAMLFileV2 struct {
 	Version string                          `json:"version,omitempty" yaml:"version,omitempty"`
-	Managed externalGenerateManagedConfigV2 `json:"managed,omitempty" yaml:"managed,omitempty"`
+	Managed externalGenerateManagedConfigV2 `json:"managed" yaml:"managed,omitempty"`
 	// Clean, if set to true, will delete the output directories, zip files, or jar files
 	// before generation is run.
 	Clean   bool                             `json:"clean,omitempty" yaml:"clean,omitempty"`

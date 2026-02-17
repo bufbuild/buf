@@ -630,8 +630,8 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 	}
 
 	var dataFile string
-	if strings.HasPrefix(f.Data, "@") {
-		dataFile = strings.TrimPrefix(f.Data, "@")
+	if after, ok := strings.CutPrefix(f.Data, "@"); ok {
+		dataFile = after
 		if dataFile == "" {
 			return fmt.Errorf("--%s value starting with '@' must indicate '-' for stdin or a filename", dataFlagName)
 		}
@@ -900,8 +900,8 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 
 	dataSource := "(argument)"
 	var dataFileReference string
-	if strings.HasPrefix(f.Data, "@") {
-		dataFileReference = strings.TrimPrefix(f.Data, "@")
+	if after, ok := strings.CutPrefix(f.Data, "@"); ok {
+		dataFileReference = after
 		if dataFileReference == "-" {
 			dataSource = "(stdin)"
 		} else {

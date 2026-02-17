@@ -342,7 +342,7 @@ type externalGitLabCodeQualityIssue struct {
 	Fingerprint string `json:"fingerprint,omitempty"`
 	// Location is a location structure that represents the file location of the code quality
 	// violation.
-	Location externalGitLabCodeQualityIssueLocation `json:"location,omitempty"`
+	Location externalGitLabCodeQualityIssueLocation `json:"location"`
 	// Severity is the line location of the code quality violation. We use "minor" as the default.
 	Severity string `json:"severity,omitempty"`
 }
@@ -353,12 +353,12 @@ type externalGitLabCodeQualityIssueLocation struct {
 	Path string `json:"path,omitempty"`
 	// Positions is the line location of the code quality violation. This maps to StartLine
 	// of the FileAnnotation.
-	Positions externalGitLabCodeQualityIssueLocationPositions `json:"positions,omitempty"`
+	Positions externalGitLabCodeQualityIssueLocationPositions `json:"positions"`
 }
 
 type externalGitLabCodeQualityIssueLocationPositions struct {
-	Begin externalGitLabCodeQualityIssueLocationPosition `json:"begin,omitempty"`
-	End   externalGitLabCodeQualityIssueLocationPosition `json:"end,omitempty"`
+	Begin externalGitLabCodeQualityIssueLocationPosition `json:"begin"`
+	End   externalGitLabCodeQualityIssueLocationPosition `json:"end"`
 }
 
 type externalGitLabCodeQualityIssueLocationPosition struct {

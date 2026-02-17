@@ -287,7 +287,7 @@ func (f *flagsBuilder) buildRec(
 				return nil, err
 			}
 			var flagFilePathArgs []string
-			for _, flagFilePathArg := range strings.Split(string(data), "\n") {
+			for flagFilePathArg := range strings.SplitSeq(string(data), "\n") {
 				flagFilePathArg = strings.TrimSpace(flagFilePathArg)
 				if flagFilePathArg != "" {
 					flagFilePathArgs = append(flagFilePathArgs, flagFilePathArg)
@@ -376,7 +376,7 @@ func (f *flagsBuilder) parsePluginNameToPluginInfo(pluginNameToPluginInfo map[st
 			}
 			pluginInfo.Out = out
 			if opt != "" {
-				for _, value := range strings.Split(opt, ",") {
+				for value := range strings.SplitSeq(opt, ",") {
 					if value := strings.TrimSpace(value); value != "" {
 						pluginInfo.Opt = append(pluginInfo.Opt, value)
 					} else {
@@ -394,7 +394,7 @@ func (f *flagsBuilder) parsePluginNameToPluginInfo(pluginNameToPluginInfo map[st
 				pluginNameToPluginInfo[pluginName] = pluginInfo
 			}
 			for _, optIndex := range pluginValue.OptIndexes {
-				for _, value := range strings.Split(f.pluginFake[optIndex], ",") {
+				for value := range strings.SplitSeq(f.pluginFake[optIndex], ",") {
 					if value := strings.TrimSpace(value); value != "" {
 						pluginInfo.Opt = append(pluginInfo.Opt, value)
 					} else {
@@ -516,7 +516,7 @@ func splitIncludeDirPaths(includeDirPaths []string) []string {
 	copyIncludeDirPaths := make([]string, 0, len(includeDirPaths))
 	for _, includeDirPath := range includeDirPaths {
 		// protocolbuffers/protobuf has true for omit_empty
-		for _, splitIncludeDirPath := range strings.Split(includeDirPath, includeDirPathSeparator) {
+		for splitIncludeDirPath := range strings.SplitSeq(includeDirPath, includeDirPathSeparator) {
 			if len(splitIncludeDirPath) > 0 {
 				copyIncludeDirPaths = append(copyIncludeDirPaths, splitIncludeDirPath)
 			}

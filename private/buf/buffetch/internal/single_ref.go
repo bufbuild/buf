@@ -88,8 +88,8 @@ func newSingleRef(
 		), nil
 	}
 	for prefix, fileScheme := range fileSchemePrefixToFileScheme {
-		if strings.HasPrefix(path, prefix) {
-			path = strings.TrimPrefix(path, prefix)
+		if after, ok := strings.CutPrefix(path, prefix); ok {
+			path = after
 			if fileScheme == FileSchemeLocal {
 				path = normalpath.Normalize(path)
 			}

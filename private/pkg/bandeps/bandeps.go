@@ -56,9 +56,9 @@ type ExternalConfig struct {
 // ExternalBanConfig is an external ban configuration.
 type ExternalBanConfig struct {
 	// Packages are the package expressions to get dependencies for.
-	Packages ExternalPackageConfig `json:"packages,omitempty" yaml:"packages,omitempty"`
+	Packages ExternalPackageConfig `json:"packages" yaml:"packages,omitempty"`
 	// Deps are package expressions that cannot be depended on for Packages.
-	Deps ExternalPackageConfig `json:"deps,omitempty" yaml:"deps,omitempty"`
+	Deps ExternalPackageConfig `json:"deps" yaml:"deps,omitempty"`
 	// Note is a note to print out regarding why this ban exists.
 	Note string `json:"note,omitempty" yaml:"note,omitempty"`
 }

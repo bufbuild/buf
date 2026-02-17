@@ -29,7 +29,7 @@ type ExternalConfig struct {
 	// If editing ExternalConfig, make sure to update ExternalConfig.IsEmpty!
 
 	Version string                             `json:"version,omitempty" yaml:"version,omitempty"`
-	TLS     certclient.ExternalClientTLSConfig `json:"tls,omitempty" yaml:"tls,omitempty"`
+	TLS     certclient.ExternalClientTLSConfig `json:"tls" yaml:"tls,omitempty"`
 }
 
 // IsEmpty returns true if the externalConfig is empty.

@@ -177,8 +177,8 @@ func (*bufPolicyYAMLFile) isFile()              {}
 type externalBufPolicyYAMLFileV2 struct {
 	Version  string                              `json:"version,omitempty" yaml:"version,omitempty"`
 	Name     string                              `json:"name,omitempty" yaml:"name,omitempty"`
-	Lint     externalBufPolicyYAMLFileLintV2     `json:"lint,omitempty" yaml:"lint,omitempty"`
-	Breaking externalBufPolicyYAMLFileBreakingV2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
+	Lint     externalBufPolicyYAMLFileLintV2     `json:"lint" yaml:"lint,omitempty"`
+	Breaking externalBufPolicyYAMLFileBreakingV2 `json:"breaking" yaml:"breaking,omitempty"`
 	Plugins  []externalBufPolicyYAMLFilePluginV2 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 }
 

@@ -816,7 +816,7 @@ type externalBufLockFileDepV1Beta1V1 struct {
 	// Dashless
 	Commit     string    `json:"commit,omitempty" yaml:"commit,omitempty"`
 	Digest     string    `json:"digest,omitempty" yaml:"digest,omitempty"`
-	CreateTime time.Time `json:"create_time,omitempty" yaml:"create_time,omitempty"`
+	CreateTime time.Time `json:"create_time" yaml:"create_time,omitempty"`
 }
 
 // externalBufLockFileV2 represents the v2 buf.lock file.

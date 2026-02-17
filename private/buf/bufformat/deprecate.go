@@ -15,6 +15,7 @@
 package bufformat
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/bufbuild/protocompile/ast"
@@ -42,12 +43,7 @@ func (d *fullNameMatcher) matchesPrefix(fqn string) bool {
 
 // matchesExact returns true if the given FQN matches exactly.
 func (d *fullNameMatcher) matchesExact(fqn string) bool {
-	for _, prefix := range d.prefixes {
-		if fqn == prefix {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(d.prefixes, fqn)
 }
 
 // fqnMatchesPrefix returns true if fqn starts with prefix using component-based matching.
@@ -76,12 +72,7 @@ func hasCompactDeprecatedOption(opts *ast.CompactOptionsNode) bool {
 	if opts == nil {
 		return false
 	}
-	for _, opt := range opts.Options {
-		if isDeprecatedOptionNode(opt) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(opts.Options, isDeprecatedOptionNode)
 }
 
 // isDeprecatedOptionNode checks if an option node is "deprecated = true".
