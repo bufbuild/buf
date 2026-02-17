@@ -1,0 +1,5 @@
+version: v2
+modules:
+  - path: a
+  - path: b
+  - path: c

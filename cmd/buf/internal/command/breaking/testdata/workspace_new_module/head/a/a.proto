@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package a.v1;
+
+import "c.proto";
+
+message Foo {
+  c.v1.Baz baz = 1;
+}
