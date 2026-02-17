@@ -171,12 +171,13 @@ at varied indentation levels` + whitespacePrefix + "// @@protoc_insertion_point(
 	// Our generated files in private/gen/proto are on average 1100 lines.
 	inflatedLines := 1100
 
-	inflatedTargetFileContent := targetFileContent
+	var inflatedTargetFileContent strings.Builder
+	inflatedTargetFileContent.WriteString(targetFileContent)
 	for range inflatedLines - 1 {
-		inflatedTargetFileContent += "// this is just extra garbage\n"
+		inflatedTargetFileContent.WriteString("// this is just extra garbage\n")
 	}
 	// no trailing newline
-	inflatedTargetFileContent += "// this is just extra garbage"
+	inflatedTargetFileContent.WriteString("// this is just extra garbage")
 
 	b.Run("basic", func(b *testing.B) {
 		var postInsertionContent []byte
@@ -235,7 +236,7 @@ at varied indentation levels` + whitespacePrefix + "// @@protoc_insertion_point(
 			postInsertionContent, _ = writeInsertionPoint(
 				context.Background(),
 				insertionPointConsumer,
-				strings.NewReader(inflatedTargetFileContent),
+				strings.NewReader(inflatedTargetFileContent.String()),
 			)
 		}
 		assert.Equal(b, inflatedExpectContent, postInsertionContent)

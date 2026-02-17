@@ -432,7 +432,7 @@ func getRawPathAndOptions(value string) (string, map[string]string, error) {
 			return "", nil, newValueEndsWithHashtagError(value)
 		}
 		options := make(map[string]string)
-		for _, pair := range strings.Split(optionsString, ",") {
+		for pair := range strings.SplitSeq(optionsString, ",") {
 			split := strings.Split(pair, "=")
 			if len(split) != 2 {
 				return "", nil, newOptionsInvalidError(optionsString)

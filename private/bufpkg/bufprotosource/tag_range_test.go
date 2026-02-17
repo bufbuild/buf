@@ -68,8 +68,8 @@ func stringToTestRanges(rangesString string) []TagRange {
 	if rangesString == "" {
 		return results
 	}
-	rangeStrings := strings.Split(rangesString, ",")
-	for _, rangeString := range rangeStrings {
+	rangeStrings := strings.SplitSeq(rangesString, ",")
+	for rangeString := range rangeStrings {
 		beginString, endString, hasEnd := strings.Cut(rangeString, "-")
 		if !hasEnd {
 			endString = beginString

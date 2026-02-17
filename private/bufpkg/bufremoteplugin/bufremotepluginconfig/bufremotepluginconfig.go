@@ -406,7 +406,7 @@ type ExternalConfig struct {
 	Description         string                 `json:"description,omitempty" yaml:"description,omitempty"`
 	Deps                []ExternalDependency   `json:"deps,omitempty" yaml:"deps,omitempty"`
 	OutputLanguages     []string               `json:"output_languages,omitempty" yaml:"output_languages,omitempty"`
-	Registry            ExternalRegistryConfig `json:"registry,omitempty" yaml:"registry,omitempty"`
+	Registry            ExternalRegistryConfig `json:"registry" yaml:"registry,omitempty"`
 	SPDXLicenseID       string                 `json:"spdx_license_id,omitempty" yaml:"spdx_license_id,omitempty"`
 	LicenseURL          string                 `json:"license_url,omitempty" yaml:"license_url,omitempty"`
 	IntegrationGuideURL string                 `json:"integration_guide_url,omitempty" yaml:"integration_guide_url,omitempty"`
@@ -522,7 +522,7 @@ type ExternalSwiftRegistryDependencyConfig struct {
 	// Products are the names of the products available to import.
 	Products []string `json:"products,omitempty" yaml:"products,omitempty"`
 	// Platforms are the minimum versions for platforms the package supports.
-	Platforms ExternalSwiftRegistryDependencyPlatformConfig `json:"platforms,omitempty" yaml:"platforms,omitempty"`
+	Platforms ExternalSwiftRegistryDependencyPlatformConfig `json:"platforms" yaml:"platforms,omitempty"`
 	// SwiftVersions are the versions of Swift the package supports.
 	SwiftVersions []string `json:"swift_versions,omitempty" yaml:"swift_versions,omitempty"`
 }

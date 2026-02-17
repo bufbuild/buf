@@ -214,8 +214,8 @@ func updateYAMLTypeError(err error) error {
 }
 
 func replaceAfter(s string, substitute string, replace string) string {
-	if index := strings.Index(s, substitute); index != -1 {
-		return s[:index] + replace
+	if before, _, ok := strings.Cut(s, substitute); ok {
+		return before + replace
 	}
 	return s
 }

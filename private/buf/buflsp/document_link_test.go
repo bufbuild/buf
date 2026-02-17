@@ -160,7 +160,7 @@ type expectedLink struct {
 func assertNoOverlappingRanges(t *testing.T, links []protocol.DocumentLink) {
 	t.Helper()
 
-	for i := 0; i < len(links); i++ {
+	for i := range links {
 		for j := i + 1; j < len(links); j++ {
 			range1 := links[i].Range
 			range2 := links[j].Range

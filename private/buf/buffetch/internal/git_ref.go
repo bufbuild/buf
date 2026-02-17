@@ -149,8 +149,8 @@ func getGitSchemeAndPath(format string, path string) (GitScheme, string, error) 
 		return 0, "", NewInvalidPathError(format, path)
 	}
 	for prefix, gitScheme := range gitSchemePrefixToGitScheme {
-		if strings.HasPrefix(path, prefix) {
-			path := strings.TrimPrefix(path, prefix)
+		if after, ok := strings.CutPrefix(path, prefix); ok {
+			path := after
 			if gitScheme == GitSchemeLocal {
 				path = normalpath.Normalize(path)
 			}

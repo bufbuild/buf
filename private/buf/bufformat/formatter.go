@@ -2271,8 +2271,8 @@ func (f *formatter) writeInlineComments(comments ast.Comments) {
 			f.Space()
 		}
 		text := comments.Index(i).RawText()
-		if strings.HasPrefix(text, "//") {
-			text = strings.TrimSpace(strings.TrimPrefix(text, "//"))
+		if after, ok := strings.CutPrefix(text, "//"); ok {
+			text = strings.TrimSpace(after)
 			text = "/* " + text + " */"
 		} else {
 			// no multi-line comments
@@ -2553,15 +2553,15 @@ func importSortOrder(node *ast.ImportNode) int {
 // stringForOptionName returns the string representation of the given option name node.
 // This is used for sorting file-level options.
 func stringForOptionName(optionNameNode *ast.OptionNameNode) string {
-	var result string
+	var result strings.Builder
 	for j, part := range optionNameNode.Parts {
 		if j > 0 {
 			// Add a dot between each of the parts.
-			result += "."
+			result.WriteString(".")
 		}
-		result += stringForFieldReference(part)
+		result.WriteString(stringForFieldReference(part))
 	}
-	return result
+	return result.String()
 }
 
 // stringForFieldReference returns the string representation of the given field reference.

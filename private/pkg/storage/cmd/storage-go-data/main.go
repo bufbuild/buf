@@ -23,6 +23,7 @@ import (
 	"math"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"buf.build/go/app"
 	"buf.build/go/app/appcmd"
@@ -151,11 +152,11 @@ var (
 		data := pathToData[path]
 		for len(data) > 0 {
 			n := min(sliceLength, len(data))
-			accum := ""
+			var accum strings.Builder
 			for _, elem := range data[:n] {
-				accum += fmt.Sprintf("0x%02x,", elem)
+				accum.WriteString(fmt.Sprintf("0x%02x,", elem))
 			}
-			_, _ = buffer.WriteString(accum)
+			_, _ = buffer.WriteString(accum.String())
 			_, _ = buffer.WriteString("\n")
 			data = data[n:]
 		}
