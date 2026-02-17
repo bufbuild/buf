@@ -145,6 +145,31 @@ func TestCodeAction_LintIgnore(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:            "trailing_comment_does_not_suppress_package_lint",
+			filename:        "testdata/lint_ignore/trailing_comment_test.proto",
+			cursorLine:      2,
+			cursorChar:      10,
+			expectedRuleIDs: []string{"PACKAGE_DIRECTORY_MATCH", "PACKAGE_VERSION_SUFFIX"},
+			// Multiple actions, so IsPreferred should not be set
+		},
+		{
+			name:              "trailing_comment_does_not_suppress_field_lint",
+			filename:          "testdata/lint_ignore/trailing_comment_test.proto",
+			cursorLine:        5,
+			cursorChar:        10,
+			expectedRuleIDs:   []string{"FIELD_LOWER_SNAKE_CASE"},
+			expectIsPreferred: true,
+			expectedEdits: []protocol.TextEdit{
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 5, Character: 0},
+						End:   protocol.Position{Line: 5, Character: 0},
+					},
+					NewText: "  // buf:lint:ignore FIELD_LOWER_SNAKE_CASE\n",
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
