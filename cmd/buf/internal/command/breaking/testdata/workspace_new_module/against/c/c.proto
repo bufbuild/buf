@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package c.v1;
+
+message Baz {
+  string name = 1;
+}
