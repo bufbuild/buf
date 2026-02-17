@@ -100,8 +100,7 @@ func generateMarkdownPage(
 	if command.Version != "" {
 		p("version `%s`\n\n", command.Version)
 	}
-	p(command.Short)
-	p("\n\n")
+	p("%s\n\n", command.Short)
 	if command.Runnable() {
 		p("### Usage\n")
 		p("```console\n$ %s\n```\n\n", command.UseLine())
