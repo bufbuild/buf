@@ -16,6 +16,7 @@ package buflsp_test
 
 import (
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"testing/synctest"
@@ -204,11 +205,8 @@ func TestCodeAction_LintIgnore(t *testing.T) {
 						for _, d := range p.Diagnostics {
 							if d.Source == "buf lint" {
 								if code, ok := d.Code.(string); ok {
-									for _, ruleID := range tt.expectedRuleIDs {
-										if code == ruleID {
-											count++
-											break
-										}
+									if slices.Contains(tt.expectedRuleIDs, code) {
+										count++
 									}
 								}
 							}
