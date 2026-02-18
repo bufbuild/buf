@@ -23,8 +23,18 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/bufbuild/protocompile/experimental/token"
 	"go.lsp.dev/protocol"
 )
+
+// isFileWideLint returns true if the diagnostic is a file-wide lint.
+// File-wide lints apply to the entire file and are reported at position 0:0.
+// These should be suppressed in buf.yaml using ignore_only, not with inline comments.
+// Examples include PACKAGE_DEFINED and FILE_LOWER_SNAKE_CASE.
+// See: https://github.com/bufbuild/intellij-buf/issues/215
+func isFileWideLint(r protocol.Range) bool {
+	return r.Start.Line == 0 && r.Start.Character == 0
+}
 
 // getLintIgnoreCodeActions generates code actions for suppressing lint diagnostics
 // at the given range. Returns a list of code actions, one for each applicable lint
@@ -55,9 +65,7 @@ func (s *server) getLintIgnoreCodeActions(
 			continue
 		}
 
-		// Skip file-wide lints (e.g., PACKAGE_DEFINED, FILE_LOWER_SNAKE_CASE)
-		// These are reported at position 0:0 or 1:0 and apply to the entire file.
-		// They should be suppressed in buf.yaml with ignore_only, not with inline comments.
+		// Skip file-wide lints (e.g., PACKAGE_DEFINED, FILE_LOWER_SNAKE_CASE).
 		if isFileWideLint(diagnostic.Range) {
 			s.logger.DebugContext(ctx, "lint_ignore: skipping file-wide lint",
 				slog.String("rule_id", ruleID),
@@ -96,36 +104,31 @@ func (s *server) generateLintIgnoreAction(
 	diagnostic protocol.Diagnostic,
 	ruleID string,
 ) *protocol.CodeAction {
-	// Calculate the line where we'll insert the ignore comment
-	// We insert AT the diagnostic line (at character 0), which pushes it down
-	// This makes the comment appear on the line before the error in the final output
+	// We insert AT the diagnostic line (at character 0), which pushes it down,
+	// making the comment appear on the line before the error in the final output.
 	diagnosticLine := diagnostic.Range.Start.Line
-	insertLine := diagnosticLine
 
-	// Get the file text and split into lines
-	text := file.file.Text()
-	lines := strings.Split(text, "\n")
+	// file.file.LineOffsets is 1-indexed; diagnosticLine is 0-indexed LSP.
+	diagLineStart, _ := file.file.LineOffsets(int(diagnosticLine) + 1)
 
-	// Check if we're trying to insert beyond the file bounds
-	if int(insertLine) >= len(lines) {
-		s.logger.WarnContext(ctx, "lint_ignore: insert line out of bounds",
-			slog.Uint64("insert_line", uint64(insertLine)),
-			slog.Int("total_lines", len(lines)),
-		)
-		return nil
-	}
-
-	// Check if an ignore comment already exists on the line before the diagnostic
-	// We check for the specific rule ID to allow multiple ignore comments for different rules
-	if insertLine > 0 {
-		prevLine := insertLine - 1
-		if int(prevLine) < len(lines) {
-			prevLineText := lines[prevLine]
-			// Check if this specific rule is already ignored (case-insensitive)
-			if strings.Contains(strings.ToLower(prevLineText), "buf:lint:ignore") &&
-				strings.Contains(prevLineText, ruleID) {
+	// Check if a standalone ignore comment already exists on the line before the diagnostic.
+	// Walk back from the start of the diagnostic line through the token stream.
+	if diagnosticLine > 0 && file.ir != nil && file.ir.AST() != nil && file.ir.AST().Stream() != nil {
+		before, _ := file.ir.AST().Stream().Around(diagLineStart)
+		if !before.IsZero() && before.Kind() == token.Comment &&
+			strings.Contains(strings.ToLower(before.Text()), "buf:lint:ignore") &&
+			strings.Contains(before.Text(), ruleID) {
+			// Confirm the comment is standalone (not a trailing comment after code on the same line).
+			// Walk back past indentation spaces; if what precedes is a newline or start of
+			// block, the comment occupies its own line.
+			cursor := token.NewCursorAt(before)
+			prevTok := cursor.PrevSkippable()
+			for !prevTok.IsZero() && isTokenSpace(prevTok) {
+				prevTok = cursor.PrevSkippable()
+			}
+			if prevTok.IsZero() || strings.ContainsRune(prevTok.Text(), '\n') {
 				s.logger.DebugContext(ctx, "lint_ignore: ignore comment already exists for this rule",
-					slog.Uint64("line", uint64(prevLine)),
+					slog.Uint64("line", uint64(diagnosticLine-1)),
 					slog.String("rule_id", ruleID),
 				)
 				return nil
@@ -133,23 +136,22 @@ func (s *server) generateLintIgnoreAction(
 		}
 	}
 
-	// Extract indentation from the diagnostic line
-	diagnosticLineText := lines[diagnosticLine]
-	indentation := diagnosticLineText[:len(diagnosticLineText)-len(strings.TrimLeft(diagnosticLineText, " \t"))]
+	// Extract indentation from the diagnostic line.
+	indentation := file.file.Indentation(diagLineStart)
 
-	// Generate the ignore comment
+	// Generate the ignore comment.
 	commentText := fmt.Sprintf("// buf:lint:ignore %s\n", ruleID)
 
-	// Create the text edit
+	// Create the text edit.
 	edit := protocol.TextEdit{
 		Range: protocol.Range{
-			Start: protocol.Position{Line: insertLine, Character: 0},
-			End:   protocol.Position{Line: insertLine, Character: 0},
+			Start: protocol.Position{Line: diagnosticLine, Character: 0},
+			End:   protocol.Position{Line: diagnosticLine, Character: 0},
 		},
 		NewText: indentation + commentText,
 	}
 
-	// Create the code action
+	// Create the code action.
 	action := protocol.CodeAction{
 		Title: fmt.Sprintf("Suppress %s with buf:lint:ignore", ruleID),
 		Kind:  protocol.QuickFix,
@@ -162,16 +164,6 @@ func (s *server) generateLintIgnoreAction(
 	}
 
 	return &action
-}
-
-// isFileWideLint returns true if the diagnostic is a file-wide lint.
-// File-wide lints apply to the entire file and are typically reported at position 0:0.
-// These should be suppressed in buf.yaml using ignore_only, not with inline comments.
-// Examples include PACKAGE_DEFINED and FILE_LOWER_SNAKE_CASE.
-// See: https://github.com/bufbuild/intellij-buf/issues/215
-func isFileWideLint(r protocol.Range) bool {
-	// File-wide lints are reported at line 0 (0-indexed) with character 0
-	return r.Start.Line == 0 && r.Start.Character == 0
 }
 
 // rangesOverlap returns true if two ranges overlap or touch each other.

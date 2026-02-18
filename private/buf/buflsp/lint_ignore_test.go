@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build go1.25
-
 package buflsp_test
 
 import (
@@ -165,6 +163,23 @@ func TestCodeAction_LintIgnore(t *testing.T) {
 					Range: protocol.Range{
 						Start: protocol.Position{Line: 5, Character: 0},
 						End:   protocol.Position{Line: 5, Character: 0},
+					},
+					NewText: "  // buf:lint:ignore FIELD_LOWER_SNAKE_CASE\n",
+				},
+			},
+		},
+		{
+			name:              "trailing_comment_on_previous_line_does_not_suppress_field_lint",
+			filename:          "testdata/lint_ignore/trailing_comment_test.proto",
+			cursorLine:        6,
+			cursorChar:        10,
+			expectedRuleIDs:   []string{"FIELD_LOWER_SNAKE_CASE"},
+			expectIsPreferred: true,
+			expectedEdits: []protocol.TextEdit{
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 6, Character: 0},
+						End:   protocol.Position{Line: 6, Character: 0},
 					},
 					NewText: "  // buf:lint:ignore FIELD_LOWER_SNAKE_CASE\n",
 				},
