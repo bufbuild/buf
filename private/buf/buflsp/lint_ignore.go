@@ -27,15 +27,6 @@ import (
 	"go.lsp.dev/protocol"
 )
 
-// isFileWideLint returns true if the diagnostic is a file-wide lint.
-// File-wide lints apply to the entire file and are reported at position 0:0.
-// These should be suppressed in buf.yaml using ignore_only, not with inline comments.
-// Examples include PACKAGE_DEFINED and FILE_LOWER_SNAKE_CASE.
-// See: https://github.com/bufbuild/intellij-buf/issues/215
-func isFileWideLint(r protocol.Range) bool {
-	return r.Start.Line == 0 && r.Start.Character == 0
-}
-
 // getLintIgnoreCodeActions generates code actions for suppressing lint diagnostics
 // at the given range. Returns a list of code actions, one for each applicable lint
 // diagnostic that overlaps with the provided range.
@@ -164,6 +155,15 @@ func (s *server) generateLintIgnoreAction(
 	}
 
 	return &action
+}
+
+// isFileWideLint returns true if the diagnostic is a file-wide lint.
+// File-wide lints apply to the entire file and are reported at position 0:0.
+// These should be suppressed in buf.yaml using ignore_only, not with inline comments.
+// Examples include PACKAGE_DEFINED and FILE_LOWER_SNAKE_CASE.
+// See: https://github.com/bufbuild/intellij-buf/issues/215
+func isFileWideLint(r protocol.Range) bool {
+	return r.Start.Line == 0 && r.Start.Character == 0
 }
 
 // rangesOverlap returns true if two ranges overlap or touch each other.
