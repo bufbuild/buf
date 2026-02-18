@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package test.lint_ignore;
+
+message Outer {
+  message Inner {
+    string BadFieldName = 1; // FIELD_LOWER_SNAKE_CASE violation
+  }
+}

@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+// No package statement - triggers PACKAGE_DEFINED which is a file-wide lint at 0:0
+
+message TestMessage {
+  string test_field = 1;
+}

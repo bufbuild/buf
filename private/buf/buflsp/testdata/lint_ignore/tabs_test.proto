@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package test.lint_ignore;
+
+message TestMessage {
+	string BadFieldName = 1; // Tab indentation
+}

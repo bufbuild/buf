@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package wrong.path; // buf:lint:ignore PACKAGE_DIRECTORY_MATCH
+
+message TestMessage {
+  string BadFieldName = 1; // buf:lint:ignore FIELD_LOWER_SNAKE_CASE
+  string AnotherBad = 2;
+}

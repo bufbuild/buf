@@ -1,0 +1,3 @@
+syntax = "proto3";
+
+package test.lint_ignore; // Both PACKAGE_DIRECTORY_MATCH and PACKAGE_VERSION_SUFFIX
