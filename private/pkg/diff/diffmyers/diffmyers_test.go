@@ -219,9 +219,9 @@ The door of all subtleties!
 			edits,
 		)
 		require.NoError(t, err)
-		firstLineEnd := bytes.Index(diff, []byte("\n"))
+		before, _, _ := bytes.Cut(diff, []byte("\n"))
 
-		firstLine := diff[:firstLineEnd]
+		firstLine := before
 		actualFirstLine := string(firstLine)
 		require.Equal(t, expectedFirstLineOfOutput, actualFirstLine,
 			"First line of diff output should match expected format (single space prefix, no double space)")

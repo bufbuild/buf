@@ -19,12 +19,27 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestIsWriterTTY(t *testing.T) {
+	t.Parallel()
+
+	// A bytes.Buffer has no Fd method, so it's not a TTY.
+	var buf bytes.Buffer
+	assert.False(t, isWriterTTY(&buf))
+
+	// An os.Pipe is never a TTY even though it has an Fd method.
+	_, w, err := os.Pipe()
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = w.Close() })
+	assert.False(t, isWriterTTY(w))
+}
 
 func TestConsoleLogOutput(t *testing.T) {
 	t.Parallel()
@@ -89,7 +104,7 @@ func testConsolLogOutput(t *testing.T, run func(logger *slog.Logger), expects []
 	run(logger)
 
 	var outputs []map[string]any
-	for _, line := range bytes.Split(buf.Bytes(), []byte{'\n'}) {
+	for line := range bytes.SplitSeq(buf.Bytes(), []byte{'\n'}) {
 		if len(line) == 0 {
 			continue
 		}

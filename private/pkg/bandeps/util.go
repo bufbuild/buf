@@ -45,7 +45,7 @@ func sortViolations(violations []Violation) {
 
 func getNonEmptyLines(s string) []string {
 	var lines []string
-	for _, line := range strings.Split(s, "\n") {
+	for line := range strings.SplitSeq(s, "\n") {
 		if line := strings.TrimSpace(line); line != "" {
 			lines = append(lines, line)
 		}

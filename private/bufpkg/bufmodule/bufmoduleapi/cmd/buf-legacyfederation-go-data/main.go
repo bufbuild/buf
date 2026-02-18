@@ -101,7 +101,7 @@ func run(ctx context.Context, container appext.Container, flags *flags) error {
 
 func getSortedHexEncodedDigests(data []byte) ([]string, error) {
 	lines := make(map[string]struct{})
-	for _, line := range strings.Split(string(data), "\n") {
+	for line := range strings.SplitSeq(string(data), "\n") {
 		line = strings.TrimSpace(line)
 		if line != "" {
 			lines[line] = struct{}{}

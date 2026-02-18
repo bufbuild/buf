@@ -82,8 +82,8 @@ Revision: %d
 }
 
 type outputSDKInfo struct {
-	ModuleInfo outputSDKModuleInfo `json:"module,omitempty"`
-	PluginInfo outputSDKPluginInfo `json:"plugin,omitempty"`
+	ModuleInfo outputSDKModuleInfo `json:"module"`
+	PluginInfo outputSDKPluginInfo `json:"plugin"`
 	Version    string              `json:"version,omitempty"`
 }
 
@@ -91,7 +91,7 @@ type outputSDKModuleInfo struct {
 	Owner            string    `json:"owner,omitempty"`
 	Name             string    `json:"name,omitempty"`
 	Commit           string    `json:"commit,omitempty"`
-	CommitCreateTime time.Time `json:"commit_create_time,omitempty"`
+	CommitCreateTime time.Time `json:"commit_create_time"`
 }
 
 type outputSDKPluginInfo struct {

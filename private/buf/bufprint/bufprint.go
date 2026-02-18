@@ -469,7 +469,7 @@ func (p *entityPage) MarshalJSON() ([]byte, error) {
 type outputLabel struct {
 	Name        string     `json:"name,omitempty" bufprint:"Name"`
 	Commit      string     `json:"commit,omitempty" bufprint:"Commit"`
-	CreateTime  time.Time  `json:"create_time,omitempty" bufprint:"Create Time"`
+	CreateTime  time.Time  `json:"create_time" bufprint:"Create Time"`
 	ArchiveTime *time.Time `json:"archive_time,omitempty" bufprint:"Archive Time,omitempty"`
 
 	entityFullName bufparse.FullName
@@ -481,7 +481,7 @@ func (l outputLabel) fullName() string {
 
 type outputCommit struct {
 	Commit           string    `json:"commit,omitempty" bufprint:"Commit"`
-	CreateTime       time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+	CreateTime       time.Time `json:"create_time" bufprint:"Create Time"`
 	SourceControlURL string    `json:"source_control_url,omitempty"`
 
 	entityFullName bufparse.FullName
@@ -497,7 +497,7 @@ type outputModule struct {
 	Owner            string    `json:"owner,omitempty"`
 	Name             string    `json:"name,omitempty"`
 	FullName         string    `json:"-" bufprint:"Name"`
-	CreateTime       time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+	CreateTime       time.Time `json:"create_time" bufprint:"Create Time"`
 	State            string    `json:"state,omitempty"`
 	DefaultLabelName string    `json:"default_label_name,omitempty"`
 }
@@ -511,7 +511,7 @@ type outputOrganization struct {
 	Remote     string    `json:"remote,omitempty"`
 	Name       string    `json:"name,omitempty"`
 	FullName   string    `json:"-" bufprint:"Name"`
-	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+	CreateTime time.Time `json:"create_time" bufprint:"Create Time"`
 }
 
 func (o outputOrganization) fullName() string {
@@ -524,7 +524,7 @@ type outputPlugin struct {
 	Owner      string    `json:"owner,omitempty"`
 	Name       string    `json:"name,omitempty"`
 	FullName   string    `json:"-" bufprint:"Name"`
-	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+	CreateTime time.Time `json:"create_time" bufprint:"Create Time"`
 }
 
 func (m outputPlugin) fullName() string {
@@ -537,7 +537,7 @@ type outputPolicy struct {
 	Owner      string    `json:"owner,omitempty"`
 	Name       string    `json:"name,omitempty"`
 	FullName   string    `json:"-" bufprint:"Name"`
-	CreateTime time.Time `json:"create_time,omitempty" bufprint:"Create Time"`
+	CreateTime time.Time `json:"create_time" bufprint:"Create Time"`
 }
 
 func (m outputPolicy) fullName() string {

@@ -328,7 +328,7 @@ type externalCommit struct {
 	Version    string    `json:"version,omitempty" yaml:"version,omitempty"`
 	Owner      string    `json:"owner,omitempty" yaml:"owner,omitempty"`
 	Module     string    `json:"module,omitempty" yaml:"module,omitempty"`
-	CreateTime time.Time `json:"create_time,omitempty" yaml:"create_time,omitempty"`
+	CreateTime time.Time `json:"create_time" yaml:"create_time,omitempty"`
 	Digest     string    `json:"digest,omitempty" yaml:"digest,omitempty"`
 }
 

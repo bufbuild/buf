@@ -243,7 +243,7 @@ func findRangeMinEnd(ranges []protocol.FoldingRange, startLine, minEndLine uint3
 func assertNoOverlappingFoldingRanges(t *testing.T, ranges []protocol.FoldingRange) {
 	t.Helper()
 
-	for i := 0; i < len(ranges); i++ {
+	for i := range ranges {
 		for j := i + 1; j < len(ranges); j++ {
 			r1 := ranges[i]
 			r2 := ranges[j]

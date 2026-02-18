@@ -653,12 +653,12 @@ func (s *symbol) getDocsFromComments() string {
 
 // commentToMarkdown processes comment strings and formats them for markdown display.
 func commentToMarkdown(comment string) string {
-	if strings.HasPrefix(comment, "//") {
+	if after, ok := strings.CutPrefix(comment, "//"); ok {
 		// NOTE: We do not trim the space here, because indentation is
 		// significant for Markdown code fences, and if every line
 		// starts with a space, Markdown will trim it for us, even off
 		// of code blocks.
-		return strings.TrimPrefix(comment, "//")
+		return after
 	}
 	if strings.HasPrefix(comment, "/**") && !strings.HasPrefix(comment, "/**/") {
 		// NOTE: Doxygen-style comments (/** ... */) to Markdown format

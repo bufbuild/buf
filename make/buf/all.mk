@@ -26,7 +26,7 @@ GO_TEST_BINS := $(GO_TEST_BINS) \
 	private/bufpkg/bufcheck/internal/cmd/buf-plugin-duplicate-rule
 GO_TEST_WASM_BINS := $(GO_TEST_WASM_BINS) \
 	private/bufpkg/bufcheck/internal/cmd/buf-plugin-suffix
-GO_MOD_VERSION := 1.23
+GO_MOD_VERSION := 1.25
 DOCKER_BINS := $(DOCKER_BINS) buf
 FILE_IGNORES := $(FILE_IGNORES) \
 	.build/ \

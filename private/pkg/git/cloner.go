@@ -343,7 +343,7 @@ func getSSHKnownHostsFilePaths(sshKnownHostsFiles string) []string {
 		return nil
 	}
 	var filePaths []string
-	for _, filePath := range strings.Split(sshKnownHostsFiles, ":") {
+	for filePath := range strings.SplitSeq(sshKnownHostsFiles, ":") {
 		filePath = strings.TrimSpace(filePath)
 		if filePath != "" {
 			filePaths = append(filePaths, filePath)

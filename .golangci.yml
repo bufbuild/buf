@@ -28,6 +28,7 @@ linters:
     - makezero
     - mirror
     - misspell
+    - modernize
     - nakedret
     - nilerr
     - nolintlint

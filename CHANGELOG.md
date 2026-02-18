@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Add LSP comment ignore code action to add comment ignores for lint errors.
+- Fix buf breaking module comparison when adding new modules.
 
 ## [v1.65.0] - 2026-02-03
 
