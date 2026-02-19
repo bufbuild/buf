@@ -85,15 +85,11 @@ type formatter struct {
 func newFormatter(
 	writer io.Writer,
 	fileNode *ast.FileNode,
-	options *formatOptions,
 ) *formatter {
 	f := &formatter{
 		writer:                   writer,
 		fileNode:                 fileNode,
 		overrideTrailingComments: map[ast.Node]ast.Comments{},
-	}
-	if options != nil && len(options.deprecatePrefixes) > 0 {
-		f.deprecation = newFullNameMatcher(options.deprecatePrefixes...)
 	}
 	return f
 }

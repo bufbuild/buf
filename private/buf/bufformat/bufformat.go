@@ -17,38 +17,22 @@ package bufformat
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
-	"sync/atomic"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/bufbuild/protocompile/ast"
-	"github.com/bufbuild/protocompile/parser"
-	"github.com/bufbuild/protocompile/reporter"
+	"github.com/bufbuild/protocompile/experimental/ast"
+	"github.com/bufbuild/protocompile/experimental/ast/printer"
+	"github.com/bufbuild/protocompile/experimental/parser"
+	"github.com/bufbuild/protocompile/experimental/report"
+	"github.com/bufbuild/protocompile/experimental/source"
 )
 
-// FormatOption is an option for formatting.
-type FormatOption func(*formatOptions)
-
-// formatOptions contains options for formatting.
-type formatOptions struct {
-	deprecatePrefixes []string
-}
-
-// WithDeprecate adds a deprecation prefix. All types whose fully-qualified name
-// starts with this prefix will have the deprecated option added to them.
-// For fields and enum values, only exact matches are deprecated.
-func WithDeprecate(fqnPrefix string) FormatOption {
-	return func(opts *formatOptions) {
-		opts.deprecatePrefixes = append(opts.deprecatePrefixes, fqnPrefix)
-	}
-}
-
 // FormatModuleSet formats and writes the target files into a read bucket.
-func FormatModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet, opts ...FormatOption) (_ storage.ReadBucket, retErr error) {
+func FormatModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) (_ storage.ReadBucket, retErr error) {
 	return FormatBucket(
 		ctx,
 		bufmodule.ModuleReadBucketToStorageReadBucket(
@@ -56,24 +40,16 @@ func FormatModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet, opts ..
 				bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFilesForTargetModules(moduleSet),
 			),
 		),
-		opts...,
 	)
 }
 
 // FormatBucket formats the .proto files in the bucket and returns a new bucket with the formatted files.
-// If WithDeprecate options are provided but no types match the prefixes, an error is returned.
-func FormatBucket(ctx context.Context, bucket storage.ReadBucket, opts ...FormatOption) (_ storage.ReadBucket, retErr error) {
-	options := &formatOptions{}
-	for _, opt := range opts {
-		opt(options)
-	}
+func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.ReadBucket, retErr error) {
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	paths, err := storage.AllPaths(ctx, storage.FilterReadBucket(bucket, storage.MatchPathExt(".proto")), "")
 	if err != nil {
 		return nil, err
 	}
-	// Track if any deprecation prefix matched across all files.
-	var deprecationMatched atomic.Bool
 	jobs := make([]func(context.Context) error, len(paths))
 	for i, path := range paths {
 		jobs[i] = func(ctx context.Context) (retErr error) {
@@ -84,10 +60,19 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket, opts ...Format
 			defer func() {
 				retErr = errors.Join(retErr, readObjectCloser.Close())
 			}()
-			fileNode, err := parser.Parse(readObjectCloser.ExternalPath(), readObjectCloser, reporter.NewHandler(nil))
+			data, err := io.ReadAll(readObjectCloser)
 			if err != nil {
 				return err
 			}
+			sourceFile := source.NewFile(readObjectCloser.ExternalPath(), string(data))
+			r := &report.Report{}
+			parsed, _ := parser.Parse(path, sourceFile, r)
+			for _, d := range r.Diagnostics {
+				if d.Level() <= report.Error {
+					slog.WarnContext(ctx, "parse error during format", "path", path, "error", d.Message())
+				}
+			}
+			formatted := FormatFile(parsed)
 			writeObjectCloser, err := readWriteBucket.Put(ctx, path)
 			if err != nil {
 				return err
@@ -95,12 +80,8 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket, opts ...Format
 			defer func() {
 				retErr = errors.Join(retErr, writeObjectCloser.Close())
 			}()
-			matched, err := formatFileNodeWithMatch(writeObjectCloser, fileNode, options)
-			if err != nil {
+			if _, err := io.WriteString(writeObjectCloser, formatted); err != nil {
 				return err
-			}
-			if matched {
-				deprecationMatched.Store(true)
 			}
 			return writeObjectCloser.SetExternalPath(readObjectCloser.ExternalPath())
 		}
@@ -108,52 +89,10 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket, opts ...Format
 	if err := thread.Parallelize(ctx, jobs); err != nil {
 		return nil, err
 	}
-	// If deprecation was requested but nothing matched, return an error.
-	if len(options.deprecatePrefixes) > 0 && !deprecationMatched.Load() {
-		return nil, fmt.Errorf("no types matched the specified deprecation prefixes")
-	}
 	return readWriteBucket, nil
 }
 
-// FormatFileNode formats the given file node and writes the result to dest.
-func FormatFileNode(dest io.Writer, fileNode *ast.FileNode) error {
-	return formatFileNode(dest, fileNode, &formatOptions{})
-}
-
-// formatFileNode formats the given file node with options and writes the result to dest.
-func formatFileNode(dest io.Writer, fileNode *ast.FileNode, options *formatOptions) error {
-	_, err := formatFileNodeWithMatch(dest, fileNode, options)
-	return err
-}
-
-// formatFileNodeWithMatch formats the given file node and returns whether any deprecation prefix matched.
-func formatFileNodeWithMatch(dest io.Writer, fileNode *ast.FileNode, options *formatOptions) (bool, error) {
-	// Construct the file descriptor to ensure the AST is valid. The
-	// reporter swallows the known edition 2024 unsupported error (the
-	// parser handles it but ResultFromAST does not yet) and propagates
-	// all other errors. The error is identified by its span matching
-	// the edition value node.
-	errReporter := reporter.NewReporter(
-		func(err reporter.ErrorWithPos) error {
-			if fileNode.Edition == nil || fileNode.Edition.Edition.AsString() != "2024" {
-				return err
-			}
-			editionValueSpan := fileNode.NodeInfo(fileNode.Edition.Edition)
-			if err.Start() == editionValueSpan.Start() && err.End() == editionValueSpan.End() {
-				return nil
-			}
-			return err
-		},
-		nil,
-	)
-	if _, err := parser.ResultFromAST(fileNode, true, reporter.NewHandler(errReporter)); err != nil {
-		if !errors.Is(err, reporter.ErrInvalidSource) {
-			return false, err
-		}
-	}
-	formatter := newFormatter(dest, fileNode, options)
-	if err := formatter.Run(); err != nil {
-		return false, err
-	}
-	return formatter.deprecationMatched, nil
+// FormatFile formats the file and returns the result as a string.
+func FormatFile(file *ast.File) string {
+	return printer.PrintFile(printer.Options{Format: true}, file)
 }

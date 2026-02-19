@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 	"unicode/utf16"
@@ -25,8 +26,8 @@ import (
 	celpv "buf.build/go/protovalidate/cel"
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufformat"
-	"github.com/bufbuild/protocompile/parser"
-	"github.com/bufbuild/protocompile/reporter"
+	"github.com/bufbuild/protocompile/experimental/parser"
+	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/google/cel-go/cel"
 	"go.lsp.dev/protocol"
 	"mvdan.cc/xurls/v2"
@@ -301,10 +302,6 @@ func (s *server) DidSave(
 }
 
 // Formatting is called whenever the user explicitly requests formatting.
-//
-// NOTE: this still uses the current compiler since formatting is not yet implemented with
-// the new compiler. This will be ported over once that is ready. For now, we parse the file
-// on-demand for formatting.
 func (s *server) Formatting(
 	ctx context.Context,
 	params *protocol.DocumentFormattingParams,
@@ -318,15 +315,19 @@ func (s *server) Formatting(
 		// Format for a file we don't know about? Seems bad!
 		return nil, fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
 	}
-	parsed, err := parser.Parse(file.uri.Filename(), strings.NewReader(file.file.Text()), reporter.NewHandler(nil))
-	if err != nil {
-		return nil, fmt.Errorf("cannot format file: %w", err)
+	r := &report.Report{}
+	parsed, _ := parser.Parse(file.uri.Filename(), file.file, r)
+	for _, d := range r.Diagnostics {
+		if d.Level() <= report.Error {
+			slog.WarnContext(ctx, "parse error during format", "path", file.uri.Filename(), "error", d.Message())
+		}
 	}
-	var out strings.Builder
-	if err := bufformat.FormatFileNode(&out, parsed); err != nil {
-		return nil, fmt.Errorf("format failed: %w", err)
+	// Currently we have no way to honor any of the parameters.
+	_ = params
+	if parsed == nil {
+		return nil, nil
 	}
-	newText := out.String()
+	newText := bufformat.FormatFile(parsed)
 	if newText == file.file.Text() {
 		return nil, nil
 	}

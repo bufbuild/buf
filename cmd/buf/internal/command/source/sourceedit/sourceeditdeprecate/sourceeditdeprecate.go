@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/buf/bufformat"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -201,16 +200,8 @@ func run(
 	)
 	originalReadBucket := bufmodule.ModuleReadBucketToStorageReadBucket(moduleReadBucket)
 
-	// Build format options from all prefixes
-	var formatOpts []bufformat.FormatOption
-	for _, prefix := range flags.Prefixes {
-		formatOpts = append(formatOpts, bufformat.WithDeprecate(prefix))
-	}
-
-	formattedReadBucket, err := bufformat.FormatBucket(ctx, originalReadBucket, formatOpts...)
-	if err != nil {
-		return err
-	}
+	// TODO: this will be replaced by edits to the AST and reprinting.
+	formattedReadBucket := originalReadBucket
 
 	// Find changed files. Only generate diff text if displaying diff.
 	var diffBuffer bytes.Buffer
