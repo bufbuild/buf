@@ -209,8 +209,8 @@ func findMacroAtOffset(sourceInfo *exprpb.SourceInfo, offset int, exprString str
 			continue
 		}
 
-		// Get the position of the macro call
-		celOffset, ok := sourceInfo.Positions[macroID]
+		// Get the position of the macro call (rune offset from CEL)
+		celRuneOffset, ok := sourceInfo.Positions[macroID]
 		if !ok {
 			continue
 		}
@@ -223,13 +223,15 @@ func findMacroAtOffset(sourceInfo *exprpb.SourceInfo, offset int, exprString str
 		if callExpr.CallExpr.Target != nil {
 			// Method call - search for ".funcName" after the target
 			targetID := callExpr.CallExpr.Target.Id
-			if targetOffset, ok := sourceInfo.Positions[targetID]; ok {
-				funcStart, funcEnd = findMethodNameAfterDot(targetOffset, funcName, exprString)
+			if targetRuneOffset, ok := sourceInfo.Positions[targetID]; ok {
+				targetByteOffset := celRuneOffsetToByteOffset(exprString, targetRuneOffset)
+				funcStart, funcEnd = findMethodNameAfterDot(targetByteOffset, funcName, exprString)
 				found = funcStart >= 0
 			}
 		} else {
 			// Standalone function call - CEL position points to opening paren, look backwards
-			funcStart, funcEnd, found = findStandaloneFunctionName(celOffset, funcName, exprString)
+			celByteOffset := celRuneOffsetToByteOffset(exprString, celRuneOffset)
+			funcStart, funcEnd, found = findStandaloneFunctionName(celByteOffset, funcName, exprString)
 		}
 
 		// Check if offset is within the macro function name
@@ -263,11 +265,13 @@ func walkCELExprForHover(
 		return nil
 	}
 
-	// Get the byte offset for this expression within the CEL string
-	celOffset, ok := sourceInfo.Positions[expr.Id]
+	// Get the CEL rune offset for this expression and convert to byte offset.
+	// CEL tracks positions as Unicode code point (rune) offsets, not byte offsets.
+	celRuneOffset, ok := sourceInfo.Positions[expr.Id]
 	if !ok {
 		return nil
 	}
+	celByteOffset := celRuneOffsetToByteOffset(exprString, celRuneOffset)
 
 	// Variable to hold the best match (deepest expression containing offset)
 	var bestMatch *celHoverInfo
@@ -291,13 +295,13 @@ func walkCELExprForHover(
 		}
 
 		if offsetRange, ok := offsetRanges[expr.Id]; ok {
-			// Check if offset is within this identifier's range
-			if offset >= int(offsetRange.Start) && offset < int(offsetRange.Stop) {
+			byteStart, byteStop := celOffsetRangeToByteRange(exprString, offsetRange)
+			if offset >= byteStart && offset < byteStop {
 				hoverInfo := &celHoverInfo{
 					kind:   hoverKind,
 					text:   identName,
-					start:  int(offsetRange.Start),
-					end:    int(offsetRange.Stop),
+					start:  byteStart,
+					end:    byteStop,
 					exprID: expr.Id,
 				}
 				// Add type information if available
@@ -323,8 +327,9 @@ func walkCELExprForHover(
 
 		// Check if cursor is on the field name itself
 		if sel.Operand != nil {
-			if targetOffset, ok := sourceInfo.Positions[sel.Operand.Id]; ok {
-				fieldStart, fieldEnd := findMethodNameAfterDot(targetOffset, sel.Field, exprString)
+			if targetRuneOffset, ok := sourceInfo.Positions[sel.Operand.Id]; ok {
+				targetByteOffset := celRuneOffsetToByteOffset(exprString, targetRuneOffset)
+				fieldStart, fieldEnd := findMethodNameAfterDot(targetByteOffset, sel.Field, exprString)
 				if fieldStart >= 0 && offset >= fieldStart && offset < fieldEnd {
 					// Cursor is on the field name
 					hoverInfo := &celHoverInfo{
@@ -370,12 +375,13 @@ func walkCELExprForHover(
 		// Check if this is an operator
 		if symbol, isOperator := celOperatorSymbol(funcName); isOperator {
 			if offsetRange, ok := offsetRanges[expr.Id]; ok {
-				if offset >= int(offsetRange.Start) && offset < int(offsetRange.Stop) {
+				byteStart, byteStop := celOffsetRangeToByteRange(exprString, offsetRange)
+				if offset >= byteStart && offset < byteStop {
 					bestMatch = &celHoverInfo{
 						kind:   celHoverOperator,
 						text:   symbol, // Store the symbol, not the internal function name
-						start:  int(offsetRange.Start),
-						end:    int(offsetRange.Stop),
+						start:  byteStart,
+						end:    byteStop,
 						exprID: expr.Id,
 					}
 				}
@@ -397,13 +403,14 @@ func walkCELExprForHover(
 
 			if call.Target != nil {
 				// Method call - search for the function name after the target
-				if targetOffset, ok := sourceInfo.Positions[call.Target.Id]; ok {
-					funcStart, funcEnd = findMethodNameAfterDot(targetOffset, funcName, exprString)
+				if targetRuneOffset, ok := sourceInfo.Positions[call.Target.Id]; ok {
+					targetByteOffset := celRuneOffsetToByteOffset(exprString, targetRuneOffset)
+					funcStart, funcEnd = findMethodNameAfterDot(targetByteOffset, funcName, exprString)
 					found = funcStart >= 0
 				}
 			} else {
 				// Standalone function call - function name is before the opening paren
-				funcStart, funcEnd, found = findStandaloneFunctionName(celOffset, funcName, exprString)
+				funcStart, funcEnd, found = findStandaloneFunctionName(celByteOffset, funcName, exprString)
 			}
 
 			if found && offset >= funcStart && offset < funcEnd {
@@ -422,12 +429,13 @@ func walkCELExprForHover(
 		constExpr := kind.ConstExpr
 
 		if offsetRange, ok := offsetRanges[expr.Id]; ok {
-			if offset >= int(offsetRange.Start) && offset < int(offsetRange.Stop) {
+			byteStart, byteStop := celOffsetRangeToByteRange(exprString, offsetRange)
+			if offset >= byteStart && offset < byteStop {
 				bestMatch = &celHoverInfo{
 					kind:    celHoverLiteral,
-					text:    exprString[offsetRange.Start:offsetRange.Stop],
-					start:   int(offsetRange.Start),
-					end:     int(offsetRange.Stop),
+					text:    exprString[byteStart:byteStop],
+					start:   byteStart,
+					end:     byteStop,
 					exprID:  expr.Id,
 					celType: getPrimitiveTypeForConstant(constExpr),
 				}

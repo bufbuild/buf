@@ -215,8 +215,8 @@ func collectMacroTokens(
 			continue
 		}
 
-		// Get the position of the macro call
-		celOffset, ok := sourceInfo.Positions[macroID]
+		// Get the position of the macro call (rune offset from CEL)
+		celRuneOffset, ok := sourceInfo.Positions[macroID]
 		if !ok {
 			continue
 		}
@@ -226,15 +226,17 @@ func collectMacroTokens(
 		if callExpr.CallExpr.Target != nil {
 			// Method call - search for ".funcName" after the target
 			targetID := callExpr.CallExpr.Target.Id
-			if targetOffset, ok := sourceInfo.Positions[targetID]; ok {
-				tokenSpan := findNameAfterDot(targetOffset, funcName, exprString, exprLiteralSpan)
+			if targetRuneOffset, ok := sourceInfo.Positions[targetID]; ok {
+				targetByteOffset := celRuneOffsetToByteOffset(exprString, targetRuneOffset)
+				tokenSpan := findNameAfterDot(targetByteOffset, funcName, exprString, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeMacro, 0, keyword.Unknown)
 				}
 			}
 		} else {
 			// Standalone function call - CEL position points to opening paren, look backwards
-			funcStart := int(celOffset) - len(funcName)
+			celByteOffset := celRuneOffsetToByteOffset(exprString, celRuneOffset)
+			funcStart := celByteOffset - len(funcName)
 			funcEnd := funcStart + len(funcName)
 			if funcStart >= 0 && funcEnd <= len(exprString) {
 				if exprString[funcStart:funcEnd] == funcName {
@@ -263,11 +265,13 @@ func walkCELExprWithVars(
 		return
 	}
 
-	// Get the byte offset for this expression within the CEL string
-	celOffset, ok := sourceInfo.Positions[expr.Id]
+	// Get the CEL rune offset for this expression and convert to byte offset.
+	// CEL tracks positions as Unicode code point (rune) offsets, not byte offsets.
+	celRuneOffset, ok := sourceInfo.Positions[expr.Id]
 	if !ok {
 		return
 	}
+	celByteOffset := celRuneOffsetToByteOffset(exprString, celRuneOffset)
 
 	var tokenSpan source.Span
 
@@ -293,7 +297,8 @@ func walkCELExprWithVars(
 		}
 
 		if offsetRange, ok := offsetRanges[expr.Id]; ok {
-			tokenSpan = createCELSpan(int(offsetRange.Start), int(offsetRange.Stop), exprLiteralSpan)
+			byteStart, byteStop := celOffsetRangeToByteRange(exprString, offsetRange)
+			tokenSpan = createCELSpan(byteStart, byteStop, exprLiteralSpan)
 			if !tokenSpan.IsZero() {
 				collectToken(tokenSpan, tokenType, tokenModifier, keyword.Unknown)
 			}
@@ -310,8 +315,9 @@ func walkCELExprWithVars(
 
 		// Highlight the field name
 		if sel.Operand != nil {
-			if targetOffset, ok := sourceInfo.Positions[sel.Operand.Id]; ok {
-				tokenSpan = findNameAfterDot(targetOffset, sel.Field, exprString, exprLiteralSpan)
+			if targetRuneOffset, ok := sourceInfo.Positions[sel.Operand.Id]; ok {
+				targetByteOffset := celRuneOffsetToByteOffset(exprString, targetRuneOffset)
+				tokenSpan = findNameAfterDot(targetByteOffset, sel.Field, exprString, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeProperty, 0, keyword.Unknown)
 				}
@@ -334,7 +340,8 @@ func walkCELExprWithVars(
 		if _, isOperator := celOperatorSymbol(funcName); isOperator {
 			// This is an operator - use offset ranges from CEL's native AST
 			if offsetRange, ok := offsetRanges[expr.Id]; ok {
-				tokenSpan = createCELSpan(int(offsetRange.Start), int(offsetRange.Stop), exprLiteralSpan)
+				byteStart, byteStop := celOffsetRangeToByteRange(exprString, offsetRange)
+				tokenSpan = createCELSpan(byteStart, byteStop, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeOperator, 0, keyword.Unknown)
 				}
@@ -362,8 +369,9 @@ func walkCELExprWithVars(
 
 			if call.Target != nil {
 				// Method call - search for the function name after the target
-				if targetOffset, ok := sourceInfo.Positions[call.Target.Id]; ok {
-					tokenSpan = findNameAfterDot(targetOffset, funcName, exprString, exprLiteralSpan)
+				if targetRuneOffset, ok := sourceInfo.Positions[call.Target.Id]; ok {
+					targetByteOffset := celRuneOffsetToByteOffset(exprString, targetRuneOffset)
+					tokenSpan = findNameAfterDot(targetByteOffset, funcName, exprString, exprLiteralSpan)
 					if !tokenSpan.IsZero() {
 						collectToken(tokenSpan, tokenType, tokenModifier, keyword.Unknown)
 					}
@@ -371,7 +379,7 @@ func walkCELExprWithVars(
 			} else {
 				// Standalone function call (no target)
 				// CEL's position typically points to the opening paren, so look backwards for the function name
-				funcStart := int(celOffset) - len(funcName)
+				funcStart := celByteOffset - len(funcName)
 				funcEnd := funcStart + len(funcName)
 				if funcStart >= 0 && funcEnd <= len(exprString) {
 					if exprString[funcStart:funcEnd] == funcName {
@@ -397,7 +405,8 @@ func walkCELExprWithVars(
 		case *exprpb.Constant_StringValue:
 			// String literal - use offset ranges from CEL's native AST
 			if offsetRange, ok := offsetRanges[expr.Id]; ok {
-				tokenSpan = createCELSpan(int(offsetRange.Start), int(offsetRange.Stop), exprLiteralSpan)
+				byteStart, byteStop := celOffsetRangeToByteRange(exprString, offsetRange)
+				tokenSpan = createCELSpan(byteStart, byteStop, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeString, 0, keyword.Unknown)
 				}
@@ -406,7 +415,8 @@ func walkCELExprWithVars(
 		case *exprpb.Constant_Int64Value, *exprpb.Constant_Uint64Value, *exprpb.Constant_DoubleValue:
 			// Number literal - use offset ranges from CEL's native AST
 			if offsetRange, ok := offsetRanges[expr.Id]; ok {
-				tokenSpan = createCELSpan(int(offsetRange.Start), int(offsetRange.Stop), exprLiteralSpan)
+				byteStart, byteStop := celOffsetRangeToByteRange(exprString, offsetRange)
+				tokenSpan = createCELSpan(byteStart, byteStop, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeNumber, 0, keyword.Unknown)
 				}
@@ -415,7 +425,8 @@ func walkCELExprWithVars(
 		case *exprpb.Constant_BoolValue:
 			// Boolean literal - use offset ranges from CEL's native AST
 			if offsetRange, ok := offsetRanges[expr.Id]; ok {
-				tokenSpan = createCELSpan(int(offsetRange.Start), int(offsetRange.Stop), exprLiteralSpan)
+				byteStart, byteStop := celOffsetRangeToByteRange(exprString, offsetRange)
+				tokenSpan = createCELSpan(byteStart, byteStop, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeKeyword, 0, keyword.Unknown)
 				}

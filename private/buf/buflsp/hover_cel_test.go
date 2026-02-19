@@ -434,16 +434,48 @@ func TestCELHover(t *testing.T) {
 			expected: "**Operator**: `?`\n\nThe ternary operator tests a boolean predicate and returns the left-hand side (truthy) expression if true, or the right-hand side (falsy) expression if false\n\n**Overloads**:\n- `bool ? <T> : <T> -> <T>`",
 		},
 
+		// Unicode: emoji are 2 UTF-16 code units but 1 rune each.
+		// These tests verify correct offset handling past non-ASCII content.
+		// '🎉😀' == this  (expression on line 335, 0-indexed: 334)
+		//  ^  ^       ^--- this at UTF-16 char 27
+		//  |  😀 at UTF-16 chars 20-21
+		//  🎉 at UTF-16 chars 18-19
+		//  '🎉😀' is at UTF-16 chars 17-22; == at 24; space at 26; this at 27
+		{
+			name:     "unicode: string literal (first emoji)",
+			line:     334,
+			char:     18,
+			expected: "**Literal**: `'🎉😀'`\n\n**Type**: string",
+		},
+		{
+			name:     "unicode: string literal (second emoji)",
+			line:     334,
+			char:     20,
+			expected: "**Literal**: `'🎉😀'`\n\n**Type**: string",
+		},
+		{
+			name:     "unicode: == operator after emoji",
+			line:     334,
+			char:     24,
+			expected: "**Operator**: `==`\n\ncompare two values of the same type for equality\n\n**Overloads**:\n- `<A> == <A> -> bool`",
+		},
+		{
+			name:     "unicode: this after emoji",
+			line:     334,
+			char:     27,
+			expected: "**Special variable**\n\nRefers to the current message or field being validated.\n\nIn field-level rules, `this` refers to the field value.\nIn message-level rules, `this` refers to the entire message.",
+		},
+
 		// Message-level CEL rules
 		{
 			name:     "message-level: this",
-			line:     338,
+			line:     345,
 			char:     17,
 			expected: "**Special variable**\n\nRefers to the current message or field being validated.\n\nIn field-level rules, `this` refers to the field value.\nIn message-level rules, `this` refers to the entire message.",
 		},
 		{
 			name:     "message-level: &&",
-			line:     338,
+			line:     345,
 			char:     33,
 			expected: "**Operator**: `&&`\n\nlogically AND two boolean values. Errors and unknown values\nare valid inputs and will not halt evaluation.\n\n**Overloads**:\n- `bool && bool -> bool`",
 		},

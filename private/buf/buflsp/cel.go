@@ -16,8 +16,10 @@ package buflsp
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/bufbuild/protocompile/experimental/source"
+	celast "github.com/google/cel-go/common/ast"
 	"github.com/google/cel-go/common/operators"
 )
 
@@ -130,10 +132,37 @@ func createCELSpanMultiline(celStart, celEnd int, multilineSpan source.Span) sou
 	return source.Span{}
 }
 
+// celRuneOffsetToByteOffset converts a CEL source position (Unicode code point offset)
+// to a UTF-8 byte offset within the expression string.
+//
+// CEL-go tracks source positions as Unicode code point (rune) offsets, not byte offsets.
+// We need byte offsets to correctly slice Go strings and compute file spans.
+func celRuneOffsetToByteOffset(s string, runeOffset int32) int {
+	byteIdx := 0
+	for runeIdx := int32(0); runeIdx < runeOffset && byteIdx < len(s); runeIdx++ {
+		_, size := utf8.DecodeRuneInString(s[byteIdx:])
+		byteIdx += size
+	}
+	return byteIdx
+}
+
+// celOffsetRangeToByteRange converts a CEL ast.OffsetRange to byte start and stop offsets.
+//
+// CEL stores OffsetRange.Start as a Unicode code point (rune) offset, but
+// OffsetRange.Stop = Start + len(tokenText) where len uses Go's byte count (UTF-8 bytes).
+// Therefore Stop-Start equals the byte length of the token, not its rune length.
+// This gives correct byte bounds for both ASCII and non-ASCII tokens.
+func celOffsetRangeToByteRange(exprString string, r celast.OffsetRange) (byteStart, byteStop int) {
+	byteStart = celRuneOffsetToByteOffset(exprString, r.Start)
+	byteStop = byteStart + int(r.Stop-r.Start) // Stop-Start is byte length of the token
+	return
+}
+
 // findMethodNameAfterDot finds the position of a method name after a dot in a CEL expression.
-// Returns the start and end positions, or -1 if not found.
-func findMethodNameAfterDot(targetOffset int32, methodName string, exprString string) (start, end int) {
-	searchStart := int(targetOffset)
+// targetByteOffset is a byte offset (not rune offset) within exprString.
+// Returns the start and end byte positions, or -1 if not found.
+func findMethodNameAfterDot(targetByteOffset int, methodName string, exprString string) (start, end int) {
+	searchStart := targetByteOffset
 	searchRegion := exprString[searchStart:]
 
 	// Search for ".methodName" pattern in the remaining string
@@ -146,15 +175,16 @@ func findMethodNameAfterDot(targetOffset int32, methodName string, exprString st
 	return -1, -1
 }
 
-// findNameAfterDot searches for ".name" after targetOffset and returns the span of just the name (without the dot).
+// findNameAfterDot searches for ".name" after targetByteOffset and returns the span of just the name (without the dot).
+// targetByteOffset is a byte offset (not rune offset) within exprString.
 // Returns zero span if not found.
 func findNameAfterDot(
-	targetOffset int32,
+	targetByteOffset int,
 	name string,
 	exprString string,
 	exprLiteralSpan source.Span,
 ) source.Span {
-	start, end := findMethodNameAfterDot(targetOffset, name, exprString)
+	start, end := findMethodNameAfterDot(targetByteOffset, name, exprString)
 	if start < 0 {
 		return source.Span{}
 	}
@@ -162,9 +192,9 @@ func findNameAfterDot(
 }
 
 // findStandaloneFunctionName calculates the position of a function name before an opening paren.
-// celOffset is the position of the opening paren.
-func findStandaloneFunctionName(celOffset int32, funcName string, exprString string) (start, end int, found bool) {
-	start = int(celOffset) - len(funcName)
+// celByteOffset is the byte offset (not rune offset) of the opening paren within exprString.
+func findStandaloneFunctionName(celByteOffset int, funcName string, exprString string) (start, end int, found bool) {
+	start = celByteOffset - len(funcName)
 	end = start + len(funcName)
 	if start >= 0 && end <= len(exprString) && exprString[start:end] == funcName {
 		return start, end, true

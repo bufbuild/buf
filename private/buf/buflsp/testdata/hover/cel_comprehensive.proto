@@ -327,6 +327,13 @@ message CELTest {
     id: "test.comp_var"
     expression: "this.all(item, item > 0)"
   }];
+
+  // Unicode test: emoji occupy 2 UTF-16 code units but 1 rune each.
+  // Hover targets after the emoji verify correct rune→byte offset conversion.
+  string test_unicode = 200 [(buf.validate.field).cel = {
+    id: "test.unicode"
+    expression: "'🎉😀' == this"
+  }];
 }
 
 // Message-level CEL validation test
