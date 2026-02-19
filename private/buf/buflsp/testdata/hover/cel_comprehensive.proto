@@ -1,0 +1,380 @@
+syntax = "proto3";
+
+package test.cel.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+message Address {
+  string city = 1;
+  string state = 2;
+  optional string zip = 3; // Optional field for testing has() macro
+}
+
+// Comprehensive CEL test coverage for hover
+message CELTest {
+  // Keywords
+  string test_this = 1 [(buf.validate.field).cel = {
+    id: "test.this"
+    expression: "this != ''"
+  }];
+
+  bool test_true = 2 [(buf.validate.field).cel = {
+    id: "test.true"
+    expression: "this == true"
+  }];
+
+  bool test_false = 3 [(buf.validate.field).cel = {
+    id: "test.false"
+    expression: "this != false"
+  }];
+
+  optional string test_null = 4 [(buf.validate.field).cel = {
+    id: "test.null"
+    expression: "true ? this != '' : null != null"
+  }];
+
+  // Operators - Logical
+  bool test_and = 10 [(buf.validate.field).cel = {
+    id: "test.and"
+    expression: "this && true"
+  }];
+
+  bool test_or = 11 [(buf.validate.field).cel = {
+    id: "test.or"
+    expression: "this || false"
+  }];
+
+  bool test_not = 12 [(buf.validate.field).cel = {
+    id: "test.not"
+    expression: "!this"
+  }];
+
+  // Operators - Comparison
+  int32 test_eq = 20 [(buf.validate.field).cel = {
+    id: "test.eq"
+    expression: "this == 5"
+  }];
+
+  int32 test_ne = 21 [(buf.validate.field).cel = {
+    id: "test.ne"
+    expression: "this != 0"
+  }];
+
+  int32 test_lt = 22 [(buf.validate.field).cel = {
+    id: "test.lt"
+    expression: "this < 10"
+  }];
+
+  int32 test_gt = 23 [(buf.validate.field).cel = {
+    id: "test.gt"
+    expression: "this > 0"
+  }];
+
+  int32 test_le = 24 [(buf.validate.field).cel = {
+    id: "test.le"
+    expression: "this <= 10"
+  }];
+
+  int32 test_ge = 25 [(buf.validate.field).cel = {
+    id: "test.ge"
+    expression: "this >= 0"
+  }];
+
+  // Operators - Arithmetic
+  int32 test_add = 30 [(buf.validate.field).cel = {
+    id: "test.add"
+    expression: "this + 1 > 0"
+  }];
+
+  int32 test_sub = 31 [(buf.validate.field).cel = {
+    id: "test.sub"
+    expression: "this - 1 >= 0"
+  }];
+
+  int32 test_mul = 32 [(buf.validate.field).cel = {
+    id: "test.mul"
+    expression: "this * 2 > 0"
+  }];
+
+  int32 test_div = 33 [(buf.validate.field).cel = {
+    id: "test.div"
+    expression: "this / 2 > 0"
+  }];
+
+  int32 test_mod = 34 [(buf.validate.field).cel = {
+    id: "test.mod"
+    expression: "this % 2 == 0"
+  }];
+
+  // String functions
+  string test_contains = 50 [(buf.validate.field).cel = {
+    id: "test.contains"
+    expression: "this.contains('test')"
+  }];
+
+  string test_starts_with = 51 [(buf.validate.field).cel = {
+    id: "test.startsWith"
+    expression: "this.startsWith('prefix')"
+  }];
+
+  string test_ends_with = 52 [(buf.validate.field).cel = {
+    id: "test.endsWith"
+    expression: "this.endsWith('suffix')"
+  }];
+
+  string test_matches = 53 [(buf.validate.field).cel = {
+    id: "test.matches"
+    expression: "this.matches('[a-z]+')"
+  }];
+
+  // Collection functions
+  repeated string test_size = 60 [(buf.validate.field).cel = {
+    id: "test.size"
+    expression: "this.size() > 0"
+  }];
+
+  repeated string test_in = 61 [(buf.validate.field).cel = {
+    id: "test.in"
+    expression: "'value' in this"
+  }];
+
+  // Type conversion functions
+  string test_int = 70 [(buf.validate.field).cel = {
+    id: "test.int"
+    expression: "int(this) > 0"
+  }];
+
+  string test_uint = 71 [(buf.validate.field).cel = {
+    id: "test.uint"
+    expression: "uint(this) > 0u"
+  }];
+
+  int32 test_double = 72 [(buf.validate.field).cel = {
+    id: "test.double"
+    expression: "double(this) > 0.0"
+  }];
+
+  int32 test_string = 73 [(buf.validate.field).cel = {
+    id: "test.string"
+    expression: "string(this) != ''"
+  }];
+
+  string test_bytes = 74 [(buf.validate.field).cel = {
+    id: "test.bytes"
+    expression: "bytes(this).size() > 0"
+  }];
+
+  string test_timestamp = 75 [(buf.validate.field).cel = {
+    id: "test.timestamp"
+    expression: "timestamp(this).getFullYear() > 2020"
+  }];
+
+  string test_duration = 76 [(buf.validate.field).cel = {
+    id: "test.duration"
+    expression: "duration(this).getSeconds() > 0"
+  }];
+
+  string test_type = 77 [(buf.validate.field).cel = {
+    id: "test.type"
+    expression: "type(this) == string"
+  }];
+
+  string test_dyn = 78 [(buf.validate.field).cel = {
+    id: "test.dyn"
+    expression: "dyn(this) != null"
+  }];
+
+  // Timestamp functions
+  google.protobuf.Timestamp test_get_full_year = 80 [(buf.validate.field).cel = {
+    id: "test.getFullYear"
+    expression: "this.getFullYear() > 2020"
+  }];
+
+  google.protobuf.Timestamp test_get_month = 81 [(buf.validate.field).cel = {
+    id: "test.getMonth"
+    expression: "this.getMonth() >= 0"
+  }];
+
+  google.protobuf.Timestamp test_get_date = 82 [(buf.validate.field).cel = {
+    id: "test.getDate"
+    expression: "this.getDate() > 0"
+  }];
+
+  google.protobuf.Timestamp test_get_hours = 83 [(buf.validate.field).cel = {
+    id: "test.getHours"
+    expression: "this.getHours() >= 0"
+  }];
+
+  google.protobuf.Timestamp test_get_minutes = 84 [(buf.validate.field).cel = {
+    id: "test.getMinutes"
+    expression: "this.getMinutes() >= 0"
+  }];
+
+  google.protobuf.Timestamp test_get_seconds = 85 [(buf.validate.field).cel = {
+    id: "test.getSeconds"
+    expression: "this.getSeconds() >= 0"
+  }];
+
+  google.protobuf.Timestamp test_get_day_of_week = 86 [(buf.validate.field).cel = {
+    id: "test.getDayOfWeek"
+    expression: "this.getDayOfWeek() >= 0"
+  }];
+
+  // Duration functions
+  google.protobuf.Duration test_duration_get_seconds = 90 [(buf.validate.field).cel = {
+    id: "test.duration.getSeconds"
+    expression: "this.getSeconds() > 0"
+  }];
+
+  // Macros
+  Address test_has = 100 [(buf.validate.field).cel = {
+    id: "test.has"
+    expression: "has(this.zip)"
+  }];
+
+  repeated int32 test_all = 101 [(buf.validate.field).cel = {
+    id: "test.all"
+    expression: "this.all(x, x > 0)"
+  }];
+
+  repeated int32 test_exists = 102 [(buf.validate.field).cel = {
+    id: "test.exists"
+    expression: "this.exists(x, x == 5)"
+  }];
+
+  repeated int32 test_exists_one = 103 [(buf.validate.field).cel = {
+    id: "test.exists_one"
+    expression: "this.exists_one(x, x == 5)"
+  }];
+
+  repeated int32 test_map = 104 [(buf.validate.field).cel = {
+    id: "test.map"
+    expression: "this.map(x, x * 2).size() > 0"
+  }];
+
+  repeated int32 test_filter = 105 [(buf.validate.field).cel = {
+    id: "test.filter"
+    expression: "this.filter(x, x > 0).size() > 0"
+  }];
+
+  // Protovalidate extension functions
+  string test_is_email = 110 [(buf.validate.field).cel = {
+    id: "test.isEmail"
+    expression: "this.isEmail()"
+  }];
+
+  string test_is_hostname = 111 [(buf.validate.field).cel = {
+    id: "test.isHostname"
+    expression: "this.isHostname()"
+  }];
+
+  string test_is_ip = 112 [(buf.validate.field).cel = {
+    id: "test.isIp"
+    expression: "this.isIp()"
+  }];
+
+  string test_is_ip_prefix = 113 [(buf.validate.field).cel = {
+    id: "test.isIpPrefix"
+    expression: "this.isIpPrefix()"
+  }];
+
+  string test_is_uri = 114 [(buf.validate.field).cel = {
+    id: "test.isUri"
+    expression: "this.isUri()"
+  }];
+
+  string test_is_uri_ref = 115 [(buf.validate.field).cel = {
+    id: "test.isUriRef"
+    expression: "this.isUriRef()"
+  }];
+
+  string test_is_host_and_port = 116 [(buf.validate.field).cel = {
+    id: "test.isHostAndPort"
+    expression: "this.isHostAndPort(true)"
+  }];
+
+  // Field access
+  Address test_field_access = 120 [(buf.validate.field).cel = {
+    id: "test.field_access"
+    expression: "this.city != ''"
+  }];
+
+  // Literals
+  string test_string_literal = 130 [(buf.validate.field).cel = {
+    id: "test.string_literal"
+    expression: "this == 'literal'"
+  }];
+
+  int32 test_int_literal = 131 [(buf.validate.field).cel = {
+    id: "test.int_literal"
+    expression: "this == 42"
+  }];
+
+  double test_double_literal = 132 [(buf.validate.field).cel = {
+    id: "test.double_literal"
+    expression: "this == 3.14"
+  }];
+
+  bool test_bool_literal = 133 [(buf.validate.field).cel = {
+    id: "test.bool_literal"
+    expression: "this == true"
+  }];
+
+  // Comprehension variables
+  repeated int32 test_comp_var = 140 [(buf.validate.field).cel = {
+    id: "test.comp_var"
+    expression: "this.all(item, item > 0)"
+  }];
+
+  // Unicode test: emoji occupy 2 UTF-16 code units but 1 rune each.
+  // Hover targets after the emoji verify correct rune→byte offset conversion.
+  string test_unicode = 200 [(buf.validate.field).cel = {
+    id: "test.unicode"
+    expression: "'🎉😀' == this"
+  }];
+
+  // Unicode test: CJK characters are 3 UTF-8 bytes but 1 UTF-16 code unit and 1 rune.
+  // Different from emoji (4 bytes, 2 UTF-16) — exercises a third point in the
+  // UTF-8/UTF-16/rune space.
+  string test_unicode_cjk = 201 [(buf.validate.field).cel = {
+    id: "test.unicode_cjk"
+    expression: "'中文' == this"
+  }];
+
+  // Unicode test: mixed emoji and CJK in one expression exercises offset
+  // handling when different multi-byte character widths are interleaved.
+  string test_unicode_mixed = 202 [(buf.validate.field).cel = {
+    id: "test.unicode_mixed"
+    expression: "'🎉中' == this"
+  }];
+
+  // Multi-line CEL expression: proto adjacent string literals are concatenated,
+  // producing a span that crosses two file lines. Tests the multi-literal walk in createCELSpan.
+  string test_multiline = 203 [(buf.validate.field).cel = {
+    id: "test.multiline"
+    expression: "this.size() > 0"
+                " && this != ''"
+  }];
+
+  // Escape-sequence test: proto \n occupies 2 source bytes but is a single
+  // byte in the decoded CEL expression string. A single-byte token immediately
+  // after the escape is at the wrong offset without escape-aware offset handling,
+  // causing hover to land in whitespace and return nil.
+  bool test_escape = 204 [(buf.validate.field).cel = {
+    id: "test.escape"
+    expression: "true\n? this : false"
+  }];
+}
+
+// Message-level CEL validation test
+message CELMessageTest {
+  string name = 1;
+  int32 value = 2;
+
+  option (buf.validate.message).cel = {
+    id: "cel_message_test.rule"
+    expression: "this.name != '' && this.value > 0"
+  };
+}

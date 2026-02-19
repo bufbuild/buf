@@ -323,11 +323,20 @@ func TestSemanticTokensKeywords(t *testing.T) {
 				// Note: Other 'i' uses in exists_one are at different positions due to expansion
 
 				// Multi-line expression test 1 (lines 72-75)
-				// Line 72: "this.point_a == this.point_b ? 'point A and point B cannot be the same'"
+				// Line 72 (0-indexed): "      "this.point_a == this.point_b ? 'point A...'""
 				{72, 7, 4, semanticTypeKeyword, "'this' keyword in multi-line expression"},
 				{72, 12, 7, semanticTypeProperty, "'point_a' property in multi-line expression"},
 				{72, 20, 2, semanticTypeOperator, "'==' operator in multi-line expression"},
 				{72, 36, 1, semanticTypeOperator, "'?' ternary operator in multi-line expression"},
+				// Second segment (line 73, 0-indexed): "      ": this.point_b == this.point_c ? 'point B...'""
+				// Verifies that createCELSpan maps tokens in the second
+				// string literal back to the correct file line and column.
+				{73, 9, 4, semanticTypeKeyword, "'this' in second segment of ternary"},
+				{73, 14, 7, semanticTypeProperty, "'point_b' property in second segment"},
+				{73, 22, 2, semanticTypeOperator, "'==' operator in second segment"},
+				{73, 25, 4, semanticTypeKeyword, "second 'this' in second segment"},
+				{73, 30, 7, semanticTypeProperty, "'point_c' property in second segment"},
+				{73, 38, 1, semanticTypeOperator, "'?' ternary in second segment"},
 
 				// Multi-line expression test 2 (lines 81-82)
 				// Line 81: "(this.point_a.y - this.point_b.y) * (this.point_a.x - this.point_c.x)"
