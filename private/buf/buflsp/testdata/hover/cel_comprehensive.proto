@@ -334,6 +334,29 @@ message CELTest {
     id: "test.unicode"
     expression: "'🎉😀' == this"
   }];
+
+  // Unicode test: CJK characters are 3 UTF-8 bytes but 1 UTF-16 code unit and 1 rune.
+  // Different from emoji (4 bytes, 2 UTF-16) — exercises a third point in the
+  // UTF-8/UTF-16/rune space.
+  string test_unicode_cjk = 201 [(buf.validate.field).cel = {
+    id: "test.unicode_cjk"
+    expression: "'中文' == this"
+  }];
+
+  // Unicode test: mixed emoji and CJK in one expression exercises offset
+  // handling when different multi-byte character widths are interleaved.
+  string test_unicode_mixed = 202 [(buf.validate.field).cel = {
+    id: "test.unicode_mixed"
+    expression: "'🎉中' == this"
+  }];
+
+  // Multi-line CEL expression: proto adjacent string literals are concatenated,
+  // producing a span that crosses two file lines. Tests createCELSpanMultiline.
+  string test_multiline = 203 [(buf.validate.field).cel = {
+    id: "test.multiline"
+    expression: "this.size() > 0"
+                " && this != ''"
+  }];
 }
 
 // Message-level CEL validation test

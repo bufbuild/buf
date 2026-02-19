@@ -30,11 +30,6 @@ import (
 	exprpb "google.golang.org/genproto/googleapis/api/expr/v1alpha1"
 )
 
-const (
-	// quoteOffsetAdjustment accounts for the opening quote in CEL string literals.
-	quoteOffsetAdjustment = 1
-)
-
 // getCELHover returns hover documentation for CEL expressions.
 // If the cursor is over a CEL expression, it returns documentation for the token at that position.
 func getCELHover(
@@ -55,9 +50,11 @@ func getCELHover(
 				continue
 			}
 
-			// Calculate offset within the CEL expression
-			// The span includes quotes, so adjust for opening quote
-			celOffset := byteOffset - exprInfo.span.Start - quoteOffsetAdjustment
+			// Calculate offset within the CEL expression.
+			// For single-line literals this is simple arithmetic; for multi-line
+			// (adjacent proto string literals) we must walk the span to find the
+			// matching CEL byte position.
+			celOffset := fileByteOffsetToCELOffset(byteOffset, exprInfo.span)
 			if celOffset < 0 || celOffset >= len(exprInfo.expression) {
 				continue
 			}

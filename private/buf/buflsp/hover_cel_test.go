@@ -466,16 +466,95 @@ func TestCELHover(t *testing.T) {
 			expected: "**Special variable**\n\nRefers to the current message or field being validated.\n\nIn field-level rules, `this` refers to the field value.\nIn message-level rules, `this` refers to the entire message.",
 		},
 
+		// Unicode: CJK characters are 3 UTF-8 bytes but 1 UTF-16 code unit and 1 rune —
+		// a third point in the UTF-8/UTF-16/rune space (vs. emoji: 4/2/1, ASCII: 1/1/1).
+		// '中文' == this  (expression on line 343, 0-indexed: 342)
+		//  ^^        ^--- this at UTF-16 char 25
+		//  |文 at UTF-16 char 19 (1 code unit, 3 UTF-8 bytes)
+		//  中 at UTF-16 char 18 (1 code unit, 3 UTF-8 bytes)
+		//  '中文' is at UTF-16 chars 17-20; == at 22; this at 25
+		{
+			name:     "unicode: CJK string literal",
+			line:     342,
+			char:     18,
+			expected: "**Literal**: `'中文'`\n\n**Type**: string",
+		},
+		{
+			name:     "unicode: == operator after CJK",
+			line:     342,
+			char:     22,
+			expected: "**Operator**: `==`\n\ncompare two values of the same type for equality\n\n**Overloads**:\n- `<A> == <A> -> bool`",
+		},
+		{
+			name:     "unicode: this after CJK",
+			line:     342,
+			char:     25,
+			expected: "**Special variable**\n\nRefers to the current message or field being validated.\n\nIn field-level rules, `this` refers to the field value.\nIn message-level rules, `this` refers to the entire message.",
+		},
+
+		// Unicode: mixed emoji (4 UTF-8 bytes, 2 UTF-16 code units) and CJK (3 UTF-8
+		// bytes, 1 UTF-16 code unit) in a single expression, verifying that the per-rune
+		// offset walk handles interleaved character widths correctly.
+		// '🎉中' == this  (expression on line 350, 0-indexed: 349)
+		//  ^ ^        ^--- this at UTF-16 char 26
+		//  | 中 at UTF-16 char 20 (1 code unit, 3 UTF-8 bytes)
+		//  🎉 at UTF-16 chars 18-19 (2 code units, 4 UTF-8 bytes)
+		//  '🎉中' is at UTF-16 chars 17-21; == at 23; this at 26
+		{
+			name:     "unicode: mixed literal (emoji part)",
+			line:     349,
+			char:     18,
+			expected: "**Literal**: `'🎉中'`\n\n**Type**: string",
+		},
+		{
+			name:     "unicode: mixed literal (CJK part)",
+			line:     349,
+			char:     20,
+			expected: "**Literal**: `'🎉中'`\n\n**Type**: string",
+		},
+		{
+			name:     "unicode: == operator after mixed",
+			line:     349,
+			char:     23,
+			expected: "**Operator**: `==`\n\ncompare two values of the same type for equality\n\n**Overloads**:\n- `<A> == <A> -> bool`",
+		},
+		{
+			name:     "unicode: this after mixed",
+			line:     349,
+			char:     26,
+			expected: "**Special variable**\n\nRefers to the current message or field being validated.\n\nIn field-level rules, `this` refers to the field value.\nIn message-level rules, `this` refers to the entire message.",
+		},
+
+		// Multi-line: CEL expression split across two adjacent proto string literals,
+		// which protocompile concatenates into one value. Hover targets in the second
+		// segment exercise createCELSpanMultiline.
+		// Line 357 (0-indexed): `    expression: "this.size() > 0"`
+		// Line 358 (0-indexed): `                " && this != ''"`
+		//                          ^   ^--- this at UTF-16 char 21
+		//                          && at UTF-16 char 18
+		{
+			name:     "multiline: && in second segment",
+			line:     357,
+			char:     18,
+			expected: "**Operator**: `&&`\n\nlogically AND two boolean values. Errors and unknown values\nare valid inputs and will not halt evaluation.\n\n**Overloads**:\n- `bool && bool -> bool`",
+		},
+		{
+			name:     "multiline: this in second segment",
+			line:     357,
+			char:     21,
+			expected: "**Special variable**\n\nRefers to the current message or field being validated.\n\nIn field-level rules, `this` refers to the field value.\nIn message-level rules, `this` refers to the entire message.",
+		},
+
 		// Message-level CEL rules
 		{
 			name:     "message-level: this",
-			line:     345,
+			line:     368,
 			char:     17,
 			expected: "**Special variable**\n\nRefers to the current message or field being validated.\n\nIn field-level rules, `this` refers to the field value.\nIn message-level rules, `this` refers to the entire message.",
 		},
 		{
 			name:     "message-level: &&",
-			line:     345,
+			line:     368,
 			char:     33,
 			expected: "**Operator**: `&&`\n\nlogically AND two boolean values. Errors and unknown values\nare valid inputs and will not halt evaluation.\n\n**Overloads**:\n- `bool && bool -> bool`",
 		},

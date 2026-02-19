@@ -132,6 +132,41 @@ func createCELSpanMultiline(celStart, celEnd int, multilineSpan source.Span) sou
 	return source.Span{}
 }
 
+// fileByteOffsetToCELOffset is the inverse of createCELSpan: given a file byte
+// offset that falls within exprLiteralSpan, it returns the corresponding byte
+// offset within the concatenated CEL expression string.
+// Returns -1 if fileByteOffset is not inside any string content of the span
+// (e.g. it lands on a quote character, whitespace between literals, or is out
+// of range).
+func fileByteOffsetToCELOffset(fileByteOffset int, exprLiteralSpan source.Span) int {
+	startLoc := exprLiteralSpan.StartLoc()
+	endLoc := exprLiteralSpan.EndLoc()
+	if startLoc.Line == endLoc.Line {
+		// Single-line: simple arithmetic (subtract the opening quote).
+		celOffset := fileByteOffset - exprLiteralSpan.Start - 1
+		return celOffset
+	}
+
+	// Multi-line: walk the same way createCELSpanMultiline does, but stop when
+	// we reach the target file position instead of the target CEL position.
+	spanText := exprLiteralSpan.Text()
+	celPos := 0
+	for i := 0; i < len(spanText); i++ {
+		if spanText[i] != '"' {
+			continue
+		}
+		i++
+		for i < len(spanText) && spanText[i] != '"' {
+			if exprLiteralSpan.Start+i == fileByteOffset {
+				return celPos
+			}
+			celPos++
+			i++
+		}
+	}
+	return -1
+}
+
 // celRuneOffsetToByteOffset converts a CEL source position (Unicode code point offset)
 // to a UTF-8 byte offset within the expression string.
 //
