@@ -26,15 +26,12 @@ import (
 // isCELKeyword returns true if the identifier is a CEL reserved keyword.
 // See https://github.com/google/cel-spec/blob/master/doc/langdef.md#syntax
 func isCELKeyword(name string) bool {
-	keywords := map[string]bool{
-		// Literals
-		"true":  true,
-		"false": true,
-		"null":  true,
-		// Special identifiers
-		"this": true,
+	switch name {
+	case "true", "false", "null", // literals
+		"this": // special identifier
+		return true
 	}
-	return keywords[name]
+	return false
 }
 
 // isCELMacroFunction returns true if the function name is a CEL macro (comprehension or special function).
@@ -70,62 +67,91 @@ func celOperatorSymbol(funcName string) (string, bool) {
 	return "", false
 }
 
-// createCELSpan creates a source.Span for a CEL token given its start and end offsets within the CEL expression.
-// The exprLiteralSpan is the span of the string literal containing the CEL expression (including quotes).
-func createCELSpan(celStart, celEnd int, exprLiteralSpan source.Span) source.Span {
-	// Check if this is a multi-line span (covers multiple string literals)
-	startLoc := exprLiteralSpan.StartLoc()
-	endLoc := exprLiteralSpan.EndLoc()
-	if startLoc.Line != endLoc.Line {
-		// Multi-line span - use special handling for concatenated literals
-		return createCELSpanMultiline(celStart, celEnd, exprLiteralSpan)
+// protoEscapeLen returns the number of source bytes consumed by the proto string
+// escape sequence beginning at s[i] (where s[i] == '\\').
+// Handles simple escapes (\n, \\, etc.), hex (\xNN), Unicode (\uNNNN, \UNNNNNNNN),
+// and octal (\NNN) as defined by the proto language specification.
+func protoEscapeLen(s string, i int) int {
+	if i+1 >= len(s) {
+		return 1
 	}
-
-	// For single-line literals, use simple offset calculation
-	literalText := exprLiteralSpan.Text()
-	if len(literalText) < 2 {
-		return source.Span{}
+	switch s[i+1] {
+	case 'a', 'b', 'f', 'n', 'r', 't', 'v', '\\', '\'', '"', '?':
+		return 2
+	case 'x', 'X':
+		// Hex escape: \xNN — consume up to 2 hex digits.
+		end := i + 2
+		for end < len(s) && end < i+4 && isProtoHexDigit(s[end]) {
+			end++
+		}
+		return end - i
+	case 'u':
+		// Unicode escape: \uNNNN — consume up to 4 hex digits.
+		end := i + 2
+		for end < len(s) && end < i+6 && isProtoHexDigit(s[end]) {
+			end++
+		}
+		return end - i
+	case 'U':
+		// Unicode escape: \UNNNNNNNN — consume up to 8 hex digits.
+		end := i + 2
+		for end < len(s) && end < i+10 && isProtoHexDigit(s[end]) {
+			end++
+		}
+		return end - i
+	default:
+		// Octal: \NNN — 1 to 3 octal digits.
+		if s[i+1] >= '0' && s[i+1] <= '7' {
+			end := i + 2
+			for end < len(s) && end < i+4 && s[end] >= '0' && s[end] <= '7' {
+				end++
+			}
+			return end - i
+		}
+		return 2
 	}
-
-	// Calculate offset from start of file
-	// exprLiteralSpan.Start is the byte offset of the opening quote
-	// Add 1 for the quote, then add the CEL offset
-	fileStart := exprLiteralSpan.Start + 1 + celStart
-	fileEnd := exprLiteralSpan.Start + 1 + celEnd
-
-	// Validate bounds
-	if fileEnd > exprLiteralSpan.End {
-		return source.Span{}
-	}
-
-	return source.Span{File: exprLiteralSpan.File, Start: fileStart, End: fileEnd}
 }
 
-// createCELSpanMultiline handles CEL token spans for multi-line expressions.
-// Multi-line spans contain multiple quoted strings like: "first" "second"
-// CEL concatenates them into: "firstsecond"
-// This function maps CEL offsets back to file positions.
-func createCELSpanMultiline(celStart, celEnd int, multilineSpan source.Span) source.Span {
-	spanText := multilineSpan.Text()
-	celPos := 0 // Current position in concatenated CEL string
+// isProtoHexDigit reports whether c is a valid hex digit (0-9, a-f, A-F).
+//
+// Equivalent to the unexported isHex in github.com/bufbuild/protocompile/linker.
+func isProtoHexDigit(c byte) bool {
+	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
+}
 
-	// Walk through the span text, tracking both file position and CEL position
+// createCELSpan creates a source.Span for a CEL token given its start and end offsets within the CEL expression.
+// exprLiteralSpan is the span of the proto string literal(s) containing the CEL expression (including quotes).
+// It handles both single-line and multi-line (adjacent proto string literals) spans uniformly by scanning for
+// opening quotes, then walking the string content while accounting for proto escape sequences.
+func createCELSpan(celStart, celEnd int, exprLiteralSpan source.Span) source.Span {
+	spanText := exprLiteralSpan.Text()
+	celPos := 0
+
 	for i := 0; i < len(spanText); i++ {
 		if spanText[i] != '"' {
 			continue
 		}
-
-		// Found opening quote - scan the string content
+		// Scan the content of this string literal.
 		i++
-		for i < len(spanText) && spanText[i] != '"' {
-			// Check if we've found the token start
+		for i < len(spanText) {
+			if spanText[i] == '"' {
+				break // End of this string literal (unescaped closing quote)
+			}
 			if celPos == celStart {
-				fileStart := multilineSpan.Start + i
+				fileStart := exprLiteralSpan.Start + i
+				// The token (celStart..celEnd) is assumed not to straddle a proto
+				// escape sequence — true for all CEL identifiers, operators, and keywords.
 				fileEnd := fileStart + (celEnd - celStart)
-				return source.Span{File: multilineSpan.File, Start: fileStart, End: fileEnd}
+				return source.Span{File: exprLiteralSpan.File, Start: fileStart, End: fileEnd}
+			}
+			var charWidth int
+			if spanText[i] == '\\' && i+1 < len(spanText) {
+				charWidth = protoEscapeLen(spanText, i)
+			} else {
+				charWidth = 1
 			}
 			celPos++
-			i++
+			i += charWidth
 		}
 	}
 
@@ -139,29 +165,29 @@ func createCELSpanMultiline(celStart, celEnd int, multilineSpan source.Span) sou
 // (e.g. it lands on a quote character, whitespace between literals, or is out
 // of range).
 func fileByteOffsetToCELOffset(fileByteOffset int, exprLiteralSpan source.Span) int {
-	startLoc := exprLiteralSpan.StartLoc()
-	endLoc := exprLiteralSpan.EndLoc()
-	if startLoc.Line == endLoc.Line {
-		// Single-line: simple arithmetic (subtract the opening quote).
-		celOffset := fileByteOffset - exprLiteralSpan.Start - 1
-		return celOffset
-	}
-
-	// Multi-line: walk the same way createCELSpanMultiline does, but stop when
-	// we reach the target file position instead of the target CEL position.
 	spanText := exprLiteralSpan.Text()
 	celPos := 0
+
 	for i := 0; i < len(spanText); i++ {
 		if spanText[i] != '"' {
 			continue
 		}
 		i++
-		for i < len(spanText) && spanText[i] != '"' {
+		for i < len(spanText) {
+			if spanText[i] == '"' {
+				break // End of this string literal
+			}
 			if exprLiteralSpan.Start+i == fileByteOffset {
 				return celPos
 			}
+			var charWidth int
+			if spanText[i] == '\\' && i+1 < len(spanText) {
+				charWidth = protoEscapeLen(spanText, i)
+			} else {
+				charWidth = 1
+			}
 			celPos++
-			i++
+			i += charWidth
 		}
 	}
 	return -1

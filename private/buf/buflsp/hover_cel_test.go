@@ -527,7 +527,7 @@ func TestCELHover(t *testing.T) {
 
 		// Multi-line: CEL expression split across two adjacent proto string literals,
 		// which protocompile concatenates into one value. Hover targets in the second
-		// segment exercise createCELSpanMultiline.
+		// segment exercise the multi-literal walk in createCELSpan.
 		// Line 357 (0-indexed): `    expression: "this.size() > 0"`
 		// Line 358 (0-indexed): `                " && this != ''"`
 		//                          ^   ^--- this at UTF-16 char 21
@@ -545,16 +545,29 @@ func TestCELHover(t *testing.T) {
 			expected: "**Special variable**\n\nRefers to the current message or field being validated.\n\nIn field-level rules, `this` refers to the field value.\nIn message-level rules, `this` refers to the entire message.",
 		},
 
+		// Escape-sequence test: proto \n (2 source bytes, 1 CEL byte) placed
+		// immediately before a single-byte token. Without escape-aware offset
+		// handling the computed celOffset lands on whitespace and hover returns
+		// nil; with the fix it lands on '?'.
+		// Line 366 (0-indexed): `    expression: "true\n? this : false"`
+		//                                                  ^--- '?' at column 23
+		{
+			name:     "escape: ? after proto \\n",
+			line:     366,
+			char:     23,
+			expected: "**Operator**: `?`\n\nThe ternary operator tests a boolean predicate and returns the left-hand side (truthy) expression if true, or the right-hand side (falsy) expression if false\n\n**Overloads**:\n- `bool ? <T> : <T> -> <T>`",
+		},
+
 		// Message-level CEL rules
 		{
 			name:     "message-level: this",
-			line:     368,
+			line:     377,
 			char:     17,
 			expected: "**Special variable**\n\nRefers to the current message or field being validated.\n\nIn field-level rules, `this` refers to the field value.\nIn message-level rules, `this` refers to the entire message.",
 		},
 		{
 			name:     "message-level: &&",
-			line:     368,
+			line:     377,
 			char:     33,
 			expected: "**Operator**: `&&`\n\nlogically AND two boolean values. Errors and unknown values\nare valid inputs and will not halt evaluation.\n\n**Overloads**:\n- `bool && bool -> bool`",
 		},
