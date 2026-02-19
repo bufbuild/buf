@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package test.v1;
+
+import "buf/validate/validate.proto";
+
+message Container {
+  repeated string tags = 1 [(buf.validate.field).repeated.items.cel = {
+    id: "tag"
+    message: "tag must start with x"
+    expression: "this.startsWith('x')"
+  }];
+  repeated string emails = 2 [(buf.validate.field).repeated.items.cel_expression = "'@' in this"];
+  map<string, string> attrs = 3 [(buf.validate.field).map.keys.cel = {
+    id: "key"
+    message: "key must not be empty"
+    expression: "this.size() > 0"
+  }];
+  map<string, string> meta = 4 [(buf.validate.field).map.values.cel = {
+    id: "val"
+    message: "value must not be empty"
+    expression: "this.size() > 1"
+  }];
+  map<string, string> labels = 5 [(buf.validate.field).map.values.cel_expression = "this.size() < 100"];
+
+  map<string, string> codes = 6 [(buf.validate.field).map.keys.cel_expression = "this.size() > 0"];
+}

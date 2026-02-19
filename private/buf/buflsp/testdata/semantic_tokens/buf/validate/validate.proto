@@ -24,6 +24,19 @@ extend google.protobuf.FieldOptions {
 message FieldRules {
   repeated string cel_expression = 29;
   repeated Rule cel = 23;
+  oneof type {
+    RepeatedRules repeated = 18;
+    MapRules map = 19;
+  }
+}
+
+message RepeatedRules {
+  FieldRules items = 4;
+}
+
+message MapRules {
+  FieldRules keys = 4;
+  FieldRules values = 5;
 }
 
 message Rule {

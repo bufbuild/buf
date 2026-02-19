@@ -112,7 +112,7 @@ func extractCELFromMessage(file *file, msgValue ir.MessageValue, irSym ir.Symbol
 				continue
 			}
 
-			// Handle nested message field (cel.expression)
+			// Handle nested Rule message (cel field containing Rule messages with expressions)
 			if fieldNumber == celFieldNumberInFieldRules || fieldNumber == celFieldNumberInMessageRules {
 				// This is a Rule message, look for the expression field
 				nestedMsg := element.AsMessage()
@@ -134,6 +134,7 @@ func extractCELFromMessage(file *file, msgValue ir.MessageValue, irSym ir.Symbol
 					// Recursively check nested messages
 					results = append(results, extractCELFromMessage(file, nestedMsg, irSym)...)
 				}
+				continue
 			}
 
 			// Handle cel_expression string field
@@ -144,7 +145,17 @@ func extractCELFromMessage(file *file, msgValue ir.MessageValue, irSym ir.Symbol
 						span:       element.AST().Span(),
 						irMember:   getMember(),
 					})
+					continue
 				}
+				// Not a string value (e.g. a nested FieldRules message at the same field number
+				// as a MessageRules cel_expression field) - fall through to general recursion.
+			}
+
+			// General case: recursively search any nested message for CEL expressions.
+			// This handles nested structures like repeated.items.cel, map.keys.cel,
+			// map.values.cel, and any other type-specific rule nesting in protovalidate.
+			if nestedMsg := element.AsMessage(); !nestedMsg.IsZero() {
+				results = append(results, extractCELFromMessage(file, nestedMsg, irSym)...)
 			}
 		}
 	}

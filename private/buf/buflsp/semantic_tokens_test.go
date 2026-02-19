@@ -346,6 +346,45 @@ func TestSemanticTokensKeywords(t *testing.T) {
 			// This test verifies that we don't crash or highlight invalid syntax.
 			expectedTokens: []expectedToken{},
 		},
+		{
+			name: "cel_nested",
+			file: "testdata/semantic_tokens/cel_nested.proto",
+			expectedTokens: []expectedToken{
+				// Line 10: repeated.items.cel expression: "this.startsWith('x')"
+				{10, 17, 4, semanticTypeKeyword, "'this' keyword in repeated.items.cel"},
+				{10, 22, 10, semanticTypeMethod, "'startsWith' method in repeated.items.cel"},
+				{10, 33, 3, semanticTypeString, "'x' string in repeated.items.cel"},
+
+				// Line 12: repeated.items.cel_expression: "'@' in this"
+				{12, 84, 3, semanticTypeString, "'@' string in repeated.items.cel_expression"},
+				{12, 88, 2, semanticTypeOperator, "'in' operator in repeated.items.cel_expression"},
+				{12, 91, 4, semanticTypeKeyword, "'this' keyword in repeated.items.cel_expression"},
+
+				// Line 16: map.keys.cel expression: "this.size() > 0"
+				{16, 17, 4, semanticTypeKeyword, "'this' keyword in map.keys.cel"},
+				{16, 22, 4, semanticTypeMethod, "'size' method in map.keys.cel"},
+				{16, 29, 1, semanticTypeOperator, "'>' operator in map.keys.cel"},
+				{16, 31, 1, semanticTypeNumber, "'0' number in map.keys.cel"},
+
+				// Line 21: map.values.cel expression: "this.size() > 1"
+				{21, 17, 4, semanticTypeKeyword, "'this' keyword in map.values.cel"},
+				{21, 22, 4, semanticTypeMethod, "'size' method in map.values.cel"},
+				{21, 29, 1, semanticTypeOperator, "'>' operator in map.values.cel"},
+				{21, 31, 1, semanticTypeNumber, "'1' number in map.values.cel"},
+
+				// Line 23: map.values.cel_expression: "this.size() < 100"
+				{23, 84, 4, semanticTypeKeyword, "'this' keyword in map.values.cel_expression"},
+				{23, 89, 4, semanticTypeMethod, "'size' method in map.values.cel_expression"},
+				{23, 96, 1, semanticTypeOperator, "'<' operator in map.values.cel_expression"},
+				{23, 98, 3, semanticTypeNumber, "'100' number in map.values.cel_expression"},
+
+				// Line 25: map.keys.cel_expression: "this.size() > 0"
+				{25, 81, 4, semanticTypeKeyword, "'this' keyword in map.keys.cel_expression"},
+				{25, 86, 4, semanticTypeMethod, "'size' method in map.keys.cel_expression"},
+				{25, 93, 1, semanticTypeOperator, "'>' operator in map.keys.cel_expression"},
+				{25, 95, 1, semanticTypeNumber, "'0' number in map.keys.cel_expression"},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
