@@ -18,14 +18,17 @@ import (
 	"context"
 	"errors"
 	"io"
+	"log/slog"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/bufbuild/protocompile/ast"
-	"github.com/bufbuild/protocompile/parser"
-	"github.com/bufbuild/protocompile/reporter"
+	"github.com/bufbuild/protocompile/experimental/ast"
+	"github.com/bufbuild/protocompile/experimental/ast/printer"
+	"github.com/bufbuild/protocompile/experimental/parser"
+	"github.com/bufbuild/protocompile/experimental/report"
+	"github.com/bufbuild/protocompile/experimental/source"
 )
 
 // FormatModuleSet formats and writes the target files into a read bucket.
@@ -57,10 +60,19 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.Rea
 			defer func() {
 				retErr = errors.Join(retErr, readObjectCloser.Close())
 			}()
-			fileNode, err := parser.Parse(readObjectCloser.ExternalPath(), readObjectCloser, reporter.NewHandler(nil))
+			data, err := io.ReadAll(readObjectCloser)
 			if err != nil {
 				return err
 			}
+			sourceFile := source.NewFile(readObjectCloser.ExternalPath(), string(data))
+			r := &report.Report{}
+			parsed, _ := parser.Parse(path, sourceFile, r)
+			for _, d := range r.Diagnostics {
+				if d.Level() <= report.Error {
+					slog.WarnContext(ctx, "parse error during format", "path", path, "error", d.Message())
+				}
+			}
+			formatted := FormatFile(parsed)
 			writeObjectCloser, err := readWriteBucket.Put(ctx, path)
 			if err != nil {
 				return err
@@ -68,7 +80,7 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.Rea
 			defer func() {
 				retErr = errors.Join(retErr, writeObjectCloser.Close())
 			}()
-			if err := FormatFileNode(writeObjectCloser, fileNode); err != nil {
+			if _, err := io.WriteString(writeObjectCloser, formatted); err != nil {
 				return err
 			}
 			return writeObjectCloser.SetExternalPath(readObjectCloser.ExternalPath())
@@ -80,14 +92,7 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.Rea
 	return readWriteBucket, nil
 }
 
-// FormatFileNode formats the given file node and writ the result to dest.
-func FormatFileNode(dest io.Writer, fileNode *ast.FileNode) error {
-	// Construct the file descriptor to ensure the AST is valid. This will
-	// capture unknown syntax like edition "2024" which at the current time is
-	// not supported.
-	if _, err := parser.ResultFromAST(fileNode, true, reporter.NewHandler(nil)); err != nil {
-		return err
-	}
-	formatter := newFormatter(dest, fileNode)
-	return formatter.Run()
+// FormatFile formats the file and returns the result as a string.
+func FormatFile(file *ast.File) string {
+	return printer.PrintFile(printer.Options{Format: true}, file)
 }

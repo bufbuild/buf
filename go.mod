@@ -114,3 +114,5 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260128011058-8636f8732409 // indirect
 	google.golang.org/grpc v1.75.1 // indirect
 )
+
+replace github.com/bufbuild/protocompile => ../protocompile
