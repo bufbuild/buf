@@ -20,10 +20,10 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
-	"go.lsp.dev/uri"
 )
 
 func TestRename(t *testing.T) {
@@ -38,9 +38,9 @@ func TestRename(t *testing.T) {
 	subpkgOptionsProtoPath, err := filepath.Abs("testdata/rename/subpkg/options.proto")
 	require.NoError(t, err)
 	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
-	typesURI := uri.New(typesProtoPath)
-	extensionsURI := uri.New(extensionsProtoPath)
-	subpkgOptionsURI := uri.New(subpkgOptionsProtoPath)
+	typesURI := buflsp.FilePathToURI(typesProtoPath)
+	extensionsURI := buflsp.FilePathToURI(extensionsProtoPath)
+	subpkgOptionsURI := buflsp.FilePathToURI(subpkgOptionsProtoPath)
 
 	type editLocation struct {
 		uri            protocol.URI
@@ -361,7 +361,7 @@ func TestPrepareRename(t *testing.T) {
 	wktProtoPath, err := filepath.Abs("testdata/rename/wkt.proto")
 	require.NoError(t, err)
 	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
-	wktURI := uri.New(wktProtoPath)
+	wktURI := buflsp.FilePathToURI(wktProtoPath)
 
 	tests := []struct {
 		name          string

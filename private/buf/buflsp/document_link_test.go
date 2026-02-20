@@ -18,10 +18,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
-	"go.lsp.dev/uri"
 )
 
 func TestDocumentLink(t *testing.T) {
@@ -126,7 +126,7 @@ func TestDocumentLink(t *testing.T) {
 				case linkTargetTypeLocal:
 					localPath, err := filepath.Abs(expected.localPath)
 					require.NoError(t, err)
-					expectedURI := uri.New(localPath)
+					expectedURI := buflsp.FilePathToURI(localPath)
 					assert.Equal(t, expectedURI, link.Target, "link %d (%s): wrong target", i, expected.description)
 				case linkTargetTypeURL:
 					assert.Equal(t, protocol.DocumentURI(expected.targetURL), link.Target, "link %d (%s): wrong target", i, expected.description)
