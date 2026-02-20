@@ -28,10 +28,19 @@ import (
 // microsoft/vscode-uri package which encodes '@' as '%40' everywhere to avoid ambiguity
 // with the authority component separator (user@host).
 //
+// Additionally, on Windows, the package also encodes ':' as '%3A' in drive letter paths
+// (e.g., 'file:///d:/path' becomes 'file:///d%3A/path').
+//
 // When URIs don't match exactly, LSP operations like go-to-definition fail because
 // the client's URI (with %40) doesn't match the server's URI (with @).
 func normalizeURI(u protocol.URI) protocol.URI {
-	return protocol.URI(strings.ReplaceAll(string(u), "@", "%40"))
+	normalized := strings.ReplaceAll(string(u), "@", "%40")
+
+	if after, found := strings.CutPrefix(normalized, "file:///"); found {
+		normalized = "file:///" + strings.ReplaceAll(after, ":", "%3A")
+	}
+
+	return protocol.URI(normalized)
 }
 
 // filePathToURI converts a file path to a properly encoded URI.
