@@ -18,10 +18,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
-	"go.lsp.dev/uri"
 )
 
 func TestTypeDefinition(t *testing.T) {
@@ -36,7 +36,7 @@ func TestTypeDefinition(t *testing.T) {
 	require.NoError(t, err)
 
 	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
-	typesURI := uri.New(typesProtoPath)
+	typesURI := buflsp.FilePathToURI(typesProtoPath)
 
 	tests := []struct {
 		name                string

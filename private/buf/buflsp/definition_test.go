@@ -16,13 +16,12 @@ package buflsp_test
 
 import (
 	"path/filepath"
-	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
-	"go.lsp.dev/uri"
 )
 
 func TestDefinition(t *testing.T) {
@@ -37,7 +36,7 @@ func TestDefinition(t *testing.T) {
 	require.NoError(t, err)
 
 	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
-	typesURI := uri.New(typesProtoPath)
+	typesURI := buflsp.FilePathToURI(typesProtoPath)
 
 	tests := []struct {
 		name               string
@@ -242,9 +241,7 @@ func TestDefinitionURLEncoding(t *testing.T) {
 	require.Len(t, locations, 1, "expected exactly one definition location")
 	location := locations[0]
 
-	// Construct the expected URI with @ encoded as %40
-	// Use uri.File() to get the correct URI format for the platform (e.g., file:/// on Windows)
-	expectedURI := protocol.URI(strings.ReplaceAll(string(uri.File(testProtoPath)), "@", "%40"))
+	expectedURI := buflsp.FilePathToURI(testProtoPath)
 
 	assert.Equal(t, expectedURI, location.URI, "returned URI should have @ encoded as %40")
 
