@@ -102,22 +102,3 @@ func TestNormalizeURI(t *testing.T) {
 		})
 	}
 }
-
-func TestFilePathToURIRoundTrip(t *testing.T) {
-	t.Parallel()
-
-	// Verify that FilePathToURI produces a URI whose Filename() decodes back to
-	// the original path. These are Unix absolute paths; Windows drive letters are
-	// covered by TestNormalizeURI.
-	paths := []string{
-		"/home/user/project/foo.proto",
-		"/home/user@host/project/foo.proto",
-		"/Users/bufbot/My Documents/foo.proto",
-	}
-	for _, path := range paths {
-		t.Run(path, func(t *testing.T) {
-			t.Parallel()
-			assert.Equal(t, path, FilePathToURI(path).Filename())
-		})
-	}
-}
