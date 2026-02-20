@@ -1062,7 +1062,7 @@ func (f *file) RunChecks(ctx context.Context) {
 	}
 
 	const checkTimeout = 30 * time.Second
-	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), checkTimeout)
+	ctx, cancel := context.WithTimeout(f.lsp.connCtx, checkTimeout)
 	f.cancelChecks = cancel
 
 	go func() {
@@ -1079,7 +1079,7 @@ func (f *file) RunChecks(ctx context.Context) {
 			); err != nil {
 				var fileAnnotationSet bufanalysis.FileAnnotationSet
 				if !errors.As(err, &fileAnnotationSet) {
-					if errors.Is(err, context.Canceled) {
+					if errors.Is(err, context.Canceled) || ctx.Err() != nil {
 						f.lsp.logger.DebugContext(ctx, "checks cancelled", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(err))
 					} else if errors.Is(err, context.DeadlineExceeded) {
 						f.lsp.logger.WarnContext(ctx, "checks deadline exceeded", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(err))

@@ -61,6 +61,17 @@ func Serve(
 	logger.Info("starting LSP server")
 
 	conn := jsonrpc2.NewConn(stream)
+	// connCtx is a context scoped to the connection's lifetime. It is cancelled
+	// when the connection is done (or when ctx is cancelled), so that background
+	// goroutines (e.g. RunChecks) do not outlive the connection.
+	connCtx, connCancel := context.WithCancel(context.Background())
+	go func() {
+		select {
+		case <-ctx.Done():
+		case <-conn.Done():
+		}
+		connCancel()
+	}()
 	lsp := &lsp{
 		conn: conn,
 		client: protocol.ClientDispatcher(
@@ -76,6 +87,8 @@ func Serve(
 		queryExecutor: queryExecutor,
 		opener:        source.NewMap(nil),
 		irSession:     new(ir.Session),
+		connCtx:       connCtx,
+		connCancel:    connCancel,
 	}
 	lsp.fileManager = newFileManager(lsp)
 	lsp.workspaceManager = newWorkspaceManager(lsp)
@@ -100,9 +113,11 @@ func Serve(
 // Its handler methods are not defined in buflsp.go; they are defined in other files, grouped
 // according to the groupings in
 type lsp struct {
-	conn      jsonrpc2.Conn
-	client    protocol.Client
-	container appext.Container
+	conn       jsonrpc2.Conn
+	client     protocol.Client
+	container  appext.Container
+	connCtx    context.Context    // cancelled when the connection is done
+	connCancel context.CancelFunc // cancels connCtx
 
 	logger           *slog.Logger
 	bufVersion       string // buf version, set at server creation
@@ -150,7 +165,10 @@ func (l *lsp) newHandler() (jsonrpc2.Handler, error) {
 		return nil, err
 	}
 	actual := protocol.ServerHandler(server, nil)
-	return jsonrpc2.AsyncHandler(func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) error {
+	// [protocol.CancelHandler] intercepts $/cancelRequest notifications from the client and
+	// cancels the context of the matching in-flight request. It must wrap AsyncHandler so
+	// that the cancellable context is the one running inside each spawned goroutine.
+	return protocol.CancelHandler(jsonrpc2.AsyncHandler(func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) error {
 		l.logger.Debug(
 			"handling request",
 			slog.String("method", req.Method()),
@@ -181,5 +199,5 @@ func (l *lsp) newHandler() (jsonrpc2.Handler, error) {
 			)
 		}
 		return nil
-	}), nil
+	})), nil
 }
