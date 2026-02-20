@@ -85,7 +85,7 @@ func buildImage(
 	var diagnostics []protocol.Diagnostic
 	compiled, err := compiler.Compile(ctx, path)
 	if err != nil {
-		logger.Warn("error building image", slog.String("path", path), xslog.ErrorAttr(err))
+		logger.WarnContext(ctx, "error building image", slog.String("path", path), xslog.ErrorAttr(err))
 		var errorWithPos reporter.ErrorWithPos
 		if errors.As(err, &errorWithPos) {
 			diagnostics = []protocol.Diagnostic{newDiagnostic(errorWithPos, false, opener, logger)}

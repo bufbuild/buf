@@ -61,6 +61,17 @@ func Serve(
 	logger.Info("starting LSP server")
 
 	conn := jsonrpc2.NewConn(stream)
+	// connCtx is a context scoped to the connection's lifetime. It is cancelled
+	// when the connection is done (or when ctx is cancelled), so that background
+	// goroutines (e.g. RunChecks) do not outlive the connection.
+	connCtx, connCancel := context.WithCancel(context.Background())
+	go func() {
+		select {
+		case <-ctx.Done():
+		case <-conn.Done():
+		}
+		connCancel()
+	}()
 	lsp := &lsp{
 		conn: conn,
 		client: protocol.ClientDispatcher(
@@ -76,6 +87,7 @@ func Serve(
 		queryExecutor: queryExecutor,
 		opener:        source.NewMap(nil),
 		irSession:     new(ir.Session),
+		connCtx:       connCtx,
 	}
 	lsp.fileManager = newFileManager(lsp)
 	lsp.workspaceManager = newWorkspaceManager(lsp)
@@ -103,6 +115,7 @@ type lsp struct {
 	conn      jsonrpc2.Conn
 	client    protocol.Client
 	container appext.Container
+	connCtx   context.Context // cancelled when the connection is done
 
 	logger           *slog.Logger
 	bufVersion       string // buf version, set at server creation
