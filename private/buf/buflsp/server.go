@@ -193,6 +193,12 @@ func (s *server) SetTrace(
 // The client will wait until Shutdown returns, and then call Exit.
 func (s *server) Shutdown(ctx context.Context) error {
 	s.lsp.shutdown = true
+	// Cancel any in-progress checks for all tracked files, then cancel the
+	// connection context to stop any remaining background goroutines.
+	for _, file := range s.lsp.fileManager.uriToFile.Range {
+		file.CancelChecks(ctx)
+	}
+	s.lsp.connCancel()
 	return nil
 }
 
