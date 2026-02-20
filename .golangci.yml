@@ -330,6 +330,11 @@ linters:
         text: os.Rename
       - linters:
           - containedctx
+        # connCtx is cancelled when the connection is done; the context lifetime is
+        # tied to the struct, not passed per-call.
+        path: private/buf/buflsp/buflsp.go
+      - linters:
+          - containedctx
         # we actually want to embed a context here
         path: private/pkg/transport/grpc/grpcclient/client_conn_provider.go
       - linters:
