@@ -43,7 +43,7 @@ func normalizeURI(u protocol.URI) protocol.URI {
 	return protocol.URI(normalized)
 }
 
-// filePathToURI converts a file path to a properly encoded URI.
-func filePathToURI(path string) protocol.URI {
+// FilePathToURI converts a file path to a properly encoded URI.
+func FilePathToURI(path string) protocol.URI {
 	return normalizeURI(uri.File(path))
 }

@@ -247,7 +247,7 @@ func (w *workspace) indexFiles(ctx context.Context) {
 	for fileInfo := range w.fileInfos(ctx) {
 		file, ok := previous[fileInfo.Path()]
 		if !ok {
-			fileURI := filePathToURI(fileInfo.LocalPath())
+			fileURI := FilePathToURI(fileInfo.LocalPath())
 			file = w.lsp.fileManager.Track(fileURI)
 			w.lsp.logger.Debug("workspace: index track file", slog.String("path", file.uri.Filename()))
 		}
