@@ -136,7 +136,7 @@ func run(
 		// This ensures we do not create an empty buf.lock when one did not exist in the first
 		// place and we do not need to go through the entire operation of updating non-existent
 		// deps and building the image for tamper-proofing.
-		logger.Warn(fmt.Sprintf("No configured dependencies were found to update in %q.", dirPath))
+		logger.WarnContext(ctx, fmt.Sprintf("No configured dependencies were found to update in %q.", dirPath))
 		return nil
 	}
 	existingRemotePluginKeys, err := workspaceDepManager.ExistingBufLockFileRemotePluginKeys(ctx)
@@ -182,5 +182,5 @@ func run(
 		return err
 	}
 	// Log warnings for users on unused configured deps.
-	return internal.LogUnusedConfiguredDepsForWorkspace(workspace, logger)
+	return internal.LogUnusedConfiguredDepsForWorkspace(ctx, workspace, logger)
 }

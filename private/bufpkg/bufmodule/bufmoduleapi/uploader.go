@@ -115,7 +115,7 @@ func (a *uploader) Upload(
 		if moduleName == nil {
 			moduleDescription := module.Description()
 			if uploadOptions.ExcludeUnnamed() {
-				a.logger.Warn("Excluding unnamed module", slog.String("module", moduleDescription))
+				a.logger.WarnContext(ctx, "Excluding unnamed module", slog.String("module", moduleDescription))
 				return false, nil
 			}
 			return false, fmt.Errorf("a name must be specified in buf.yaml to push module: %s", moduleDescription)

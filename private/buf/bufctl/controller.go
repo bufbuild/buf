@@ -1340,7 +1340,7 @@ func (c *controller) warnUnconfiguredTransitiveImports(
 				continue
 			}
 			if _, ok := configuredFullNameStringMap[moduleFullNameString]; !ok {
-				c.logger.Warn(fmt.Sprintf(
+				c.logger.WarnContext(ctx, fmt.Sprintf(
 					`File %q imports %q, which is not in your workspace or in the dependencies declared in your buf.yaml, but is found in transitive dependency %q.
 Declare %q in the deps key in your buf.yaml.`,
 					imageFile.Path(),

@@ -16,6 +16,7 @@ package slogapp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -45,8 +46,8 @@ func TestConsoleLogOutput(t *testing.T) {
 	t.Parallel()
 
 	testConsolLogOutput(t, func(logger *slog.Logger) {
-		logger.Info("hello", slog.String("a", "b"))
-		logger.Info("hello world")
+		logger.InfoContext(context.Background(), "hello", slog.String("a", "b"))
+		logger.InfoContext(context.Background(), "hello world")
 	}, []map[string]any{{
 		slog.LevelKey:   colorize("INFO", getColor(slog.LevelInfo)),
 		slog.MessageKey: "hello",
@@ -57,8 +58,8 @@ func TestConsoleLogOutput(t *testing.T) {
 	}}, withConsoleColor(true))
 
 	testConsolLogOutput(t, func(logger *slog.Logger) {
-		logger.Info("info", slog.String("a", "b"))
-		logger.Error("error")
+		logger.InfoContext(context.Background(), "info", slog.String("a", "b"))
+		logger.ErrorContext(context.Background(), "error")
 	}, []map[string]any{{
 		slog.LevelKey:   "INFO",
 		slog.MessageKey: "info",
@@ -71,9 +72,9 @@ func TestConsoleLogOutput(t *testing.T) {
 	testConsolLogOutput(t, func(logger *slog.Logger) {
 		logger = logger.With(slog.String("a", "b"))
 		logger = logger.WithGroup("g")
-		logger.Error("error message", slog.String("c", "d"))
-		logger.Info("info message")
-		logger.Debug("debuf message", slog.String("c", "d"))
+		logger.ErrorContext(context.Background(), "error message", slog.String("c", "d"))
+		logger.InfoContext(context.Background(), "info message")
+		logger.DebugContext(context.Background(), "debuf message", slog.String("c", "d"))
 	}, []map[string]any{{
 		slog.LevelKey:   colorize("ERROR", getColor(slog.LevelError)),
 		slog.MessageKey: "error message",
@@ -88,7 +89,7 @@ func TestConsoleLogOutput(t *testing.T) {
 	}}, withConsoleColor(true))
 
 	testConsolLogOutput(t, func(logger *slog.Logger) {
-		logger.Info("key spaces", slog.String("a key", "with spaces"))
+		logger.InfoContext(context.Background(), "key spaces", slog.String("a key", "with spaces"))
 	}, []map[string]any{{
 		slog.LevelKey:   colorize("INFO", getColor(slog.LevelInfo)),
 		slog.MessageKey: "key spaces",

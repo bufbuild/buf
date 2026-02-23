@@ -134,7 +134,7 @@ func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadRes
 				continue
 			}
 			if !strings.HasPrefix(loadedImageID, "sha256:") {
-				d.logger.Warn("Unsupported image digest", slog.String("imageID", loadedImageID))
+				d.logger.WarnContext(ctx, "Unsupported image digest", slog.String("imageID", loadedImageID))
 				continue
 			}
 			imageID = loadedImageID

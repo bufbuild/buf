@@ -38,6 +38,7 @@ linters:
     - promlinter
     - reassign
     - rowserrcheck
+    - sloglint
     - staticcheck
     - unconvert
     - unused
@@ -88,6 +89,10 @@ linters:
       require-explanation: true
       require-specific: true
       allow-unused: false
+    sloglint:
+      attr-only: true
+      no-global: "all"
+      context: "all"
   exclusions:
     generated: lax
     presets:

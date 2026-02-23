@@ -120,9 +120,9 @@ func Run(
 	eg.Go(func() error {
 		<-ctx.Done()
 		start := time.Now()
-		logger.Info("shutdown_starting", slog.Duration("shutdown_timeout", s.shutdownTimeout))
+		logger.InfoContext(ctx, "shutdown_starting", slog.Duration("shutdown_timeout", s.shutdownTimeout))
 		defer func() {
-			logger.Info("shutdown_finished", slog.Duration("duration", time.Since(start)))
+			logger.InfoContext(ctx, "shutdown_finished", slog.Duration("duration", time.Since(start)))
 		}()
 		if s.shutdownTimeout != 0 {
 			ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
@@ -132,7 +132,8 @@ func Run(
 		return httpServer.Close()
 	})
 
-	logger.Info(
+	logger.InfoContext(
+		ctx,
 		"starting",
 		slog.String("address", listener.Addr().String()),
 		slog.Duration("shutdown_timeout", s.shutdownTimeout),

@@ -58,7 +58,7 @@ func Serve(
 
 	logger := container.Logger()
 	logger = logger.With(slog.String("buf_version", bufVersion))
-	logger.Info("starting LSP server")
+	logger.InfoContext(ctx, "starting LSP server")
 
 	conn := jsonrpc2.NewConn(stream)
 	// connCtx is a context scoped to the connection's lifetime. It is cancelled
@@ -169,7 +169,8 @@ func (l *lsp) newHandler() (jsonrpc2.Handler, error) {
 	// cancels the context of the matching in-flight request. It must wrap AsyncHandler so
 	// that the cancellable context is the one running inside each spawned goroutine.
 	return protocol.CancelHandler(jsonrpc2.AsyncHandler(func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) error {
-		l.logger.Debug(
+		l.logger.DebugContext(
+			ctx,
 			"handling request",
 			slog.String("method", req.Method()),
 		)
@@ -192,7 +193,8 @@ func (l *lsp) newHandler() (jsonrpc2.Handler, error) {
 		}
 
 		if err != nil {
-			l.logger.Error(
+			l.logger.ErrorContext(
+				ctx,
 				"error while replying to request",
 				slog.String("method", req.Method()),
 				xslog.ErrorAttr(err),

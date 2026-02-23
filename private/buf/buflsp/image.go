@@ -90,11 +90,11 @@ func buildImage(
 		}
 		var errorWithPos reporter.ErrorWithPos
 		if errors.As(err, &errorWithPos) {
-			diagnostics = []protocol.Diagnostic{newDiagnostic(errorWithPos, false, opener, logger)}
+			diagnostics = []protocol.Diagnostic{newDiagnostic(ctx, errorWithPos, false, opener, logger)}
 		}
 		if len(errorsWithPos) > 0 {
 			diagnostics = slices.Concat(diagnostics, xslices.Map(errorsWithPos, func(errorWithPos reporter.ErrorWithPos) protocol.Diagnostic {
-				return newDiagnostic(errorWithPos, false, opener, logger)
+				return newDiagnostic(ctx, errorWithPos, false, opener, logger)
 			}))
 		}
 	}
@@ -142,7 +142,7 @@ func buildImage(
 		for i := range imports.Len() {
 			dep := imports.Get(i).FileDescriptor
 			if dep == nil {
-				logger.Warn(fmt.Sprintf("found nil FileDescriptor for import %s", imports.Get(i).Path()))
+				logger.WarnContext(ctx, fmt.Sprintf("found nil FileDescriptor for import %s", imports.Get(i).Path()))
 				continue
 			}
 
@@ -177,17 +177,17 @@ func buildImage(
 		}
 
 		imageFiles = append(imageFiles, imageFile)
-		logger.Debug(fmt.Sprintf("added image file for %s", descriptor.Path()))
+		logger.DebugContext(ctx, fmt.Sprintf("added image file for %s", descriptor.Path()))
 	}
 
 	if err != nil {
-		logger.Warn("could not build image", slog.String("path", path), xslog.ErrorAttr(err))
+		logger.WarnContext(ctx, "could not build image", slog.String("path", path), xslog.ErrorAttr(err))
 		return nil, diagnostics
 	}
 
 	image, err := bufimage.NewImage(imageFiles)
 	if err != nil {
-		logger.Warn("could not build image", slog.String("path", path), xslog.ErrorAttr(err))
+		logger.WarnContext(ctx, "could not build image", slog.String("path", path), xslog.ErrorAttr(err))
 		return nil, diagnostics
 	}
 
@@ -198,7 +198,7 @@ func buildImage(
 //
 // Unfortunately, protocompile's errors are currently too meagre to provide full code
 // spans; that will require a fix in the compiler.
-func newDiagnostic(err reporter.ErrorWithPos, isWarning bool, opener fileOpener, logger *slog.Logger) protocol.Diagnostic {
+func newDiagnostic(ctx context.Context, err reporter.ErrorWithPos, isWarning bool, opener fileOpener, logger *slog.Logger) protocol.Diagnostic {
 	startPos := err.Start()
 	endPos := err.End()
 	filename := startPos.Filename
@@ -217,7 +217,7 @@ func newDiagnostic(err reporter.ErrorWithPos, isWarning bool, opener fileOpener,
 		startUtf16Col = startLoc.Column - 1
 		endUtf16Col = endLoc.Column - 1
 	} else {
-		logger.Warn(
+		logger.WarnContext(ctx,
 			"failed to open file for diagnostic position encoding",
 			slog.String("filename", filename),
 		)

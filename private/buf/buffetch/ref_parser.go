@@ -515,7 +515,7 @@ func (a *refParser) getParsedRef(
 	if err != nil {
 		return nil, err
 	}
-	a.checkDeprecated(parsedRef)
+	a.checkDeprecated(ctx, parsedRef)
 	return parsedRef, nil
 }
 
@@ -532,14 +532,14 @@ func (a *refParser) getParsedRefForInputConfig(
 	if err != nil {
 		return nil, err
 	}
-	a.checkDeprecated(parsedRef)
+	a.checkDeprecated(ctx, parsedRef)
 	return parsedRef, nil
 }
 
-func (a *refParser) checkDeprecated(parsedRef internal.ParsedRef) {
+func (a *refParser) checkDeprecated(ctx context.Context, parsedRef internal.ParsedRef) {
 	format := parsedRef.Format()
 	if replacementFormat, ok := deprecatedCompressionFormatToReplacementFormat[format]; ok {
-		a.logger.Warn(fmt.Sprintf(
+		a.logger.WarnContext(ctx, fmt.Sprintf(
 			`Format %q is deprecated. Use "format=%s,compression=gzip" instead. This will continue to work forever, but updating is recommended.`,
 			format,
 			replacementFormat,

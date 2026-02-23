@@ -278,7 +278,7 @@ func run(
 			return err
 		}
 	} else {
-		container.Logger().Info("image found in registry - skipping push")
+		container.Logger().InfoContext(ctx, "image found in registry - skipping push")
 	}
 	plugin, err := bufremoteplugin.NewPlugin(
 		pluginConfig.PluginVersion,
@@ -302,7 +302,8 @@ func run(
 			return err
 		}
 		// Plugin with the same image digest and metadata already exists
-		container.Logger().Info(
+		container.Logger().InfoContext(
+			ctx,
 			"plugin already exists",
 			slog.String("name", pluginConfig.Name.IdentityString()),
 			slog.String("digest", plugin.ContainerImageDigest()),

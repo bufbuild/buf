@@ -479,7 +479,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 					),
 					typeReferencesToCompletionItems(
 						file,
-						findTypeFullName(file, parentDef),
+						findTypeFullName(ctx, file, parentDef),
 						completionSpan,
 						offset,
 						true, // Allow enums.
@@ -599,7 +599,7 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 	}
 
 	if start > offset || offset > end {
-		file.lsp.logger.Debug("completion: outside import expr range",
+		file.lsp.logger.DebugContext(ctx, "completion: outside import expr range",
 			slog.String("import", importPathText),
 			slog.Int("start", start),
 			slog.Int("offset", offset),
@@ -722,11 +722,11 @@ func completionItemsForOptions(
 			return nil
 		}
 		return slices.Collect(
-			messageFieldCompletionItems(file, optionType, optionSpan, offset, true),
+			messageFieldCompletionItems(ctx, file, optionType, optionSpan, offset, true),
 		)
 	}
 	return slices.Collect(
-		optionNamesToCompletionItems(file, optionSpanParts, offset, optionsType, targetKind),
+		optionNamesToCompletionItems(ctx, file, optionSpanParts, offset, optionsType, targetKind),
 	)
 }
 
@@ -768,7 +768,7 @@ func completionItemsForCompactOptions(
 				return nil
 			}
 			// Generate completions for fields in the options value at this position.
-			return slices.Collect(messageFieldCompletionItems(file, optionValueType, optionSpan, offset, true))
+			return slices.Collect(messageFieldCompletionItems(ctx, file, optionValueType, optionSpan, offset, true))
 		}
 	}
 	// Find the options message type in the workspace by looking through all types.
@@ -789,7 +789,7 @@ func completionItemsForCompactOptions(
 		return nil
 	}
 	return slices.Collect(
-		optionNamesToCompletionItems(file, optionSpanParts, offset, optionsType, targetKind),
+		optionNamesToCompletionItems(ctx, file, optionSpanParts, offset, optionsType, targetKind),
 	)
 }
 
@@ -1076,6 +1076,7 @@ func typeReferencesToCompletionItems(
 
 // optionToCompletionItems returns completion items for options.
 func optionToCompletionItems(
+	ctx context.Context,
 	current *file,
 	span source.Span,
 	offset int,
@@ -1092,7 +1093,8 @@ func optionToCompletionItems(
 			}
 			// Check if this option can target this symbol kind
 			if !member.CanTarget(targetKind) {
-				current.lsp.logger.Debug(
+				current.lsp.logger.DebugContext(
+					ctx,
 					"completion: skipping option due to target mismatch",
 					slog.String("option", member.Name()),
 					slog.String("target_kind", targetKind.String()),
@@ -1136,6 +1138,7 @@ func optionToCompletionItems(
 
 // extensionToCompletionItems returns completion items for options from extensions.
 func extensionToCompletionItems(
+	ctx context.Context,
 	current *file,
 	span source.Span,
 	offset int,
@@ -1160,7 +1163,8 @@ func extensionToCompletionItems(
 				}
 				// Check if this extension can target this symbol kind
 				if !extension.CanTarget(targetKind) {
-					current.lsp.logger.Debug(
+					current.lsp.logger.DebugContext(
+						ctx,
 						"completion: skipping extension due to target mismatch",
 						slog.String("extension", string(extension.FullName())),
 						slog.String("target_kind", targetKind.String()),
@@ -1207,6 +1211,7 @@ func extensionToCompletionItems(
 // optionNamesToCompletionItems completes nested option field paths like: option field.nested.sub = value
 // It walks through the path segments to find the current message type and suggests valid fields.
 func optionNamesToCompletionItems(
+	ctx context.Context,
 	current *file,
 	pathSpans []source.Span,
 	offset int,
@@ -1227,9 +1232,9 @@ func optionNamesToCompletionItems(
 	}
 	if len(pathSpans) == 1 {
 		if isExtension {
-			return extensionToCompletionItems(current, rootSpan, offset, optionType, targetKind)
+			return extensionToCompletionItems(ctx, current, rootSpan, offset, optionType, targetKind)
 		}
-		return optionToCompletionItems(current, rootSpan, offset, optionType, targetKind)
+		return optionToCompletionItems(ctx, current, rootSpan, offset, optionType, targetKind)
 	}
 	tokenSpan := pathSpans[len(pathSpans)-1]
 	pathSpans = pathSpans[1 : len(pathSpans)-1]
@@ -1268,7 +1273,8 @@ func optionNamesToCompletionItems(
 		}
 	}
 	if currentField.IsZero() {
-		current.lsp.logger.Debug(
+		current.lsp.logger.DebugContext(
+			ctx,
 			"completion: could not find root field",
 			slog.String("root", rootFieldName),
 		)
@@ -1277,7 +1283,8 @@ func optionNamesToCompletionItems(
 	currentType := currentField.Element()
 	for i, pathSegment := range pathSpans {
 		segmentName := pathSegment.Text()
-		current.lsp.logger.Debug(
+		current.lsp.logger.DebugContext(
+			ctx,
 			"completion: walking path segment",
 			slog.Int("index", i),
 			slog.String("segment", segmentName),
@@ -1285,7 +1292,8 @@ func optionNamesToCompletionItems(
 		)
 		// The current field should be a message type to have nested fields
 		if !currentType.IsMessage() || currentType.IsZero() {
-			current.lsp.logger.Debug(
+			current.lsp.logger.DebugContext(
+				ctx,
 				"completion: current type is not a message, cannot continue path",
 				slog.String("segment", segmentName),
 			)
@@ -1302,7 +1310,8 @@ func optionNamesToCompletionItems(
 			}
 		}
 		if !found {
-			current.lsp.logger.Debug(
+			current.lsp.logger.DebugContext(
+				ctx,
 				"completion: could not find field in path",
 				slog.String("segment", segmentName),
 				slog.String("type", string(currentType.FullName())),
@@ -1311,12 +1320,13 @@ func optionNamesToCompletionItems(
 			break
 		}
 	}
-	return messageFieldCompletionItems(current, currentType, tokenSpan, offset, false)
+	return messageFieldCompletionItems(ctx, current, currentType, tokenSpan, offset, false)
 }
 
 // messageFieldCompletionItems generates completion items for fields in a message type.
 // This is used for both option field paths and option value field completion.
 func messageFieldCompletionItems(
+	ctx context.Context,
 	current *file,
 	messageType ir.Type,
 	tokenSpan source.Span,
@@ -1325,7 +1335,8 @@ func messageFieldCompletionItems(
 ) iter.Seq[protocol.CompletionItem] {
 	return func(yield func(protocol.CompletionItem) bool) {
 		if messageType.IsZero() || !messageType.IsMessage() {
-			current.lsp.logger.Debug(
+			current.lsp.logger.DebugContext(
+				ctx,
 				"completion: final type is not a message, no completions",
 				slog.String("type", string(messageType.FullName())),
 			)
@@ -1335,7 +1346,8 @@ func messageFieldCompletionItems(
 		prefix, _ := splitSpan(tokenSpan, offset)
 		editRange := reportSpanToProtocolRange(tokenSpan)
 
-		current.lsp.logger.Debug(
+		current.lsp.logger.DebugContext(
+			ctx,
 			"completion: generating message field completions",
 			slog.String("type", string(messageType.FullName())),
 			slog.String("prefix", prefix),
@@ -1797,14 +1809,14 @@ func findTypeBySpan(file *file, span source.Span) ir.Type {
 }
 
 // findTypeFullName simply loops through and finds the type definition name.
-func findTypeFullName(file *file, declDef ast.DeclDef) ir.FullName {
+func findTypeFullName(ctx context.Context, file *file, declDef ast.DeclDef) ir.FullName {
 	declDefSpan := declDef.Span()
 	if declDefSpan.IsZero() {
 		return ""
 	}
 	irType := findTypeBySpan(file, declDefSpan)
 	if !irType.IsZero() {
-		file.lsp.logger.Debug("completion: found parent type", slog.String("parent", string(irType.FullName())))
+		file.lsp.logger.DebugContext(ctx, "completion: found parent type", slog.String("parent", string(irType.FullName())))
 		return irType.FullName()
 	}
 	return ""

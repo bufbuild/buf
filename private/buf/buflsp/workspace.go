@@ -55,14 +55,14 @@ func (w *workspaceManager) LeaseWorkspace(ctx context.Context, uri protocol.URI)
 	defer func() {
 		// Run a cleanup as a lazy job.
 		w.Cleanup(ctx)
-		w.lsp.logger.Debug("workspace: lease workspace", slog.Int("active", len(w.workspaces)))
+		w.lsp.logger.DebugContext(ctx, "workspace: lease workspace", slog.Int("active", len(w.workspaces)))
 	}()
 
 	workspace, err := w.getOrCreateWorkspace(ctx, uri)
 	if err != nil {
 		return nil, err
 	}
-	workspace.Lease()
+	workspace.Lease(ctx)
 	return workspace, nil
 }
 
@@ -76,7 +76,7 @@ func (w *workspaceManager) Cleanup(ctx context.Context) {
 			index++
 			continue // workspace leased
 		}
-		w.lsp.logger.Debug("workspace: cleanup removing workspace", slog.String("parent", workspace.workspaceURI.Filename()))
+		w.lsp.logger.DebugContext(ctx, "workspace: cleanup removing workspace", slog.String("parent", workspace.workspaceURI.Filename()))
 		for _, file := range workspace.pathToFile {
 			file.Close(ctx)
 		}
@@ -100,7 +100,7 @@ func (w *workspaceManager) getOrCreateWorkspace(ctx context.Context, uri protoco
 			if err := workspace.Refresh(ctx); err != nil {
 				return nil, err
 			}
-			w.lsp.logger.Debug("workspace: reusing workspace", slog.String("file", uri.Filename()), slog.String("parent", workspace.workspaceURI.Filename()))
+			w.lsp.logger.DebugContext(ctx, "workspace: reusing workspace", slog.String("file", uri.Filename()), slog.String("parent", workspace.workspaceURI.Filename()))
 			return workspace, nil
 		}
 	}
@@ -108,7 +108,7 @@ func (w *workspaceManager) getOrCreateWorkspace(ctx context.Context, uri protoco
 	// Workspaces are unresolvable for cached files.
 	isCache := normalpath.ContainsPath(w.lsp.container.CacheDirPath(), fileName, normalpath.Absolute)
 	if isCache {
-		w.lsp.logger.Debug("workspace: unresolvable cache file outside workspace", slog.String("path", fileName))
+		w.lsp.logger.DebugContext(ctx, "workspace: unresolvable cache file outside workspace", slog.String("path", fileName))
 		return nil, errUnresolvableWorkspace(uri)
 	}
 	// Add the workspace to the manager.
@@ -138,14 +138,14 @@ type workspace struct {
 }
 
 // Lease increments the reference count.
-func (w *workspace) Lease() {
-	w.lsp.logger.Debug("workspace: lease", slog.String("path", w.workspaceURI.Filename()))
+func (w *workspace) Lease(ctx context.Context) {
+	w.lsp.logger.DebugContext(ctx, "workspace: lease", slog.String("path", w.workspaceURI.Filename()))
 	w.refCount++
 }
 
 // Release decrements the reference count.
-func (w *workspace) Release() int {
-	w.lsp.logger.Debug("workspace: release", slog.String("path", w.workspaceURI.Filename()))
+func (w *workspace) Release(ctx context.Context) int {
+	w.lsp.logger.DebugContext(ctx, "workspace: release", slog.String("path", w.workspaceURI.Filename()))
 	w.refCount--
 	return w.refCount
 }
@@ -158,7 +158,7 @@ func (w *workspace) Refresh(ctx context.Context) error {
 	fileName := w.workspaceURI.Filename()
 	bufWorkspace, err := w.lsp.controller.GetWorkspace(ctx, fileName)
 	if err != nil {
-		w.lsp.logger.Error("workspace: get workspace", slog.String("file", fileName), xslog.ErrorAttr(err))
+		w.lsp.logger.ErrorContext(ctx, "workspace: get workspace", slog.String("file", fileName), xslog.ErrorAttr(err))
 		return err
 	}
 	fileNameToFileInfo := make(map[string]bufmodule.FileInfo)
@@ -176,7 +176,7 @@ func (w *workspace) Refresh(ctx context.Context) error {
 	// Get the check client for the workspace.
 	checkClient, err := w.lsp.controller.GetCheckClientForWorkspace(ctx, bufWorkspace, w.lsp.wasmRuntime)
 	if err != nil {
-		w.lsp.logger.Warn("workspace: get check client", slog.String("file", fileName), xslog.ErrorAttr(err))
+		w.lsp.logger.WarnContext(ctx, "workspace: get check client", slog.String("file", fileName), xslog.ErrorAttr(err))
 	}
 
 	// Update the workspace.
@@ -210,7 +210,7 @@ func (w *workspace) Workspace() bufworkspace.Workspace {
 }
 
 // GetModule resolves the Module for the protocol URI.
-func (w *workspace) GetModule(uri protocol.URI) bufmodule.Module {
+func (w *workspace) GetModule(ctx context.Context, uri protocol.URI) bufmodule.Module {
 	if w == nil {
 		return nil
 	}
@@ -218,7 +218,7 @@ func (w *workspace) GetModule(uri protocol.URI) bufmodule.Module {
 	if fileInfo, ok := w.fileNameToFileInfo[fileName]; ok {
 		return fileInfo.Module()
 	}
-	w.lsp.logger.Warn("workspace: module not found", slog.String("file", fileName), slog.String("parent", w.workspaceURI.Filename()))
+	w.lsp.logger.WarnContext(ctx, "workspace: module not found", slog.String("file", fileName), slog.String("parent", w.workspaceURI.Filename()))
 	return nil
 }
 
@@ -240,7 +240,7 @@ func (w *workspace) PathToFile() map[string]*file {
 
 // indexFiles builds the pathToFile mapping.
 func (w *workspace) indexFiles(ctx context.Context) {
-	w.lsp.logger.Debug("workspace: index files", slog.String("path", w.workspaceURI.Filename()))
+	w.lsp.logger.DebugContext(ctx, "workspace: index files", slog.String("path", w.workspaceURI.Filename()))
 	previous := w.pathToFile
 	w.pathToFile = make(map[string]*file, len(previous))
 
@@ -249,21 +249,22 @@ func (w *workspace) indexFiles(ctx context.Context) {
 		if !ok {
 			fileURI := FilePathToURI(fileInfo.LocalPath())
 			file = w.lsp.fileManager.Track(fileURI)
-			w.lsp.logger.Debug("workspace: index track file", slog.String("path", file.uri.Filename()))
+			w.lsp.logger.DebugContext(ctx, "workspace: index track file", slog.String("path", file.uri.Filename()))
 		}
 
 		// Currently we only associate a file with one workspace. This assumption isn't accurate
 		// for shared dependencies. Here we update to the latest, most recently used, workspace.
 		// This will make goto definition and find references only work in that workspace.
 		if oldWorkspace := file.workspace; oldWorkspace != nil && oldWorkspace != w {
-			oldWorkspace.Release()
-			w.Lease()
+			oldWorkspace.Release(ctx)
+			w.Lease(ctx)
 			file.workspace = w
 		}
 
 		file.objectInfo = fileInfo
 		if err := file.ReadFromWorkspace(ctx); err != nil {
-			w.lsp.logger.Error(
+			w.lsp.logger.ErrorContext(
+				ctx,
 				"failed to read contents for file",
 				xslog.ErrorAttr(err),
 				slog.String("file", fileInfo.Path()),
@@ -276,7 +277,7 @@ func (w *workspace) indexFiles(ctx context.Context) {
 	}
 	// Drop all unused files. It was deleted from the workspace.
 	for _, file := range previous {
-		w.lsp.logger.Debug("workspace: index drop file", slog.String("path", file.uri.Filename()))
+		w.lsp.logger.DebugContext(ctx, "workspace: index drop file", slog.String("path", file.uri.Filename()))
 		file.Close(ctx)
 	}
 }
@@ -302,7 +303,7 @@ func (w *workspace) fileInfos(ctx context.Context) iter.Seq[storage.ObjectInfo] 
 			}
 			return nil
 		}); err != nil && !errors.Is(err, io.EOF) {
-			w.lsp.logger.Error("wkt bucket failed", xslog.ErrorAttr(err))
+			w.lsp.logger.ErrorContext(ctx, "wkt bucket failed", xslog.ErrorAttr(err))
 		}
 	}
 }

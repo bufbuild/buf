@@ -72,10 +72,10 @@ func NewCLIWarningInterceptor(container appext.LoggerContainer) connect.UnaryInt
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 			resp, err := next(ctx, req)
 			if resp != nil {
-				logWarningFromHeader(container, resp.Header())
+				logWarningFromHeader(ctx, container, resp.Header())
 			} else if err != nil {
 				if connectErr := new(connect.Error); errors.As(err, &connectErr) {
-					logWarningFromHeader(container, connectErr.Meta())
+					logWarningFromHeader(ctx, container, connectErr.Meta())
 				}
 			}
 			return resp, err
@@ -84,16 +84,16 @@ func NewCLIWarningInterceptor(container appext.LoggerContainer) connect.UnaryInt
 	return interceptor
 }
 
-func logWarningFromHeader(container appext.LoggerContainer, header http.Header) {
+func logWarningFromHeader(ctx context.Context, container appext.LoggerContainer, header http.Header) {
 	encoded := header.Get(CLIWarningHeaderName)
 	if encoded != "" {
 		warning, err := connect.DecodeBinaryHeader(encoded)
 		if err != nil {
-			container.Logger().Debug(fmt.Errorf("failed to decode warning header: %w", err).Error())
+			container.Logger().DebugContext(ctx, fmt.Errorf("failed to decode warning header: %w", err).Error())
 			return
 		}
 		if len(warning) > 0 {
-			container.Logger().Warn(string(warning))
+			container.Logger().WarnContext(ctx, string(warning))
 		}
 	}
 }

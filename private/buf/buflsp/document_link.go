@@ -15,6 +15,8 @@
 package buflsp
 
 import (
+	"context"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/protocompile/experimental/ast"
@@ -35,7 +37,7 @@ const (
 // For WKT imports, this creates links to buf.build/protocolbuffers/wellknowntypes/file/main:<file-path>.
 // For local imports without module names, it links to the local file.
 // For https:// URLs found in comments, it creates clickable links to those URLs.
-func (s *server) documentLink(file *file) []protocol.DocumentLink {
+func (s *server) documentLink(ctx context.Context, file *file) []protocol.DocumentLink {
 	var links []protocol.DocumentLink
 
 	// Create links for import statements
@@ -51,7 +53,7 @@ func (s *server) documentLink(file *file) []protocol.DocumentLink {
 				targetURI = protocol.DocumentURI(url)
 			} else if file.workspace != nil && imported.file.objectInfo != nil {
 				// Try to get BSR module information for non-WKT imports
-				module := file.workspace.GetModule(imported.file.uri)
+				module := file.workspace.GetModule(ctx, imported.file.uri)
 				filePath := imported.file.objectInfo.Path()
 				url := bsrURL(module, filePath, "", bsrTabTypeFile)
 				if url != "" {

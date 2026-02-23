@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 	"unicode/utf16"
@@ -93,10 +94,11 @@ func (s *server) Initialize(
 	}
 
 	if params.ClientInfo != nil {
-		s.logger.Info(
+		s.logger.InfoContext(
+			ctx,
 			"client attached",
-			"client_name", params.ClientInfo.Name,
-			"client_version", params.ClientInfo.Version,
+			slog.String("client_name", params.ClientInfo.Name),
+			slog.String("client_version", params.ClientInfo.Version),
 		)
 	}
 
@@ -609,7 +611,7 @@ func (s *server) DocumentLink(
 	if file == nil {
 		return nil, nil
 	}
-	return s.documentLink(file), nil
+	return s.documentLink(ctx, file), nil
 }
 
 // getSymbol is a helper function that gets the *[symbol] for the given [protocol.URI] and

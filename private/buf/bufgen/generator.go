@@ -92,7 +92,7 @@ func (g *generator) Generate(
 	}
 	if !config.GenerateManagedConfig().Enabled() {
 		if len(config.GenerateManagedConfig().Overrides()) != 0 || len(config.GenerateManagedConfig().Disables()) != 0 {
-			g.logger.Warn("managed mode configs are set but are not enabled")
+			g.logger.WarnContext(ctx, "managed mode configs are set but are not enabled")
 		}
 	}
 	for _, image := range images {
@@ -317,7 +317,7 @@ func (g *generator) execPlugins(
 	if err := validateResponses(responses, pluginConfigs); err != nil {
 		return nil, err
 	}
-	if err := checkRequiredFeatures(g.logger, requiredFeatures, responses, pluginConfigs); err != nil {
+	if err := checkRequiredFeatures(ctx, g.logger, requiredFeatures, responses, pluginConfigs); err != nil {
 		return nil, err
 	}
 	return responses, nil

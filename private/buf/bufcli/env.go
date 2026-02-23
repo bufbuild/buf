@@ -71,16 +71,16 @@ var (
 
 // WarnAlphaCommand prints a warning for a alpha command unless the alphaSuppressWarningsEnvKey
 // environment variable is set.
-func WarnAlphaCommand(_ context.Context, container appext.Container) {
+func WarnAlphaCommand(ctx context.Context, container appext.Container) {
 	if container.Env(alphaSuppressWarningsEnvKey) == "" {
-		container.Logger().Warn("This command is in alpha. It is hidden for a reason. This command is purely for development purposes, and may never even be promoted to beta, do not rely on this command's functionality. To suppress this warning, set " + alphaSuppressWarningsEnvKey + "=1")
+		container.Logger().WarnContext(ctx, "This command is in alpha. It is hidden for a reason. This command is purely for development purposes, and may never even be promoted to beta, do not rely on this command's functionality. To suppress this warning, set "+alphaSuppressWarningsEnvKey+"=1")
 	}
 }
 
 // WarnBetaCommand prints a warning for a beta command unless the betaSuppressWarningsEnvKey
 // environment variable is set.
-func WarnBetaCommand(_ context.Context, container appext.Container) {
+func WarnBetaCommand(ctx context.Context, container appext.Container) {
 	if container.Env(betaSuppressWarningsEnvKey) == "" {
-		container.Logger().Warn("This command is in beta. It is unstable and likely to change. To suppress this warning, set " + betaSuppressWarningsEnvKey + "=1")
+		container.Logger().WarnContext(ctx, "This command is in beta. It is unstable and likely to change. To suppress this warning, set "+betaSuppressWarningsEnvKey+"=1")
 	}
 }

@@ -15,6 +15,7 @@
 package bufcheck
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"sort"
@@ -47,13 +48,13 @@ func rulesConfigForCheckConfig(
 	)
 }
 
-func logRulesConfig(logger *slog.Logger, configName string, rulesConfig *rulesConfig, hasPolicyConfigs bool) {
-	logger.Debug("rulesConfig", slog.Any("ruleIDs", rulesConfig.RuleIDs))
+func logRulesConfig(ctx context.Context, logger *slog.Logger, configName string, rulesConfig *rulesConfig, hasPolicyConfigs bool) {
+	logger.DebugContext(ctx, "rulesConfig", slog.Any("ruleIDs", rulesConfig.RuleIDs))
 	if len(rulesConfig.RuleIDs) == 0 && !hasPolicyConfigs {
-		logger.Warn("No " + rulesConfig.RuleType.String() + " rules are configured in " + configName + ".")
+		logger.WarnContext(ctx, "No "+rulesConfig.RuleType.String()+" rules are configured in "+configName+".")
 	}
-	warnReferencedDeprecatedIDs(logger, configName, rulesConfig)
-	warnUnusedPlugins(logger, configName, rulesConfig)
+	warnReferencedDeprecatedIDs(ctx, logger, configName, rulesConfig)
+	warnUnusedPlugins(ctx, logger, configName, rulesConfig)
 }
 
 type rulesConfig struct {
@@ -344,8 +345,9 @@ func newRulesConfig(
 
 // *** JUST USED WITHIN THIS FILE ***
 
-func warnReferencedDeprecatedIDs(logger *slog.Logger, configName string, rulesConfig *rulesConfig) {
+func warnReferencedDeprecatedIDs(ctx context.Context, logger *slog.Logger, configName string, rulesConfig *rulesConfig) {
 	warnReferencedDeprecatedIDsForIDType(
+		ctx,
 		logger,
 		configName,
 		rulesConfig.ReferencedDeprecatedRuleIDToReplacementIDs,
@@ -353,6 +355,7 @@ func warnReferencedDeprecatedIDs(logger *slog.Logger, configName string, rulesCo
 		"rules",
 	)
 	warnReferencedDeprecatedIDsForIDType(
+		ctx,
 		logger,
 		configName,
 		rulesConfig.ReferencedDeprecatedCategoryIDToReplacementIDs,
@@ -361,7 +364,7 @@ func warnReferencedDeprecatedIDs(logger *slog.Logger, configName string, rulesCo
 	)
 }
 
-func warnUnusedPlugins(logger *slog.Logger, configName string, rulesConfig *rulesConfig) {
+func warnUnusedPlugins(ctx context.Context, logger *slog.Logger, configName string, rulesConfig *rulesConfig) {
 	if len(rulesConfig.UnusedPluginNameToRuleIDs) == 0 {
 		return
 	}
@@ -387,10 +390,11 @@ func warnUnusedPlugins(logger *slog.Logger, configName string, rulesConfig *rule
 		_, _ = sb.WriteString("\n")
 	}
 	_, _ = sb.WriteString("\n\tIf you do not want to use these plugins, we recommend removing them from your configuration.")
-	logger.Warn(sb.String())
+	logger.WarnContext(ctx, sb.String())
 }
 
 func warnReferencedDeprecatedIDsForIDType(
+	ctx context.Context,
 	logger *slog.Logger,
 	configName string,
 	referencedDeprecatedIDToReplacementIDs map[string]map[string]struct{},
@@ -418,7 +422,8 @@ func warnReferencedDeprecatedIDsForIDType(
 	are also default rules, the name has become overloaded.
 `, configName)
 		}
-		logger.Warn(
+		logger.WarnContext(
+			ctx,
 			fmt.Sprintf(
 				"%s %s referenced in your %s is deprecated.%s%s\n\tAs with all buf changes, this change is backwards-compatible: %s will continue to work.\n\tWe recommend replacing %s in your %s, but no action is immediately necessary.",
 				capitalizedIDType,

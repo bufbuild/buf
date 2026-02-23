@@ -202,7 +202,7 @@ func (c *client) lint(
 	if policyConfig != nil {
 		configName = policyConfig.Name()
 	}
-	logRulesConfig(c.logger, configName, config.rulesConfig, hasPolicyConfigs)
+	logRulesConfig(ctx, c.logger, configName, config.rulesConfig, hasPolicyConfigs)
 	files, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
 	if err != nil {
 		// An Image may be invalid if it does not contain all of the required dependencies.
@@ -349,7 +349,7 @@ func (c *client) breaking(
 	if policyConfig != nil {
 		configName = policyConfig.Name()
 	}
-	logRulesConfig(c.logger, configName, config.rulesConfig, hasPolicyConfigs)
+	logRulesConfig(ctx, c.logger, configName, config.rulesConfig, hasPolicyConfigs)
 	fileDescriptors, err := descriptor.FileDescriptorsForProtoFileDescriptors(imageToProtoFileDescriptors(image))
 	if err != nil {
 		// An Image may be invalid if it does not contain all of the required dependencies.
@@ -416,7 +416,7 @@ func (c *client) ConfiguredRules(
 	if err != nil {
 		return nil, err
 	}
-	logRulesConfig(c.logger, "", rulesConfig, len(configuredRulesOptions.policyConfigs) > 0)
+	logRulesConfig(ctx, c.logger, "", rulesConfig, len(configuredRulesOptions.policyConfigs) > 0)
 	allRules := rulesForRuleIDs(rules, rulesConfig.RuleIDs)
 	policies, err := c.getPolicies(ctx, configuredRulesOptions.policyConfigs)
 	if err != nil {

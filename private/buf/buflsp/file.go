@@ -95,7 +95,7 @@ func (f *file) Manager() *fileManager {
 func (f *file) Reset(ctx context.Context) {
 	f.lsp.logger.DebugContext(ctx, "resetting file", slog.String("uri", f.uri.Filename()))
 	if f.workspace != nil {
-		f.workspace.Release()
+		f.workspace.Release(ctx)
 		f.workspace = nil
 	}
 	// Evict the query key if there is a query cached on the file. We cache the [queries.File]
@@ -182,14 +182,16 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 //
 // The Buf workspace provides the sources for the compiler to work with.
 func (f *file) RefreshWorkspace(ctx context.Context) {
-	f.lsp.logger.Debug(
+	f.lsp.logger.DebugContext(
+		ctx,
 		"refresh workspace",
 		slog.String("file", f.uri.Filename()),
 		slog.Int("version", int(f.version)),
 	)
 	if f.workspace != nil {
 		if err := f.workspace.Refresh(ctx); err != nil {
-			f.lsp.logger.Error(
+			f.lsp.logger.ErrorContext(
+				ctx,
 				"could not refresh workspace",
 				slog.String("uri", string(f.uri)),
 				xslog.ErrorAttr(err),
@@ -198,7 +200,8 @@ func (f *file) RefreshWorkspace(ctx context.Context) {
 	} else {
 		workspace, err := f.lsp.workspaceManager.LeaseWorkspace(ctx, f.uri)
 		if err != nil {
-			f.lsp.logger.Error(
+			f.lsp.logger.ErrorContext(
+				ctx,
 				"could not lease workspace",
 				slog.String("uri", string(f.uri)),
 				xslog.ErrorAttr(err),
@@ -222,7 +225,8 @@ func (f *file) RefreshIR(ctx context.Context) {
 		return
 	}
 
-	f.lsp.logger.Info(
+	f.lsp.logger.InfoContext(
+		ctx,
 		"parsing IR for file",
 		slog.String("uri", string(f.uri)),
 		slog.Int("version", int(f.version)),
@@ -268,7 +272,8 @@ func (f *file) RefreshIR(ctx context.Context) {
 		queries...,
 	)
 	if err != nil {
-		f.lsp.logger.Error(
+		f.lsp.logger.ErrorContext(
+			ctx,
 			"failed to parse IR for file",
 			slog.String("uri", string(f.uri)),
 			slog.Int("version", int(f.version)),
@@ -383,7 +388,8 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			referenceable, ok := def.kind.(*referenceable)
 			if !ok {
 				// This shouldn't happen, logging a warning
-				f.lsp.logger.Warn(
+				f.lsp.logger.WarnContext(
+					ctx,
 					"found non-referenceable symbol in index",
 					slog.String("file", f.uri.Filename()),
 					slog.Any("symbol", def),
@@ -398,7 +404,8 @@ func (f *file) IndexSymbols(ctx context.Context) {
 				referenceable, ok := def.kind.(*referenceable)
 				if !ok {
 					// This shouldn't happen, logging a warning
-					f.lsp.logger.Warn(
+					f.lsp.logger.WarnContext(
+						ctx,
 						"found non-referenceable symbol in index",
 						slog.String("file", f.uri.Filename()),
 						slog.Any("symbol", def),
@@ -411,7 +418,8 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			sym.typeDef = typeDef
 		default:
 			// This shouldn't happen, logging a warning
-			f.lsp.logger.Warn(
+			f.lsp.logger.WarnContext(
+				ctx,
 				"found unresolved non-reference and non-option symbol",
 				slog.String("file", f.uri.Filename()),
 				slog.Any("symbol", sym),
@@ -439,7 +447,8 @@ func (f *file) IndexSymbols(ctx context.Context) {
 				fullName = kind.defFullName
 			default:
 				// This shouldn't happen, logging a warning
-				f.lsp.logger.Warn(
+				f.lsp.logger.WarnContext(
+					ctx,
 					"found unresolved non-reference and non-option symbol",
 					slog.String("file", f.uri.Filename()),
 					slog.Any("symbol", sym),
@@ -450,7 +459,8 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			if !ok {
 				// This shouldn't happen, if a symbol is pointing at this file, all definitions
 				// should be resolved, logging a warning
-				f.lsp.logger.Warn(
+				f.lsp.logger.WarnContext(
+					ctx,
 					"found reference to unknown symbol",
 					slog.String("file", f.uri.Filename()),
 					slog.Any("reference", sym),
@@ -460,7 +470,8 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			referenceable, ok := def.kind.(*referenceable)
 			if !ok {
 				// This shouldn't happen, logging a warning
-				f.lsp.logger.Warn(
+				f.lsp.logger.WarnContext(
+					ctx,
 					"found non-referenceable symbol in index",
 					slog.String("file", f.uri.Filename()),
 					slog.Any("symbol", def),
@@ -1048,10 +1059,10 @@ func (f *file) RunChecks(ctx context.Context) {
 	}
 
 	workspace := f.workspace.Workspace()
-	module := f.workspace.GetModule(f.uri)
+	module := f.workspace.GetModule(ctx, f.uri)
 	checkClient := f.workspace.CheckClient()
 	if workspace == nil || module == nil || checkClient == nil || f.objectInfo == nil {
-		f.lsp.logger.Debug("checks skipped", slog.String("uri", f.uri.Filename()))
+		f.lsp.logger.DebugContext(ctx, "checks skipped", slog.String("uri", f.uri.Filename()))
 		return
 	}
 	path := f.objectInfo.Path()

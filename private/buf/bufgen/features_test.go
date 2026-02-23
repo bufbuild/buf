@@ -175,6 +175,7 @@ func testCheckRequiredFeatures(
 	buffer := bytes.NewBuffer(nil)
 	logger := slog.New(slog.NewTextHandler(buffer, &slog.HandlerOptions{}))
 	err := checkRequiredFeatures(
+		t.Context(),
 		logger,
 		required,
 		[]*pluginpb.CodeGeneratorResponse{

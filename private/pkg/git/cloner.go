@@ -121,7 +121,7 @@ func (c *cloner) CloneToBucket(
 	if strings.HasPrefix(url, "https://") {
 		// These extraArgs MUST be first, as the -c flag potentially produced
 		// is only a flag on the parent git command, not on git fetch.
-		extraArgs, err := c.getArgsForHTTPSCommand(envContainer)
+		extraArgs, err := c.getArgsForHTTPSCommand(ctx, envContainer)
 		if err != nil {
 			return err
 		}
@@ -129,7 +129,7 @@ func (c *cloner) CloneToBucket(
 	}
 
 	if strings.HasPrefix(url, "ssh://") {
-		envContainer, err = c.getEnvContainerWithGitSSHCommand(envContainer)
+		envContainer, err = c.getEnvContainerWithGitSSHCommand(ctx, envContainer)
 		if err != nil {
 			return err
 		}
@@ -264,7 +264,7 @@ func (c *cloner) CloneToBucket(
 	return err
 }
 
-func (c *cloner) getArgsForHTTPSCommand(envContainer app.EnvContainer) ([]string, error) {
+func (c *cloner) getArgsForHTTPSCommand(ctx context.Context, envContainer app.EnvContainer) ([]string, error) {
 	if c.options.HTTPSUsernameEnvKey == "" || c.options.HTTPSPasswordEnvKey == "" {
 		return nil, nil
 	}
@@ -276,7 +276,7 @@ func (c *cloner) getArgsForHTTPSCommand(envContainer app.EnvContainer) ([]string
 		}
 		return nil, nil
 	}
-	c.logger.Debug("git_credential_helper_override")
+	c.logger.DebugContext(ctx, "git_credential_helper_override")
 	return []string{
 		"-c",
 		fmt.Sprintf(
@@ -296,13 +296,13 @@ func (c *cloner) getArgsForHTTPSCommand(envContainer app.EnvContainer) ([]string
 	}, nil
 }
 
-func (c *cloner) getEnvContainerWithGitSSHCommand(envContainer app.EnvContainer) (app.EnvContainer, error) {
+func (c *cloner) getEnvContainerWithGitSSHCommand(ctx context.Context, envContainer app.EnvContainer) (app.EnvContainer, error) {
 	gitSSHCommand, err := c.getGitSSHCommand(envContainer)
 	if err != nil {
 		return nil, err
 	}
 	if gitSSHCommand != "" {
-		c.logger.Debug("git_ssh_command_override")
+		c.logger.DebugContext(ctx, "git_ssh_command_override")
 		return app.NewEnvContainerWithOverrides(
 			envContainer,
 			map[string]string{

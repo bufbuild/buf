@@ -259,7 +259,7 @@ func (a *moduleDataProvider) warnIfDeprecated(
 		return err
 	}
 	if v1ProtoModule.State == modulev1.ModuleState_MODULE_STATE_DEPRECATED {
-		a.logger.Warn(fmt.Sprintf("%s is deprecated", moduleKey.FullName().String()))
+		a.logger.WarnContext(ctx, fmt.Sprintf("%s is deprecated", moduleKey.FullName().String()))
 	}
 	return nil
 }

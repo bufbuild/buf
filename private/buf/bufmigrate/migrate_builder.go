@@ -96,12 +96,12 @@ func (m *migrateBuilder) addBufGenYAML(ctx context.Context, bufGenYAMLFilePath s
 		return err
 	}
 	if bufGenYAML.FileVersion() == bufconfig.FileVersionV2 {
-		m.logger.Warn(fmt.Sprintf("%s is a v2 file, no migration required", bufGenYAMLFilePath))
+		m.logger.WarnContext(ctx, fmt.Sprintf("%s is a v2 file, no migration required", bufGenYAMLFilePath))
 		return nil
 	}
 	if typeConfig := bufGenYAML.GenerateConfig().GenerateTypeConfig(); typeConfig != nil && len(typeConfig.IncludeTypes()) > 0 {
 		// TODO FUTURE: what does this sentence mean? Get someone else to read it and understand it without any explanation.
-		m.logger.Warn(fmt.Sprintf(
+		m.logger.WarnContext(ctx, fmt.Sprintf(
 			"%s is a v1 generation template with a top-level 'types' section including %s. In a v2 generation template, 'types' can"+
 				" only exist within an input in the 'inputs' section. Since the migration command does not have information"+
 				" on inputs, the migrated generation will not have an 'inputs' section. To add these types in the migrated file, you can"+
@@ -246,7 +246,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		// but they should not share the same module name. Instead we just give
 		// them empty module names.
 		if len(moduleConfig.RootToExcludes()) > 1 && moduleFullName != nil {
-			m.logger.Warn(fmt.Sprintf(
+			m.logger.WarnContext(ctx, fmt.Sprintf(
 				"%s has name %s and multiple roots. These roots are now separate unnamed modules.",
 				bufYAMLFilePath,
 				moduleFullName.String(),
@@ -326,7 +326,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		}
 		m.configuredDepModuleRefs = append(m.configuredDepModuleRefs, bufYAMLFile.ConfiguredDepModuleRefs()...)
 	case bufconfig.FileVersionV2:
-		m.logger.Warn(fmt.Sprintf("%s is a v2 file, no migration required", bufYAMLFilePath))
+		m.logger.WarnContext(ctx, fmt.Sprintf("%s is a v2 file, no migration required", bufYAMLFilePath))
 		return nil
 	default:
 		return syserror.Newf("unexpected version: %v", bufYAMLFile.FileVersion())
@@ -373,7 +373,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 	case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
 		m.depModuleKeys = append(m.depModuleKeys, bufLockFile.DepModuleKeys()...)
 	case bufconfig.FileVersionV2:
-		m.logger.Warn(fmt.Sprintf("%s is a v2 file, no migration required", bufLockFilePath))
+		m.logger.WarnContext(ctx, fmt.Sprintf("%s is a v2 file, no migration required", bufLockFilePath))
 		return nil
 	default:
 		return syserror.Newf("unrecognized version: %v", bufLockFile.FileVersion())

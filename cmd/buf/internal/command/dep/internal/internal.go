@@ -85,7 +85,7 @@ func Prune(
 	}
 	// Compute those dependencies that are in buf.yaml that are not used at all, and warn
 	// about them.
-	if err := LogUnusedConfiguredDepsForWorkspace(workspace, logger); err != nil {
+	if err := LogUnusedConfiguredDepsForWorkspace(ctx, workspace, logger); err != nil {
 		return err
 	}
 	// Step that actually computes remote dependencies based on imports. These are all
@@ -124,6 +124,7 @@ func Prune(
 // LogUnusedConfiguredDepsForWorkspace takes a workspace and logs the unused configured
 // dependencies as warnings to the user.
 func LogUnusedConfiguredDepsForWorkspace(
+	ctx context.Context,
 	workspace bufworkspace.Workspace,
 	logger *slog.Logger,
 ) error {
@@ -134,7 +135,7 @@ func LogUnusedConfiguredDepsForWorkspace(
 	for _, malformedDep := range malformedDeps {
 		switch t := malformedDep.Type(); t {
 		case bufworkspace.MalformedDepTypeUnused:
-			logger.Warn(fmt.Sprintf(
+			logger.WarnContext(ctx, fmt.Sprintf(
 				`Module %[1]s is declared in your buf.yaml deps but is unused. This command only modifies buf.lock files, not buf.yaml files. Please remove %[1]s from your buf.yaml deps if it is not needed.`,
 				malformedDep.ModuleRef().FullName(),
 			))

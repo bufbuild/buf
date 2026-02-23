@@ -15,6 +15,7 @@
 package bufgen
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -87,6 +88,7 @@ func computeRequiredFeatures(image bufimage.Image) *requiredFeatures {
 }
 
 func checkRequiredFeatures(
+	ctx context.Context,
 	logger *slog.Logger,
 	required *requiredFeatures,
 	responses []*pluginpb.CodeGeneratorResponse,
@@ -166,7 +168,7 @@ func checkRequiredFeatures(
 						fmt.Sprintf(" Feature %q is required by %d file(s):", featureName(feature), len(files)),
 					)
 					warningMessage = fmt.Sprintln(warningMessage, fmt.Sprintf("   %s", strings.Join(files, ",")))
-					logger.Warn(strings.TrimSpace(warningMessage))
+					logger.WarnContext(ctx, strings.TrimSpace(warningMessage))
 					continue
 				}
 				featureErrs := xslices.Map(

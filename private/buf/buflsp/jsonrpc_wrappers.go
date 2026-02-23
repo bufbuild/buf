@@ -26,13 +26,15 @@ import (
 func (l *lsp) wrapReplier(reply jsonrpc2.Replier, req jsonrpc2.Request) jsonrpc2.Replier {
 	return func(ctx context.Context, result any, err error) error {
 		if err != nil {
-			l.logger.Warn(
+			l.logger.WarnContext(
+				ctx,
 				"responding with error",
 				slog.String("method", req.Method()),
 				xslog.ErrorAttr(err),
 			)
 		} else {
-			l.logger.Debug(
+			l.logger.DebugContext(
+				ctx,
 				"responding",
 				slog.String("method", req.Method()),
 			)
@@ -54,20 +56,23 @@ type connWrapper struct {
 
 func (c *connWrapper) Call(
 	ctx context.Context, method string, params, result any) (id jsonrpc2.ID, err error) {
-	c.logger.Debug(
+	c.logger.DebugContext(
+		ctx,
 		"call",
 		slog.String("method", method),
 	)
 
 	id, err = c.Conn.Call(ctx, method, params, result)
 	if err != nil {
-		c.logger.Warn(
+		c.logger.WarnContext(
+			ctx,
 			"call returned error",
 			slog.String("method", method),
 			xslog.ErrorAttr(err),
 		)
 	} else {
-		c.logger.Debug(
+		c.logger.DebugContext(
+			ctx,
 			"call returned",
 			slog.String("method", method),
 		)
@@ -78,20 +83,23 @@ func (c *connWrapper) Call(
 
 func (c *connWrapper) Notify(
 	ctx context.Context, method string, params any) error {
-	c.logger.Debug(
+	c.logger.DebugContext(
+		ctx,
 		"notify",
 		slog.String("method", method),
 	)
 
 	err := c.Conn.Notify(ctx, method, params)
 	if err != nil {
-		c.logger.Warn(
+		c.logger.WarnContext(
+			ctx,
 			"notify returned error",
 			slog.String("method", method),
 			xslog.ErrorAttr(err),
 		)
 	} else {
-		c.logger.Debug(
+		c.logger.DebugContext(
+			ctx,
 			"notify returned",
 			slog.String("method", method),
 		)

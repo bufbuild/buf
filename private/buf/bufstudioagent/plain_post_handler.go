@@ -16,6 +16,7 @@ package bufstudioagent
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"errors"
@@ -186,21 +187,22 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusBadGateway)
 				return
 			}
-			i.writeProtoMessage(w, studiov1alpha1.InvokeResponse_builder{
+			i.writeProtoMessage(r.Context(), w, studiov1alpha1.InvokeResponse_builder{
 				// connectErr.Meta contains the trailers for the
 				// caller to find out the error details.
 				Headers: goHeadersToProtoHeaders(connectErr.Meta()),
 			}.Build())
 			return
 		}
-		i.Logger.Warn(
+		i.Logger.WarnContext(
+			r.Context(),
 			"non_connect_unary_error",
 			xslog.ErrorAttr(err),
 		)
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
-	i.writeProtoMessage(w, studiov1alpha1.InvokeResponse_builder{
+	i.writeProtoMessage(r.Context(), w, studiov1alpha1.InvokeResponse_builder{
 		Headers:  goHeadersToProtoHeaders(response.Header()),
 		Body:     response.Msg.Bytes(),
 		Trailers: goHeadersToProtoHeaders(response.Trailer()),
@@ -232,7 +234,7 @@ func connectClientOptionsFromContentType(contentType string) ([]connect.ClientOp
 	}
 }
 
-func (i *plainPostHandler) writeProtoMessage(w http.ResponseWriter, message proto.Message) {
+func (i *plainPostHandler) writeProtoMessage(ctx context.Context, w http.ResponseWriter, message proto.Message) {
 	responseProtoBytes, err := protoencoding.NewWireMarshaler().Marshal(message)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -242,7 +244,8 @@ func (i *plainPostHandler) writeProtoMessage(w http.ResponseWriter, message prot
 	i.B64Encoding.Encode(responseB64Bytes, responseProtoBytes)
 	w.Header().Set("Content-Type", "text/plain")
 	if n, err := w.Write(responseB64Bytes); n != len(responseB64Bytes) && err != nil {
-		i.Logger.Error(
+		i.Logger.ErrorContext(
+			ctx,
 			"write_error",
 			slog.Int("expected_bytes", len(responseB64Bytes)),
 			slog.Int("actual_bytes", n),
