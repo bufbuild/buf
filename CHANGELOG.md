@@ -6,6 +6,7 @@
 - Fix buf breaking module comparison when adding new modules.
 - Add LSP hover support for protovalidate CEL expressions
 - Fixed offset handling in CEL semantic tokens for non-ASCII content and proto escape sequences in multi-line string literal expressions
+- Add support for Edition 2024 syntax to `buf format`.
 
 ## [v1.65.0] - 2026-02-03
 
