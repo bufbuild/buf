@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.66.0] - 2026-02-23
 
 - Add LSP comment ignore code action to add comment ignores for lint errors.
@@ -1492,6 +1496,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.66.0...HEAD
 [v1.66.0]: https://github.com/bufbuild/buf/compare/v1.65.0...v1.66.0
 [v1.65.0]: https://github.com/bufbuild/buf/compare/v1.64.0...v1.65.0
 [v1.64.0]: https://github.com/bufbuild/buf/compare/v1.63.0...v1.64.0
