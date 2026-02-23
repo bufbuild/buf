@@ -292,21 +292,21 @@ func (f *formatter) writeFileHeader() {
 	sort.Slice(importNodes, func(i, j int) bool {
 		iName := importNodes[i].Name.AsString()
 		jName := importNodes[j].Name.AsString()
-		// sort by import type (public > regular > weak > option), then by name
+		// "import option" sorts after all other imports. Within each
+		// group, sort alphabetically by name, then by modifier
+		// (public > regular > weak), and finally by comment.
+		iOption := isOptionImport(importNodes[i])
+		jOption := isOptionImport(importNodes[j])
+		if iOption != jOption {
+			return !iOption
+		}
+		if iName != jName {
+			return iName < jName
+		}
 		iOrder := importSortOrder(importNodes[i])
 		jOrder := importSortOrder(importNodes[j])
-
-		if iOrder > jOrder {
-			return true
-		}
-		if iOrder < jOrder {
-			return false
-		}
-		if iName < jName {
-			return true
-		}
-		if iName > jName {
-			return false
+		if iOrder != jOrder {
+			return iOrder < jOrder
 		}
 
 		// put commented import first
@@ -2553,18 +2553,21 @@ func (n infoWithTrailingComments) TrailingComments() ast.Comments {
 }
 
 // importSortOrder maps import types to a sort order number, so it can be compared and sorted.
-// `import`=3, `import public`=2, `import weak`=1 `import option`=0
+// Higher values sort first: `import`=3, `import public`=2, `import weak`=1.
 func importSortOrder(node *ast.ImportNode) int {
 	switch {
 	case node.Public != nil:
 		return 2
 	case node.Weak != nil:
 		return 1
-	case node.Modifier != nil:
-		return 0
 	default:
 		return 3
 	}
+}
+
+// isOptionImport reports whether the import has the "option" modifier.
+func isOptionImport(node *ast.ImportNode) bool {
+	return node.Modifier != nil && node.Modifier.Val == "option"
 }
 
 // stringForOptionName returns the string representation of the given option name node.

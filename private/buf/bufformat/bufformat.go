@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strings"
 	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -132,10 +131,15 @@ func formatFileNodeWithMatch(dest io.Writer, fileNode *ast.FileNode, options *fo
 	// Construct the file descriptor to ensure the AST is valid. The
 	// reporter swallows the known edition 2024 unsupported error (the
 	// parser handles it but ResultFromAST does not yet) and propagates
-	// all other errors.
+	// all other errors. The error is identified by its span matching
+	// the edition value node.
 	errReporter := reporter.NewReporter(
 		func(err reporter.ErrorWithPos) error {
-			if isEdition2024UnsupportedError(err) {
+			if fileNode.Edition == nil || fileNode.Edition.Edition.AsString() != "2024" {
+				return err
+			}
+			editionValueSpan := fileNode.NodeInfo(fileNode.Edition.Edition)
+			if err.Start() == editionValueSpan.Start() && err.End() == editionValueSpan.End() {
 				return nil
 			}
 			return err
@@ -152,8 +156,4 @@ func formatFileNodeWithMatch(dest io.Writer, fileNode *ast.FileNode, options *fo
 		return false, err
 	}
 	return formatter.deprecationMatched, nil
-}
-
-func isEdition2024UnsupportedError(err error) bool {
-	return strings.Contains(err.Error(), `edition "2024" not yet fully supported`)
 }

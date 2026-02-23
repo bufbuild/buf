@@ -3,6 +3,10 @@ edition = "2023";
 package a.b.c;
 
 import "google/protobuf/descriptor.proto";
+import "a.proto";
+import "d.proto";
+import weak "c.proto";
+import public "b.proto";
 
 extend google.protobuf.FeatureSet {
   string string_feature = 9995;

@@ -2,8 +2,9 @@ edition = "2024";
 
 package a.b.c;
 
-import "other.proto";
-import option "custom_options.proto";
+import public "a.proto";
+import "c.proto";
+import option "b.proto";
 import option "google/protobuf/descriptor.proto";
 
 export message PublicApi {
