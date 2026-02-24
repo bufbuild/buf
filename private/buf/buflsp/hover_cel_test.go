@@ -403,7 +403,7 @@ func TestCELHover(t *testing.T) {
 			name:     "literal: int",
 			line:     311,
 			char:     25,
-			expected: "**Literal**: `42`\n\n**Type**: int64",
+			expected: "**Literal**: `42`\n\n**Type**: int",
 		},
 		{
 			name:     "literal: double",

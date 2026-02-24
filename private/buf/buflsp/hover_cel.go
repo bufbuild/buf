@@ -24,10 +24,9 @@ import (
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common"
 	"github.com/google/cel-go/common/ast"
-	"github.com/google/cel-go/common/operators"
 	"github.com/google/cel-go/common/overloads"
+	"github.com/google/cel-go/common/types"
 	"go.lsp.dev/protocol"
-	exprpb "google.golang.org/genproto/googleapis/api/expr/v1alpha1"
 )
 
 // getCELHover returns hover documentation for CEL expressions.
@@ -70,13 +69,11 @@ func getCELHover(
 			// Default to the parsed AST, but prefer the checked AST for full
 			// type information if type-checking succeeds.
 			astForTypeInfo := parsedAST
-			var typeMap map[int64]*exprpb.Type
+			var typeMap map[int64]*types.Type
 
 			if checkedAST, compileIssues := celEnv.Compile(exprInfo.expression); compileIssues.Err() == nil {
 				astForTypeInfo = checkedAST
-				if checkedExpr, err := cel.AstToCheckedExpr(checkedAST); err == nil {
-					typeMap = checkedExpr.TypeMap
-				}
+				typeMap = checkedAST.NativeRep().TypeMap()
 			}
 
 			// Find the token at the cursor position using proper AST walking.
@@ -116,10 +113,10 @@ func getCELHover(
 type celHoverInfo struct {
 	kind        celHoverKind
 	text        string
-	start       int          // byte offset in CEL expression
-	end         int          // byte offset in CEL expression
-	celType     *exprpb.Type // from type checker
-	protoMember ir.Member    // resolved proto field
+	start       int         // byte offset in CEL expression
+	end         int         // byte offset in CEL expression
+	celType     *types.Type // from type checker
+	protoMember ir.Member   // resolved proto field
 	exprID      int64
 }
 
@@ -148,32 +145,21 @@ const (
 //   - typeMap: Type information from the type checker (nil if only parsed AST available).
 //
 // Returns hover information for the token at the offset, or nil if not found.
-func findCELTokenAtOffset(astForTypeInfo *cel.Ast, parsedAst *cel.Ast, offset int, exprInfo celExpressionInfo, typeMap map[int64]*exprpb.Type) *celHoverInfo {
-	// Get parsed expression and source info from the type-checked AST
-	parsedExpr, err := cel.AstToParsedExpr(astForTypeInfo)
-	if err != nil {
-		return nil
-	}
-
-	sourceInfo := parsedExpr.GetSourceInfo()
-	expr := parsedExpr.GetExpr()
-
-	// Get offset ranges from native AST for accurate position information
+func findCELTokenAtOffset(astForTypeInfo *cel.Ast, parsedAst *cel.Ast, offset int, exprInfo celExpressionInfo, typeMap map[int64]*types.Type) *celHoverInfo {
+	// Get expression and source info from the native AST directly
 	nativeAST := astForTypeInfo.NativeRep()
-	nativeSourceInfo := nativeAST.SourceInfo()
-	offsetRanges := nativeSourceInfo.OffsetRanges()
+	sourceInfo := nativeAST.SourceInfo()
+	expr := nativeAST.Expr()
 
 	// Walk the AST to find the deepest matching expression at the cursor position
 	// Track comprehension variables for proper scoping
 	compVars := make(map[string]bool)
-	result := walkCELExprForHover(expr, sourceInfo, offsetRanges, offset, exprInfo.expression, compVars, exprInfo, typeMap)
+	result := walkCELExprForHover(expr, sourceInfo, offset, exprInfo.expression, compVars, exprInfo, typeMap)
 
 	// If we didn't find anything in the main AST, check macro calls in the parsed AST
-	// Macros are expanded in the main AST, but parsedExpr.MacroCalls preserves the original macro syntax
+	// Macros are expanded in the main AST, but parsedAst.MacroCalls preserves the original macro syntax
 	if result == nil && parsedAst != nil {
-		if parsedExprForMacros, err := cel.AstToParsedExpr(parsedAst); err == nil {
-			result = findMacroAtOffset(parsedExprForMacros.GetSourceInfo(), offset, exprInfo.expression)
-		}
+		result = findMacroAtOffset(parsedAst.NativeRep().SourceInfo(), offset, exprInfo.expression)
 	}
 
 	return result
@@ -182,24 +168,18 @@ func findCELTokenAtOffset(astForTypeInfo *cel.Ast, parsedAst *cel.Ast, offset in
 // findMacroAtOffset checks if the offset is within a CEL macro call.
 // Macros like has(), all(), exists(), map(), filter() are expanded in the main AST,
 // but sourceInfo.MacroCalls preserves the original macro call information.
-func findMacroAtOffset(sourceInfo *exprpb.SourceInfo, offset int, exprString string) *celHoverInfo {
+func findMacroAtOffset(sourceInfo *ast.SourceInfo, offset int, exprString string) *celHoverInfo {
 	if sourceInfo == nil {
 		return nil
 	}
 
-	// MacroCalls might be nil if there are no macros
-	if len(sourceInfo.MacroCalls) == 0 {
-		return nil
-	}
-
 	// Process each macro call
-	for macroID, macroExpr := range sourceInfo.MacroCalls {
-		callExpr, ok := macroExpr.ExprKind.(*exprpb.Expr_CallExpr)
-		if !ok {
+	for macroID, macroExpr := range sourceInfo.MacroCalls() {
+		if macroExpr.Kind() != ast.CallKind {
 			continue
 		}
-
-		funcName := callExpr.CallExpr.Function
+		call := macroExpr.AsCall()
+		funcName := call.FunctionName()
 
 		// Only process recognized CEL macros
 		if !isCELMacroFunction(funcName) {
@@ -207,8 +187,8 @@ func findMacroAtOffset(sourceInfo *exprpb.SourceInfo, offset int, exprString str
 		}
 
 		// Get the position of the macro call (rune offset from CEL)
-		celRuneOffset, ok := sourceInfo.Positions[macroID]
-		if !ok {
+		startLoc := sourceInfo.GetStartLocation(macroID)
+		if startLoc.Line() <= 0 {
 			continue
 		}
 
@@ -217,17 +197,18 @@ func findMacroAtOffset(sourceInfo *exprpb.SourceInfo, offset int, exprString str
 		var funcStart, funcEnd int
 		var found bool
 
-		if callExpr.CallExpr.Target != nil {
+		if call.IsMemberFunction() {
 			// Method call - search for ".funcName" after the target
-			targetID := callExpr.CallExpr.Target.Id
-			if targetRuneOffset, ok := sourceInfo.Positions[targetID]; ok {
-				targetByteOffset := celRuneOffsetToByteOffset(exprString, targetRuneOffset)
+			targetID := call.Target().ID()
+			targetLoc := sourceInfo.GetStartLocation(targetID)
+			if targetLoc.Line() > 0 {
+				targetByteOffset := celLocByteOffset(targetLoc.Line(), targetLoc.Column(), sourceInfo, exprString)
 				funcStart, funcEnd = findMethodNameAfterDot(targetByteOffset, funcName, exprString)
 				found = funcStart >= 0
 			}
 		} else {
 			// Standalone function call - CEL position points to opening paren, look backwards
-			celByteOffset := celRuneOffsetToByteOffset(exprString, celRuneOffset)
+			celByteOffset := celLocByteOffset(startLoc.Line(), startLoc.Column(), sourceInfo, exprString)
 			funcStart, funcEnd, found = findStandaloneFunctionName(celByteOffset, funcName, exprString)
 		}
 
@@ -249,35 +230,33 @@ func findMacroAtOffset(sourceInfo *exprpb.SourceInfo, offset int, exprString str
 // walkCELExprForHover walks the CEL AST to find the token at the given offset.
 // Returns the deepest matching expression that contains the offset.
 func walkCELExprForHover(
-	expr *exprpb.Expr,
-	sourceInfo *exprpb.SourceInfo,
-	offsetRanges map[int64]ast.OffsetRange,
+	expr ast.Expr,
+	sourceInfo *ast.SourceInfo,
 	offset int,
 	exprString string,
 	compVars map[string]bool,
 	exprInfo celExpressionInfo,
-	typeMap map[int64]*exprpb.Type,
+	typeMap map[int64]*types.Type,
 ) *celHoverInfo {
-	if expr == nil {
+	if expr == nil || expr.Kind() == ast.UnspecifiedExprKind {
 		return nil
 	}
 
 	// Get the CEL rune offset for this expression and convert to byte offset.
 	// CEL tracks positions as Unicode code point (rune) offsets, not byte offsets.
-	celRuneOffset, ok := sourceInfo.Positions[expr.Id]
-	if !ok {
+	startLoc := sourceInfo.GetStartLocation(expr.ID())
+	if startLoc.Line() <= 0 {
 		return nil
 	}
-	celByteOffset := celRuneOffsetToByteOffset(exprString, celRuneOffset)
+	celByteOffset := celLocByteOffset(startLoc.Line(), startLoc.Column(), sourceInfo, exprString)
 
 	// Variable to hold the best match (deepest expression containing offset)
 	var bestMatch *celHoverInfo
 
-	switch kind := expr.ExprKind.(type) {
-	case *exprpb.Expr_IdentExpr:
+	switch expr.Kind() {
+	case ast.IdentKind:
 		// Identifier reference (variable, field, keyword)
-		ident := kind.IdentExpr
-		identName := ident.Name
+		identName := expr.AsIdent()
 
 		// Determine the hover kind
 		var hoverKind celHoverKind
@@ -291,7 +270,7 @@ func walkCELExprForHover(
 			hoverKind = celHoverField
 		}
 
-		if offsetRange, ok := offsetRanges[expr.Id]; ok {
+		if offsetRange, ok := sourceInfo.GetOffsetRange(expr.ID()); ok {
 			byteStart, byteStop := celOffsetRangeToByteRange(exprString, offsetRange)
 			if offset >= byteStart && offset < byteStop {
 				hoverInfo := &celHoverInfo{
@@ -299,11 +278,11 @@ func walkCELExprForHover(
 					text:   identName,
 					start:  byteStart,
 					end:    byteStop,
-					exprID: expr.Id,
+					exprID: expr.ID(),
 				}
 				// Add type information if available
 				if typeMap != nil {
-					if celType, hasType := typeMap[expr.Id]; hasType {
+					if celType, hasType := typeMap[expr.ID()]; hasType {
 						hoverInfo.celType = celType
 					}
 				}
@@ -311,34 +290,35 @@ func walkCELExprForHover(
 			}
 		}
 
-	case *exprpb.Expr_SelectExpr:
+	case ast.SelectKind:
 		// Field access (target.field)
-		sel := kind.SelectExpr
+		sel := expr.AsSelect()
 
 		// Walk target first (might contain the offset)
-		if sel.Operand != nil {
-			if targetMatch := walkCELExprForHover(sel.Operand, sourceInfo, offsetRanges, offset, exprString, compVars, exprInfo, typeMap); targetMatch != nil {
+		if sel.Operand() != nil {
+			if targetMatch := walkCELExprForHover(sel.Operand(), sourceInfo, offset, exprString, compVars, exprInfo, typeMap); targetMatch != nil {
 				bestMatch = targetMatch
 			}
 		}
 
 		// Check if cursor is on the field name itself
-		if sel.Operand != nil {
-			if targetRuneOffset, ok := sourceInfo.Positions[sel.Operand.Id]; ok {
-				targetByteOffset := celRuneOffsetToByteOffset(exprString, targetRuneOffset)
-				fieldStart, fieldEnd := findMethodNameAfterDot(targetByteOffset, sel.Field, exprString)
+		if sel.Operand() != nil {
+			targetLoc := sourceInfo.GetStartLocation(sel.Operand().ID())
+			if targetLoc.Line() > 0 {
+				targetByteOffset := celLocByteOffset(targetLoc.Line(), targetLoc.Column(), sourceInfo, exprString)
+				fieldStart, fieldEnd := findMethodNameAfterDot(targetByteOffset, sel.FieldName(), exprString)
 				if fieldStart >= 0 && offset >= fieldStart && offset < fieldEnd {
 					// Cursor is on the field name
 					hoverInfo := &celHoverInfo{
 						kind:   celHoverField,
-						text:   sel.Field,
+						text:   sel.FieldName(),
 						start:  fieldStart,
 						end:    fieldEnd,
-						exprID: expr.Id,
+						exprID: expr.ID(),
 					}
 					// Add type information
 					if typeMap != nil {
-						if celType, hasType := typeMap[expr.Id]; hasType {
+						if celType, hasType := typeMap[expr.ID()]; hasType {
 							hoverInfo.celType = celType
 						}
 					}
@@ -349,37 +329,37 @@ func walkCELExprForHover(
 			}
 		}
 
-	case *exprpb.Expr_CallExpr:
+	case ast.CallKind:
 		// Function call or operator
-		call := kind.CallExpr
+		call := expr.AsCall()
 
 		// Walk target first (for method calls)
-		if call.Target != nil {
-			if targetMatch := walkCELExprForHover(call.Target, sourceInfo, offsetRanges, offset, exprString, compVars, exprInfo, typeMap); targetMatch != nil {
+		if call.IsMemberFunction() {
+			if targetMatch := walkCELExprForHover(call.Target(), sourceInfo, offset, exprString, compVars, exprInfo, typeMap); targetMatch != nil {
 				bestMatch = targetMatch
 			}
 		}
 
 		// Walk arguments to see if offset is in any of them
-		for _, arg := range call.Args {
-			if argMatch := walkCELExprForHover(arg, sourceInfo, offsetRanges, offset, exprString, compVars, exprInfo, typeMap); argMatch != nil {
+		for _, arg := range call.Args() {
+			if argMatch := walkCELExprForHover(arg, sourceInfo, offset, exprString, compVars, exprInfo, typeMap); argMatch != nil {
 				bestMatch = argMatch
 			}
 		}
 
-		funcName := call.Function
+		funcName := call.FunctionName()
 
 		// Check if this is an operator
-		if symbol, isOperator := celOperatorSymbol(funcName); isOperator {
-			if offsetRange, ok := offsetRanges[expr.Id]; ok {
+		if _, isOperator := celOperatorSymbol(funcName); isOperator {
+			if offsetRange, ok := sourceInfo.GetOffsetRange(expr.ID()); ok {
 				byteStart, byteStop := celOffsetRangeToByteRange(exprString, offsetRange)
 				if offset >= byteStart && offset < byteStop {
 					bestMatch = &celHoverInfo{
 						kind:   celHoverOperator,
-						text:   symbol, // Store the symbol, not the internal function name
+						text:   funcName,
 						start:  byteStart,
 						end:    byteStop,
-						exprID: expr.Id,
+						exprID: expr.ID(),
 					}
 				}
 			}
@@ -398,10 +378,11 @@ func walkCELExprForHover(
 			var funcStart, funcEnd int
 			var found bool
 
-			if call.Target != nil {
+			if call.IsMemberFunction() {
 				// Method call - search for the function name after the target
-				if targetRuneOffset, ok := sourceInfo.Positions[call.Target.Id]; ok {
-					targetByteOffset := celRuneOffsetToByteOffset(exprString, targetRuneOffset)
+				targetLoc := sourceInfo.GetStartLocation(call.Target().ID())
+				if targetLoc.Line() > 0 {
+					targetByteOffset := celLocByteOffset(targetLoc.Line(), targetLoc.Column(), sourceInfo, exprString)
 					funcStart, funcEnd = findMethodNameAfterDot(targetByteOffset, funcName, exprString)
 					found = funcStart >= 0
 				}
@@ -416,16 +397,14 @@ func walkCELExprForHover(
 					text:   funcName,
 					start:  funcStart,
 					end:    funcEnd,
-					exprID: expr.Id,
+					exprID: expr.ID(),
 				}
 			}
 		}
 
-	case *exprpb.Expr_ConstExpr:
+	case ast.LiteralKind:
 		// Constant literal
-		constExpr := kind.ConstExpr
-
-		if offsetRange, ok := offsetRanges[expr.Id]; ok {
+		if offsetRange, ok := sourceInfo.GetOffsetRange(expr.ID()); ok {
 			byteStart, byteStop := celOffsetRangeToByteRange(exprString, offsetRange)
 			if offset >= byteStart && offset < byteStop {
 				bestMatch = &celHoverInfo{
@@ -433,58 +412,55 @@ func walkCELExprForHover(
 					text:    exprString[byteStart:byteStop],
 					start:   byteStart,
 					end:     byteStop,
-					exprID:  expr.Id,
-					celType: getPrimitiveTypeForConstant(constExpr),
+					exprID:  expr.ID(),
+					celType: getPrimitiveTypeForLiteral(expr),
 				}
 			}
 		}
 
-	case *exprpb.Expr_ListExpr:
+	case ast.ListKind:
 		// List literal - walk all elements
-		list := kind.ListExpr
-		for _, elem := range list.Elements {
-			if elemMatch := walkCELExprForHover(elem, sourceInfo, offsetRanges, offset, exprString, compVars, exprInfo, typeMap); elemMatch != nil {
+		for _, elem := range expr.AsList().Elements() {
+			if elemMatch := walkCELExprForHover(elem, sourceInfo, offset, exprString, compVars, exprInfo, typeMap); elemMatch != nil {
 				bestMatch = elemMatch
 			}
 		}
 
-	case *exprpb.Expr_StructExpr:
-		// Map/struct literal - walk all entries
-		structExpr := kind.StructExpr
-		for _, entry := range structExpr.Entries {
-			// Handle map entries (have a key)
-			if mapKey := entry.GetMapKey(); mapKey != nil {
-				if keyMatch := walkCELExprForHover(mapKey, sourceInfo, offsetRanges, offset, exprString, compVars, exprInfo, typeMap); keyMatch != nil {
-					bestMatch = keyMatch
-				}
+	case ast.MapKind:
+		// Map literal - walk all entries
+		for _, entry := range expr.AsMap().Entries() {
+			mapEntry := entry.AsMapEntry()
+			if keyMatch := walkCELExprForHover(mapEntry.Key(), sourceInfo, offset, exprString, compVars, exprInfo, typeMap); keyMatch != nil {
+				bestMatch = keyMatch
 			}
-			// Walk the value
-			if entry.Value != nil {
-				if valueMatch := walkCELExprForHover(entry.Value, sourceInfo, offsetRanges, offset, exprString, compVars, exprInfo, typeMap); valueMatch != nil {
-					bestMatch = valueMatch
-				}
+			if valueMatch := walkCELExprForHover(mapEntry.Value(), sourceInfo, offset, exprString, compVars, exprInfo, typeMap); valueMatch != nil {
+				bestMatch = valueMatch
 			}
 		}
 
-	case *exprpb.Expr_ComprehensionExpr:
+	case ast.StructKind:
+		// Struct literal - walk all field values
+		for _, field := range expr.AsStruct().Fields() {
+			if fieldMatch := walkCELExprForHover(field.AsStructField().Value(), sourceInfo, offset, exprString, compVars, exprInfo, typeMap); fieldMatch != nil {
+				bestMatch = fieldMatch
+			}
+		}
+
+	case ast.ComprehensionKind:
 		// List comprehension - walk all parts with proper variable scoping
-		comp := kind.ComprehensionExpr
+		comp := expr.AsComprehension()
 
 		// Walk the range and init with current scope (they don't see loop variables)
-		if comp.IterRange != nil {
-			if rangeMatch := walkCELExprForHover(comp.IterRange, sourceInfo, offsetRanges, offset, exprString, compVars, exprInfo, typeMap); rangeMatch != nil {
-				bestMatch = rangeMatch
-			}
+		if rangeMatch := walkCELExprForHover(comp.IterRange(), sourceInfo, offset, exprString, compVars, exprInfo, typeMap); rangeMatch != nil {
+			bestMatch = rangeMatch
 		}
-		if comp.AccuInit != nil {
-			if initMatch := walkCELExprForHover(comp.AccuInit, sourceInfo, offsetRanges, offset, exprString, compVars, exprInfo, typeMap); initMatch != nil {
-				bestMatch = initMatch
-			}
+		if initMatch := walkCELExprForHover(comp.AccuInit(), sourceInfo, offset, exprString, compVars, exprInfo, typeMap); initMatch != nil {
+			bestMatch = initMatch
 		}
 
 		// Create extended scope with comprehension variables for the loop body
 		extendedVars := compVars
-		if comp.IterVar != "" || comp.AccuVar != "" {
+		if comp.IterVar() != "" || comp.AccuVar() != "" {
 			// Copy the current compVars map and add the new variables
 			if compVars != nil {
 				extendedVars = make(map[string]bool, len(compVars)+2)
@@ -492,29 +468,23 @@ func walkCELExprForHover(
 			} else {
 				extendedVars = make(map[string]bool, 2)
 			}
-			if comp.IterVar != "" {
-				extendedVars[comp.IterVar] = true
+			if comp.IterVar() != "" {
+				extendedVars[comp.IterVar()] = true
 			}
-			if comp.AccuVar != "" {
-				extendedVars[comp.AccuVar] = true
+			if comp.AccuVar() != "" {
+				extendedVars[comp.AccuVar()] = true
 			}
 		}
 
 		// Walk the loop body with extended scope (they can see loop variables)
-		if comp.LoopCondition != nil {
-			if condMatch := walkCELExprForHover(comp.LoopCondition, sourceInfo, offsetRanges, offset, exprString, extendedVars, exprInfo, typeMap); condMatch != nil {
-				bestMatch = condMatch
-			}
+		if condMatch := walkCELExprForHover(comp.LoopCondition(), sourceInfo, offset, exprString, extendedVars, exprInfo, typeMap); condMatch != nil {
+			bestMatch = condMatch
 		}
-		if comp.LoopStep != nil {
-			if stepMatch := walkCELExprForHover(comp.LoopStep, sourceInfo, offsetRanges, offset, exprString, extendedVars, exprInfo, typeMap); stepMatch != nil {
-				bestMatch = stepMatch
-			}
+		if stepMatch := walkCELExprForHover(comp.LoopStep(), sourceInfo, offset, exprString, extendedVars, exprInfo, typeMap); stepMatch != nil {
+			bestMatch = stepMatch
 		}
-		if comp.Result != nil {
-			if resultMatch := walkCELExprForHover(comp.Result, sourceInfo, offsetRanges, offset, exprString, extendedVars, exprInfo, typeMap); resultMatch != nil {
-				bestMatch = resultMatch
-			}
+		if resultMatch := walkCELExprForHover(comp.Result(), sourceInfo, offset, exprString, extendedVars, exprInfo, typeMap); resultMatch != nil {
+			bestMatch = resultMatch
 		}
 	}
 
@@ -538,10 +508,6 @@ func formatCELHoverContent(info *celHoverInfo, celEnv *cel.Env) string {
 		}
 		return result
 	case celHoverOperator:
-		// Convert internal operator name to symbol if needed
-		if symbol, ok := celOperatorSymbol(info.text); ok {
-			return getCELOperatorDocs(symbol, celEnv)
-		}
 		return getCELOperatorDocs(info.text, celEnv)
 	case celHoverMacro:
 		return getCELMacroDocs(info.text, celEnv)
@@ -583,7 +549,7 @@ func formatCELHoverContent(info *celHoverInfo, celEnv *cel.Env) string {
 
 // resolveCELFieldAccess resolves a CEL SelectExpr to a proto field/member.
 // Handles expressions like `this.fieldName` or `this.address.city`.
-func resolveCELFieldAccess(sel *exprpb.Expr_Select, exprInfo celExpressionInfo) ir.Member {
+func resolveCELFieldAccess(sel ast.SelectExpr, exprInfo celExpressionInfo) ir.Member {
 	if sel == nil || exprInfo.irMember.IsZero() {
 		return ir.Member{}
 	}
@@ -597,28 +563,23 @@ func resolveCELFieldAccess(sel *exprpb.Expr_Select, exprInfo celExpressionInfo) 
 
 	// Walk the select chain to build the field path
 	currentSel := sel
-	for currentSel != nil {
-		fieldPath = append([]string{currentSel.Field}, fieldPath...)
+	for {
+		fieldPath = append([]string{currentSel.FieldName()}, fieldPath...)
 
 		// Check if the operand is another select expression
-		if currentSel.Operand != nil {
-			if nestedSel, ok := currentSel.Operand.ExprKind.(*exprpb.Expr_SelectExpr); ok {
-				currentSel = nestedSel.SelectExpr
-			} else if ident, ok := currentSel.Operand.ExprKind.(*exprpb.Expr_IdentExpr); ok {
-				// Hit an identifier (should be 'this')
-				if ident.IdentExpr.Name == "this" {
-					// Start resolution from the current field's type
-					break
-				}
-				// Unknown identifier, can't resolve
-				return ir.Member{}
-			} else {
-				// Other expression type, can't resolve
-				return ir.Member{}
-			}
-		} else {
+		operand := currentSel.Operand()
+		if operand == nil || operand.Kind() == ast.UnspecifiedExprKind {
 			break
 		}
+		if operand.Kind() == ast.SelectKind {
+			currentSel = operand.AsSelect()
+			continue
+		}
+		// Non-select operand: must be 'this' to resolve
+		if operand.Kind() != ast.IdentKind || operand.AsIdent() != "this" {
+			return ir.Member{}
+		}
+		break
 	}
 
 	// Now resolve the field path through the type hierarchy
@@ -685,54 +646,26 @@ func getProtoFieldDocumentation(member ir.Member) string {
 }
 
 // getCELTypeString converts a CEL type to a human-readable string.
-func getCELTypeString(t *exprpb.Type) string {
+func getCELTypeString(t *types.Type) string {
 	if t == nil {
 		return "unknown"
 	}
-
-	switch kind := t.TypeKind.(type) {
-	case *exprpb.Type_Primitive:
-		switch kind.Primitive {
-		case exprpb.Type_BOOL:
-			return "bool"
-		case exprpb.Type_INT64:
-			return "int64"
-		case exprpb.Type_UINT64:
-			return "uint64"
-		case exprpb.Type_DOUBLE:
-			return "double"
-		case exprpb.Type_STRING:
-			return "string"
-		case exprpb.Type_BYTES:
-			return "bytes"
-		default:
-			return "unknown"
+	switch t.Kind() {
+	case types.ListKind:
+		params := t.Parameters()
+		if len(params) > 0 {
+			return fmt.Sprintf("list(%s)", getCELTypeString(params[0]))
 		}
-	case *exprpb.Type_ListType_:
-		elemType := getCELTypeString(kind.ListType.ElemType)
-		return fmt.Sprintf("list(%s)", elemType)
-	case *exprpb.Type_MapType_:
-		keyType := getCELTypeString(kind.MapType.KeyType)
-		valueType := getCELTypeString(kind.MapType.ValueType)
-		return fmt.Sprintf("map(%s, %s)", keyType, valueType)
-	case *exprpb.Type_MessageType:
-		return kind.MessageType
-	case *exprpb.Type_TypeParam:
-		return kind.TypeParam
-	case *exprpb.Type_WellKnown:
-		switch kind.WellKnown {
-		case exprpb.Type_ANY:
-			return "any"
-		case exprpb.Type_DURATION:
-			return "duration"
-		case exprpb.Type_TIMESTAMP:
-			return "timestamp"
-		default:
-			return "unknown"
+	case types.MapKind:
+		params := t.Parameters()
+		if len(params) >= 2 {
+			return fmt.Sprintf("map(%s, %s)", getCELTypeString(params[0]), getCELTypeString(params[1]))
 		}
-	default:
-		return "unknown"
 	}
+	if name := t.TypeName(); name != "" {
+		return name
+	}
+	return "unknown"
 }
 
 // getCELKeywordDocs returns documentation for CEL keywords.
@@ -839,48 +772,24 @@ func formatCELDoc(doc *common.Doc, headerPrefix ...string) string {
 	return result.String()
 }
 
-// getCELOperatorDocs returns documentation for CEL operators
-func getCELOperatorDocs(op string, celEnv *cel.Env) string {
-	// Operators are internally represented as functions (e.g., "_&&_", "_||_")
-	// Try to find the internal function name from the operator symbol
-	var internalName string
-	var found bool
-
-	// operators.Find() doesn't work for some operators, so map them manually
-	switch op {
-	case "&&":
-		internalName = operators.LogicalAnd
-		found = true
-	case "||":
-		internalName = operators.LogicalOr
-		found = true
-	case "!":
-		internalName = operators.LogicalNot
-		found = true
-	case "?", "?:":
-		internalName = operators.Conditional
-		found = true
-	case "[]":
-		internalName = operators.Index
-		found = true
-	default:
-		internalName, found = operators.Find(op)
+// getCELOperatorDocs returns documentation for CEL operators.
+// funcName is the internal operator function name (e.g., "_&&_").
+func getCELOperatorDocs(funcName string, celEnv *cel.Env) string {
+	if celEnv == nil {
+		return ""
 	}
-
-	if found {
-		if celEnv != nil {
-			funcs := celEnv.Functions()
-			if funcDecl, ok := funcs[internalName]; ok {
-				if doc := funcDecl.Documentation(); doc != nil {
-					// Use the operator symbol instead of the internal name
-					doc.Name = op
-					return formatCELDoc(doc, "**Operator**: ")
-				}
-				if desc := funcDecl.Description(); desc != "" {
-					return fmt.Sprintf("**Operator**: `%s`\n\n%s", op, desc)
-				}
-			}
-		}
+	funcs := celEnv.Functions()
+	funcDecl, ok := funcs[funcName]
+	if !ok {
+		return ""
+	}
+	symbol, _ := celOperatorSymbol(funcName)
+	if doc := funcDecl.Documentation(); doc != nil {
+		doc.Name = symbol
+		return formatCELDoc(doc, "**Operator**: ")
+	}
+	if desc := funcDecl.Description(); desc != "" {
+		return fmt.Sprintf("**Operator**: `%s`\n\n%s", symbol, desc)
 	}
 	return ""
 }
@@ -935,19 +844,21 @@ func getCELTypeDocs(typeName string, celEnv *cel.Env) string {
 	return fmt.Sprintf("**Type**: `%s`", typeName)
 }
 
-// getPrimitiveTypeForConstant returns the CEL type for a constant expression.
-func getPrimitiveTypeForConstant(constExpr *exprpb.Constant) *exprpb.Type {
-	switch constExpr.ConstantKind.(type) {
-	case *exprpb.Constant_StringValue:
-		return &exprpb.Type{TypeKind: &exprpb.Type_Primitive{Primitive: exprpb.Type_STRING}}
-	case *exprpb.Constant_Int64Value:
-		return &exprpb.Type{TypeKind: &exprpb.Type_Primitive{Primitive: exprpb.Type_INT64}}
-	case *exprpb.Constant_Uint64Value:
-		return &exprpb.Type{TypeKind: &exprpb.Type_Primitive{Primitive: exprpb.Type_UINT64}}
-	case *exprpb.Constant_DoubleValue:
-		return &exprpb.Type{TypeKind: &exprpb.Type_Primitive{Primitive: exprpb.Type_DOUBLE}}
-	case *exprpb.Constant_BoolValue:
-		return &exprpb.Type{TypeKind: &exprpb.Type_Primitive{Primitive: exprpb.Type_BOOL}}
+// getPrimitiveTypeForLiteral returns the CEL type for a literal expression.
+func getPrimitiveTypeForLiteral(expr ast.Expr) *types.Type {
+	switch expr.AsLiteral().(type) {
+	case types.String:
+		return types.StringType
+	case types.Int:
+		return types.IntType
+	case types.Uint:
+		return types.UintType
+	case types.Double:
+		return types.DoubleType
+	case types.Bool:
+		return types.BoolType
+	case types.Bytes:
+		return types.BytesType
 	default:
 		return nil
 	}
