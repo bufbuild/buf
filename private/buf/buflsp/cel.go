@@ -198,7 +198,7 @@ func fileByteOffsetToCELOffset(fileByteOffset int, exprLiteralSpan source.Span) 
 // but ComputeOffset requires int32; the conversion is safe for any realistic
 // CEL expression length.
 func celLocByteOffset(line, col int, sourceInfo *celast.SourceInfo, exprString string) int {
-	runeOffset := int32(col) + sourceInfo.ComputeOffset(int32(line), 0) //nolint:gosec // CEL expressions are never large enough to overflow int32
+	runeOffset := int32(col) + sourceInfo.ComputeOffset(int32(line), 0)
 	return celRuneOffsetToByteOffset(exprString, runeOffset)
 }
 
