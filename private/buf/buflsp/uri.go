@@ -15,26 +15,57 @@
 package buflsp
 
 import (
+	"net/url"
 	"strings"
 
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
 )
 
-// normalizeURI ensures that URIs are properly percent-encoded for LSP compatibility.
-//
-// The go.lsp.dev/uri package (which uses Go's net/url) follows RFC 3986 strictly and
-// allows '@' unencoded in path components. However, VS Code's LSP client uses the
-// microsoft/vscode-uri package which encodes '@' as '%40' everywhere to avoid ambiguity
-// with the authority component separator (user@host).
-//
-// When URIs don't match exactly, LSP operations like go-to-definition fail because
-// the client's URI (with %40) doesn't match the server's URI (with @).
-func normalizeURI(u protocol.URI) protocol.URI {
-	return protocol.URI(strings.ReplaceAll(string(u), "@", "%40"))
+// FilePathToURI converts a file path to a properly encoded URI.
+func FilePathToURI(path string) protocol.URI {
+	return normalizeURI(uri.File(path))
 }
 
-// filePathToURI converts a file path to a properly encoded URI.
-func filePathToURI(path string) protocol.URI {
-	return normalizeURI(uri.File(path))
+// normalizeURI encodes a URI to match VS Code's microsoft/vscode-uri behavior.
+//
+// Go's net/url follows RFC 3986 and permits '@' and ':' unencoded in path
+// components (valid pchar); vscode-uri always encodes them. vscode-uri also
+// lowercases Windows drive letters. When URIs differ, LSP operations like
+// go-to-definition silently fail because the client and server URIs don't match.
+func normalizeURI(u protocol.URI) protocol.URI {
+	str := string(u)
+
+	after, found := strings.CutPrefix(str, "file:///")
+	if !found {
+		// Non-file URIs: only encode @.
+		return protocol.URI(strings.ReplaceAll(str, "@", "%40"))
+	}
+
+	segments := strings.Split(after, "/")
+	for i, segment := range segments {
+		// Decode first to avoid double-encoding already-normalized URIs.
+		// PathUnescape only fails on malformed sequences (e.g. %2G); falling
+		// back to the raw segment is the best we can do.
+		decoded, err := url.PathUnescape(segment)
+		if err != nil {
+			decoded = segment
+		}
+		// PathEscape encodes spaces as %20 (not +) and most special chars,
+		// but permits '@' and ':' as RFC 3986 pchar. Encode those manually.
+		encoded := url.PathEscape(decoded)
+		encoded = strings.ReplaceAll(encoded, "@", "%40")
+		encoded = strings.ReplaceAll(encoded, ":", "%3A")
+		segments[i] = encoded
+	}
+
+	// vscode-uri lowercases Windows drive letters: C%3A → c%3A.
+	// 'A'+32 == 'a' by ASCII identity; segments[0] is e.g. "C%3A" (4 bytes).
+	if len(segments[0]) == 4 &&
+		segments[0][0] >= 'A' && segments[0][0] <= 'Z' &&
+		segments[0][1:] == "%3A" {
+		segments[0] = string(segments[0][0]+32) + "%3A"
+	}
+
+	return protocol.URI("file:///" + strings.Join(segments, "/"))
 }

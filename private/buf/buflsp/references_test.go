@@ -19,10 +19,10 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
-	"go.lsp.dev/uri"
 )
 
 func TestReferences(t *testing.T) {
@@ -37,7 +37,7 @@ func TestReferences(t *testing.T) {
 	require.NoError(t, err)
 
 	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
-	typesURI := uri.New(typesProtoPath)
+	typesURI := buflsp.FilePathToURI(typesProtoPath)
 
 	type refLocation struct {
 		uri  protocol.URI

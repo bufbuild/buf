@@ -146,7 +146,7 @@ func setupLSPServer(
 	})
 
 	testWorkspaceDir := filepath.Dir(testProtoPath)
-	testURI := uri.New(testProtoPath)
+	testURI := buflsp.FilePathToURI(testProtoPath)
 	var initResult protocol.InitializeResult
 	_, initErr := clientJSONConn.Call(ctx, protocol.MethodInitialize, &protocol.InitializeParams{
 		RootURI: uri.New(testWorkspaceDir),

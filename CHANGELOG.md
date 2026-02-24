@@ -2,10 +2,15 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.66.0] - 2026-02-23
+
 - Add LSP comment ignore code action to add comment ignores for lint errors.
 - Fix buf breaking module comparison when adding new modules.
-- Add LSP hover support for protovalidate CEL expressions
-- Fixed offset handling in CEL semantic tokens for non-ASCII content and proto escape sequences in multi-line string literal expressions
+- Add LSP hover support for protovalidate CEL expressions.
+- Fixed offset handling in CEL semantic tokens for non-ASCII content and proto escape sequences in multi-line string literal expressions.
+- Improve URI normalization for the LSP.
 
 ## [v1.65.0] - 2026-02-03
 
@@ -1491,7 +1496,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.65.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.66.0...HEAD
+[v1.66.0]: https://github.com/bufbuild/buf/compare/v1.65.0...v1.66.0
 [v1.65.0]: https://github.com/bufbuild/buf/compare/v1.64.0...v1.65.0
 [v1.64.0]: https://github.com/bufbuild/buf/compare/v1.63.0...v1.64.0
 [v1.63.0]: https://github.com/bufbuild/buf/compare/v1.62.1...v1.63.0
