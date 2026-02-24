@@ -113,10 +113,10 @@ func getCELHover(
 type celHoverInfo struct {
 	kind        celHoverKind
 	text        string
-	start       int          // byte offset in CEL expression
-	end         int          // byte offset in CEL expression
+	start       int         // byte offset in CEL expression
+	end         int         // byte offset in CEL expression
 	celType     *types.Type // from type checker
-	protoMember ir.Member    // resolved proto field
+	protoMember ir.Member   // resolved proto field
 	exprID      int64
 }
 
