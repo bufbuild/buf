@@ -191,7 +191,6 @@ func findMacroAtOffset(sourceInfo *ast.SourceInfo, offset int, exprString string
 		if startLoc.Line() <= 0 {
 			continue
 		}
-		celRuneOffset := int32(startLoc.Column()) + sourceInfo.ComputeOffset(int32(startLoc.Line()), 0)
 
 		// For method-style macros like this.all(...), find the method name after the dot
 		// For standalone macros like has(...), find the function name before the paren
@@ -203,13 +202,13 @@ func findMacroAtOffset(sourceInfo *ast.SourceInfo, offset int, exprString string
 			targetID := call.Target().ID()
 			targetLoc := sourceInfo.GetStartLocation(targetID)
 			if targetLoc.Line() > 0 {
-				targetByteOffset := celRuneOffsetToByteOffset(exprString, int32(targetLoc.Column())+sourceInfo.ComputeOffset(int32(targetLoc.Line()), 0))
+				targetByteOffset := celLocByteOffset(targetLoc.Line(), targetLoc.Column(), sourceInfo, exprString)
 				funcStart, funcEnd = findMethodNameAfterDot(targetByteOffset, funcName, exprString)
 				found = funcStart >= 0
 			}
 		} else {
 			// Standalone function call - CEL position points to opening paren, look backwards
-			celByteOffset := celRuneOffsetToByteOffset(exprString, celRuneOffset)
+			celByteOffset := celLocByteOffset(startLoc.Line(), startLoc.Column(), sourceInfo, exprString)
 			funcStart, funcEnd, found = findStandaloneFunctionName(celByteOffset, funcName, exprString)
 		}
 
@@ -249,7 +248,7 @@ func walkCELExprForHover(
 	if startLoc.Line() <= 0 {
 		return nil
 	}
-	celByteOffset := celRuneOffsetToByteOffset(exprString, int32(startLoc.Column())+sourceInfo.ComputeOffset(int32(startLoc.Line()), 0))
+	celByteOffset := celLocByteOffset(startLoc.Line(), startLoc.Column(), sourceInfo, exprString)
 
 	// Variable to hold the best match (deepest expression containing offset)
 	var bestMatch *celHoverInfo
@@ -306,7 +305,7 @@ func walkCELExprForHover(
 		if sel.Operand() != nil {
 			targetLoc := sourceInfo.GetStartLocation(sel.Operand().ID())
 			if targetLoc.Line() > 0 {
-				targetByteOffset := celRuneOffsetToByteOffset(exprString, int32(targetLoc.Column())+sourceInfo.ComputeOffset(int32(targetLoc.Line()), 0))
+				targetByteOffset := celLocByteOffset(targetLoc.Line(), targetLoc.Column(), sourceInfo, exprString)
 				fieldStart, fieldEnd := findMethodNameAfterDot(targetByteOffset, sel.FieldName(), exprString)
 				if fieldStart >= 0 && offset >= fieldStart && offset < fieldEnd {
 					// Cursor is on the field name
@@ -383,7 +382,7 @@ func walkCELExprForHover(
 				// Method call - search for the function name after the target
 				targetLoc := sourceInfo.GetStartLocation(call.Target().ID())
 				if targetLoc.Line() > 0 {
-					targetByteOffset := celRuneOffsetToByteOffset(exprString, int32(targetLoc.Column())+sourceInfo.ComputeOffset(int32(targetLoc.Line()), 0))
+					targetByteOffset := celLocByteOffset(targetLoc.Line(), targetLoc.Column(), sourceInfo, exprString)
 					funcStart, funcEnd = findMethodNameAfterDot(targetByteOffset, funcName, exprString)
 					found = funcStart >= 0
 				}

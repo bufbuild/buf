@@ -193,6 +193,15 @@ func fileByteOffsetToCELOffset(fileByteOffset int, exprLiteralSpan source.Span) 
 	return -1
 }
 
+// celLocByteOffset converts a CEL source location (line, col) to a byte offset
+// within exprString. line and col come from common.Location, which returns int,
+// but ComputeOffset requires int32; the conversion is safe for any realistic
+// CEL expression length.
+func celLocByteOffset(line, col int, sourceInfo *celast.SourceInfo, exprString string) int {
+	runeOffset := int32(col) + sourceInfo.ComputeOffset(int32(line), 0) //nolint:gosec // CEL expressions are never large enough to overflow int32
+	return celRuneOffsetToByteOffset(exprString, runeOffset)
+}
+
 // celRuneOffsetToByteOffset converts a CEL source position (Unicode code point offset)
 // to a UTF-8 byte offset within the expression string.
 //

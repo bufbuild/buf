@@ -221,8 +221,6 @@ func collectMacroTokens(
 		if startLoc.Line() <= 0 {
 			continue
 		}
-		celRuneOffset := int32(startLoc.Column()) + sourceInfo.ComputeOffset(int32(startLoc.Line()), 0)
-
 		// For method-style macros like this.all(...), we need to find the method name
 		// For standalone macros like has(...), we need to find the function name
 		if call.IsMemberFunction() {
@@ -230,7 +228,7 @@ func collectMacroTokens(
 			targetID := call.Target().ID()
 			targetLoc := sourceInfo.GetStartLocation(targetID)
 			if targetLoc.Line() > 0 {
-				targetByteOffset := celRuneOffsetToByteOffset(exprString, int32(targetLoc.Column())+sourceInfo.ComputeOffset(int32(targetLoc.Line()), 0))
+				targetByteOffset := celLocByteOffset(targetLoc.Line(), targetLoc.Column(), sourceInfo, exprString)
 				tokenSpan := findNameAfterDot(targetByteOffset, funcName, exprString, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeMacro, 0, keyword.Unknown)
@@ -238,7 +236,7 @@ func collectMacroTokens(
 			}
 		} else {
 			// Standalone function call - CEL position points to opening paren, look backwards
-			celByteOffset := celRuneOffsetToByteOffset(exprString, celRuneOffset)
+			celByteOffset := celLocByteOffset(startLoc.Line(), startLoc.Column(), sourceInfo, exprString)
 			funcStart := celByteOffset - len(funcName)
 			funcEnd := funcStart + len(funcName)
 			if funcStart >= 0 && funcEnd <= len(exprString) {
@@ -273,7 +271,7 @@ func walkCELExprWithVars(
 	if startLoc.Line() <= 0 {
 		return
 	}
-	celByteOffset := celRuneOffsetToByteOffset(exprString, int32(startLoc.Column())+sourceInfo.ComputeOffset(int32(startLoc.Line()), 0))
+	celByteOffset := celLocByteOffset(startLoc.Line(), startLoc.Column(), sourceInfo, exprString)
 
 	var tokenSpan source.Span
 
@@ -318,7 +316,7 @@ func walkCELExprWithVars(
 		if sel.Operand() != nil {
 			targetLoc := sourceInfo.GetStartLocation(sel.Operand().ID())
 			if targetLoc.Line() > 0 {
-				targetByteOffset := celRuneOffsetToByteOffset(exprString, int32(targetLoc.Column())+sourceInfo.ComputeOffset(int32(targetLoc.Line()), 0))
+				targetByteOffset := celLocByteOffset(targetLoc.Line(), targetLoc.Column(), sourceInfo, exprString)
 				tokenSpan = findNameAfterDot(targetByteOffset, sel.FieldName(), exprString, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeProperty, 0, keyword.Unknown)
@@ -373,7 +371,7 @@ func walkCELExprWithVars(
 				// Method call - search for the function name after the target
 				targetLoc := sourceInfo.GetStartLocation(call.Target().ID())
 				if targetLoc.Line() > 0 {
-					targetByteOffset := celRuneOffsetToByteOffset(exprString, int32(targetLoc.Column())+sourceInfo.ComputeOffset(int32(targetLoc.Line()), 0))
+					targetByteOffset := celLocByteOffset(targetLoc.Line(), targetLoc.Column(), sourceInfo, exprString)
 					tokenSpan = findNameAfterDot(targetByteOffset, funcName, exprString, exprLiteralSpan)
 					if !tokenSpan.IsZero() {
 						collectToken(tokenSpan, tokenType, tokenModifier, keyword.Unknown)

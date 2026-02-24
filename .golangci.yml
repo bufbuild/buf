@@ -192,11 +192,6 @@ linters:
       - linters:
           - gosec
         # G115 checks for use of truncating conversions.
-        path: private/buf/buflsp/semantic_tokens_cel.go
-        text: "G115:"
-      - linters:
-          - gosec
-        # G115 checks for use of truncating conversions.
         path: private/buf/buflsp/folding_range.go
         text: "G115:"
       - linters:
