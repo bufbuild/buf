@@ -24,7 +24,7 @@ import (
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/ast"
 	"github.com/google/cel-go/common/overloads"
-	exprpb "google.golang.org/genproto/googleapis/api/expr/v1alpha1"
+	"github.com/google/cel-go/common/types"
 )
 
 const (
@@ -175,51 +175,41 @@ func collectCELTokens(
 
 	// Parse the CEL expression (without type-checking) to get syntax highlighting even for invalid expressions
 	// This provides a better user experience as users can see highlighting while writing
-	ast, issues := baseCelEnv.Parse(exprInfo.expression)
+	parsedCELAST, issues := baseCelEnv.Parse(exprInfo.expression)
 	if issues.Err() != nil {
 		// Skip on parse errors (syntax errors)
 		return
 	}
 
 	// Get the native AST which has offset ranges for all expressions
-	nativeAST := ast.NativeRep()
+	nativeAST := parsedCELAST.NativeRep()
 	nativeSourceInfo := nativeAST.SourceInfo()
-	offsetRanges := nativeSourceInfo.OffsetRanges()
-
-	// Get the expression AST and source info (for compatibility with existing code)
-	parsedExpr, err := cel.AstToParsedExpr(ast)
-	if err != nil {
-		return // Skip on error
-	}
-	expr := parsedExpr.GetExpr()
-	sourceInfo := parsedExpr.GetSourceInfo()
 
 	// Walk the CEL AST and collect tokens
-	walkCELExprWithVars(expr, sourceInfo, offsetRanges, exprInfo.span, exprInfo.expression, collectToken, nil)
+	walkCELExprWithVars(nativeAST.Expr(), nativeSourceInfo, exprInfo.span, exprInfo.expression, collectToken, nil)
 
 	// Process macro calls separately since they're expanded in the main AST
 	// but we want to highlight the original macro function names (has, all, exists, map, filter, etc.)
-	collectMacroTokens(sourceInfo, exprInfo.span, exprInfo.expression, collectToken)
+	collectMacroTokens(nativeSourceInfo, exprInfo.span, exprInfo.expression, collectToken)
 }
 
 // collectMacroTokens processes CEL macro calls to highlight macro function names.
 // Macros like has(), all(), exists(), map(), filter() are expanded in the main AST,
 // but CEL preserves the original macro calls in sourceInfo.MacroCalls.
 func collectMacroTokens(
-	sourceInfo *exprpb.SourceInfo,
+	sourceInfo *ast.SourceInfo,
 	exprLiteralSpan source.Span,
 	exprString string,
 	collectToken func(span source.Span, semanticType, semanticModifier uint32, kw keyword.Keyword),
 ) {
 	// Process each macro call
-	for macroID, macroExpr := range sourceInfo.MacroCalls {
+	for macroID, macroExpr := range sourceInfo.MacroCalls() {
 		// Only process call expressions
-		callExpr, ok := macroExpr.ExprKind.(*exprpb.Expr_CallExpr)
-		if !ok {
+		if macroExpr.Kind() != ast.CallKind {
 			continue
 		}
-
-		funcName := callExpr.CallExpr.Function
+		call := macroExpr.AsCall()
+		funcName := call.FunctionName()
 
 		// Only highlight if it's a recognized CEL macro
 		if !isCELMacroFunction(funcName) {
@@ -227,18 +217,20 @@ func collectMacroTokens(
 		}
 
 		// Get the position of the macro call (rune offset from CEL)
-		celRuneOffset, ok := sourceInfo.Positions[macroID]
-		if !ok {
+		startLoc := sourceInfo.GetStartLocation(macroID)
+		if startLoc.Line() <= 0 {
 			continue
 		}
+		celRuneOffset := int32(startLoc.Column()) + sourceInfo.ComputeOffset(int32(startLoc.Line()), 0)
 
 		// For method-style macros like this.all(...), we need to find the method name
 		// For standalone macros like has(...), we need to find the function name
-		if callExpr.CallExpr.Target != nil {
+		if call.IsMemberFunction() {
 			// Method call - search for ".funcName" after the target
-			targetID := callExpr.CallExpr.Target.Id
-			if targetRuneOffset, ok := sourceInfo.Positions[targetID]; ok {
-				targetByteOffset := celRuneOffsetToByteOffset(exprString, targetRuneOffset)
+			targetID := call.Target().ID()
+			targetLoc := sourceInfo.GetStartLocation(targetID)
+			if targetLoc.Line() > 0 {
+				targetByteOffset := celRuneOffsetToByteOffset(exprString, int32(targetLoc.Column())+sourceInfo.ComputeOffset(int32(targetLoc.Line()), 0))
 				tokenSpan := findNameAfterDot(targetByteOffset, funcName, exprString, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeMacro, 0, keyword.Unknown)
@@ -264,33 +256,31 @@ func collectMacroTokens(
 // walkCELExprWithVars recursively walks a CEL expression AST and collects semantic tokens.
 // The compVars parameter tracks comprehension variables in scope.
 func walkCELExprWithVars(
-	expr *exprpb.Expr,
-	sourceInfo *exprpb.SourceInfo,
-	offsetRanges map[int64]ast.OffsetRange,
+	expr ast.Expr,
+	sourceInfo *ast.SourceInfo,
 	exprLiteralSpan source.Span,
 	exprString string,
 	collectToken func(span source.Span, semanticType, semanticModifier uint32, kw keyword.Keyword),
 	compVars map[string]bool,
 ) {
-	if expr == nil {
+	if expr == nil || expr.Kind() == ast.UnspecifiedExprKind {
 		return
 	}
 
 	// Get the CEL rune offset for this expression and convert to byte offset.
 	// CEL tracks positions as Unicode code point (rune) offsets, not byte offsets.
-	celRuneOffset, ok := sourceInfo.Positions[expr.Id]
-	if !ok {
+	startLoc := sourceInfo.GetStartLocation(expr.ID())
+	if startLoc.Line() <= 0 {
 		return
 	}
-	celByteOffset := celRuneOffsetToByteOffset(exprString, celRuneOffset)
+	celByteOffset := celRuneOffsetToByteOffset(exprString, int32(startLoc.Column())+sourceInfo.ComputeOffset(int32(startLoc.Line()), 0))
 
 	var tokenSpan source.Span
 
-	switch kind := expr.ExprKind.(type) {
-	case *exprpb.Expr_IdentExpr:
+	switch expr.Kind() {
+	case ast.IdentKind:
 		// Identifier reference - use offset ranges from CEL's native AST
-		ident := kind.IdentExpr
-		identName := ident.Name
+		identName := expr.AsIdent()
 
 		// Determine the token type
 		var tokenType uint32
@@ -307,7 +297,7 @@ func walkCELExprWithVars(
 			tokenType = semanticTypeProperty
 		}
 
-		if offsetRange, ok := offsetRanges[expr.Id]; ok {
+		if offsetRange, ok := sourceInfo.GetOffsetRange(expr.ID()); ok {
 			byteStart, byteStop := celOffsetRangeToByteRange(exprString, offsetRange)
 			tokenSpan = createCELSpan(byteStart, byteStop, exprLiteralSpan)
 			if !tokenSpan.IsZero() {
@@ -315,42 +305,43 @@ func walkCELExprWithVars(
 			}
 		}
 
-	case *exprpb.Expr_SelectExpr:
+	case ast.SelectKind:
 		// Field access (target.field)
-		sel := kind.SelectExpr
+		sel := expr.AsSelect()
 
 		// Walk target first
-		if sel.Operand != nil {
-			walkCELExprWithVars(sel.Operand, sourceInfo, offsetRanges, exprLiteralSpan, exprString, collectToken, compVars)
+		if sel.Operand() != nil {
+			walkCELExprWithVars(sel.Operand(), sourceInfo, exprLiteralSpan, exprString, collectToken, compVars)
 		}
 
 		// Highlight the field name
-		if sel.Operand != nil {
-			if targetRuneOffset, ok := sourceInfo.Positions[sel.Operand.Id]; ok {
-				targetByteOffset := celRuneOffsetToByteOffset(exprString, targetRuneOffset)
-				tokenSpan = findNameAfterDot(targetByteOffset, sel.Field, exprString, exprLiteralSpan)
+		if sel.Operand() != nil {
+			targetLoc := sourceInfo.GetStartLocation(sel.Operand().ID())
+			if targetLoc.Line() > 0 {
+				targetByteOffset := celRuneOffsetToByteOffset(exprString, int32(targetLoc.Column())+sourceInfo.ComputeOffset(int32(targetLoc.Line()), 0))
+				tokenSpan = findNameAfterDot(targetByteOffset, sel.FieldName(), exprString, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
 					collectToken(tokenSpan, semanticTypeProperty, 0, keyword.Unknown)
 				}
 			}
 		}
 
-	case *exprpb.Expr_CallExpr:
+	case ast.CallKind:
 		// Function call (or operator)
-		call := kind.CallExpr
+		call := expr.AsCall()
 
 		// Walk target first (for method calls)
-		if call.Target != nil {
-			walkCELExprWithVars(call.Target, sourceInfo, offsetRanges, exprLiteralSpan, exprString, collectToken, compVars)
+		if call.IsMemberFunction() {
+			walkCELExprWithVars(call.Target(), sourceInfo, exprLiteralSpan, exprString, collectToken, compVars)
 		}
 
-		funcName := call.Function
+		funcName := call.FunctionName()
 
 		// Check if this is an operator (CEL represents operators as functions with special names)
 		// Operators in CEL have names like _&&_, _||_, _>_, _==_, etc.
 		if _, isOperator := celOperatorSymbol(funcName); isOperator {
 			// This is an operator - use offset ranges from CEL's native AST
-			if offsetRange, ok := offsetRanges[expr.Id]; ok {
+			if offsetRange, ok := sourceInfo.GetOffsetRange(expr.ID()); ok {
 				byteStart, byteStop := celOffsetRangeToByteRange(exprString, offsetRange)
 				tokenSpan = createCELSpan(byteStart, byteStop, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
@@ -370,7 +361,7 @@ func walkCELExprWithVars(
 				// Built-in type conversion functions (int, uint, string, etc.)
 				tokenType = semanticTypeType
 				tokenModifier = semanticModifierDefaultLibrary
-			} else if call.Target != nil {
+			} else if call.IsMemberFunction() {
 				// Method call (e.g., this.size())
 				tokenType = semanticTypeMethod
 			} else {
@@ -378,10 +369,11 @@ func walkCELExprWithVars(
 				tokenType = semanticTypeFunction
 			}
 
-			if call.Target != nil {
+			if call.IsMemberFunction() {
 				// Method call - search for the function name after the target
-				if targetRuneOffset, ok := sourceInfo.Positions[call.Target.Id]; ok {
-					targetByteOffset := celRuneOffsetToByteOffset(exprString, targetRuneOffset)
+				targetLoc := sourceInfo.GetStartLocation(call.Target().ID())
+				if targetLoc.Line() > 0 {
+					targetByteOffset := celRuneOffsetToByteOffset(exprString, int32(targetLoc.Column())+sourceInfo.ComputeOffset(int32(targetLoc.Line()), 0))
 					tokenSpan = findNameAfterDot(targetByteOffset, funcName, exprString, exprLiteralSpan)
 					if !tokenSpan.IsZero() {
 						collectToken(tokenSpan, tokenType, tokenModifier, keyword.Unknown)
@@ -404,18 +396,16 @@ func walkCELExprWithVars(
 		}
 
 		// Walk arguments
-		for _, arg := range call.Args {
-			walkCELExprWithVars(arg, sourceInfo, offsetRanges, exprLiteralSpan, exprString, collectToken, compVars)
+		for _, arg := range call.Args() {
+			walkCELExprWithVars(arg, sourceInfo, exprLiteralSpan, exprString, collectToken, compVars)
 		}
 
-	case *exprpb.Expr_ConstExpr:
+	case ast.LiteralKind:
 		// Constant literal
-		constExpr := kind.ConstExpr
-
-		switch constExpr.ConstantKind.(type) {
-		case *exprpb.Constant_StringValue:
+		switch expr.AsLiteral().(type) {
+		case types.String:
 			// String literal - use offset ranges from CEL's native AST
-			if offsetRange, ok := offsetRanges[expr.Id]; ok {
+			if offsetRange, ok := sourceInfo.GetOffsetRange(expr.ID()); ok {
 				byteStart, byteStop := celOffsetRangeToByteRange(exprString, offsetRange)
 				tokenSpan = createCELSpan(byteStart, byteStop, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
@@ -423,9 +413,9 @@ func walkCELExprWithVars(
 				}
 			}
 
-		case *exprpb.Constant_Int64Value, *exprpb.Constant_Uint64Value, *exprpb.Constant_DoubleValue:
+		case types.Int, types.Uint, types.Double:
 			// Number literal - use offset ranges from CEL's native AST
-			if offsetRange, ok := offsetRanges[expr.Id]; ok {
+			if offsetRange, ok := sourceInfo.GetOffsetRange(expr.ID()); ok {
 				byteStart, byteStop := celOffsetRangeToByteRange(exprString, offsetRange)
 				tokenSpan = createCELSpan(byteStart, byteStop, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
@@ -433,9 +423,9 @@ func walkCELExprWithVars(
 				}
 			}
 
-		case *exprpb.Constant_BoolValue:
+		case types.Bool:
 			// Boolean literal - use offset ranges from CEL's native AST
-			if offsetRange, ok := offsetRanges[expr.Id]; ok {
+			if offsetRange, ok := sourceInfo.GetOffsetRange(expr.ID()); ok {
 				byteStart, byteStop := celOffsetRangeToByteRange(exprString, offsetRange)
 				tokenSpan = createCELSpan(byteStart, byteStop, exprLiteralSpan)
 				if !tokenSpan.IsZero() {
@@ -444,42 +434,37 @@ func walkCELExprWithVars(
 			}
 		}
 
-	case *exprpb.Expr_ListExpr:
+	case ast.ListKind:
 		// List literal - walk all elements
-		list := kind.ListExpr
-		for _, elem := range list.Elements {
-			walkCELExprWithVars(elem, sourceInfo, offsetRanges, exprLiteralSpan, exprString, collectToken, compVars)
+		for _, elem := range expr.AsList().Elements() {
+			walkCELExprWithVars(elem, sourceInfo, exprLiteralSpan, exprString, collectToken, compVars)
 		}
 
-	case *exprpb.Expr_StructExpr:
-		// Map/struct literal - walk all entries
-		structExpr := kind.StructExpr
-		for _, entry := range structExpr.Entries {
-			// Handle map entries (have a key)
-			if mapKey := entry.GetMapKey(); mapKey != nil {
-				walkCELExprWithVars(mapKey, sourceInfo, offsetRanges, exprLiteralSpan, exprString, collectToken, compVars)
-			}
-			// Walk the value
-			if entry.Value != nil {
-				walkCELExprWithVars(entry.Value, sourceInfo, offsetRanges, exprLiteralSpan, exprString, collectToken, compVars)
-			}
+	case ast.MapKind:
+		// Map literal - walk all entries
+		for _, entry := range expr.AsMap().Entries() {
+			mapEntry := entry.AsMapEntry()
+			walkCELExprWithVars(mapEntry.Key(), sourceInfo, exprLiteralSpan, exprString, collectToken, compVars)
+			walkCELExprWithVars(mapEntry.Value(), sourceInfo, exprLiteralSpan, exprString, collectToken, compVars)
 		}
 
-	case *exprpb.Expr_ComprehensionExpr:
+	case ast.StructKind:
+		// Struct literal - walk all field values
+		for _, field := range expr.AsStruct().Fields() {
+			walkCELExprWithVars(field.AsStructField().Value(), sourceInfo, exprLiteralSpan, exprString, collectToken, compVars)
+		}
+
+	case ast.ComprehensionKind:
 		// List comprehension - walk all parts
-		comp := kind.ComprehensionExpr
+		comp := expr.AsComprehension()
 
 		// Walk the range and init with current scope (they don't see loop variables)
-		if comp.IterRange != nil {
-			walkCELExprWithVars(comp.IterRange, sourceInfo, offsetRanges, exprLiteralSpan, exprString, collectToken, compVars)
-		}
-		if comp.AccuInit != nil {
-			walkCELExprWithVars(comp.AccuInit, sourceInfo, offsetRanges, exprLiteralSpan, exprString, collectToken, compVars)
-		}
+		walkCELExprWithVars(comp.IterRange(), sourceInfo, exprLiteralSpan, exprString, collectToken, compVars)
+		walkCELExprWithVars(comp.AccuInit(), sourceInfo, exprLiteralSpan, exprString, collectToken, compVars)
 
 		// Create extended scope with comprehension variables for the loop body
 		extendedVars := compVars
-		if comp.IterVar != "" || comp.AccuVar != "" {
+		if comp.IterVar() != "" || comp.AccuVar() != "" {
 			// Copy the current compVars map and add the new variables
 			if compVars != nil {
 				extendedVars = make(map[string]bool, len(compVars)+2)
@@ -487,23 +472,17 @@ func walkCELExprWithVars(
 			} else {
 				extendedVars = make(map[string]bool, 2)
 			}
-			if comp.IterVar != "" {
-				extendedVars[comp.IterVar] = true
+			if comp.IterVar() != "" {
+				extendedVars[comp.IterVar()] = true
 			}
-			if comp.AccuVar != "" {
-				extendedVars[comp.AccuVar] = true
+			if comp.AccuVar() != "" {
+				extendedVars[comp.AccuVar()] = true
 			}
 		}
 
 		// Walk the loop body with extended scope (they can see loop variables)
-		if comp.LoopCondition != nil {
-			walkCELExprWithVars(comp.LoopCondition, sourceInfo, offsetRanges, exprLiteralSpan, exprString, collectToken, extendedVars)
-		}
-		if comp.LoopStep != nil {
-			walkCELExprWithVars(comp.LoopStep, sourceInfo, offsetRanges, exprLiteralSpan, exprString, collectToken, extendedVars)
-		}
-		if comp.Result != nil {
-			walkCELExprWithVars(comp.Result, sourceInfo, offsetRanges, exprLiteralSpan, exprString, collectToken, extendedVars)
-		}
+		walkCELExprWithVars(comp.LoopCondition(), sourceInfo, exprLiteralSpan, exprString, collectToken, extendedVars)
+		walkCELExprWithVars(comp.LoopStep(), sourceInfo, exprLiteralSpan, exprString, collectToken, extendedVars)
+		walkCELExprWithVars(comp.Result(), sourceInfo, exprLiteralSpan, exprString, collectToken, extendedVars)
 	}
 }
