@@ -751,7 +751,9 @@ func (c *controller) GetMessage(
 	}
 	var validator protoyaml.Validator
 	if functionOptions.messageValidation {
-		protovalidateValidator, err := protovalidate.New()
+		protovalidateValidator, err := protovalidate.New(
+			protovalidate.WithExtensionTypeResolver(schemaImage.Resolver()),
+		)
 		if err != nil {
 			return nil, 0, err
 		}

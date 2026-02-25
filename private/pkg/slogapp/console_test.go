@@ -22,6 +22,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -44,7 +45,7 @@ func TestIsWriterTTY(t *testing.T) {
 func TestConsoleLogOutput(t *testing.T) {
 	t.Parallel()
 
-	testConsolLogOutput(t, func(logger *slog.Logger) {
+	testConsoleLogOutput(t, func(logger *slog.Logger) {
 		logger.Info("hello", slog.String("a", "b"))
 		logger.Info("hello world")
 	}, []map[string]any{{
@@ -56,7 +57,7 @@ func TestConsoleLogOutput(t *testing.T) {
 		slog.MessageKey: "hello world",
 	}}, withConsoleColor(true))
 
-	testConsolLogOutput(t, func(logger *slog.Logger) {
+	testConsoleLogOutput(t, func(logger *slog.Logger) {
 		logger.Info("info", slog.String("a", "b"))
 		logger.Error("error")
 	}, []map[string]any{{
@@ -68,7 +69,7 @@ func TestConsoleLogOutput(t *testing.T) {
 		slog.MessageKey: "error",
 	}})
 
-	testConsolLogOutput(t, func(logger *slog.Logger) {
+	testConsoleLogOutput(t, func(logger *slog.Logger) {
 		logger = logger.With(slog.String("a", "b"))
 		logger = logger.WithGroup("g")
 		logger.Error("error message", slog.String("c", "d"))
@@ -87,7 +88,7 @@ func TestConsoleLogOutput(t *testing.T) {
 		"a":             "b",
 	}}, withConsoleColor(true))
 
-	testConsolLogOutput(t, func(logger *slog.Logger) {
+	testConsoleLogOutput(t, func(logger *slog.Logger) {
 		logger.Info("key spaces", slog.String("a key", "with spaces"))
 	}, []map[string]any{{
 		slog.LevelKey:   colorize("INFO", getColor(slog.LevelInfo)),
@@ -96,7 +97,7 @@ func TestConsoleLogOutput(t *testing.T) {
 	}}, withConsoleColor(true))
 }
 
-func testConsolLogOutput(t *testing.T, run func(logger *slog.Logger), expects []map[string]any, options ...consoleHandlerOption) {
+func testConsoleLogOutput(t *testing.T, run func(logger *slog.Logger), expects []map[string]any, options ...consoleHandlerOption) {
 	t.Helper()
 	var buf bytes.Buffer
 	consoleHandler := newConsoleHandler(&buf, slog.LevelInfo, options...)
@@ -118,16 +119,31 @@ func testConsolLogOutput(t *testing.T, run func(logger *slog.Logger), expects []
 	require.Equal(t, len(expects), len(outputs))
 	for i := range len(outputs) {
 		output, expect := outputs[i], expects[i]
+		// Verify the timestamp is present and parseable, then remove it before
+		// comparing the rest of the output (timestamps are dynamic).
+		ts, ok := output[slog.TimeKey]
+		if assert.True(t, ok, "expected timestamp in log output") {
+			timestamp, ok := ts.(string)
+			assert.True(t, ok, "expected timestamp to be string type in log output")
+			_, err := time.Parse(time.RFC3339, timestamp)
+			assert.NoError(t, err, "timestamp should be valid RFC3339")
+		}
+		delete(output, slog.TimeKey)
 		assert.Equal(t, expect, output)
 	}
 }
 
-// testParseLogLine passes the output of a single log line.
+// testParseLogLine parses the output of a single log line.
+// The format is: TIME\tLEVEL\tMESSAGE\t{...JSON attrs...}\n
 func testParseLogLine(lineBytes []byte) (map[string]any, error) {
 	top := map[string]any{}
 	line := string(bytes.TrimSpace(lineBytes))
-	index, line, _ := strings.Cut(line, consoleSeparator)
-	top[slog.LevelKey] = index
+	// First field is the timestamp.
+	timestamp, line, _ := strings.Cut(line, consoleSeparator)
+	top[slog.TimeKey] = timestamp
+	// Second field is the level.
+	level, line, _ := strings.Cut(line, consoleSeparator)
+	top[slog.LevelKey] = level
 	if len(line) == 0 {
 		return top, nil
 	}
