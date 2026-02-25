@@ -439,6 +439,13 @@ func (s *server) Completion(
 	if file == nil {
 		return nil, nil
 	}
+
+	// First, try CEL completion when the cursor is inside a protovalidate expression.
+	if celItems := getCELCompletionItems(file, params.Position, s.celEnv); celItems != nil {
+		return &protocol.CompletionList{Items: celItems}, nil
+	}
+
+	// Fall back to proto-level completions.
 	items := getCompletionItems(ctx, file, params.Position)
 	if len(items) == 0 {
 		return nil, nil

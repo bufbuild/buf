@@ -571,6 +571,22 @@ func TestCELHover(t *testing.T) {
 			char:     33,
 			expected: "**Operator**: `&&`\n\nlogically AND two boolean values. Errors and unknown values\nare valid inputs and will not halt evaluation.\n\n**Overloads**:\n- `bool && bool -> bool`",
 		},
+		{
+			// `this.name` in the message-level expression; hovering over `name` should
+			// resolve to CELMessageTest.name (string, field 1).
+			name:     "message-level: field access name",
+			line:     377,
+			char:     22, // `n` of `name` in `this.name != ''`
+			expected: "**Field**: `name`\n\n**Proto Field**: `test.cel.v1.CELMessageTest.name`\n\n**Field Number**: 1\n\n**Proto Type**: `string`\n\nencoded (hex): `0A` (1 byte)",
+		},
+		{
+			// `this.value` in the message-level expression; hovering over `value` should
+			// resolve to CELMessageTest.value (int32, field 2).
+			name:     "message-level: field access value",
+			line:     377,
+			char:     41, // `v` of `value` in `this.value > 0`
+			expected: "**Field**: `value`\n\n**Proto Field**: `test.cel.v1.CELMessageTest.value`\n\n**Field Number**: 2\n\n**Proto Type**: `int32`\n\nencoded (hex): `10` (1 byte)",
+		},
 	}
 
 	for _, tc := range testCases {

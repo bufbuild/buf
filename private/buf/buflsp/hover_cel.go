@@ -550,13 +550,13 @@ func formatCELHoverContent(info *celHoverInfo, celEnv *cel.Env) string {
 // resolveCELFieldAccess resolves a CEL SelectExpr to a proto field/member.
 // Handles expressions like `this.fieldName` or `this.address.city`.
 func resolveCELFieldAccess(sel ast.SelectExpr, exprInfo celExpressionInfo) ir.Member {
-	if sel == nil || exprInfo.irMember.IsZero() {
+	if sel == nil || exprInfo.thisIRType.IsZero() {
 		return ir.Member{}
 	}
 
-	// Start from the context field (the field being validated)
-	// For field-level validation, exprInfo.irMember is the field
-	currentType := exprInfo.irMember.Element()
+	// Start from the `this` type: the field's element type for field-level rules,
+	// or the message type itself for message-level rules.
+	currentType := exprInfo.thisIRType
 
 	// Build the field path by walking up the select chain
 	var fieldPath []string

@@ -1,0 +1,225 @@
+syntax = "proto3";
+
+package test.celcompletion.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+// Address is used for testing message-field completions.
+message Address {
+  // The city name.
+  string city = 1;
+  // The country code.
+  string country = 2;
+  // The ZIP or postal code.
+  int32 zip_code = 3 [deprecated = true];
+}
+
+// Location wraps Address for testing nested path completions.
+message Location {
+  Address address = 1;
+}
+
+message CELCompletion {
+  // test_dot: cursor after "this." should yield member completions.
+  string test_dot = 1 [(buf.validate.field).cel = {
+    id: "test.dot"
+    expression: "this."
+  }];
+
+  // test_empty: cursor inside "" should yield all (global, macro, keyword) completions.
+  string test_empty = 2 [(buf.validate.field).cel = {
+    id: "test.empty"
+    expression: ""
+  }];
+
+  // test_operator: cursor after "1 > " — inside CEL expression after operator.
+  // The `>` operator has mixed-type overloads so type narrowing does not apply.
+  string test_operator = 3 [(buf.validate.field).cel = {
+    id: "test.operator"
+    expression: "1 > "
+  }];
+
+  // test_eq: cursor after "true == " — `==` has a single type-param overload.
+  // With bool left side, expectedType narrows to bool, filtering out int-return functions.
+  bool test_eq = 4 [(buf.validate.field).cel = {
+    id: "test.eq"
+    expression: "true == "
+  }];
+
+  // test_prefix: cursor at closing `"` of `"th"` — prefix "th" filters completions
+  // to only items starting with "th", which is "this".
+  string test_prefix = 5 [(buf.validate.field).cel = {
+    id: "test.prefix"
+    expression: "th"
+  }];
+
+  // test_midword: cursor placed mid-token inside a fully written expression.
+  // No completion should be offered since the token is already complete.
+  string test_midword = 6 [(buf.validate.field).cel = {
+    id: "test.midword"
+    expression: "size(this) > 0"
+  }];
+
+  // test_cel_expr: the cel_expression field is a direct string (not a Rule message).
+  // Cursor after "this." should yield member completions via the alternate extraction path.
+  string test_cel_expr = 7 [(buf.validate.field).cel_expression = "this."];
+
+  // test_msg_dot: cursor after "this." on a message-typed field should yield
+  // the fields of Address as completions.
+  Address test_msg = 8 [(buf.validate.field).cel = {
+    id: "test.msg.dot"
+    expression: "this."
+  }];
+
+  // test_not: cursor after "!" should narrow completions to bool-returning items.
+  bool test_not = 9 [(buf.validate.field).cel = {
+    id: "test.not"
+    expression: "!"
+  }];
+
+  // test_nested: cursor at end of "this.address.ci" — nested path through a message-typed
+  // field. Prefix "ci" should yield only city from Address.
+  Location test_nested = 10 [(buf.validate.field).cel = {
+    id: "test.nested"
+    expression: "this.address.ci"
+  }];
+
+  // test_has: cursor after "has(this." — inside the has() macro argument.
+  // Should yield Address field completions (city, country, zip_code).
+  Address test_has = 11 [(buf.validate.field).cel = {
+    id: "test.has"
+    expression: "has(this."
+  }];
+
+  // test_has_nested: has() with a nested path "has(this.address.ci".
+  // Prefix "ci" filters to only the city field from Address.
+  Location test_has_nested = 12 [(buf.validate.field).cel = {
+    id: "test.has.nested"
+    expression: "has(this.address.ci"
+  }];
+
+  // test_now_dot: cursor after "now." — now is protovalidate's Timestamp variable.
+  // Timestamp methods (getFullYear, getHours, etc.) should be offered.
+  string test_now_dot = 13 [(buf.validate.field).cel = {
+    id: "test.now.dot"
+    expression: "now."
+  }];
+
+  // test_repeated_dot: cursor after "this." on a repeated Address field.
+  // CEL treats repeated proto fields as lists; list methods should be offered.
+  repeated Address test_repeated = 14 [(buf.validate.field).cel = {
+    id: "test.repeated.dot"
+    expression: "this."
+  }];
+
+  // test_map_dot: cursor after "this." on a map<string, string> field.
+  // CEL treats map fields as maps; map methods (e.g. size) should be offered.
+  map<string, string> test_map = 15 [(buf.validate.field).cel = {
+    id: "test.map.dot"
+    expression: "this."
+  }];
+}
+
+// CELCompletionMsg exercises message-level CEL rules.
+message CELCompletionMsg {
+  option (buf.validate.message).cel = {
+    id: "test.msg"
+    expression: "this."
+  };
+  string name = 1;
+}
+
+// CELCompletionIter exercises iteration variable completions in comprehension macros.
+message CELCompletionIter {
+  repeated Address items = 1;
+
+  option (buf.validate.message).cel = {
+    id: "test.iter"
+    expression: "this.items.filter(addr, addr."
+  };
+}
+
+// Item is used for testing nested comprehension completions.
+message Item {
+  string label = 1;
+  repeated Address addresses = 2;
+}
+
+// CELCompletionIterNested exercises nested comprehension iteration variable completions.
+// The inner iter var `addr` is bound to Address elements from `item.addresses`.
+message CELCompletionIterNested {
+  repeated Item items = 1;
+
+  option (buf.validate.message).cel = {
+    id: "test.iter.nested"
+    expression: "this.items.filter(item, item.addresses.filter(addr, addr."
+  };
+}
+
+// WKTHolder exercises completions on well-known-type fields.
+// Completing `this.` on a google.protobuf.Timestamp field should offer both
+// the proto fields (seconds, nanos) and CEL Timestamp methods (getFullYear, etc.).
+message WKTHolder {
+  google.protobuf.Timestamp created_at = 1 [(buf.validate.field).cel = {
+    id: "wkt.created_at"
+    expression: "this."
+  }];
+}
+
+// OneofHolder exercises completions on messages that contain oneof fields.
+// Oneof member fields are regular (non-synthetic) members in the proto IR
+// and must appear in `this.` completions.
+message OneofHolder {
+  option (buf.validate.message).cel = {
+    id: "oneof.rule"
+    expression: "this."
+  };
+
+  oneof payload {
+    string text = 1;
+    int32 code = 2;
+    Address location = 3;
+  }
+}
+
+// RepeatedPathHolder exercises completions when the cursor is after a
+// repeated-field path (e.g. "this.items."). The receiver `this.items` is a
+// list, so list methods and macros should be offered — not Address fields.
+message RepeatedPathHolder {
+  repeated Address items = 1;
+
+  option (buf.validate.message).cel = {
+    id: "repeated.path"
+    expression: "this.items."
+  };
+}
+
+// IndexAccessHolder exercises completions after bracket-index expressions.
+// - "this.items[0]."     → Address fields (list element access)
+// - "this.locations["key"]." → Address fields (map value access)
+message IndexAccessHolder {
+  repeated Address items = 1;
+  map<string, Address> locations = 2;
+
+  option (buf.validate.message).cel = {
+    id: "index.list"
+    expression: "this.items[0]."
+  };
+  option (buf.validate.message).cel = {
+    id: "index.map"
+    expression: "this.locations[\"key\"]."
+  };
+}
+
+// ChainedComprehensionHolder exercises completions in chained comprehension macros.
+// A filter result is piped into all(); the inner iter var `addr` is bound to
+// Address elements from the outer filter and must yield Address field completions.
+message ChainedComprehensionHolder {
+  repeated Address items = 1;
+
+  option (buf.validate.message).cel = {
+    id: "chained.comp"
+    expression: "this.items.filter(item, item.zip_code > 0).all(addr, addr."
+  };
+}

@@ -23,6 +23,13 @@ import (
 	"github.com/google/cel-go/common/operators"
 )
 
+// celIsIdentChar reports whether c is a valid CEL identifier character:
+// ASCII letter, digit, or underscore. This mirrors the CEL spec's IDENT token
+// rule; there is no public API for this in cel-go.
+func celIsIdentChar(c byte) bool {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'
+}
+
 // isCELKeyword returns true if the identifier is a CEL reserved keyword.
 // See https://github.com/google/cel-spec/blob/master/doc/langdef.md#syntax
 func isCELKeyword(name string) bool {

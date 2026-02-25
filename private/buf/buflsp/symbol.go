@@ -525,33 +525,14 @@ func protowireTypeForPredeclared(name predeclared.Name) protowire.Type {
 	return protowire.BytesType
 }
 
-// getDocsFromComments is a helper function that gets the doc string from the comments from
-// the definition AST, if available.
-// This helper function expects that imports, tags, and predeclared (builtin) types are
-// already handled, since those types currently do not get docs from their comments.
-func (s *symbol) getDocsFromComments() string {
-	if s.def == nil {
-		return ""
-	}
-	var def ast.DeclDef
-	switch s.kind.(type) {
-	case *referenceable:
-		referenceable, _ := s.kind.(*referenceable)
-		def = referenceable.ast
-	case *static:
-		static, _ := s.kind.(*static)
-		def = static.ast
-	case *reference:
-		reference, _ := s.kind.(*reference)
-		def = reference.def
-	case *option:
-		option, _ := s.kind.(*option)
-		def = option.def
-	}
+// leadingDocComments extracts the leading doc comments immediately preceding def
+// from the token stream and returns them as a trimmed markdown string.
+// Returns "" if def is zero, has no leading comments, or if a blank line separates
+// the comments from the definition.
+func leadingDocComments(def ast.DeclDef) string {
 	if def.IsZero() {
 		return ""
 	}
-
 	var comments []string
 	// We drop the other side of "Around" because we only care about the beginning -- we're
 	// traversing backwards for leading comments only.
@@ -585,13 +566,42 @@ func (s *symbol) getDocsFromComments() string {
 		}
 	}
 	comments = lineUpComments(comments)
-	// Reverse the list and return joined.
 	slices.Reverse(comments)
-
 	var docs strings.Builder
 	for _, comment := range comments {
 		docs.WriteString(comment)
 	}
+	return strings.TrimRight(docs.String(), "\n")
+}
+
+// getDocsFromComments is a helper function that gets the doc string from the comments from
+// the definition AST, if available.
+// This helper function expects that imports, tags, and predeclared (builtin) types are
+// already handled, since those types currently do not get docs from their comments.
+func (s *symbol) getDocsFromComments() string {
+	if s.def == nil {
+		return ""
+	}
+	var def ast.DeclDef
+	switch s.kind.(type) {
+	case *referenceable:
+		referenceable, _ := s.kind.(*referenceable)
+		def = referenceable.ast
+	case *static:
+		static, _ := s.kind.(*static)
+		def = static.ast
+	case *reference:
+		reference, _ := s.kind.(*reference)
+		def = reference.def
+	case *option:
+		option, _ := s.kind.(*option)
+		def = option.def
+	}
+	if def.IsZero() {
+		return ""
+	}
+
+	docs := leadingDocComments(def)
 
 	// If the file is a remote dependency, link to BSR docs.
 	if s.def != nil && s.def.file != nil && !s.def.file.IsLocal() {
@@ -639,8 +649,7 @@ func (s *symbol) getDocsFromComments() string {
 				url = bsrURL(module, packageName, bsrAnchor, bsrTabTypeDocs)
 			}
 			if url != "" {
-				fmt.Fprintf(
-					&docs,
+				docs += fmt.Sprintf(
 					"\n[`%s` on the Buf Schema Registry](%s)\n",
 					defFullName,
 					url,
@@ -648,7 +657,7 @@ func (s *symbol) getDocsFromComments() string {
 			}
 		}
 	}
-	return docs.String()
+	return docs
 }
 
 // commentToMarkdown processes comment strings and formats them for markdown display.
