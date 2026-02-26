@@ -19,9 +19,8 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"strings"
+	"fmt"
 	"testing"
-	"time"
 
 	"buf.build/go/app"
 	"buf.build/go/app/appext"
@@ -55,7 +54,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 			return nil, errors.New("error auth token")
 		}
 		return nil, nil
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
+	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 
 	getMachineForName := func(app.EnvContainer, string) (netrc.Machine, error) {
@@ -68,7 +67,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 			return nil, errors.New("error auth token")
 		}
 		return nil, nil
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
+	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 
 	// testing using tokenSet over netrc tokenToAuthKey
@@ -77,7 +76,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 			return nil, errors.New("error auth token")
 		}
 		return nil, nil
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
+	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 
 	// testing using netrc tokenToAuthKey over tokenSet
@@ -86,7 +85,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 			return nil, errors.New("error auth token")
 		}
 		return nil, nil
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
+	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 
 	_, err = NewAuthorizationInterceptorProvider()("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
@@ -94,7 +93,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 			return nil, errors.New("error auth token")
 		}
 		return nil, nil
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
+	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 
 	tokenSet, err = NewTokenProviderFromContainer(app.NewEnvContainer(map[string]string{
@@ -103,7 +102,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 	assert.NoError(t, err)
 	_, err = NewAuthorizationInterceptorProvider(tokenSet)("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		return nil, errors.New("underlying cause")
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
+	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	authErr, ok := AsAuthError(err)
 	assert.True(t, ok)
 	assert.Equal(t, TokenEnvKey, authErr.tokenEnvKey)
@@ -120,15 +119,15 @@ func TestCLIWarningInterceptor(t *testing.T) {
 		resp := connect.NewResponse(&bytes.Buffer{})
 		resp.Header().Set(CLIWarningHeaderName, base64.StdEncoding.EncodeToString([]byte(warningMessage)))
 		return resp, nil
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
+	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
-	assertWarnLog(t, warningMessage, buf.String())
+	assert.Equal(t, fmt.Sprintf("WARN\t%s\n", warningMessage), buf.String())
 
 	// testing no warning message in valid response with no header
 	buf.Reset()
 	_, err = NewCLIWarningInterceptor(appext.NewLoggerContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		return connect.NewResponse(&bytes.Buffer{}), nil
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
+	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 	assert.Equal(t, "", buf.String())
 }
@@ -144,9 +143,9 @@ func TestCLIWarningInterceptorFromError(t *testing.T) {
 		err := connect.NewError(connect.CodeInternal, errors.New("error"))
 		err.Meta().Set(CLIWarningHeaderName, base64.StdEncoding.EncodeToString([]byte(warningMessage)))
 		return nil, err
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
+	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	assert.Error(t, err)
-	assertWarnLog(t, warningMessage, buf.String())
+	assert.Equal(t, fmt.Sprintf("WARN\t%s\n", warningMessage), buf.String())
 }
 
 type testRequest[T any] struct {
@@ -164,25 +163,12 @@ func (r testRequest[_]) Peer() connect.Peer {
 	}
 }
 
-// assertWarnLog verifies that logOutput contains a single WARN log line with the
-// given message. The console handler prepends an RFC3339 timestamp, so this
-// helper parses the three tab-separated fields and checks each one.
-func assertWarnLog(t *testing.T, message, logOutput string) {
-	t.Helper()
-	parts := strings.SplitN(strings.TrimRight(logOutput, "\n"), "\t", 3)
-	require.Len(t, parts, 3, "expected 3 tab-separated fields in log output")
-	_, err := time.Parse(time.RFC3339, parts[0])
-	assert.NoError(t, err, "expected valid RFC3339 timestamp")
-	assert.Equal(t, "WARN", parts[1])
-	assert.Equal(t, message, parts[2])
-}
-
 func TestNewAugmentedConnectErrorInterceptor(t *testing.T) {
 	t.Parallel()
 	_, err := NewAugmentedConnectErrorInterceptor()(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		err := connect.NewError(connect.CodeUnknown, errors.New("405 Method Not Allowed"))
 		return nil, err
-	})(t.Context(), testRequest[bytes.Buffer]{Request: connect.NewRequest(&bytes.Buffer{})})
+	})(context.Background(), testRequest[bytes.Buffer]{Request: connect.NewRequest(&bytes.Buffer{})})
 	assert.Error(t, err)
 	var augmentedConnectError *AugmentedConnectError
 	assert.ErrorAs(t, err, &augmentedConnectError)

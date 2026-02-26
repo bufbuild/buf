@@ -22,7 +22,6 @@ import (
 	"log/slog"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/mattn/go-colorable"
 	"golang.org/x/term"
@@ -133,10 +132,6 @@ func (c *consoleHandler) Handle(ctx context.Context, r slog.Record) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	c.buffer.Reset()
-	if !r.Time.IsZero() {
-		c.buffer.WriteString(r.Time.Format(time.RFC3339))
-		c.buffer.WriteString(consoleSeparator)
-	}
 	if c.enableColor {
 		c.buffer.WriteString(colorize(r.Level.String(), getColor(r.Level)))
 	} else {
