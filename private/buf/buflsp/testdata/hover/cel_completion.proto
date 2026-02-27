@@ -223,3 +223,13 @@ message ChainedComprehensionHolder {
     expression: "this.items.filter(item, item.zip_code > 0).all(addr, addr."
   };
 }
+
+// InOperatorHolder verifies that the "in" membership operator does not appear
+// as a callable function completion ("in()") when typed as a prefix.
+// "in" is a binary infix operator ("value in list"), not a function call.
+message InOperatorHolder {
+  option (buf.validate.message).cel = {
+    id: "in.operator"
+    expression: "in"
+  };
+}

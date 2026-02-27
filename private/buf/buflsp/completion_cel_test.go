@@ -57,6 +57,7 @@ func TestCELCompletion(t *testing.T) {
 	// 206:  `    expression: "this.items[0]."`                                     (IndexAccessHolder — indexed into list, yields element fields)
 	// 210:  `    expression: "this.locations[\"key\"]."`                           (IndexAccessHolder — indexed into map, yields value fields)
 	// 222:  `    expression: "this.items.filter(item, item.zip_code > 0).all(addr, addr."` (ChainedComprehensionHolder)
+	// 232:  `    expression: "in"`                                                    (InOperatorHolder — "in" is an operator, not a function)
 	tests := []struct {
 		name                string
 		line                uint32
@@ -449,6 +450,15 @@ func TestCELCompletion(t *testing.T) {
 				"zip_code",
 			},
 			expectedNotContains: []string{"size", "all", "true", "false", "null"},
+		},
+		{
+			// Cursor at closing `"` of `"in"` — prefix "in".
+			// `in` is a CEL binary membership operator ("value in list"), not a
+			// callable function. It must NOT appear as a function completion "in()".
+			name:                "in_operator_not_function_completion",
+			line:                232,
+			character:           19, // closing `"` after `in`
+			expectedNotContains: []string{"in"},
 		},
 	}
 
