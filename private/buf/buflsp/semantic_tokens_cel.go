@@ -51,6 +51,9 @@ type celExpressionInfo struct {
 	expression string      // The CEL expression string
 	span       source.Span // The span of the expression string literal in the proto file
 	irMember   ir.Member   // The field/member that has the option (for type context)
+	thisIRType ir.Type     // The IR type of `this` in the expression:
+	//   field/extension-level: the field's element type (e.g. string, Address)
+	//   message-level: the message type itself
 }
 
 // extractCELExpressions finds CEL expressions in protovalidate options.
@@ -96,6 +99,19 @@ func extractCELFromMessage(file *file, msgValue ir.MessageValue, irSym ir.Symbol
 		}
 		return ir.Member{}
 	}
+	// getThisType returns the IR type of `this` for the expression:
+	//   field/extension → the field's element type
+	//   message         → the message type itself (so this.field completions work)
+	getThisType := func() ir.Type {
+		switch irSym.Kind() {
+		case ir.SymbolKindField, ir.SymbolKindExtension:
+			return irSym.AsMember().Element()
+		case ir.SymbolKindMessage:
+			return irSym.AsType()
+		default:
+			return ir.Type{}
+		}
+	}
 
 	for field := range msgValue.Fields() {
 		for element := range seq.Values(field.Elements()) {
@@ -125,6 +141,7 @@ func extractCELFromMessage(file *file, msgValue ir.MessageValue, irSym ir.Symbol
 										expression: exprString,
 										span:       nestedElement.AST().Span(),
 										irMember:   getMember(),
+										thisIRType: getThisType(),
 									})
 								}
 							}
@@ -143,6 +160,7 @@ func extractCELFromMessage(file *file, msgValue ir.MessageValue, irSym ir.Symbol
 						expression: exprString,
 						span:       element.AST().Span(),
 						irMember:   getMember(),
+						thisIRType: getThisType(),
 					})
 					continue
 				}
