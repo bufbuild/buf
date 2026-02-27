@@ -749,6 +749,12 @@ func celMacroCompletionItems(celEnv *cel.Env) []protocol.CompletionItem {
 			continue
 		}
 		seen[name] = true
+		// Skip macros whose function name is an operator display symbol.
+		// The "in" membership operator is registered as a CEL macro but is
+		// an infix binary operator ("value in list"), not a callable function.
+		if _, ok := operators.Find(name); ok {
+			continue
+		}
 
 		items = append(items, protocol.CompletionItem{
 			Label:            name,
@@ -813,7 +819,13 @@ func celKeywordCompletionItems(celEnv *cel.Env, expectedType *types.Type) []prot
 // celIsOperatorOrInternal returns true if name represents an operator or internal
 // function that should not appear as a user-visible completion item.
 func celIsOperatorOrInternal(name string) bool {
+	// Check internal operator names (e.g. "@in", "_&&_").
 	if _, ok := operators.FindReverse(name); ok {
+		return true
+	}
+	// Check operator display names (e.g. "in"). Some CEL environments register
+	// the in operator under its display name as well as its internal "@in" name.
+	if _, ok := operators.Find(name); ok {
 		return true
 	}
 	return strings.HasPrefix(name, "@") || strings.HasPrefix(name, "_")
