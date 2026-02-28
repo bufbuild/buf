@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add support for Edition 2024 syntax to `buf format`.
 
 ## [v1.66.0] - 2026-02-23
 

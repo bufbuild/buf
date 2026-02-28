@@ -292,21 +292,21 @@ func (f *formatter) writeFileHeader() {
 	sort.Slice(importNodes, func(i, j int) bool {
 		iName := importNodes[i].Name.AsString()
 		jName := importNodes[j].Name.AsString()
-		// sort by public > None > weak
+		// "import option" sorts after all other imports. Within each
+		// group, sort alphabetically by name, then by modifier
+		// (public > regular > weak), and finally by comment.
+		iOption := isOptionImport(importNodes[i])
+		jOption := isOptionImport(importNodes[j])
+		if iOption != jOption {
+			return !iOption
+		}
+		if iName != jName {
+			return iName < jName
+		}
 		iOrder := importSortOrder(importNodes[i])
 		jOrder := importSortOrder(importNodes[j])
-
-		if iName < jName {
-			return true
-		}
-		if iName > jName {
-			return false
-		}
-		if iOrder > jOrder {
-			return true
-		}
-		if iOrder < jOrder {
-			return false
+		if iOrder != jOrder {
+			return iOrder < jOrder
 		}
 
 		// put commented import first
@@ -446,6 +446,9 @@ func (f *formatter) writeImport(importNode *ast.ImportNode, forceCompact, first 
 		f.Space()
 	case importNode.Weak != nil:
 		f.writeInline(importNode.Weak)
+		f.Space()
+	case importNode.Modifier != nil:
+		f.writeInline(importNode.Modifier)
 		f.Space()
 	}
 	f.writeInline(importNode.Name)
@@ -626,7 +629,13 @@ func (f *formatter) writeMessage(messageNode *ast.MessageNode) {
 			f.writeDeprecatedOption()
 		}
 	}
-	f.writeStart(messageNode.Keyword, false)
+	if messageNode.Visibility != nil {
+		f.writeStart(messageNode.Visibility, false)
+		f.Space()
+		f.writeInline(messageNode.Keyword)
+	} else {
+		f.writeStart(messageNode.Keyword, false)
+	}
 	f.Space()
 	f.writeInline(messageNode.Name)
 	f.Space()
@@ -911,7 +920,13 @@ func (f *formatter) writeEnum(enumNode *ast.EnumNode) {
 			f.writeDeprecatedOption()
 		}
 	}
-	f.writeStart(enumNode.Keyword, false)
+	if enumNode.Visibility != nil {
+		f.writeStart(enumNode.Visibility, false)
+		f.Space()
+		f.writeInline(enumNode.Keyword)
+	} else {
+		f.writeStart(enumNode.Keyword, false)
+	}
 	f.Space()
 	f.writeInline(enumNode.Name)
 	f.Space()
@@ -2538,7 +2553,7 @@ func (n infoWithTrailingComments) TrailingComments() ast.Comments {
 }
 
 // importSortOrder maps import types to a sort order number, so it can be compared and sorted.
-// `import`=3, `import public`=2, `import weak`=1
+// Higher values sort first: `import`=3, `import public`=2, `import weak`=1.
 func importSortOrder(node *ast.ImportNode) int {
 	switch {
 	case node.Public != nil:
@@ -2548,6 +2563,11 @@ func importSortOrder(node *ast.ImportNode) int {
 	default:
 		return 3
 	}
+}
+
+// isOptionImport reports whether the import has the "option" modifier.
+func isOptionImport(node *ast.ImportNode) bool {
+	return node.Modifier != nil && node.Modifier.Val == "option"
 }
 
 // stringForOptionName returns the string representation of the given option name node.
