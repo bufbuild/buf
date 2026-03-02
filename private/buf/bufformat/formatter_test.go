@@ -43,7 +43,7 @@ func testFormatCustomOptions(t *testing.T) {
 
 func testFormatEditions(t *testing.T) {
 	testFormatNoDiff(t, "testdata/editions/2023")
-	testFormatError(t, "testdata/editions/2024", `edition "2024" not yet fully supported; latest supported edition "2023"`)
+	testFormatNoDiff(t, "testdata/editions/2024")
 }
 
 func testFormatProto2(t *testing.T) {
@@ -114,20 +114,6 @@ func testFormatNoDiff(t *testing.T, path string) {
 		reformattedBucket, err := FormatModuleSet(ctx, moduleSet)
 		require.NoError(t, err)
 		assertGolden(reformattedBucket)
-	})
-}
-
-func testFormatError(t *testing.T, path string, errContains string) {
-	t.Run(path, func(t *testing.T) {
-		ctx := context.Background()
-		bucket, err := storageos.NewProvider().NewReadWriteBucket(path)
-		require.NoError(t, err)
-		moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, slogtestext.NewLogger(t), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
-		moduleSetBuilder.AddLocalModule(bucket, path, true)
-		moduleSet, err := moduleSetBuilder.Build()
-		require.NoError(t, err)
-		_, err = FormatModuleSet(ctx, moduleSet)
-		require.ErrorContains(t, err, errContains)
 	})
 }
 

@@ -128,11 +128,28 @@ func formatFileNode(dest io.Writer, fileNode *ast.FileNode, options *formatOptio
 
 // formatFileNodeWithMatch formats the given file node and returns whether any deprecation prefix matched.
 func formatFileNodeWithMatch(dest io.Writer, fileNode *ast.FileNode, options *formatOptions) (bool, error) {
-	// Construct the file descriptor to ensure the AST is valid. This will
-	// capture unknown syntax like edition "2024" which at the current time is
-	// not supported.
-	if _, err := parser.ResultFromAST(fileNode, true, reporter.NewHandler(nil)); err != nil {
-		return false, err
+	// Construct the file descriptor to ensure the AST is valid. The
+	// reporter swallows the known edition 2024 unsupported error (the
+	// parser handles it but ResultFromAST does not yet) and propagates
+	// all other errors. The error is identified by its span matching
+	// the edition value node.
+	errReporter := reporter.NewReporter(
+		func(err reporter.ErrorWithPos) error {
+			if fileNode.Edition == nil || fileNode.Edition.Edition.AsString() != "2024" {
+				return err
+			}
+			editionValueSpan := fileNode.NodeInfo(fileNode.Edition.Edition)
+			if err.Start() == editionValueSpan.Start() && err.End() == editionValueSpan.End() {
+				return nil
+			}
+			return err
+		},
+		nil,
+	)
+	if _, err := parser.ResultFromAST(fileNode, true, reporter.NewHandler(errReporter)); err != nil {
+		if !errors.Is(err, reporter.ErrInvalidSource) {
+			return false, err
+		}
 	}
 	formatter := newFormatter(dest, fileNode, options)
 	if err := formatter.Run(); err != nil {

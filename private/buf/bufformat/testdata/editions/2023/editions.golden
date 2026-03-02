@@ -2,6 +2,10 @@ edition = "2023";
 
 package a.b.c;
 
+import "a.proto";
+import public "b.proto";
+import weak "c.proto";
+import "d.proto";
 import "google/protobuf/descriptor.proto";
 
 option features.(string_feature) = "abc";
