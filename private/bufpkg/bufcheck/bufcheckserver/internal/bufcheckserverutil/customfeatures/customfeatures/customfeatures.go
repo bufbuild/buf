@@ -18,6 +18,8 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/gen/proto/go/google/protobuf"
+	gofeaturespb "google.golang.org/protobuf/types/gofeaturespb"
+
 	"github.com/bufbuild/protocompile/protoutil"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -32,6 +34,18 @@ func ResolveCppFeature(field protoreflect.FieldDescriptor, fieldName protoreflec
 // for the given field.
 func ResolveJavaFeature(field protoreflect.FieldDescriptor, fieldName protoreflect.Name, expectedKind protoreflect.Kind) (protoreflect.Value, error) {
 	return resolveFeature(field, protobuf.E_Java.TypeDescriptor(), fieldName, expectedKind)
+}
+
+// ResolveGoFeature returns a value for the given field name of the (pb.go) custom feature
+// for the given field.
+func ResolveGoFeature(field protoreflect.FieldDescriptor, fieldName protoreflect.Name, expectedKind protoreflect.Kind) (protoreflect.Value, error) {
+	return resolveFeature(field, gofeaturespb.E_Go.TypeDescriptor(), fieldName, expectedKind)
+}
+
+// ResolveGoFeatureForEnum returns a value for the given field name of the (pb.go) custom feature
+// for the given enum.
+func ResolveGoFeatureForEnum(enum protoreflect.EnumDescriptor, fieldName protoreflect.Name, expectedKind protoreflect.Kind) (protoreflect.Value, error) {
+	return resolveFeatureForEnum(enum, gofeaturespb.E_Go.TypeDescriptor(), fieldName, expectedKind)
 }
 
 func resolveFeature(
@@ -50,6 +64,27 @@ func resolveFeature(
 	}
 	return protoutil.ResolveCustomFeature(
 		field,
+		extension.Type(),
+		featureField,
+	)
+}
+
+func resolveFeatureForEnum(
+	enum protoreflect.EnumDescriptor,
+	extension protoreflect.ExtensionTypeDescriptor,
+	fieldName protoreflect.Name,
+	expectedKind protoreflect.Kind,
+) (protoreflect.Value, error) {
+	featureField := extension.Message().Fields().ByName(fieldName)
+	if featureField == nil {
+		return protoreflect.Value{}, fmt.Errorf("unable to resolve field descriptor for %s.%s", extension.Message().FullName(), fieldName)
+	}
+	if featureField.Kind() != expectedKind || featureField.IsList() {
+		return protoreflect.Value{}, fmt.Errorf("resolved field descriptor for %s.%s has unexpected type: expected optional %s, got %s %s",
+			extension.Message().FullName(), fieldName, expectedKind, featureField.Cardinality(), featureField.Kind())
+	}
+	return protoutil.ResolveCustomFeature(
+		enum,
 		extension.Type(),
 		featureField,
 	)

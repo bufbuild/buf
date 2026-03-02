@@ -379,6 +379,18 @@ func TestRunBreakingFieldSameJavaUTF8Validation(t *testing.T) {
 	)
 }
 
+func TestRunBreakingFieldSameGoStripEnumPrefix(t *testing.T) {
+	t.Skip("TODO: enable when edition 2024 is supported")
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_field_same_go_strip_enum_prefix",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 1, 8, 7, "FIELD_SAME_GO_STRIP_ENUM_PREFIX"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 15, 1, 15, 12, "FIELD_SAME_GO_STRIP_ENUM_PREFIX"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 1, 22, 17, "FIELD_SAME_GO_STRIP_ENUM_PREFIX"),
+	)
+}
+
 func TestRunBreakingFieldSameDefault(t *testing.T) {
 	t.Parallel()
 	testBreaking(
