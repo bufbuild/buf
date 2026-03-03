@@ -64,7 +64,7 @@ func GetActualProtocFileDescriptorSet(
 	filePaths []string,
 ) *descriptorpb.FileDescriptorSet {
 	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
-		context.Background(),
+		t.Context(),
 		[]string{dirPath},
 		filePaths,
 		includeImports,
@@ -86,7 +86,7 @@ func RunActualProtoc(
 	extraFlags ...string,
 ) {
 	err := prototesting.RunProtoc(
-		context.Background(),
+		t.Context(),
 		[]string{dirPath},
 		filePaths,
 		includeImports,
@@ -104,7 +104,7 @@ func GetGoogleapisDirPath(t *testing.T, buftestingDirPath string) string {
 	require.NoError(
 		t,
 		testArchiveReader.GetArchive(
-			context.Background(),
+			t.Context(),
 			googleapisDirPath,
 			"googleapis",
 			"googleapis",
@@ -119,7 +119,7 @@ func GetGoogleapisDirPath(t *testing.T, buftestingDirPath string) string {
 // Limit limits the number of files returned if > 0.
 // protoc has a fixed size for number of characters to argument list.
 func GetProtocFilePaths(t *testing.T, dirPath string, limit int) []string {
-	realFilePaths, err := GetProtocFilePathsErr(context.Background(), dirPath, limit)
+	realFilePaths, err := GetProtocFilePathsErr(t.Context(), dirPath, limit)
 	require.NoError(t, err)
 	return realFilePaths
 }

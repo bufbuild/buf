@@ -15,7 +15,6 @@
 package bufprotoc
 
 import (
-	"context"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
@@ -26,7 +25,7 @@ import (
 func TestNewModuleSetForProtoc(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	moduleSet, err := NewModuleSetForProtoc(
 		ctx,

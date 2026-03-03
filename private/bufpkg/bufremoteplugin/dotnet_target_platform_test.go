@@ -15,7 +15,6 @@
 package bufremoteplugin
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -46,7 +45,7 @@ func TestDotnetTargetPlatformExternalConfigMapping(t *testing.T) {
 	// We validate the string values for target frameworks in bufremoteconfig.
 	// This test will fail if we add a new target framework to the proto and didn't update the validation.
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 	for targetFrameworkStr := range stringToDotnetTargetFramework {
 		externalCfg := fmt.Sprintf(
 			`version: v1

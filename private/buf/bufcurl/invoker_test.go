@@ -15,7 +15,6 @@
 package bufcurl
 
 import (
-	"context"
 	"os"
 	"testing"
 
@@ -32,7 +31,7 @@ func TestCountUnrecognized(t *testing.T) {
 		Resolver: &protocompile.SourceResolver{
 			ImportPaths: []string{"./testdata"},
 		},
-	}).Compile(context.Background(), "test.proto")
+	}).Compile(t.Context(), "test.proto")
 	require.NoError(t, err)
 	msgType, err := descriptors.AsResolver().FindMessageByName("foo.bar.Message")
 	require.NoError(t, err)

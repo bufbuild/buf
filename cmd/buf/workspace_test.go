@@ -16,7 +16,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -1716,7 +1715,7 @@ func createZipFromDir(t *testing.T, rootPath string, archiveName string) string 
 
 	buffer := bytes.NewBuffer(nil)
 	require.NoError(t, storagearchive.Zip(
-		context.Background(),
+		t.Context(),
 		testdataBucket,
 		buffer,
 		true,
@@ -1728,7 +1727,7 @@ func createZipFromDir(t *testing.T, rootPath string, archiveName string) string 
 	)
 	require.NoError(t, err)
 	require.NoError(t, storage.PutPath(
-		context.Background(),
+		t.Context(),
 		zipBucket,
 		archiveName,
 		buffer.Bytes(),

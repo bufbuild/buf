@@ -15,7 +15,6 @@
 package bufcheckserverhandle
 
 import (
-	"context"
 	"math"
 	"testing"
 
@@ -119,7 +118,7 @@ func TestGetDefault(t *testing.T) {
 			}),
 		},
 	}
-	results, err := compiler.Compile(context.Background(), "test.proto")
+	results, err := compiler.Compile(t.Context(), "test.proto")
 	require.NoError(t, err)
 	msg := results[0].Messages().ByName("A")
 

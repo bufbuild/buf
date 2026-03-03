@@ -15,7 +15,6 @@
 package bufconfig
 
 import (
-	"context"
 	"path/filepath"
 	"testing"
 
@@ -25,7 +24,7 @@ import (
 
 func TestPutAndGetBufWorkYAMLFileForPrefix(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 	bufWorkYAMLFile, err := NewBufWorkYAMLFile(FileVersionV1, []string{"foo", "bar"})
 	require.NoError(t, err)
 	readWriteBucket := storagemem.NewReadWriteBucket()
@@ -44,7 +43,7 @@ func TestPutAndGetBufWorkYAMLFileForPrefix(t *testing.T) {
 
 func TestReadBufWorkYAMLFileValidateVersion(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 	testcases := []struct {
 		description      string
 		prefix           string

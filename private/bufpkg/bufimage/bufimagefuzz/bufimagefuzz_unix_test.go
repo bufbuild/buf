@@ -42,7 +42,7 @@ func TestCorpus(t *testing.T) {
 	t.Parallel()
 	// To focus on just one test in the corpus, put its file name here. Don't forget to revert before committing.
 	focus := ""
-	ctx := context.Background()
+	ctx := t.Context()
 	require.NoError(t, filepath.Walk("corpus", func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err

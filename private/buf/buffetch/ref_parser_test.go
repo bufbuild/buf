@@ -15,7 +15,6 @@
 package buffetch
 
 import (
-	"context"
 	"fmt"
 	"path/filepath"
 	"testing"
@@ -1432,7 +1431,7 @@ func testGetParsedRef(
 	value string,
 ) {
 	parsedRef, err := newRefParser(slogtestext.NewLogger(t)).getParsedRef(
-		context.Background(),
+		t.Context(),
 		value,
 		allFormats,
 	)
@@ -1457,7 +1456,7 @@ func testGetParsedDirOrProtoFileRef(
 	value string,
 ) {
 	parsedRef, err := newDirOrProtoFileRefParser(slogtestext.NewLogger(t)).getParsedRef(
-		context.Background(),
+		t.Context(),
 		value,
 		dirOrProtoFileFormats,
 	)

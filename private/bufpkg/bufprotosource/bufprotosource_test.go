@@ -15,7 +15,6 @@
 package bufprotosource
 
 import (
-	"context"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -30,12 +29,12 @@ func TestNewFiles(t *testing.T) {
 	moduleSet, err := bufmoduletesting.NewModuleSetForDirPath("testdata/nested")
 	require.NoError(t, err)
 	image, err := bufimage.BuildImage(
-		context.Background(),
+		t.Context(),
 		slogtestext.NewLogger(t),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 	)
 	require.NoError(t, err)
-	files, err := NewFiles(context.Background(), image.Files(), image.Resolver())
+	files, err := NewFiles(t.Context(), image.Files(), image.Resolver())
 	require.NoError(t, err)
 	require.Len(t, files, 1)
 	file := files[0]

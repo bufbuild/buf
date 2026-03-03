@@ -72,7 +72,7 @@ func testModuleDataStore(
 	moduleDataStoreOptions []ModuleDataStoreOption,
 	tar bool,
 ) {
-	ctx := context.Background()
+	ctx := t.Context()
 	logger := slogtestext.NewLogger(t)
 	moduleDataStore := NewModuleDataStore(logger, bucket, filelocker, moduleDataStoreOptions...)
 	moduleKeys, moduleDatas := testGetModuleKeysAndModuleDatas(t, ctx)

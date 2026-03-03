@@ -15,7 +15,6 @@
 package storagemem_test
 
 import (
-	"context"
 	"path/filepath"
 	"testing"
 
@@ -49,7 +48,7 @@ func testNewReadBucket(t *testing.T, dirPath string, storageosProvider storageos
 	require.NoError(t, err)
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	_, err = storage.Copy(
-		context.Background(),
+		t.Context(),
 		osBucket,
 		readWriteBucket,
 		storage.CopyWithExternalAndLocalPaths(),

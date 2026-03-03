@@ -61,7 +61,7 @@ func TestPushSuccess(t *testing.T) {
 	image, err := buildDockerPlugin(t, "testdata/success/Dockerfile", listenerAddr+"/library/go")
 	require.Nilf(t, err, "failed to build docker plugin")
 	require.NotEmpty(t, image)
-	pushResponse, err := dockerClient.Push(context.Background(), image, &RegistryAuthConfig{})
+	pushResponse, err := dockerClient.Push(t.Context(), image, &RegistryAuthConfig{})
 	require.Nilf(t, err, "failed to push docker plugin")
 	require.NotNil(t, pushResponse)
 	assert.NotEmpty(t, pushResponse.Digest)
@@ -77,7 +77,7 @@ func TestPushError(t *testing.T) {
 	image, err := buildDockerPlugin(t, "testdata/success/Dockerfile", listenerAddr+"/library/go")
 	require.Nilf(t, err, "failed to build docker plugin")
 	require.NotEmpty(t, image)
-	_, err = dockerClient.Push(context.Background(), image, &RegistryAuthConfig{})
+	_, err = dockerClient.Push(t.Context(), image, &RegistryAuthConfig{})
 	require.NotNil(t, err, "expected error")
 	assert.Equal(t, server.pushErr.Error(), err.Error())
 }
@@ -150,7 +150,7 @@ func buildDockerPlugin(t testing.TB, dockerfilePath string, pluginIdentity strin
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
 	if err := xexec.Run(
-		context.Background(),
+		t.Context(),
 		docker,
 		xexec.WithArgs("build", "-t", imageName, "."),
 		xexec.WithDir(filepath.Dir(dockerfilePath)),
@@ -163,7 +163,7 @@ func buildDockerPlugin(t testing.TB, dockerfilePath string, pluginIdentity strin
 	t.Logf("created image: %s", imageName)
 	t.Cleanup(func() {
 		if err := xexec.Run(
-			context.Background(),
+			t.Context(),
 			docker,
 			xexec.WithArgs("rmi", "--force", imageName),
 			xexec.WithDir(filepath.Dir(dockerfilePath)),

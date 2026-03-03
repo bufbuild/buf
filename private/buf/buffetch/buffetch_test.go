@@ -15,7 +15,6 @@
 package buffetch
 
 import (
-	"context"
 	"io"
 	"log/slog"
 	"path/filepath"
@@ -106,7 +105,7 @@ func testRoundTripLocalFile(
 	reader := testNewFetchReader(logger)
 	writer := testNewFetchWriter(logger)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	container := app.NewContainer(nil, nil, nil, nil)
 
 	tmpDir := t.TempDir()

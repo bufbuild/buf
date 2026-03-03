@@ -41,6 +41,7 @@ linters:
     - staticcheck
     - unconvert
     - unused
+    - usetesting
     - wastedassign
     - whitespace
   settings:
@@ -88,6 +89,9 @@ linters:
       require-explanation: true
       require-specific: true
       allow-unused: false
+    usetesting:
+      context-background: true
+      context-todo: true
   exclusions:
     generated: lax
     presets:

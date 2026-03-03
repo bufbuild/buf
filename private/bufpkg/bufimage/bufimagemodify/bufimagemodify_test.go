@@ -15,7 +15,6 @@
 package bufimagemodify
 
 import (
-	"context"
 	"path/filepath"
 	"testing"
 
@@ -865,7 +864,7 @@ func testGetImageFromDirs(
 		options = []bufimage.BuildImageOption{bufimage.WithExcludeSourceCodeInfo()}
 	}
 	image, err := bufimage.BuildImage(
-		context.Background(),
+		t.Context(),
 		slogtestext.NewLogger(t),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
