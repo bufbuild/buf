@@ -70,6 +70,7 @@ var (
 		"python": {},
 		"pyi":    {},
 		"ruby":   {},
+		"rbs":    {},
 		"kotlin": {},
 		"rust":   {},
 	}
