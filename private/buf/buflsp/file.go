@@ -233,8 +233,6 @@ func (f *file) RefreshIR(ctx context.Context) {
 
 	// Opener creates a cached view of all files in the workspace.
 	pathToFiles := f.workspace.PathToFile()
-	files := make([]*file, 0, len(pathToFiles))
-	paths := make([]string, 0, len(pathToFiles))
 	var evictQueryKeys []any
 
 	openerMap := f.lsp.opener.Get()
@@ -249,8 +247,6 @@ func (f *file) RefreshIR(ctx context.Context) {
 				evictQueryKeys = append(evictQueryKeys, file.queryFileKeys()...)
 			}
 		}
-		files = append(files, file)
-		paths = append(paths, path)
 	}
 	// Remove paths that are no longer in the current workspace and evict stale query keys.
 	for path := range openerMap {
@@ -260,16 +256,24 @@ func (f *file) RefreshIR(ctx context.Context) {
 	}
 	f.lsp.queryExecutor.Evict(evictQueryKeys...)
 
+	if f.workspace == nil {
+		return
+	}
+	sourceWorkspace := f.workspace.sourceWorkspace
+	if sourceWorkspace == nil {
+		return
+	}
 	results, diagnosticReport, err := incremental.Run(
 		ctx,
 		f.lsp.queryExecutor,
 		queries.Workspace{
 			Opener:    f.lsp.opener,
 			Session:   f.lsp.irSession,
-			Workspace: source.NewWorkspace(paths),
+			Workspace: sourceWorkspace,
 		},
 	)
 	if err != nil {
+		// err is only non-nil for context cancellation.
 		f.lsp.logger.Error(
 			"failed to parse IR for file",
 			slog.String("uri", string(f.uri)),
@@ -278,9 +282,28 @@ func (f *file) RefreshIR(ctx context.Context) {
 		)
 		return
 	}
+	if fatal := results[0].Fatal; fatal != nil {
+		// Fatal query errors (e.g. descriptor.proto missing from opener) are not
+		// propagated as err from Run; they land in Result.Fatal instead.
+		f.lsp.logger.Error(
+			"fatal error parsing IR for workspace",
+			slog.String("uri", string(f.uri)),
+			slog.Int("version", int(f.version)),
+			xslog.ErrorAttr(fatal),
+		)
+		return
+	}
+	// Match IR files back to LSP files by path. The workspace result preserves the
+	// order of paths from sourceWorkspace, so we build a lookup map.
 	irFiles := results[0].Value
-	for i, file := range files {
-		file.ir = irFiles[i]
+	irFileByPath := make(map[string]*ir.File, len(irFiles))
+	i := 0
+	for path := range sourceWorkspace.Paths() {
+		irFileByPath[path] = irFiles[i]
+		i++
+	}
+	for _, file := range pathToFiles {
+		file.ir = irFileByPath[file.objectInfo.Path()]
 		if f != file {
 			// Update symbols for imports.
 			file.IndexSymbols(ctx)

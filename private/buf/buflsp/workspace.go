@@ -28,6 +28,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/protocompile/experimental/incremental/queries"
+	"github.com/bufbuild/protocompile/experimental/source"
 	"go.lsp.dev/protocol"
 )
 
@@ -134,7 +136,10 @@ type workspace struct {
 	workspace          bufworkspace.Workspace
 	fileNameToFileInfo map[string]bufmodule.FileInfo
 	pathToFile         map[string]*file
-	checkClient        bufcheck.Client
+	// sourceWorkspace is recreated only when the set of paths in pathToFile changes,
+	// keeping the pointer stable so that queries.Workspace cache keys remain valid.
+	sourceWorkspace source.Workspace
+	checkClient     bufcheck.Client
 }
 
 // Lease increments the reference count.
@@ -243,10 +248,12 @@ func (w *workspace) indexFiles(ctx context.Context) {
 	w.lsp.logger.Debug("workspace: index files", slog.String("path", w.workspaceURI.Filename()))
 	previous := w.pathToFile
 	w.pathToFile = make(map[string]*file, len(previous))
+	pathsChanged := false
 
 	for fileInfo := range w.fileInfos(ctx) {
 		file, ok := previous[fileInfo.Path()]
 		if !ok {
+			pathsChanged = true
 			fileURI := FilePathToURI(fileInfo.LocalPath())
 			file = w.lsp.fileManager.Track(fileURI)
 			w.lsp.logger.Debug("workspace: index track file", slog.String("path", file.uri.Filename()))
@@ -276,8 +283,30 @@ func (w *workspace) indexFiles(ctx context.Context) {
 	}
 	// Drop all unused files. It was deleted from the workspace.
 	for _, file := range previous {
+		pathsChanged = true
 		w.lsp.logger.Debug("workspace: index drop file", slog.String("path", file.uri.Filename()))
 		file.Close(ctx)
+	}
+	// Rebuild sourceWorkspace only when the set of paths changes, so that the pointer
+	// stays stable and queries.Workspace cache keys remain valid across refreshes.
+	if pathsChanged || w.sourceWorkspace == nil {
+		// Evict the old workspace query before replacing the pointer. Without this,
+		// the file-removal case is covered by cascade eviction (file.Close evicts
+		// queries.File, which cascades through queries.IR to queries.Workspace), but
+		// the file-addition case is not: no file is evicted, so the old workspace
+		// query entry would accumulate in the executor cache.
+		if w.sourceWorkspace != nil {
+			w.lsp.queryExecutor.Evict(queries.Workspace{
+				Opener:    w.lsp.opener,
+				Session:   w.lsp.irSession,
+				Workspace: w.sourceWorkspace,
+			}.Key())
+		}
+		paths := make([]string, 0, len(w.pathToFile))
+		for path := range w.pathToFile {
+			paths = append(paths, path)
+		}
+		w.sourceWorkspace = source.NewWorkspace(paths)
 	}
 }
 
