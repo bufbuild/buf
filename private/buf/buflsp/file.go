@@ -234,6 +234,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 	// Opener creates a cached view of all files in the workspace.
 	pathToFiles := f.workspace.PathToFile()
 	files := make([]*file, 0, len(pathToFiles))
+	paths := make([]string, 0, len(pathToFiles))
 	var evictQueryKeys []any
 
 	openerMap := f.lsp.opener.Get()
@@ -249,6 +250,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 			}
 		}
 		files = append(files, file)
+		paths = append(paths, path)
 	}
 	// Remove paths that are no longer in the current workspace and evict stale query keys.
 	for path := range openerMap {
@@ -258,14 +260,14 @@ func (f *file) RefreshIR(ctx context.Context) {
 	}
 	f.lsp.queryExecutor.Evict(evictQueryKeys...)
 
-	queries := xslices.Map(files, func(file *file) incremental.Query[*ir.File] {
-		return file.queryIR()
-	})
-
 	results, diagnosticReport, err := incremental.Run(
 		ctx,
 		f.lsp.queryExecutor,
-		queries...,
+		queries.Workspace{
+			Opener:    f.lsp.opener,
+			Session:   f.lsp.irSession,
+			Workspace: source.NewWorkspace(paths),
+		},
 	)
 	if err != nil {
 		f.lsp.logger.Error(
@@ -276,8 +278,9 @@ func (f *file) RefreshIR(ctx context.Context) {
 		)
 		return
 	}
+	irFiles := results[0].Value
 	for i, file := range files {
-		file.ir = results[i].Value
+		file.ir = irFiles[i]
 		if f != file {
 			// Update symbols for imports.
 			file.IndexSymbols(ctx)
@@ -296,18 +299,6 @@ func (f *file) RefreshIR(ctx context.Context) {
 		slog.String("uri", f.uri.Filename()),
 		slog.Int("count", len(f.diagnostics)),
 	)
-}
-
-// queryIR returns the [queries.IR] for the current file.
-func (f *file) queryIR() incremental.Query[*ir.File] {
-	if f.objectInfo == nil {
-		return nil
-	}
-	return queries.IR{
-		Opener:  f.lsp.opener,
-		Path:    f.objectInfo.Path(),
-		Session: f.lsp.irSession,
-	}
 }
 
 // queryFileKeys returns the keys for [queries.File] with ReportError set to true and false.
