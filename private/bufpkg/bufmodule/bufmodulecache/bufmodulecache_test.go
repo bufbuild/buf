@@ -37,7 +37,7 @@ import (
 func TestCommitProviderForModuleKeyBasic(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
 	logger := slogtestext.NewLogger(t)
@@ -100,7 +100,7 @@ func TestCommitProviderForModuleKeyBasic(t *testing.T) {
 func TestCommitProviderForCommitKeyBasic(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
 	logger := slogtestext.NewLogger(t)
@@ -164,7 +164,7 @@ func TestCommitProviderForCommitKeyBasic(t *testing.T) {
 
 func TestModuleDataProviderBasic(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
 	logger := slogtestext.NewLogger(t)
@@ -228,7 +228,7 @@ func TestModuleDataProviderBasic(t *testing.T) {
 func TestConcurrentCacheReadWrite(t *testing.T) {
 	t.Parallel()
 
-	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, context.Background())
+	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, t.Context())
 	tempDir := t.TempDir()
 	cacheDir := filepath.Join(tempDir, "cache")
 	logger := slogtestext.NewLogger(t)
@@ -277,7 +277,7 @@ func TestConcurrentCacheReadWrite(t *testing.T) {
 			},
 		)
 		require.NoError(t, err)
-		require.NoError(t, thread.Parallelize(context.Background(), jobs))
+		require.NoError(t, thread.Parallelize(t.Context(), jobs))
 		require.NoError(t, os.RemoveAll(cacheDir))
 	}
 }

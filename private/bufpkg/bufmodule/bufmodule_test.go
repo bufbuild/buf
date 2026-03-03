@@ -15,7 +15,6 @@
 package bufmodule_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -33,7 +32,7 @@ import (
 func TestBasic(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// This represents some external dependencies from the BSR.
 	bsrProvider, err := bufmoduletesting.NewOmniProvider(
@@ -448,7 +447,7 @@ func TestModuleCycleError(t *testing.T) {
 func TestDuplicateProtoPathError(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	moduleSet, err := bufmoduletesting.NewOmniProvider(
 		bufmoduletesting.ModuleData{
@@ -506,7 +505,7 @@ func TestDuplicateProtoPathError(t *testing.T) {
 func TestNoProtoFilesError(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	moduleSet, err := bufmoduletesting.NewOmniProvider(
 		bufmoduletesting.ModuleData{
@@ -549,7 +548,7 @@ func TestNoProtoFilesError(t *testing.T) {
 func TestProtoFileTargetPath(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	bucket := testNewBucketForPathToData(
 		t,
 		map[string][]byte{
@@ -676,7 +675,7 @@ func testGetDepOpaqueIDToDirect(t *testing.T, module bufmodule.Module) map[strin
 }
 
 func testFilePaths(t *testing.T, module bufmodule.Module, expectedFilePaths ...string) {
-	ctx := context.Background()
+	ctx := t.Context()
 	fileInfos, err := bufmodule.GetFileInfos(ctx, module)
 	require.NoError(t, err)
 	require.Equal(
@@ -687,7 +686,7 @@ func testFilePaths(t *testing.T, module bufmodule.Module, expectedFilePaths ...s
 }
 
 func testTargetFilePaths(t *testing.T, module bufmodule.Module, expectedFilePaths ...string) {
-	ctx := context.Background()
+	ctx := t.Context()
 	fileInfos, err := bufmodule.GetTargetFileInfos(ctx, module)
 	require.NoError(t, err)
 	require.Equal(

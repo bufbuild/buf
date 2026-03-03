@@ -228,7 +228,7 @@ func AssertFileDescriptorSetsEqual(
 	one *descriptorpb.FileDescriptorSet,
 	two *descriptorpb.FileDescriptorSet,
 ) {
-	diff, err := DiffFileDescriptorSetsJSON(context.Background(), one, two, "buf", "protoc")
+	diff, err := DiffFileDescriptorSetsJSON(t.Context(), one, two, "buf", "protoc")
 	assert.NoError(t, err)
 	assert.Empty(t, diff)
 	diff = DiffFileDescriptorSetsCompare(one, two)

@@ -15,7 +15,6 @@
 package protosourcepath
 
 import (
-	"context"
 	"testing"
 
 	"github.com/bufbuild/protocompile"
@@ -381,7 +380,7 @@ func testGetAssociatedSourcePaths(
 		Resolver:       &protocompile.SourceResolver{},
 		SourceInfoMode: protocompile.SourceInfoStandard,
 	}
-	files, err := compiler.Compile(context.Background(), testFilePath)
+	files, err := compiler.Compile(t.Context(), testFilePath)
 	require.NoError(t, err)
 	require.Len(t, files, 1, "expect only one test file")
 	sourceLocations := files[0].SourceLocations()

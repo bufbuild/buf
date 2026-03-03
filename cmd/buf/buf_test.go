@@ -16,7 +16,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -1356,7 +1355,7 @@ func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 			// Do not need any custom lint/breaking plugins here.
 			client, err := bufcheck.NewClient(slogtestext.NewLogger(t))
 			require.NoError(t, err)
-			allRules, err := client.AllRules(context.Background(), check.RuleTypeBreaking, version)
+			allRules, err := client.AllRules(t.Context(), check.RuleTypeBreaking, version)
 			require.NoError(t, err)
 			allPackageIDs := make([]string, 0, len(allRules))
 			for _, rule := range allRules {

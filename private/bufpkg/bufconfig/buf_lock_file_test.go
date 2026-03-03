@@ -16,7 +16,6 @@ package bufconfig
 
 import (
 	"bytes"
-	"context"
 	"strings"
 	"testing"
 
@@ -128,7 +127,7 @@ func testReadBufLockFile(
 	inputBufLockFileData string,
 ) BufLockFile {
 	bufLockFile, err := ReadBufLockFile(
-		context.Background(),
+		t.Context(),
 		strings.NewReader(testCleanYAMLData(inputBufLockFileData)),
 		DefaultBufLockFileName,
 	)

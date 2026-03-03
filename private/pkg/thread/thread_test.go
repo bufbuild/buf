@@ -39,7 +39,7 @@ func TestParallelizeWithImmediateCancellation(t *testing.T) {
 				return nil
 			})
 		}
-		err := Parallelize(context.Background(), jobs)
+		err := Parallelize(t.Context(), jobs)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(jobsToExecute), executed.Load(), "jobs executed")
 	})
@@ -53,7 +53,7 @@ func TestParallelizeWithImmediateCancellation(t *testing.T) {
 				return nil
 			})
 		}
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 		err := Parallelize(ctx, jobs)
 		assert.Error(t, err)

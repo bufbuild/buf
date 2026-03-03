@@ -54,7 +54,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 			return nil, errors.New("error auth token")
 		}
 		return nil, nil
-	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
+	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 
 	getMachineForName := func(app.EnvContainer, string) (netrc.Machine, error) {
@@ -67,7 +67,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 			return nil, errors.New("error auth token")
 		}
 		return nil, nil
-	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
+	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 
 	// testing using tokenSet over netrc tokenToAuthKey
@@ -76,7 +76,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 			return nil, errors.New("error auth token")
 		}
 		return nil, nil
-	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
+	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 
 	// testing using netrc tokenToAuthKey over tokenSet
@@ -85,7 +85,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 			return nil, errors.New("error auth token")
 		}
 		return nil, nil
-	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
+	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 
 	_, err = NewAuthorizationInterceptorProvider()("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
@@ -93,7 +93,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 			return nil, errors.New("error auth token")
 		}
 		return nil, nil
-	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
+	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 
 	tokenSet, err = NewTokenProviderFromContainer(app.NewEnvContainer(map[string]string{
@@ -102,7 +102,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 	assert.NoError(t, err)
 	_, err = NewAuthorizationInterceptorProvider(tokenSet)("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		return nil, errors.New("underlying cause")
-	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
+	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
 	authErr, ok := AsAuthError(err)
 	assert.True(t, ok)
 	assert.Equal(t, TokenEnvKey, authErr.tokenEnvKey)
@@ -119,7 +119,7 @@ func TestCLIWarningInterceptor(t *testing.T) {
 		resp := connect.NewResponse(&bytes.Buffer{})
 		resp.Header().Set(CLIWarningHeaderName, base64.StdEncoding.EncodeToString([]byte(warningMessage)))
 		return resp, nil
-	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
+	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("WARN\t%s\n", warningMessage), buf.String())
 
@@ -127,7 +127,7 @@ func TestCLIWarningInterceptor(t *testing.T) {
 	buf.Reset()
 	_, err = NewCLIWarningInterceptor(appext.NewLoggerContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		return connect.NewResponse(&bytes.Buffer{}), nil
-	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
+	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 	assert.Equal(t, "", buf.String())
 }
@@ -143,7 +143,7 @@ func TestCLIWarningInterceptorFromError(t *testing.T) {
 		err := connect.NewError(connect.CodeInternal, errors.New("error"))
 		err.Meta().Set(CLIWarningHeaderName, base64.StdEncoding.EncodeToString([]byte(warningMessage)))
 		return nil, err
-	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
+	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
 	assert.Error(t, err)
 	assert.Equal(t, fmt.Sprintf("WARN\t%s\n", warningMessage), buf.String())
 }
@@ -168,7 +168,7 @@ func TestNewAugmentedConnectErrorInterceptor(t *testing.T) {
 	_, err := NewAugmentedConnectErrorInterceptor()(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		err := connect.NewError(connect.CodeUnknown, errors.New("405 Method Not Allowed"))
 		return nil, err
-	})(context.Background(), testRequest[bytes.Buffer]{Request: connect.NewRequest(&bytes.Buffer{})})
+	})(t.Context(), testRequest[bytes.Buffer]{Request: connect.NewRequest(&bytes.Buffer{})})
 	assert.Error(t, err)
 	var augmentedConnectError *AugmentedConnectError
 	assert.ErrorAs(t, err, &augmentedConnectError)

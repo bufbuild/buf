@@ -82,7 +82,7 @@ func TestMultiClientSimpleCacheRules(t *testing.T) {
 }
 
 func testMultiClientSimple(t *testing.T, cacheRules bool) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	requestSpec := &checktest.RequestSpec{
 		Files: &checktest.ProtoFileSpec{
@@ -171,7 +171,7 @@ func TestMultiClientCannotHaveOverlappingRules(t *testing.T) {
 		},
 	)
 
-	_, _, err = multiClient.ListRulesAndCategories(context.Background())
+	_, _, err = multiClient.ListRulesAndCategories(t.Context())
 	duplicateRuleOrCategoryError := &duplicateRuleOrCategoryError{}
 	require.ErrorAs(t, err, &duplicateRuleOrCategoryError)
 	require.Equal(t, []string{fieldLowerSnakeCaseRuleID}, duplicateRuleOrCategoryError.duplicateIDs())
@@ -195,7 +195,7 @@ func TestMultiClientCannotHaveOverlappingRulesWithBuiltIn(t *testing.T) {
 	require.NoError(t, err)
 
 	multiClient, err := client.getMultiClient(
-		context.Background(),
+		t.Context(),
 		bufconfig.FileVersionV2,
 		[]bufconfig.PluginConfig{
 			duplicateBuiltInRulePluginConfig,
@@ -206,7 +206,7 @@ func TestMultiClientCannotHaveOverlappingRulesWithBuiltIn(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, _, err = multiClient.ListRulesAndCategories(context.Background())
+	_, _, err = multiClient.ListRulesAndCategories(t.Context())
 	duplicateRuleOrCategoryError := &duplicateRuleOrCategoryError{}
 	require.ErrorAs(t, err, &duplicateRuleOrCategoryError)
 	require.Equal(t, []string{"ENUM_NO_DELETE", "PACKAGE_DIRECTORY_MATCH"}, duplicateRuleOrCategoryError.duplicateIDs())
@@ -266,7 +266,7 @@ func TestMultiClientCannotHaveOverlappingCategories(t *testing.T) {
 		},
 	)
 
-	_, _, err = multiClient.ListRulesAndCategories(context.Background())
+	_, _, err = multiClient.ListRulesAndCategories(t.Context())
 	duplicateRuleOrCategoryError := &duplicateRuleOrCategoryError{}
 	require.ErrorAs(t, err, &duplicateRuleOrCategoryError)
 	require.Equal(t, []string{"FOO"}, duplicateRuleOrCategoryError.duplicateIDs())
@@ -290,7 +290,7 @@ func TestMultiClientCannotHaveOverlappingCategoriesWithBuiltIn(t *testing.T) {
 	require.NoError(t, err)
 
 	multiClient, err := client.getMultiClient(
-		context.Background(),
+		t.Context(),
 		bufconfig.FileVersionV2,
 		[]bufconfig.PluginConfig{
 			duplicateBuiltInRulePluginConfig,
@@ -301,7 +301,7 @@ func TestMultiClientCannotHaveOverlappingCategoriesWithBuiltIn(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, _, err = multiClient.ListRulesAndCategories(context.Background())
+	_, _, err = multiClient.ListRulesAndCategories(t.Context())
 	duplicateRuleOrCategoryError := &duplicateRuleOrCategoryError{}
 	require.ErrorAs(t, err, &duplicateRuleOrCategoryError)
 	require.Equal(t, []string{"STANDARD"}, duplicateRuleOrCategoryError.duplicateIDs())

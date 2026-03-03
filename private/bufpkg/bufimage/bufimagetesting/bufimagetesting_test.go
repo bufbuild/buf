@@ -15,7 +15,6 @@
 package bufimagetesting
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -864,7 +863,7 @@ func TestImageFileInfosWithOnlyTargetsAndTargetImports(t *testing.T) {
 		fileB,
 	}
 	resultImageFileInfos, err := bufimage.ImageFileInfosWithOnlyTargetsAndTargetImports(
-		context.Background(),
+		t.Context(),
 		datawkt.ReadBucket,
 		imageFileInfos,
 	)

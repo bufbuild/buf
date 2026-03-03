@@ -15,7 +15,6 @@
 package bufformat
 
 import (
-	"context"
 	"io"
 	"strings"
 	"testing"
@@ -76,7 +75,7 @@ func testFormatHeader(t *testing.T) {
 
 func testFormatNoDiff(t *testing.T, path string) {
 	t.Run(path, func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		bucket, err := storageos.NewProvider().NewReadWriteBucket(path)
 		require.NoError(t, err)
 
@@ -119,7 +118,7 @@ func testFormatNoDiff(t *testing.T, path string) {
 
 func testFormatError(t *testing.T, path string, errContains string) {
 	t.Run(path, func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		bucket, err := storageos.NewProvider().NewReadWriteBucket(path)
 		require.NoError(t, err)
 		moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, slogtestext.NewLogger(t), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
@@ -150,7 +149,7 @@ func TestFormatterWithDeprecation(t *testing.T) {
 
 func testDeprecateNoDiff(t *testing.T, name string, path string, deprecatePrefixes []string, files []string) {
 	t.Run(name, func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		bucket, err := storageos.NewProvider().NewReadWriteBucket(path)
 		require.NoError(t, err)
 		var opts []FormatOption
@@ -194,7 +193,7 @@ func testDeprecateNoDiff(t *testing.T, name string, path string, deprecatePrefix
 
 func TestFormatBucketNoTypesMatchedError(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 	bucket, err := storageos.NewProvider().NewReadWriteBucket("testdata/deprecate")
 	require.NoError(t, err)
 	// Use a prefix that won't match anything in the deprecate testdata

@@ -15,7 +15,6 @@
 package filelock
 
 import (
-	"context"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -26,7 +25,7 @@ import (
 
 func TestGlobalBasic(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 	tempDirPath := t.TempDir()
 	filePath := filepath.Join(tempDirPath, "path/to/lock")
 	unlocker, err := Lock(ctx, filePath)
@@ -49,7 +48,7 @@ func TestGlobalBasic(t *testing.T) {
 
 func TestLockerBasic(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 	tempDirPath := t.TempDir()
 	filePath := "path/to/lock"
 	locker, err := NewLocker(tempDirPath)

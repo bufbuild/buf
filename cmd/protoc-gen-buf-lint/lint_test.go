@@ -301,7 +301,7 @@ func testRunHandlerFunc(
 
 	exitCode := app.GetExitCode(
 		protoplugin.Run(
-			context.Background(),
+			t.Context(),
 			protoplugin.Env{
 				Args:    nil,
 				Stdin:   stdin,
@@ -331,7 +331,7 @@ func testBuildRequest(
 	fileToGenerate []string,
 ) protoplugin.Request {
 	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
-		context.Background(),
+		t.Context(),
 		[]string{root},
 		realFilePaths,
 		true,

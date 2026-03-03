@@ -15,7 +15,6 @@
 package storageos_test
 
 import (
-	"context"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -43,7 +42,7 @@ func TestOS(t *testing.T) {
 
 	t.Run("get_non_existent_file", func(t *testing.T) {
 		t.Parallel()
-		ctx := context.Background()
+		ctx := t.Context()
 		// Create a bucket at an absolute path.
 		tempDir := t.TempDir()
 		tempDir, err := filepath.Abs(tempDir)
@@ -72,7 +71,7 @@ func TestOS(t *testing.T) {
 
 	t.Run("get_non_existent_file_symlink", func(t *testing.T) {
 		t.Parallel()
-		ctx := context.Background()
+		ctx := t.Context()
 		// Create a bucket at an absolute path.
 		actualTempDir := t.TempDir()
 		actualTempDir, err := filepath.Abs(actualTempDir)
