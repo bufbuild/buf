@@ -7,6 +7,8 @@
 - Add relevant links from CEL LSP hover documentation to either <celbyexample.com> or <protovalidate.com>
 - Add OpenBSD and FreeBSD release binaries for amd64 and arm64.
 - Skip writing unchanged output files in `buf generate` to preserve modification times
+- Update `buf beta registry plugin delete` to prompt the user for deletion, matching the UX of the other deletion commands.
+  Use `--force` to restore the old behavior.
 
 ## [v1.66.1] - 2026-03-09
 
