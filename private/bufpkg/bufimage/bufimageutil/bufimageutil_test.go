@@ -504,6 +504,48 @@ func TestDependencies(t *testing.T) {
 	})
 }
 
+// TestExcludeImportFileDependencies is a regression test for a bug where
+// excluding a package caused import files that were retained in the image
+// (because their extension fields were used) to lose their own transitive
+// dependencies.
+//
+// Concretely: user.proto uses an extension from opt.proto; opt.proto has a
+// message that references dep.DepMessage from dep.proto. When excluding the
+// "excluded" package, dep.proto must still be retained because opt.proto
+// depends on it.
+func TestExcludeImportFileDependencies(t *testing.T) {
+	t.Parallel()
+
+	testdataDir := "testdata/exclude_import_deps"
+	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
+	require.NoError(t, err)
+	testModuleData := []bufmoduletesting.ModuleData{
+		{
+			Bucket: storage.FilterReadBucket(bucket, storage.MatchPathEqual("user.proto")),
+		},
+		{
+			Bucket:      storage.FilterReadBucket(bucket, storage.MatchNot(storage.MatchPathEqual("user.proto"))),
+			NotTargeted: true,
+		},
+	}
+	moduleSet, err := bufmoduletesting.NewModuleSet(testModuleData...)
+	require.NoError(t, err)
+	image, err := bufimage.BuildImage(
+		context.Background(),
+		slogtestext.NewLogger(t),
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+		bufimage.WithExcludeSourceCodeInfo(),
+	)
+	require.NoError(t, err)
+
+	// Excluding "excluded" should not drop dep.proto from the image.
+	// opt.proto is retained because its extension is used by user.proto.
+	// opt.proto depends on dep.proto, so dep.proto must also be retained.
+	// Before the fix, dep.proto was silently dropped and protodesc.NewFiles
+	// would fail with "type_name .dep.DepMessage not found".
+	runFilterImage(t, image, WithExcludeTypes("excluded"))
+}
+
 func TestEmptyFiles(t *testing.T) {
 	t.Parallel()
 	t.Run("include_empty_file", func(t *testing.T) {
