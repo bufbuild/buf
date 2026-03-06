@@ -62,7 +62,7 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 			if mode := closure.elements[fileDescriptorProto]; mode == inclusionModeExcluded {
 				continue
 			}
-			if err := closure.addElement(fileDescriptorProto, false, imageIndex, options); err != nil {
+			if err := closure.addElement(fileDescriptorProto, "", false, imageIndex, options); err != nil {
 				return nil, err
 			}
 		}
@@ -82,10 +82,7 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 		}
 	}
 
-	// Phase 2: Derive file-to-file imports from the completed closure.
-	fileImports := closure.computeImports(imageIndex, options)
-
-	// Phase 3: Filter image files using the closure and computed imports.
+	// Phase 2: Filter image files using the closure and recorded imports.
 	//
 	// Loop over image files in reverse DAG order. Imports that are no longer
 	// imported by a previous file are dropped from the image.
@@ -94,14 +91,13 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 	for _, imageFile := range slices.Backward(image.Files()) {
 		imageFilePath := imageFile.Path()
 		// Check if the file is used.
-		if _, ok := fileImports[imageFilePath]; !ok {
+		if _, ok := closure.imports[imageFilePath]; !ok {
 			continue // Filtered out.
 		}
 		newImageFile, err := filterImageFile(
 			imageFile,
 			imageIndex,
 			closure,
-			fileImports,
 			options,
 		)
 		if err != nil {
@@ -110,7 +106,7 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 		dirty = dirty || newImageFile != imageFile
 		if newImageFile == nil {
 			// The file was filtered out. Check if it was used by another file.
-			for filePath, dependencies := range fileImports {
+			for filePath, dependencies := range closure.imports {
 				if _, isImported := dependencies[imageFilePath]; isImported {
 					return nil, syserror.Newf("file %q was filtered out, but is still used by %q", imageFilePath, filePath)
 				}
@@ -135,16 +131,14 @@ func filterImageFile(
 	imageFile bufimage.ImageFile,
 	imageIndex *imageIndex,
 	closure *transitiveClosure,
-	fileImports map[string]map[string]struct{},
 	options *imageFilterOptions,
 ) (bufimage.ImageFile, error) {
 	fileDescriptor := imageFile.FileDescriptorProto()
 	var sourcePathsRemap sourcePathsRemapTrie
 	builder := sourcePathsBuilder{
-		imageIndex:  imageIndex,
-		closure:     closure,
-		fileImports: fileImports,
-		options:     options,
+		imageIndex: imageIndex,
+		closure:    closure,
+		options:    options,
 	}
 	newFileDescriptor, changed, err := builder.remapFileDescriptor(&sourcePathsRemap, fileDescriptor)
 	if err != nil {
@@ -200,10 +194,9 @@ func filterImageFile(
 // Each method return the new value, whether it was changed, and an error if any.
 // The value is nil if it was filtered out.
 type sourcePathsBuilder struct {
-	imageIndex  *imageIndex
-	closure     *transitiveClosure
-	fileImports map[string]map[string]struct{}
-	options     *imageFilterOptions
+	imageIndex *imageIndex
+	closure    *transitiveClosure
+	options    *imageFilterOptions
 }
 
 func (b *sourcePathsBuilder) remapFileDescriptor(
@@ -278,7 +271,7 @@ func (b *sourcePathsBuilder) remapDependencies(
 	}
 
 	// Check if the imports need to be remapped.
-	importsRequired := b.fileImports[fileDescriptor.GetName()]
+	importsRequired := b.closure.imports[fileDescriptor.GetName()]
 	importsCount := len(importsRequired)
 	for _, importPath := range dependencies {
 		if _, ok := importsRequired[importPath]; ok {
