@@ -147,6 +147,9 @@ func (s *server) Initialize(
 				ResolveProvider:   true,
 				TriggerCharacters: []string{".", "\"", "/"},
 			},
+			SignatureHelpProvider: &protocol.SignatureHelpOptions{
+				TriggerCharacters: celSignatureHelpTriggers,
+			},
 			DefinitionProvider:         &protocol.DefinitionOptions{},
 			TypeDefinitionProvider:     &protocol.TypeDefinitionOptions{},
 			DocumentFormattingProvider: true,
@@ -564,6 +567,18 @@ func (s *server) Completion(
 		return nil, nil
 	}
 	return &protocol.CompletionList{Items: items}, nil
+}
+
+// SignatureHelp is the entry point for function signature help.
+func (s *server) SignatureHelp(
+	_ context.Context,
+	params *protocol.SignatureHelpParams,
+) (*protocol.SignatureHelp, error) {
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		return nil, nil
+	}
+	return getCELSignatureHelp(file, params.Position, s.celEnv), nil
 }
 
 // CompletionResolve is the entry point for resolving additional details for a completion item.
