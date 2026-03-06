@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix `exclude_types` in `buf generate` dropping transitive dependencies of import files retained for their extension fields.
 
 ## [v1.66.0] - 2026-02-23
 

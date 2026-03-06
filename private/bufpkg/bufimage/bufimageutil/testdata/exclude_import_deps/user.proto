@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package user;
+
+import "excluded.proto";
+import "opt.proto";
+
+// UserService uses an extension from opt.proto. This causes opt.proto to be
+// retained in the filtered image. opt.proto also contains OptMessage which
+// references dep.DepMessage from dep.proto. When excluding the "excluded"
+// package, dep.proto must still be retained in the image because opt.proto
+// depends on it.
+service UserService {
+  option (opt.my_service_option) = "example.com";
+
+  rpc GetUser(UserRequest) returns (UserResponse);
+}
+
+message UserRequest {
+  string name = 1;
+  // This field is excluded (its type is in the excluded package).
+  excluded.ExcludedMessage filter = 2;
+}
+
+message UserResponse {
+  string result = 1;
+}

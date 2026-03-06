@@ -68,6 +68,13 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 				return nil, err
 			}
 		}
+		// Import files that were pulled in only as namespace containers for
+		// extension fields haven't had their own types walked, so their
+		// field-type dependencies are absent from closure.imports. Traverse
+		// those files now, recursing until the closure is stable.
+		if err := closure.traverseRetainedImportFiles(image, imageIndex, options); err != nil {
+			return nil, err
+		}
 	}
 	// After all types are added, add their known extensions
 	if err := closure.addExtensions(imageIndex, options); err != nil {

@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package dep;
+
+// DepMessage is used by OptMessage in opt.proto.
+// When opt.proto is retained in the filtered image (because its extension
+// is used by user.proto), dep.proto must also be retained.
+message DepMessage {
+  string value = 1;
+}

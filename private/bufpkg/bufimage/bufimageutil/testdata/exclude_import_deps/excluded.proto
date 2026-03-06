@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package excluded;
+
+// ExcludedMessage is referenced by user.proto but excluded from the
+// filtered image via WithExcludeTypes("excluded").
+message ExcludedMessage {
+  string value = 1;
+}
