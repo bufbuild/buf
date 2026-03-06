@@ -34,10 +34,11 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 	if err != nil {
 		return nil, err
 	}
+
+	// Phase 1: Build the transitive closure of included elements.
 	closure := newTransitiveClosure()
-	// All excludes are added first, then includes walk included all non excluded types.
-	// TODO: consider supporting a glob syntax of some kind, to do more advanced pattern
-	//   matching, such as ability to get a package AND all of its sub-packages.
+
+	// All excludes are added first, then includes walk all non-excluded types.
 	for excludeType := range options.excludeTypes {
 		excludeType := protoreflect.FullName(excludeType)
 		if err := closure.excludeType(excludeType, imageIndex, options); err != nil {
@@ -50,51 +51,57 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 			return nil, err
 		}
 	}
-	// TODO: No types were included, so include everything. This can be
-	// removed when we are able to handle finding all required imports
-	// below, when remapping the descriptor.
+	// When no types are explicitly included, include all non-import,
+	// non-excluded files and their contents.
 	if len(options.includeTypes) == 0 {
 		for _, file := range image.Files() {
 			if file.IsImport() {
 				continue
 			}
-			// Check if target package is filtered, this is not an error.
-			// These includes are implicitly added to the closure.
 			fileDescriptorProto := file.FileDescriptorProto()
 			if mode := closure.elements[fileDescriptorProto]; mode == inclusionModeExcluded {
 				continue
 			}
-			if err := closure.addElement(fileDescriptorProto, "", false, imageIndex, options); err != nil {
+			if err := closure.addElement(fileDescriptorProto, false, imageIndex, options); err != nil {
 				return nil, err
 			}
 		}
-		// Import files that were pulled in only as namespace containers for
-		// extension fields haven't had their own types walked, so their
-		// field-type dependencies are absent from closure.imports. Traverse
-		// those files now, recursing until the closure is stable.
-		if err := closure.traverseRetainedImportFiles(image, imageIndex, options); err != nil {
-			return nil, err
-		}
 	}
-	// After all types are added, add their known extensions
+	// After all types are added, add their known extensions.
 	if err := closure.addExtensions(imageIndex, options); err != nil {
 		return nil, err
 	}
+	// In exclude-only mode (no includes specified), types not in the
+	// closure are implicitly included. This means retained files may
+	// contain types that haven't been walked. Complete the closure for
+	// these files so that the import computation accounts for all type
+	// references in the output.
+	if len(options.includeTypes) == 0 {
+		if err := closure.completeFileContents(image, imageIndex, options); err != nil {
+			return nil, err
+		}
+	}
 
-	// Loop over image files in revserse DAG order. Imports that are no longer
+	// Phase 2: Derive file-to-file imports from the completed closure.
+	fileImports := closure.computeImports(imageIndex, options)
+
+	// Phase 3: Filter image files using the closure and computed imports.
+	//
+	// Loop over image files in reverse DAG order. Imports that are no longer
 	// imported by a previous file are dropped from the image.
 	dirty := false
 	newImageFiles := make([]bufimage.ImageFile, 0, len(image.Files()))
 	for _, imageFile := range slices.Backward(image.Files()) {
 		imageFilePath := imageFile.Path()
 		// Check if the file is used.
-		if _, ok := closure.imports[imageFilePath]; !ok {
+		if _, ok := fileImports[imageFilePath]; !ok {
 			continue // Filtered out.
 		}
 		newImageFile, err := filterImageFile(
 			imageFile,
 			imageIndex,
 			closure,
+			fileImports,
 			options,
 		)
 		if err != nil {
@@ -103,15 +110,15 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 		dirty = dirty || newImageFile != imageFile
 		if newImageFile == nil {
 			// The file was filtered out. Check if it was used by another file.
-			for filePath, dependencies := range closure.imports {
+			for filePath, dependencies := range fileImports {
 				if _, isImported := dependencies[imageFilePath]; isImported {
 					return nil, syserror.Newf("file %q was filtered out, but is still used by %q", imageFilePath, filePath)
 				}
 			}
-			// Currently, with an explicitly included type we add the extensions
-			// to the import list. If all the extension fields types are excluded,
-			// the file may be empty. The import list still contains the empty file.
-			// Skip the file. See: TestDeps/IncludeWithExcludeExtensions
+			// With an explicitly included type we add the extensions to the
+			// import list. If all the extension field types are excluded,
+			// the file may be empty. Skip it.
+			// See: TestDeps/IncludeWithExcludeExtensions
 			continue
 		}
 		newImageFiles = append(newImageFiles, newImageFile)
@@ -128,14 +135,16 @@ func filterImageFile(
 	imageFile bufimage.ImageFile,
 	imageIndex *imageIndex,
 	closure *transitiveClosure,
+	fileImports map[string]map[string]struct{},
 	options *imageFilterOptions,
 ) (bufimage.ImageFile, error) {
 	fileDescriptor := imageFile.FileDescriptorProto()
 	var sourcePathsRemap sourcePathsRemapTrie
 	builder := sourcePathsBuilder{
-		imageIndex: imageIndex,
-		closure:    closure,
-		options:    options,
+		imageIndex:  imageIndex,
+		closure:     closure,
+		fileImports: fileImports,
+		options:     options,
 	}
 	newFileDescriptor, changed, err := builder.remapFileDescriptor(&sourcePathsRemap, fileDescriptor)
 	if err != nil {
@@ -191,9 +200,10 @@ func filterImageFile(
 // Each method return the new value, whether it was changed, and an error if any.
 // The value is nil if it was filtered out.
 type sourcePathsBuilder struct {
-	imageIndex *imageIndex
-	closure    *transitiveClosure
-	options    *imageFilterOptions
+	imageIndex  *imageIndex
+	closure     *transitiveClosure
+	fileImports map[string]map[string]struct{}
+	options     *imageFilterOptions
 }
 
 func (b *sourcePathsBuilder) remapFileDescriptor(
@@ -268,7 +278,7 @@ func (b *sourcePathsBuilder) remapDependencies(
 	}
 
 	// Check if the imports need to be remapped.
-	importsRequired := b.closure.imports[fileDescriptor.GetName()]
+	importsRequired := b.fileImports[fileDescriptor.GetName()]
 	importsCount := len(importsRequired)
 	for _, importPath := range dependencies {
 		if _, ok := importsRequired[importPath]; ok {
