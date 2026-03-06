@@ -119,7 +119,7 @@ func TestTypes(t *testing.T) {
 	})
 	t.Run("include-method-exclude-method-types", func(t *testing.T) {
 		t.Parallel()
-		_, image, err := getImage(context.Background(), slogtestext.NewLogger(t), "testdata/options", bufimage.WithExcludeSourceCodeInfo())
+		_, image, err := getImage(t.Context(), slogtestext.NewLogger(t), "testdata/options", bufimage.WithExcludeSourceCodeInfo())
 		require.NoError(t, err)
 		_, err = FilterImage(image, WithIncludeTypes("pkg.FooService", "pkg.FooService.Do"), WithExcludeTypes("pkg.Empty"))
 		require.Error(t, err)
@@ -128,7 +128,7 @@ func TestTypes(t *testing.T) {
 
 	t.Run("include-extension-exclude-extendee", func(t *testing.T) {
 		t.Parallel()
-		_, image, err := getImage(context.Background(), slogtestext.NewLogger(t), "testdata/options", bufimage.WithExcludeSourceCodeInfo())
+		_, image, err := getImage(t.Context(), slogtestext.NewLogger(t), "testdata/options", bufimage.WithExcludeSourceCodeInfo())
 		require.NoError(t, err)
 		_, err = FilterImage(image, WithIncludeTypes("pkg.extension"), WithExcludeTypes("pkg.Foo"))
 		require.Error(t, err)
@@ -179,7 +179,7 @@ func TestNesting(t *testing.T) {
 
 	t.Run("include-excluded", func(t *testing.T) {
 		t.Parallel()
-		ctx := context.Background()
+		ctx := t.Context()
 		_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/nesting", bufimage.WithExcludeSourceCodeInfo())
 		require.NoError(t, err)
 		_, err = FilterImage(image, WithIncludeTypes("pkg.Foo.NestedFoo"), WithExcludeTypes("pkg.Foo"))
@@ -265,7 +265,7 @@ func TestOptionImports(t *testing.T) {
 
 	// Safe to filter the image concurrently as its not being modified.
 	image, err := bufimage.BuildImage(
-		context.Background(),
+		t.Context(),
 		slogtestext.NewLogger(t),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
@@ -275,17 +275,17 @@ func TestOptionImports(t *testing.T) {
 	t.Run("exclude_foo", func(t *testing.T) {
 		t.Parallel()
 		generated, _ := runFilterImage(t, image, WithExcludeTypes("message_foo"))
-		checkExpectation(t, context.Background(), generated, bucket, "foo.txtar")
+		checkExpectation(t, t.Context(), generated, bucket, "foo.txtar")
 	})
 	t.Run("exclude_foo_bar", func(t *testing.T) {
 		t.Parallel()
 		generated, _ := runFilterImage(t, image, WithExcludeTypes("message_foo", "message_bar"))
-		checkExpectation(t, context.Background(), generated, bucket, "foo_bar.txtar")
+		checkExpectation(t, t.Context(), generated, bucket, "foo_bar.txtar")
 	})
 	t.Run("exclude_bar", func(t *testing.T) {
 		t.Parallel()
 		generated, _ := runFilterImage(t, image, WithIncludeTypes("pkg.Foo"), WithExcludeTypes("message_bar"))
-		checkExpectation(t, context.Background(), generated, bucket, "bar.txtar")
+		checkExpectation(t, t.Context(), generated, bucket, "bar.txtar")
 	})
 }
 
@@ -355,7 +355,7 @@ func TestUnusedDeps(t *testing.T) {
 
 func TestTransitivePublic(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 	moduleSet, err := bufmoduletesting.NewModuleSetForPathToData(
 		map[string][]byte{
 			"a.proto": []byte(`syntax = "proto3";package a;message Foo{}`),
@@ -382,7 +382,7 @@ func TestTransitivePublic(t *testing.T) {
 func TestTypesFromMainModule(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	moduleSet, err := bufmoduletesting.NewOmniProvider(
 		bufmoduletesting.ModuleData{
 			Name: "buf.build/repo/main",
@@ -427,7 +427,7 @@ func TestTypesFromMainModule(t *testing.T) {
 
 func TestMutateInPlace(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 	_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/options")
 	require.NoError(t, err)
 
@@ -469,7 +469,7 @@ func TestMutateInPlace(t *testing.T) {
 func TestConsecutiveFilters(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/options")
 	require.NoError(t, err)
 
@@ -531,7 +531,7 @@ func TestExcludeImportFileDependencies(t *testing.T) {
 	moduleSet, err := bufmoduletesting.NewModuleSet(testModuleData...)
 	require.NoError(t, err)
 	image, err := bufimage.BuildImage(
-		context.Background(),
+		t.Context(),
 		slogtestext.NewLogger(t),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
@@ -580,7 +580,7 @@ func getImage(ctx context.Context, logger *slog.Logger, testdataDir string, opti
 }
 
 func runDiffTest(t *testing.T, testdataDir string, expectedFile string, opts ...ImageFilterOption) {
-	ctx := context.Background()
+	ctx := t.Context()
 	bucket, image, err := getImage(ctx, slogtestext.NewLogger(t), testdataDir, bufimage.WithExcludeSourceCodeInfo())
 	require.NoError(t, err)
 	generated, _ := runFilterImage(t, image, opts...)
@@ -657,7 +657,7 @@ func checkExpectation(t *testing.T, ctx context.Context, actual []byte, bucket s
 }
 
 func runSourceCodeInfoTest(t *testing.T, typename string, expectedFile string, opts ...ImageFilterOption) {
-	ctx := context.Background()
+	ctx := t.Context()
 	bucket, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/sourcecodeinfo")
 	require.NoError(t, err)
 
@@ -793,7 +793,7 @@ func benchmarkFilterImage(b *testing.B, opts ...bufimage.BuildImageOption) {
 			types:  []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService", "pkg.FooService.Do"},
 		},
 	}
-	ctx := context.Background()
+	ctx := b.Context()
 	for _, benchmarkCase := range benchmarkCases {
 		_, image, err := getImage(ctx, slogtestext.NewLogger(b, slogtestext.WithLogLevel(appext.LogLevelError)), benchmarkCase.folder, opts...)
 		require.NoError(b, err)
