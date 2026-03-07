@@ -26,14 +26,17 @@ import (
 	"github.com/bufbuild/protocompile/protoutil"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
+	gofeaturespb "google.golang.org/protobuf/types/gofeaturespb"
 )
 
 const (
-	featuresFieldName             = "features"
-	featureNameUTF8Validation     = "utf8_validation"
-	featureNameJSONFormat         = "json_format"
-	cppFeatureNameStringType      = "string_type"
-	javaFeatureNameUTF8Validation = "utf8_validation"
+	featuresFieldName              = "features"
+	featureNameUTF8Validation      = "utf8_validation"
+	featureNameJSONFormat          = "json_format"
+	cppFeatureNameStringType       = "string_type"
+	javaFeatureNameUTF8Validation  = "utf8_validation"
+	goFeatureNameStripEnumPrefix   = "strip_enum_prefix"
+	goFeatureNameAPILevel          = "api_level"
 )
 
 var (
@@ -255,6 +258,20 @@ func fieldJavaUTF8ValidationLocation(field bufprotosource.Field) bufprotosource.
 		return nil
 	}
 	return getCustomFeatureLocation(field, ext, javaFeatureNameUTF8Validation)
+}
+
+func enumGoStripEnumPrefix(enum protoreflect.EnumDescriptor) (gofeaturespb.GoFeatures_StripEnumPrefix, error) {
+	val, err := customfeatures.ResolveGoFeatureForEnum(enum, goFeatureNameStripEnumPrefix, protoreflect.EnumKind)
+	if err != nil {
+		return 0, err
+	}
+	return gofeaturespb.GoFeatures_StripEnumPrefix(val.Enum()), nil
+}
+
+func enumGoStripEnumPrefixLocation(enum bufprotosource.Enum) bufprotosource.Location {
+	// For enums, we use the enum's features location
+	// This is similar to how other enum features are handled
+	return enum.Features().EnumTypeLocation()
 }
 
 func getCustomFeatureLocation(field bufprotosource.Field, extension protoreflect.ExtensionTypeDescriptor, fieldName protoreflect.Name) bufprotosource.Location {
