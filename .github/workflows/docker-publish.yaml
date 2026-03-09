@@ -50,7 +50,7 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: docker-meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             bufbuild/buf
