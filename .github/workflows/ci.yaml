@@ -89,21 +89,21 @@ jobs:
       # not have any CGO and care should be taken in the Dockerfile to ensure
       # that go cross compilation happens on the build platform.
       - name: setup-qemu
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         id: qemu
         with:
           # alpine image doesn't support linux/riscv64
           platforms: linux/386,linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x
       - name: setup-docker-buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: login-docker
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: docker-meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             bufbuild/buf
@@ -115,7 +115,7 @@ jobs:
           flavor: |
             latest=auto
       - name: docker-build-push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           file: Dockerfile.buf
           platforms: ${{ steps.qemu.outputs.platforms }}
