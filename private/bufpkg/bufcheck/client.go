@@ -43,6 +43,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"pluginrpc.com/pluginrpc"
 )
 
@@ -821,6 +822,12 @@ func ignoreFileLocation(
 		if err != nil {
 			return false, err
 		}
+		// For group fields, comments in source get attributed to the nested message
+		// (the synthetic message that holds the group's fields), not the group field itself.
+		// We need to also check the group field's source path for comment ignores.
+		if groupFieldSourcePath := getGroupFieldSourcePathForNestedMessage(sourcePath, protoreflectFileDescriptor); groupFieldSourcePath != nil {
+			associatedSourcePaths = append(associatedSourcePaths, groupFieldSourcePath)
+		}
 		sourceLocations := protoreflectFileDescriptor.SourceLocations()
 		for _, associatedSourcePath := range associatedSourcePaths {
 			sourceLocation := sourceLocations.ByPath(associatedSourcePath)
@@ -834,6 +841,93 @@ func ignoreFileLocation(
 		}
 	}
 	return false, nil
+}
+
+// getGroupFieldSourcePathForNestedMessage checks if the given source path points to a
+// descriptor within a synthetic message that was created for a group field. If so, it
+// returns the source path of the parent group field so that comment ignores on the group
+// field declaration are properly respected.
+//
+// Group fields in proto2 create a synthetic message to hold their fields. The source
+// path for elements within this synthetic message includes the nested message path
+// component. For example, for a group field "Metadata" at index 0 in a message, the
+// source path might be [4,0,2,0,3,0,...] where:
+// - [4,0] is the parent message
+// - [2,0] is the group field
+// - [3,0] is the nested message (synthetic message for the group)
+// - ... is the rest of the path within the synthetic message
+//
+// In this case, we want to also check [4,0,2,0] (the group field) for comment ignores.
+func getGroupFieldSourcePathForNestedMessage(
+	sourcePath protoreflect.SourcePath,
+	fileDescriptor protoreflect.FileDescriptor,
+) protoreflect.SourcePath {
+	// A source path pointing to a descriptor within a synthetic group message will have
+	// at least 6 elements: [4, msg_idx, 2, field_idx, 3, nested_msg_idx, ...]
+	// where 3 is the field number for nested_type in DescriptorProto.
+	//
+	// We need to check if the message at nested_msg_idx is a synthetic message created
+	// for a group field. A synthetic message for a group field has:
+	// 1. The same name as the parent field
+	// 2. The parent field has type GROUP
+	//
+	// We find the parent field by looking at the field at [2, field_idx] within the
+	// parent message at [4, msg_idx].
+	if len(sourcePath) < 6 {
+		return nil
+	}
+	// Check if we have the pattern [4, msg_idx, 2, field_idx, 3, nested_msg_idx, ...]
+	// where 4 = message_type, 2 = field, 3 = nested_type
+	const (
+		messageTypeTag  = 4  // FieldDescriptorProto.message_type
+		fieldTypeTag    = 2  // DescriptorProto.field
+		nestedTypeTag   = 3  // DescriptorProto.nested_type
+		fieldNumberTag  = 3  // FieldDescriptorProto.number
+		fieldTypeTag2   = 5  // FieldDescriptorProto.type
+		fieldTypeNameTag = 6 // FieldDescriptorProto.type_name
+	)
+	// Walk through the source path to find the pattern
+	for i := 0; i < len(sourcePath)-5; i++ {
+		if sourcePath[i] == messageTypeTag &&
+			sourcePath[i+2] == fieldTypeTag &&
+			sourcePath[i+4] == nestedTypeTag {
+			// Found the pattern [4, msg_idx, 2, field_idx, 3, nested_msg_idx]
+			msgIdx := int(sourcePath[i+1])
+			fieldIdx := int(sourcePath[i+3])
+			nestedMsgIdx := int(sourcePath[i+5])
+
+			messages := fileDescriptor.Messages()
+			if msgIdx >= messages.Len() {
+				continue
+			}
+			message := messages.Get(msgIdx)
+			fields := message.Fields()
+			if fieldIdx >= fields.Len() {
+				continue
+			}
+			field := fields.Get(fieldIdx)
+			// Check if this is a group field
+			if field.Kind() != protoreflect.GroupKind {
+				continue
+			}
+			// Check if the nested message name matches the field name
+			// (this confirms it's the synthetic message for the group field)
+			nestedMessages := message.Messages()
+			if nestedMsgIdx >= nestedMessages.Len() {
+				continue
+			}
+			nestedMessage := nestedMessages.Get(nestedMsgIdx)
+			if string(nestedMessage.Name()) != string(field.Name()) {
+				continue
+			}
+			// This is a synthetic message for a group field
+			// Return the source path of the group field: [4, msg_idx, 2, field_idx]
+			groupFieldPath := make(protoreflect.SourcePath, i+4)
+			copy(groupFieldPath, sourcePath[:i+4])
+			return groupFieldPath
+		}
+	}
+	return nil
 }
 
 // checkCommentLineForCheckIgnore checks that the comment line starts with the configured
