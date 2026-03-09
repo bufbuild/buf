@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.66.1] - 2026-03-09
 
 - Fix `exclude_types` in `buf generate` dropping transitive dependencies of import files retained for their extension fields.
@@ -1496,6 +1500,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.66.1...HEAD
 [v1.66.1]: https://github.com/bufbuild/buf/compare/v1.66.0...v1.66.1
 [v1.66.0]: https://github.com/bufbuild/buf/compare/v1.65.0...v1.66.0
 [v1.65.0]: https://github.com/bufbuild/buf/compare/v1.64.0...v1.65.0
