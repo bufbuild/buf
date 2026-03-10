@@ -231,6 +231,16 @@ message FeatureSet {
       type: ".pb.PythonFeatures"
     },
     declaration = {
+      number: 1100,
+      full_name: ".imp.impress_feature_set",
+      type: ".imp.ImpressFeatureSet"
+    },
+    declaration = {
+      number: 9989,
+      full_name: ".pb.java_mutable",
+      type: ".pb.JavaMutableFeatures"
+    },
+    declaration = {
       number: 9990,
       full_name: ".pb.proto1",
       type: ".pb.Proto1Features"
@@ -295,7 +305,7 @@ message FieldOptions {
   optional bool deprecated = 3 [default = false];
   optional bool lazy = 5 [default = false];
   optional JSType jstype = 6 [default = JS_NORMAL];
-  optional bool weak = 10 [default = false];
+  optional bool weak = 10 [default = false, deprecated = true];
   optional bool unverified_lazy = 15 [default = false];
   optional bool debug_redact = 16 [default = false];
   optional OptionRetention retention = 17;
@@ -313,6 +323,7 @@ message FieldOptions {
     optional Edition edition_deprecated = 2;
     optional string deprecation_warning = 3;
     optional Edition edition_removed = 4;
+    optional string removal_error = 5;
   }
   enum CType {
     STRING = 0;
@@ -374,7 +385,10 @@ message FileOptions {
   optional string java_package = 1;
   optional string java_outer_classname = 8;
   optional OptimizeMode optimize_for = 9 [default = SPEED];
-  optional bool java_multiple_files = 10 [default = false];
+  optional bool java_multiple_files = 10 [
+    default = false,
+    feature_support = { edition_introduced: EDITION_PROTO2, edition_removed: EDITION_2024 }
+  ];
   optional string go_package = 11;
   optional bool cc_generic_services = 16 [default = false];
   optional bool java_generic_services = 17 [default = false];
@@ -460,6 +474,8 @@ message ServiceDescriptorProto {
   optional string name = 1;
   repeated MethodDescriptorProto method = 2;
   optional ServiceOptions options = 3;
+  reserved 4;
+  reserved "stream";
 }
 message ServiceOptions {
   optional bool deprecated = 33 [default = false];
@@ -506,6 +522,7 @@ enum Edition {
   EDITION_PROTO3 = 999;
   EDITION_2023 = 1000;
   EDITION_2024 = 1001;
+  EDITION_UNSTABLE = 9999;
   EDITION_99997_TEST_ONLY = 99997;
   EDITION_99998_TEST_ONLY = 99998;
   EDITION_99999_TEST_ONLY = 99999;
