@@ -38,11 +38,11 @@ const (
 	// This is what we want to report here.
 
 	// defaultMajorVersion is the default major version.
-	defaultMajorVersion = 7
+	defaultMajorVersion = 6
 	// defaultMinorVersion is the default minor version.
-	defaultMinorVersion = 34
+	defaultMinorVersion = 33
 	// defaultPatchVersion is the default patch version.
-	defaultPatchVersion = 0
+	defaultPatchVersion = 3
 	// defaultSuffixVersion is the default suffix version.
 	defaultSuffixVersion = ""
 )
