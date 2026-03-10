@@ -17,23 +17,14 @@
 // Should primarily be used for testing.
 package diff
 
-// Largely copied from https://github.com/golang/go/blob/master/src/cmd/gofmt/gofmt.go
-//
-// Copyright 2009 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-//
-// https://github.com/golang/go/blob/master/LICENSE
-
 import (
 	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
-	"runtime"
 
-	"buf.build/go/standard/xos/xexec"
+	zdiff "znkr.io/diff"
+	"znkr.io/diff/textdiff"
 )
 
 // Diff does a diff.
@@ -51,15 +42,7 @@ func Diff(
 	for _, option := range options {
 		option(diffOptions)
 	}
-	return doDiff(
-		ctx,
-		b1,
-		b2,
-		filename1,
-		filename2,
-		diffOptions.suppressCommands,
-		diffOptions.suppressTimestamps,
-	)
+	return doDiff(b1, b2, filename1, filename2, diffOptions.suppressCommands)
 }
 
 // DiffOption is an option for Diff.
@@ -74,100 +57,22 @@ func DiffWithSuppressCommands() DiffOption {
 
 // DiffWithSuppressTimestamps returns a new DiffOption that suppresses printing of timestamps.
 func DiffWithSuppressTimestamps() DiffOption {
-	return func(diffOptions *diffOptions) {
-		diffOptions.suppressTimestamps = true
-	}
+	return func(*diffOptions) {}
 }
 
 func doDiff(
-	ctx context.Context,
 	b1 []byte,
 	b2 []byte,
 	filename1 string,
 	filename2 string,
 	suppressCommands bool,
-	suppressTimestamps bool,
 ) ([]byte, error) {
 	if bytes.Equal(b1, b2) {
 		return nil, nil
 	}
-
-	f1, err := writeTempFile("", "", b1)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		_ = os.Remove(f1)
-	}()
-
-	f2, err := writeTempFile("", "", b2)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		_ = os.Remove(f2)
-	}()
-
-	binaryPath := "diff"
-	if runtime.GOOS == "plan9" {
-		binaryPath = "/bin/ape/diff"
-	}
-
-	buffer := bytes.NewBuffer(nil)
-	err = xexec.Run(
-		ctx,
-		binaryPath,
-		xexec.WithArgs("-u", f1, f2),
-		xexec.WithStdout(buffer),
-		xexec.WithStderr(buffer),
-	)
-	data := buffer.Bytes()
-	if len(data) > 0 {
-		// diff exits with a non-zero status when the files don't match.
-		// Ignore that failure as long as we get output.
-		return tryModifyHeader(data, filename1, filename2, suppressCommands, suppressTimestamps), nil
-	}
-	return nil, err
-}
-
-func writeTempFile(dir string, prefix string, data []byte) (string, error) {
-	file, err := os.CreateTemp(dir, prefix)
-	if err != nil {
-		return "", err
-	}
-	if len(data) > 0 {
-		_, err = file.Write(data)
-	}
-	if err1 := file.Close(); err == nil {
-		err = err1
-	}
-	if err != nil {
-		_ = os.Remove(file.Name())
-		return "", err
-	}
-	return file.Name(), nil
-}
-
-func tryModifyHeader(
-	diff []byte,
-	filename1 string,
-	filename2 string,
-	suppressCommands bool,
-	suppressTimestamps bool,
-) []byte {
-	bs := bytes.SplitN(diff, []byte{'\n'}, 3)
-	if len(bs) < 3 {
-		return diff
-	}
-	// Preserve timestamps.
-	var t0, t1 []byte
-	if !suppressTimestamps {
-		if i := bytes.LastIndexByte(bs[0], '\t'); i != -1 {
-			t0 = bs[0][i:]
-		}
-		if i := bytes.LastIndexByte(bs[1], '\t'); i != -1 {
-			t1 = bs[1][i:]
-		}
+	hunks := textdiff.Hunks(b1, b2)
+	if len(hunks) == 0 {
+		return nil, nil
 	}
 	// Always print filepath with slash separator.
 	filename1 = filepath.ToSlash(filename1)
@@ -175,22 +80,49 @@ func tryModifyHeader(
 	if filename1 == filename2 {
 		filename1 = filename1 + ".orig"
 	}
-	bs[0] = fmt.Appendf(nil, "--- %s%s", filename1, t0)
-	bs[1] = fmt.Appendf(nil, "+++ %s%s", filename2, t1)
+	var buf bytes.Buffer
 	if !suppressCommands {
-		bs = append(
-			[][]byte{
-				fmt.Appendf(nil, "diff -u %s %s", filename1, filename2),
-			},
-			bs...,
-		)
+		fmt.Fprintf(&buf, "diff -u %s %s\n", filename1, filename2)
 	}
-	return bytes.Join(bs, []byte{'\n'})
+	fmt.Fprintf(&buf, "--- %s\n", filename1)
+	fmt.Fprintf(&buf, "+++ %s\n", filename2)
+	for _, h := range hunks {
+		fmt.Fprintf(&buf, "@@ -%s +%s @@\n",
+			hunkRange(h.LineNoX, h.EndLineNoX),
+			hunkRange(h.LineNoY, h.EndLineNoY),
+		)
+		for _, e := range h.Edits {
+			switch e.Op {
+			case zdiff.Match:
+				fmt.Fprintf(&buf, " %s", e.Line)
+			case zdiff.Delete:
+				fmt.Fprintf(&buf, "-%s", e.Line)
+			case zdiff.Insert:
+				fmt.Fprintf(&buf, "+%s", e.Line)
+			}
+		}
+	}
+	return buf.Bytes(), nil
+}
+
+// hunkRange formats a hunk range for a unified diff header, matching GNU diff -u output:
+// - count 0: "l,0" using the 0-based line number (line before which the change occurs)
+// - count 1: "l" using 1-based line number, count omitted
+// - count N: "l,N" using 1-based line number
+func hunkRange(lineNo, endLine int) string {
+	count := endLine - lineNo
+	switch count {
+	case 0:
+		return fmt.Sprintf("%d,0", lineNo)
+	case 1:
+		return fmt.Sprintf("%d", lineNo+1)
+	default:
+		return fmt.Sprintf("%d,%d", lineNo+1, count)
+	}
 }
 
 type diffOptions struct {
-	suppressCommands   bool
-	suppressTimestamps bool
+	suppressCommands bool
 }
 
 func newDiffOptions() *diffOptions {
