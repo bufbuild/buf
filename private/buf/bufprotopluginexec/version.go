@@ -150,6 +150,15 @@ func getRustSupportedAsBuiltin(version *pluginpb.Version) bool {
 	return true
 }
 
+// Is rbs supported as a builtin plugin?
+func getRbsSupportedAsBuiltin(version *pluginpb.Version) bool {
+	if version.GetSuffix() == "buf" {
+		return true
+	}
+	// rbs was added in protoc v34.0
+	return version.GetMajor() >= 34
+}
+
 // Is js supported as a builtin plugin?
 func getJSSupportedAsBuiltin(version *pluginpb.Version) bool {
 	if version.GetSuffix() == "buf" {

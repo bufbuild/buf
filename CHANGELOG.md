@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add support for `--rbs_out` as a `protoc_builtin` plugin (requires protoc v34.0+).
 
 ## [v1.66.1] - 2026-03-09
 

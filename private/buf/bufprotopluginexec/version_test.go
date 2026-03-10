@@ -75,6 +75,15 @@ func TestGetRustSupportedAsBuiltin(t *testing.T) {
 	assert.False(t, getRustSupportedAsBuiltin(newVersion(3, 14, 1, "")))
 }
 
+func TestGetRbsSupportedAsBuiltin(t *testing.T) {
+	t.Parallel()
+	assert.True(t, getRbsSupportedAsBuiltin(newVersion(3, 11, 1, "buf")))
+	assert.True(t, getRbsSupportedAsBuiltin(newVersion(34, 0, 0, "")))
+	assert.True(t, getRbsSupportedAsBuiltin(newVersion(35, 0, 0, "")))
+	assert.False(t, getRbsSupportedAsBuiltin(newVersion(33, 5, 0, "")))
+	assert.False(t, getRbsSupportedAsBuiltin(newVersion(21, 1, 0, "")))
+}
+
 func TestGetJSSupportedAsBuiltin(t *testing.T) {
 	t.Parallel()
 	assert.False(t, getJSSupportedAsBuiltin(newVersion(2, 11, 1, "")))
