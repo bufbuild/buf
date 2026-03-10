@@ -189,6 +189,16 @@ message FeatureSet {
       type: ".pb.PythonFeatures"
     },
     declaration = {
+      number: 1100,
+      full_name: ".imp.impress_feature_set",
+      type: ".imp.ImpressFeatureSet"
+    },
+    declaration = {
+      number: 9989,
+      full_name: ".pb.java_mutable",
+      type: ".pb.JavaMutableFeatures"
+    },
+    declaration = {
       number: 9990,
       full_name: ".pb.proto1",
       type: ".pb.Proto1Features"
