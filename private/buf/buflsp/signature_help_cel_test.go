@@ -67,11 +67,14 @@ func TestCELSignatureHelp(t *testing.T) {
 		wantExactSigCount  int // if > 0, assert len(Signatures) == this value
 	}{
 		{
-			name:           "global function: size",
-			line:           11,
-			char:           22, // 't' of 'this', inside size(...)
-			wantFuncInSig:  "size",
-			wantParamIndex: 0,
+			// Argument-type filtering: this is a string field, so only
+			// size(string) should appear (not bytes, list, or map overloads).
+			name:              "global function: size filtered to string arg",
+			line:              11,
+			char:              22, // 't' of 'this', inside size(...)
+			wantFuncInSig:     "size",
+			wantParamIndex:    0,
+			wantExactSigCount: 1,
 		},
 		{
 			// Receiver-type filtering: this is a string field, so only the
@@ -132,20 +135,32 @@ func TestCELSignatureHelp(t *testing.T) {
 			expectNil: true,
 		},
 		{
+			// The call has 2 args, so the 1-arg overload is filtered out,
+			// leaving only string.substring(int, int).
 			// cursor at char 32 = '1', the first argument → paramIndex 0.
-			name:           "substring: first param",
-			line:           58,
-			char:           32, // '1' in substring(1, 3)
-			wantFuncInSig:  "substring",
-			wantParamIndex: 0,
+			name:              "substring: first param",
+			line:              58,
+			char:              32, // '1' in substring(1, 3)
+			wantFuncInSig:     "substring",
+			wantParamIndex:    0,
+			wantExactSigCount: 1,
 		},
 		{
 			// cursor at char 35 = '3', the second argument → paramIndex 1.
-			name:           "substring: second param",
-			line:           58,
-			char:           35, // '3' in substring(1, 3)
-			wantFuncInSig:  "substring",
-			wantParamIndex: 1,
+			name:              "substring: second param",
+			line:              58,
+			char:              35, // '3' in substring(1, 3)
+			wantFuncInSig:     "substring",
+			wantParamIndex:    1,
+			wantExactSigCount: 1,
+		},
+		{
+			// Incomplete expression "size( ": parsing fails, so we fall back to
+			// text scanning. All overloads are shown (no type filtering).
+			name:          "incomplete expression: text scan fallback",
+			line:          74,
+			char:          22, // space right after '(' in "size( "
+			wantFuncInSig: "size",
 		},
 	}
 

@@ -62,4 +62,16 @@ message SignatureHelpTest {
     id: "test.substring"
     expression: "this.substring(1, 3)"
   }];
+
+  // Incomplete expression: cursor right after '(' before any arg is typed.
+  // The CEL expression "size( " fails to parse as-is; the paren-patching
+  // heuristic appends ')' to recover. Expression line (0-indexed): 74.
+  // `    expression: "size( "`
+  //  0         1         2
+  //  01234567890123456789012345
+  //                  ^17=s ^21=(  ^22=space (inside incomplete size()
+  string test_incomplete = 8 [(buf.validate.field).cel = {
+    id: "test.incomplete"
+    expression: "size( "
+  }];
 }

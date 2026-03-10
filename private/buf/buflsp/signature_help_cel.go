@@ -55,7 +55,26 @@ func getCELSignatureHelp(
 
 			parsedAST, parseIssues := celEnv.Parse(exprInfo.expression)
 			if parseIssues.Err() != nil {
-				continue
+				// Expression is incomplete (e.g. cursor right after '(').
+				// Fall back to a text scan: find the enclosing function name
+				// and return all its overloads without type filtering.
+				funcName, isMember, parenOffset := celFindCallAtOffset(exprInfo.expression, celOffset)
+				if funcName == "" || celIsOperatorOrInternal(funcName) {
+					continue
+				}
+				funcDecl, ok := celEnv.Functions()[funcName]
+				if !ok {
+					continue
+				}
+				sigs := generateCELSignatures(funcDecl, isMember, nil, nil)
+				if len(sigs) == 0 {
+					continue
+				}
+				return &protocol.SignatureHelp{
+					Signatures:      sigs,
+					ActiveSignature: 0,
+					ActiveParameter: celCountParamsBeforeOffset(exprInfo.expression, parenOffset, celOffset),
+				}
 			}
 
 			nativeAST := parsedAST.NativeRep()
@@ -80,27 +99,49 @@ func getCELSignatureHelp(
 				continue
 			}
 
+			// Try the type-checked AST; used to filter overloads for both
+			// member and global calls.
+			var typeMap map[int64]*types.Type
+			if checkedAST, compileIssues := celEnv.Compile(exprInfo.expression); compileIssues.Err() == nil {
+				typeMap = checkedAST.NativeRep().TypeMap()
+			}
+
 			// For member function calls, determine the receiver type so we can
 			// filter overloads to only those applicable to that receiver.
 			var receiverType *types.Type
 			if call.IsMemberFunction() {
-				// Try the type-checked AST first (most accurate).
-				if checkedAST, compileIssues := celEnv.Compile(exprInfo.expression); compileIssues.Err() == nil {
-					typeMap := checkedAST.NativeRep().TypeMap()
-					if celType, hasType := typeMap[call.Target().ID()]; hasType {
+				target := call.Target()
+				if typeMap != nil {
+					if celType, hasType := typeMap[target.ID()]; hasType {
 						receiverType = celType
 					}
 				}
 				// Fall back to the proto IR type of `this` when the target is the
 				// `this` identifier and compilation didn't provide a type.
 				if receiverType == nil && !exprInfo.thisIRType.IsZero() {
-					if target := call.Target(); target != nil && target.Kind() == ast.IdentKind && target.AsIdent() == "this" {
+					if target != nil && target.Kind() == ast.IdentKind && target.AsIdent() == "this" {
 						receiverType = celProtoTypeToExprType(exprInfo.thisIRType)
 					}
 				}
 			}
 
-			sigs := generateCELSignatures(funcDecl, call.IsMemberFunction(), receiverType)
+			// Determine the types of the call arguments to filter overloads.
+			// This handles global calls like size(this) where 'this' is a string.
+			argTypes := make([]*types.Type, len(call.Args()))
+			for i, arg := range call.Args() {
+				if typeMap != nil {
+					if celType, hasType := typeMap[arg.ID()]; hasType {
+						argTypes[i] = celType
+						continue
+					}
+				}
+				// Fall back: if this arg is the 'this' identifier, use the IR type.
+				if !exprInfo.thisIRType.IsZero() && arg.Kind() == ast.IdentKind && arg.AsIdent() == "this" {
+					argTypes[i] = celProtoTypeToExprType(exprInfo.thisIRType)
+				}
+			}
+
+			sigs := generateCELSignatures(funcDecl, call.IsMemberFunction(), receiverType, argTypes)
 			if len(sigs) == 0 {
 				continue
 			}
@@ -233,27 +274,57 @@ func countCELParametersBeforeCursor(exprString string, parenStart, cursorOffset 
 
 // generateCELSignatures creates signature information for the overloads of
 // funcDecl, filtered to member or global overloads based on isMemberFunction.
-// For member functions, if receiverType is non-nil only overloads whose first
-// argument type is assignable from receiverType are included.
-func generateCELSignatures(funcDecl *decls.FunctionDecl, isMemberFunction bool, receiverType *types.Type) []protocol.SignatureInformation {
+// receiverType filters member overloads by the receiver's type. argTypes
+// filters all overloads by known argument types (nil entries are ignored).
+func generateCELSignatures(funcDecl *decls.FunctionDecl, isMemberFunction bool, receiverType *types.Type, argTypes []*types.Type) []protocol.SignatureInformation {
 	var sigs []protocol.SignatureInformation
 	for _, o := range funcDecl.OverloadDecls() {
 		if o.IsMemberFunction() != isMemberFunction {
 			continue
 		}
-		if isMemberFunction && receiverType != nil && len(o.ArgTypes()) > 0 {
-			recvType := o.ArgTypes()[0]
-			if !recvType.IsAssignableType(receiverType) {
+		oArgTypes := o.ArgTypes()
+		start := 0
+		if isMemberFunction {
+			if receiverType != nil && len(oArgTypes) > 0 {
+				if !oArgTypes[0].IsAssignableType(receiverType) {
+					continue
+				}
+			}
+			start = 1
+		}
+		// Filter by known argument types. A call with more arguments than this
+		// overload accepts cannot match.
+		overloadArgs := oArgTypes[start:]
+		if len(argTypes) > len(overloadArgs) {
+			continue
+		}
+		compatible := true
+		for i, knownType := range argTypes {
+			if knownType == nil {
 				continue
 			}
+			if !overloadArgs[i].IsAssignableType(knownType) {
+				compatible = false
+				break
+			}
+		}
+		if !compatible {
+			continue
 		}
 		label := celFormatOverloadSignature(funcDecl.Name(), o)
 		sig := protocol.SignatureInformation{
 			Label:      label,
 			Parameters: extractCELSignatureParameters(o),
 		}
-		if desc := funcDecl.Description(); desc != "" {
-			sig.Documentation = desc
+		docStr := funcDecl.Description()
+		if doc := funcDecl.Documentation(); doc != nil && doc.Description != "" {
+			docStr = doc.Description
+		}
+		if docStr != "" {
+			sig.Documentation = protocol.MarkupContent{
+				Kind:  protocol.PlainText,
+				Value: docStr,
+			}
 		}
 		sigs = append(sigs, sig)
 	}
@@ -279,4 +350,55 @@ func extractCELSignatureParameters(o *decls.OverloadDecl) []protocol.ParameterIn
 		})
 	}
 	return params
+}
+
+// celFindCallAtOffset scans expression backward from offset to find the
+// innermost unclosed function call. Returns the function name, whether it is
+// a member call (preceded by a dot), and the byte offset of the opening paren.
+// Returns ("", false, -1) if no enclosing call is found.
+func celFindCallAtOffset(expression string, offset int) (funcName string, isMember bool, parenOffset int) {
+	depth := 0
+	for i := offset - 1; i >= 0; i-- {
+		switch expression[i] {
+		case ')':
+			depth++
+		case '(':
+			if depth > 0 {
+				depth--
+				continue
+			}
+			// Found the unclosed opening paren. Extract the name before it.
+			j := i - 1
+			for j >= 0 && celIsIdentChar(expression[j]) {
+				j--
+			}
+			name := expression[j+1 : i]
+			if name == "" {
+				return "", false, -1
+			}
+			member := j >= 0 && expression[j] == '.'
+			return name, member, i
+		}
+	}
+	return "", false, -1
+}
+
+// celCountParamsBeforeOffset counts depth-0 commas between parenOffset+1 and
+// offset, returning the 0-based active parameter index.
+func celCountParamsBeforeOffset(expression string, parenOffset, offset int) uint32 {
+	var paramIndex uint32
+	depth := 0
+	for i := parenOffset + 1; i < len(expression) && i < offset; i++ {
+		switch expression[i] {
+		case '(':
+			depth++
+		case ')':
+			depth--
+		case ',':
+			if depth == 0 {
+				paramIndex++
+			}
+		}
+	}
+	return paramIndex
 }
