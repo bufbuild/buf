@@ -24,6 +24,7 @@ import (
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common"
 	"github.com/google/cel-go/common/ast"
+	"github.com/google/cel-go/common/operators"
 	"github.com/google/cel-go/common/overloads"
 	"github.com/google/cel-go/common/types"
 	"go.lsp.dev/protocol"
@@ -497,25 +498,25 @@ func formatCELHoverContent(info *celHoverInfo, celEnv *cel.Env) string {
 		return ""
 	}
 
+	var result string
 	switch info.kind {
 	case celHoverKeyword:
-		return getCELKeywordDocs(info.text)
+		result = getCELKeywordDocs(info.text)
 	case celHoverFunction:
-		result := getCELFunctionDocs(info.text, celEnv)
+		result = getCELFunctionDocs(info.text, celEnv)
 		// Add inferred return type if available
 		if info.celType != nil {
 			result += fmt.Sprintf("\n\n**Return type**: `%s`", getCELTypeString(info.celType))
 		}
-		return result
 	case celHoverOperator:
-		return getCELOperatorDocs(info.text, celEnv)
+		result = getCELOperatorDocs(info.text, celEnv)
 	case celHoverMacro:
-		return getCELMacroDocs(info.text, celEnv)
+		result = getCELMacroDocs(info.text, celEnv)
 	case celHoverType:
-		return getCELTypeDocs(info.text, celEnv)
+		result = getCELTypeDocs(info.text, celEnv)
 	case celHoverField:
 		// For fields, show comprehensive proto field info
-		result := fmt.Sprintf("**Field**: `%s`", info.text)
+		result = fmt.Sprintf("**Field**: `%s`", info.text)
 
 		// Add CEL type information
 		if info.celType != nil {
@@ -526,25 +527,148 @@ func formatCELHoverContent(info *celHoverInfo, celEnv *cel.Env) string {
 		if !info.protoMember.IsZero() {
 			result += "\n\n" + getProtoFieldDocumentation(info.protoMember)
 		}
-
-		return result
 	case celHoverVariable:
 		// Comprehension variable
-		result := fmt.Sprintf("**Variable**: `%s`\n\nLoop variable from comprehension.", info.text)
+		result = fmt.Sprintf("**Variable**: `%s`\n\nLoop variable from comprehension.", info.text)
 		if info.celType != nil {
 			result += fmt.Sprintf("\n\n**Type**: `%s`", getCELTypeString(info.celType))
 		}
-		return result
 	case celHoverLiteral:
 		// Literal value
 		typeName := "value"
 		if info.celType != nil {
 			typeName = getCELTypeString(info.celType)
 		}
-		return fmt.Sprintf("**Literal**: `%s`\n\n**Type**: %s", info.text, typeName)
+		result = fmt.Sprintf("**Literal**: `%s`\n\n**Type**: %s", info.text, typeName)
 	default:
 		return ""
 	}
+
+	// Append documentation link if available
+	if link := celDocumentationLinks(info.kind, info.text); link != "" {
+		result += "\n\n" + link
+	}
+
+	return result
+}
+
+// celDocumentationLinks returns a markdown link to external documentation for a CEL hover item.
+// Returns an empty string if no documentation link is available.
+func celDocumentationLinks(kind celHoverKind, name string) string {
+	switch kind {
+	case celHoverKeyword:
+		if name == "this" {
+			return celProtovalidateLink("this")
+		}
+	case celHoverOperator:
+		switch name {
+		case operators.LogicalAnd:
+			return celByExampleLink("logical-operators/#and")
+		case operators.LogicalOr:
+			return celByExampleLink("logical-operators/#or")
+		case operators.LogicalNot:
+			return celByExampleLink("logical-operators/#not")
+		case operators.Equals, operators.NotEquals:
+			return celByExampleLink("comparison/#equality")
+		case operators.Less, operators.LessEquals, operators.Greater, operators.GreaterEquals:
+			return celByExampleLink("comparison/#ordering")
+		case operators.Add, operators.Subtract, operators.Multiply, operators.Divide, operators.Modulo:
+			return celByExampleLink("arithmetic/")
+		case operators.In:
+			return celByExampleLink("collections/#membership-and-access")
+		case operators.Conditional:
+			return celByExampleLink("ternary/")
+		case operators.Index:
+			return celByExampleLink("lists/")
+		}
+	case celHoverMacro:
+		switch name {
+		case operators.Has:
+			return celByExampleLink("has/")
+		case operators.All:
+			return celByExampleLink("all/")
+		case operators.Exists:
+			return celByExampleLink("exists/")
+		case operators.ExistsOne:
+			return celByExampleLink("exists-one/")
+		case operators.Filter:
+			return celByExampleLink("filter/")
+		case operators.Map:
+			return celByExampleLink("map-macro/")
+		}
+	case celHoverFunction:
+		switch name {
+		// String functions
+		case overloads.Size:
+			return celByExampleLink("strings/#size")
+		case overloads.Contains, overloads.StartsWith, overloads.EndsWith:
+			return celByExampleLink("strings/#substring-search")
+		case overloads.Matches:
+			return celByExampleLink("strings/#regular-expressions")
+		case "split", "join":
+			return celByExampleLink("strings/#split-and-join")
+		case "lowerAscii", "upperAscii":
+			return celByExampleLink("strings/#case-conversion")
+		case "indexOf", "lastIndexOf":
+			return celByExampleLink("strings/#position-search")
+		case "charAt":
+			return celByExampleLink("strings/#character-access")
+		case "substring":
+			return celByExampleLink("strings/#substring")
+		case "replace":
+			return celByExampleLink("strings/#replace")
+		case "trim":
+			return celByExampleLink("strings/#trim")
+		case "reverse":
+			return celByExampleLink("strings/#reverse")
+		// Timestamp and duration functions
+		case overloads.TimeGetFullYear, overloads.TimeGetMonth, overloads.TimeGetDate,
+			overloads.TimeGetDayOfMonth, overloads.TimeGetDayOfWeek, overloads.TimeGetDayOfYear,
+			overloads.TimeGetHours, overloads.TimeGetMinutes, overloads.TimeGetSeconds,
+			overloads.TimeGetMilliseconds:
+			return celByExampleLink("time/#timestamp-components")
+		// Protovalidate string extension functions
+		case "isEmail":
+			return celProtovalidateLink("isemail")
+		case "isHostname":
+			return celProtovalidateLink("ishostname")
+		case "isIp":
+			return celProtovalidateLink("isip")
+		case "isIpPrefix":
+			return celProtovalidateLink("isipprefix")
+		case "isUri":
+			return celProtovalidateLink("isuri")
+		case "isUriRef":
+			return celProtovalidateLink("isuriref")
+		case "isHostAndPort":
+			return celProtovalidateLink("ishostandport")
+		}
+	case celHoverType:
+		switch name {
+		case overloads.TypeConvertInt, overloads.TypeConvertUint, overloads.TypeConvertDouble:
+			return celByExampleLink("type-conversions/#numeric-conversions")
+		case overloads.TypeConvertString:
+			return celByExampleLink("type-conversions/#string-conversions")
+		case overloads.TypeConvertBytes:
+			return celByExampleLink("type-conversions/#bytes-conversions")
+		case overloads.TypeConvertTimestamp, overloads.TypeConvertDuration:
+			return celByExampleLink("type-conversions/#time-conversions")
+		case overloads.TypeConvertDyn:
+			return celByExampleLink("type-conversions/#dynamic-type")
+		}
+	}
+	return ""
+}
+
+// celByExampleLink returns a markdown link to a page on celbyexample.com.
+func celByExampleLink(path string) string {
+	return "[CEL by Example](https://celbyexample.com/" + path + ")"
+}
+
+// celProtovalidateLink returns a markdown link to an anchor on the Protovalidate CEL extensions
+// reference page.
+func celProtovalidateLink(anchor string) string {
+	return "[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#" + anchor + ")"
 }
 
 // resolveCELFieldAccess resolves a CEL SelectExpr to a proto field/member.
