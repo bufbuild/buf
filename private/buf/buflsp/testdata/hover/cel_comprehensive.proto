@@ -366,6 +366,29 @@ message CELTest {
     id: "test.escape"
     expression: "true\n? this : false"
   }];
+
+  // Protovalidate `now` variable (timestamp comparison)
+  google.protobuf.Timestamp test_now = 205 [(buf.validate.field).cel = {
+    id: "test.now"
+    expression: "this < now"
+  }];
+
+  // Protovalidate double extension functions
+  double test_isnan = 206 [(buf.validate.field).cel = {
+    id: "test.isnan"
+    expression: "this.isNan()"
+  }];
+
+  double test_isinf = 207 [(buf.validate.field).cel = {
+    id: "test.isinf"
+    expression: "this.isInf()"
+  }];
+
+  // Protovalidate list extension function
+  repeated double test_unique = 208 [(buf.validate.field).cel = {
+    id: "test.unique"
+    expression: "this.unique()"
+  }];
 }
 
 // Message-level CEL validation test
