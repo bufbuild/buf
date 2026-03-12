@@ -123,11 +123,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fmt.Sprintf(
 			"List all the rules for the given configuration version. By default, the version in the buf.yaml in the current directory is used, or the latest version otherwise (currently v2). Cannot be set if --%s is set. Must be one of %s",
 			configuredOnlyFlagName,
-			xslices.Map(
-				bufconfig.AllFileVersions,
-				func(fileVersion bufconfig.FileVersion) string {
-					return fileVersion.String()
-				},
+			xstrings.SliceToString(
+				xslices.Map(
+					bufconfig.AllFileVersions,
+					func(fileVersion bufconfig.FileVersion) string {
+						return fileVersion.String()
+					},
+				),
 			),
 		),
 	)
