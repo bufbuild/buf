@@ -557,8 +557,11 @@ func formatCELHoverContent(info *celHoverInfo, celEnv *cel.Env) string {
 func celDocumentationLinks(kind celHoverKind, name string) string {
 	switch kind {
 	case celHoverKeyword:
-		if name == "this" {
+		switch name {
+		case "this":
 			return celProtovalidateLink("this")
+		case "now":
+			return celProtovalidateLink("now")
 		}
 	case celHoverOperator:
 		switch name {
@@ -642,6 +645,14 @@ func celDocumentationLinks(kind celHoverKind, name string) string {
 			return celProtovalidateLink("isuriref")
 		case "isHostAndPort":
 			return celProtovalidateLink("ishostandport")
+		// Protovalidate double extension functions
+		case "isNan":
+			return celProtovalidateLink("isnan")
+		case "isInf":
+			return celProtovalidateLink("isinf")
+		// Protovalidate list extension function
+		case "unique":
+			return celProtovalidateLink("unique")
 		}
 	case celHoverType:
 		switch name {
@@ -797,10 +808,13 @@ func getCELTypeString(t *types.Type) string {
 func getCELKeywordDocs(keyword string) string {
 	// Note: true, false, and null are ConstExpr nodes in the CEL AST (not IdentExpr),
 	// so only "this" can reach this function via celHoverKeyword.
-	if keyword == "this" {
+	switch keyword {
+	case "this":
 		return "**Special variable**\n\nRefers to the current message or field being validated.\n\n" +
 			"In field-level rules, `this` refers to the field value.\n" +
 			"In message-level rules, `this` refers to the entire message."
+	case "now":
+		return "**Special variable**\n\nThe current timestamp at the time of validation.\n\n**Type**: `google.protobuf.Timestamp`"
 	}
 	return ""
 }
