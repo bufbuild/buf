@@ -388,6 +388,12 @@ func (s *server) Definition(
 	ctx context.Context,
 	params *protocol.DefinitionParams,
 ) ([]protocol.Location, error) {
+	// First, try to resolve a CEL definition (e.g. `this` → field or message).
+	if file := s.fileManager.Get(params.TextDocument.URI); file != nil {
+		if loc := getCELDefinition(file, params.Position, s.celEnv); loc != nil {
+			return []protocol.Location{*loc}, nil
+		}
+	}
 	symbol := s.getSymbol(ctx, params.TextDocument.URI, params.Position)
 	if symbol == nil {
 		return nil, nil

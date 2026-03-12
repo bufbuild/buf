@@ -101,8 +101,7 @@ bufgeneratecleango:
 bufgeneratecleantestdata:
 	rm -rf cmd/buf/testdata/check_plugins/current/vendor/protovalidate
 	rm -rf cmd/buf/testdata/check_plugins/previous/vendor/protovalidate
-	rm -rf private/buf/buflsp/testdata/hover/vendor/protovalidate
-	rm -rf private/buf/buflsp/testdata/semantic_tokens/vendor/protovalidate
+	rm -rf private/buf/buflsp/testdata/vendor/protovalidate
 	rm -rf private/bufpkg/bufcheck/testdata/lint/protovalidate/vendor/protovalidate
 	rm -rf private/bufpkg/bufcheck/testdata/lint/protovalidate_predefines/vendor/protovalidate
 
@@ -125,10 +124,7 @@ bufgeneratetestdata:
 		--output cmd/buf/testdata/check_plugins/previous/vendor/protovalidate
 	$(BUF_BIN) export \
 		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
-		--output private/buf/buflsp/testdata/hover/vendor/protovalidate
-	$(BUF_BIN) export \
-		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
-		--output private/buf/buflsp/testdata/semantic_tokens/vendor/protovalidate
+		--output private/buf/buflsp/testdata/vendor/protovalidate
 	$(BUF_BIN) export \
 		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
 		--output private/bufpkg/bufcheck/testdata/lint/protovalidate/vendor/protovalidate

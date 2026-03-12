@@ -807,7 +807,7 @@ func getCELTypeString(t *types.Type) string {
 // These keywords are defined in the CEL specification and are not available from upstream documentation.
 func getCELKeywordDocs(keyword string) string {
 	// Note: true, false, and null are ConstExpr nodes in the CEL AST (not IdentExpr),
-	// so only "this" can reach this function via celHoverKeyword.
+	// so only "this" and "now" can reach this function via celHoverKeyword.
 	switch keyword {
 	case "this":
 		return "**Special variable**\n\nRefers to the current message or field being validated.\n\n" +

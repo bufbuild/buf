@@ -966,6 +966,23 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 	return symbols
 }
 
+// findSymbolByFullName searches for a referenceable symbol with the given full name
+// in the current file and its workspace.
+func (f *file) findSymbolByFullName(fullName ir.FullName) *symbol {
+	if sym, ok := f.referenceableSymbols[fullName]; ok {
+		return sym
+	}
+	if f.workspace == nil {
+		return nil
+	}
+	for _, wsFile := range f.workspace.PathToFile() {
+		if sym, ok := wsFile.referenceableSymbols[fullName]; ok {
+			return sym
+		}
+	}
+	return nil
+}
+
 // resolveASTDefinition is a helper for resolving the [ast.DeclDef] to the *[symbol], if
 // there is a matching indexed *[symbol].
 func (f *file) resolveASTDefinition(def ast.DeclDef, defName ir.FullName) *symbol {
