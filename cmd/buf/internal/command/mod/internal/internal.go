@@ -129,11 +129,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fmt.Sprintf(
 			"List all the rules for the given configuration version. Implies --%s. Must be one of %s",
 			allFlagName,
-			xslices.Map(
-				bufconfig.AllFileVersions,
-				func(fileVersion bufconfig.FileVersion) string {
-					return fileVersion.String()
-				},
+			xstrings.SliceToString(
+				xslices.Map(
+					bufconfig.AllFileVersions,
+					func(fileVersion bufconfig.FileVersion) string {
+						return fileVersion.String()
+					},
+				),
 			),
 		),
 	)
