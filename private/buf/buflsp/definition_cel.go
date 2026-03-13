@@ -99,4 +99,3 @@ func getCELDefinition(
 	}
 	return nil
 }
-
