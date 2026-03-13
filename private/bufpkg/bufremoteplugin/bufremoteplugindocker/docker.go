@@ -24,15 +24,11 @@ import (
 	"log/slog"
 	"regexp"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginconfig"
-	"github.com/docker/docker/api/types"
-	imagetypes "github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/jsonmessage"
-	"github.com/docker/docker/pkg/stringid"
+	"github.com/moby/moby/api/types/jsonstream"
+	"github.com/moby/moby/client"
+	"github.com/moby/moby/client/pkg/stringid"
 )
 
 const (
@@ -103,31 +99,26 @@ type InspectResponse struct {
 }
 
 type dockerAPIClient struct {
-	cli        *client.Client
-	logger     *slog.Logger
-	lock       sync.RWMutex // protects negotiated
-	negotiated bool
+	cli    *client.Client
+	logger *slog.Logger
 }
 
 var _ Client = (*dockerAPIClient)(nil)
 
 func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadResponse, retErr error) {
-	if err := d.negotiateVersion(ctx); err != nil {
-		return nil, err
-	}
 	response, err := d.cli.ImageLoad(ctx, image, client.ImageLoadWithQuiet(true))
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		if err := response.Body.Close(); err != nil {
+		if err := response.Close(); err != nil {
 			retErr = errors.Join(retErr, fmt.Errorf("docker load response body close error: %w", err))
 		}
 	}()
 	imageID := ""
-	responseScanner := bufio.NewScanner(response.Body)
+	responseScanner := bufio.NewScanner(response)
 	for responseScanner.Scan() {
-		var jsonMessage jsonmessage.JSONMessage
+		var jsonMessage jsonstream.Message
 		if err := json.Unmarshal(responseScanner.Bytes(), &jsonMessage); err == nil {
 			_, loadedImageID, found := strings.Cut(strings.TrimSpace(jsonMessage.Stream), "Loaded image ID: ")
 			if !found {
@@ -150,42 +141,36 @@ func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadRes
 }
 
 func (d *dockerAPIClient) Tag(ctx context.Context, image string, config *bufremotepluginconfig.Config) (*TagResponse, error) {
-	if err := d.negotiateVersion(ctx); err != nil {
-		return nil, err
-	}
 	buildID := stringid.GenerateRandomID()
 	imageName := config.Name.IdentityString() + ":" + buildID
-	if err := d.cli.ImageTag(ctx, image, imageName); err != nil {
+	if _, err := d.cli.ImageTag(ctx, client.ImageTagOptions{Source: image, Target: imageName}); err != nil {
 		return nil, err
 	}
 	return &TagResponse{Image: imageName}, nil
 }
 
 func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *RegistryAuthConfig) (response *PushResponse, retErr error) {
-	if err := d.negotiateVersion(ctx); err != nil {
-		return nil, err
-	}
 	registryAuth, err := auth.ToHeader()
 	if err != nil {
 		return nil, err
 	}
-	pushReader, err := d.cli.ImagePush(ctx, image, imagetypes.PushOptions{
+	pushResponse, err := d.cli.ImagePush(ctx, image, client.ImagePushOptions{
 		RegistryAuth: registryAuth,
 	})
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		retErr = errors.Join(retErr, pushReader.Close())
+		retErr = errors.Join(retErr, pushResponse.Close())
 	}()
 	var imageDigest string
-	pushScanner := bufio.NewScanner(pushReader)
+	pushScanner := bufio.NewScanner(pushResponse)
 	for pushScanner.Scan() {
 		d.logger.DebugContext(ctx, pushScanner.Text())
-		var message jsonmessage.JSONMessage
+		var message jsonstream.Message
 		if err := json.Unmarshal([]byte(pushScanner.Text()), &message); err == nil {
 			if message.Error != nil {
-				return nil, message.Error
+				return nil, errors.New(message.Error.Message)
 			}
 			imageDigest = getImageDigestFromMessage(message)
 		}
@@ -193,16 +178,16 @@ func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *Registry
 	if err := pushScanner.Err(); err != nil {
 		return nil, err
 	}
-	if len(imageDigest) == 0 {
+	if imageDigest == "" {
 		return nil, fmt.Errorf("failed to determine image digest after push")
 	}
 	d.logger.DebugContext(ctx, "docker image digest", slog.String("imageDigest", imageDigest))
 	return &PushResponse{Digest: imageDigest}, nil
 }
 
-func getImageDigestFromMessage(message jsonmessage.JSONMessage) string {
+func getImageDigestFromMessage(message jsonstream.Message) string {
 	if message.Aux != nil {
-		var pushResult types.PushResult
+		var pushResult struct{ Digest string }
 		if err := json.Unmarshal(*message.Aux, &pushResult); err == nil {
 			return pushResult.Digest
 		}
@@ -217,10 +202,7 @@ func getImageDigestFromMessage(message jsonmessage.JSONMessage) string {
 }
 
 func (d *dockerAPIClient) Delete(ctx context.Context, image string) (*DeleteResponse, error) {
-	if err := d.negotiateVersion(ctx); err != nil {
-		return nil, err
-	}
-	_, err := d.cli.ImageRemove(ctx, image, imagetypes.RemoveOptions{})
+	_, err := d.cli.ImageRemove(ctx, image, client.ImageRemoveOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -228,9 +210,6 @@ func (d *dockerAPIClient) Delete(ctx context.Context, image string) (*DeleteResp
 }
 
 func (d *dockerAPIClient) Inspect(ctx context.Context, image string) (*InspectResponse, error) {
-	if err := d.negotiateVersion(ctx); err != nil {
-		return nil, err
-	}
 	inspect, err := d.cli.ImageInspect(ctx, image)
 	if err != nil {
 		return nil, err
@@ -240,35 +219,6 @@ func (d *dockerAPIClient) Inspect(ctx context.Context, image string) (*InspectRe
 
 func (d *dockerAPIClient) Close() error {
 	return d.cli.Close()
-}
-
-func (d *dockerAPIClient) negotiateVersion(ctx context.Context) error {
-	d.lock.RLock()
-	negotiated := d.negotiated
-	d.lock.RUnlock()
-	if negotiated {
-		return nil
-	}
-	d.lock.Lock()
-	defer d.lock.Unlock()
-	if d.negotiated {
-		return nil
-	}
-	deadline := time.Now().Add(5 * time.Second)
-	if existingDeadline, ok := ctx.Deadline(); ok {
-		if existingDeadline.Before(deadline) {
-			deadline = existingDeadline
-		}
-	}
-	ctx, cancel := context.WithDeadline(context.Background(), deadline)
-	defer cancel()
-	ping, err := d.cli.Ping(ctx)
-	if err != nil {
-		return err
-	}
-	d.cli.NegotiateAPIVersionPing(ping)
-	d.negotiated = true
-	return nil
 }
 
 // NewClient creates a new Client to use to build Docker plugins.
@@ -290,9 +240,9 @@ func NewClient(logger *slog.Logger, cliVersion string, options ...ClientOption) 
 		dockerClientOpts = append(dockerClientOpts, client.WithHost(opts.host))
 	}
 	if len(opts.version) > 0 {
-		dockerClientOpts = append(dockerClientOpts, client.WithVersion(opts.version))
+		dockerClientOpts = append(dockerClientOpts, client.WithAPIVersion(opts.version))
 	}
-	cli, err := client.NewClientWithOpts(dockerClientOpts...)
+	cli, err := client.New(dockerClientOpts...)
 	if err != nil {
 		return nil, err
 	}
