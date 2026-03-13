@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package test.cel.definition.v1;
+
+import "buf/validate/validate.proto";
+
+// TestMessage has a message-level CEL rule where `this` refers to the message.
+message TestMessage {
+  option (buf.validate.message).cel = {
+    id: "test_message.valid"
+    expression: "this.name.size() > 0"
+  };
+
+  string name = 1;
+}
+
+// TestField has a field-level CEL rule where `this` refers to the field.
+message TestField {
+  string email = 1 [(buf.validate.field).cel = {
+    id: "test_field.email.valid"
+    expression: "this.contains('@')"
+  }];
+}
+
+// TestOneofField has a field inside a oneof with a field-level CEL rule.
+// `this` refers to the field itself (the email field inside the oneof).
+message TestOneofField {
+  oneof value {
+    string email = 1 [(buf.validate.field).cel = {
+      id: "test_oneof_field.email"
+      expression: "this.contains('@')"
+    }];
+  }
+}
+
+// TestOneofMessage has a message-level CEL rule accessing a field inside a oneof.
+// `this.name` navigates to the `name` field declared inside the oneof.
+message TestOneofMessage {
+  option (buf.validate.message).cel = {
+    id: "test_oneof_message.valid"
+    expression: "this.name.size() > 0"
+  };
+
+  oneof value {
+    string name = 1;
+    int32 id_num = 2;
+  }
+}

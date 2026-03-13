@@ -27,7 +27,7 @@ func TestCELCompletion(t *testing.T) {
 	t.Parallel()
 
 	ctx := t.Context()
-	testProtoPath, err := filepath.Abs("testdata/hover/cel_completion.proto")
+	testProtoPath, err := filepath.Abs("testdata/completion/cel_completion.proto")
 	require.NoError(t, err)
 
 	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
