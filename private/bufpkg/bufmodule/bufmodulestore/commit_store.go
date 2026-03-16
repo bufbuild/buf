@@ -188,7 +188,7 @@ func (p *commitStore) getCommitForCommitKey(
 	}
 	if !externalCommit.isValid() {
 		invalidReason = "invalid"
-		return nil, err
+		return nil, fmt.Errorf("invalid commit cache entry for %s", path)
 	}
 	digest, err := bufmodule.ParseDigest(externalCommit.Digest)
 	if err != nil {
@@ -197,7 +197,7 @@ func (p *commitStore) getCommitForCommitKey(
 	}
 	if commitKey.DigestType() != digest.Type() {
 		invalidReason = "mismatched digest type"
-		return nil, err
+		return nil, fmt.Errorf("mismatched digest type for %s: got %s, expected %s", path, digest.Type(), commitKey.DigestType())
 	}
 	moduleFullName, err := bufparse.NewFullName(
 		commitKey.Registry(),
