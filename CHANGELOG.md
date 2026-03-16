@@ -4,6 +4,7 @@
 
 - Add support for `--rbs_out` as a `protoc_builtin` plugin (requires protoc v34.0+).
 - Add relevant links from CEL LSP hover documentation to either <celbyexample.com> or <protovalidate.com>
+- `buf generate` now skips writing output files when the content matches what's already on disk, preserving modification times for mtime-based build systems like cargo and make.
 
 ## [v1.66.1] - 2026-03-09
 

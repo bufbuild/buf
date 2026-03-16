@@ -15,6 +15,7 @@
 package bufprotopluginos
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -29,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/thread"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -284,12 +286,43 @@ func (w *responseWriter) writeDirectory(
 		if err != nil {
 			return err
 		}
-		if _, err := storage.Copy(ctx, readWriteBucket, osReadWriteBucket); err != nil {
-			return err
-		}
-		return nil
+		return w.copySkipUnchanged(ctx, readWriteBucket, osReadWriteBucket)
 	})
 	return nil
+}
+
+// copySkipUnchanged copies all paths from the source bucket to the destination,
+// skipping any path whose content already matches what is on disk. This preserves
+// mtimes for unchanged generated files so that mtime-based build systems do not
+// rebuild unnecessarily.
+func (w *responseWriter) copySkipUnchanged(
+	ctx context.Context,
+	from storage.ReadBucket,
+	to storage.ReadWriteBucket,
+) error {
+	paths, err := storage.AllPaths(ctx, from, "")
+	if err != nil {
+		return err
+	}
+	jobs := make([]func(context.Context) error, len(paths))
+	for i, path := range paths {
+		jobs[i] = func(ctx context.Context) error {
+			newData, err := storage.ReadPath(ctx, from, path)
+			if err != nil {
+				return err
+			}
+			existingData, err := storage.ReadPath(ctx, to, path)
+			if err == nil && bytes.Equal(existingData, newData) {
+				w.logger.DebugContext(ctx, "skipping unchanged generated file", slog.String("path", path))
+				return nil
+			}
+			// Not-exist, read error, or content differs: fall through to write.
+			// We intentionally swallow read errors here; this comparison is an
+			// optimization and must not cause generate to fail.
+			return storage.PutPath(ctx, to, path, newData)
+		}
+	}
+	return thread.Parallelize(ctx, jobs)
 }
 
 type responseWriterOptions struct {
