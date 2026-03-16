@@ -34,7 +34,7 @@ import (
 )
 
 var (
-	externalCommitVersion    = "v1"
+	externalCommitVersion     = "v1"
 	externalCommitLockFileExt = ".lock"
 )
 
