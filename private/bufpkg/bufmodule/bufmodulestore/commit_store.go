@@ -266,7 +266,7 @@ func (p *commitStore) putCommit(
 	// Re-check after acquiring the exclusive lock, as another process may have
 	// written the commit between releasing the shared lock and acquiring the
 	// exclusive lock.
-	if _, err := storage.ReadPath(ctx, bucket, path); err == nil {
+	if _, err := bucket.Stat(ctx, path); err == nil {
 		return nil
 	}
 	externalCommit := externalCommit{
@@ -330,8 +330,7 @@ func (p *commitStore) commitExistsUnderRLock(
 	defer func() {
 		retErr = errors.Join(retErr, unlocker.Unlock())
 	}()
-	_, err = storage.ReadPath(ctx, bucket, path)
-	if err != nil {
+	if _, err := bucket.Stat(ctx, path); err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return false, nil
 		}
