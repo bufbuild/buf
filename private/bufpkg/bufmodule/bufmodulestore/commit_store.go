@@ -163,7 +163,8 @@ func (p *commitStore) getCommitForCommitKey(
 ) (_ bufmodule.Commit, retErr error) {
 	bucket := p.getReadWriteBucketForDir(ctx, commitKey)
 	path := getCommitStoreFilePath(commitKey)
-	data, err := p.readCommitData(ctx, commitKey, bucket, path)
+	registryLockPath := getCommitStoreLockPath(commitKey)
+	data, err := p.readCommitData(ctx, bucket, path, registryLockPath)
 	p.logDebugCommitKey(
 		ctx,
 		commitKey,
@@ -249,7 +250,7 @@ func (p *commitStore) putCommit(
 	registryLockPath := getCommitStoreLockPath(commitKey)
 	// Check if the commit already exists under a shared lock before acquiring
 	// an exclusive lock.
-	exists, err := p.commitExistsUnderRLock(ctx, commitKey, bucket, path, registryLockPath)
+	exists, err := p.commitExistsUnderRLock(ctx, bucket, path, registryLockPath)
 	if err != nil {
 		return err
 	}
@@ -297,15 +298,12 @@ func (p *commitStore) getReadWriteBucketForDir(ctx context.Context, commitKey bu
 	return storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
 }
 
-// readCommitData reads the commit data file under a shared lock
-// and returns the raw bytes. The lock is released before returning.
 func (p *commitStore) readCommitData(
 	ctx context.Context,
-	commitKey bufmodule.CommitKey,
 	bucket storage.ReadBucket,
 	path string,
+	registryLockPath string,
 ) (_ []byte, retErr error) {
-	registryLockPath := getCommitStoreLockPath(commitKey)
 	unlocker, err := p.locker.RLock(ctx, registryLockPath)
 	if err != nil {
 		return nil, err
@@ -318,7 +316,6 @@ func (p *commitStore) readCommitData(
 
 func (p *commitStore) commitExistsUnderRLock(
 	ctx context.Context,
-	commitKey bufmodule.CommitKey,
 	bucket storage.ReadBucket,
 	path string,
 	registryLockPath string,
