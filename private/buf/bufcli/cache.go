@@ -61,6 +61,7 @@ var (
 		v1beta1CacheModuleDataRelDirPath,
 		v1beta1CacheModuleLockRelDirPath,
 		v2CacheModuleRelDirPath,
+		v3CacheCommitLockRelDirPath,
 		v3CacheCommitsRelDirPath,
 		v3CacheModuleLockRelDirPath,
 		v3CacheModuleRelDirPath,
@@ -119,6 +120,11 @@ var (
 	//
 	// Normalized.
 	v3CacheModuleLockRelDirPath = normalpath.Join("v3", "modulelocks")
+	// v3CacheCommitLockRelDirPath is the relative path to the lock files directory for commit data.
+	// This directory is used to store lock files for synchronizing reading and writing commit data from the cache.
+	//
+	// Normalized.
+	v3CacheCommitLockRelDirPath = normalpath.Join("v3", "commitlocks")
 	// v3CachePluginRelDirPath is the relative path to the files cache directory in its newest iteration.
 	//
 	// Normalized.
@@ -289,12 +295,20 @@ func newCommitProvider(
 	if err != nil {
 		return nil, err
 	}
+	if err := createCacheDir(container.CacheDirPath(), v3CacheCommitLockRelDirPath); err != nil {
+		return nil, err
+	}
+	filelocker, err := filelock.NewLocker(normalpath.Join(container.CacheDirPath(), v3CacheCommitLockRelDirPath))
+	if err != nil {
+		return nil, err
+	}
 	return bufmodulecache.NewCommitProvider(
 		container.Logger(),
 		delegateReader,
 		bufmodulestore.NewCommitStore(
 			container.Logger(),
 			cacheBucket,
+			filelocker,
 		),
 	), nil
 }
