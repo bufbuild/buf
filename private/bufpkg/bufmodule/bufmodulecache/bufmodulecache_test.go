@@ -48,6 +48,7 @@ func TestCommitProviderForModuleKeyBasic(t *testing.T) {
 		bufmodulestore.NewCommitStore(
 			logger,
 			storagemem.NewReadWriteBucket(),
+			filelock.NewNopLocker(),
 		),
 	)
 
@@ -113,6 +114,7 @@ func TestCommitProviderForCommitKeyBasic(t *testing.T) {
 		bufmodulestore.NewCommitStore(
 			logger,
 			storagemem.NewReadWriteBucket(),
+			filelock.NewNopLocker(),
 		),
 	)
 

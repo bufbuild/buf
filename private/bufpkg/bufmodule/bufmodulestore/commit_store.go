@@ -26,13 +26,17 @@ import (
 	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
-var externalCommitVersion = "v1"
+var (
+	externalCommitVersion    = "v1"
+	externalCommitLockFileExt = ".lock"
+)
 
 // CommitStore reads and writes Commits.
 type CommitStore interface {
@@ -66,8 +70,9 @@ type CommitStore interface {
 func NewCommitStore(
 	logger *slog.Logger,
 	bucket storage.ReadWriteBucket,
+	locker filelock.Locker,
 ) CommitStore {
-	return newCommitStore(logger, bucket)
+	return newCommitStore(logger, bucket, locker)
 }
 
 /// *** PRIVATE ***
@@ -75,15 +80,18 @@ func NewCommitStore(
 type commitStore struct {
 	logger *slog.Logger
 	bucket storage.ReadWriteBucket
+	locker filelock.Locker
 }
 
 func newCommitStore(
 	logger *slog.Logger,
 	bucket storage.ReadWriteBucket,
+	locker filelock.Locker,
 ) *commitStore {
 	return &commitStore{
 		logger: logger,
 		bucket: bucket,
+		locker: locker,
 	}
 }
 
@@ -155,7 +163,7 @@ func (p *commitStore) getCommitForCommitKey(
 ) (_ bufmodule.Commit, retErr error) {
 	bucket := p.getReadWriteBucketForDir(ctx, commitKey)
 	path := getCommitStoreFilePath(commitKey)
-	data, err := storage.ReadPath(ctx, bucket, path)
+	data, err := p.readCommitData(ctx, commitKey, bucket, path)
 	p.logDebugCommitKey(
 		ctx,
 		commitKey,
@@ -238,6 +246,29 @@ func (p *commitStore) putCommit(
 	}
 	bucket := p.getReadWriteBucketForDir(ctx, commitKey)
 	path := getCommitStoreFilePath(commitKey)
+	registryLockPath := getCommitStoreLockPath(commitKey)
+	// Check if the commit already exists under a shared lock before acquiring
+	// an exclusive lock.
+	exists, err := p.commitExistsUnderRLock(ctx, commitKey, bucket, path, registryLockPath)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	unlocker, err := p.locker.Lock(ctx, registryLockPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = errors.Join(retErr, unlocker.Unlock())
+	}()
+	// Re-check after acquiring the exclusive lock, as another process may have
+	// written the commit between releasing the shared lock and acquiring the
+	// exclusive lock.
+	if _, err := storage.ReadPath(ctx, bucket, path); err == nil {
+		return nil
+	}
 	externalCommit := externalCommit{
 		Version:    externalCommitVersion,
 		Owner:      moduleKey.FullName().Owner(),
@@ -264,6 +295,49 @@ func (p *commitStore) getReadWriteBucketForDir(ctx context.Context, commitKey bu
 		slog.String("dirPath", dirPath),
 	)
 	return storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
+}
+
+// readCommitData reads the commit data file under a shared lock
+// and returns the raw bytes. The lock is released before returning.
+func (p *commitStore) readCommitData(
+	ctx context.Context,
+	commitKey bufmodule.CommitKey,
+	bucket storage.ReadBucket,
+	path string,
+) (_ []byte, retErr error) {
+	registryLockPath := getCommitStoreLockPath(commitKey)
+	unlocker, err := p.locker.RLock(ctx, registryLockPath)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		retErr = errors.Join(retErr, unlocker.Unlock())
+	}()
+	return storage.ReadPath(ctx, bucket, path)
+}
+
+func (p *commitStore) commitExistsUnderRLock(
+	ctx context.Context,
+	commitKey bufmodule.CommitKey,
+	bucket storage.ReadBucket,
+	path string,
+	registryLockPath string,
+) (_ bool, retErr error) {
+	unlocker, err := p.locker.RLock(ctx, registryLockPath)
+	if err != nil {
+		return false, err
+	}
+	defer func() {
+		retErr = errors.Join(retErr, unlocker.Unlock())
+	}()
+	_, err = storage.ReadPath(ctx, bucket, path)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 func (p *commitStore) deleteInvalidCommitFile(
@@ -315,6 +389,16 @@ func getCommitStoreDirPath(
 // This is "dashlessCommitID.json", e.g. the commit "12345-abcde" will return "12345abcde.json".
 func getCommitStoreFilePath(commitKey bufmodule.CommitKey) string {
 	return uuidutil.ToDashless(commitKey.CommitID()) + ".json"
+}
+
+// Returns the lock file path for the commit's registry.
+//
+// This is "digestType/registry.lock", e.g. "shake256/buf.build.lock".
+func getCommitStoreLockPath(commitKey bufmodule.CommitKey) string {
+	return normalpath.Join(
+		commitKey.DigestType().String(),
+		commitKey.Registry()+externalCommitLockFileExt,
+	)
 }
 
 // externalCommit is the store representation of a Commit.
