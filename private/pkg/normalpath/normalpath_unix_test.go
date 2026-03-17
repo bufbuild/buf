@@ -17,7 +17,6 @@
 package normalpath
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -25,31 +24,32 @@ import (
 
 	"buf.build/go/standard/xslices"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNormalizeAndValidate(t *testing.T) {
 	t.Parallel()
 	path, err := NormalizeAndValidate("")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, ".", path)
 	path, err = NormalizeAndValidate(".")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, ".", path)
 	path, err = NormalizeAndValidate("./.")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, ".", path)
 	path, err = NormalizeAndValidate("./foo")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "foo", path)
 
 	_, err = NormalizeAndValidate("/foo")
-	assert.Error(t, err)
+	require.Error(t, err)
 
 	_, err = NormalizeAndValidate("../foo")
-	assert.Error(t, err)
+	require.Error(t, err)
 
 	_, err = NormalizeAndValidate("..")
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestNormalize(t *testing.T) {
@@ -69,7 +69,7 @@ func TestNormalize(t *testing.T) {
 
 func TestUnnormalize(t *testing.T) {
 	t.Parallel()
-	assert.Equal(t, "", Unnormalize(""))
+	assert.Empty(t, Unnormalize(""))
 	assert.Equal(t, ".", Unnormalize("."))
 	assert.Equal(t, "/foo", Unnormalize("/foo"))
 }
@@ -181,22 +181,22 @@ func TestRel(t *testing.T) {
 func testRel(t *testing.T, expected string, basepath string, targpath string) {
 	if os.PathSeparator == '/' {
 		rel, err := filepath.Rel(basepath, targpath)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, expected, rel)
 	}
 	rel, err := Rel(basepath, targpath)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expected, rel)
 }
 
 func testRelError(t *testing.T, expected string, basepath string, targpath string) {
 	if os.PathSeparator == '/' {
 		rel, err := filepath.Rel(basepath, targpath)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, expected, rel)
 	}
 	rel, err := Rel(basepath, targpath)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, expected, rel)
 }
 
@@ -304,7 +304,7 @@ func TestContainsPath(t *testing.T) {
 }
 
 func testContainsPath(t *testing.T, expected bool, value string, path string) {
-	assert.Equal(t, expected, ContainsPath(value, path, Relative), fmt.Sprintf("%s %s", value, path))
+	assert.Equal(t, expected, ContainsPath(value, path, Relative), "%s %s", value, path)
 }
 
 func TestEqualsOrContainsPath(t *testing.T) {
@@ -322,7 +322,7 @@ func TestEqualsOrContainsPath(t *testing.T) {
 }
 
 func testEqualsOrContainsPath(t *testing.T, expected bool, value string, path string) {
-	assert.Equal(t, expected, EqualsOrContainsPath(value, path, Relative), fmt.Sprintf("%s %s", value, path))
+	assert.Equal(t, expected, EqualsOrContainsPath(value, path, Relative), "%s %s", value, path)
 }
 
 func TestMapHasEqualOrContainingPath(t *testing.T) {
@@ -342,7 +342,7 @@ func TestMapHasEqualOrContainingPath(t *testing.T) {
 
 func testMapHasEqualOrContainingPath(t *testing.T, expected bool, path string, keys ...string) {
 	keyMap := xslices.ToStructMap(keys)
-	assert.Equal(t, expected, MapHasEqualOrContainingPath(keyMap, path, Relative), fmt.Sprintf("%s %v", path, keys))
+	assert.Equal(t, expected, MapHasEqualOrContainingPath(keyMap, path, Relative), "%s %v", path, keys)
 }
 
 func TestMapAllEqualOrContainingPaths(t *testing.T) {
@@ -367,7 +367,7 @@ func testMapAllEqualOrContainingPaths(t *testing.T, expected []string, path stri
 	}
 	sort.Strings(expected)
 	keyMap := xslices.ToStructMap(keys)
-	assert.Equal(t, expected, MapAllEqualOrContainingPaths(keyMap, path, Relative), fmt.Sprintf("%s %v", path, keys))
+	assert.Equal(t, expected, MapAllEqualOrContainingPaths(keyMap, path, Relative), "%s %v", path, keys)
 }
 
 func TestContainsPathAbs(t *testing.T) {
@@ -386,7 +386,7 @@ func TestContainsPathAbs(t *testing.T) {
 }
 
 func testContainsPathAbs(t *testing.T, expected bool, value string, path string) {
-	assert.Equal(t, expected, ContainsPath(value, path, Absolute), fmt.Sprintf("%s %s", value, path))
+	assert.Equal(t, expected, ContainsPath(value, path, Absolute), "%s %s", value, path)
 }
 
 func TestEqualsOrContainsPathAbs(t *testing.T) {
@@ -404,7 +404,7 @@ func TestEqualsOrContainsPathAbs(t *testing.T) {
 }
 
 func testEqualsOrContainsPathAbs(t *testing.T, expected bool, value string, path string) {
-	assert.Equal(t, expected, EqualsOrContainsPath(value, path, Absolute), fmt.Sprintf("%s %s", value, path))
+	assert.Equal(t, expected, EqualsOrContainsPath(value, path, Absolute), "%s %s", value, path)
 }
 
 func TestMapHasEqualOrContainingPathAbs(t *testing.T) {
@@ -424,7 +424,7 @@ func TestMapHasEqualOrContainingPathAbs(t *testing.T) {
 
 func testMapHasEqualOrContainingPathAbs(t *testing.T, expected bool, path string, keys ...string) {
 	keyMap := xslices.ToStructMap(keys)
-	assert.Equal(t, expected, MapHasEqualOrContainingPath(keyMap, path, Absolute), fmt.Sprintf("%s %v", path, keys))
+	assert.Equal(t, expected, MapHasEqualOrContainingPath(keyMap, path, Absolute), "%s %v", path, keys)
 }
 
 func TestMapAllEqualOrContainingPathsAbs(t *testing.T) {
@@ -449,5 +449,5 @@ func testMapAllEqualOrContainingPathsAbs(t *testing.T, expected []string, path s
 	}
 	sort.Strings(expected)
 	keyMap := xslices.ToStructMap(keys)
-	assert.Equal(t, expected, MapAllEqualOrContainingPaths(keyMap, path, Absolute), fmt.Sprintf("%s %v", path, keys))
+	assert.Equal(t, expected, MapAllEqualOrContainingPaths(keyMap, path, Absolute), "%s %v", path, keys)
 }

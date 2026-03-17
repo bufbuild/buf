@@ -39,6 +39,7 @@ linters:
     - reassign
     - rowserrcheck
     - staticcheck
+    - testifylint
     - unconvert
     - unused
     - usetesting

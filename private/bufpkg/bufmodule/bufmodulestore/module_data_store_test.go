@@ -227,7 +227,7 @@ func testGetModuleKeysAndModuleDatas(t *testing.T, ctx context.Context) ([]bufmo
 
 func testRequireModuleKeyNamesEqual(t *testing.T, expected []string, actual []bufmodule.ModuleKey) {
 	if len(expected) == 0 {
-		require.Equal(t, 0, len(actual))
+		require.Empty(t, actual)
 	} else {
 		require.Equal(
 			t,
@@ -244,7 +244,7 @@ func testRequireModuleKeyNamesEqual(t *testing.T, expected []string, actual []bu
 
 func testRequireModuleDataNamesEqual(t *testing.T, expected []string, actual []bufmodule.ModuleData) {
 	if len(expected) == 0 {
-		require.Equal(t, 0, len(actual))
+		require.Empty(t, actual)
 	} else {
 		require.Equal(
 			t,

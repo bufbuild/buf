@@ -64,7 +64,7 @@ func TestNewDigestForContent(t *testing.T) {
 	// failing digesting content
 	expectedErr := errors.New("testing error")
 	digest, err = cas.NewDigestForContent(iotest.ErrReader(expectedErr))
-	assert.ErrorIs(t, err, expectedErr)
+	require.ErrorIs(t, err, expectedErr)
 	assert.Nil(t, digest)
 }
 
@@ -106,7 +106,7 @@ func TestDigestEqual(t *testing.T) {
 
 func testParseDigestError(t *testing.T, digestString string, expectParseError bool) {
 	_, err := cas.ParseDigest(digestString)
-	assert.Error(t, err)
+	require.Error(t, err)
 	parseError := &cas.ParseError{}
 	isParseError := errors.As(err, &parseError)
 	if expectParseError {

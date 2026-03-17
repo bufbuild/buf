@@ -1437,7 +1437,7 @@ func testGetParsedRef(
 	)
 	if expectedErr != nil {
 		if err == nil {
-			assert.Equal(t, nil, parsedRef, "expected error")
+			assert.Nil(t, parsedRef, "expected error")
 		} else {
 			assert.Equal(t, expectedErr, err)
 		}
@@ -1462,7 +1462,7 @@ func testGetParsedDirOrProtoFileRef(
 	)
 	if expectedErr != nil {
 		if err == nil {
-			assert.Equal(t, nil, parsedRef, "expected error")
+			assert.Nil(t, parsedRef, "expected error")
 		} else {
 			assert.Equal(t, expectedErr, err)
 		}

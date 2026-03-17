@@ -1785,5 +1785,5 @@ func requireBuildOutputFilePaths(t *testing.T, expectedFilePathToInfo map[string
 		}
 		delete(filesToCheck, filePath)
 	}
-	require.Zerof(t, len(filesToCheck), "expected files missing from image built: %v", xslices.MapKeysToSortedSlice(filesToCheck))
+	require.Emptyf(t, filesToCheck, "expected files missing from image built: %v", xslices.MapKeysToSortedSlice(filesToCheck))
 }

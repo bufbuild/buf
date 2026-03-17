@@ -37,7 +37,7 @@ func TestDiff(t *testing.T) {
 			splitLines(from),
 			splitLines(to),
 		)
-		assert.Equal(t, edits, []diffmyers.Edit{
+		assert.Equal(t, []diffmyers.Edit{
 			{
 				Kind: diffmyers.EditKindDelete,
 			},
@@ -45,7 +45,7 @@ func TestDiff(t *testing.T) {
 				Kind:         diffmyers.EditKindInsert,
 				FromPosition: 1,
 			},
-		})
+		}, edits)
 		testPrint(t, from, to, edits, "delete-and-insert")
 	})
 	t.Run("insert-one", func(t *testing.T) {
@@ -56,13 +56,13 @@ func TestDiff(t *testing.T) {
 			splitLines(from),
 			splitLines(to),
 		)
-		assert.Equal(t, edits, []diffmyers.Edit{
+		assert.Equal(t, []diffmyers.Edit{
 			{
 				Kind:         diffmyers.EditKindInsert,
 				FromPosition: 1,
 				ToPosition:   1,
 			},
-		})
+		}, edits)
 		testPrint(t, from, to, edits, "insert")
 	})
 	t.Run("delete-one", func(t *testing.T) {
@@ -73,12 +73,12 @@ func TestDiff(t *testing.T) {
 			splitLines(from),
 			splitLines(to),
 		)
-		assert.Equal(t, edits, []diffmyers.Edit{
+		assert.Equal(t, []diffmyers.Edit{
 			{
 				Kind:         diffmyers.EditKindDelete,
 				FromPosition: 1,
 			},
-		})
+		}, edits)
 		testPrint(t, from, to, edits, "delete")
 	})
 	t.Run("create-file", func(t *testing.T) {
@@ -89,13 +89,13 @@ func TestDiff(t *testing.T) {
 			splitLines(from),
 			splitLines(to),
 		)
-		assert.Equal(t, edits, []diffmyers.Edit{
+		assert.Equal(t, []diffmyers.Edit{
 			{
 				Kind:         diffmyers.EditKindInsert,
 				FromPosition: 0,
 				ToPosition:   0,
 			},
-		})
+		}, edits)
 		testPrint(t, from, to, edits, "create")
 	})
 	t.Run("remove", func(t *testing.T) {
@@ -106,12 +106,12 @@ func TestDiff(t *testing.T) {
 			splitLines(from),
 			splitLines(to),
 		)
-		assert.Equal(t, edits, []diffmyers.Edit{
+		assert.Equal(t, []diffmyers.Edit{
 			{
 				Kind:         diffmyers.EditKindDelete,
 				FromPosition: 0,
 			},
-		})
+		}, edits)
 		testPrint(t, from, to, edits, "remove")
 	})
 	t.Run("equal", func(t *testing.T) {
@@ -122,7 +122,7 @@ func TestDiff(t *testing.T) {
 			splitLines(from),
 			splitLines(to),
 		)
-		assert.Len(t, edits, 0)
+		assert.Empty(t, edits)
 		testPrint(t, from, to, edits, "equal")
 	})
 	// The example from https://www.gnu.org/software/diffutils/manual/html_node/Sample-diff-Input.html

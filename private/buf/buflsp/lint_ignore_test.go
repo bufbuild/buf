@@ -278,7 +278,7 @@ func TestCodeAction_LintIgnore(t *testing.T) {
 
 					changes, ok := action.Edit.Changes[testURI]
 					require.True(t, ok, "expected changes for test file")
-					require.Equal(t, len(tt.expectedEdits), len(changes),
+					require.Len(t, changes, len(tt.expectedEdits),
 						"expected %d edit(s), got %d", len(tt.expectedEdits), len(changes))
 
 					for i, expectedEdit := range tt.expectedEdits {

@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNormalizeAndCheckPathsRelSuccess1(t *testing.T) {
@@ -113,7 +114,7 @@ func TestNormalizeAndCheckPathsRelEqual1(t *testing.T) {
 
 func testNormalizeAndCheckPathsRelSuccess(t *testing.T, paths []string) {
 	_, err := normalizeAndCheckPaths(paths, "test")
-	assert.NoError(t, err, paths)
+	require.NoError(t, err, paths)
 }
 
 func testNormalizeAndCheckPathsRelError(t *testing.T, paths []string) {
@@ -127,6 +128,6 @@ func testNormalizeAndCheckPathsRelEqual(
 	expected []string,
 ) {
 	actual, err := normalizeAndCheckPaths(paths, "test")
-	assert.NoError(t, err, paths)
+	require.NoError(t, err, paths)
 	assert.Equal(t, expected, actual)
 }

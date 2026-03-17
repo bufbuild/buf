@@ -56,10 +56,10 @@ func TestPushSuccess(t *testing.T) {
 	listenerAddr := server.httpServer.Listener.Addr().String()
 	dockerClient := createClient(t, WithHost("tcp://"+listenerAddr), WithVersion(dockerVersion))
 	image, err := buildDockerPlugin(t, "testdata/success/Dockerfile", listenerAddr+"/library/go")
-	require.Nilf(t, err, "failed to build docker plugin")
+	require.NoErrorf(t, err, "failed to build docker plugin")
 	require.NotEmpty(t, image)
 	pushResponse, err := dockerClient.Push(t.Context(), image, &RegistryAuthConfig{})
-	require.Nilf(t, err, "failed to push docker plugin")
+	require.NoErrorf(t, err, "failed to push docker plugin")
 	require.NotNil(t, pushResponse)
 	assert.NotEmpty(t, pushResponse.Digest)
 }
@@ -72,10 +72,10 @@ func TestPushError(t *testing.T) {
 	listenerAddr := server.httpServer.Listener.Addr().String()
 	dockerClient := createClient(t, WithHost("tcp://"+listenerAddr), WithVersion(dockerVersion))
 	image, err := buildDockerPlugin(t, "testdata/success/Dockerfile", listenerAddr+"/library/go")
-	require.Nilf(t, err, "failed to build docker plugin")
+	require.NoErrorf(t, err, "failed to build docker plugin")
 	require.NotEmpty(t, image)
 	_, err = dockerClient.Push(t.Context(), image, &RegistryAuthConfig{})
-	require.NotNil(t, err, "expected error")
+	require.Error(t, err, "expected error")
 	assert.Equal(t, server.pushErr.Error(), err.Error())
 }
 
@@ -127,7 +127,7 @@ func assertImageDigestFromStatusString(t *testing.T, status string, expectedDige
 func createClient(t testing.TB, options ...ClientOption) Client {
 	t.Helper()
 	dockerClient, err := NewClient(slogtestext.NewLogger(t), "buf-cli-1.11.0", options...)
-	require.Nilf(t, err, "failed to create client")
+	require.NoErrorf(t, err, "failed to create client")
 	t.Cleanup(func() {
 		if err := dockerClient.Close(); err != nil {
 			t.Errorf("failed to close client: %v", err)

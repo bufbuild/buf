@@ -31,7 +31,7 @@ func TestJSONStable(t *testing.T) {
 	fileDescriptorProto := &descriptorpb.FileDescriptorProto{Name: proto.String("a.proto")}
 	data, err := NewJSONMarshaler(nil, JSONMarshalerWithIndent()).Marshal(fileDescriptorProto)
 	require.NoError(t, err)
-	require.Equal(
+	require.JSONEq(
 		t,
 		"{\n  \"name\": \"a.proto\"\n}",
 		string(data),

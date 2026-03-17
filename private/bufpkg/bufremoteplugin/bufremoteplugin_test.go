@@ -38,7 +38,7 @@ func TestPluginToProtoPluginRegistryType(t *testing.T) {
 
 func assertPluginToPluginRegistryType(t testing.TB, config *bufremotepluginconfig.RegistryConfig, registryType registryv1alpha1.PluginRegistryType) {
 	plugin, err := NewPlugin("v1.0.0", nil, config, "sha256:digest", "", "")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, registryType, PluginToProtoPluginRegistryType(plugin))
 }
 
@@ -253,5 +253,5 @@ func TestLanguagesToProtoLanguages(t *testing.T) {
 	require.Error(t, err)
 	protoLanguages, err = OutputLanguagesToProtoLanguages(nil)
 	require.NoError(t, err)
-	assert.Equal(t, 0, len(protoLanguages))
+	assert.Empty(t, protoLanguages)
 }

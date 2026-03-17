@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -168,7 +167,7 @@ func TestGetReadWriteBucketForOSParentPwd(t *testing.T) {
 	require.NoError(t, osext.Chdir(normalpath.Unnormalize(normalpath.Join(pwd, "testdata/bufyaml/one/two/three/four"))))
 	defer func() {
 		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
+		require.NoError(t, osext.Chdir(pwd))
 		if r != nil {
 			panic(r)
 		}
@@ -204,7 +203,7 @@ func TestGetReadWriteBucketForOSAbsPwd(t *testing.T) {
 	require.NoError(t, osext.Chdir(normalpath.Unnormalize(normalpath.Join(pwd, "testdata/bufyaml/one/two/three/four"))))
 	defer func() {
 		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
+		require.NoError(t, osext.Chdir(pwd))
 		if r != nil {
 			panic(r)
 		}
@@ -283,7 +282,7 @@ func TestGetReadBucketCloserForOSProtoFileParentPwd(t *testing.T) {
 	require.NoError(t, osext.Chdir(normalpath.Unnormalize(normalpath.Join(pwd, "testdata/bufyaml/one/two/three/four"))))
 	defer func() {
 		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
+		require.NoError(t, osext.Chdir(pwd))
 		if r != nil {
 			panic(r)
 		}
@@ -320,7 +319,7 @@ func TestGetReadBucketCloserForOSProtoFileAbsPwd(t *testing.T) {
 	require.NoError(t, osext.Chdir(normalpath.Unnormalize(normalpath.Join(pwd, "testdata/bufyaml/one/two/three/four"))))
 	defer func() {
 		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
+		require.NoError(t, osext.Chdir(pwd))
 		if r != nil {
 			panic(r)
 		}
@@ -376,7 +375,7 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLParentPwd(t *testing.T) {
 	require.NoError(t, osext.Chdir(normalpath.Unnormalize(normalpath.Join(pwd, "testdata/nobufyaml/one/two/three/four"))))
 	defer func() {
 		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
+		require.NoError(t, osext.Chdir(pwd))
 		if r != nil {
 			panic(r)
 		}
@@ -414,7 +413,7 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLAbsPwd(t *testing.T) {
 	require.NoError(t, osext.Chdir(normalpath.Unnormalize(normalpath.Join(pwd, "testdata/nobufyaml/one/two/three/four"))))
 	defer func() {
 		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
+		require.NoError(t, osext.Chdir(pwd))
 		if r != nil {
 			panic(r)
 		}

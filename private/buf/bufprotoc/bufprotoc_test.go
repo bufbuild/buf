@@ -47,7 +47,7 @@ func TestNewModuleSetForProtoc(t *testing.T) {
 	require.NoError(t, err)
 
 	modules := moduleSet.Modules()
-	require.Equal(t, 1, len(modules))
+	require.Len(t, modules, 1)
 	module := modules[0]
 	require.Equal(t, ".", module.OpaqueID())
 	require.True(t, module.IsTarget())

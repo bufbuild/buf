@@ -68,7 +68,7 @@ func testCompareConfigMigrate(t *testing.T, dir string, expectCode int, expectSt
 		require.NoError(t, osext.Chdir(tempDir))
 		defer func() {
 			r := recover()
-			assert.NoError(t, osext.Chdir(pwd))
+			require.NoError(t, osext.Chdir(pwd))
 			if r != nil {
 				panic(r)
 			}

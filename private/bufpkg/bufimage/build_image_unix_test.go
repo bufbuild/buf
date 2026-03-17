@@ -46,7 +46,7 @@ func testBuildActualProtocGoogleapis(t *testing.T, includeSourceInfo bool) *desc
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	filePaths := buftesting.GetProtocFilePaths(t, googleapisDirPath, 0)
 	fileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, true, includeSourceInfo, googleapisDirPath, filePaths)
-	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(fileDescriptorSet.GetFile()))
+	assert.Len(t, fileDescriptorSet.GetFile(), buftesting.NumGoogleapisFilesWithImports)
 
 	return fileDescriptorSet
 }

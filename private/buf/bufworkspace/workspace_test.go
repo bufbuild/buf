@@ -16,7 +16,6 @@ package bufworkspace
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/fs"
 	"testing"
@@ -155,7 +154,7 @@ func testBasic(t *testing.T, subDirPath string, isV2 bool) {
 	_, err = module.StatFileInfo(ctx, "acme/bond/v2/bond.proto")
 	require.NoError(t, err)
 	_, err = module.StatFileInfo(ctx, "acme/bond/excluded/v2/excluded.proto")
-	require.True(t, errors.Is(err, fs.ErrNotExist))
+	require.ErrorIs(t, err, fs.ErrNotExist)
 
 	testLicenseAndDoc(t, ctx, workspace, isV2)
 
@@ -240,7 +239,7 @@ func TestUnusedDep(t *testing.T) {
 
 	malformedDeps, err := MalformedDepsForWorkspace(workspace)
 	require.NoError(t, err)
-	require.Equal(t, 2, len(malformedDeps))
+	require.Len(t, malformedDeps, 2)
 	require.Equal(t, "buf.testing/acme/date", malformedDeps[0].ModuleRef().FullName().String())
 	require.Equal(t, MalformedDepTypeUnused, malformedDeps[0].Type())
 	require.Equal(t, "buf.testing/acme/extension", malformedDeps[1].ModuleRef().FullName().String())

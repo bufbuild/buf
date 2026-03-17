@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParallelizeWithImmediateCancellation(t *testing.T) {
@@ -40,7 +41,7 @@ func TestParallelizeWithImmediateCancellation(t *testing.T) {
 			})
 		}
 		err := Parallelize(t.Context(), jobs)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, int64(jobsToExecute), executed.Load(), "jobs executed")
 	})
 	t.Run("WithCtxCancellation", func(t *testing.T) {
@@ -56,7 +57,7 @@ func TestParallelizeWithImmediateCancellation(t *testing.T) {
 		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 		err := Parallelize(ctx, jobs)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, int64(0), executed.Load(), "jobs executed")
 	})
 }

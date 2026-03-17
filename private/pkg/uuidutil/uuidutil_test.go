@@ -86,7 +86,7 @@ func TestFromStringSlice(t *testing.T) {
 	ids := []string{id1.String(), id2.String()}
 	uuids, err := FromStringSlice(ids)
 	require.NoError(t, err)
-	require.Equal(t, 2, len(uuids))
+	require.Len(t, uuids, 2)
 	require.Equal(t, id1, uuids[0])
 	require.Equal(t, id2, uuids[1])
 }

@@ -520,8 +520,8 @@ modules:
 	)
 	moduleConfig0 := bufYAMLFile.ModuleConfigs()[0]
 	moduleConfig1 := bufYAMLFile.ModuleConfigs()[1]
-	require.Equal(t, moduleConfig0.DirPath(), "proto")
-	require.Equal(t, moduleConfig1.DirPath(), "vendor")
+	require.Equal(t, "proto", moduleConfig0.DirPath())
+	require.Equal(t, "vendor", moduleConfig1.DirPath())
 	require.False(t, moduleConfig0.LintConfig().Disabled())
 	require.False(t, moduleConfig1.LintConfig().Disabled())
 
@@ -538,8 +538,8 @@ lint:
 	)
 	moduleConfig0 = bufYAMLFile.ModuleConfigs()[0]
 	moduleConfig1 = bufYAMLFile.ModuleConfigs()[1]
-	require.Equal(t, moduleConfig0.DirPath(), "proto")
-	require.Equal(t, moduleConfig1.DirPath(), "vendor")
+	require.Equal(t, "proto", moduleConfig0.DirPath())
+	require.Equal(t, "vendor", moduleConfig1.DirPath())
 	require.False(t, moduleConfig0.LintConfig().Disabled())
 	require.True(t, moduleConfig1.LintConfig().Disabled())
 
@@ -556,8 +556,8 @@ modules:
 	)
 	moduleConfig0 = bufYAMLFile.ModuleConfigs()[0]
 	moduleConfig1 = bufYAMLFile.ModuleConfigs()[1]
-	require.Equal(t, moduleConfig0.DirPath(), "proto")
-	require.Equal(t, moduleConfig1.DirPath(), "vendor")
+	require.Equal(t, "proto", moduleConfig0.DirPath())
+	require.Equal(t, "vendor", moduleConfig1.DirPath())
 	require.False(t, moduleConfig0.LintConfig().Disabled())
 	require.True(t, moduleConfig1.LintConfig().Disabled())
 }
@@ -575,8 +575,8 @@ modules:
 	)
 	moduleConfig0 := bufYAMLFile.ModuleConfigs()[0]
 	moduleConfig1 := bufYAMLFile.ModuleConfigs()[1]
-	require.Equal(t, moduleConfig0.DirPath(), "proto")
-	require.Equal(t, moduleConfig1.DirPath(), "vendor")
+	require.Equal(t, "proto", moduleConfig0.DirPath())
+	require.Equal(t, "vendor", moduleConfig1.DirPath())
 	require.False(t, moduleConfig0.BreakingConfig().Disabled())
 	require.False(t, moduleConfig1.BreakingConfig().Disabled())
 
@@ -593,8 +593,8 @@ breaking:
 	)
 	moduleConfig0 = bufYAMLFile.ModuleConfigs()[0]
 	moduleConfig1 = bufYAMLFile.ModuleConfigs()[1]
-	require.Equal(t, moduleConfig0.DirPath(), "proto")
-	require.Equal(t, moduleConfig1.DirPath(), "vendor")
+	require.Equal(t, "proto", moduleConfig0.DirPath())
+	require.Equal(t, "vendor", moduleConfig1.DirPath())
 	require.False(t, moduleConfig0.BreakingConfig().Disabled())
 	require.True(t, moduleConfig1.BreakingConfig().Disabled())
 
@@ -611,8 +611,8 @@ modules:
 	)
 	moduleConfig0 = bufYAMLFile.ModuleConfigs()[0]
 	moduleConfig1 = bufYAMLFile.ModuleConfigs()[1]
-	require.Equal(t, moduleConfig0.DirPath(), "proto")
-	require.Equal(t, moduleConfig1.DirPath(), "vendor")
+	require.Equal(t, "proto", moduleConfig0.DirPath())
+	require.Equal(t, "vendor", moduleConfig1.DirPath())
 	require.False(t, moduleConfig0.BreakingConfig().Disabled())
 	require.True(t, moduleConfig1.BreakingConfig().Disabled())
 }
@@ -723,7 +723,7 @@ func testReadWriteBufYAMLFileRoundTrip(
 	err := WriteBufYAMLFile(buffer, bufYAMLFile)
 	require.NoError(t, err)
 	outputBufYAMLData := testCleanYAMLData(buffer.String())
-	assert.Equal(t, testCleanYAMLData(expectedOutputBufYAMLFileData), outputBufYAMLData, "output:\n%s", outputBufYAMLData)
+	assert.YAMLEq(t, testCleanYAMLData(expectedOutputBufYAMLFileData), outputBufYAMLData, "output:\n%s", outputBufYAMLData)
 }
 
 func testReadBufYAMLFile(

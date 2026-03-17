@@ -158,7 +158,7 @@ func setupLSPServer(
 		},
 	}, &initResult)
 	require.NoError(t, initErr)
-	assert.True(t, initResult.Capabilities.HoverProvider != nil)
+	assert.NotNil(t, initResult.Capabilities.HoverProvider)
 
 	err = clientJSONConn.Notify(ctx, protocol.MethodInitialized, &protocol.InitializedParams{})
 	require.NoError(t, err)

@@ -60,7 +60,7 @@ func BenchmarkNewImageWithOnlyPathsAllowNotExistFileOnly(b *testing.B) {
 		// this does increase the time but we're just looking for order of magnitude
 		// between this and the below benchmark function
 		require.NoError(b, err)
-		require.Equal(b, 1, len(newImage.Files()))
+		require.Len(b, newImage.Files(), 1)
 	}
 }
 
@@ -91,7 +91,7 @@ func BenchmarkNewImageWithOnlyPathsAllowNotExistDirOnly(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		newImage, err := bufimage.ImageWithOnlyPathsAllowNotExist(image, []string{"a1.proto"}, nil)
 		require.NoError(b, err)
-		require.Equal(b, 1, len(newImage.Files()))
+		require.Len(b, newImage.Files(), 1)
 	}
 }
 
@@ -621,7 +621,7 @@ func TestBasic(t *testing.T) {
 	// imagesByDir and multiple Image tests
 	imagesByDir, err := bufimage.ImageByDir(image)
 	require.NoError(t, err)
-	require.Equal(t, 3, len(imagesByDir))
+	require.Len(t, imagesByDir, 3)
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
@@ -705,7 +705,7 @@ func TestBasic(t *testing.T) {
 	}
 	requestsFromImages, err := bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, false, false)
 	require.NoError(t, err)
-	require.Equal(t, len(codeGeneratorRequests), len(requestsFromImages))
+	require.Len(t, requestsFromImages, len(codeGeneratorRequests))
 	for i := range codeGeneratorRequests {
 		diff = cmp.Diff(codeGeneratorRequests[i], requestsFromImages[i], protocmp.Transform())
 		require.Empty(t, diff)
@@ -765,7 +765,7 @@ func TestBasic(t *testing.T) {
 	}
 	requestsFromImages, err = bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, true, false)
 	require.NoError(t, err)
-	require.Equal(t, len(codeGeneratorRequestsIncludeImports), len(requestsFromImages))
+	require.Len(t, requestsFromImages, len(codeGeneratorRequestsIncludeImports))
 	for i := range codeGeneratorRequestsIncludeImports {
 		diff = cmp.Diff(codeGeneratorRequestsIncludeImports[i], requestsFromImages[i], protocmp.Transform())
 		require.Empty(t, diff)

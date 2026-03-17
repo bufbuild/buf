@@ -17,7 +17,6 @@ package storagetesting
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -60,8 +59,8 @@ func AssertNotExist(
 	path string,
 ) {
 	_, err := readBucket.Stat(t.Context(), path)
-	assert.Error(t, err)
-	assert.True(t, errors.Is(err, fs.ErrNotExist))
+	require.Error(t, err)
+	assert.ErrorIs(t, err, fs.ErrNotExist)
 }
 
 // AssertObjectInfo asserts the path has the expected ObjectInfo.
@@ -115,8 +114,8 @@ func AssertPathToContent(
 			return nil
 		},
 	))
-	require.Equal(t, len(paths), len(xslices.ToUniqueSorted(paths)))
-	assert.Equal(t, len(expectedPathToContent), len(paths), paths)
+	require.Len(t, xslices.ToUniqueSorted(paths), len(paths))
+	assert.Len(t, paths, len(expectedPathToContent), paths)
 	for _, path := range paths {
 		expectedContent, ok := expectedPathToContent[path]
 		assert.True(t, ok, path)
@@ -399,13 +398,13 @@ func RunTestSuite(
 			t.Context(),
 			"a/b/1.proto",
 		)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.True(t, storage.IsExistsMultipleLocations(err))
 		_, err = readBucketMulti.Stat(
 			t.Context(),
 			"a/b/1.proto",
 		)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.True(t, storage.IsExistsMultipleLocations(err))
 		err = readBucketMulti.Walk(
 			t.Context(),
@@ -414,7 +413,7 @@ func RunTestSuite(
 				return nil
 			},
 		)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.True(t, storage.IsExistsMultipleLocations(err))
 	})
 
@@ -1215,7 +1214,7 @@ func RunTestSuite(
 		t.Parallel()
 		writeBucket := newWriteBucket(t, defaultProvider)
 		err := writeBucket.Delete(t.Context(), "hello")
-		require.True(t, errors.Is(err, fs.ErrNotExist))
+		require.ErrorIs(t, err, fs.ErrNotExist)
 		writeObjectCloser, err := writeBucket.Put(
 			t.Context(),
 			"hello",
@@ -1227,7 +1226,7 @@ func RunTestSuite(
 		err = writeBucket.Delete(t.Context(), "hello")
 		require.NoError(t, err)
 		err = writeBucket.Delete(t.Context(), "hello")
-		require.True(t, errors.Is(err, fs.ErrNotExist))
+		require.ErrorIs(t, err, fs.ErrNotExist)
 		writeObjectCloser, err = writeBucket.Put(
 			t.Context(),
 			"hello",
@@ -1239,7 +1238,7 @@ func RunTestSuite(
 		err = writeBucket.Delete(t.Context(), "hello")
 		require.NoError(t, err)
 		err = writeBucket.Delete(t.Context(), "hello")
-		require.True(t, errors.Is(err, fs.ErrNotExist))
+		require.ErrorIs(t, err, fs.ErrNotExist)
 	})
 
 	t.Run("write-bucket-put-delete-all", func(t *testing.T) {
@@ -1516,15 +1515,15 @@ func RunTestSuite(
 		writeBucket = newWriteBucket(t, defaultProvider)
 		tarball := bytes.NewReader(buffer.Bytes())
 		err = storagearchive.Untar(t.Context(), tarball, writeBucket, storagearchive.UntarWithMaxFileSize(limit))
-		assert.ErrorIs(t, err, storagearchive.ErrFileSizeLimit)
+		require.ErrorIs(t, err, storagearchive.ErrFileSizeLimit)
 		_, err = tarball.Seek(0, io.SeekStart)
 		require.NoError(t, err)
 		err = storagearchive.Untar(t.Context(), tarball, writeBucket)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		_, err = tarball.Seek(0, io.SeekStart)
 		require.NoError(t, err)
 		err = storagearchive.Untar(t.Context(), tarball, writeBucket, storagearchive.UntarWithMaxFileSize(limit+1))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		err = storagearchive.Untar(
 			t.Context(),
 			tarball,

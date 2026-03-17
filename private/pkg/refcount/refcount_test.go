@@ -26,17 +26,17 @@ func TestMap(t *testing.T) {
 	table := &Map[string, int]{}
 
 	value, found := table.Insert("foo")
-	assert.Equal(t, *value, 0)
-	assert.Equal(t, found, false)
+	assert.Equal(t, 0, *value)
+	assert.False(t, found)
 	*value = 42
 
 	value, found = table.Insert("foo")
-	assert.Equal(t, *value, 42)
-	assert.Equal(t, found, true)
+	assert.Equal(t, 42, *value)
+	assert.True(t, found)
 
-	assert.Equal(t, *table.Get("foo"), 42)
+	assert.Equal(t, 42, *table.Get("foo"))
 	assert.Nil(t, table.Get("bar"))
 
 	assert.Nil(t, table.Delete("foo"))
-	assert.Equal(t, *table.Delete("foo"), 42)
+	assert.Equal(t, 42, *table.Delete("foo"))
 }

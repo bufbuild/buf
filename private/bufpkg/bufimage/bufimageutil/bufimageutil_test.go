@@ -414,7 +414,7 @@ func TestTypesFromMainModule(t *testing.T) {
 	require.False(t, bProtoFileInfo.IsTargetFile())
 	_, err = FilterImage(image, WithIncludeTypes("dependency.Dep"))
 	require.Error(t, err)
-	assert.ErrorIs(t, err, ErrImageFilterTypeIsImport)
+	require.ErrorIs(t, err, ErrImageFilterTypeIsImport)
 
 	// allowed if we specify option
 	_, err = FilterImage(image, WithIncludeTypes("dependency.Dep"), WithAllowIncludeOfImportedType())
@@ -463,7 +463,7 @@ func TestMutateInPlace(t *testing.T) {
 	}
 	assert.Nil(t, aFileDescriptorProto.EnumType)
 	assert.Nil(t, aFileDescriptorProto.Service)
-	assert.Equal(t, filterLocationLen, len(aFileDescriptorProto.SourceCodeInfo.Location))
+	assert.Len(t, aFileDescriptorProto.SourceCodeInfo.Location, filterLocationLen)
 }
 
 func TestConsecutiveFilters(t *testing.T) {

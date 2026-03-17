@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -121,7 +122,7 @@ func testParseVersionForCLIVersionSuccess(
 	expectedVersion *pluginpb.Version,
 ) {
 	version, err := parseVersionForCLIVersion(value)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if err == nil {
 		assert.Equal(t, expectedVersion, version)
 	}

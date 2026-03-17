@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRegisterDevice(t *testing.T) {
@@ -95,10 +96,10 @@ func TestRegisterDevice(t *testing.T) {
 			ctx := t.Context()
 			c := NewClient("https://buf.build", &http.Client{
 				Transport: testRoundTripFunc(func(r *http.Request) (*http.Response, error) {
-					assert.Equal(t, r.Method, http.MethodPost)
-					assert.Equal(t, r.URL.Path, DeviceRegistrationPath)
-					assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
-					assert.Equal(t, r.Header.Get("Accept"), "application/json")
+					assert.Equal(t, http.MethodPost, r.Method)
+					assert.Equal(t, DeviceRegistrationPath, r.URL.Path)
+					assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+					assert.Equal(t, "application/json", r.Header.Get("Accept"))
 					return test.transport(t, r)
 				}),
 			})
@@ -207,10 +208,10 @@ func TestAuthorizeDevice(t *testing.T) {
 			ctx := t.Context()
 			c := NewClient("https://buf.build", &http.Client{
 				Transport: testRoundTripFunc(func(r *http.Request) (*http.Response, error) {
-					assert.Equal(t, r.Method, http.MethodPost)
-					assert.Equal(t, r.URL.Path, DeviceAuthorizationPath)
-					assert.Equal(t, r.Header.Get("Content-Type"), "application/x-www-form-urlencoded")
-					assert.Equal(t, r.Header.Get("Accept"), "application/json")
+					assert.Equal(t, http.MethodPost, r.Method)
+					assert.Equal(t, DeviceAuthorizationPath, r.URL.Path)
+					assert.Equal(t, "application/x-www-form-urlencoded", r.Header.Get("Content-Type"))
+					assert.Equal(t, "application/json", r.Header.Get("Accept"))
 					return test.transport(t, r)
 				}),
 			})
@@ -313,10 +314,10 @@ func TestAccessDeviceToken(t *testing.T) {
 			ctx := t.Context()
 			c := NewClient("https://buf.build", &http.Client{
 				Transport: testRoundTripFunc(func(r *http.Request) (*http.Response, error) {
-					assert.Equal(t, r.Method, http.MethodPost)
-					assert.Equal(t, r.URL.Path, DeviceTokenPath)
-					assert.Equal(t, r.Header.Get("Content-Type"), "application/x-www-form-urlencoded")
-					assert.Equal(t, r.Header.Get("Accept"), "application/json")
+					assert.Equal(t, http.MethodPost, r.Method)
+					assert.Equal(t, DeviceTokenPath, r.URL.Path)
+					assert.Equal(t, "application/x-www-form-urlencoded", r.Header.Get("Content-Type"))
+					assert.Equal(t, "application/json", r.Header.Get("Accept"))
 					return test.transport(t, r)
 				}),
 			})
@@ -345,16 +346,12 @@ func testNewJSONResponse(t *testing.T, statusCode int, body string) *http.Respon
 func testAssertJSONRequest(t *testing.T, r *http.Request, expect string) {
 	t.Helper()
 	body, err := io.ReadAll(r.Body)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
 	assert.JSONEq(t, string(body), expect)
 }
 
 func testAssertFormRequest(t *testing.T, r *http.Request, values url.Values) {
 	t.Helper()
-	if !assert.NoError(t, r.ParseForm()) {
-		return
-	}
-	assert.Equal(t, r.Form, values)
+	require.NoError(t, r.ParseForm())
+	assert.Equal(t, values, r.Form)
 }

@@ -93,7 +93,7 @@ func TestParseManifestError(t *testing.T) {
 
 func testParseManifestError(t *testing.T, manifestString string) {
 	_, err := ParseManifest(manifestString)
-	assert.Error(t, err)
+	require.Error(t, err)
 	parseError := &ParseError{}
 	isParseError := errors.As(err, &parseError)
 	assert.True(t, isParseError)

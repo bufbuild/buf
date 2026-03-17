@@ -15,7 +15,6 @@
 package bufmodule_test
 
 import (
-	"errors"
 	"testing"
 
 	"buf.build/go/standard/xslices"
@@ -239,7 +238,7 @@ func TestBasic(t *testing.T) {
 	)
 	extdep2Deps, err := extdep2.ModuleDeps()
 	require.NoError(t, err)
-	require.Equal(t, 1, len(extdep2Deps))
+	require.Len(t, extdep2Deps, 1)
 	require.Equal(t, "buf.build/foo/extdep1", extdep2Deps[0].OpaqueID())
 	require.Equal(t, extdep2.OpaqueID(), extdep2Deps[0].Parent().OpaqueID())
 
@@ -255,7 +254,7 @@ func TestBasic(t *testing.T) {
 	)
 	module1Deps, err := module1.ModuleDeps()
 	require.NoError(t, err)
-	require.Equal(t, 2, len(module1Deps))
+	require.Len(t, module1Deps, 2)
 	require.Equal(t, "buf.build/foo/extdep1", module1Deps[0].OpaqueID())
 	require.Equal(t, extdep2.OpaqueID(), module1Deps[0].Parent().OpaqueID())
 	require.Equal(t, "buf.build/foo/extdep2", module1Deps[1].OpaqueID())
@@ -397,7 +396,7 @@ func TestModuleCycleError(t *testing.T) {
 	_, err = moduleA.ModuleDeps()
 	require.Error(t, err)
 	moduleCycleError := &bufmodule.ModuleCycleError{}
-	require.True(t, errors.As(err, &moduleCycleError), err.Error())
+	require.ErrorAs(t, err, &moduleCycleError, err.Error())
 	require.Equal(
 		t,
 		[]string{
@@ -414,7 +413,7 @@ func TestModuleCycleError(t *testing.T) {
 	_, err = moduleB.ModuleDeps()
 	require.Error(t, err)
 	moduleCycleError = &bufmodule.ModuleCycleError{}
-	require.True(t, errors.As(err, &moduleCycleError), err.Error())
+	require.ErrorAs(t, err, &moduleCycleError, err.Error())
 	require.Equal(
 		t,
 		[]string{
@@ -431,7 +430,7 @@ func TestModuleCycleError(t *testing.T) {
 	_, err = moduleC.ModuleDeps()
 	require.Error(t, err)
 	moduleCycleError = &bufmodule.ModuleCycleError{}
-	require.True(t, errors.As(err, &moduleCycleError), err.Error())
+	require.ErrorAs(t, err, &moduleCycleError, err.Error())
 	require.Equal(
 		t,
 		[]string{
@@ -478,7 +477,7 @@ func TestDuplicateProtoPathError(t *testing.T) {
 	checkError := func(err error) {
 		require.Error(t, err)
 		duplicateProtoPathError := &bufmodule.DuplicateProtoPathError{}
-		require.True(t, errors.As(err, &duplicateProtoPathError), err.Error())
+		require.ErrorAs(t, err, &duplicateProtoPathError, err.Error())
 		require.Equal(
 			t,
 			"a.proto",
@@ -533,7 +532,7 @@ func TestNoProtoFilesError(t *testing.T) {
 	checkError := func(err error) {
 		require.Error(t, err)
 		noProtoFilesError := &bufmodule.NoProtoFilesError{}
-		require.True(t, errors.As(err, &noProtoFilesError), err.Error())
+		require.ErrorAs(t, err, &noProtoFilesError, err.Error())
 		require.Contains(
 			t,
 			"buf.build/foo/b",

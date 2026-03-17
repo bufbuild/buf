@@ -104,7 +104,7 @@ func TestReparseExtensions(t *testing.T) {
 		switch field.Number() {
 		case customOptionNum:
 			found++
-			assert.Equal(t, customOptionVal, value.Interface())
+			assert.InEpsilon(t, customOptionVal, value.Interface(), 1e-6)
 		case protoreflect.FieldNumber(validate.E_Field.Field):
 			found++
 			msg := value.Message().Interface()

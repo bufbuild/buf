@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -229,7 +230,7 @@ func AssertFileDescriptorSetsEqual(
 	two *descriptorpb.FileDescriptorSet,
 ) {
 	diff, err := DiffFileDescriptorSetsJSON(t.Context(), one, two, "buf", "protoc")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, diff)
 	diff = DiffFileDescriptorSetsCompare(one, two)
 	assert.Empty(t, diff)

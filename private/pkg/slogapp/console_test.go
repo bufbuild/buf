@@ -109,13 +109,11 @@ func testConsolLogOutput(t *testing.T, run func(logger *slog.Logger), expects []
 			continue
 		}
 		lineAttrs, err := testParseLogLine(line)
-		if !assert.NoError(t, err) {
-			continue
-		}
+		require.NoError(t, err)
 		outputs = append(outputs, lineAttrs)
 	}
 	t.Log(buf.String())
-	require.Equal(t, len(expects), len(outputs))
+	require.Len(t, outputs, len(expects))
 	for i := range len(outputs) {
 		output, expect := outputs[i], expects[i]
 		assert.Equal(t, expect, output)

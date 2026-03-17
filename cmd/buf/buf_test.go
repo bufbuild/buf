@@ -1405,7 +1405,7 @@ func TestLsModulesWorkspaceV1(t *testing.T) {
 	require.NoError(t, err)
 	defer func() {
 		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
+		require.NoError(t, osext.Chdir(pwd))
 		if r != nil {
 			panic(r)
 		}
@@ -1486,7 +1486,7 @@ func TestLsModulesWorkspaceV2(t *testing.T) {
 	require.NoError(t, err)
 	defer func() {
 		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
+		require.NoError(t, osext.Chdir(pwd))
 		if r != nil {
 			panic(r)
 		}
@@ -1561,7 +1561,7 @@ func TestLsModulesModuleV1(t *testing.T) {
 	require.NoError(t, err)
 	defer func() {
 		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
+		require.NoError(t, osext.Chdir(pwd))
 		if r != nil {
 			panic(r)
 		}
@@ -1659,7 +1659,7 @@ func TestLsModulesModuleV1Beta1(t *testing.T) {
 	require.NoError(t, err)
 	defer func() {
 		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
+		require.NoError(t, osext.Chdir(pwd))
 		if r != nil {
 			panic(r)
 		}
@@ -1755,7 +1755,7 @@ func TestLsModulesNoConfig(t *testing.T) {
 	require.NoError(t, err)
 	defer func() {
 		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
+		require.NoError(t, osext.Chdir(pwd))
 		if r != nil {
 			panic(r)
 		}
@@ -1810,7 +1810,7 @@ func TestLsModulesBothConfig(t *testing.T) {
 	require.NoError(t, err)
 	defer func() {
 		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
+		require.NoError(t, osext.Chdir(pwd))
 		if r != nil {
 			panic(r)
 		}
@@ -1843,7 +1843,7 @@ func TestLsModulesInvalidVersion(t *testing.T) {
 	require.NoError(t, err)
 	defer func() {
 		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
+		require.NoError(t, osext.Chdir(pwd))
 		if r != nil {
 			panic(r)
 		}
@@ -1917,7 +1917,7 @@ func TestLsModulesConfigFlagTakesPrecedence(t *testing.T) {
 	require.NoError(t, err)
 	defer func() {
 		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
+		require.NoError(t, osext.Chdir(pwd))
 		if r != nil {
 			panic(r)
 		}
@@ -1948,7 +1948,7 @@ func TestLsModulesWorkspaceV2DuplicateDirPath(t *testing.T) {
 	require.NoError(t, err)
 	defer func() {
 		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
+		require.NoError(t, osext.Chdir(pwd))
 		if r != nil {
 			panic(r)
 		}
@@ -2495,7 +2495,7 @@ func TestImageConvertRoundtripJSONBinaryJSON(t *testing.T) {
 		"-#format=json",
 	)
 
-	require.Equal(t, json1, stdout.Bytes())
+	require.JSONEq(t, string(json1), stdout.String())
 }
 
 func TestModInitBasic(t *testing.T) {

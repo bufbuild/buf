@@ -91,7 +91,7 @@ func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
 		assert.Equal(t, http.StatusOK, response.StatusCode)
 		assert.Equal(t, "https://example.buf.build", response.Header.Get("Access-Control-Allow-Origin"))
 		responseBytes, err := io.ReadAll(response.Body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		invokeResponse := &studiov1alpha1.InvokeResponse{}
 		protoUnmarshalBase64(t, responseBytes, invokeResponse)
 		upstreamResponseHeaders := make(http.Header)
@@ -123,13 +123,13 @@ func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
 		assert.Equal(t, http.StatusOK, response.StatusCode)
 		assert.Equal(t, "https://example.buf.build", response.Header.Get("Access-Control-Allow-Origin"))
 		responseBytes, err := io.ReadAll(response.Body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		invokeResponse := &studiov1alpha1.InvokeResponse{}
 		protoUnmarshalBase64(t, responseBytes, invokeResponse)
 		upstreamResponseHeaders := make(http.Header)
 		addProtoHeadersToGoHeader(invokeResponse.GetHeaders(), upstreamResponseHeaders)
 		addProtoHeadersToGoHeader(invokeResponse.GetTrailers(), upstreamResponseHeaders)
-		assert.Equal(t, "", upstreamResponseHeaders.Get("grpc-status"))
+		assert.Empty(t, upstreamResponseHeaders.Get("grpc-status"))
 		assert.Equal(t, []byte("echo: echothis"), invokeResponse.GetBody())
 		assert.Equal(t, "foo-value", upstreamResponseHeaders.Get("Echo-Bar"))
 	})
@@ -182,7 +182,7 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		defer response.Body.Close()
 		assert.Equal(t, http.StatusOK, response.StatusCode)
 		responseBytes, err := io.ReadAll(response.Body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		invokeResponse := &studiov1alpha1.InvokeResponse{}
 		protoUnmarshalBase64(t, responseBytes, invokeResponse)
 		upstreamResponseHeaders := make(http.Header)

@@ -152,7 +152,7 @@ func TestMaskReadBucket_InvalidPrefixes(t *testing.T) {
 	t.Parallel()
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	_, err := storage.MaskReadBucket(readWriteBucket, []string{"../invalid"}, []string{})
-	assert.Error(t, err, "Should error on invalid include prefix")
+	require.Error(t, err, "Should error on invalid include prefix")
 	_, err = storage.MaskReadBucket(readWriteBucket, []string{}, []string{"../invalid"})
 	assert.Error(t, err, "Should error on invalid exclude prefix")
 }
@@ -332,7 +332,7 @@ func testMaskReadBucket(
 	// Test Get operation for accessible files
 	for file := range accessibleFiles {
 		readObjectCloser, err := filteredBucket.Get(ctx, file)
-		assert.NoError(t, err, "Should be able to get accessible file: %s", file)
+		require.NoError(t, err, "Should be able to get accessible file: %s", file)
 		if err == nil {
 			require.NoError(t, readObjectCloser.Close())
 		}
@@ -341,7 +341,7 @@ func testMaskReadBucket(
 	for file := range testFiles {
 		if !accessibleFiles[file] {
 			_, err := filteredBucket.Get(ctx, file)
-			assert.ErrorIs(t, err, fs.ErrNotExist, "Non-accessible file %s should return ErrNotExist", file)
+			require.ErrorIs(t, err, fs.ErrNotExist, "Non-accessible file %s should return ErrNotExist", file)
 			_, err = filteredBucket.Stat(ctx, file)
 			assert.ErrorIs(t, err, fs.ErrNotExist, "Non-accessible file %s should return ErrNotExist for Stat", file)
 		}

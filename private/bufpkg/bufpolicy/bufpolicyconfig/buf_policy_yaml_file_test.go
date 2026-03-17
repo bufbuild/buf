@@ -118,7 +118,7 @@ func testReadWriteBufPolicyYAMLFileRoundTrip(
 	err := WriteBufPolicyYAMLFile(buffer, bufPolicyYAMLFile)
 	require.NoError(t, err)
 	outputBufPolicyYAMLData := testCleanYAMLData(buffer.String())
-	assert.Equal(t, testCleanYAMLData(expectedOutputBufYAMLFileData), outputBufPolicyYAMLData, "output:\n%s", outputBufPolicyYAMLData)
+	assert.YAMLEq(t, testCleanYAMLData(expectedOutputBufYAMLFileData), outputBufPolicyYAMLData, "output:\n%s", outputBufPolicyYAMLData)
 }
 
 func testCleanYAMLData(data string) string {

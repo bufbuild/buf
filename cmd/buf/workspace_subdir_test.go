@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/osext"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -221,7 +220,7 @@ func chdirToSubDir(t *testing.T, relSubDirPath string) func() {
 	require.NoError(t, osext.Chdir(subDirPath))
 	return func() {
 		r := recover()
-		assert.NoError(t, osext.Chdir(pwd))
+		require.NoError(t, osext.Chdir(pwd))
 		if r != nil {
 			panic(r)
 		}

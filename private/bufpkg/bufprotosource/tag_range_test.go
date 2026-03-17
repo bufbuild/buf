@@ -54,7 +54,7 @@ func testExpectedSubset(
 		t.Error("Subset flag should be set when missing ranges aren't found")
 	}
 
-	assert.Equal(t, len(expectedMissing), len(actualMissing), fmt.Sprint(actualMissing))
+	assert.Len(t, actualMissing, len(expectedMissing), fmt.Sprint(actualMissing))
 	if len(expectedMissing) == len(actualMissing) {
 		for i := range actualMissing {
 			assert.Equal(t, expectedMissing[i], actualMissing[i])

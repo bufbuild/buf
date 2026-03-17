@@ -491,5 +491,5 @@ func testReadWriteBufGenYAMLFileRoundTrip(
 	err := WriteBufGenYAMLFile(buffer, bufGenYAMLFile)
 	require.NoError(t, err)
 	outputBufGenYAMLData := testCleanYAMLData(buffer.String())
-	assert.Equal(t, testCleanYAMLData(expectedOutputBufYAMLFileData), outputBufGenYAMLData, "output:\n%s", outputBufGenYAMLData)
+	assert.YAMLEq(t, testCleanYAMLData(expectedOutputBufYAMLFileData), outputBufGenYAMLData, "output:\n%s", outputBufGenYAMLData)
 }

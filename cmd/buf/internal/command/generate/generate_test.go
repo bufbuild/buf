@@ -948,7 +948,7 @@ func testGenerateDeleteOutsWithArgAndConfig(
 	outputPaths []string,
 ) {
 	// Just add more builtins to the plugins slice below if this goes off
-	require.True(t, len(outputPaths) < 4, "we want to have unique plugins to work with and this test is only set up for three plugins max right now")
+	require.Less(t, len(outputPaths), 4, "we want to have unique plugins to work with and this test is only set up for three plugins max right now")
 	fullOutputPaths := outputPaths
 	if baseOutDirPath != "" && baseOutDirPath != "." {
 		fullOutputPaths = xslices.Map(
@@ -1034,7 +1034,7 @@ plugins:
 			// Always expect non-fake data, because the existing ".jar" or ".zip"
 			// file is always replaced by the output. This is the existing and correct
 			// behavior.
-			require.True(t, len(data) > 1, "expected non-fake data at %q", fullOutputPath)
+			require.Greater(t, len(data), 1, "expected non-fake data at %q", fullOutputPath)
 		default:
 			data, err := storage.ReadPath(
 				ctx,

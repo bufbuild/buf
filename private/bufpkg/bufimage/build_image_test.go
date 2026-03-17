@@ -47,7 +47,7 @@ func TestGoogleapis(t *testing.T) {
 	xtesting.SkipIfShort(t)
 	t.Parallel()
 	image := testBuildGoogleapis(t, true)
-	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(image.Files()))
+	assert.Len(t, image.Files(), buftesting.NumGoogleapisFilesWithImports)
 	assert.Equal(
 		t,
 		[]string{
@@ -67,9 +67,9 @@ func TestGoogleapis(t *testing.T) {
 	)
 
 	imageWithoutImports := bufimage.ImageWithoutImports(image)
-	assert.Equal(t, buftesting.NumGoogleapisFiles, len(imageWithoutImports.Files()))
+	assert.Len(t, imageWithoutImports.Files(), buftesting.NumGoogleapisFiles)
 	imageWithoutImports = bufimage.ImageWithoutImports(imageWithoutImports)
-	assert.Equal(t, buftesting.NumGoogleapisFiles, len(imageWithoutImports.Files()))
+	assert.Len(t, imageWithoutImports.Files(), buftesting.NumGoogleapisFiles)
 
 	imageWithSpecificNames, err := bufimage.ImageWithOnlyPathsAllowNotExist(
 		image,
@@ -81,7 +81,7 @@ func TestGoogleapis(t *testing.T) {
 		},
 		nil,
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(
 		t,
 		[]string{
@@ -104,7 +104,7 @@ func TestGoogleapis(t *testing.T) {
 		},
 		nil,
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(
 		t,
 		[]string{
@@ -181,7 +181,7 @@ func TestGoogleapis(t *testing.T) {
 			"google/type/date.proto",
 		},
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t,
 		[]string{
 			"google/protobuf/wrappers.proto",
@@ -206,13 +206,13 @@ func TestGoogleapis(t *testing.T) {
 		"google/type/date.proto",
 	}
 	imageWithExcludes, err := bufimage.ImageWithOnlyPaths(image, []string{}, excludePaths)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	testImageWithExcludedFilePaths(t, imageWithExcludes, excludePaths)
 
-	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(image.Files()))
+	assert.Len(t, image.Files(), buftesting.NumGoogleapisFilesWithImports)
 	// basic check to make sure there is no error at this scale
 	_, err = bufprotosource.NewFiles(t.Context(), image.Files(), image.Resolver())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestCompareCustomOptions1(t *testing.T) {
@@ -364,7 +364,7 @@ func TestModuleTargetFiles(t *testing.T) {
 func testCompare(t *testing.T, relDirPath string) {
 	dirPath := filepath.Join("testdata", relDirPath)
 	image, fileAnnotations := testBuild(t, false, dirPath, false)
-	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
+	require.Empty(t, fileAnnotations, fileAnnotations)
 	image = bufimage.ImageWithoutImports(image)
 	fileDescriptorSet := bufimage.ImageToFileDescriptorSet(image)
 	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 0)
@@ -375,7 +375,7 @@ func testCompare(t *testing.T, relDirPath string) {
 func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufimage.Image {
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	image, fileAnnotations := testBuild(t, includeSourceInfo, googleapisDirPath, true)
-	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
+	require.Empty(t, fileAnnotations, fileAnnotations)
 	return image
 }
 
@@ -431,7 +431,7 @@ func testFileAnnotations(t *testing.T, relDirPath string, parallelism bool, want
 	for i, annotation := range fileAnnotations {
 		got[i] = annotation.String()
 	}
-	require.Equal(t, len(want), len(got))
+	require.Len(t, got, len(want))
 	for i := range want {
 		options := strings.Split(want[i], "||")
 		matched := false

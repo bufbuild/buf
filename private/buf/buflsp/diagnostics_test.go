@@ -472,7 +472,7 @@ message TestMessage {
 		assert.NotEmpty(t, updatedDiagnostics.Diagnostics, "expected diagnostics after introducing syntax error")
 
 		if len(updatedDiagnostics.Diagnostics) > 0 {
-			assert.Equal(t, protocol.DiagnosticSeverityError, updatedDiagnostics.Diagnostics[0].Severity)
+			assert.InDelta(t, protocol.DiagnosticSeverityError, updatedDiagnostics.Diagnostics[0].Severity, 0)
 		}
 	})
 }

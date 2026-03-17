@@ -126,7 +126,7 @@ func TestWorkspaceSymbol(t *testing.T) {
 				})
 				require.NotEqual(t, -1, idx, "expected to find symbol %s", expectedSymbol.name)
 				found := symbols[idx]
-				assert.Equal(t, expectedSymbol.kind, found.Kind, "symbol %s has wrong kind", expectedSymbol.name)
+				assert.InDelta(t, expectedSymbol.kind, found.Kind, 0, "symbol %s has wrong kind", expectedSymbol.name)
 				assert.Equal(t, expectedSymbol.uri, found.Location.URI, "symbol %s has wrong URI", expectedSymbol.name)
 				assert.Equal(t, expectedSymbol.line, found.Location.Range.Start.Line, "symbol %s has wrong line number", expectedSymbol.name)
 				assert.Equal(t, expectedSymbol.deprecated, found.Deprecated, "symbol %s has wrong deprecated status", expectedSymbol.name)

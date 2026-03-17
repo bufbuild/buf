@@ -332,6 +332,6 @@ func testGetBSRProviderAndModuleKeys(t *testing.T, ctx context.Context) (bufmodu
 		bufmodule.DigestTypeB5,
 	)
 	require.NoError(t, err)
-	require.Equal(t, 3, len(moduleKeys))
+	require.Len(t, moduleKeys, 3)
 	return bsrProvider, moduleKeys
 }

@@ -51,9 +51,9 @@ func TestGitCloner(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 2", string(content), "expected the commit on local-branch to be checked out")
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.True(t, errors.Is(err, fs.ErrNotExist))
+		require.ErrorIs(t, err, fs.ErrNotExist)
 		_, err = storage.ReadPath(ctx, readBucket, "submodule/sub.proto")
-		assert.ErrorIs(t, err, fs.ErrNotExist)
+		require.ErrorIs(t, err, fs.ErrNotExist)
 	})
 
 	t.Run("default_submodule", func(t *testing.T) {
@@ -64,7 +64,7 @@ func TestGitCloner(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 2", string(content), "expected the commit on local-branch to be checked out")
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.True(t, errors.Is(err, fs.ErrNotExist))
+		require.ErrorIs(t, err, fs.ErrNotExist)
 		content, err = storage.ReadPath(ctx, readBucket, "submodule/sub.proto")
 		require.NoError(t, err)
 		assert.Equal(t, "// submodule", string(content))
@@ -204,7 +204,7 @@ func TestGitCloner(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 2", string(content))
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.True(t, errors.Is(err, fs.ErrNotExist))
+		assert.ErrorIs(t, err, fs.ErrNotExist)
 	})
 	t.Run("ref=HEAD~", func(t *testing.T) {
 		t.Parallel()
@@ -234,7 +234,7 @@ func TestGitCloner(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 1", string(content))
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.True(t, errors.Is(err, fs.ErrNotExist))
+		assert.ErrorIs(t, err, fs.ErrNotExist)
 	})
 	t.Run("ref=HEAD^1", func(t *testing.T) {
 		t.Parallel()
@@ -303,28 +303,28 @@ func TestGitCloner(t *testing.T) {
 		readBucket := readBucketForName(ctx, t, workDir, readBucketForNameOptions{name: NewBranchName("main"), filter: "tree:0"})
 
 		_, err := readBucket.Stat(ctx, "a.proto")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		_, err = readBucket.Stat(ctx, "c/c.proto")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		content, err := storage.ReadPath(ctx, readBucket, "b/b.proto")
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 0", string(content))
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.ErrorIs(t, err, fs.ErrNotExist)
+		require.ErrorIs(t, err, fs.ErrNotExist)
 	})
 	t.Run("filter=blob:none", func(t *testing.T) {
 		t.Parallel()
 		readBucket := readBucketForName(ctx, t, workDir, readBucketForNameOptions{name: NewBranchName("main"), filter: "tree:0"})
 
 		_, err := readBucket.Stat(ctx, "a.proto")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		_, err = readBucket.Stat(ctx, "c/c.proto")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		content, err := storage.ReadPath(ctx, readBucket, "b/b.proto")
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 0", string(content))
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.ErrorIs(t, err, fs.ErrNotExist)
+		require.ErrorIs(t, err, fs.ErrNotExist)
 	})
 	t.Run("filter=tree:0,subdir=b", func(t *testing.T) {
 		t.Parallel()
@@ -332,14 +332,14 @@ func TestGitCloner(t *testing.T) {
 
 		// Only root and the b directory should be present. It is a sparse checkout.
 		_, err := readBucket.Stat(ctx, "a.proto")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		_, err = readBucket.Stat(ctx, "c/c.proto")
-		assert.ErrorIs(t, err, fs.ErrNotExist)
+		require.ErrorIs(t, err, fs.ErrNotExist)
 		content, err := storage.ReadPath(ctx, readBucket, "b/b.proto")
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 0", string(content))
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.ErrorIs(t, err, fs.ErrNotExist)
+		require.ErrorIs(t, err, fs.ErrNotExist)
 	})
 }
 
