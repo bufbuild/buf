@@ -21,7 +21,6 @@ import (
 	"html"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"sort"
 	"strings"
