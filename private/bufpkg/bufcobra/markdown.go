@@ -36,7 +36,6 @@ func generateMarkdownTree(
 	command *cobra.Command,
 	config *config,
 	parentDirPath string,
-	includeFrontMatter bool,
 ) error {
 	if !command.IsAvailableCommand() {
 		return nil
@@ -58,14 +57,14 @@ func generateMarkdownTree(
 		return err
 	}
 	defer file.Close()
-	if err := generateMarkdownPage(command, config, file, includeFrontMatter); err != nil {
+	if err := generateMarkdownPage(command, config, file); err != nil {
 		return err
 	}
 	if command.HasSubCommands() {
 		commands := command.Commands()
 		orderCommands(config.WeightCommands, commands)
 		for _, command := range commands {
-			if err := generateMarkdownTree(command, config, dirPath, includeFrontMatter); err != nil {
+			if err := generateMarkdownTree(command, config, dirPath); err != nil {
 				return err
 			}
 		}
@@ -78,29 +77,21 @@ func generateMarkdownPage(
 	command *cobra.Command,
 	config *config,
 	writer io.Writer,
-	includeFrontMatter bool,
 ) error {
 	var err error
 	p := func(format string, a ...any) {
 		_, err = fmt.Fprintf(writer, format, a...)
 	}
-	if includeFrontMatter {
-		p("---\n")
-		p("id: %s\n", websitePageIDForCommand(command))
-		p("title: %s\n", command.CommandPath())
-		p("sidebar_label: %s\n", sidebarLabelForCommand(command, config.SidebarPathThreshold))
-		p("sidebar_position: %d\n", websiteSidebarPosition(command, config.WeightCommands))
-		p("slug: /%s\n", path.Join(config.SlugPrefix, websiteSlugForCommand(command)))
-		p("---\n")
-	} else {
-		p("# %s\n", command.CommandPath())
-	}
+	p("---\n")
+	p("title: %s\n", command.CommandPath())
+	p("---\n")
+	p("# %s\n", command.CommandPath())
 	command.InitDefaultHelpCmd()
 	command.InitDefaultHelpFlag()
 	if command.Version != "" {
 		p("version `%s`\n\n", command.Version)
 	}
-	p("%s\n\n", command.Short)
+	p("%s\n\n", html.EscapeString(command.Short))
 	if command.Runnable() {
 		p("### Usage\n")
 		p("```console\n$ %s\n```\n\n", command.UseLine())
@@ -139,7 +130,7 @@ func generateMarkdownPage(
 			if child.HasSubCommands() {
 				childRelPath = filepath.Join(child.Name(), indexFileName)
 			}
-			p("* [%s](./%s)\t - %s\n", child.CommandPath(), childRelPath, child.Short)
+			p("* [%s](./%s)\t - %s\n", child.CommandPath(), childRelPath, html.EscapeString(child.Short))
 		}
 		p("\n")
 	}
@@ -150,11 +141,11 @@ func generateMarkdownPage(
 		if hasSubCommands(command) {
 			// If the current command has sub-commands, the parent command is the index file in
 			// the parent directory.
-			p("* [%s](../%s)\t - %s\n", parentName, indexFileName, parent.Short)
+			p("* [%s](../%s)\t - %s\n", parentName, indexFileName, html.EscapeString(parent.Short))
 		} else {
 			// If the current command is a leaf command, the parent command is the index file in
 			// the current directory.
-			p("* [%s](./%s)\t - %s\n", parentName, indexFileName, parent.Short)
+			p("* [%s](./%s)\t - %s\n", parentName, indexFileName, html.EscapeString(parent.Short))
 		}
 		command.VisitParents(func(c *cobra.Command) {
 			if c.DisableAutoGenTag {
@@ -257,11 +248,11 @@ func writeFlags(f *pflag.FlagSet, writer io.Writer) error {
 		}
 		varname, usage := pflag.UnquoteUsage(flag)
 		if varname != "" {
-			p(" *%s*", varname)
+			p(" *%s*", html.EscapeString(varname))
 		}
 		p(" {#%s}", flag.Name)
 		p("\n")
-		p("%s", usage)
+		p("%s", html.EscapeString(usage))
 		if flag.NoOptDefVal != "" {
 			switch flag.Value.Type() {
 			case "string":
