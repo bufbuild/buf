@@ -50,6 +50,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
@@ -1046,6 +1047,10 @@ func (c *controller) getWorkspaceForSourceRef(
 	defer func() {
 		retErr = errors.Join(retErr, readBucketCloser.Close())
 	}()
+	var readBucket storage.ReadBucket = readBucketCloser
+	if functionOptions.bucketOverlay != nil {
+		readBucket = storage.OverlayReadBucket(functionOptions.bucketOverlay, readBucket)
+	}
 	options := []bufworkspace.WorkspaceBucketOption{
 		bufworkspace.WithConfigOverride(
 			functionOptions.configOverride,
@@ -1059,7 +1064,7 @@ func (c *controller) getWorkspaceForSourceRef(
 	}
 	return c.workspaceProvider.GetWorkspaceForBucket(
 		ctx,
-		readBucketCloser,
+		readBucket,
 		bucketTargeting,
 		options...,
 	)
