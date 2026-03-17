@@ -372,7 +372,7 @@ func TestOutputFlag(t *testing.T) {
 	}
 }
 
-func TestSkipWriteWhenUnchanged(t *testing.T) {
+func TestSmartCleanPreservesMtime(t *testing.T) {
 	t.Parallel()
 	tempDirPath := t.TempDir()
 	template := filepath.Join("testdata", "simple", "buf.gen.yaml")
@@ -384,7 +384,7 @@ func TestSkipWriteWhenUnchanged(t *testing.T) {
 	past := time.Now().Add(-time.Hour)
 	require.NoError(t, os.Chtimes(outFile, past, past))
 
-	testRunSuccess(t, "--output", tempDirPath, "--template", template, input)
+	testRunSuccess(t, "--output", tempDirPath, "--template", template, "--clean", input)
 
 	info, err := os.Stat(outFile)
 	require.NoError(t, err)

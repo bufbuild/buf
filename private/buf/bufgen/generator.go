@@ -104,15 +104,17 @@ func (g *generator) Generate(
 	if generateOptions.deleteOuts != nil {
 		shouldDeleteOuts = *generateOptions.deleteOuts
 	}
-	if shouldDeleteOuts {
-		if err := g.deleteOuts(
-			ctx,
-			generateOptions.baseOutDirPath,
-			config.GeneratePluginConfigs(),
-		); err != nil {
-			return err
-		}
+	responseWriterOptions := []bufprotopluginos.ResponseWriterOption{
+		bufprotopluginos.ResponseWriterWithCreateOutDirIfNotExists(),
 	}
+	if shouldDeleteOuts {
+		responseWriterOptions = append(responseWriterOptions, bufprotopluginos.ResponseWriterWithDeleteOuts())
+	}
+	responseWriter := bufprotopluginos.NewResponseWriter(
+		g.logger,
+		g.storageosProvider,
+		responseWriterOptions...,
+	)
 	for _, image := range images {
 		if err := g.generateCode(
 			ctx,
@@ -120,33 +122,14 @@ func (g *generator) Generate(
 			image,
 			generateOptions.baseOutDirPath,
 			config.GeneratePluginConfigs(),
+			responseWriter,
 			generateOptions.includeImportsOverride,
 			generateOptions.includeWellKnownTypesOverride,
 		); err != nil {
 			return err
 		}
 	}
-	return nil
-}
-
-func (g *generator) deleteOuts(
-	ctx context.Context,
-	baseOutDir string,
-	pluginConfigs []bufconfig.GeneratePluginConfig,
-) error {
-	return bufprotopluginos.NewCleaner(g.storageosProvider).DeleteOuts(
-		ctx,
-		xslices.Map(
-			pluginConfigs,
-			func(pluginConfig bufconfig.GeneratePluginConfig) string {
-				out := pluginConfig.Out()
-				if baseOutDir != "" && baseOutDir != "." {
-					return filepath.Join(baseOutDir, out)
-				}
-				return out
-			},
-		),
-	)
+	return responseWriter.Close()
 }
 
 func (g *generator) generateCode(
@@ -155,6 +138,7 @@ func (g *generator) generateCode(
 	inputImage bufimage.Image,
 	baseOutDir string,
 	pluginConfigs []bufconfig.GeneratePluginConfig,
+	responseWriter bufprotopluginos.ResponseWriter,
 	includeImportsOverride *bool,
 	includeWellKnownTypesOverride *bool,
 ) error {
@@ -170,11 +154,6 @@ func (g *generator) generateCode(
 		return err
 	}
 	// Apply the CodeGeneratorResponses in the order they were specified.
-	responseWriter := bufprotopluginos.NewResponseWriter(
-		g.logger,
-		g.storageosProvider,
-		bufprotopluginos.ResponseWriterWithCreateOutDirIfNotExists(),
-	)
 	for i, pluginConfig := range pluginConfigs {
 		out := pluginConfig.Out()
 		if baseOutDir != "" && baseOutDir != "." {
@@ -191,9 +170,6 @@ func (g *generator) generateCode(
 		); err != nil {
 			return fmt.Errorf("plugin %s: %v", pluginConfig.Name(), err)
 		}
-	}
-	if err := responseWriter.Close(); err != nil {
-		return err
 	}
 	return nil
 }
