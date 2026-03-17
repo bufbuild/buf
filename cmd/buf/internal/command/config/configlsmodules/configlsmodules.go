@@ -104,7 +104,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		formatFlagName,
 		defaultFormat,
 		fmt.Sprintf(
-			"The format to print rules as. Must be one of %s",
+			"The format to print rules as. Must be one of %s.",
 			xstrings.SliceToString(allFormats),
 		),
 	)

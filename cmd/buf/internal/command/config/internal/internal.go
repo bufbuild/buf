@@ -94,14 +94,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.ConfiguredOnly,
 		configuredOnlyFlagName,
 		false,
-		"List rules that are configured instead of listing all available rules",
+		"List rules that are configured instead of listing all available rules.",
 	)
 	flagSet.StringVar(
 		&f.Config,
 		configFlagName,
 		"",
 		fmt.Sprintf(
-			`The buf.yaml file or data to use for configuration. --%s must be set`,
+			`The buf.yaml file or data to use for configuration. --%s must be set.`,
 			configuredOnlyFlagName,
 		),
 	)
@@ -119,7 +119,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		formatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format to print rules as. Must be one of %s",
+			"The format to print rules as. Must be one of %s.",
 			xstrings.SliceToString(bufcli.AllRuleFormatStrings),
 		),
 	)
@@ -128,7 +128,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		versionFlagName,
 		"", // do not set a default as we need to know if this is unset
 		fmt.Sprintf(
-			"List all the rules for the given configuration version. By default, the version in the buf.yaml in the current directory is used, or the latest version otherwise (currently v2). Cannot be set if --%s is set. Must be one of %s",
+			"List all the rules for the given configuration version. By default, the version in the buf.yaml in the current directory is used, or the latest version otherwise (currently v2). Cannot be set if --%s is set. Must be one of %s.",
 			configuredOnlyFlagName,
 			xstrings.SliceToString(
 				xslices.Map(
@@ -145,7 +145,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		modulePathFlagName,
 		"",
 		fmt.Sprintf(
-			"The path to the specific module to list configured rules for as specified in the buf.yaml. If the buf.yaml has more than one module defined, this must be set. --%s must be set",
+			"The path to the specific module to list configured rules for as specified in the buf.yaml. If the buf.yaml has more than one module defined, this must be set. --%s must be set.",
 			configuredOnlyFlagName,
 		),
 	)

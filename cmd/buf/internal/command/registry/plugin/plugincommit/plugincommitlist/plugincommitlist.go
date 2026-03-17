@@ -88,31 +88,31 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.PageSize,
 		pageSizeFlagName,
 		defaultPageSize,
-		`The page size`,
+		`The page size.`,
 	)
 	flagSet.StringVar(
 		&f.PageToken,
 		pageTokenFlagName,
 		"",
-		`The page token. If more results are available, a "next_page" key is present in the --format=json output`,
+		`The page token. If more results are available, a "next_page" key is present in the --format=json output.`,
 	)
 	flagSet.BoolVar(
 		&f.Reverse,
 		reverseFlagName,
 		false,
-		`Reverse the results. By default, they are ordered with the newest first`,
+		`Reverse the results. By default, they are ordered with the newest first.`,
 	)
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
 		bufprint.FormatText.String(),
-		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
+		fmt.Sprintf(`The output format to use. Must be one of %s.`, bufprint.AllFormatsString),
 	)
 	flagSet.BoolVar(
 		&f.DigestChangesOnly,
 		digestChangesOnlyFlagName,
 		false,
-		`Only commits that have changed digests. By default, all commits are listed`,
+		`Only commits that have changed digests. By default, all commits are listed.`,
 	)
 }
 

@@ -85,7 +85,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.PipePath,
 		pipeFlagName,
 		"",
-		"path to a UNIX socket to listen on; uses stdio if not specified",
+		"The path to a UNIX socket to listen on. Uses stdio if not specified.",
 	)
 	flagSet.StringVar(
 		&f.DebugAddress,

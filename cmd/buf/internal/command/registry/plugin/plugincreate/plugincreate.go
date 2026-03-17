@@ -94,20 +94,20 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Format,
 		formatFlagName,
 		bufprint.FormatText.String(),
-		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
+		fmt.Sprintf(`The output format to use. Must be one of %s.`, bufprint.AllFormatsString),
 	)
 	flagSet.StringVar(
 		&f.DefaultLabel,
 		defaultLabeFlagName,
 		defaultDefaultLabel,
-		"The default label name of the module",
+		"The default label name of the module.",
 	)
 	flagSet.StringVar(
 		&f.Type,
 		typeFlagName,
 		"",
 		fmt.Sprintf(
-			"The type of the plugin. Must be one of %s",
+			"The type of the plugin. Must be one of %s.",
 			xstrings.SliceToString(allPluginTypeStrings),
 		),
 	)

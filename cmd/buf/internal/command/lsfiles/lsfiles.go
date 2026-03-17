@@ -115,14 +115,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The buf.yaml file or data to use for configuration`,
+		`The buf.yaml file or data to use for configuration.`,
 	)
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
 		formatText,
 		fmt.Sprintf(
-			`The format to print the .proto files. Must be one of %s`,
+			`The format to print the .proto files. Must be one of %s.`,
 			xstrings.SliceToString(allFormats),
 		),
 	)
@@ -130,14 +130,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.IncludeImports,
 		includeImportsFlagName,
 		false,
-		"Include imports",
+		"Include imports.",
 	)
 	flagSet.BoolVar(
 		&f.IncludeImportable,
 		includeImportableFlagName,
 		false,
 		fmt.Sprintf(
-			"Include all .proto files that are importable by the input. --%s is redundant if this is set",
+			"Include all .proto files that are importable by the input. --%s is redundant if this is set.",
 			includeImportsFlagName,
 		),
 	)
@@ -146,7 +146,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors printed to stderr. Must be one of %s",
+			"The format for build errors printed to stderr. Must be one of %s.",
 			xstrings.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -156,7 +156,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.AsImportPaths,
 		asImportPathsFlagName,
 		false,
-		"Strip local directory paths and print filepaths as they are imported",
+		"Strip local directory paths and print filepaths as they are imported.",
 	)
 	_ = flagSet.MarkDeprecated(asImportPathsFlagName, fmt.Sprintf("use --%s=import instead", formatFlagName))
 	_ = flagSet.MarkHidden(asImportPathsFlagName)

@@ -131,14 +131,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		diffFlagName,
 		diffFlagShortName,
 		false,
-		"Display diffs instead of rewriting files",
+		"Display diffs instead of rewriting files.",
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors printed to stderr. Must be one of %s",
+			"The format for build errors printed to stderr. Must be one of %s.",
 			xstrings.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -146,7 +146,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The buf.yaml file or data to use for configuration`,
+		`The buf.yaml file or data to use for configuration.`,
 	)
 	flagSet.StringSliceVar(
 		&f.Prefixes,

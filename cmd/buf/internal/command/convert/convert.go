@@ -122,7 +122,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors printed to stderr. Must be one of %s",
+			"The format for build errors printed to stderr. Must be one of %s.",
 			xstrings.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -130,14 +130,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Type,
 		typeFlagName,
 		"",
-		`The full type name of the message within the input (e.g. acme.weather.v1.Units)`,
+		`The full type name of the message within the input (e.g. acme.weather.v1.Units).`,
 	)
 	flagSet.StringVar(
 		&f.From,
 		fromFlagName,
 		"-",
 		fmt.Sprintf(
-			`The location of the payload to be converted. Supported formats are %s`,
+			`The location of the payload to be converted. Supported formats are %s.`,
 			buffetch.MessageFormatsString,
 		),
 	)
@@ -146,7 +146,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		toFlagName,
 		"-",
 		fmt.Sprintf(
-			`The output location of the conversion. Supported formats are %s`,
+			`The output location of the conversion. Supported formats are %s.`,
 			buffetch.MessageFormatsString,
 		),
 	)

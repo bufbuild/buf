@@ -73,13 +73,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Format,
 		formatFlagName,
 		bufprint.FormatText.String(),
-		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
+		fmt.Sprintf(`The output format to use. Must be one of %s.`, bufprint.AllFormatsString),
 	)
 	flagSet.StringVar(
 		&f.TokenID,
 		tokenIDFlagName,
 		"",
-		"The ID of the token to get",
+		"The ID of the token to get.",
 	)
 	_ = appcmd.MarkFlagRequired(flagSet, tokenIDFlagName)
 }

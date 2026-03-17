@@ -66,13 +66,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		flagSet,
 		descriptionFlagName,
 		&f.description,
-		"The new description for the organization",
+		"The new description for the organization.",
 	)
 	bufcli.BindStringPointer(
 		flagSet,
 		urlFlagName,
 		&f.url,
-		"The new URL for the organization",
+		"The new URL for the organization.",
 	)
 }
 

@@ -71,7 +71,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Only,
 		onlyFlagName,
 		nil,
-		"The name of the policy to update. When set, only this policy is updated. May be provided multiple times",
+		"The name of the policy to update. When set, only this policy is updated. May be provided multiple times.",
 	)
 	// TODO FUTURE: implement
 	_ = flagSet.MarkHidden(onlyFlagName)

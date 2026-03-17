@@ -126,7 +126,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors printed to stderr. Must be one of %s",
+			"The format for build errors printed to stderr. Must be one of %s.",
 			xstrings.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)

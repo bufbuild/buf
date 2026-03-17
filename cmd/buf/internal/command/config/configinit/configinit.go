@@ -85,7 +85,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outDirPathFlagName,
 		outDirPathFlagShortName,
 		".",
-		`The directory to write the configuration files to`,
+		`The directory to write the configuration files to.`,
 	)
 	if f.bindOldFlags {
 		// TODO FUTURE: Bring this flag back in future versions if we decide it's important.
@@ -94,14 +94,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			&f.DocumentationComments,
 			documentationCommentsFlagName,
 			false,
-			"Write inline documentation in the form of comments in the resulting configuration file",
+			"Write inline documentation in the form of comments in the resulting configuration file.",
 		)
 		_ = flagSet.MarkHidden(documentationCommentsFlagName)
 		flagSet.BoolVar(
 			&f.Uncomment,
 			uncommentFlagName,
 			false,
-			"Uncomment examples in the resulting configuration file",
+			"Uncomment examples in the resulting configuration file.",
 		)
 		_ = flagSet.MarkHidden(uncommentFlagName)
 	}

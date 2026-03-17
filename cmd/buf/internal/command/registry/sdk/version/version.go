@@ -78,8 +78,8 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&f.Module, moduleFlagName, "", "The module reference to resolve")
-	flagSet.StringVar(&f.Plugin, pluginFlagName, "", "The plugin reference to resolve")
+	flagSet.StringVar(&f.Module, moduleFlagName, "", "The module reference to resolve.")
+	flagSet.StringVar(&f.Plugin, pluginFlagName, "", "The plugin reference to resolve.")
 	_ = appcmd.MarkFlagRequired(flagSet, moduleFlagName)
 	_ = appcmd.MarkFlagRequired(flagSet, pluginFlagName)
 }

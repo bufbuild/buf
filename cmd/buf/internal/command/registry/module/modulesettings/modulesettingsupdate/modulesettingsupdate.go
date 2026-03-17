@@ -78,19 +78,19 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		flagSet,
 		descriptionFlagName,
 		&f.Description,
-		"The new description for the module",
+		"The new description for the module.",
 	)
 	bufcli.BindStringPointer(
 		flagSet,
 		urlFlagName,
 		&f.URL,
-		"The new URL for the module",
+		"The new URL for the module.",
 	)
 	flagSet.StringVar(
 		&f.DefaultLabel,
 		defaultLabelFlagName,
 		"",
-		"The label that commits are pushed to by default",
+		"The label that commits are pushed to by default.",
 	)
 }
 

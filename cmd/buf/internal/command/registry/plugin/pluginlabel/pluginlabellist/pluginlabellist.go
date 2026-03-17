@@ -89,19 +89,19 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.PageToken,
 		pageTokenFlagName,
 		"",
-		`The page token. If more results are available, a "next_page" key is present in the --format=json output`,
+		`The page token. If more results are available, a "next_page" key is present in the --format=json output.`,
 	)
 	flagSet.BoolVar(
 		&f.Reverse,
 		reverseFlagName,
 		false,
-		`Reverse the results`,
+		`Reverse the results.`,
 	)
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
 		bufprint.FormatText.String(),
-		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
+		fmt.Sprintf(`The output format to use. Must be one of %s.`, bufprint.AllFormatsString),
 	)
 }
 

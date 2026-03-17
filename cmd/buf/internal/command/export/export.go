@@ -124,14 +124,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outputFlagName,
 		outputFlagShortName,
 		"",
-		`The output directory for exported files`,
+		`The output directory for exported files.`,
 	)
 	_ = appcmd.MarkFlagRequired(flagSet, outputFlagName)
 	flagSet.StringVar(
 		&f.Config,
 		configFlagName,
 		"",
-		`The buf.yaml file or data to use for configuration`,
+		`The buf.yaml file or data to use for configuration.`,
 	)
 	flagSet.BoolVar(
 		&f.All,

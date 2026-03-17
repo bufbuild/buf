@@ -67,7 +67,7 @@ func BindAsFileDescriptorSet(flagSet *pflag.FlagSet, addr *bool, flagName string
 		false,
 		`Output as a google.protobuf.FileDescriptorSet instead of an image
 Note that images are wire compatible with FileDescriptorSets, but this flag strips
-the additional metadata added for Buf usage`,
+the additional metadata added for Buf usage.`,
 	)
 }
 
@@ -87,7 +87,7 @@ func BindExcludeSourceInfo(flagSet *pflag.FlagSet, addr *bool, flagName string) 
 		addr,
 		flagName,
 		false,
-		"Exclude source info",
+		"Exclude source info.",
 	)
 }
 
@@ -102,7 +102,7 @@ func BindPaths(
 		pathsFlagName,
 		nil,
 		`Limit to specific files or directories, e.g. "proto/a/a.proto", "proto/a"
-If specified multiple times, the union is taken`,
+If specified multiple times, the union is taken.`,
 	)
 }
 
@@ -133,7 +133,7 @@ func BindExcludePaths(
 		excludePathsFlagName,
 		nil,
 		`Exclude specific files or directories, e.g. "proto/a/a.proto", "proto/a"
-If specified multiple times, the union is taken`,
+If specified multiple times, the union is taken.`,
 	)
 }
 
@@ -143,8 +143,8 @@ func BindDisableSymlinks(flagSet *pflag.FlagSet, addr *bool, flagName string) {
 		addr,
 		flagName,
 		false,
-		`Do not follow symlinks when reading sources or configuration from the local filesystem
-By default, symlinks are followed in this CLI, but never followed on the Buf Schema Registry`,
+		`Do not follow symlinks when reading sources or configuration from the local filesystem.
+By default, symlinks are followed in this CLI, but never followed on the Buf Schema Registry.`,
 	)
 }
 
@@ -158,7 +158,7 @@ func BindVisibility(flagSet *pflag.FlagSet, addr *string, flagName string, empty
 		addr,
 		flagName,
 		defaultVisibility,
-		fmt.Sprintf(`The module's visibility setting. Must be one of %s`, xstrings.SliceToString(allVisibilityStrings)),
+		fmt.Sprintf(`The module's visibility setting. Must be one of %s.`, xstrings.SliceToString(allVisibilityStrings)),
 	)
 }
 
@@ -169,7 +169,7 @@ func BindCreateVisibility(flagSet *pflag.FlagSet, addr *string, flagName string,
 		addr,
 		flagName,
 		privateVisibility,
-		fmt.Sprintf(`The module's visibility setting, if created. Can only be set with --%s. Must be one of %s`, createFlagName, xstrings.SliceToString(allVisibilityStrings)),
+		fmt.Sprintf(`The module's visibility setting, if created. Can only be set with --%s. Must be one of %s.`, createFlagName, xstrings.SliceToString(allVisibilityStrings)),
 	)
 }
 
@@ -180,7 +180,7 @@ func BindArchiveStatus(flagSet *pflag.FlagSet, addr *string, flagName string) {
 		addr,
 		flagName,
 		DefaultArchiveStatus,
-		fmt.Sprintf(`The archive status of the labels listed. Must be one of %s`, xstrings.SliceToString(allArchiveStatusStrings)),
+		fmt.Sprintf(`The archive status of the labels listed. Must be one of %s.`, xstrings.SliceToString(allArchiveStatusStrings)),
 	)
 }
 

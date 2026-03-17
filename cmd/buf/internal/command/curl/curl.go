@@ -278,7 +278,7 @@ in order thereafter if reflection fails to resolve a schema element.`,
 		&f.Reflect,
 		reflectFlagName,
 		true,
-		`If true, use server reflection to determine the schema`,
+		`If true, use server reflection to determine the schema.`,
 	)
 	flagSet.StringSliceVar(
 		&f.ReflectHeaders,
@@ -292,7 +292,7 @@ flags) should also be included with reflection requests. A special value of '@<p
 means to read headers from the file at <path>. If the path is "-" then headers are
 read from stdin. It is not allowed to indicate a file with the same path as used with
 the request data flag (--%s or -%s). Furthermore, it is not allowed to indicate stdin
-if the schema is expected to be provided via stdin as a file descriptor set or image`,
+if the schema is expected to be provided via stdin as a file descriptor set or image.`,
 			reflectFlagName, headerFlagName, headerFlagShortName, dataFlagName, dataFlagShortName,
 		),
 	)
@@ -308,21 +308,21 @@ and "grpc-v1alpha" is used if it doesn't work. If newer reflection protocols are
 they may be preferred in the absence of this flag being explicitly set to a specific protocol.
 The valid values for this flag are "grpc-v1" and "grpc-v1alpha". These correspond to services
 named "grpc.reflection.v1.ServerReflection" and "grpc.reflection.v1alpha.ServerReflection"
-respectively`,
+respectively.`,
 	)
 
 	flagSet.StringVar(
 		&f.Protocol,
 		protocolFlagName,
 		connect.ProtocolConnect,
-		`The RPC protocol to use. This can be one of "grpc", "grpcweb", or "connect"`,
+		`The RPC protocol to use. This can be one of "grpc", "grpcweb", or "connect".`,
 	)
 	flagSet.StringVar(
 		&f.UnixSocket,
 		unixSocketFlagName,
 		"",
 		`The path to a unix socket that will be used instead of opening a TCP socket to the host
-and port indicated in the URL`,
+and port indicated in the URL.`,
 	)
 	flagSet.BoolVar(
 		&f.HTTP2PriorKnowledge,
@@ -349,20 +349,20 @@ HTTP/3 is always used.`,
 		noKeepAliveFlagName,
 		false,
 		`By default, connections are created using TCP keepalive. If this flag is present, they
-will be disabled`,
+will be disabled.`,
 	)
 	flagSet.Float64Var(
 		&f.KeepAliveTimeSeconds,
 		keepAliveFlagName,
 		60,
-		`The duration, in seconds, between TCP keepalive transmissions`,
+		`The duration, in seconds, between TCP keepalive transmissions.`,
 	)
 	flagSet.Float64Var(
 		&f.ConnectTimeoutSeconds,
 		connectTimeoutFlagName,
 		0,
 		`The time limit, in seconds, for a connection to be established with the server. There is
-no limit if this flag is not present`,
+no limit if this flag is not present.`,
 	)
 
 	flagSet.StringVar(
@@ -372,7 +372,7 @@ no limit if this flag is not present`,
 		fmt.Sprintf(`Path to a PEM-encoded X509 private key file, for using client certificates with TLS. This
 option is only valid when the URL uses the https scheme. A --%s or -%s flag must also be
 present to provide the certificate and public key that corresponds to the given
-private key`,
+private key.`,
 			certFlagName, certFlagShortName,
 		),
 	)
@@ -383,7 +383,7 @@ private key`,
 		"",
 		fmt.Sprintf(`Path to a PEM-encoded X509 certificate file, for using client certificates with TLS. This
 option is only valid when the URL uses the https scheme. A --%s flag must also be
-present to provide the private key that corresponds to the given certificate`,
+present to provide the private key that corresponds to the given certificate.`,
 			keyFlagName,
 		),
 	)
@@ -394,7 +394,7 @@ present to provide the private key that corresponds to the given certificate`,
 		fmt.Sprintf(`Path to a PEM-encoded X509 certificate pool file that contains the set of trusted
 certificate authorities/issuers. If omitted, the system's default set of trusted
 certificates are used to verify the server's certificate. This option is only valid
-when the URL uses the https scheme. It is not applicable if --%s or -%s flag is used`,
+when the URL uses the https scheme. It is not applicable if --%s or -%s flag is used.`,
 			insecureFlagName, insecureFlagShortName,
 		),
 	)
@@ -405,7 +405,7 @@ when the URL uses the https scheme. It is not applicable if --%s or -%s flag is 
 		false,
 		`If set, the TLS connection will be insecure and the server's certificate will NOT be
 verified. This is generally discouraged. This option is only valid when the URL uses
-the https scheme`,
+the https scheme.`,
 	)
 	flagSet.StringVar(
 		&f.ServerName,
@@ -413,7 +413,7 @@ the https scheme`,
 		"",
 		`The server name to use in TLS handshakes (for SNI) if the URL scheme is https. If not
 specified, the default is the origin host in the URL or the value in a "Host" header if
-one is provided`,
+one is provided.`,
 	)
 
 	flagSet.BoolVar(
@@ -493,7 +493,7 @@ A special value of '@<path>' means to read headers from the file at <path>. If t
 is "-" then headers are read from stdin. If the same file is indicated as used with the
 request data flag (--%s or -%s), the file must contain all headers, then a blank line,
 and then the request body. It is not allowed to indicate stdin if the schema is expected
-to be provided via stdin as a file descriptor set or image`,
+to be provided via stdin as a file descriptor set or image.`,
 			dataFlagName, dataFlagShortName,
 		),
 	)
@@ -508,7 +508,7 @@ message. For unary RPCs, there should be exactly one JSON document. A special va
 request data is read from stdin. If the same file is indicated as used with the request
 headers flags (--%s or -%s), the file must contain all headers, then a blank line, and
 then the request body. It is not allowed to indicate stdin if the schema is expected to be
-provided via stdin as a file descriptor set or image`,
+provided via stdin as a file descriptor set or image.`,
 			headerFlagName, headerFlagShortName,
 		),
 	)
@@ -517,7 +517,7 @@ provided via stdin as a file descriptor set or image`,
 		outputFlagName,
 		outputFlagShortName,
 		"",
-		`Path to output file to create with response data. If absent, response is printed to stdout`,
+		`Path to output file to create with response data. If absent, response is printed to stdout.`,
 	)
 	flagSet.BoolVar(
 		&f.EmitDefaults,
@@ -531,7 +531,7 @@ provided via stdin as a file descriptor set or image`,
 		verboseFlagName,
 		verboseFlagShortName,
 		false,
-		"Turn on verbose mode",
+		"Turn on verbose mode.",
 	)
 }
 

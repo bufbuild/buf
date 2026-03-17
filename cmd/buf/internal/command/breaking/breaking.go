@@ -110,7 +110,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors or check violations printed to stdout. Must be one of %s",
+			"The format for build errors or check violations printed to stdout. Must be one of %s.",
 			xstrings.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -125,9 +125,9 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		limitToInputFilesFlagName,
 		false,
 		fmt.Sprintf(
-			`Only run breaking checks against the files in the input
-When set, the against input contains only the files in the input
-Overrides --%s`,
+			`Only run breaking checks against the files in the input.
+When set, the against input contains only the files in the input.
+Overrides --%s.`,
 			pathsFlagName,
 		),
 	)
@@ -135,14 +135,14 @@ Overrides --%s`,
 		&f.Config,
 		configFlagName,
 		"",
-		`The buf.yaml file or data to use for configuration`,
+		`The buf.yaml file or data to use for configuration.`,
 	)
 	flagSet.StringVar(
 		&f.Against,
 		againstFlagName,
 		"",
 		fmt.Sprintf(
-			`Required, except if --%s is set. The source, module, or image to check against. Must be one of format %s`,
+			`Required, except if --%s is set. The source, module, or image to check against. Must be one of format %s.`,
 			againstRegistryFlagName,
 			buffetch.AllFormatsString,
 		),
@@ -151,7 +151,7 @@ Overrides --%s`,
 		&f.AgainstConfig,
 		againstConfigFlagName,
 		"",
-		`The buf.yaml file or data to use to configure the against source, module, or image`,
+		`The buf.yaml file or data to use to configure the against source, module, or image.`,
 	)
 	flagSet.BoolVar(
 		&f.AgainstRegistry,

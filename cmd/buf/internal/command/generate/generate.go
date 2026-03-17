@@ -438,14 +438,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		flagSet,
 		includeImportsFlagName,
 		&f.IncludeImportsOverride,
-		"Also generate all imports except for Well-Known Types",
+		"Also generate all imports except for Well-Known Types.",
 	)
 	bindBoolPointer(
 		flagSet,
 		includeWKTFlagName,
 		&f.IncludeWKTOverride,
 		fmt.Sprintf(
-			"Also generate Well-Known Types. Cannot be set to true without setting --%s to true",
+			"Also generate Well-Known Types. Cannot be set to true without setting --%s to true.",
 			includeImportsFlagName,
 		),
 	)
@@ -453,27 +453,27 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Template,
 		templateFlagName,
 		"",
-		`The generation template file or data to use. Must be in either YAML or JSON format`,
+		`The generation template file or data to use. Must be in either YAML or JSON format.`,
 	)
 	flagSet.StringVarP(
 		&f.BaseOutDirPath,
 		baseOutDirPathFlagName,
 		baseOutDirPathFlagShortName,
 		".",
-		`The base directory to generate to. This is prepended to the out directories in the generation template`,
+		`The base directory to generate to. This is prepended to the out directories in the generation template.`,
 	)
 	bindBoolPointer(
 		flagSet,
 		deleteOutsFlagName,
 		&f.DeleteOuts,
-		`Prior to generation, delete the directories, jar files, or zip files that the plugins will write to. Allows cleaning of existing assets without having to call rm -rf`,
+		`Prior to generation, delete the directories, jar files, or zip files that the plugins will write to. Allows cleaning of existing assets without having to call rm -rf.`,
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors, printed to stderr. Must be one of %s",
+			"The format for build errors, printed to stderr. Must be one of %s.",
 			xstrings.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -481,25 +481,25 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The buf.yaml file or data to use for configuration`,
+		`The buf.yaml file or data to use for configuration.`,
 	)
 	flagSet.StringSliceVar(
 		&f.Types,
 		typeFlagName,
 		nil,
-		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
+		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml.",
 	)
 	flagSet.StringSliceVar(
 		&f.TypesDeprecated,
 		typeDeprecatedFlagName,
 		nil,
-		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
+		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml.",
 	)
 	flagSet.StringSliceVar(
 		&f.ExcludeTypes,
 		excludeTypeFlagName,
 		nil,
-		"The types (package, message, enum, extension, service, method) that should be excluded from this image. When specified, the resulting image will omit descriptors for the specified types and remove any references to them, such as fields typed to an excluded message or enum, or custom options tied to an excluded extension. The image is first filtered by the included types, then further reduced by the excluded. Flag usage overrides buf.gen.yaml",
+		"The types (package, message, enum, extension, service, method) that should be excluded from this image. When specified, the resulting image will omit descriptors for the specified types and remove any references to them, such as fields typed to an excluded message or enum, or custom options tied to an excluded extension. The image is first filtered by the included types, then further reduced by the excluded. Flag usage overrides buf.gen.yaml.",
 	)
 	_ = flagSet.MarkDeprecated(typeDeprecatedFlagName, fmt.Sprintf("use --%s instead", typeFlagName))
 	_ = flagSet.MarkHidden(typeDeprecatedFlagName)

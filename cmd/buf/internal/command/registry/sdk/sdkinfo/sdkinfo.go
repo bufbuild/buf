@@ -145,7 +145,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Format,
 		formatFlagName,
 		bufprint.FormatText.String(),
-		fmt.Sprintf("The output format to use. Must be one of %s", bufprint.AllFormatsString),
+		fmt.Sprintf("The output format to use. Must be one of %s.", bufprint.AllFormatsString),
 	)
 	flagSet.StringVar(&f.Module, moduleFlagName, "", "The module reference for the SDK.")
 	flagSet.StringVar(&f.Plugin, pluginFlagName, "", "The plugin reference for the SDK.")

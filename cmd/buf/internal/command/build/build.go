@@ -101,14 +101,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.ExcludeSourceRetentionOptions,
 		excludeSourceRetentionOptionsFlagName,
 		false,
-		"Exclude options whose retention is source",
+		"Exclude options whose retention is source.",
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors printed to stderr. Must be one of %s",
+			"The format for build errors printed to stderr. Must be one of %s.",
 			xstrings.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -118,7 +118,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outputFlagShortName,
 		app.DevNullFilePath,
 		fmt.Sprintf(
-			`The output location for the built image. Must be one of format %s`,
+			`The output location for the built image. Must be one of format %s.`,
 			buffetch.MessageFormatsString,
 		),
 	)
@@ -126,13 +126,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The buf.yaml file or data to use for configuration`,
+		`The buf.yaml file or data to use for configuration.`,
 	)
 	flagSet.StringSliceVar(
 		&f.Types,
 		typeFlagName,
 		nil,
-		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types",
+		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types.",
 	)
 }
 

@@ -72,13 +72,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		flagSet,
 		descriptionFlagName,
 		&f.Description,
-		"The new description for the plugin",
+		"The new description for the plugin.",
 	)
 	bufcli.BindStringPointer(
 		flagSet,
 		urlFlagName,
 		&f.URL,
-		"The new URL for the plugin",
+		"The new URL for the plugin.",
 	)
 }
 

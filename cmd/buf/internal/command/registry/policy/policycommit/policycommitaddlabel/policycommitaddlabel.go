@@ -75,13 +75,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Format,
 		formatFlagName,
 		bufprint.FormatText.String(),
-		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
+		fmt.Sprintf(`The output format to use. Must be one of %s.`, bufprint.AllFormatsString),
 	)
 	flagSet.StringSliceVar(
 		&f.Labels,
 		labelsFlagName,
 		nil,
-		"The labels to add to the commit. Must have at least one",
+		"The labels to add to the commit. Must have at least one.",
 	)
 }
 

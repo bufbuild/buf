@@ -80,19 +80,19 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.WorkspaceDirPaths,
 		workspaceDirectoriesFlagName,
 		nil,
-		"The workspace directories to migrate. buf.work.yaml, buf.yamls and buf.locks will be migrated",
+		"The workspace directories to migrate. buf.work.yaml, buf.yamls and buf.locks will be migrated.",
 	)
 	flagSet.StringSliceVar(
 		&f.ModuleDirPaths,
 		moduleDirectoriesFlagName,
 		nil,
-		"The module directories to migrate. buf.yaml and buf.lock will be migrated",
+		"The module directories to migrate. buf.yaml and buf.lock will be migrated.",
 	)
 	flagSet.StringSliceVar(
 		&f.BufGenYAMLFilePaths,
 		bufGenYAMLFilePathFlagName,
 		nil,
-		"The paths to the buf.gen.yaml generation templates to migrate",
+		"The paths to the buf.gen.yaml generation templates to migrate.",
 	)
 	flagSet.BoolVarP(
 		&f.Diff,

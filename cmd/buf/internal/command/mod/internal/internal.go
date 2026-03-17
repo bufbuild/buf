@@ -92,14 +92,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.All,
 		allFlagName,
 		false,
-		"List all rules and not just those currently configured",
+		"List all rules and not just those currently configured.",
 	)
 	flagSet.StringVar(
 		&f.Config,
 		configFlagName,
 		"",
 		fmt.Sprintf(
-			`The buf.yaml file or data to use for configuration. Ignored if --%s or --%s is specified`,
+			`The buf.yaml file or data to use for configuration. Ignored if --%s or --%s is specified.`,
 			allFlagName,
 			versionFlagName,
 		),
@@ -118,7 +118,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		formatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format to print rules as. Must be one of %s",
+			"The format to print rules as. Must be one of %s.",
 			xstrings.SliceToString(bufcli.AllRuleFormatStrings),
 		),
 	)
@@ -127,7 +127,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		versionFlagName,
 		"", // do not set a default as we need to know if this is unset
 		fmt.Sprintf(
-			"List all the rules for the given configuration version. Implies --%s. Must be one of %s",
+			"List all the rules for the given configuration version. Implies --%s. Must be one of %s.",
 			allFlagName,
 			xstrings.SliceToString(
 				xslices.Map(
