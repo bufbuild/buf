@@ -155,10 +155,6 @@ func generateMarkdownPage(
 	return err
 }
 
-func websitePageIDForCommand(cmd *cobra.Command) string {
-	return strings.ReplaceAll(cmd.CommandPath(), " ", "-")
-}
-
 // hasSubCommands checks for whether a command has available sub-commands, not including help.
 func hasSubCommands(cmd *cobra.Command) bool {
 	for _, command := range cmd.Commands() {
@@ -274,40 +270,4 @@ func writeFlags(f *pflag.FlagSet, writer io.Writer) error {
 		p("\n\n")
 	})
 	return err
-}
-
-// websiteSidebarPosition calculates the position of the given command in the website sidebar.
-func websiteSidebarPosition(cmd *cobra.Command, weights map[string]int) int {
-	// Return 0 if the command has no parent
-	if !cmd.HasParent() {
-		return 0
-	}
-	siblings := cmd.Parent().Commands()
-	orderCommands(weights, siblings)
-	position := 0
-	for _, sibling := range siblings {
-		if isCommandVisible(sibling) {
-			position++
-			if sibling.CommandPath() == cmd.CommandPath() {
-				return position
-			}
-		}
-	}
-	return -1
-}
-
-// isCommandVisible checks if a command is visible (available, not an additional help topic, and not hidden).
-func isCommandVisible(command *cobra.Command) bool {
-	return command.IsAvailableCommand() && !command.IsAdditionalHelpTopicCommand() && !command.Hidden
-}
-
-func websiteSlugForCommand(command *cobra.Command) string {
-	return strings.ReplaceAll(command.CommandPath(), " ", "/")
-}
-
-func sidebarLabelForCommand(command *cobra.Command, maxSidebarLen int) string {
-	if len(strings.Split(command.CommandPath(), " ")) > maxSidebarLen {
-		return command.Name()
-	}
-	return command.CommandPath()
 }
