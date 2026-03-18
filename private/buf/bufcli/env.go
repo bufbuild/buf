@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	"buf.build/go/app/appext"
+	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 )
@@ -68,6 +69,16 @@ var (
 		SSHKnownHostsFilesEnvKey: inputSSHKnownHostsFilesEnvKey,
 	}
 )
+
+// DefaultRemote returns the default BSR remote for the given container.
+// It checks the BUF_REMOTE environment variable first, falling back to
+// bufconnect.DefaultRemote ("buf.build") if not set.
+func DefaultRemote(container appext.Container) string {
+	if remote := container.Env(bufconnect.RemoteEnvKey); remote != "" {
+		return remote
+	}
+	return bufconnect.DefaultRemote
+}
 
 // WarnAlphaCommand prints a warning for a alpha command unless the alphaSuppressWarningsEnvKey
 // environment variable is set.

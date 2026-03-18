@@ -17,11 +17,13 @@ package webhooklist
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
@@ -82,9 +84,8 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Remote,
 		remoteFlagName,
 		"",
-		"The remote of the owner and repository to list webhooks for",
+		fmt.Sprintf(`The remote of the owner and repository to list webhooks for. Defaults to the value of the %s environment variable if set, otherwise %s`, bufconnect.RemoteEnvKey, bufconnect.DefaultRemote),
 	)
-	_ = appcmd.MarkFlagRequired(flagSet, remoteFlagName)
 }
 
 func run(
@@ -93,11 +94,15 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
+	remote := flags.Remote
+	if remote == "" {
+		remote = bufcli.DefaultRemote(container)
+	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	service := connectclient.Make(clientConfig, flags.Remote, registryv1alpha1connect.NewWebhookServiceClient)
+	service := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewWebhookServiceClient)
 	resp, err := service.ListWebhooks(
 		ctx,
 		connect.NewRequest(

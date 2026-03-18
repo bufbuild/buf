@@ -29,4 +29,8 @@ const (
 	CLIWarningHeaderName = "buf-warning-bin"
 	// DefaultRemote is the default remote if none can be inferred from a module name.
 	DefaultRemote = "buf.build"
+	// RemoteEnvKey is the environment variable that sets the default remote for
+	// all buf commands that interact with the BSR. When set, this takes precedence
+	// over DefaultRemote.
+	RemoteEnvKey = "BUF_REMOTE"
 )

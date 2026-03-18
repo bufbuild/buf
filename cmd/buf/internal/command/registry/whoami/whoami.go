@@ -85,7 +85,7 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	remote := bufconnect.DefaultRemote
+	remote := bufcli.DefaultRemote(container)
 	if container.NumArgs() == 1 {
 		remote = container.Arg(0)
 		if _, err := netext.ValidateHostname(remote); err != nil {
