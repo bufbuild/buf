@@ -225,6 +225,11 @@ linters:
         path: private/buf/bufcurl/tls.go
         text: "G402:"
       - linters:
+          - gosec
+        # InsecureSkipVerify mirrors the value of the --insecure flag chosen by the user.
+        path: cmd/buf/internal/command/curl/curl.go
+        text: "G402:"
+      - linters:
           - paralleltest
         # This test shouldn't run in parallel as it needs osext.Getwd.
         path: private/buf/buffetch/internal/reader_test.go

@@ -7,7 +7,7 @@ require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260209202127-80ab13bee0bf.1
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.1-20260126144947-819582968857.2
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260126144947-819582968857.1
-	buf.build/go/app v0.2.0
+	buf.build/go/app v0.2.1-0.20260319161355-7114df37efaa
 	buf.build/go/bufplugin v0.9.0
 	buf.build/go/bufprivateusage v0.1.0
 	buf.build/go/protovalidate v1.1.3
@@ -15,6 +15,7 @@ require (
 	buf.build/go/spdx v0.2.0
 	buf.build/go/standard v0.1.0
 	connectrpc.com/connect v1.19.1
+	connectrpc.com/grpcreflect v1.3.0
 	connectrpc.com/otelconnect v0.9.0
 	github.com/bufbuild/protocompile v0.14.2-0.20260313233150-4b57e9e2a3ff
 	github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1
