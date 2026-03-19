@@ -19,9 +19,9 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/buflsp"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 func TestDefinition(t *testing.T) {
@@ -180,7 +180,7 @@ func TestDefinition(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			var locations []protocol.Location
-			_, defErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentDefinition, protocol.DefinitionParams{
+			defErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentDefinition, protocol.DefinitionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
 						URI: testURI,
@@ -225,7 +225,7 @@ func TestDefinitionURLEncoding(t *testing.T) {
 
 	// Test definition lookup for a type reference within the same file
 	var locations []protocol.Location
-	_, defErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentDefinition, protocol.DefinitionParams{
+	defErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentDefinition, protocol.DefinitionParams{
 		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 			TextDocument: protocol.TextDocumentIdentifier{
 				URI: testURI,

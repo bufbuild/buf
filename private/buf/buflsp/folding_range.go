@@ -15,12 +15,12 @@
 package buflsp
 
 import (
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/seq"
 	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
-	"go.lsp.dev/protocol"
 )
 
 // foldingRange generates folding ranges for a file.
@@ -35,13 +35,13 @@ func (s *server) foldingRange(file *file) []protocol.FoldingRange {
 	// Add folding ranges for all types (messages, enums)
 	for irType := range seq.Values(file.ir.AllTypes()) {
 		if span := irType.AST().Span(); !span.IsZero() {
-			ranges = append(ranges, createFoldingRange(span, protocol.RegionFoldingRange))
+			ranges = append(ranges, createFoldingRange(span, protocol.Region))
 		}
 
 		// Add folding ranges for oneofs within messages
 		for oneof := range seq.Values(irType.Oneofs()) {
 			if span := oneof.AST().Span(); !span.IsZero() {
-				ranges = append(ranges, createFoldingRange(span, protocol.RegionFoldingRange))
+				ranges = append(ranges, createFoldingRange(span, protocol.Region))
 			}
 		}
 	}
@@ -49,13 +49,13 @@ func (s *server) foldingRange(file *file) []protocol.FoldingRange {
 	// Add folding ranges for services
 	for service := range seq.Values(file.ir.Services()) {
 		if span := service.AST().Span(); !span.IsZero() {
-			ranges = append(ranges, createFoldingRange(span, protocol.RegionFoldingRange))
+			ranges = append(ranges, createFoldingRange(span, protocol.Region))
 		}
 
 		// Add folding ranges for individual RPC methods
 		for method := range seq.Values(service.Methods()) {
 			if span := method.AST().Span(); !span.IsZero() {
-				ranges = append(ranges, createFoldingRange(span, protocol.RegionFoldingRange))
+				ranges = append(ranges, createFoldingRange(span, protocol.Region))
 			}
 		}
 	}
@@ -63,7 +63,7 @@ func (s *server) foldingRange(file *file) []protocol.FoldingRange {
 	// Add folding ranges for extend blocks
 	for extend := range seq.Values(file.ir.Extends()) {
 		if span := extend.AST().Span(); !span.IsZero() {
-			ranges = append(ranges, createFoldingRange(span, protocol.RegionFoldingRange))
+			ranges = append(ranges, createFoldingRange(span, protocol.Region))
 		}
 	}
 
@@ -116,7 +116,7 @@ func (s *server) commentFoldingRanges(astFile *ast.File) []protocol.FoldingRange
 				firstComment := commentBlock[0]
 				lastComment := commentBlock[len(commentBlock)-1]
 				span := source.Join(firstComment, lastComment)
-				ranges = append(ranges, createFoldingRange(span, protocol.CommentFoldingRange))
+				ranges = append(ranges, createFoldingRange(span, protocol.Comment))
 			}
 			// Start new block
 			commentBlock = []token.Token{tok}
@@ -128,7 +128,7 @@ func (s *server) commentFoldingRanges(astFile *ast.File) []protocol.FoldingRange
 		firstComment := commentBlock[0]
 		lastComment := commentBlock[len(commentBlock)-1]
 		span := source.Join(firstComment, lastComment)
-		ranges = append(ranges, createFoldingRange(span, protocol.CommentFoldingRange))
+		ranges = append(ranges, createFoldingRange(span, protocol.Comment))
 	}
 
 	return ranges
@@ -160,7 +160,7 @@ func (s *server) importGroupFoldingRanges(astFile *ast.File) []protocol.FoldingR
 				firstImport := importGroup[0]
 				lastImport := importGroup[len(importGroup)-1]
 				span := source.Join(firstImport, lastImport)
-				ranges = append(ranges, createFoldingRange(span, protocol.ImportsFoldingRange))
+				ranges = append(ranges, createFoldingRange(span, protocol.Imports))
 			}
 			// Start new group
 			importGroup = []ast.DeclImport{imp}
@@ -172,7 +172,7 @@ func (s *server) importGroupFoldingRanges(astFile *ast.File) []protocol.FoldingR
 		firstImport := importGroup[0]
 		lastImport := importGroup[len(importGroup)-1]
 		span := source.Join(firstImport, lastImport)
-		ranges = append(ranges, createFoldingRange(span, protocol.ImportsFoldingRange))
+		ranges = append(ranges, createFoldingRange(span, protocol.Imports))
 	}
 
 	return ranges
@@ -212,7 +212,7 @@ func (s *server) optionBlockFoldingRanges(astFile *ast.File) []protocol.FoldingR
 				key := spanKey{startLine: startLine, endLine: endLine}
 				if !seen[key] {
 					seen[key] = true
-					ranges = append(ranges, createFoldingRange(span, protocol.RegionFoldingRange))
+					ranges = append(ranges, createFoldingRange(span, protocol.Region))
 				}
 			}
 		}
@@ -230,6 +230,6 @@ func createFoldingRange(span source.Span, kind protocol.FoldingRangeKind) protoc
 	return protocol.FoldingRange{
 		StartLine: uint32(startLoc.Line - 1),
 		EndLine:   uint32(endLoc.Line - 1),
-		Kind:      kind,
+		Kind:      string(kind),
 	}
 }

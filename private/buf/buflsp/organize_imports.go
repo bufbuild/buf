@@ -23,6 +23,7 @@ import (
 	"strings"
 	"unicode"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/experimental/report/tags"
@@ -31,7 +32,6 @@ import (
 	"github.com/bufbuild/protocompile/experimental/source/length"
 	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
-	"go.lsp.dev/protocol"
 )
 
 // importInfo represents an import statement to be included in the organized imports.

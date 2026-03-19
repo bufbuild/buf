@@ -18,13 +18,12 @@ import (
 	"net/url"
 	"strings"
 
-	"go.lsp.dev/protocol"
-	"go.lsp.dev/uri"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 )
 
 // FilePathToURI converts a file path to a properly encoded URI.
 func FilePathToURI(path string) protocol.URI {
-	return normalizeURI(uri.File(path))
+	return normalizeURI(protocol.URIFromPath(path))
 }
 
 // normalizeURI encodes a URI to match VS Code's microsoft/vscode-uri behavior.

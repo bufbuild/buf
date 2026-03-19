@@ -29,13 +29,13 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
-	"go.lsp.dev/protocol"
 	"google.golang.org/protobuf/encoding/protowire"
 )
 
@@ -192,7 +192,7 @@ func (s *symbol) References(includeDeclaration bool) []protocol.Location {
 
 // DocumentHighlights returns document highlights for the symbol within the current file.
 // This includes the definition (if in the same file) and all references in the same file.
-// All highlights use the [protocol.DocumentHighlightKindText] kind.
+// All highlights use the [protocol.Text] kind.
 func (s *symbol) DocumentHighlights() []protocol.DocumentHighlight {
 	// Don't highlight static symbols (services, methods, enum values)
 	if _, ok := s.kind.(*static); ok {
@@ -223,7 +223,7 @@ func (s *symbol) DocumentHighlights() []protocol.DocumentHighlight {
 		if reference.file.uri == s.file.uri {
 			highlights = append(highlights, protocol.DocumentHighlight{
 				Range: reference.Range(),
-				Kind:  protocol.DocumentHighlightKindText,
+				Kind:  protocol.Text,
 			})
 		}
 	}
@@ -232,13 +232,13 @@ func (s *symbol) DocumentHighlights() []protocol.DocumentHighlight {
 	if s.def != nil && s.def.file.uri == s.file.uri {
 		highlights = append(highlights, protocol.DocumentHighlight{
 			Range: s.def.Range(),
-			Kind:  protocol.DocumentHighlightKindText,
+			Kind:  protocol.Text,
 		})
 	} else if s.def == nil {
 		// If there's no separate definition, the symbol itself is the definition
 		highlights = append(highlights, protocol.DocumentHighlight{
 			Range: s.Range(),
-			Kind:  protocol.DocumentHighlightKindText,
+			Kind:  protocol.Text,
 		})
 	}
 
@@ -335,25 +335,25 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 	var kind protocol.SymbolKind
 	switch s.ir.Kind() {
 	case ir.SymbolKindMessage:
-		kind = protocol.SymbolKindClass // Messages are like classes
+		kind = protocol.Class // Messages are like classes
 	case ir.SymbolKindEnum:
-		kind = protocol.SymbolKindEnum
+		kind = protocol.Enum
 	case ir.SymbolKindEnumValue:
-		kind = protocol.SymbolKindEnumMember
+		kind = protocol.EnumMember
 	case ir.SymbolKindField:
-		kind = protocol.SymbolKindField
+		kind = protocol.Field
 	case ir.SymbolKindExtension:
-		kind = protocol.SymbolKindField
+		kind = protocol.Field
 	case ir.SymbolKindOneof:
-		kind = protocol.SymbolKindClass // Oneof are like classes
+		kind = protocol.Class // Oneof are like classes
 	case ir.SymbolKindService:
-		kind = protocol.SymbolKindInterface // Services are like interfaces
+		kind = protocol.Interface // Services are like interfaces
 	case ir.SymbolKindMethod:
-		kind = protocol.SymbolKindMethod
+		kind = protocol.Method
 	case ir.SymbolKindScalar:
-		kind = protocol.SymbolKindConstant
+		kind = protocol.Constant
 	default:
-		kind = protocol.SymbolKindVariable
+		kind = protocol.Variable
 	}
 	var isDeprecated bool
 	if _, ok := s.ir.Deprecated().AsBool(); ok {
@@ -366,7 +366,7 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 		ContainerName: containerName,
 		Deprecated:    isDeprecated,
 		Tags: []protocol.SymbolTag{
-			protocol.SymbolTagDeprecated,
+			protocol.DeprecatedSymbol,
 		},
 	}
 }

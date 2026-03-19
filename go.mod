@@ -37,10 +37,6 @@ require (
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
 	github.com/tetratelabs/wazero v1.11.0
-	go.lsp.dev/jsonrpc2 v0.10.0
-	go.lsp.dev/protocol v0.12.0
-	go.lsp.dev/uri v0.3.0
-	go.uber.org/zap v1.27.1
 	golang.org/x/crypto v0.49.0
 	golang.org/x/mod v0.34.0
 	golang.org/x/sync v0.20.0
@@ -84,18 +80,14 @@ require (
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/segmentio/asm v1.2.1 // indirect
-	github.com/segmentio/encoding v0.5.4 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/tidwall/btree v1.8.1 // indirect
 	github.com/vbatts/tar-split v0.12.2 // indirect
-	go.lsp.dev/pkg v0.0.0-20210717090340-384b27a52fb2 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.67.0 // indirect
 	go.opentelemetry.io/otel v1.42.0 // indirect
 	go.opentelemetry.io/otel/metric v1.42.0 // indirect
 	go.opentelemetry.io/otel/trace v1.42.0 // indirect
-	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90 // indirect
 	golang.org/x/net v0.52.0 // indirect

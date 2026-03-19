@@ -18,9 +18,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 func TestCodeAction_Deprecate(t *testing.T) {
@@ -398,7 +398,7 @@ func testCodeActionDeprecate(
 		clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
 
 		var codeActions []protocol.CodeAction
-		_, err = clientJSONConn.Call(t.Context(), protocol.MethodTextDocumentCodeAction, protocol.CodeActionParams{
+		err = clientJSONConn.Call(t.Context(), protocol.MethodTextDocumentCodeAction, protocol.CodeActionParams{
 			TextDocument: protocol.TextDocumentIdentifier{
 				URI: testURI,
 			},
@@ -464,7 +464,7 @@ func testCodeActionDeprecateNoEdit(
 		clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
 
 		var codeActions []protocol.CodeAction
-		_, err = clientJSONConn.Call(t.Context(), protocol.MethodTextDocumentCodeAction, protocol.CodeActionParams{
+		err = clientJSONConn.Call(t.Context(), protocol.MethodTextDocumentCodeAction, protocol.CodeActionParams{
 			TextDocument: protocol.TextDocumentIdentifier{
 				URI: testURI,
 			},

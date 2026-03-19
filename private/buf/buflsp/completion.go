@@ -26,6 +26,7 @@ import (
 	"strconv"
 	"strings"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/syntax"
@@ -35,9 +36,32 @@ import (
 	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
-	"go.lsp.dev/protocol"
 	"google.golang.org/protobuf/encoding/protowire"
 )
+
+// completionTextEdit wraps a TextEdit into the union type required by CompletionItem.TextEdit.
+func completionTextEdit(e protocol.TextEdit) *protocol.Or_CompletionItem_textEdit {
+	return &protocol.Or_CompletionItem_textEdit{Value: e}
+}
+
+// completionDoc wraps a documentation string into the union type required by CompletionItem.Documentation.
+func completionDoc(s string) *protocol.Or_CompletionItem_documentation {
+	if s == "" {
+		return nil
+	}
+	return &protocol.Or_CompletionItem_documentation{Value: s}
+}
+
+// completionMarkupDoc wraps a MarkupContent into the union type required by CompletionItem.Documentation.
+func completionMarkupDoc(content protocol.MarkupContent) *protocol.Or_CompletionItem_documentation {
+	return &protocol.Or_CompletionItem_documentation{Value: content}
+}
+
+// completionSnippetFormat returns a pointer to SnippetTextFormat for CompletionItem.InsertTextFormat.
+func completionSnippetFormat() *protocol.InsertTextFormat {
+	v := protocol.SnippetTextFormat
+	return &v
+}
 
 // numberRange represents a range of numbers (inclusive) used for field/enum number completion.
 type numberRange[T int32 | uint64] struct {
@@ -195,14 +219,14 @@ func completionItemsForSyntax(ctx context.Context, file *file, syntaxDecl ast.De
 		}
 		items = append(items, protocol.CompletionItem{
 			Label: syntax.String(),
-			Kind:  protocol.CompletionItemKindValue,
-			TextEdit: &protocol.TextEdit{
+			Kind:  protocol.ValueCompletion,
+			TextEdit: completionTextEdit(protocol.TextEdit{
 				Range: protocol.Range{
 					Start: position,
 					End:   position,
 				},
 				NewText: suggest[len(prefix) : len(suggest)-len(suffix)],
-			},
+			}),
 			AdditionalTextEdits: additionalTextEdits,
 		})
 	}
@@ -222,7 +246,7 @@ func completionItemsForPackage(ctx context.Context, file *file, syntaxPackage as
 	file.lsp.logger.DebugContext(ctx, "completion: package suggestion", slog.String("package", strings.Join(suggested, ".")))
 	return []protocol.CompletionItem{{
 		Label: strings.Join(suggested, ".") + ";",
-		Kind:  protocol.CompletionItemKindModule,
+		Kind:  protocol.ModuleCompletion,
 	}}
 }
 
@@ -407,7 +431,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 			file.lsp.logger.DebugContext(ctx, "completion: definition returning top-level keywords")
 			return slices.Collect(keywordToCompletionItem(
 				topLevelKeywords(),
-				protocol.CompletionItemKindKeyword,
+				protocol.KeywordCompletion,
 				tokenSpan,
 				offset,
 			))
@@ -429,13 +453,13 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 			iters = append(iters,
 				keywordToCompletionItem(
 					messageLevelKeywords(isProto2),
-					protocol.CompletionItemKindKeyword,
+					protocol.KeywordCompletion,
 					tokenSpan,
 					offset,
 				),
 				keywordToCompletionItem(
 					messageLevelFieldKeywords(),
-					protocol.CompletionItemKindKeyword,
+					protocol.KeywordCompletion,
 					tokenSpan,
 					offset,
 				),
@@ -459,7 +483,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 				iters = append(iters,
 					keywordToCompletionItem(
 						mapKeyTypeKeywords(),
-						protocol.CompletionItemKindKeyword,
+						protocol.KeywordCompletion,
 						completionSpan,
 						offset,
 					),
@@ -473,7 +497,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 				iters = append(iters,
 					keywordToCompletionItem(
 						predeclaredTypeKeywords(),
-						protocol.CompletionItemKindKeyword,
+						protocol.KeywordCompletion,
 						completionSpan,
 						offset,
 					),
@@ -512,7 +536,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 				iters = append(iters,
 					keywordToCompletionItem(
 						methodArgLevelKeywords(),
-						protocol.CompletionItemKindKeyword,
+						protocol.KeywordCompletion,
 						tokenSpan,
 						offset,
 					),
@@ -521,7 +545,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 				iters = append(iters,
 					keywordToCompletionItem(
 						serviceLevelKeywords(),
-						protocol.CompletionItemKindKeyword,
+						protocol.KeywordCompletion,
 						tokenSpan,
 						offset,
 					),
@@ -531,7 +555,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 			iters = append(iters,
 				keywordToCompletionItem(
 					serviceReturnKeyword(),
-					protocol.CompletionItemKindKeyword,
+					protocol.KeywordCompletion,
 					tokenSpan,
 					offset,
 				),
@@ -554,7 +578,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 			iters = append(iters,
 				keywordToCompletionItem(
 					optionKeywords(),
-					protocol.CompletionItemKindKeyword,
+					protocol.KeywordCompletion,
 					tokenSpan,
 					offset,
 				),
@@ -566,7 +590,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 			iters = append(iters,
 				keywordToCompletionItem(
 					optionKeywords(),
-					protocol.CompletionItemKindKeyword,
+					protocol.KeywordCompletion,
 					tokenSpan,
 					offset,
 				),
@@ -651,14 +675,14 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 		}
 		items = append(items, protocol.CompletionItem{
 			Label: importPath,
-			Kind:  protocol.CompletionItemKindFile,
-			TextEdit: &protocol.TextEdit{
+			Kind:  protocol.FileCompletion,
+			TextEdit: completionTextEdit(protocol.TextEdit{
 				Range: protocol.Range{
 					Start: position,
 					End:   position,
 				},
 				NewText: suggest[len(prefix) : len(suggest)-len(suffix)],
-			},
+			}),
 			AdditionalTextEdits: additionalTextEdits,
 			Deprecated:          importFileIsDeprecated,
 		})
@@ -946,10 +970,10 @@ func keywordToCompletionItem(
 			if !yield(protocol.CompletionItem{
 				Label: suggest,
 				Kind:  kind,
-				TextEdit: &protocol.TextEdit{
+				TextEdit: completionTextEdit(protocol.TextEdit{
 					Range:   editRange,
 					NewText: suggest,
-				},
+				}),
 			}) {
 				break
 			}
@@ -1017,12 +1041,12 @@ func typeReferencesToCompletionItems(
 			var kind protocol.CompletionItemKind
 			switch symbol.ir.Kind() {
 			case ir.SymbolKindMessage:
-				kind = protocol.CompletionItemKindClass // Messages are like classes
+				kind = protocol.ClassCompletion // Messages are like classes
 			case ir.SymbolKindEnum:
 				if !allowEnums {
 					continue
 				}
-				kind = protocol.CompletionItemKindEnum
+				kind = protocol.EnumCompletion
 			default:
 				continue // Unsupported kind, skip it.
 			}
@@ -1060,12 +1084,12 @@ func typeReferencesToCompletionItems(
 			if !yield(protocol.CompletionItem{
 				Label: label,
 				Kind:  kind,
-				TextEdit: &protocol.TextEdit{
+				TextEdit: completionTextEdit(protocol.TextEdit{
 					Range:   editRange,
 					NewText: label,
-				},
+				}),
 				Deprecated:          isDeprecated,
-				Documentation:       symbol.FormatDocs(),
+				Documentation:       completionDoc(symbol.FormatDocs()),
 				AdditionalTextEdits: additionalTextEdits,
 			}) {
 				break
@@ -1118,13 +1142,13 @@ func optionToCompletionItems(
 			}
 			item := protocol.CompletionItem{
 				Label: label,
-				Kind:  protocol.CompletionItemKindField,
-				TextEdit: &protocol.TextEdit{
+				Kind:  protocol.FieldCompletion,
+				TextEdit: completionTextEdit(protocol.TextEdit{
 					Range:   reportSpanToProtocolRange(span),
 					NewText: label,
-				},
+				}),
 				Deprecated:    isDeprecated,
-				Documentation: irMemberDoc(member),
+				Documentation: completionDoc(irMemberDoc(member)),
 				Detail:        detail,
 			}
 			if !yield(item) {
@@ -1187,13 +1211,13 @@ func extensionToCompletionItems(
 				}
 				item := protocol.CompletionItem{
 					Label: label,
-					Kind:  protocol.CompletionItemKindProperty,
-					TextEdit: &protocol.TextEdit{
+					Kind:  protocol.PropertyCompletion,
+					TextEdit: completionTextEdit(protocol.TextEdit{
 						Range:   reportSpanToProtocolRange(span),
 						NewText: label,
-					},
+					}),
 					Deprecated:    isDeprecated,
-					Documentation: irMemberDoc(extension),
+					Documentation: completionDoc(irMemberDoc(extension)),
 					Detail:        detail,
 				}
 				if !yield(item) {
@@ -1370,13 +1394,13 @@ func messageFieldCompletionItems(
 			}
 			item := protocol.CompletionItem{
 				Label: label,
-				Kind:  protocol.CompletionItemKindField,
-				TextEdit: &protocol.TextEdit{
+				Kind:  protocol.FieldCompletion,
+				TextEdit: completionTextEdit(protocol.TextEdit{
 					Range:   editRange,
 					NewText: newText,
-				},
+				}),
 				Deprecated:    isDeprecated,
-				Documentation: irMemberDoc(member),
+				Documentation: completionDoc(irMemberDoc(member)),
 				Detail:        detail,
 			}
 			if !yield(item) {
@@ -1894,7 +1918,7 @@ func completionItemsForFieldNumber(
 			return []protocol.CompletionItem{
 				{
 					Label: strconv.FormatUint(nextNumber, 10),
-					Kind:  protocol.CompletionItemKindValue,
+					Kind:  protocol.ValueCompletion,
 				},
 			}
 		}
@@ -1909,7 +1933,7 @@ func completionItemsForFieldNumber(
 		return []protocol.CompletionItem{
 			{
 				Label: strconv.FormatUint(nextNumber, 10),
-				Kind:  protocol.CompletionItemKindValue,
+				Kind:  protocol.ValueCompletion,
 			},
 		}
 	}
@@ -1936,7 +1960,7 @@ func completionItemsForEnumNumber(
 		return []protocol.CompletionItem{
 			{
 				Label: "0",
-				Kind:  protocol.CompletionItemKindValue,
+				Kind:  protocol.ValueCompletion,
 			},
 		}
 	}
@@ -1999,7 +2023,7 @@ func completionItemsForEnumNumber(
 			return []protocol.CompletionItem{
 				{
 					Label: strconv.FormatInt(int64(nextNumber), 10),
-					Kind:  protocol.CompletionItemKindValue,
+					Kind:  protocol.ValueCompletion,
 				},
 			}
 		}
@@ -2017,7 +2041,7 @@ func completionItemsForEnumNumber(
 	return []protocol.CompletionItem{
 		{
 			Label: strconv.FormatInt(int64(nextNumber), 10),
-			Kind:  protocol.CompletionItemKindValue,
+			Kind:  protocol.ValueCompletion,
 		},
 	}
 }

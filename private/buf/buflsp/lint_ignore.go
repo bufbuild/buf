@@ -23,8 +23,8 @@ import (
 	"log/slog"
 	"strings"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/protocompile/experimental/token"
-	"go.lsp.dev/protocol"
 )
 
 // getLintIgnoreCodeActions generates code actions for suppressing lint diagnostics

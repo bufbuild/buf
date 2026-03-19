@@ -25,10 +25,10 @@ import (
 	celpv "buf.build/go/protovalidate/cel"
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufformat"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
 	"github.com/google/cel-go/cel"
-	"go.lsp.dev/protocol"
 	"mvdan.cc/xurls/v2"
 )
 
@@ -101,8 +101,8 @@ func (s *server) Initialize(
 	}
 
 	// Set initial trace value, if provided.
-	if params.Trace != "" {
-		s.lsp.traceValue.Store(&params.Trace)
+	if params.Trace != nil {
+		s.lsp.traceValue.Store(params.Trace)
 	}
 
 	info := &protocol.ServerInfo{
@@ -130,7 +130,7 @@ func (s *server) Initialize(
 				// Request that whole files be sent to us. Protobuf IDL files don't
 				// usually get especially huge, so this simplifies our logic without
 				// necessarily making the LSP slow.
-				Change: protocol.TextDocumentSyncKindFull,
+				Change: protocol.Full,
 				Save: &protocol.SaveOptions{
 					IncludeText: false,
 				},
@@ -146,12 +146,12 @@ func (s *server) Initialize(
 				ResolveProvider:   true,
 				TriggerCharacters: []string{".", "\"", "/"},
 			},
-			DefinitionProvider:         &protocol.DefinitionOptions{},
-			TypeDefinitionProvider:     &protocol.TypeDefinitionOptions{},
-			DocumentFormattingProvider: true,
-			DocumentHighlightProvider:  true,
-			HoverProvider:              true,
-			ReferencesProvider:         &protocol.ReferenceOptions{},
+			DefinitionProvider:         &protocol.Or_ServerCapabilities_definitionProvider{Value: protocol.DefinitionOptions{}},
+			TypeDefinitionProvider:     &protocol.Or_ServerCapabilities_typeDefinitionProvider{Value: protocol.TypeDefinitionOptions{}},
+			DocumentFormattingProvider: &protocol.Or_ServerCapabilities_documentFormattingProvider{Value: true},
+			DocumentHighlightProvider:  &protocol.Or_ServerCapabilities_documentHighlightProvider{Value: true},
+			HoverProvider:              &protocol.Or_ServerCapabilities_hoverProvider{Value: true},
+			ReferencesProvider:         &protocol.Or_ServerCapabilities_referencesProvider{Value: protocol.ReferenceOptions{}},
 			RenameProvider: &protocol.RenameOptions{
 				PrepareProvider: true,
 			},
@@ -162,9 +162,9 @@ func (s *server) Initialize(
 				},
 				Full: true,
 			},
-			WorkspaceSymbolProvider: true,
-			DocumentSymbolProvider:  true,
-			FoldingRangeProvider:    true,
+			WorkspaceSymbolProvider: &protocol.Or_ServerCapabilities_workspaceSymbolProvider{Value: true},
+			DocumentSymbolProvider:  &protocol.Or_ServerCapabilities_documentSymbolProvider{Value: true},
+			FoldingRangeProvider:    &protocol.Or_ServerCapabilities_foldingRangeProvider{Value: true},
 			DocumentLinkProvider:    &protocol.DocumentLinkOptions{},
 		},
 		ServerInfo: info,
@@ -185,7 +185,8 @@ func (s *server) SetTrace(
 	ctx context.Context,
 	params *protocol.SetTraceParams,
 ) error {
-	s.lsp.traceValue.Store(&params.Value)
+	v := params.Value
+	s.lsp.traceValue.Store(&v)
 	return nil
 }
 
@@ -211,7 +212,7 @@ func (s *server) Exit(ctx context.Context) error {
 
 	// Close the connection. This will let the server shut down gracefully once this
 	// notification is replied to.
-	return s.lsp.conn.Close()
+	return s.lsp.conn.Load().Close()
 }
 
 // -- File synchronization methods.
@@ -240,7 +241,14 @@ func (s *server) DidChange(
 		return fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
 	}
 
-	file.Update(ctx, params.TextDocument.Version, params.ContentChanges[0].Text)
+	var text string
+	switch v := params.ContentChanges[0].Value.(type) {
+	case protocol.TextDocumentContentChangeWholeDocument:
+		text = v.Text
+	case protocol.TextDocumentContentChangePartial:
+		text = v.Text
+	}
+	file.Update(ctx, params.TextDocument.Version, text)
 	return nil
 }
 
@@ -373,13 +381,12 @@ func (s *server) Hover(
 	replacer := strings.NewReplacer("<", "&lt;", ">", "&gt;")
 	docs = replacer.Replace(docs)
 
-	range_ := symbol.Range() // Need to spill this here because Hover.Range is a pointer.
 	return &protocol.Hover{
 		Contents: protocol.MarkupContent{
 			Kind:  protocol.Markdown,
 			Value: docs,
 		},
-		Range: &range_,
+		Range: symbol.Range(),
 	}, nil
 }
 

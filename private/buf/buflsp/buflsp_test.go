@@ -33,15 +33,14 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
+	"github.com/bufbuild/buf/private/pkg/jsonrpc2"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/bufbuild/protocompile/experimental/incremental"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/jsonrpc2"
-	"go.lsp.dev/protocol"
-	"go.lsp.dev/uri"
 )
 
 // nopModuleKeyProvider is a no-op implementation of ModuleKeyProvider for testing
@@ -56,7 +55,7 @@ func (nopModuleKeyProvider) GetModuleKeysForModuleRefs(context.Context, []bufpar
 func setupLSPServer(
 	t *testing.T,
 	testProtoPath string,
-) (jsonrpc2.Conn, protocol.URI) {
+) (*jsonrpc2.Conn, protocol.URI) {
 	t.Helper()
 
 	ctx := t.Context()
@@ -119,8 +118,6 @@ func setupLSPServer(
 		require.NoError(t, clientConn.Close())
 	})
 
-	stream := jsonrpc2.NewStream(serverConn)
-
 	conn, err := buflsp.Serve(
 		ctx,
 		"test",
@@ -128,7 +125,7 @@ func setupLSPServer(
 		appextContainer,
 		controller,
 		wasmRuntime,
-		stream,
+		serverConn,
 		queryExecutor,
 	)
 	require.NoError(t, err)
@@ -136,10 +133,8 @@ func setupLSPServer(
 		require.NoError(t, conn.Close())
 	})
 
-	clientStream := jsonrpc2.NewStream(clientConn)
-	clientJSONConn := jsonrpc2.NewConn(clientStream)
-	clientJSONConn.Go(ctx, jsonrpc2.AsyncHandler(func(_ context.Context, reply jsonrpc2.Replier, _ jsonrpc2.Request) error {
-		return reply(ctx, nil, nil)
+	clientJSONConn := jsonrpc2.NewConn(ctx, clientConn, jsonrpc2.HandlerFunc(func(_ context.Context, _ *jsonrpc2.Conn, _ *jsonrpc2.Request) (any, error) {
+		return nil, nil
 	}))
 	t.Cleanup(func() {
 		require.NoError(t, clientJSONConn.Close())
@@ -148,17 +143,19 @@ func setupLSPServer(
 	testWorkspaceDir := filepath.Dir(testProtoPath)
 	testURI := buflsp.FilePathToURI(testProtoPath)
 	var initResult protocol.InitializeResult
-	_, initErr := clientJSONConn.Call(ctx, protocol.MethodInitialize, &protocol.InitializeParams{
-		RootURI: uri.New(testWorkspaceDir),
-		Capabilities: protocol.ClientCapabilities{
-			TextDocument: &protocol.TextDocumentClientCapabilities{},
+	initErr := clientJSONConn.Call(ctx, protocol.MethodInitialize, &protocol.InitializeParams{
+		XInitializeParams: protocol.XInitializeParams{
+			RootURI: protocol.URIFromPath(testWorkspaceDir),
+			Capabilities: protocol.ClientCapabilities{
+				TextDocument: protocol.TextDocumentClientCapabilities{},
+			},
 		},
 	}, &initResult)
 	require.NoError(t, initErr)
 	assert.True(t, initResult.Capabilities.HoverProvider != nil)
 
-	err = clientJSONConn.Notify(ctx, protocol.MethodInitialized, &protocol.InitializedParams{})
-	require.NoError(t, err)
+	notifyErr := clientJSONConn.Notify(ctx, protocol.MethodInitialized, &protocol.InitializedParams{})
+	require.NoError(t, notifyErr)
 
 	testProtoContent, err := os.ReadFile(testProtoPath)
 	require.NoError(t, err)

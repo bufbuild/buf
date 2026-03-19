@@ -17,10 +17,10 @@ package buflsp
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/experimental/token"
-	"go.lsp.dev/protocol"
 )
 
 const (
@@ -66,7 +66,7 @@ func (s *server) documentLink(file *file) []protocol.DocumentLink {
 
 			links = append(links, protocol.DocumentLink{
 				Range:  reportSpanToProtocolRange(symbol.span),
-				Target: targetURI,
+				Target: &targetURI,
 			})
 		}
 	}
@@ -136,9 +136,10 @@ func (s *server) findURLLinksInComments(astFile *ast.File) []protocol.DocumentLi
 				End:   commentSpan.Start + urlEnd,
 			}
 
+			urlURI := protocol.DocumentURI(url)
 			links = append(links, protocol.DocumentLink{
 				Range:  reportSpanToProtocolRange(urlSpan),
-				Target: protocol.DocumentURI(url),
+				Target: &urlURI,
 			})
 		}
 	}

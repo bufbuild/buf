@@ -18,9 +18,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 func TestCELCompletion(t *testing.T) {
@@ -467,7 +467,7 @@ func TestCELCompletion(t *testing.T) {
 			t.Parallel()
 
 			var completionList *protocol.CompletionList
-			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
+			err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
 						URI: testURI,
@@ -518,16 +518,18 @@ func TestCELCompletion(t *testing.T) {
 					}
 					found = true
 					var docStr string
-					switch doc := item.Documentation.(type) {
-					case string:
-						docStr = doc
-					case *protocol.MarkupContent:
-						docStr = doc.Value
-					case map[string]any:
-						// After JSON round-trip through the LSP JSON-RPC layer,
-						// *protocol.MarkupContent is decoded as a generic map.
-						if v, ok := doc["value"].(string); ok {
-							docStr = v
+					if item.Documentation != nil {
+						switch doc := item.Documentation.Value.(type) {
+						case string:
+							docStr = doc
+						case protocol.MarkupContent:
+							docStr = doc.Value
+						case map[string]any:
+							// After JSON round-trip through the LSP JSON-RPC layer,
+							// MarkupContent is decoded as a generic map.
+							if v, ok := doc["value"].(string); ok {
+								docStr = v
+							}
 						}
 					}
 					assert.Contains(t, docStr, wantDoc, "item %q: expected documentation to contain %q", label, wantDoc)

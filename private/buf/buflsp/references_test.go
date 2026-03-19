@@ -20,9 +20,9 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/buflsp"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 func TestReferences(t *testing.T) {
@@ -141,7 +141,7 @@ func TestReferences(t *testing.T) {
 			t.Parallel()
 
 			var locations []protocol.Location
-			_, refErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentReferences, protocol.ReferenceParams{
+			refErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentReferences, protocol.ReferenceParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
 						URI: tt.targetURI,

@@ -20,6 +20,7 @@ package buflsp
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"runtime/debug"
 	"sync"
@@ -28,19 +29,18 @@ import (
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/pkg/jsonrpc2"
+	"github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/bufbuild/protocompile/experimental/incremental"
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/experimental/source"
-	"go.lsp.dev/jsonrpc2"
-	"go.lsp.dev/protocol"
-	"go.uber.org/zap"
 )
 
 // Serve spawns a new LSP server, listening on the given stream.
 //
-// Returns a context for managing the server.
+// Returns the connection for managing the server.
 func Serve(
 	ctx context.Context,
 	bufVersion string,
@@ -48,9 +48,9 @@ func Serve(
 	container appext.Container,
 	controller bufctl.Controller,
 	wasmRuntime wasm.Runtime,
-	stream jsonrpc2.Stream,
+	rwc io.ReadWriteCloser,
 	queryExecutor *incremental.Executor,
-) (jsonrpc2.Conn, error) {
+) (*jsonrpc2.Conn, error) {
 	// Prefer build info version if available
 	if buildInfo, ok := debug.ReadBuildInfo(); ok && buildInfo.Main.Version != "" {
 		bufVersion = buildInfo.Main.Version
@@ -60,24 +60,12 @@ func Serve(
 	logger = logger.With(slog.String("buf_version", bufVersion))
 	logger.Info("starting LSP server")
 
-	conn := jsonrpc2.NewConn(stream)
 	// connCtx is a context scoped to the connection's lifetime. It is cancelled
 	// when the connection is done (or when ctx is cancelled), so that background
 	// goroutines (e.g. RunChecks) do not outlive the connection.
 	connCtx, connCancel := context.WithCancel(context.Background())
-	go func() {
-		select {
-		case <-ctx.Done():
-		case <-conn.Done():
-		}
-		connCancel()
-	}()
-	lsp := &lsp{
-		conn: conn,
-		client: protocol.ClientDispatcher(
-			&connWrapper{Conn: conn, logger: logger},
-			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
-		),
+
+	lspState := &lsp{
 		container:     container,
 		logger:        logger,
 		bufVersion:    bufVersion,
@@ -90,16 +78,31 @@ func Serve(
 		connCtx:       connCtx,
 		connCancel:    connCancel,
 	}
-	lsp.fileManager = newFileManager(lsp)
-	lsp.workspaceManager = newWorkspaceManager(lsp)
-	off := protocol.TraceOff
-	lsp.traceValue.Store(&off)
+	lspState.fileManager = newFileManager(lspState)
+	lspState.workspaceManager = newWorkspaceManager(lspState)
+	off := lspprotocol.TraceOff
+	lspState.traceValue.Store(&off)
 
-	handler, err := lsp.newHandler()
+	handler, err := lspState.newHandler()
 	if err != nil {
+		connCancel()
 		return nil, err
 	}
-	conn.Go(ctx, handler)
+
+	conn := jsonrpc2.NewConn(ctx, rwc, jsonrpc2.GoHandler(handler))
+	// Store the conn atomically so Exit() can call Close() safely even though
+	// NewConn already started the read loop.
+	lspState.conn.Store(conn)
+	lspState.client = lspprotocol.ClientDispatcher(&connWrapper{conn: conn, logger: logger})
+
+	go func() {
+		select {
+		case <-ctx.Done():
+		case <-conn.Done():
+		}
+		connCancel()
+	}()
+
 	return conn, nil
 }
 
@@ -108,13 +111,18 @@ func Serve(
 // lsp contains all of the LSP server's state. (I.e., it is the "god class" the protocol requires
 // that we implement).
 //
-// This type does not implement protocol.Server; see server.go for that.
+// This type does not implement lspprotocol.Server; see server.go for that.
 // This type contains all the necessary book-keeping for keeping the server running.
 // Its handler methods are not defined in buflsp.go; they are defined in other files, grouped
-// according to the groupings in
+// according to the groupings in the LSP specification.
 type lsp struct {
-	conn       jsonrpc2.Conn
-	client     protocol.Client
+	// conn is stored atomically because NewConn starts the read loop immediately,
+	// creating a tiny window before we assign conn. The LSP protocol guarantees
+	// initialize is the first request, so this is safe in practice, but we use
+	// atomic storage to satisfy the race detector.
+	conn   atomic.Pointer[jsonrpc2.Conn]
+	client lspprotocol.Client
+
 	container  appext.Container
 	connCtx    context.Context    // cancelled when the connection is done
 	connCancel context.CancelFunc // cancels connCtx
@@ -137,16 +145,16 @@ type lsp struct {
 	// almost never, but potentially concurrently. Having them side-by-side
 	// is fine; they are almost never written to so false sharing is not a
 	// concern.
-	initParams atomic.Pointer[protocol.InitializeParams]
-	traceValue atomic.Pointer[protocol.TraceValue]
+	initParams atomic.Pointer[lspprotocol.InitializeParams]
+	traceValue atomic.Pointer[lspprotocol.TraceValue]
 }
 
 // init performs *actual* initialization of the server. This is called by Initialize().
 //
 // It may only be called once for a given server.
-func (l *lsp) init(_ context.Context, params *protocol.InitializeParams) error {
+func (l *lsp) init(_ context.Context, params *lspprotocol.InitializeParams) error {
 	if l.initParams.Load() != nil {
-		return fmt.Errorf("called the %q method more than once", protocol.MethodInitialize)
+		return fmt.Errorf("called the %q method more than once", lspprotocol.MethodInitialize)
 	}
 	l.initParams.Store(params)
 
@@ -164,40 +172,44 @@ func (l *lsp) newHandler() (jsonrpc2.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	actual := protocol.ServerHandler(server, nil)
-	// [protocol.CancelHandler] intercepts $/cancelRequest notifications from the client and
-	// cancels the context of the matching in-flight request. It must wrap AsyncHandler so
-	// that the cancellable context is the one running inside each spawned goroutine.
-	return protocol.CancelHandler(jsonrpc2.AsyncHandler(func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) error {
+	// CancelHandler intercepts $/cancelRequest notifications from the client and
+	// cancels the context of the matching in-flight request. GoHandler (applied in
+	// Serve) ensures each request runs in its own goroutine so the cancellable
+	// context is the one running inside the spawned goroutine.
+	return jsonrpc2.CancelHandler(jsonrpc2.HandlerFunc(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (any, error) {
 		l.logger.Debug(
 			"handling request",
-			slog.String("method", req.Method()),
+			slog.String("method", req.Method),
 		)
 		defer xslog.DebugProfile(
 			l.logger,
-			slog.String("method", req.Method()),
+			slog.String("method", req.Method),
 		)()
 
-		replier := l.wrapReplier(reply, req)
-
+		var result any
 		var err error
-		if req.Method() != protocol.MethodInitialize && l.initParams.Load() == nil {
+		if req.Method != lspprotocol.MethodInitialize && l.initParams.Load() == nil {
 			// Verify that the server has been initialized if this isn't the initialization
 			// request.
-			err = replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize))
+			err = fmt.Errorf("the first call to the server must be the %q method", lspprotocol.MethodInitialize)
 		} else {
 			l.lock.Lock()
-			err = actual(ctx, replier, req)
+			result, err = lspprotocol.ServerDispatch(ctx, server, req)
 			l.lock.Unlock()
 		}
 
 		if err != nil {
-			l.logger.Error(
-				"error while replying to request",
-				slog.String("method", req.Method()),
+			l.logger.Warn(
+				"responding with error",
+				slog.String("method", req.Method),
 				xslog.ErrorAttr(err),
 			)
+		} else {
+			l.logger.Debug(
+				"responding",
+				slog.String("method", req.Method),
+			)
 		}
-		return nil
+		return result, err
 	})), nil
 }

@@ -20,9 +20,9 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/buflsp"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 func TestWorkspaceSymbol(t *testing.T) {
@@ -57,12 +57,12 @@ func TestWorkspaceSymbol(t *testing.T) {
 			name:  "search_for_item",
 			query: "Item",
 			expectedSymbols: []symbolInfo{
-				{name: "workspace_symbols.v1.Item", kind: protocol.SymbolKindClass, line: 6, uri: testURI},
-				{name: "workspace_symbols.v1.GetItemRequest", kind: protocol.SymbolKindClass, line: 24, uri: testURI},
-				{name: "workspace_symbols.v1.GetItemResponse", kind: protocol.SymbolKindClass, line: 28, uri: testURI},
-				{name: "workspace_symbols.v1.ListItemsRequest", kind: protocol.SymbolKindClass, line: 32, uri: testURI},
-				{name: "workspace_symbols.v1.ListItemsResponse", kind: protocol.SymbolKindClass, line: 36, uri: testURI},
-				{name: "workspace_symbols.v1.ItemService", kind: protocol.SymbolKindInterface, line: 19, uri: testURI},
+				{name: "workspace_symbols.v1.Item", kind: protocol.Class, line: 6, uri: testURI},
+				{name: "workspace_symbols.v1.GetItemRequest", kind: protocol.Class, line: 24, uri: testURI},
+				{name: "workspace_symbols.v1.GetItemResponse", kind: protocol.Class, line: 28, uri: testURI},
+				{name: "workspace_symbols.v1.ListItemsRequest", kind: protocol.Class, line: 32, uri: testURI},
+				{name: "workspace_symbols.v1.ListItemsResponse", kind: protocol.Class, line: 36, uri: testURI},
+				{name: "workspace_symbols.v1.ItemService", kind: protocol.Interface, line: 19, uri: testURI},
 			},
 			minResults: 6,
 		},
@@ -70,10 +70,10 @@ func TestWorkspaceSymbol(t *testing.T) {
 			name:  "search_for_color",
 			query: "Color",
 			expectedSymbols: []symbolInfo{
-				{name: "workspace_symbols.v1.Color", kind: protocol.SymbolKindEnum, line: 4, uri: typesURI},
-				{name: "workspace_symbols.v1.COLOR_UNSPECIFIED", kind: protocol.SymbolKindEnumMember, line: 5, uri: typesURI},
-				{name: "workspace_symbols.v1.COLOR_RED", kind: protocol.SymbolKindEnumMember, line: 6, uri: typesURI},
-				{name: "workspace_symbols.v1.COLOR_BLUE", kind: protocol.SymbolKindEnumMember, line: 7, uri: typesURI},
+				{name: "workspace_symbols.v1.Color", kind: protocol.Enum, line: 4, uri: typesURI},
+				{name: "workspace_symbols.v1.COLOR_UNSPECIFIED", kind: protocol.EnumMember, line: 5, uri: typesURI},
+				{name: "workspace_symbols.v1.COLOR_RED", kind: protocol.EnumMember, line: 6, uri: typesURI},
+				{name: "workspace_symbols.v1.COLOR_BLUE", kind: protocol.EnumMember, line: 7, uri: typesURI},
 			},
 			minResults: 4,
 		},
@@ -81,7 +81,7 @@ func TestWorkspaceSymbol(t *testing.T) {
 			name:  "search_for_label",
 			query: "Label",
 			expectedSymbols: []symbolInfo{
-				{name: "workspace_symbols.v1.Label", kind: protocol.SymbolKindClass, line: 10, uri: typesURI},
+				{name: "workspace_symbols.v1.Label", kind: protocol.Class, line: 10, uri: typesURI},
 			},
 			minResults: 1,
 		},
@@ -89,7 +89,7 @@ func TestWorkspaceSymbol(t *testing.T) {
 			name:  "search_for_container",
 			query: "Container",
 			expectedSymbols: []symbolInfo{
-				{name: "workspace_symbols.v1.Container", kind: protocol.SymbolKindClass, line: 13, uri: testURI},
+				{name: "workspace_symbols.v1.Container", kind: protocol.Class, line: 13, uri: testURI},
 			},
 			minResults: 1,
 		},
@@ -97,7 +97,7 @@ func TestWorkspaceSymbol(t *testing.T) {
 			name:  "search_for_deprecated",
 			query: "Legacy",
 			expectedSymbols: []symbolInfo{
-				{name: "workspace_symbols.v1.LegacyItem", kind: protocol.SymbolKindClass, line: 40, deprecated: true, uri: testURI},
+				{name: "workspace_symbols.v1.LegacyItem", kind: protocol.Class, line: 40, deprecated: true, uri: testURI},
 			},
 			minResults: 1,
 		},
@@ -113,7 +113,7 @@ func TestWorkspaceSymbol(t *testing.T) {
 			t.Parallel()
 
 			var symbols []protocol.SymbolInformation
-			_, symErr := clientJSONConn.Call(ctx, protocol.MethodWorkspaceSymbol, protocol.WorkspaceSymbolParams{
+			symErr := clientJSONConn.Call(ctx, protocol.MethodWorkspaceSymbol, protocol.WorkspaceSymbolParams{
 				Query: tt.query,
 			}, &symbols)
 			require.NoError(t, symErr)

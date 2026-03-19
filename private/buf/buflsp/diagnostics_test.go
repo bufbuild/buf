@@ -36,22 +36,21 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
+	"github.com/bufbuild/buf/private/pkg/jsonrpc2"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/bufbuild/protocompile/experimental/incremental"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/jsonrpc2"
-	"go.lsp.dev/protocol"
-	"go.lsp.dev/uri"
 )
 
 // setupLSPServerWithDiagnostics creates and initializes an LSP server for testing with diagnostic capture.
 func setupLSPServerWithDiagnostics(
 	t *testing.T,
 	testProtoPath string,
-) (jsonrpc2.Conn, protocol.URI, *diagnosticsCapture) {
+) (*jsonrpc2.Conn, protocol.URI, *diagnosticsCapture) {
 	t.Helper()
 
 	ctx := t.Context()
@@ -114,8 +113,6 @@ func setupLSPServerWithDiagnostics(
 		require.NoError(t, clientConn.Close())
 	})
 
-	stream := jsonrpc2.NewStream(serverConn)
-
 	conn, err := buflsp.Serve(
 		ctx,
 		"test",
@@ -123,7 +120,7 @@ func setupLSPServerWithDiagnostics(
 		appextContainer,
 		controller,
 		wasmRuntime,
-		stream,
+		serverConn,
 		queryExecutor,
 	)
 	require.NoError(t, err)
@@ -133,9 +130,7 @@ func setupLSPServerWithDiagnostics(
 
 	capture := newDiagnosticsCapture()
 
-	clientStream := jsonrpc2.NewStream(clientConn)
-	clientJSONConn := jsonrpc2.NewConn(clientStream)
-	clientJSONConn.Go(ctx, jsonrpc2.AsyncHandler(capture.handle))
+	clientJSONConn := jsonrpc2.NewConn(ctx, clientConn, jsonrpc2.HandlerFunc(capture.handle))
 	t.Cleanup(func() {
 		require.NoError(t, clientJSONConn.Close())
 	})
@@ -143,10 +138,12 @@ func setupLSPServerWithDiagnostics(
 	testWorkspaceDir := filepath.Dir(testProtoPath)
 	testURI := buflsp.FilePathToURI(testProtoPath)
 	var initResult protocol.InitializeResult
-	_, initErr := clientJSONConn.Call(ctx, protocol.MethodInitialize, &protocol.InitializeParams{
-		RootURI: uri.New(testWorkspaceDir),
-		Capabilities: protocol.ClientCapabilities{
-			TextDocument: &protocol.TextDocumentClientCapabilities{},
+	initErr := clientJSONConn.Call(ctx, protocol.MethodInitialize, &protocol.InitializeParams{
+		XInitializeParams: protocol.XInitializeParams{
+			RootURI: protocol.URIFromPath(testWorkspaceDir),
+			Capabilities: protocol.ClientCapabilities{
+				TextDocument: protocol.TextDocumentClientCapabilities{},
+			},
 		},
 	}, &initResult)
 	require.NoError(t, initErr)
@@ -194,7 +191,7 @@ func TestDiagnostics(t *testing.T) {
 						Start: protocol.Position{Line: 8, Character: 0},
 						End:   protocol.Position{Line: 8, Character: 0},
 					},
-					Severity: protocol.DiagnosticSeverityError,
+					Severity: protocol.SeverityError,
 					Source:   "buf-lsp",
 					Message:  "syntax error: expecting ';'",
 				},
@@ -209,14 +206,14 @@ func TestDiagnostics(t *testing.T) {
 						Start: protocol.Position{Line: 4, Character: 0},
 						End:   protocol.Position{Line: 4, Character: 41},
 					},
-					Severity: protocol.DiagnosticSeverityWarning,
+					Severity: protocol.SeverityWarning,
 					Code:     "IMPORT_USED",
 					CodeDescription: &protocol.CodeDescription{
 						Href: "https://buf.build/docs/lint/rules/#import_used",
 					},
 					Source:  "buf lint",
 					Message: `Import "google/protobuf/timestamp.proto" is unused.`,
-					Tags:    []protocol.DiagnosticTag{protocol.DiagnosticTagUnnecessary},
+					Tags:    []protocol.DiagnosticTag{protocol.Unnecessary},
 				},
 			},
 		},
@@ -229,7 +226,7 @@ func TestDiagnostics(t *testing.T) {
 						Start: protocol.Position{Line: 5, Character: 7},
 						End:   protocol.Position{Line: 5, Character: 28},
 					},
-					Severity: protocol.DiagnosticSeverityError,
+					Severity: protocol.SeverityError,
 					Source:   "buf-lsp",
 					Message:  `does/not/exist.proto: file does not exist`,
 				},
@@ -312,9 +309,7 @@ message TestMessage {
 				Version: 2,
 			},
 			ContentChanges: []protocol.TextDocumentContentChangeEvent{
-				{
-					Text: invalidContent,
-				},
+				{Value: protocol.TextDocumentContentChangeWholeDocument{Text: invalidContent}},
 			},
 		})
 		require.NoError(t, err)
@@ -324,11 +319,11 @@ message TestMessage {
 			return p.Version == 2 && len(p.Diagnostics) > 0
 		})
 		require.NotNil(t, updatedDiagnostics)
-		assert.Equal(t, uint32(2), updatedDiagnostics.Version, "expected diagnostics version to match file version")
+		assert.Equal(t, int32(2), updatedDiagnostics.Version, "expected diagnostics version to match file version")
 		assert.NotEmpty(t, updatedDiagnostics.Diagnostics, "expected diagnostics after introducing syntax error")
 
 		if len(updatedDiagnostics.Diagnostics) > 0 {
-			assert.Equal(t, protocol.DiagnosticSeverityError, updatedDiagnostics.Diagnostics[0].Severity)
+			assert.Equal(t, protocol.SeverityError, updatedDiagnostics.Diagnostics[0].Severity)
 		}
 	})
 }
@@ -345,16 +340,16 @@ func newDiagnosticsCapture() *diagnosticsCapture {
 	}
 }
 
-func (dc *diagnosticsCapture) handle(_ context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) error {
-	if req.Method() == protocol.MethodTextDocumentPublishDiagnostics {
+func (dc *diagnosticsCapture) handle(_ context.Context, _ *jsonrpc2.Conn, req *jsonrpc2.Request) (any, error) {
+	if req.Method == protocol.MethodTextDocumentPublishDiagnostics && req.Params != nil {
 		var params protocol.PublishDiagnosticsParams
-		if err := json.Unmarshal(req.Params(), &params); err == nil {
+		if err := json.Unmarshal(*req.Params, &params); err == nil {
 			dc.mu.Lock()
 			dc.diagnostics[params.URI] = &params
 			dc.mu.Unlock()
 		}
 	}
-	return reply(context.Background(), nil, nil)
+	return nil, nil
 }
 
 // wait polls for diagnostics matching the predicate.

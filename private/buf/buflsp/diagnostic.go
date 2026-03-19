@@ -17,23 +17,23 @@
 package buflsp
 
 import (
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/report/tags"
 	"github.com/bufbuild/protocompile/experimental/source/length"
-	"go.lsp.dev/protocol"
 )
 
-// UTF-16 is the default per LSP spec. Position encoding negotiation is not yet
-// supported by the go.lsp.dev/protocol library.
+// UTF-16 is the default per LSP spec.
+// Position encoding negotiation is not yet implemented.
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#position
 const positionalEncoding = length.UTF16
 
 // reportLevelToDiagnosticSeverity is a mapping of [report.Level] to [protocol.DiagnosticSeverity].
 var reportLevelToDiagnosticSeverity = map[report.Level]protocol.DiagnosticSeverity{
-	report.ICE:     protocol.DiagnosticSeverityError,
-	report.Error:   protocol.DiagnosticSeverityError,
-	report.Warning: protocol.DiagnosticSeverityWarning,
-	report.Remark:  protocol.DiagnosticSeverityInformation,
+	report.ICE:     protocol.SeverityError,
+	report.Error:   protocol.SeverityError,
+	report.Warning: protocol.SeverityWarning,
+	report.Remark:  protocol.SeverityInformation,
 }
 
 // reportDiagnosticToProtocolDiagnostic takes a [report.Diagnostic] and returns the
@@ -63,11 +63,11 @@ func reportDiagnosticToProtocolDiagnostic(
 	switch reportDiagnostic.Tag() {
 	case tags.UnusedImport:
 		diagnostic.Tags = []protocol.DiagnosticTag{
-			protocol.DiagnosticTagUnnecessary,
+			protocol.Unnecessary,
 		}
 	case tags.Deprecated:
 		diagnostic.Tags = []protocol.DiagnosticTag{
-			protocol.DiagnosticTagDeprecated,
+			protocol.Deprecated,
 		}
 	}
 	return diagnostic

@@ -19,47 +19,24 @@ import (
 	"log/slog"
 
 	"buf.build/go/standard/xlog/xslog"
-	"go.lsp.dev/jsonrpc2"
+	"github.com/bufbuild/buf/private/pkg/jsonrpc2"
 )
 
-// wrapReplier wraps a jsonrpc2.Replier, allowing us to inject logging and tracing and so on.
-func (l *lsp) wrapReplier(reply jsonrpc2.Replier, req jsonrpc2.Request) jsonrpc2.Replier {
-	return func(ctx context.Context, result any, err error) error {
-		if err != nil {
-			l.logger.Warn(
-				"responding with error",
-				slog.String("method", req.Method()),
-				xslog.ErrorAttr(err),
-			)
-		} else {
-			l.logger.Debug(
-				"responding",
-				slog.String("method", req.Method()),
-			)
-		}
-
-		return reply(ctx, result, err)
-	}
-}
-
-// connWrapper wraps a connection and logs calls and notifications.
-//
-// By default, the ClientDispatcher does not log the bodies of requests and responses, making
-// for much lower-quality debugging.
+// connWrapper wraps a *jsonrpc2.Conn, adding logging around Call and Notify.
+// It implements the jsonrpc2.Caller interface used by lspprotocol.ClientDispatcher.
 type connWrapper struct {
-	jsonrpc2.Conn
-
+	conn   *jsonrpc2.Conn
 	logger *slog.Logger
 }
 
 func (c *connWrapper) Call(
-	ctx context.Context, method string, params, result any) (id jsonrpc2.ID, err error) {
+	ctx context.Context, method string, params, result any) error {
 	c.logger.Debug(
 		"call",
 		slog.String("method", method),
 	)
 
-	id, err = c.Conn.Call(ctx, method, params, result)
+	err := c.conn.Call(ctx, method, params, result)
 	if err != nil {
 		c.logger.Warn(
 			"call returned error",
@@ -73,7 +50,7 @@ func (c *connWrapper) Call(
 		)
 	}
 
-	return
+	return err
 }
 
 func (c *connWrapper) Notify(
@@ -83,7 +60,7 @@ func (c *connWrapper) Notify(
 		slog.String("method", method),
 	)
 
-	err := c.Conn.Notify(ctx, method, params)
+	err := c.conn.Notify(ctx, method, params)
 	if err != nil {
 		c.logger.Warn(
 			"notify returned error",

@@ -27,6 +27,7 @@ import (
 	"buf.build/go/standard/xlog/xslog"
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/linker"
@@ -34,7 +35,6 @@ import (
 	"github.com/bufbuild/protocompile/protoutil"
 	"github.com/bufbuild/protocompile/reporter"
 	"github.com/google/uuid"
-	"go.lsp.dev/protocol"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -232,9 +232,9 @@ func newDiagnostic(err reporter.ErrorWithPos, isWarning bool, opener fileOpener,
 		Character: uint32(endUtf16Col),
 	}
 
-	severity := protocol.DiagnosticSeverityError
+	severity := protocol.SeverityError
 	if isWarning {
-		severity = protocol.DiagnosticSeverityWarning
+		severity = protocol.SeverityWarning
 	}
 
 	return protocol.Diagnostic{

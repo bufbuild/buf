@@ -18,9 +18,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 func TestFoldingRange(t *testing.T) {
@@ -39,36 +39,36 @@ func TestFoldingRange(t *testing.T) {
 				require.NotEmpty(t, ranges)
 
 				// Find import group
-				assert.True(t, findRange(ranges, 4, 6, protocol.ImportsFoldingRange), "import group")
+				assert.True(t, findRange(ranges, 4, 6, protocol.Imports), "import group")
 
 				// Find multi-line comment
-				assert.True(t, findRange(ranges, 8, 10, protocol.CommentFoldingRange), "multi-line comment")
+				assert.True(t, findRange(ranges, 8, 10, protocol.Comment), "multi-line comment")
 
 				// Find User message
-				assert.True(t, findRange(ranges, 11, 15, protocol.RegionFoldingRange), "User message")
+				assert.True(t, findRange(ranges, 11, 15, protocol.Region), "User message")
 
 				// Find Status enum
-				assert.True(t, findRange(ranges, 17, 21, protocol.RegionFoldingRange), "Status enum")
+				assert.True(t, findRange(ranges, 17, 21, protocol.Region), "Status enum")
 
 				// Find UserService
-				assert.True(t, findRange(ranges, 23, 32, protocol.RegionFoldingRange), "UserService")
+				assert.True(t, findRange(ranges, 23, 32, protocol.Region), "UserService")
 
 				// Find individual RPCs
-				assert.True(t, findRange(ranges, 24, 24, protocol.RegionFoldingRange), "GetUser RPC")
-				assert.True(t, findRange(ranges, 25, 25, protocol.RegionFoldingRange), "CreateUser RPC")
-				assert.True(t, findRange(ranges, 28, 31, protocol.RegionFoldingRange), "UpdateUser multi-line RPC")
+				assert.True(t, findRange(ranges, 24, 24, protocol.Region), "GetUser RPC")
+				assert.True(t, findRange(ranges, 25, 25, protocol.Region), "CreateUser RPC")
+				assert.True(t, findRange(ranges, 28, 31, protocol.Region), "UpdateUser multi-line RPC")
 
 				// Find Config message
-				assert.True(t, findRange(ranges, 60, 65, protocol.RegionFoldingRange), "Config message")
+				assert.True(t, findRange(ranges, 60, 65, protocol.Region), "Config message")
 
 				// Find Repository message with multi-line options
-				assert.True(t, findRange(ranges, 67, 74, protocol.RegionFoldingRange), "Repository message")
-				assert.True(t, findRange(ranges, 68, 71, protocol.RegionFoldingRange), "multi-line field options")
+				assert.True(t, findRange(ranges, 67, 74, protocol.Region), "Repository message")
+				assert.True(t, findRange(ranges, 68, 71, protocol.Region), "multi-line field options")
 
 				// Find Profile message with oneof and nested Address
-				assert.True(t, findRange(ranges, 76, 88, protocol.RegionFoldingRange), "Profile message")
-				assert.True(t, findRange(ranges, 77, 80, protocol.RegionFoldingRange), "oneof")
-				assert.True(t, findRange(ranges, 83, 87, protocol.RegionFoldingRange), "nested Address")
+				assert.True(t, findRange(ranges, 76, 88, protocol.Region), "Profile message")
+				assert.True(t, findRange(ranges, 77, 80, protocol.Region), "oneof")
+				assert.True(t, findRange(ranges, 83, 87, protocol.Region), "nested Address")
 			},
 		},
 		{
@@ -79,23 +79,23 @@ func TestFoldingRange(t *testing.T) {
 				require.NotEmpty(t, ranges)
 
 				// Find User message
-				assert.True(t, findRange(ranges, 5, 9, protocol.RegionFoldingRange), "User message")
+				assert.True(t, findRange(ranges, 5, 9, protocol.Region), "User message")
 
 				// Find extend block
-				assert.True(t, findRange(ranges, 12, 15, protocol.RegionFoldingRange), "extend block")
+				assert.True(t, findRange(ranges, 12, 15, protocol.Region), "extend block")
 
 				// Find UserMetadata message
-				assert.True(t, findRange(ranges, 18, 30, protocol.RegionFoldingRange), "UserMetadata message")
+				assert.True(t, findRange(ranges, 18, 30, protocol.Region), "UserMetadata message")
 
 				// Find nested AuditInfo
-				assert.True(t, findRange(ranges, 23, 27, protocol.RegionFoldingRange), "nested AuditInfo")
+				assert.True(t, findRange(ranges, 23, 27, protocol.Region), "nested AuditInfo")
 
 				// Find Preferences message
-				assert.True(t, findRange(ranges, 33, 36, protocol.RegionFoldingRange), "Preferences message")
+				assert.True(t, findRange(ranges, 33, 36, protocol.Region), "Preferences message")
 
 				// Find Settings message with multi-line options
-				assert.True(t, findRange(ranges, 39, 44, protocol.RegionFoldingRange), "Settings message")
-				assert.True(t, findRange(ranges, 40, 43, protocol.RegionFoldingRange), "multi-line field options in proto2")
+				assert.True(t, findRange(ranges, 39, 44, protocol.Region), "Settings message")
+				assert.True(t, findRange(ranges, 40, 43, protocol.Region), "multi-line field options in proto2")
 			},
 		},
 		{
@@ -108,7 +108,7 @@ func TestFoldingRange(t *testing.T) {
 				if len(ranges) > 0 {
 					assert.Equal(t, uint32(5), ranges[0].StartLine)
 					assert.Equal(t, uint32(7), ranges[0].EndLine)
-					assert.Equal(t, protocol.RegionFoldingRange, ranges[0].Kind)
+					assert.Equal(t, string(protocol.Region), ranges[0].Kind)
 				}
 			},
 		},
@@ -120,7 +120,7 @@ func TestFoldingRange(t *testing.T) {
 				// Count import groups
 				importGroupCount := 0
 				for _, r := range ranges {
-					if r.Kind == protocol.ImportsFoldingRange {
+					if r.Kind == string(protocol.Imports) {
 						importGroupCount++
 					}
 				}
@@ -136,10 +136,10 @@ func TestFoldingRange(t *testing.T) {
 				require.NotEmpty(t, ranges)
 
 				// Find Level4 message (most deeply nested)
-				assert.True(t, findRange(ranges, 14, 17, protocol.RegionFoldingRange), "Level4 nested message")
+				assert.True(t, findRange(ranges, 14, 17, protocol.Region), "Level4 nested message")
 
 				// Find ComplexOneof with many options
-				assert.True(t, findRange(ranges, 30, 39, protocol.RegionFoldingRange), "ComplexOneof")
+				assert.True(t, findRange(ranges, 30, 39, protocol.Region), "ComplexOneof")
 			},
 		},
 		{
@@ -150,7 +150,7 @@ func TestFoldingRange(t *testing.T) {
 				// Count comment folding ranges
 				commentCount := 0
 				for _, r := range ranges {
-					if r.Kind == protocol.CommentFoldingRange {
+					if r.Kind == string(protocol.Comment) {
 						commentCount++
 					}
 				}
@@ -160,7 +160,7 @@ func TestFoldingRange(t *testing.T) {
 				// Verify the large comment block is found (spans at least 8 lines)
 				foundLarge := false
 				for _, r := range ranges {
-					if r.Kind == protocol.CommentFoldingRange && r.EndLine-r.StartLine >= 8 {
+					if r.Kind == string(protocol.Comment) && r.EndLine-r.StartLine >= 8 {
 						foundLarge = true
 						break
 					}
@@ -176,7 +176,7 @@ func TestFoldingRange(t *testing.T) {
 				// Count multi-line option blocks (small regions)
 				optionBlockCount := 0
 				for _, r := range ranges {
-					if r.Kind == protocol.RegionFoldingRange && r.EndLine-r.StartLine <= 3 {
+					if r.Kind == string(protocol.Region) && r.EndLine-r.StartLine <= 3 {
 						optionBlockCount++
 					}
 				}
@@ -184,7 +184,7 @@ func TestFoldingRange(t *testing.T) {
 				assert.GreaterOrEqual(t, optionBlockCount, 5, "expected at least 5 multi-line option blocks")
 
 				// Verify FieldOptions message is found
-				assert.True(t, findRangeMinEnd(ranges, 5, 19, protocol.RegionFoldingRange), "FieldOptions message")
+				assert.True(t, findRangeMinEnd(ranges, 5, 19, protocol.Region), "FieldOptions message")
 			},
 		},
 	}
@@ -201,11 +201,9 @@ func TestFoldingRange(t *testing.T) {
 			clientJSONConn, protoURI := setupLSPServer(t, protoPath)
 
 			var ranges []protocol.FoldingRange
-			_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentFoldingRange, protocol.FoldingRangeParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: protoURI,
-					},
+			err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentFoldingRange, protocol.FoldingRangeParams{
+				TextDocument: protocol.TextDocumentIdentifier{
+					URI: protoURI,
 				},
 			}, &ranges)
 			require.NoError(t, err)
@@ -222,7 +220,7 @@ func TestFoldingRange(t *testing.T) {
 // findRange returns true if a folding range with the exact start/end lines and kind exists.
 func findRange(ranges []protocol.FoldingRange, startLine, endLine uint32, kind protocol.FoldingRangeKind) bool {
 	for _, r := range ranges {
-		if r.StartLine == startLine && r.EndLine == endLine && r.Kind == kind {
+		if r.StartLine == startLine && r.EndLine == endLine && r.Kind == string(kind) {
 			return true
 		}
 	}
@@ -232,7 +230,7 @@ func findRange(ranges []protocol.FoldingRange, startLine, endLine uint32, kind p
 // findRangeMinEnd returns true if a folding range with the exact start line, at least the end line, and kind exists.
 func findRangeMinEnd(ranges []protocol.FoldingRange, startLine, minEndLine uint32, kind protocol.FoldingRangeKind) bool {
 	for _, r := range ranges {
-		if r.StartLine == startLine && r.EndLine >= minEndLine && r.Kind == kind {
+		if r.StartLine == startLine && r.EndLine >= minEndLine && r.Kind == string(kind) {
 			return true
 		}
 	}

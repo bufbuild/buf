@@ -19,9 +19,9 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/buflsp"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 func TestDocumentLink(t *testing.T) {
@@ -106,7 +106,7 @@ func TestDocumentLink(t *testing.T) {
 			clientJSONConn, testURI := setupLSPServer(t, protoPath)
 
 			var links []protocol.DocumentLink
-			_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentLink, protocol.DocumentLinkParams{
+			err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentLink, protocol.DocumentLinkParams{
 				TextDocument: protocol.TextDocumentIdentifier{
 					URI: testURI,
 				},
@@ -127,9 +127,9 @@ func TestDocumentLink(t *testing.T) {
 					localPath, err := filepath.Abs(expected.localPath)
 					require.NoError(t, err)
 					expectedURI := buflsp.FilePathToURI(localPath)
-					assert.Equal(t, expectedURI, link.Target, "link %d (%s): wrong target", i, expected.description)
+					assert.Equal(t, expectedURI, *link.Target, "link %d (%s): wrong target", i, expected.description)
 				case linkTargetTypeURL:
-					assert.Equal(t, protocol.DocumentURI(expected.targetURL), link.Target, "link %d (%s): wrong target", i, expected.description)
+					assert.Equal(t, protocol.DocumentURI(expected.targetURL), *link.Target, "link %d (%s): wrong target", i, expected.description)
 				}
 			}
 

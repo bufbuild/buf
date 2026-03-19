@@ -19,8 +19,8 @@ package buflsp
 import (
 	"context"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/buf/private/pkg/refcount"
-	"go.lsp.dev/protocol"
 )
 
 // fileManager tracks all files the LSP is currently handling, whether read from disk or opened

@@ -17,8 +17,8 @@ package buflsp
 import (
 	"testing"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
-	"go.lsp.dev/protocol"
 )
 
 func TestNormalizeURI(t *testing.T) {

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"go.lsp.dev/protocol"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 )
 
 // validate the protocol.Server implementation.

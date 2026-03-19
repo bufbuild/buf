@@ -19,10 +19,9 @@ import (
 	"slices"
 	"testing"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
-	"go.lsp.dev/uri"
 )
 
 func TestDocumentHighlight(t *testing.T) {
@@ -37,7 +36,7 @@ func TestDocumentHighlight(t *testing.T) {
 	require.NoError(t, err)
 
 	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
-	typesURI := uri.New(typesProtoPath)
+	typesURI := protocol.URIFromPath(typesProtoPath)
 
 	type highlightLocation struct {
 		line           uint32
@@ -58,15 +57,15 @@ func TestDocumentHighlight(t *testing.T) {
 			line:      7,
 			character: 8,
 			expectedHighlights: []highlightLocation{
-				{line: 7, startCharacter: 8, endCharacter: 15, kind: protocol.DocumentHighlightKindText},    // message Product (definition)
-				{line: 11, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText},  // repeated Product related
-				{line: 16, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText},  // repeated Product products in Catalog
-				{line: 33, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},    // Product product in GetProductResponse
-				{line: 41, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText},  // repeated Product products in ListProductsResponse
-				{line: 49, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},    // Product product in StreamProductsResponse
-				{line: 53, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},    // Product product in UploadProductsRequest
-				{line: 65, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},    // Product product in DownloadProductsResponse
-				{line: 117, startCharacter: 14, endCharacter: 21, kind: protocol.DocumentHighlightKindText}, // Product in map<string, Product>
+				{line: 7, startCharacter: 8, endCharacter: 15, kind: protocol.Text},    // message Product (definition)
+				{line: 11, startCharacter: 11, endCharacter: 18, kind: protocol.Text},  // repeated Product related
+				{line: 16, startCharacter: 11, endCharacter: 18, kind: protocol.Text},  // repeated Product products in Catalog
+				{line: 33, startCharacter: 2, endCharacter: 9, kind: protocol.Text},    // Product product in GetProductResponse
+				{line: 41, startCharacter: 11, endCharacter: 18, kind: protocol.Text},  // repeated Product products in ListProductsResponse
+				{line: 49, startCharacter: 2, endCharacter: 9, kind: protocol.Text},    // Product product in StreamProductsResponse
+				{line: 53, startCharacter: 2, endCharacter: 9, kind: protocol.Text},    // Product product in UploadProductsRequest
+				{line: 65, startCharacter: 2, endCharacter: 9, kind: protocol.Text},    // Product product in DownloadProductsResponse
+				{line: 117, startCharacter: 14, endCharacter: 21, kind: protocol.Text}, // Product in map<string, Product>
 			},
 		},
 		{
@@ -75,15 +74,15 @@ func TestDocumentHighlight(t *testing.T) {
 			line:      11,
 			character: 11,
 			expectedHighlights: []highlightLocation{
-				{line: 7, startCharacter: 8, endCharacter: 15, kind: protocol.DocumentHighlightKindText},    // message Product (definition)
-				{line: 11, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText},  // repeated Product related
-				{line: 16, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText},  // repeated Product products in Catalog
-				{line: 33, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},    // Product product in GetProductResponse
-				{line: 41, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText},  // repeated Product products in ListProductsResponse
-				{line: 49, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},    // Product product in StreamProductsResponse
-				{line: 53, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},    // Product product in UploadProductsRequest
-				{line: 65, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},    // Product product in DownloadProductsResponse
-				{line: 117, startCharacter: 14, endCharacter: 21, kind: protocol.DocumentHighlightKindText}, // Product in map<string, Product>
+				{line: 7, startCharacter: 8, endCharacter: 15, kind: protocol.Text},    // message Product (definition)
+				{line: 11, startCharacter: 11, endCharacter: 18, kind: protocol.Text},  // repeated Product related
+				{line: 16, startCharacter: 11, endCharacter: 18, kind: protocol.Text},  // repeated Product products in Catalog
+				{line: 33, startCharacter: 2, endCharacter: 9, kind: protocol.Text},    // Product product in GetProductResponse
+				{line: 41, startCharacter: 11, endCharacter: 18, kind: protocol.Text},  // repeated Product products in ListProductsResponse
+				{line: 49, startCharacter: 2, endCharacter: 9, kind: protocol.Text},    // Product product in StreamProductsResponse
+				{line: 53, startCharacter: 2, endCharacter: 9, kind: protocol.Text},    // Product product in UploadProductsRequest
+				{line: 65, startCharacter: 2, endCharacter: 9, kind: protocol.Text},    // Product product in DownloadProductsResponse
+				{line: 117, startCharacter: 14, endCharacter: 21, kind: protocol.Text}, // Product in map<string, Product>
 			},
 		},
 		{
@@ -92,7 +91,7 @@ func TestDocumentHighlight(t *testing.T) {
 			line:      14,
 			character: 8,
 			expectedHighlights: []highlightLocation{
-				{line: 14, startCharacter: 8, endCharacter: 15, kind: protocol.DocumentHighlightKindText}, // message Catalog (definition)
+				{line: 14, startCharacter: 8, endCharacter: 15, kind: protocol.Text}, // message Catalog (definition)
 			},
 		},
 		{
@@ -101,7 +100,7 @@ func TestDocumentHighlight(t *testing.T) {
 			line:      4,
 			character: 5,
 			expectedHighlights: []highlightLocation{
-				{line: 4, startCharacter: 5, endCharacter: 13, kind: protocol.DocumentHighlightKindText}, // enum Category (definition)
+				{line: 4, startCharacter: 5, endCharacter: 13, kind: protocol.Text}, // enum Category (definition)
 			},
 		},
 		{
@@ -131,8 +130,8 @@ func TestDocumentHighlight(t *testing.T) {
 			line:      28,
 			character: 8,
 			expectedHighlights: []highlightLocation{
-				{line: 28, startCharacter: 8, endCharacter: 25, kind: protocol.DocumentHighlightKindText},  // message GetProductRequest (definition)
-				{line: 21, startCharacter: 17, endCharacter: 34, kind: protocol.DocumentHighlightKindText}, // GetProductRequest in rpc
+				{line: 28, startCharacter: 8, endCharacter: 25, kind: protocol.Text},  // message GetProductRequest (definition)
+				{line: 21, startCharacter: 17, endCharacter: 34, kind: protocol.Text}, // GetProductRequest in rpc
 			},
 		},
 		{
@@ -148,8 +147,8 @@ func TestDocumentHighlight(t *testing.T) {
 			line:      69,
 			character: 10,
 			expectedHighlights: []highlightLocation{
-				{line: 69, startCharacter: 10, endCharacter: 14, kind: protocol.DocumentHighlightKindText}, // message Item (definition)
-				{line: 73, startCharacter: 11, endCharacter: 15, kind: protocol.DocumentHighlightKindText}, // repeated Item items (reference)
+				{line: 69, startCharacter: 10, endCharacter: 14, kind: protocol.Text}, // message Item (definition)
+				{line: 73, startCharacter: 11, endCharacter: 15, kind: protocol.Text}, // repeated Item items (reference)
 			},
 		},
 		{
@@ -158,8 +157,8 @@ func TestDocumentHighlight(t *testing.T) {
 			line:      74,
 			character: 7,
 			expectedHighlights: []highlightLocation{
-				{line: 74, startCharacter: 7, endCharacter: 13, kind: protocol.DocumentHighlightKindText}, // enum Status (definition)
-				{line: 79, startCharacter: 2, endCharacter: 8, kind: protocol.DocumentHighlightKindText},  // Status status (reference)
+				{line: 74, startCharacter: 7, endCharacter: 13, kind: protocol.Text}, // enum Status (definition)
+				{line: 79, startCharacter: 2, endCharacter: 8, kind: protocol.Text},  // Status status (reference)
 			},
 		},
 		{
@@ -203,10 +202,10 @@ func TestDocumentHighlight(t *testing.T) {
 			line:      105, // Line 106 in file (1-indexed) = line 105 (0-indexed)
 			character: 8,
 			expectedHighlights: []highlightLocation{
-				{line: 105, startCharacter: 8, endCharacter: 16, kind: protocol.DocumentHighlightKindText},  // message Metadata (definition)
-				{line: 111, startCharacter: 2, endCharacter: 10, kind: protocol.DocumentHighlightKindText},  // Metadata short_reference
-				{line: 112, startCharacter: 2, endCharacter: 23, kind: protocol.DocumentHighlightKindText},  // highlight.v1.Metadata qualified_reference (entire span)
-				{line: 118, startCharacter: 13, endCharacter: 21, kind: protocol.DocumentHighlightKindText}, // Metadata in map<int32, Metadata>
+				{line: 105, startCharacter: 8, endCharacter: 16, kind: protocol.Text},  // message Metadata (definition)
+				{line: 111, startCharacter: 2, endCharacter: 10, kind: protocol.Text},  // Metadata short_reference
+				{line: 112, startCharacter: 2, endCharacter: 23, kind: protocol.Text},  // highlight.v1.Metadata qualified_reference (entire span)
+				{line: 118, startCharacter: 13, endCharacter: 21, kind: protocol.Text}, // Metadata in map<int32, Metadata>
 			},
 		},
 		{
@@ -215,10 +214,10 @@ func TestDocumentHighlight(t *testing.T) {
 			line:      111, // Line 112 in file (1-indexed) = line 111 (0-indexed)
 			character: 2,
 			expectedHighlights: []highlightLocation{
-				{line: 105, startCharacter: 8, endCharacter: 16, kind: protocol.DocumentHighlightKindText},  // message Metadata (definition)
-				{line: 111, startCharacter: 2, endCharacter: 10, kind: protocol.DocumentHighlightKindText},  // Metadata short_reference
-				{line: 112, startCharacter: 2, endCharacter: 23, kind: protocol.DocumentHighlightKindText},  // highlight.v1.Metadata qualified_reference (entire span)
-				{line: 118, startCharacter: 13, endCharacter: 21, kind: protocol.DocumentHighlightKindText}, // Metadata in map<int32, Metadata>
+				{line: 105, startCharacter: 8, endCharacter: 16, kind: protocol.Text},  // message Metadata (definition)
+				{line: 111, startCharacter: 2, endCharacter: 10, kind: protocol.Text},  // Metadata short_reference
+				{line: 112, startCharacter: 2, endCharacter: 23, kind: protocol.Text},  // highlight.v1.Metadata qualified_reference (entire span)
+				{line: 118, startCharacter: 13, endCharacter: 21, kind: protocol.Text}, // Metadata in map<int32, Metadata>
 			},
 		},
 		{
@@ -227,10 +226,10 @@ func TestDocumentHighlight(t *testing.T) {
 			line:      112, // Line 113 in file (1-indexed) = line 112 (0-indexed)
 			character: 20,
 			expectedHighlights: []highlightLocation{
-				{line: 105, startCharacter: 8, endCharacter: 16, kind: protocol.DocumentHighlightKindText},  // message Metadata (definition)
-				{line: 111, startCharacter: 2, endCharacter: 10, kind: protocol.DocumentHighlightKindText},  // Metadata short_reference
-				{line: 112, startCharacter: 2, endCharacter: 23, kind: protocol.DocumentHighlightKindText},  // highlight.v1.Metadata qualified_reference (entire span)
-				{line: 118, startCharacter: 13, endCharacter: 21, kind: protocol.DocumentHighlightKindText}, // Metadata in map<int32, Metadata>
+				{line: 105, startCharacter: 8, endCharacter: 16, kind: protocol.Text},  // message Metadata (definition)
+				{line: 111, startCharacter: 2, endCharacter: 10, kind: protocol.Text},  // Metadata short_reference
+				{line: 112, startCharacter: 2, endCharacter: 23, kind: protocol.Text},  // highlight.v1.Metadata qualified_reference (entire span)
+				{line: 118, startCharacter: 13, endCharacter: 21, kind: protocol.Text}, // Metadata in map<int32, Metadata>
 			},
 		},
 		{
@@ -239,8 +238,8 @@ func TestDocumentHighlight(t *testing.T) {
 			line:      23, // Line 24: rpc StreamProducts(stream StreamProductsRequest)
 			character: 30,
 			expectedHighlights: []highlightLocation{
-				{line: 44, startCharacter: 8, endCharacter: 29, kind: protocol.DocumentHighlightKindText},  // message StreamProductsRequest (definition)
-				{line: 23, startCharacter: 28, endCharacter: 49, kind: protocol.DocumentHighlightKindText}, // StreamProductsRequest in RPC input (excluding "stream ")
+				{line: 44, startCharacter: 8, endCharacter: 29, kind: protocol.Text},  // message StreamProductsRequest (definition)
+				{line: 23, startCharacter: 28, endCharacter: 49, kind: protocol.Text}, // StreamProductsRequest in RPC input (excluding "stream ")
 			},
 		},
 		{
@@ -249,8 +248,8 @@ func TestDocumentHighlight(t *testing.T) {
 			line:      23, // Line 24: returns (stream StreamProductsResponse)
 			character: 70,
 			expectedHighlights: []highlightLocation{
-				{line: 48, startCharacter: 8, endCharacter: 30, kind: protocol.DocumentHighlightKindText},  // message StreamProductsResponse (definition)
-				{line: 23, startCharacter: 67, endCharacter: 89, kind: protocol.DocumentHighlightKindText}, // StreamProductsResponse in RPC output (excluding "stream ")
+				{line: 48, startCharacter: 8, endCharacter: 30, kind: protocol.Text},  // message StreamProductsResponse (definition)
+				{line: 23, startCharacter: 67, endCharacter: 89, kind: protocol.Text}, // StreamProductsResponse in RPC output (excluding "stream ")
 			},
 		},
 		{
@@ -259,8 +258,8 @@ func TestDocumentHighlight(t *testing.T) {
 			line:      44, // message StreamProductsRequest
 			character: 8,
 			expectedHighlights: []highlightLocation{
-				{line: 44, startCharacter: 8, endCharacter: 29, kind: protocol.DocumentHighlightKindText},  // message StreamProductsRequest (definition)
-				{line: 23, startCharacter: 28, endCharacter: 49, kind: protocol.DocumentHighlightKindText}, // StreamProductsRequest in RPC (excluding "stream ")
+				{line: 44, startCharacter: 8, endCharacter: 29, kind: protocol.Text},  // message StreamProductsRequest (definition)
+				{line: 23, startCharacter: 28, endCharacter: 49, kind: protocol.Text}, // StreamProductsRequest in RPC (excluding "stream ")
 			},
 		},
 		{
@@ -269,8 +268,8 @@ func TestDocumentHighlight(t *testing.T) {
 			line:      24, // Line 25: rpc UploadProducts(stream UploadProductsRequest)
 			character: 30,
 			expectedHighlights: []highlightLocation{
-				{line: 52, startCharacter: 8, endCharacter: 29, kind: protocol.DocumentHighlightKindText},  // message UploadProductsRequest (definition)
-				{line: 24, startCharacter: 28, endCharacter: 49, kind: protocol.DocumentHighlightKindText}, // UploadProductsRequest in RPC (excluding "stream ")
+				{line: 52, startCharacter: 8, endCharacter: 29, kind: protocol.Text},  // message UploadProductsRequest (definition)
+				{line: 24, startCharacter: 28, endCharacter: 49, kind: protocol.Text}, // UploadProductsRequest in RPC (excluding "stream ")
 			},
 		},
 		{
@@ -279,8 +278,8 @@ func TestDocumentHighlight(t *testing.T) {
 			line:      25, // Line 26: returns (stream DownloadProductsResponse)
 			character: 70,
 			expectedHighlights: []highlightLocation{
-				{line: 64, startCharacter: 8, endCharacter: 32, kind: protocol.DocumentHighlightKindText},  // message DownloadProductsResponse (definition)
-				{line: 25, startCharacter: 64, endCharacter: 88, kind: protocol.DocumentHighlightKindText}, // DownloadProductsResponse in RPC (excluding "stream ")
+				{line: 64, startCharacter: 8, endCharacter: 32, kind: protocol.Text},  // message DownloadProductsResponse (definition)
+				{line: 25, startCharacter: 64, endCharacter: 88, kind: protocol.Text}, // DownloadProductsResponse in RPC (excluding "stream ")
 			},
 		},
 		{
@@ -310,15 +309,15 @@ func TestDocumentHighlight(t *testing.T) {
 			line:      117, // Line 118: map<string, Product> product_map = 2;
 			character: 17,  // Clicking on "Product" in map value type
 			expectedHighlights: []highlightLocation{
-				{line: 7, startCharacter: 8, endCharacter: 15, kind: protocol.DocumentHighlightKindText},    // message Product (definition)
-				{line: 11, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText},  // repeated Product related
-				{line: 16, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText},  // repeated Product products in Catalog
-				{line: 33, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},    // Product product in GetProductResponse
-				{line: 41, startCharacter: 11, endCharacter: 18, kind: protocol.DocumentHighlightKindText},  // repeated Product products in ListProductsResponse
-				{line: 49, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},    // Product product in StreamProductsResponse
-				{line: 53, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},    // Product product in UploadProductsRequest
-				{line: 65, startCharacter: 2, endCharacter: 9, kind: protocol.DocumentHighlightKindText},    // Product product in DownloadProductsResponse
-				{line: 117, startCharacter: 14, endCharacter: 21, kind: protocol.DocumentHighlightKindText}, // Product in map<string, Product>
+				{line: 7, startCharacter: 8, endCharacter: 15, kind: protocol.Text},    // message Product (definition)
+				{line: 11, startCharacter: 11, endCharacter: 18, kind: protocol.Text},  // repeated Product related
+				{line: 16, startCharacter: 11, endCharacter: 18, kind: protocol.Text},  // repeated Product products in Catalog
+				{line: 33, startCharacter: 2, endCharacter: 9, kind: protocol.Text},    // Product product in GetProductResponse
+				{line: 41, startCharacter: 11, endCharacter: 18, kind: protocol.Text},  // repeated Product products in ListProductsResponse
+				{line: 49, startCharacter: 2, endCharacter: 9, kind: protocol.Text},    // Product product in StreamProductsResponse
+				{line: 53, startCharacter: 2, endCharacter: 9, kind: protocol.Text},    // Product product in UploadProductsRequest
+				{line: 65, startCharacter: 2, endCharacter: 9, kind: protocol.Text},    // Product product in DownloadProductsResponse
+				{line: 117, startCharacter: 14, endCharacter: 21, kind: protocol.Text}, // Product in map<string, Product>
 			},
 		},
 	}
@@ -328,7 +327,7 @@ func TestDocumentHighlight(t *testing.T) {
 			t.Parallel()
 
 			var highlights []protocol.DocumentHighlight
-			_, highlightErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentHighlight, protocol.DocumentHighlightParams{
+			highlightErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentHighlight, protocol.DocumentHighlightParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
 						URI: tt.targetURI,

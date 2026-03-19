@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
@@ -41,7 +42,6 @@ import (
 	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/seq"
 	"github.com/bufbuild/protocompile/experimental/source"
-	"go.lsp.dev/protocol"
 )
 
 // file is a file that has been opened by the client.
@@ -1055,10 +1055,10 @@ func (f *file) RunChecks(ctx context.Context) {
 	f.CancelChecks(ctx)
 
 	for _, diagnostic := range f.diagnostics {
-		if diagnostic.Severity == protocol.DiagnosticSeverityError {
+		if diagnostic.Severity == protocol.SeverityError {
 			f.lsp.logger.DebugContext(
 				ctx, "checks skipped on diagnostic severity",
-				slog.String("severity", diagnostic.Severity.String()),
+				slog.Uint64("severity", uint64(diagnostic.Severity)),
 			)
 			return // Skip on not buildable images.
 		}
@@ -1152,13 +1152,13 @@ func (f *file) appendAnnotations(source string, annotations []bufanalysis.FileAn
 			CodeDescription: &protocol.CodeDescription{
 				Href: protocol.URI("https://buf.build/docs/lint/rules/#" + strings.ToLower(annotation.Type())),
 			},
-			Severity: protocol.DiagnosticSeverityWarning,
+			Severity: protocol.SeverityWarning,
 			Source:   source,
 			Message:  annotation.Message(),
 		}
 		if annotation.Type() == "IMPORT_USED" {
 			diagnostic.Tags = []protocol.DiagnosticTag{
-				protocol.DiagnosticTagUnnecessary,
+				protocol.Unnecessary,
 			}
 		}
 		f.diagnostics = append(f.diagnostics, diagnostic)
@@ -1186,10 +1186,8 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 
 	// Publish the diagnostics. This error is automatically logged by the LSP framework.
 	_ = f.lsp.client.PublishDiagnostics(ctx, &protocol.PublishDiagnosticsParams{
-		URI: f.uri,
-		// NOTE: For some reason, Version is int32 in the document struct, but uint32 here.
-		// This seems like a bug in the LSP protocol package.
-		Version:     uint32(f.version),
+		URI:         f.uri,
+		Version:     f.version,
 		Diagnostics: diagnostics,
 	})
 }

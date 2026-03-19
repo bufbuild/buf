@@ -19,9 +19,9 @@ import (
 	"slices"
 	"testing"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 // TestSemanticTokensKeywords tests that keywords, modifiers, and other token types
@@ -404,7 +404,7 @@ func TestSemanticTokensKeywords(t *testing.T) {
 			require.NoError(t, err)
 			clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
 			var semanticTokens *protocol.SemanticTokens
-			_, err = clientJSONConn.Call(ctx, "textDocument/semanticTokens/full", protocol.SemanticTokensParams{
+			err = clientJSONConn.Call(ctx, "textDocument/semanticTokens/full", protocol.SemanticTokensParams{
 				TextDocument: protocol.TextDocumentIdentifier{
 					URI: testURI,
 				},

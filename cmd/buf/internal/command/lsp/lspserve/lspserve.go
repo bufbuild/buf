@@ -31,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/bufbuild/protocompile/experimental/incremental"
 	"github.com/spf13/pflag"
-	"go.lsp.dev/jsonrpc2"
 )
 
 const (
@@ -125,7 +124,7 @@ func run(
 		container,
 		controller,
 		wasmRuntime,
-		jsonrpc2.NewStream(transport),
+		transport,
 		incremental.New(),
 	)
 	if err != nil {

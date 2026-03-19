@@ -26,9 +26,9 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.lsp.dev/protocol"
 )
 
 // errUnresolvableWorkspace is an unsupported workspace error.
