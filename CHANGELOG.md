@@ -4,6 +4,8 @@
 
 - Add support for `--rbs_out` as a `protoc_builtin` plugin (requires protoc v34.0+).
 - Add relevant links from CEL LSP hover documentation to either <celbyexample.com> or <protovalidate.com>
+- Add shell completions for `buf curl`: `--protocol` and `--reflect-protocol` flag values, and URL
+  path completion (service and method names) via server reflection, `--schema`, or the local buf module.
 
 ## [v1.66.1] - 2026-03-09
 
