@@ -15,10 +15,10 @@
 package buflsp
 
 import (
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
-	"go.lsp.dev/protocol"
 )
 
 // getCELDefinition returns the definition location for a CEL token at the given position.

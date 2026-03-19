@@ -18,9 +18,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 func TestHover(t *testing.T) {
@@ -216,7 +216,7 @@ func TestHover(t *testing.T) {
 			clientJSONConn, testURI := setupLSPServer(t, protoPath)
 
 			var hover *protocol.Hover
-			_, hoverErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, protocol.HoverParams{
+			hoverErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, protocol.HoverParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
 						URI: testURI,

@@ -19,6 +19,7 @@ import (
 	"maps"
 	"strings"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/experimental/seq"
 	"github.com/google/cel-go/cel"
@@ -27,7 +28,6 @@ import (
 	"github.com/google/cel-go/common/operators"
 	"github.com/google/cel-go/common/overloads"
 	"github.com/google/cel-go/common/types"
-	"go.lsp.dev/protocol"
 )
 
 // getCELHover returns hover documentation for CEL expressions.
@@ -102,7 +102,7 @@ func getCELHover(
 					Kind:  protocol.Markdown,
 					Value: docs,
 				},
-				Range: &hoverRange,
+				Range: hoverRange,
 			}
 		}
 	}

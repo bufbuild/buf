@@ -19,9 +19,9 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/buflsp"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 func TestTypeDefinition(t *testing.T) {
@@ -164,7 +164,7 @@ func TestTypeDefinition(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			var locations []protocol.Location
-			_, typeDefErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentTypeDefinition, protocol.TypeDefinitionParams{
+			typeDefErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentTypeDefinition, protocol.TypeDefinitionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
 						URI: testURI,

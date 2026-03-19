@@ -22,9 +22,9 @@ import (
 	"testing/synctest"
 	"time"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 func TestCodeAction_LintIgnore(t *testing.T) {
@@ -218,7 +218,7 @@ func TestCodeAction_LintIgnore(t *testing.T) {
 
 				// Request code actions at the specified position
 				var codeActions []protocol.CodeAction
-				_, err = clientJSONConn.Call(t.Context(), protocol.MethodTextDocumentCodeAction, protocol.CodeActionParams{
+				err = clientJSONConn.Call(t.Context(), protocol.MethodTextDocumentCodeAction, protocol.CodeActionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
 						URI: testURI,
 					},

@@ -23,11 +23,11 @@ import (
 	"slices"
 	"strings"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/experimental/seq"
 	"github.com/bufbuild/protocompile/experimental/source"
-	"go.lsp.dev/protocol"
 )
 
 // getDeprecateCodeAction generates a code action for deprecating the symbol at the given range.

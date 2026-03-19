@@ -24,6 +24,7 @@ import (
 	"slices"
 	"strings"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/experimental/seq"
@@ -31,7 +32,6 @@ import (
 	"github.com/google/cel-go/common/decls"
 	"github.com/google/cel-go/common/operators"
 	"github.com/google/cel-go/common/types"
-	"go.lsp.dev/protocol"
 )
 
 // celKeywords are CEL literal keywords, the protovalidate "this" special variable,
@@ -580,16 +580,16 @@ func celProtoFieldCompletionItems(irType ir.Type) []protocol.CompletionItem {
 			detail = string(fieldType.FullName())
 		}
 		_, isDeprecated := member.Deprecated().AsBool()
-		var documentation any
+		var documentation *protocol.Or_CompletionItem_documentation
 		if doc := leadingDocComments(member.AST()); doc != "" {
-			documentation = &protocol.MarkupContent{
+			documentation = completionMarkupDoc(protocol.MarkupContent{
 				Kind:  protocol.Markdown,
 				Value: doc,
-			}
+			})
 		}
 		items = append(items, protocol.CompletionItem{
 			Label:         member.Name(),
-			Kind:          protocol.CompletionItemKindField,
+			Kind:          protocol.FieldCompletion,
 			Detail:        detail,
 			Documentation: documentation,
 			Deprecated:    isDeprecated,
@@ -736,11 +736,11 @@ func celMemberCompletionItems(celEnv *cel.Env, receiverType *types.Type) []proto
 
 		items = append(items, protocol.CompletionItem{
 			Label:            name,
-			Kind:             protocol.CompletionItemKindMethod,
+			Kind:             protocol.MethodCompletion,
 			Detail:           celFormatOverloadSignature(fn.Name(), matchingOverloads[0]),
-			Documentation:    fn.Description(),
+			Documentation:    completionDoc(fn.Description()),
 			InsertText:       name + "($1)",
-			InsertTextFormat: protocol.InsertTextFormatSnippet,
+			InsertTextFormat: completionSnippetFormat(),
 		})
 	}
 	slices.SortFunc(items, func(a, b protocol.CompletionItem) int {
@@ -758,10 +758,10 @@ func celMemberMacroCompletionItems() []protocol.CompletionItem {
 	for _, name := range celIteratorMacros {
 		items = append(items, protocol.CompletionItem{
 			Label:            name,
-			Kind:             protocol.CompletionItemKindMethod,
+			Kind:             protocol.MethodCompletion,
 			Detail:           "macro",
 			InsertText:       name + "($1, $2)",
-			InsertTextFormat: protocol.InsertTextFormatSnippet,
+			InsertTextFormat: completionSnippetFormat(),
 		})
 	}
 	return items
@@ -793,11 +793,11 @@ func celGlobalCompletionItems(celEnv *cel.Env, expectedType *types.Type) []proto
 
 		items = append(items, protocol.CompletionItem{
 			Label:            name,
-			Kind:             protocol.CompletionItemKindFunction,
+			Kind:             protocol.FunctionCompletion,
 			Detail:           celGlobalFunctionDetail(fn),
-			Documentation:    fn.Description(),
+			Documentation:    completionDoc(fn.Description()),
 			InsertText:       name + "($1)",
-			InsertTextFormat: protocol.InsertTextFormatSnippet,
+			InsertTextFormat: completionSnippetFormat(),
 		})
 	}
 	slices.SortFunc(items, func(a, b protocol.CompletionItem) int {
@@ -827,10 +827,10 @@ func celMacroCompletionItems(celEnv *cel.Env) []protocol.CompletionItem {
 
 		items = append(items, protocol.CompletionItem{
 			Label:            name,
-			Kind:             protocol.CompletionItemKindFunction,
+			Kind:             protocol.FunctionCompletion,
 			Detail:           "macro",
 			InsertText:       name + "($1)",
-			InsertTextFormat: protocol.InsertTextFormatSnippet,
+			InsertTextFormat: completionSnippetFormat(),
 		})
 	}
 	slices.SortFunc(items, func(a, b protocol.CompletionItem) int {
@@ -855,7 +855,7 @@ func celKeywordCompletionItems(celEnv *cel.Env, expectedType *types.Type) []prot
 			if expectedType == nil {
 				items = append(items, protocol.CompletionItem{
 					Label:  kw,
-					Kind:   protocol.CompletionItemKindVariable,
+					Kind:   protocol.VariableCompletion,
 					Detail: "protovalidate: current message or field",
 				})
 			}
@@ -869,11 +869,11 @@ func celKeywordCompletionItems(celEnv *cel.Env, expectedType *types.Type) []prot
 		if !celTypeMatches(expectedType, kwType) {
 			continue
 		}
-		kind := protocol.CompletionItemKindKeyword
+		kind := protocol.KeywordCompletion
 		detail := kwType.String()
 		if kw == "now" {
 			// "now" is a protovalidate runtime variable, not a literal keyword.
-			kind = protocol.CompletionItemKindVariable
+			kind = protocol.VariableCompletion
 			detail = "protovalidate: current evaluation timestamp"
 		}
 		items = append(items, protocol.CompletionItem{

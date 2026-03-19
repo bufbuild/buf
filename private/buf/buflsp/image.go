@@ -21,9 +21,9 @@ import (
 
 	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/source"
-	"go.lsp.dev/protocol"
 )
 
 // buildImage builds a Buf Image for the given path using the new experimental compiler.

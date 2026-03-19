@@ -20,11 +20,11 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufformat"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 func TestFormatting(t *testing.T) {
@@ -59,7 +59,7 @@ func TestFormatting(t *testing.T) {
 			require.NoError(t, err)
 			clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
 			var textEdits []protocol.TextEdit
-			_, formatErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentFormatting, protocol.DocumentFormattingParams{
+			formatErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentFormatting, protocol.DocumentFormattingParams{
 				TextDocument: protocol.TextDocumentIdentifier{
 					URI: testURI,
 				},

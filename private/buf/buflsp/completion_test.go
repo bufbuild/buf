@@ -19,9 +19,9 @@ import (
 	"testing"
 
 	"buf.build/go/standard/xslices"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 func TestCompletion(t *testing.T) {
@@ -133,7 +133,7 @@ func TestCompletion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			var completionList *protocol.CompletionList
-			_, completionErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
+			completionErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
 						URI: testURI,
@@ -193,9 +193,7 @@ message User {
 			Version: 2,
 		},
 		ContentChanges: []protocol.TextDocumentContentChangeEvent{
-			{
-				Text: updatedContent,
-			},
+			{Value: protocol.TextDocumentContentChangeWholeDocument{Text: updatedContent}},
 		},
 	})
 	require.NoError(t, err)
@@ -203,7 +201,7 @@ message User {
 	// Now request completions at the position where we just inserted "str"
 	// This should return completions for "string" and other types starting with "str"
 	var completionList *protocol.CompletionList
-	_, completionErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
+	completionErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
 		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 			TextDocument: protocol.TextDocumentIdentifier{
 				URI: testURI,
@@ -294,7 +292,7 @@ func TestCompletionMaps(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			var completionList *protocol.CompletionList
-			_, completionErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
+			completionErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
 						URI: testURI,
@@ -489,7 +487,7 @@ func TestCompletionOptions(t *testing.T) {
 
 			// Request completions at the specified position in the static file
 			var completionList *protocol.CompletionList
-			_, completionErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
+			completionErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
 						URI: testURI,

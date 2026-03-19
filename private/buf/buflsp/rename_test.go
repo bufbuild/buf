@@ -21,9 +21,9 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/buflsp"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 func TestRename(t *testing.T) {
@@ -301,15 +301,13 @@ func TestRename(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			var workspaceEdit protocol.WorkspaceEdit
-			_, renameErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentRename, protocol.RenameParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: tt.targetURI,
-					},
-					Position: protocol.Position{
-						Line:      tt.line,
-						Character: tt.character,
-					},
+			renameErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentRename, protocol.RenameParams{
+				TextDocument: protocol.TextDocumentIdentifier{
+					URI: tt.targetURI,
+				},
+				Position: protocol.Position{
+					Line:      tt.line,
+					Character: tt.character,
 				},
 				NewName: tt.newName,
 			}, &workspaceEdit)
@@ -506,7 +504,7 @@ func TestPrepareRename(t *testing.T) {
 			}
 
 			var rnge *protocol.Range
-			_, prepareErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentPrepareRename, protocol.PrepareRenameParams{
+			prepareErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentPrepareRename, protocol.PrepareRenameParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
 						URI: targetURI,

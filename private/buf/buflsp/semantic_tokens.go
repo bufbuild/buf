@@ -17,6 +17,7 @@ package buflsp
 import (
 	"slices"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/experimental/seq"
@@ -24,7 +25,6 @@ import (
 	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
 	"github.com/google/cel-go/cel"
-	"go.lsp.dev/protocol"
 )
 
 // The subset of SemanticTokenTypes that we support.
@@ -64,28 +64,28 @@ var (
 	// These slices must match the order of the indices in the above const blocks.
 	// We use protocol constants where available.
 	semanticTypeLegend = []string{
-		string(protocol.SemanticTokenProperty),
-		string(protocol.SemanticTokenStruct),
-		string(protocol.SemanticTokenVariable),
-		string(protocol.SemanticTokenEnum),
-		string(protocol.SemanticTokenEnumMember),
-		string(protocol.SemanticTokenInterface),
-		string(protocol.SemanticTokenMethod),
-		string(protocol.SemanticTokenFunction),
-		"decorator", // Added in LSP 3.17.0; not in our protocol library yet.
-		string(protocol.SemanticTokenMacro),
-		string(protocol.SemanticTokenNamespace),
-		string(protocol.SemanticTokenKeyword),
-		string(protocol.SemanticTokenModifier),
-		string(protocol.SemanticTokenComment),
-		string(protocol.SemanticTokenString),
-		string(protocol.SemanticTokenNumber),
-		string(protocol.SemanticTokenType),
-		string(protocol.SemanticTokenOperator),
+		string(protocol.PropertyType),
+		string(protocol.StructType),
+		string(protocol.VariableType),
+		string(protocol.EnumType),
+		string(protocol.EnumMemberType),
+		string(protocol.InterfaceType),
+		string(protocol.MethodType),
+		string(protocol.FunctionType),
+		string(protocol.DecoratorType),
+		string(protocol.MacroType),
+		string(protocol.NamespaceType),
+		string(protocol.KeywordType),
+		string(protocol.ModifierType),
+		string(protocol.CommentType),
+		string(protocol.StringType),
+		string(protocol.NumberType),
+		string(protocol.TypeType),
+		string(protocol.OperatorType),
 	}
 	semanticModifierLegend = []string{
-		string(protocol.SemanticTokenModifierDeprecated),
-		string(protocol.SemanticTokenModifierDefaultLibrary),
+		string(protocol.ModDeprecated),
+		string(protocol.ModDefaultLibrary),
 	}
 )
 
