@@ -48,7 +48,7 @@ var (
 	}
 	testStorageosProvider = storageos.NewProvider(storageos.ProviderWithSymlinks())
 	testArchiveReader     = githubtesting.NewArchiveReader(
-		xslog.NopLogger,
+		slog.New(slog.DiscardHandler),
 		testStorageosProvider,
 		testHTTPClient,
 	)
@@ -130,7 +130,7 @@ func GetProtocFilePathsErr(ctx context.Context, dirPath string, limit int) ([]st
 	// impact on our dependency tree.
 	moduleSet, err := bufprotoc.NewModuleSetForProtoc(
 		ctx,
-		xslog.NopLogger,
+		slog.New(slog.DiscardHandler),
 		testStorageosProvider,
 		[]string{dirPath},
 		nil,

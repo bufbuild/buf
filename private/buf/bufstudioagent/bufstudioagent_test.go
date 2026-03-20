@@ -138,7 +138,7 @@ func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
 func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 	agentServer := httptest.NewTLSServer(
 		NewHandler(
-			xslog.NopLogger,
+			slog.New(slog.DiscardHandler),
 			"https://example.buf.build",
 			upstreamServer.TLS,
 			map[string]struct{}{"forbidden-header": {}},
