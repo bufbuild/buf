@@ -1252,7 +1252,7 @@ func completeURL(cmd *cobra.Command, _ []string, toComplete string) ([]string, c
 	// 1. Explicit --schema flag.
 	schemas, _ := cmd.Flags().GetStringSlice(schemaFlagName)
 	if len(schemas) > 0 {
-		return completeURLFromSchema(ctx, schemas, baseURL, rawPath)
+		return completeURLFromSchema(ctx, schemas, baseURL, rawPath, "--schema")
 	}
 
 	// 2. Live server reflection.
@@ -1267,7 +1267,7 @@ func completeURL(cmd *cobra.Command, _ []string, toComplete string) ([]string, c
 	// buf.work.yaml). This covers the common local-dev case: the user is working
 	// inside a buf workspace and hasn't started the server yet, or the server
 	// doesn't expose reflection.
-	return completeURLFromSchema(ctx, []string{"."}, baseURL, rawPath)
+	return completeURLFromSchema(ctx, []string{"."}, baseURL, rawPath, "local module")
 }
 
 // completeURLFromReflection attempts server reflection against baseURL and
@@ -1305,6 +1305,7 @@ func completeURLFromReflection(ctx context.Context, httpClient connect.HTTPClien
 		func(svcName string) (protoreflect.ServiceDescriptor, error) {
 			return bufcurl.ResolveServiceDescriptor(reflectionResolver, svcName)
 		},
+		"reflection",
 	)
 	return completions, directive, true
 }
@@ -1312,19 +1313,31 @@ func completeURLFromReflection(ctx context.Context, httpClient connect.HTTPClien
 // completeURLFromSchema builds a resolver from the given schemas using the full
 // schema-loading stack (BSR auth, caching, etc.) and uses it to complete
 // service and method name path components.
-func completeURLFromSchema(ctx context.Context, schemas []string, baseURL, rawPath string) ([]string, cobra.ShellCompDirective) {
+func completeURLFromSchema(ctx context.Context, schemas []string, baseURL, rawPath, source string) ([]string, cobra.ShellCompDirective) {
+	// Only surface errors when the user explicitly provided a source (e.g.
+	// --schema). The CWD fallback ("local module") is silent because there may
+	// simply be no buf.yaml in the current directory.
+	reportError := func(format string, args ...any) {
+		if source != "local module" {
+			cobra.CompErrorln(fmt.Sprintf("buf curl completion: "+format, args...))
+		}
+	}
+
 	baseContainer, err := app.NewContainerForOS()
 	if err != nil {
+		reportError("%v", err)
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 	nameContainer, err := appext.NewNameContainer(baseContainer, "buf")
 	if err != nil {
+		reportError("%v", err)
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 	// Discard log output during shell completion.
 	container := appext.NewContainer(nameContainer, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	controller, err := bufcli.NewController(container)
 	if err != nil {
+		reportError("%v", err)
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
@@ -1332,6 +1345,7 @@ func completeURLFromSchema(ctx context.Context, schemas []string, baseURL, rawPa
 	for _, schema := range schemas {
 		image, err := controller.GetImage(ctx, schema)
 		if err != nil {
+			reportError("failed to load schema %q: %v", schema, err)
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 		resolvers = append(resolvers, bufcurl.ResolverForImage(image))
@@ -1340,6 +1354,7 @@ func completeURLFromSchema(ctx context.Context, schemas []string, baseURL, rawPa
 
 	serviceNames, err := resolver.ListServices()
 	if err != nil {
+		reportError("%v", err)
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 	return completePathFromServices(
@@ -1349,6 +1364,7 @@ func completeURLFromSchema(ctx context.Context, schemas []string, baseURL, rawPa
 		func(svcName string) (protoreflect.ServiceDescriptor, error) {
 			return bufcurl.ResolveServiceDescriptor(resolver, svcName)
 		},
+		source,
 	)
 }
 
@@ -1372,12 +1388,18 @@ func completePathFromServices(
 	serviceNames []protoreflect.FullName,
 	rawPath string,
 	getServiceDescriptor func(serviceName string) (protoreflect.ServiceDescriptor, error),
+	source string,
 ) ([]string, cobra.ShellCompDirective) {
 	serviceName, methodPrefix, hasSlash := strings.Cut(rawPath, "/")
 	if hasSlash {
 		// Method completion.
 		desc, err := getServiceDescriptor(serviceName)
 		if err != nil {
+			// The service name was already listed, so failing to fetch its
+			// descriptor is unexpected — surface it regardless of source.
+			if source != "" {
+				cobra.CompErrorln(fmt.Sprintf("buf curl completion: failed to resolve service %q: %v", serviceName, err))
+			}
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 		methods := desc.Methods()
@@ -1385,7 +1407,11 @@ func completePathFromServices(
 		for i := range methods.Len() {
 			name := string(methods.Get(i).Name())
 			if strings.HasPrefix(name, methodPrefix) {
-				completions = append(completions, baseURL+"/"+serviceName+"/"+name)
+				item := baseURL + "/" + serviceName + "/" + name
+				if source != "" {
+					item += "\t" + source
+				}
+				completions = append(completions, item)
 			}
 		}
 		slices.Sort(completions)
@@ -1428,7 +1454,13 @@ func completePathFromServices(
 		}
 		completions := make([]string, 0, len(seen))
 		for p := range seen {
-			completions = append(completions, baseURL+"/"+p)
+			item := baseURL + "/" + p
+			// Add source description only to terminal service names (ending with "/"),
+			// not to intermediate package segments (ending with ".").
+			if source != "" && strings.HasSuffix(p, "/") {
+				item += "\t" + source
+			}
+			completions = append(completions, item)
 		}
 		slices.Sort(completions)
 		// NoSpace so the shell does not insert a space after a trailing dot or

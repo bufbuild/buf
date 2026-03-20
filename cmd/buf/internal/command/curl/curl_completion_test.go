@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -161,7 +163,7 @@ func TestCompletePathFromServices_ServiceHierarchy(t *testing.T) {
 		t.Parallel()
 		// Both services share the unambiguous prefix "acme.", so the completer
 		// advances past it automatically and returns the two diverging branches.
-		completions, directive := completePathFromServices(base, testServices, "", noDesc)
+		completions, directive := completePathFromServices(base, testServices, "", noDesc, "")
 		assert.Equal(t, cobra.ShellCompDirectiveNoSpace|cobra.ShellCompDirectiveNoFileComp, directive)
 		assert.Equal(t, []string{base + "/acme.bar.", base + "/acme.foo."}, completions)
 	})
@@ -169,7 +171,7 @@ func TestCompletePathFromServices_ServiceHierarchy(t *testing.T) {
 	t.Run("acme. prefix shows same fork", func(t *testing.T) {
 		t.Parallel()
 		// Explicitly typing "acme." produces the same result as the empty prefix.
-		completions, directive := completePathFromServices(base, testServices, "acme.", noDesc)
+		completions, directive := completePathFromServices(base, testServices, "acme.", noDesc, "")
 		assert.Equal(t, cobra.ShellCompDirectiveNoSpace|cobra.ShellCompDirectiveNoFileComp, directive)
 		assert.Equal(t, []string{base + "/acme.bar.", base + "/acme.foo."}, completions)
 	})
@@ -178,30 +180,43 @@ func TestCompletePathFromServices_ServiceHierarchy(t *testing.T) {
 		t.Parallel()
 		// "acme.foo." has only one service beneath it, so the completer skips
 		// the intermediate "v1." segment and lands on the full service name.
-		completions, directive := completePathFromServices(base, testServices, "acme.foo.", noDesc)
+		completions, directive := completePathFromServices(base, testServices, "acme.foo.", noDesc, "")
 		assert.Equal(t, cobra.ShellCompDirectiveNoSpace|cobra.ShellCompDirectiveNoFileComp, directive)
 		assert.Equal(t, []string{base + "/acme.foo.v1.FooService/"}, completions)
 	})
 
 	t.Run("full service name adds trailing slash", func(t *testing.T) {
 		t.Parallel()
-		completions, directive := completePathFromServices(base, testServices, "acme.foo.v1.", noDesc)
+		completions, directive := completePathFromServices(base, testServices, "acme.foo.v1.", noDesc, "")
 		assert.Equal(t, cobra.ShellCompDirectiveNoSpace|cobra.ShellCompDirectiveNoFileComp, directive)
 		assert.Equal(t, []string{base + "/acme.foo.v1.FooService/"}, completions)
 	})
 
 	t.Run("exact service name without trailing slash adds slash", func(t *testing.T) {
 		t.Parallel()
-		completions, directive := completePathFromServices(base, testServices, "acme.foo.v1.FooService", noDesc)
+		completions, directive := completePathFromServices(base, testServices, "acme.foo.v1.FooService", noDesc, "")
 		assert.Equal(t, cobra.ShellCompDirectiveNoSpace|cobra.ShellCompDirectiveNoFileComp, directive)
 		assert.Equal(t, []string{base + "/acme.foo.v1.FooService/"}, completions)
 	})
 
 	t.Run("no match returns empty list", func(t *testing.T) {
 		t.Parallel()
-		completions, directive := completePathFromServices(base, testServices, "notexist.", noDesc)
+		completions, directive := completePathFromServices(base, testServices, "notexist.", noDesc, "")
 		assert.Equal(t, cobra.ShellCompDirectiveNoSpace|cobra.ShellCompDirectiveNoFileComp, directive)
 		assert.Empty(t, completions)
+	})
+
+	t.Run("source appended to terminal service names only", func(t *testing.T) {
+		t.Parallel()
+		// Intermediate package segments get no description; only the terminal
+		// service name (ending with "/") gets the source description.
+		forkCompletions, _ := completePathFromServices(base, testServices, "acme.", noDesc, "test-source")
+		assert.Equal(t, []string{base + "/acme.bar.", base + "/acme.foo."}, forkCompletions,
+			"intermediate package segments should have no description")
+
+		terminalCompletions, _ := completePathFromServices(base, testServices, "acme.foo.", noDesc, "test-source")
+		assert.Equal(t, []string{base + "/acme.foo.v1.FooService/\ttest-source"}, terminalCompletions,
+			"terminal service name should have description")
 	})
 }
 
@@ -226,7 +241,7 @@ func TestCompletePathFromServices_Methods(t *testing.T) {
 
 	t.Run("all methods listed after trailing slash", func(t *testing.T) {
 		t.Parallel()
-		completions, directive := completePathFromServices(base, testServices, "acme.foo.v1.FooService/", getDesc)
+		completions, directive := completePathFromServices(base, testServices, "acme.foo.v1.FooService/", getDesc, "")
 		assert.Equal(t, cobra.ShellCompDirectiveNoFileComp, directive)
 		assert.Equal(t, []string{
 			base + "/acme.foo.v1.FooService/GetFoo",
@@ -236,14 +251,14 @@ func TestCompletePathFromServices_Methods(t *testing.T) {
 
 	t.Run("method prefix filters results", func(t *testing.T) {
 		t.Parallel()
-		completions, directive := completePathFromServices(base, testServices, "acme.foo.v1.FooService/List", getDesc)
+		completions, directive := completePathFromServices(base, testServices, "acme.foo.v1.FooService/List", getDesc, "")
 		assert.Equal(t, cobra.ShellCompDirectiveNoFileComp, directive)
 		assert.Equal(t, []string{base + "/acme.foo.v1.FooService/ListFoos"}, completions)
 	})
 
 	t.Run("non-matching method prefix returns empty", func(t *testing.T) {
 		t.Parallel()
-		completions, directive := completePathFromServices(base, testServices, "acme.foo.v1.FooService/Delete", getDesc)
+		completions, directive := completePathFromServices(base, testServices, "acme.foo.v1.FooService/Delete", getDesc, "")
 		assert.Equal(t, cobra.ShellCompDirectiveNoFileComp, directive)
 		assert.Empty(t, completions)
 	})
@@ -253,10 +268,21 @@ func TestCompletePathFromServices_Methods(t *testing.T) {
 		errDesc := func(string) (protoreflect.ServiceDescriptor, error) {
 			return nil, fmt.Errorf("not found")
 		}
-		completions, directive := completePathFromServices(base, testServices, "acme.foo.v1.FooService/", errDesc)
+		completions, directive := completePathFromServices(base, testServices, "acme.foo.v1.FooService/", errDesc, "")
 		assert.Equal(t, cobra.ShellCompDirectiveNoFileComp, directive)
 		assert.Nil(t, completions)
 	})
+
+	t.Run("source appended to method completions", func(t *testing.T) {
+		t.Parallel()
+		completions, directive := completePathFromServices(base, testServices, "acme.foo.v1.FooService/", getDesc, "test-source")
+		assert.Equal(t, cobra.ShellCompDirectiveNoFileComp, directive)
+		assert.Equal(t, []string{
+			base + "/acme.foo.v1.FooService/GetFoo\ttest-source",
+			base + "/acme.foo.v1.FooService/ListFoos\ttest-source",
+		}, completions)
+	})
+
 }
 
 // TestCompleteURL_ReflectionServer verifies end-to-end completion via a real
@@ -282,7 +308,7 @@ func TestCompleteURL_ReflectionServer(t *testing.T) {
 		// "acme.foo." has only one service; intermediate "v1." is skipped.
 		completions, directive := completeURL(cmd, nil, server.URL+"/acme.foo.")
 		assert.Equal(t, cobra.ShellCompDirectiveNoSpace|cobra.ShellCompDirectiveNoFileComp, directive)
-		assert.Equal(t, []string{server.URL + "/acme.foo.v1.FooService/"}, completions)
+		assert.Equal(t, []string{server.URL + "/acme.foo.v1.FooService/\treflection"}, completions)
 	})
 
 	t.Run("lists methods for a service", func(t *testing.T) {
@@ -290,8 +316,8 @@ func TestCompleteURL_ReflectionServer(t *testing.T) {
 		completions, directive := completeURL(cmd, nil, server.URL+"/acme.foo.v1.FooService/")
 		assert.Equal(t, cobra.ShellCompDirectiveNoFileComp, directive)
 		assert.Equal(t, []string{
-			server.URL + "/acme.foo.v1.FooService/GetFoo",
-			server.URL + "/acme.foo.v1.FooService/ListFoos",
+			server.URL + "/acme.foo.v1.FooService/GetFoo\treflection",
+			server.URL + "/acme.foo.v1.FooService/ListFoos\treflection",
 		}, completions)
 	})
 
@@ -368,5 +394,42 @@ func TestMakeCompletionHTTPClient(t *testing.T) {
 		client, ok := makeCompletionHTTPClient(cmd, false)
 		assert.True(t, ok)
 		assert.NotNil(t, client)
+	})
+}
+
+// TestCompletePathFromServices_ErrorReporting verifies that descriptor lookup
+// errors are written to BASH_COMP_DEBUG_FILE when a source is set, and are
+// silent when source is empty. These tests modify an environment variable so
+// they cannot be run in parallel.
+func TestCompletePathFromServices_ErrorReporting(t *testing.T) {
+	const base = "https://api.example.com"
+	errDesc := func(string) (protoreflect.ServiceDescriptor, error) {
+		return nil, fmt.Errorf("lookup failed")
+	}
+
+	t.Run("error logged when source is set", func(t *testing.T) {
+		debugFile := filepath.Join(t.TempDir(), "comp_debug.log")
+		t.Setenv("BASH_COMP_DEBUG_FILE", debugFile)
+
+		completions, directive := completePathFromServices(base, testServices, "acme.foo.v1.FooService/", errDesc, "reflection")
+		assert.Equal(t, cobra.ShellCompDirectiveNoFileComp, directive)
+		assert.Nil(t, completions)
+
+		contents, err := os.ReadFile(debugFile)
+		require.NoError(t, err, "expected error to be written to debug file")
+		assert.Contains(t, string(contents), "acme.foo.v1.FooService")
+		assert.Contains(t, string(contents), "lookup failed")
+	})
+
+	t.Run("error silent when source is empty", func(t *testing.T) {
+		debugFile := filepath.Join(t.TempDir(), "comp_debug.log")
+		t.Setenv("BASH_COMP_DEBUG_FILE", debugFile)
+
+		completions, directive := completePathFromServices(base, testServices, "acme.foo.v1.FooService/", errDesc, "")
+		assert.Equal(t, cobra.ShellCompDirectiveNoFileComp, directive)
+		assert.Nil(t, completions)
+
+		_, err := os.ReadFile(debugFile)
+		assert.True(t, os.IsNotExist(err), "debug file should not be created when source is empty")
 	})
 }
