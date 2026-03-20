@@ -17,12 +17,12 @@ package buftesting
 import (
 	"context"
 	"io"
+	"log/slog"
 	"net/http"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/buf/bufprotoc"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/github/githubtesting"
