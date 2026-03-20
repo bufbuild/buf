@@ -282,7 +282,6 @@ func TestCompletePathFromServices_Methods(t *testing.T) {
 			base + "/acme.foo.v1.FooService/ListFoos\ttest-source",
 		}, completions)
 	})
-
 }
 
 // TestCompleteURL_ReflectionServer verifies end-to-end completion via a real
