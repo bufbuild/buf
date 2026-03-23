@@ -16,6 +16,7 @@ package bufimage_test
 
 import (
 	"errors"
+	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -267,7 +268,10 @@ func TestCyclicImport(t *testing.T) {
 		t,
 		"cyclicimport",
 		false,
-		filepath.FromSlash("testdata/cyclicimport/b/b.proto:5:1:detected cyclic import while importing \"a/a.proto\""),
+		fmt.Sprintf(
+			`%s:5:1:detected cyclic import while importing "a/a.proto"`,
+			filepath.FromSlash("testdata/cyclicimport/b/b.proto"),
+		),
 	)
 }
 
