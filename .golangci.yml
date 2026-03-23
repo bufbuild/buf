@@ -409,6 +409,61 @@ linters:
         # which are not an actual risk of overflow.
         path: private/bufpkg/bufimage/bufimageutil/image_filter.go
         text: "G115:"
+      - linters:
+          - gosec
+        # G115: int32->uint32 reinterpretation (same width, no data loss) passed
+        # to binary.LittleEndian.PutUint32 to encode protobuf source path elements
+        # as a byte-string map key. gosec flags same-width signed->unsigned casts.
+        path: private/bufpkg/bufimage/bufimagemodify/internal/marksweeper.go
+        text: "G115:"
+      - linters:
+          - gosec
+        # G115: same int32->uint32 reinterpretation as marksweeper.go above.
+        path: private/bufpkg/bufprotosource/location_store.go
+        text: "G115:"
+      - linters:
+          - gosec
+        # G115: uintptr->int conversion for passing a terminal file descriptor
+        # to term.IsTerminal/term.ReadPassword, which require int. Safe on all
+        # supported platforms; fd values fit in int.
+        path: private/buf/bufcli/prompt.go
+        text: "G115:"
+      - linters:
+          - gosec
+        # G115: uintptr->int conversion to pass a writer's file descriptor to
+        # term.IsTerminal. Safe on all supported platforms.
+        path: private/pkg/slogapp/console.go
+        text: "G115:"
+      - linters:
+          - gosec
+        # G602: false positive — the loop index i is bounded by the length of
+        # both slices, which are verified equal before the loop.
+        path: private/bufpkg/bufimage/build_image_test.go
+        text: "G602:"
+      - linters:
+          - gosec
+        # G602: false positive — the loop index i is bounded by the length of
+        # both slices, which are verified equal before the loop.
+        path: private/pkg/slogapp/console_test.go
+        text: "G602:"
+      - linters:
+          - gosec
+        # G117: the Password field is intentionally marshaled — this struct
+        # exists specifically to encode Docker registry credentials for the
+        # X-Registry-Auth header.
+        path: private/bufpkg/bufremoteplugin/bufremoteplugindocker/registry_auth_config.go
+        text: "G117:"
+      - linters:
+          - gosec
+        # G117: test for registry_auth_config.go; same reasoning as above.
+        path: private/bufpkg/bufremoteplugin/bufremoteplugindocker/registry_auth_config_test.go
+        text: "G117:"
+      - linters:
+          - gosec
+        # G703: the filename comes from walking the filesystem with os.Stat,
+        # not from user input, so path traversal is not a realistic risk here.
+        path: private/pkg/licenseheader/cmd/license-header/main.go
+        text: "G703:"
 
 issues:
   max-same-issues: 0

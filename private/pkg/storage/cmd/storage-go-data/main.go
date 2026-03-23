@@ -154,7 +154,7 @@ var (
 			n := min(sliceLength, len(data))
 			var accum strings.Builder
 			for _, elem := range data[:n] {
-				accum.WriteString(fmt.Sprintf("0x%02x,", elem))
+				fmt.Fprintf(&accum, "0x%02x,", elem)
 			}
 			_, _ = buffer.WriteString(accum.String())
 			_, _ = buffer.WriteString("\n")
