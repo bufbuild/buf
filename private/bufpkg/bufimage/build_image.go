@@ -108,6 +108,9 @@ func compileImage(
 			Workspace: source.NewWorkspace(paths...),
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	var fileAnnotations []bufanalysis.FileAnnotation
 	for _, diagnostic := range diagnostics.Diagnostics {
