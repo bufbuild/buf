@@ -170,13 +170,13 @@ func TestInvalidNonexistentImportFromDirectDep(t *testing.T) {
 		t, nil, bufctl.ExitCodeFileAnnotation,
 		fmt.Sprintf(
 			`error: imported file does not exist
---> %s:6:1
+--> %[1]s:6:1
 |
 6 | import "people/v1/people_nonexistent.proto"; // but nonexistent file in explicit direct import
 | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ imported here
 
 error: cannot find `+"`people.v1.Person2`"+` in this scope
---> %s:10:3
+--> %[1]s:10:3
 |
 10 |   people.v1.Person2 person2 = 2;
 |   ^^^^^^^^^^^^^^^^^ not found in this scope
