@@ -176,7 +176,7 @@ func TestInvalidNonexistentImportFromDirectDep(t *testing.T) {
 | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ imported here
 
 error: cannot find `+"`people.v1.Person2`"+` in this scope
---> testdata/imports/failure/students/students/v1/students.proto:10:3
+--> %s:10:3
 |
 10 |   people.v1.Person2 person2 = 2;
 |   ^^^^^^^^^^^^^^^^^ not found in this scope
