@@ -32,13 +32,13 @@ func TestWorkspaceSymlinkFail(t *testing.T) {
 		"v2/symlink",
 	} {
 		symlinkImportError := fmt.Sprintf(`error: imported file does not exist
---> %[1]s/b/b.proto:5:1
+--> %[1]s:5:1
 |
 5 | import "c.proto";
 | ^^^^^^^^^^^^^^^^^ imported here
 
 error: cannot find %[2]s in this scope
---> %[1]s/b/b.proto:8:5
+--> %[1]s:8:5
 |
 8 |     c.C c = 1;
 |     ^^^ not found in this scope
@@ -46,7 +46,7 @@ error: cannot find %[2]s in this scope
 = help: the full name of this scope is %[3]s
 
 encountered 2 errors`,
-			filepath.FromSlash("testdata/workspace/fail/"+dirPath),
+			filepath.FromSlash("testdata/workspace/fail/"+dirPath+"/b/b.proto"),
 			"`c.C`",
 			"`b.B`",
 		)

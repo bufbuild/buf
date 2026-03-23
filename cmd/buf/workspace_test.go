@@ -142,13 +142,13 @@ func TestWorkspaceDir(t *testing.T) {
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 		)
 		dirImportError := fmt.Sprintf(`error: imported file does not exist
---> %[1]s/proto/rpc.proto:5:1
+--> %[1]s:5:1
 |
 5 | import "request.proto";
 | ^^^^^^^^^^^^^^^^^^^^^^^ imported here
 
 error: cannot find %[2]s in this scope
---> %[1]s/proto/rpc.proto:8:5
+--> %[1]s:8:5
 |
 8 |     request.Request req = 1;
 |     ^^^^^^^^^^^^^^^ not found in this scope
@@ -156,7 +156,7 @@ error: cannot find %[2]s in this scope
 = help: the full name of this scope is %[3]s
 
 encountered 2 errors`,
-			filepath.FromSlash("testdata/workspace/success/"+baseDirPath),
+			filepath.FromSlash("testdata/workspace/success/"+baseDirPath+"/proto/rpc.proto"),
 			"`request.Request`",
 			"`example.RPC`",
 		)
@@ -386,13 +386,13 @@ func TestWorkspaceDetached(t *testing.T) {
 		// was discovered, therefore you build as if proto was the input directory, which results in
 		// request.proto not existing as an import.
 		detachedImportError := fmt.Sprintf(`error: imported file does not exist
---> %[1]s/proto/rpc.proto:5:1
+--> %[1]s:5:1
 |
 5 | import "request.proto";
 | ^^^^^^^^^^^^^^^^^^^^^^^ imported here
 
 error: cannot find %[2]s in this scope
---> %[1]s/proto/rpc.proto:8:5
+--> %[1]s:8:5
 |
 8 |     request.Request req = 1;
 |     ^^^^^^^^^^^^^^^ not found in this scope
@@ -400,7 +400,7 @@ error: cannot find %[2]s in this scope
 = help: the full name of this scope is %[3]s
 
 encountered 2 errors`,
-			filepath.FromSlash("testdata/workspace/success/"+dirPath),
+			filepath.FromSlash("testdata/workspace/success/"+dirPath+"/proto/rpc.proto"),
 			"`request.Request`",
 			"`example.RPC`",
 		)

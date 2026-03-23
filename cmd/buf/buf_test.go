@@ -4493,19 +4493,20 @@ func TestProtoFileNoWorkspaceOrModule(t *testing.T) {
 		nil,
 		bufctl.ExitCodeFileAnnotation,
 		"", // no stdout
-		`warning: missing `+"`package`"+` declaration
---> testdata/protofileref/noworkspaceormodule/fail/import.proto
+		fmt.Sprintf(
+			`warning: missing `+"`package`"+` declaration
+--> %[1]s
 = note: not explicitly specifying a package places the file in the unnamed
 package; using it strongly is discouraged
 
 error: imported file does not exist
---> testdata/protofileref/noworkspaceormodule/fail/import.proto:3:1
+--> %[1]s:3:1
 |
 3 | import "google/type/date.proto";
 | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ imported here
 
 error: cannot find `+"`google.type.Date`"+` in this scope
---> testdata/protofileref/noworkspaceormodule/fail/import.proto:6:3
+--> %[1]s:6:3
 |
 6 |   google.type.Date date = 1;
 |   ^^^^^^^^^^^^^^^^ not found in this scope
@@ -4513,6 +4514,8 @@ error: cannot find `+"`google.type.Date`"+` in this scope
 = help: the full name of this scope is `+"`A`"+`
 
 encountered 2 errors and 1 warning`,
+			filepath.FromSlash("testdata/protofileref/noworkspaceormodule/fail/import.proto"),
+		),
 		"build",
 		filepath.Join("testdata", "protofileref", "noworkspaceormodule", "fail", "import.proto"),
 	)
