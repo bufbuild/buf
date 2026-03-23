@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appcmd/appcmdtesting"
@@ -369,6 +370,25 @@ func TestOutputFlag(t *testing.T) {
 		_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
 		require.NoError(t, err)
 	}
+}
+
+func TestSkipWriteWhenUnchanged(t *testing.T) {
+	t.Parallel()
+	tempDirPath := t.TempDir()
+	template := filepath.Join("testdata", "simple", "buf.gen.yaml")
+	input := filepath.Join("testdata", "simple")
+	outFile := filepath.Join(tempDirPath, "java", "a", "v1", "A.java")
+
+	testRunSuccess(t, "--output", tempDirPath, "--template", template, input)
+
+	past := time.Now().Add(-time.Hour)
+	require.NoError(t, os.Chtimes(outFile, past, past))
+
+	testRunSuccess(t, "--output", tempDirPath, "--template", template, input)
+
+	info, err := os.Stat(outFile)
+	require.NoError(t, err)
+	require.Equal(t, past.Truncate(time.Second), info.ModTime().Truncate(time.Second))
 }
 
 func TestProtoFileRefIncludePackageFiles(t *testing.T) {

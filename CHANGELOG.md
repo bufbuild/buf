@@ -4,6 +4,7 @@
 
 - Add support for `--rbs_out` as a `protoc_builtin` plugin (requires protoc v34.0+).
 - Add relevant links from CEL LSP hover documentation to either <celbyexample.com> or <protovalidate.com>
+- Skip writing unchanged output files in `buf generate` to preserve modification times
 
 ## [v1.66.1] - 2026-03-09
 
