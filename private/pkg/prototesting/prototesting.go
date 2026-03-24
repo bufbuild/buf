@@ -118,12 +118,12 @@ func RunProtoc(
 	if err != nil {
 		return err
 	}
-	if resolved, err := filepath.EvalSymlinks(protocBinPath); err == nil {
-		protocBinPath = resolved
-	}
 	protocIncludePath, err := getProtocIncludePath(protocBinPath)
 	if err != nil {
 		return err
+	}
+	if resolved, err := filepath.EvalSymlinks(protocBinPath); err == nil {
+		protocBinPath = resolved
 	}
 	args := []string{"-I", protocIncludePath}
 	for _, root := range roots {
