@@ -51,7 +51,7 @@ linters:
       forbid:
         # Use private/pkg/thread.Parallelize
         - pattern: ^errgroup\.
-        # Use private/pkg/standard/xos/xexec
+        # Use buf.build/go/standard/xos/xexec
         - pattern: ^exec\.Cmd$
         - pattern: ^exec\.Command$
         - pattern: ^exec\.CommandContext$
@@ -133,11 +133,6 @@ linters:
         path: cmd/buf/internal/command/alpha/protoc/protoc_test.go
         text: os.Getwd
       - linters:
-          - dogsled
-        # One function call doesn't care about most of the returned destructured values. The
-        # dogsled linter complains about it. (Value of this linter is unclear...)
-        path: cmd/buf/internal/command/curl/curl.go
-      - linters:
           - forbidigo
         # This is a legacy usage of os.Getwd we're not bothering to port yet.
         path: cmd/buf/internal/command/generate/generate_test.go
@@ -155,11 +150,6 @@ linters:
         text: "G101:"
       - linters:
           - gosec
-        # G404 checks for use of the ordinary non-CPRNG.
-        path: private/buf/buflsp/progress.go
-        text: "G404:"
-      - linters:
-          - gosec
         # G115 checks for use of truncating conversions.
         path: private/buf/buflsp/file.go
         text: "G115:"
@@ -172,11 +162,6 @@ linters:
           - gosec
         # G115 checks for use of truncating conversions.
         path: private/buf/buflsp/image.go
-        text: "G115:"
-      - linters:
-          - gosec
-        # G115 checks for use of truncating conversions.
-        path: private/buf/buflsp/report.go
         text: "G115:"
       - linters:
           - gosec
@@ -263,42 +248,15 @@ linters:
         # we actually want to embed a context here
         path: private/bufpkg/bufmodule/module_set_builder.go
       - linters:
-          - containedctx
-        # we actually want to embed a context here
-        path: private/pkg/standard/xos/xexec/process.go
-      - linters:
           - gochecknoinits
         # we actually want to use init here
         path: private/bufpkg/bufmodule/paths.go
-      - linters:
-          - forbidigo
-        # we want to use errgroup here
-        path: private/bufpkg/bufremoteplugin/bufremoteplugindocker/docker.go
-        text: use of `errgroup
-      - linters:
-          - forbidigo
-        # this is one of two files we want to allow exec.Cmd functions in
-        path: private/pkg/standard/xos/xexec/xexec.go
-      - linters:
-          - forbidigo
-        # this is one of two files we want to allow exec.Cmd functions in
-        path: private/pkg/standard/xos/xexec/process.go
-      - linters:
-          - gosec
-        # G204 checks that exec.Command is not called with non-constants.
-        path: private/pkg/standard/xos/xexec/xexec.go
-        text: "G204:"
       - linters:
           - gosec
         # We should be able to use net/http/cgi in a unit test, in addition the CVE mentions
         # only versions of go < 1.6.3 are affected.
         path: private/pkg/git/git_test.go
         text: "G504:"
-      - linters:
-          - wastedassign
-        # netrc/internal is a library largely copied in from an external repository with attribution.
-        # We try to make minimal edits.
-        path: private/pkg/netrc/internal/internal.go
       - linters:
           - forbidigo
         # We cache os.Getwd in osext, osext is the entrypoint.
@@ -310,22 +268,10 @@ linters:
         path: private/pkg/osext/osext.go
         text: os.Chdir
       - linters:
-          - forbidigo
-        # We're going to move xfilepath out.
-        path: private/pkg/standard/xpath/xfilepath/xfilepath.go
-        text: os.Getwd
-      - linters:
           - gochecknoinits
         # protoencoding calls detrand.Disable via go:linkname and and init function. See the comments
         # in the file for more details.
         path: private/pkg/protoencoding/detrand.go
-      - linters:
-          - errcheck
-        # headers.go has casts with values from contexts that should fail if there
-        # is no error, but it would be very unidiomatic to return an error from
-        # the functions that do these casts, and we completely control the
-        # context values within this file
-        path: private/pkg/rpc/headers.go
       - linters:
           - forbidigo
         # we use os.Rename here to rename files in the same directory
@@ -338,10 +284,6 @@ linters:
         # tied to the struct, not passed per-call.
         path: private/buf/buflsp/buflsp.go
       - linters:
-          - containedctx
-        # we actually want to embed a context here
-        path: private/pkg/transport/grpc/grpcclient/client_conn_provider.go
-      - linters:
           - forbidigo
         # we actually want to use errgroup when starting an HTTP server
         path: private/pkg/transport/http/httpserver/httpserver.go
@@ -349,25 +291,10 @@ linters:
           - staticcheck
         text: "ST1005:"
       - linters:
-          - gochecknoinits
-        # we actually want to use this init
-        path: private/usage/usage.go
-      - linters:
-          - staticcheck
-        # We deprecated all the definitions in plugin.proto but we still implement them.
-        text: buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated
-      - linters:
-          - staticcheck
-        # We deprecated all the definitions in generate.proto but we still implement them.
-        text: buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated
-      - linters:
           - staticcheck
         # This greatly simplifies creation of descriptors, and it's safe enough since
         # it's just test code.
         text: GetDeprecatedLegacyJsonFieldConflicts is deprecated
-      - linters:
-          - forcetypeassert
-        path: private/bufpkg/bufimage/source_retention_options_test\.go
       - linters:
           - paralleltest
         # The LsModules tests call chdir and cannot be parallelized.
@@ -477,17 +404,66 @@ linters:
         path: private/bufpkg/bufcheck/bufcheckserver/internal/buflintvalidate/predefined_rules.go
         text: "G115:"
       - linters:
-          - govet
-        # We print command.Short to markdown, which is controlled and set by each command
-        # and should be considered safe.
-        path: private/bufpkg/bufcobra/markdown.go
-        text: "printf: non-constant format string in call to p"
-      - linters:
           - gosec
         # This converts slice indexes in a FileDescriptorProto to int32,
         # which are not an actual risk of overflow.
         path: private/bufpkg/bufimage/bufimageutil/image_filter.go
         text: "G115:"
+      - linters:
+          - gosec
+        # G115: int32->uint32 reinterpretation (same width, no data loss) passed
+        # to binary.LittleEndian.PutUint32 to encode protobuf source path elements
+        # as a byte-string map key. gosec flags same-width signed->unsigned casts.
+        path: private/bufpkg/bufimage/bufimagemodify/internal/marksweeper.go
+        text: "G115:"
+      - linters:
+          - gosec
+        # G115: same int32->uint32 reinterpretation as marksweeper.go above.
+        path: private/bufpkg/bufprotosource/location_store.go
+        text: "G115:"
+      - linters:
+          - gosec
+        # G115: uintptr->int conversion for passing a terminal file descriptor
+        # to term.IsTerminal/term.ReadPassword, which require int. Safe on all
+        # supported platforms; fd values fit in int.
+        path: private/buf/bufcli/prompt.go
+        text: "G115:"
+      - linters:
+          - gosec
+        # G115: uintptr->int conversion to pass a writer's file descriptor to
+        # term.IsTerminal. Safe on all supported platforms.
+        path: private/pkg/slogapp/console.go
+        text: "G115:"
+      - linters:
+          - gosec
+        # G602: false positive — the loop index i is bounded by the length of
+        # both slices, which are verified equal before the loop.
+        path: private/bufpkg/bufimage/build_image_test.go
+        text: "G602:"
+      - linters:
+          - gosec
+        # G602: false positive — the loop index i is bounded by the length of
+        # both slices, which are verified equal before the loop.
+        path: private/pkg/slogapp/console_test.go
+        text: "G602:"
+      - linters:
+          - gosec
+        # G117: the Password field is intentionally marshaled — this struct
+        # exists specifically to encode Docker registry credentials for the
+        # X-Registry-Auth header.
+        path: private/bufpkg/bufremoteplugin/bufremoteplugindocker/registry_auth_config.go
+        text: "G117:"
+      - linters:
+          - gosec
+        # G117: test for registry_auth_config.go; same reasoning as above.
+        path: private/bufpkg/bufremoteplugin/bufremoteplugindocker/registry_auth_config_test.go
+        text: "G117:"
+      - linters:
+          - gosec
+        # G703: the filename comes from walking the filesystem with os.Stat,
+        # not from user input, so path traversal is not a realistic risk here.
+        path: private/pkg/licenseheader/cmd/license-header/main.go
+        text: "G703:"
 
 issues:
   max-same-issues: 0

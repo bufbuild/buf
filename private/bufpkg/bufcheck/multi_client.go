@@ -303,10 +303,10 @@ func formatDelegateError(delegate *checkClientSpec, err error) error {
 	}
 	var errorMsg strings.Builder
 	errorMsg.WriteString("plugin ")
-	errorMsg.WriteString(fmt.Sprintf("%q", delegate.PluginName))
+	fmt.Fprintf(&errorMsg, "%q", delegate.PluginName)
 	if delegate.PolicyName != "" {
 		errorMsg.WriteString(" from policy ")
-		errorMsg.WriteString(fmt.Sprintf("%q", delegate.PolicyName))
+		fmt.Fprintf(&errorMsg, "%q", delegate.PolicyName)
 	}
 	errorMsg.WriteString(" failed: ")
 	return fmt.Errorf("%s%w", errorMsg.String(), err)
