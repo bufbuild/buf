@@ -84,9 +84,7 @@ func (m *moduleFileResolver) Open(path string) (_ *source.File, retErr error) {
 		return nil, moduleErr
 	}
 	defer func() {
-		if retErr != nil {
-			retErr = errors.Join(retErr, moduleFile.Close())
-		}
+		retErr = errors.Join(retErr, moduleFile.Close())
 	}()
 	if moduleFile.Path() != path {
 		// this should never happen, but just in case

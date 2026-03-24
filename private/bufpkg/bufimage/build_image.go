@@ -61,7 +61,7 @@ func buildImage(
 	}
 
 	if len(targetFileInfos) == 0 {
-		// If we had no no target files within the module after path filtering, this is an error.
+		// If we had no target files within the module after path filtering, this is an error.
 		// We could have a better user error than this. This gets back to the lack of allowNotExist.
 		return nil, bufmodule.ErrNoTargetProtoFiles
 	}
@@ -218,6 +218,7 @@ func fileDescriptorSetToImage(
 	var imageFiles []ImageFile
 	var err error
 	seen := make(map[string]struct{})
+	nonImportPaths := xslices.ToStructMap(paths)
 
 	for _, path := range paths {
 		imageFiles, err = getImageFilesForPath(
@@ -226,7 +227,7 @@ func fileDescriptorSetToImage(
 			moduleFileResolver,
 			excludeSourceCodeInfo,
 			seen,
-			xslices.ToStructMap(paths),
+			nonImportPaths,
 			imageFiles,
 		)
 
