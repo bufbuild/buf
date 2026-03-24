@@ -116,10 +116,16 @@ func compileImage(
 	for _, diagnostic := range diagnostics.Diagnostics {
 		primary := diagnostic.Primary()
 		if primary.IsZero() || diagnostic.Level() > report.Error {
+			// We only surface [report.Error] level or more sever diagnostics as build errors.
+			// Warnings will still be rendered in the diagnostics report if errors are found,
+			// but if there are no errors, then the warnings are not surfaced to the user.
+			//
+			// In the future, we should handle warnings and other checks in a unified way.
 			continue
 		}
 		start := primary.Location(primary.Start, length.Bytes)
 		end := primary.Location(primary.End, length.Bytes)
+
 		// We resolve the path and external path using moduleFileResolver, since the span
 		// uses the path set by moduleFileResolver, which is the moduleFile.LocalPath().
 		path := moduleFileResolver.PathForLocalPath(primary.Path())
