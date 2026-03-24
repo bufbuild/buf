@@ -33,7 +33,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -437,8 +436,10 @@ func removeEmptyDirs(rootDir string) error {
 			// may now be empty if all its contents were removed.
 			childEntries, err := os.ReadDir(childDir)
 			if err != nil {
-				// Directory was already removed or is inaccessible.
-				continue
+				if errors.Is(err, fs.ErrNotExist) {
+					continue
+				}
+				return err
 			}
 			if len(childEntries) == 0 {
 				if err := os.Remove(childDir); err != nil && !os.IsNotExist(err) {
@@ -450,13 +451,11 @@ func removeEmptyDirs(rootDir string) error {
 	return nil
 }
 
-// validateDeleteOutPath checks that absOutPath is safe to delete from.
+// validateDeleteOutPath checks that the output path is safe to delete from.
 // It prevents accidentally deleting files from the current working directory,
-// which could happen if a user points --out at ".".
+// which could happen if a user configures out as ".".
+// The path is already absolute (via filepath.Abs in AddResponse).
 func (w *responseWriter) validateDeleteOutPath(absOutPath string) error {
-	if absOutPath == "" {
-		return syserror.New("got empty pluginOut in bufprotopluginos.ResponseWriter")
-	}
 	pwd, err := osext.Getwd()
 	if err != nil {
 		return err

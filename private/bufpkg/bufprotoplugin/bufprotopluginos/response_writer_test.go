@@ -264,6 +264,49 @@ func TestResponseWriterSmartCleanRemovesNestedEmptyDirs(t *testing.T) {
 	require.DirExists(t, filepath.Join(outDir, "a"))
 }
 
+func TestResponseWriterSmartCleanMultiplePluginsSameOutDir(t *testing.T) {
+	t.Parallel()
+	outDir := t.TempDir()
+	// Pre-populate the output directory with a stale file that neither plugin will write.
+	stalePath := filepath.Join(outDir, "stale.go")
+	require.NoError(t, os.WriteFile(stalePath, []byte("package stale\n"), 0600))
+
+	writer := NewResponseWriter(
+		slogtestext.NewLogger(t),
+		storageos.NewProvider(),
+		ResponseWriterWithCreateOutDirIfNotExists(),
+		ResponseWriterWithDeleteOuts(),
+	)
+	// First plugin writes foo.go.
+	require.NoError(t, writer.AddResponse(
+		t.Context(),
+		&pluginpb.CodeGeneratorResponse{File: []*pluginpb.CodeGeneratorResponse_File{
+			newResponseFile("foo.go", "package foo\n"),
+		}},
+		outDir,
+	))
+	// Second plugin writes bar.go to the same directory.
+	require.NoError(t, writer.AddResponse(
+		t.Context(),
+		&pluginpb.CodeGeneratorResponse{File: []*pluginpb.CodeGeneratorResponse_File{
+			newResponseFile("bar.go", "package bar\n"),
+		}},
+		outDir,
+	))
+	require.NoError(t, writer.Close())
+
+	// Stale file must be deleted.
+	_, err := os.Stat(stalePath)
+	require.ErrorIs(t, err, os.ErrNotExist)
+	// Both plugin outputs must exist.
+	fooData, err := os.ReadFile(filepath.Join(outDir, "foo.go"))
+	require.NoError(t, err)
+	require.Equal(t, "package foo\n", string(fooData))
+	barData, err := os.ReadFile(filepath.Join(outDir, "bar.go"))
+	require.NoError(t, err)
+	require.Equal(t, "package bar\n", string(barData))
+}
+
 func runResponseWriter(t *testing.T, outPath string, deleteOuts bool, files ...*pluginpb.CodeGeneratorResponse_File) {
 	t.Helper()
 	opts := []ResponseWriterOption{
