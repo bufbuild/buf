@@ -71,7 +71,7 @@ include make/go/docker.mk
 include make/go/license_header.mk
 include make/go/buf.mk
 
-installtest:: $(PROTOC) $(PROTOC_GEN_GO)
+installtest:: $(PROTOC) $(PROTOC_INCLUDE) $(PROTOC_GEN_GO)
 
 .PHONY: godata
 godata: installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC) $(PROTOC_INCLUDE)
