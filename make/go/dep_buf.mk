@@ -7,8 +7,8 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/bufbuild/buf/releases 20260203 checked 20260203
-BUF_VERSION ?= v1.65.0
+# https://github.com/bufbuild/buf/releases 20260223 checked 20260223
+BUF_VERSION ?= v1.66.1
 # Settable
 #
 # If set, this path will be installed every time someone depends on $(BUF)
@@ -27,16 +27,23 @@ BUF := __goinstallbuf
 # Use this instead of "buf" when using buf.
 BUF_BIN := $(CACHE_GOBIN)/buf
 else
-BUF := $(CACHE_VERSIONS)/buf/$(BUF_VERSION)
-$(BUF):
-	@rm -f $(CACHE_BIN)/buf
-	GOBIN=$(CACHE_BIN) go install github.com/bufbuild/buf/cmd/buf@$(BUF_VERSION)
-	@rm -rf $(dir $(BUF))
-	@mkdir -p $(dir $(BUF))
-	@touch $(BUF)
+BUF := $(CACHE_BIN)/buf
 
 # Use this instead of "buf" when using buf.
-BUF_BIN := $(CACHE_BIN)/buf
+BUF_BIN := $(BUF)
+
+$(CACHE_VERSIONS)/buf/buf-$(BUF_VERSION):
+	@rm -f $(BUF)
+	@rm -rf $(dir $@)
+	@mkdir -p $(dir $@)
+	GOBIN=$(dir $@) go install github.com/bufbuild/buf/cmd/buf@$(BUF_VERSION)
+	@mv $(dir $@)/buf $@
+	@test -x $@
+	@touch $@
+
+$(BUF): $(CACHE_VERSIONS)/buf/buf-$(BUF_VERSION)
+	@mkdir -p $(dir $@)
+	@ln -sf $< $@
 
 dockerdeps:: $(BUF)
 endif

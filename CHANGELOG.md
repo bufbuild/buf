@@ -6,6 +6,7 @@
 - Add relevant links from CEL LSP hover documentation to either <celbyexample.com> or <protovalidate.com>
 - Add shell completions for `buf curl`: `--protocol` and `--reflect-protocol` flag values, and URL
   path completion (service and method names) via server reflection, `--schema`, or the local buf module.
+- Skip writing unchanged output files in `buf generate` to preserve modification times
 
 ## [v1.66.1] - 2026-03-09
 

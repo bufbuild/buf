@@ -1,6 +1,7 @@
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
 GO_GET_PKGS := $(GO_GET_PKGS) \
-	github.com/bufbuild/protocompile@main
+	github.com/bufbuild/protocompile@main \
+	buf.build/go/standard@main
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
@@ -70,10 +71,10 @@ include make/go/docker.mk
 include make/go/license_header.mk
 include make/go/buf.mk
 
-installtest:: $(PROTOC) $(PROTOC_GEN_GO)
+installtest:: $(PROTOC) $(PROTOC_INCLUDE) $(PROTOC_GEN_GO)
 
 .PHONY: godata
-godata: installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC)
+godata: installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC) $(PROTOC_INCLUDE)
 	rm -rf private/gen/data/datawkt
 	mkdir -p private/gen/data/datawkt
 	wkt-go-data "$(CACHE_INCLUDE)" --package datawkt --protobuf-version "$(PROTOC_VERSION)" > private/gen/data/datawkt/datawkt.gen.go

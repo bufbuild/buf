@@ -106,7 +106,7 @@ func run(ctx context.Context, container appext.Container, flags *flags) error {
 	if protobufVersion == "" {
 		return appcmd.NewInvalidArgumentErrorf("--%s is required", protobufVersionFlagName)
 	}
-	readWriteBucket, err := storageos.NewProvider(storageos.ProviderWithSymlinks()).NewReadWriteBucket(dirPath)
+	readWriteBucket, err := storageos.NewProvider(storageos.ProviderWithSymlinks()).NewReadWriteBucket(dirPath, storageos.ReadWriteBucketWithSymlinksIfSupported())
 	if err != nil {
 		return err
 	}

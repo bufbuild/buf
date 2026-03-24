@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"encoding/binary"
 	"fmt"
 	"slices"
 
@@ -164,13 +165,8 @@ func isPathForFileOption(path []int32) bool {
 // getPathKey returns a unique key for the given path.
 func getPathKey(path []int32) string {
 	key := make([]byte, len(path)*4)
-	j := 0
-	for _, elem := range path {
-		key[j] = byte(elem)
-		key[j+1] = byte(elem >> 8)
-		key[j+2] = byte(elem >> 16)
-		key[j+3] = byte(elem >> 24)
-		j += 4
+	for i, elem := range path {
+		binary.LittleEndian.PutUint32(key[i*4:], uint32(elem))
 	}
 	return string(key)
 }
