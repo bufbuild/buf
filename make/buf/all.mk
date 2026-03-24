@@ -74,7 +74,7 @@ include make/go/buf.mk
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 
 .PHONY: godata
-godata: installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC)
+godata: installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC) $(PROTOC_INCLUDE)
 	rm -rf private/gen/data/datawkt
 	mkdir -p private/gen/data/datawkt
 	wkt-go-data "$(CACHE_INCLUDE)" --package datawkt --protobuf-version "$(PROTOC_VERSION)" > private/gen/data/datawkt/datawkt.gen.go
