@@ -13,12 +13,19 @@ PROTOC_GEN_GO_VERSION ?= v1.36.11
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	google.golang.org/protobuf/proto@$(PROTOC_GEN_GO_VERSION)
 
-PROTOC_GEN_GO := $(CACHE_VERSIONS)/protoc-gen-go/$(PROTOC_GEN_GO_VERSION)
-$(PROTOC_GEN_GO):
-	@rm -f $(CACHE_BIN)/protoc-gen-go
-	GOBIN=$(CACHE_BIN) go install google.golang.org/protobuf/cmd/protoc-gen-go@$(PROTOC_GEN_GO_VERSION)
-	@rm -rf $(dir $(PROTOC_GEN_GO))
-	@mkdir -p $(dir $(PROTOC_GEN_GO))
-	@touch $(PROTOC_GEN_GO)
+PROTOC_GEN_GO := $(CACHE_BIN)/protoc-gen-go
+
+$(CACHE_VERSIONS)/protoc-gen-go/protoc-gen-go-$(PROTOC_GEN_GO_VERSION):
+	@rm -f $(PROTOC_GEN_GO)
+	@rm -rf $(dir $@)
+	@mkdir -p $(dir $@)
+	GOBIN=$(dir $@) go install google.golang.org/protobuf/cmd/protoc-gen-go@$(PROTOC_GEN_GO_VERSION)
+	@mv $(dir $@)/protoc-gen-go $@
+	@test -x $@
+	@touch $@
+
+$(PROTOC_GEN_GO): $(CACHE_VERSIONS)/protoc-gen-go/protoc-gen-go-$(PROTOC_GEN_GO_VERSION)
+	@mkdir -p $(dir $@)
+	@ln -sf $< $@
 
 dockerdeps:: $(PROTOC_GEN_GO)
