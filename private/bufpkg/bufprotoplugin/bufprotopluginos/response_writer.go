@@ -289,7 +289,12 @@ func (w *responseWriter) writeZip(
 		if err == nil && bytes.Equal(existingContent, newContent) {
 			return nil
 		}
-		return os.WriteFile(outFilePath, newContent, 0666)
+		file, err := os.Create(outFilePath)
+		if err != nil {
+			return err
+		}
+		_, writeErr := file.Write(newContent)
+		return errors.Join(writeErr, file.Close())
 	})
 	return nil
 }
