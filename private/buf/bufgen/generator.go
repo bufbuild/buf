@@ -129,7 +129,7 @@ func (g *generator) Generate(
 			return err
 		}
 	}
-	return responseWriter.Close()
+	return responseWriter.Close(ctx)
 }
 
 func (g *generator) generateCode(

@@ -293,7 +293,7 @@ func TestResponseWriterSmartCleanMultiplePluginsSameOutDir(t *testing.T) {
 		}},
 		outDir,
 	))
-	require.NoError(t, writer.Close())
+	require.NoError(t, writer.Close(t.Context()))
 
 	// Stale file must be deleted.
 	_, err := os.Stat(stalePath)
@@ -325,7 +325,7 @@ func runResponseWriter(t *testing.T, outPath string, deleteOuts bool, files ...*
 		&pluginpb.CodeGeneratorResponse{File: files},
 		outPath,
 	))
-	require.NoError(t, writer.Close())
+	require.NoError(t, writer.Close(t.Context()))
 }
 
 func newResponseFile(name, content string) *pluginpb.CodeGeneratorResponse_File {

@@ -37,6 +37,11 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+const (
+	jarExt = ".jar"
+	zipExt = ".zip"
+)
+
 // Constants used to create .jar files.
 var (
 	manifestPath    = normalpath.Join("META-INF", "MANIFEST.MF")
@@ -74,7 +79,7 @@ type responseWriter struct {
 	// Cache the functions used to flush all of the responses to disk.
 	// This holds all of the buckets in-memory so that we only write
 	// the results to disk if all of the responses are successful.
-	closers []func() error
+	closers []func(ctx context.Context) error
 	lock    sync.RWMutex
 }
 
@@ -125,12 +130,22 @@ func (w *responseWriter) AddResponse(
 	)
 }
 
-func (w *responseWriter) Close() error {
+func (w *responseWriter) Close(ctx context.Context) error {
 	w.lock.Lock()
 	defer w.lock.Unlock()
-	// When deleteOuts is enabled, collect the set of generated paths per
-	// directory output before writing anything to disk. We do this first so
-	// that the delete phase (after writes) knows exactly which files to keep.
+	for _, closeFunc := range w.closers {
+		if err := closeFunc(ctx); err != nil {
+			// Although unlikely, if an error happens here,
+			// some generated files could be written to disk,
+			// whereas others aren't.
+			//
+			// Regardless, we stop at the first error so that
+			// we don't unnecessarily write more results.
+			return err
+		}
+	}
+	// Collect the set of generated paths per directory output before
+	// clearing state, so the delete phase knows which files to keep.
 	var dirOutputPaths map[string]map[string]struct{}
 	if w.deleteOuts {
 		dirOutputPaths = make(map[string]map[string]struct{}, len(w.readWriteBuckets))
@@ -138,7 +153,7 @@ func (w *responseWriter) Close() error {
 			if isArchivePath(outPath) {
 				continue
 			}
-			paths, err := storage.AllPaths(context.Background(), readWriteBucket, "")
+			paths, err := storage.AllPaths(ctx, readWriteBucket, "")
 			if err != nil {
 				return err
 			}
@@ -149,26 +164,15 @@ func (w *responseWriter) Close() error {
 			dirOutputPaths[outPath] = pathSet
 		}
 	}
-	for _, closeFunc := range w.closers {
-		if err := closeFunc(); err != nil {
-			// Although unlikely, if an error happens here,
-			// some generated files could be written to disk,
-			// whereas others aren't.
-			//
-			// Regardless, we stop at the first error so that
-			// we don't unnecessarily write more results.
-			return err
-		}
-	}
 	// Re-initialize the cached values to be safe.
 	w.readWriteBuckets = make(map[string]storage.ReadWriteBucket)
 	w.closers = nil
 	if !w.deleteOuts {
 		return nil
 	}
-	// Run cleanup. Delete stale files and remove empty directories.
+	// Delete stale files and remove empty directories.
 	for outDirPath, retainPaths := range dirOutputPaths {
-		if err := w.deleteStaleFilesAndEmptyDirs(outDirPath, retainPaths); err != nil {
+		if err := w.deleteStaleFilesAndEmptyDirs(ctx, outDirPath, retainPaths); err != nil {
 			return err
 		}
 	}
@@ -191,7 +195,7 @@ func (w *responseWriter) addResponse(
 		}
 	}
 	switch filepath.Ext(pluginOut) {
-	case ".jar":
+	case jarExt:
 		return w.writeZip(
 			ctx,
 			response,
@@ -199,7 +203,7 @@ func (w *responseWriter) addResponse(
 			true,
 			createOutDirIfNotExists,
 		)
-	case ".zip":
+	case zipExt:
 		return w.writeZip(
 			ctx,
 			response,
@@ -271,7 +275,7 @@ func (w *responseWriter) writeZip(
 	// Add this readWriteBucket to the set so that other plugins
 	// can write to the same files (re: insertion points).
 	w.readWriteBuckets[outFilePath] = readWriteBucket
-	w.closers = append(w.closers, func() error {
+	w.closers = append(w.closers, func(ctx context.Context) error {
 		// Zip the generated content into a buffer so we can compare it with
 		// the existing file before deciding whether to write. This preserves
 		// the modification time when the output is unchanged.
@@ -285,7 +289,7 @@ func (w *responseWriter) writeZip(
 		if err == nil && bytes.Equal(existingContent, newContent) {
 			return nil
 		}
-		return os.WriteFile(outFilePath, newContent, 0600)
+		return os.WriteFile(outFilePath, newContent, 0666)
 	})
 	return nil
 }
@@ -321,7 +325,7 @@ func (w *responseWriter) writeDirectory(
 	// Add this readWriteBucket to the set so that other plugins
 	// can write to the same files (re: insertion points).
 	w.readWriteBuckets[outDirPath] = readWriteBucket
-	w.closers = append(w.closers, func() error {
+	w.closers = append(w.closers, func(ctx context.Context) error {
 		if createOutDirIfNotExists {
 			if err := os.MkdirAll(outDirPath, 0755); err != nil {
 				return err
@@ -377,10 +381,10 @@ func (w *responseWriter) copySkipUnchanged(
 // deleteStaleFilesAndEmptyDirs deletes files present in outDirPath that are
 // not in retainPaths, then removes any directories that are now empty.
 func (w *responseWriter) deleteStaleFilesAndEmptyDirs(
+	ctx context.Context,
 	outDirPath string,
 	retainPaths map[string]struct{},
 ) error {
-	ctx := context.Background()
 	osReadWriteBucket, err := w.storageosProvider.NewReadWriteBucket(
 		outDirPath,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
@@ -498,5 +502,5 @@ func resolveCleanPath(path string) (string, error) {
 // isArchivePath returns true if the given path has a .zip or .jar extension.
 func isArchivePath(path string) bool {
 	ext := filepath.Ext(path)
-	return ext == ".zip" || ext == ".jar"
+	return ext == zipExt || ext == jarExt
 }

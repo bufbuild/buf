@@ -17,7 +17,6 @@ package bufprotopluginos
 
 import (
 	"context"
-	"io"
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -26,9 +25,11 @@ import (
 
 // ResponseWriter writes CodeGeneratorResponses to the OS filesystem.
 type ResponseWriter interface {
-	// Close writes all of the responses to disk. No further calls can be
-	// made to the ResponseWriter after this call.
-	io.Closer
+	// Close writes all of the responses to disk and, when
+	// ResponseWriterWithDeleteOuts is enabled, removes stale files from
+	// output directories. No further calls can be made to the
+	// ResponseWriter after this call.
+	Close(ctx context.Context) error
 
 	// AddResponse adds the response to the writer, switching on the file extension.
 	// If there is a .jar extension, this generates a jar. If there is a .zip
