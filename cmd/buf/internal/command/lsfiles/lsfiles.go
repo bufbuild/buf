@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -72,6 +73,16 @@ func NewCommand(
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return cmd.RegisterFlagCompletionFunc(
+				formatFlagName,
+				cobra.FixedCompletions([]string{
+					cobra.CompletionWithDesc(formatText, "External file paths"),
+					cobra.CompletionWithDesc(formatJSON, "JSON"),
+					cobra.CompletionWithDesc(formatImport, "Import paths"),
+				}, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
+			)
+		},
 	}
 }
 

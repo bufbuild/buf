@@ -43,6 +43,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -195,6 +196,24 @@ exit code that is the gRPC code, shifted three bits to the left.
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return errors.Join(
+				cmd.RegisterFlagCompletionFunc(
+					protocolFlagName,
+					cobra.FixedCompletions([]string{
+						cobra.CompletionWithDesc(connect.ProtocolConnect, "Connect protocol"),
+						cobra.CompletionWithDesc(connect.ProtocolGRPC, "gRPC protocol"),
+						cobra.CompletionWithDesc(connect.ProtocolGRPCWeb, "gRPC-Web protocol"),
+					}, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
+				),
+				cmd.RegisterFlagCompletionFunc(
+					reflectProtocolFlagName,
+					cobra.FixedCompletions(bufcurl.AllKnownReflectProtocolStrings, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
+				),
+				cmd.RegisterFlagCompletionFunc(headerFlagName, cobra.NoFileCompletions),
+				cmd.RegisterFlagCompletionFunc(reflectHeaderFlagName, cobra.NoFileCompletions),
+			)
+		},
 	}
 }
 
