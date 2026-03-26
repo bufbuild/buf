@@ -99,7 +99,7 @@ buf dep graph | dot -Tpng >| graph.png && open graph.png
 					formatFlagName,
 					cobra.FixedCompletions([]string{
 						cobra.CompletionWithDesc(dotFormatString, "Graphviz DOT"),
-						cobra.CompletionWithDesc(jsonFormatString, "JSON"),
+						jsonFormatString,
 					}, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
 				),
 			)

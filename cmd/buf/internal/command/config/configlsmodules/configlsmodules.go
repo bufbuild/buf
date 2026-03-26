@@ -74,9 +74,9 @@ func NewCommand(
 			return cmd.RegisterFlagCompletionFunc(
 				formatFlagName,
 				cobra.FixedCompletions([]string{
-					cobra.CompletionWithDesc(formatPath, "Directory path"),
-					cobra.CompletionWithDesc(formatName, "Module name"),
-					cobra.CompletionWithDesc(formatJSON, "JSON"),
+					formatPath,
+					formatName,
+					formatJSON,
 				}, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
 			)
 		},

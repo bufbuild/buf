@@ -201,9 +201,9 @@ exit code that is the gRPC code, shifted three bits to the left.
 				cmd.RegisterFlagCompletionFunc(
 					protocolFlagName,
 					cobra.FixedCompletions([]string{
-						cobra.CompletionWithDesc(connect.ProtocolConnect, "Connect protocol"),
-						cobra.CompletionWithDesc(connect.ProtocolGRPC, "gRPC protocol"),
-						cobra.CompletionWithDesc(connect.ProtocolGRPCWeb, "gRPC-Web protocol"),
+						connect.ProtocolConnect,
+						connect.ProtocolGRPC,
+						connect.ProtocolGRPCWeb,
 					}, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
 				),
 				cmd.RegisterFlagCompletionFunc(

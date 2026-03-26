@@ -23,16 +23,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// errorFormatDescriptions maps each error format string to a short description
-// for shell completion.
+// errorFormatDescriptions maps error format strings that have non-obvious names
+// to a short description for shell completion.
 var errorFormatDescriptions = map[string]string{
-	"text":                "Human-readable text",
-	"json":                "JSON",
-	"msvs":                "Visual Studio",
-	"junit":               "JUnit XML",
-	"github-actions":      "GitHub Actions annotations",
-	"gitlab-code-quality": "GitLab Code Quality report",
-	"config-ignore-yaml":  "buf.yaml ignore_only snippet",
+	"msvs":               "Visual Studio",
+	"config-ignore-yaml": "buf.yaml ignore_only snippet",
 }
 
 // RegisterFlagCompletionErrorFormat registers shell completion for flags that accept
@@ -40,7 +35,10 @@ var errorFormatDescriptions = map[string]string{
 func RegisterFlagCompletionErrorFormat(cmd *cobra.Command, flagName string) error {
 	return cmd.RegisterFlagCompletionFunc(flagName, cobra.FixedCompletions(
 		xslices.Map(bufanalysis.AllFormatStrings, func(s string) string {
-			return cobra.CompletionWithDesc(s, errorFormatDescriptions[s])
+			if desc, ok := errorFormatDescriptions[s]; ok {
+				return cobra.CompletionWithDesc(s, desc)
+			}
+			return s
 		}),
 		cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder,
 	))
@@ -51,7 +49,10 @@ func RegisterFlagCompletionErrorFormat(cmd *cobra.Command, flagName string) erro
 func RegisterFlagCompletionLintErrorFormat(cmd *cobra.Command, flagName string) error {
 	return cmd.RegisterFlagCompletionFunc(flagName, cobra.FixedCompletions(
 		xslices.Map(AllLintFormatStrings, func(s string) string {
-			return cobra.CompletionWithDesc(s, errorFormatDescriptions[s])
+			if desc, ok := errorFormatDescriptions[s]; ok {
+				return cobra.CompletionWithDesc(s, desc)
+			}
+			return s
 		}),
 		cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder,
 	))
@@ -62,8 +63,8 @@ func RegisterFlagCompletionLintErrorFormat(cmd *cobra.Command, flagName string) 
 func RegisterFlagCompletionOutputFormat(cmd *cobra.Command, flagName string) error {
 	return cmd.RegisterFlagCompletionFunc(flagName, cobra.FixedCompletions(
 		[]string{
-			cobra.CompletionWithDesc(bufprint.FormatText.String(), "Human-readable text"),
-			cobra.CompletionWithDesc(bufprint.FormatJSON.String(), "JSON"),
+			bufprint.FormatText.String(),
+			bufprint.FormatJSON.String(),
 		},
 		cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder,
 	))
@@ -73,9 +74,7 @@ func RegisterFlagCompletionOutputFormat(cmd *cobra.Command, flagName string) err
 // a rule print format value (text or json).
 func RegisterFlagCompletionRuleFormat(cmd *cobra.Command, flagName string) error {
 	return cmd.RegisterFlagCompletionFunc(flagName, cobra.FixedCompletions(
-		xslices.Map(AllRuleFormatStrings, func(s string) string {
-			return cobra.CompletionWithDesc(s, errorFormatDescriptions[s])
-		}),
+		AllRuleFormatStrings,
 		cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder,
 	))
 }
