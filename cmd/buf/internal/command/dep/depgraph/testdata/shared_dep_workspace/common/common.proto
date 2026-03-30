@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package common.v1;
+
+message Shared {
+  string value = 1;
+}
