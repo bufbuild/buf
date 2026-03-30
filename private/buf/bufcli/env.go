@@ -38,6 +38,10 @@ const (
 	// at a per-file level.
 	copyToInMemoryEnvKey = "BUF_BETA_COPY_FILES_TO_MEMORY"
 
+	// useGitBranchAsLabelEnvKey can be set to "OFF" (case-insensitive) to disable
+	// auto-label behavior even when use_git_branch_as_label is configured in buf.yaml.
+	useGitBranchAsLabelEnvKey = "BUF_USE_GIT_BRANCH_AS_LABEL"
+
 	// This should only be used for testing. This is not part of Buf's API, and should
 	// never be documented or part of Buf's contract.
 	legacyFederationRegistryEnvKey = "BUF_TESTING_LEGACY_FEDERATION_REGISTRY"

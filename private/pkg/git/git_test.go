@@ -470,6 +470,72 @@ func createGitDirs(
 	return originPath, workPath
 }
 
+func TestGetCurrentBranch(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	container, err := app.NewContainerForOS()
+	require.NoError(t, err)
+
+	t.Run("returns_branch_name", func(t *testing.T) {
+		t.Parallel()
+		repoDir := t.TempDir()
+		runCommand(ctx, t, container, "git", "-C", repoDir, "init")
+		runCommand(ctx, t, container, "git", "-C", repoDir, "config", "user.email", "tests@buf.build")
+		runCommand(ctx, t, container, "git", "-C", repoDir, "config", "user.name", "Buf go tests")
+		runCommand(ctx, t, container, "git", "-C", repoDir, "checkout", "-b", "main")
+		require.NoError(t, os.WriteFile(filepath.Join(repoDir, "test.txt"), []byte("hello"), 0600))
+		runCommand(ctx, t, container, "git", "-C", repoDir, "add", "test.txt")
+		runCommand(ctx, t, container, "git", "-C", repoDir, "commit", "-m", "initial commit")
+
+		branch, err := GetCurrentBranch(ctx, container, repoDir)
+		require.NoError(t, err)
+		assert.Equal(t, "main", branch)
+	})
+
+	t.Run("returns_feature_branch", func(t *testing.T) {
+		t.Parallel()
+		repoDir := t.TempDir()
+		runCommand(ctx, t, container, "git", "-C", repoDir, "init")
+		runCommand(ctx, t, container, "git", "-C", repoDir, "config", "user.email", "tests@buf.build")
+		runCommand(ctx, t, container, "git", "-C", repoDir, "config", "user.name", "Buf go tests")
+		runCommand(ctx, t, container, "git", "-C", repoDir, "checkout", "-b", "main")
+		require.NoError(t, os.WriteFile(filepath.Join(repoDir, "test.txt"), []byte("hello"), 0600))
+		runCommand(ctx, t, container, "git", "-C", repoDir, "add", "test.txt")
+		runCommand(ctx, t, container, "git", "-C", repoDir, "commit", "-m", "initial commit")
+		runCommand(ctx, t, container, "git", "-C", repoDir, "checkout", "-b", "feature/my-feature")
+
+		branch, err := GetCurrentBranch(ctx, container, repoDir)
+		require.NoError(t, err)
+		assert.Equal(t, "feature/my-feature", branch)
+	})
+
+	t.Run("errors_on_detached_head", func(t *testing.T) {
+		t.Parallel()
+		repoDir := t.TempDir()
+		runCommand(ctx, t, container, "git", "-C", repoDir, "init")
+		runCommand(ctx, t, container, "git", "-C", repoDir, "config", "user.email", "tests@buf.build")
+		runCommand(ctx, t, container, "git", "-C", repoDir, "config", "user.name", "Buf go tests")
+		runCommand(ctx, t, container, "git", "-C", repoDir, "checkout", "-b", "main")
+		require.NoError(t, os.WriteFile(filepath.Join(repoDir, "test.txt"), []byte("hello"), 0600))
+		runCommand(ctx, t, container, "git", "-C", repoDir, "add", "test.txt")
+		runCommand(ctx, t, container, "git", "-C", repoDir, "commit", "-m", "initial commit")
+		// Detach HEAD by checking out the commit directly.
+		runCommand(ctx, t, container, "git", "-C", repoDir, "checkout", "--detach", "HEAD")
+
+		_, err := GetCurrentBranch(ctx, container, repoDir)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "HEAD is detached")
+	})
+
+	t.Run("errors_on_non_git_dir", func(t *testing.T) {
+		t.Parallel()
+		nonGitDir := t.TempDir()
+
+		_, err := GetCurrentBranch(ctx, container, nonGitDir)
+		require.Error(t, err)
+	})
+}
+
 func runCommand(
 	ctx context.Context,
 	t *testing.T,

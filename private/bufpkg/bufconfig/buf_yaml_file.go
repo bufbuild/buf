@@ -116,6 +116,19 @@ type BufYAMLFile interface {
 	// The ModuleRefs in this list will be unique by FullName.
 	// Sorted by FullName.
 	ConfiguredDepModuleRefs() []bufparse.Ref
+	// UseGitBranchAsLabel returns the list of module names for which the current
+	// git branch should be used as the BSR label during push and dep update.
+	//
+	// For v1 buf.yaml files, this will always return nil.
+	UseGitBranchAsLabel() []string
+	// DisableLabelForBranch returns the list of git branch names for which
+	// auto-label behavior is disabled (i.e., the default label is used instead).
+	//
+	// If UseGitBranchAsLabel is set but DisableLabelForBranch is not, the default
+	// value is ["main", "master"].
+	//
+	// For v1 buf.yaml files, this will always return nil.
+	DisableLabelForBranch() []string
 	//IncludeDocsLink specifies whether a top-level comment with a link to our public docs
 	// should be included at the top of the buf.yaml file.
 	IncludeDocsLink() bool
@@ -147,6 +160,8 @@ func NewBufYAMLFile(
 		pluginConfigs,
 		policyConfigs,
 		configuredDepModuleRefs,
+		nil, // useGitBranchAsLabel
+		nil, // disableLabelForBranch
 		bufYAMLFileOptions.includeDocsLink,
 	)
 }
@@ -262,6 +277,8 @@ type bufYAMLFile struct {
 	pluginConfigs           []PluginConfig
 	policyConfigs           []PolicyConfig
 	configuredDepModuleRefs []bufparse.Ref
+	useGitBranchAsLabel     []string
+	disableLabelForBranch   []string
 	includeDocsLink         bool
 }
 
@@ -274,6 +291,8 @@ func newBufYAMLFile(
 	pluginConfigs []PluginConfig,
 	policyConfigs []PolicyConfig,
 	configuredDepModuleRefs []bufparse.Ref,
+	useGitBranchAsLabel []string,
+	disableLabelForBranch []string,
 	includeDocsLink bool,
 ) (*bufYAMLFile, error) {
 	if (fileVersion == FileVersionV1Beta1 || fileVersion == FileVersionV1) && len(moduleConfigs) > 1 {
@@ -330,6 +349,8 @@ func newBufYAMLFile(
 		pluginConfigs:           pluginConfigs,
 		policyConfigs:           policyConfigs,
 		configuredDepModuleRefs: configuredDepModuleRefs,
+		useGitBranchAsLabel:     useGitBranchAsLabel,
+		disableLabelForBranch:   disableLabelForBranch,
 		includeDocsLink:         includeDocsLink,
 	}, nil
 }
@@ -368,6 +389,14 @@ func (c *bufYAMLFile) PolicyConfigs() []PolicyConfig {
 
 func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufparse.Ref {
 	return slices.Clone(c.configuredDepModuleRefs)
+}
+
+func (c *bufYAMLFile) UseGitBranchAsLabel() []string {
+	return slices.Clone(c.useGitBranchAsLabel)
+}
+
+func (c *bufYAMLFile) DisableLabelForBranch() []string {
+	return slices.Clone(c.disableLabelForBranch)
 }
 
 func (c *bufYAMLFile) IncludeDocsLink() bool {
@@ -470,6 +499,8 @@ func readBufYAMLFile(
 			nil,
 			nil,
 			configuredDepModuleRefs,
+			nil, // useGitBranchAsLabel - v1 only
+			nil, // disableLabelForBranch - v1 only
 			includeDocsLink,
 		)
 	case FileVersionV2:
@@ -677,6 +708,13 @@ func readBufYAMLFile(
 		if err != nil {
 			return nil, err
 		}
+		useGitBranchAsLabel := externalBufYAMLFile.UseGitBranchAsLabel
+		disableLabelForBranch := externalBufYAMLFile.DisableLabelForBranch
+		// If use_git_branch_as_label is set but disable_label_for_branch is not,
+		// default to disabling auto-label for main and master branches.
+		if len(useGitBranchAsLabel) > 0 && len(disableLabelForBranch) == 0 {
+			disableLabelForBranch = []string{"main", "master"}
+		}
 		return newBufYAMLFile(
 			fileVersion,
 			objectData,
@@ -686,6 +724,8 @@ func readBufYAMLFile(
 			pluginConfigs,
 			policyConfigs,
 			configuredDepModuleRefs,
+			useGitBranchAsLabel,
+			disableLabelForBranch,
 			includeDocsLink,
 		)
 	default:
@@ -893,6 +933,8 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			externalPolicies = append(externalPolicies, externalPolicy)
 		}
 		externalBufYAMLFile.Policies = externalPolicies
+		externalBufYAMLFile.UseGitBranchAsLabel = bufYAMLFile.UseGitBranchAsLabel()
+		externalBufYAMLFile.DisableLabelForBranch = bufYAMLFile.DisableLabelForBranch()
 
 		data, err := encoding.MarshalYAML(&externalBufYAMLFile)
 		if err != nil {
@@ -1298,14 +1340,16 @@ type externalBufYAMLFileV1Beta1V1 struct {
 // Note that the lint and breaking ids/categories DID change between versions, make
 // sure to deal with this when parsing what to set as defaults, or how to interpret categories.
 type externalBufYAMLFileV2 struct {
-	Version  string                                 `json:"version,omitempty" yaml:"version,omitempty"`
-	Name     string                                 `json:"name,omitempty" yaml:"name,omitempty"`
-	Modules  []externalBufYAMLFileModuleV2          `json:"modules,omitempty" yaml:"modules,omitempty"`
-	Deps     []string                               `json:"deps,omitempty" yaml:"deps,omitempty"`
-	Lint     externalBufYAMLFileLintV2              `json:"lint" yaml:"lint,omitempty"`
-	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking" yaml:"breaking,omitempty"`
-	Plugins  []externalBufYAMLFilePluginV2          `json:"plugins,omitempty" yaml:"plugins,omitempty"`
-	Policies []externalBufYAMLFilePolicyV2          `json:"policies,omitempty" yaml:"policies,omitempty"`
+	Version               string                                 `json:"version,omitempty" yaml:"version,omitempty"`
+	Name                  string                                 `json:"name,omitempty" yaml:"name,omitempty"`
+	Modules               []externalBufYAMLFileModuleV2          `json:"modules,omitempty" yaml:"modules,omitempty"`
+	Deps                  []string                               `json:"deps,omitempty" yaml:"deps,omitempty"`
+	Lint                  externalBufYAMLFileLintV2              `json:"lint" yaml:"lint,omitempty"`
+	Breaking              externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking" yaml:"breaking,omitempty"`
+	Plugins               []externalBufYAMLFilePluginV2          `json:"plugins,omitempty" yaml:"plugins,omitempty"`
+	Policies              []externalBufYAMLFilePolicyV2          `json:"policies,omitempty" yaml:"policies,omitempty"`
+	UseGitBranchAsLabel   []string                               `json:"use_git_branch_as_label,omitempty" yaml:"use_git_branch_as_label,omitempty"`
+	DisableLabelForBranch []string                               `json:"disable_label_for_branch,omitempty" yaml:"disable_label_for_branch,omitempty"`
 }
 
 // externalBufYAMLFileModuleV2 represents a single module configuration within a v2 buf.yaml file.

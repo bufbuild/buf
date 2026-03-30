@@ -384,6 +384,34 @@ func IsValidRef(
 	return nil
 }
 
+// GetCurrentBranch returns the name of the current git branch for the given directory.
+//
+// Returns an error if the directory is not a valid git checkout or if HEAD is detached.
+func GetCurrentBranch(
+	ctx context.Context,
+	envContainer app.EnvContainer,
+	dir string,
+) (string, error) {
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	if err := xexec.Run(
+		ctx,
+		gitCommand,
+		xexec.WithArgs("rev-parse", "--abbrev-ref", "HEAD"),
+		xexec.WithStdout(stdout),
+		xexec.WithStderr(stderr),
+		xexec.WithDir(dir),
+		xexec.WithEnv(app.Environ(envContainer)),
+	); err != nil {
+		return "", fmt.Errorf("failed to get current branch: %w: %s", err, stderr.String())
+	}
+	branch := strings.TrimSpace(stdout.String())
+	if branch == "" || branch == "HEAD" {
+		return "", errors.New("HEAD is detached, not on a branch")
+	}
+	return branch, nil
+}
+
 // ReadFileAtRef will read the file at path rolled back to the given ref, if
 // it exists at that ref.
 //

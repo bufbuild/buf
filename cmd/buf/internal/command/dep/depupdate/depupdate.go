@@ -15,9 +15,12 @@
 package depupdate
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
+	"slices"
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
@@ -27,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -113,10 +117,19 @@ func run(
 	if err != nil {
 		return err
 	}
-	configuredDepModuleKeys, err := internal.ModuleKeysAndTransitiveDepModuleKeysForModuleRefs(
+	// Apply git branch auto-label overrides for matching dependencies.
+	// originalRefs maps the full name string of each overridden ref to its original ref,
+	// so that fallback can use the original hard-coded label instead of the default label.
+	configuredDepModuleRefs, originalRefs, err := applyGitBranchLabelOverrides(ctx, container, dirPath, configuredDepModuleRefs)
+	if err != nil {
+		return err
+	}
+	configuredDepModuleKeys, err := resolveModuleRefsWithFallback(
 		ctx,
 		container,
+		logger,
 		configuredDepModuleRefs,
+		originalRefs,
 		workspaceDepManager.BufLockFileDigestType(),
 	)
 	if err != nil {
@@ -231,4 +244,160 @@ func newBufLockFile(
 			nil,
 		)
 	}
+}
+
+// applyGitBranchLabelOverrides reads the buf.yaml from dirPath and overrides the
+// label on any dep whose full name appears in use_git_branch_as_label.
+//
+// Returns the modified refs and a map from full name string to the original ref
+// for each overridden dependency, so that fallback resolution can use the original
+// hard-coded label instead of the default label.
+func applyGitBranchLabelOverrides(
+	ctx context.Context,
+	container appext.Container,
+	dirPath string,
+	refs []bufparse.Ref,
+) ([]bufparse.Ref, map[string]bufparse.Ref, error) {
+	useGitBranchAsLabel, disableLabelForBranch, ok := readGitBranchLabelConfig(dirPath)
+	if !ok || len(useGitBranchAsLabel) == 0 {
+		return refs, nil, nil
+	}
+	// We only need to determine the branch once, using any matching module name.
+	// Use the first matching module name to check.
+	branchName, enabled, err := bufcli.GetGitBranchLabelForModule(
+		ctx,
+		container.Logger(),
+		container,
+		dirPath,
+		useGitBranchAsLabel[0],
+		useGitBranchAsLabel,
+		disableLabelForBranch,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !enabled {
+		return refs, nil, nil
+	}
+	result := make([]bufparse.Ref, len(refs))
+	originalRefs := make(map[string]bufparse.Ref)
+	for i, moduleRef := range refs {
+		if slices.Contains(useGitBranchAsLabel, moduleRef.FullName().String()) {
+			overriddenRef, err := bufparse.NewRef(
+				moduleRef.FullName().Registry(),
+				moduleRef.FullName().Owner(),
+				moduleRef.FullName().Name(),
+				branchName,
+			)
+			if err != nil {
+				return nil, nil, err
+			}
+			originalRefs[moduleRef.FullName().String()] = moduleRef
+			result[i] = overriddenRef
+		} else {
+			result[i] = moduleRef
+		}
+	}
+	return result, originalRefs, nil
+}
+
+// moduleRefResolver is a function that resolves module refs to module keys.
+// Extracted as a type to allow testing with a mock resolver.
+type moduleRefResolver func(
+	ctx context.Context,
+	container appext.Container,
+	moduleRefs []bufparse.Ref,
+	digestType bufmodule.DigestType,
+) ([]bufmodule.ModuleKey, error)
+
+// resolveModuleRefsWithFallback resolves module refs to module keys. If the
+// batch resolution fails (e.g., because a branch label doesn't exist on the BSR),
+// it falls back to resolving each ref individually, retrying failed branch-labeled
+// refs with their original ref (which may have a hard-coded label from buf.yaml).
+//
+// originalRefs maps full name strings to the original ref before branch label override.
+// If nil, no overrides were applied and fallback is not attempted.
+func resolveModuleRefsWithFallback(
+	ctx context.Context,
+	container appext.Container,
+	logger *slog.Logger,
+	refs []bufparse.Ref,
+	originalRefs map[string]bufparse.Ref,
+	digestType bufmodule.DigestType,
+) ([]bufmodule.ModuleKey, error) {
+	return doResolveModuleRefsWithFallback(
+		ctx,
+		container,
+		logger,
+		refs,
+		originalRefs,
+		digestType,
+		internal.ModuleKeysAndTransitiveDepModuleKeysForModuleRefs,
+	)
+}
+
+// doResolveModuleRefsWithFallback contains the core logic, accepting a resolver
+// function to allow testing.
+func doResolveModuleRefsWithFallback(
+	ctx context.Context,
+	container appext.Container,
+	logger *slog.Logger,
+	refs []bufparse.Ref,
+	originalRefs map[string]bufparse.Ref,
+	digestType bufmodule.DigestType,
+	resolve moduleRefResolver,
+) ([]bufmodule.ModuleKey, error) {
+	// First, try resolving all refs in a single batch.
+	moduleKeys, err := resolve(ctx, container, refs, digestType)
+	if err == nil {
+		return moduleKeys, nil
+	}
+	// If no overrides were applied, the error is genuine.
+	if len(originalRefs) == 0 {
+		return nil, err
+	}
+	logger.DebugContext(ctx, "batch resolution failed, falling back to per-ref resolution", slog.String("error", err.Error()))
+	// Fall back to per-ref resolution.
+	var allModuleKeys []bufmodule.ModuleKey
+	for _, moduleRef := range refs {
+		keys, resolveErr := resolve(ctx, container, []bufparse.Ref{moduleRef}, digestType)
+		if resolveErr == nil {
+			allModuleKeys = append(allModuleKeys, keys...)
+			continue
+		}
+		// Check if this ref was overridden with a branch label.
+		fallbackRef, wasOverridden := originalRefs[moduleRef.FullName().String()]
+		if !wasOverridden {
+			// Not an overridden ref, the error is genuine.
+			return nil, resolveErr
+		}
+		// Branch-labeled ref failed, retry with the original ref from buf.yaml.
+		logger.DebugContext(
+			ctx,
+			"branch label not found, falling back to original label",
+			slog.String("module", moduleRef.FullName().String()),
+			slog.String("branch_label", moduleRef.Ref()),
+			slog.String("fallback_label", fallbackRef.Ref()),
+		)
+		keys, resolveErr = resolve(ctx, container, []bufparse.Ref{fallbackRef}, digestType)
+		if resolveErr != nil {
+			return nil, resolveErr
+		}
+		allModuleKeys = append(allModuleKeys, keys...)
+	}
+	return allModuleKeys, nil
+}
+
+// readGitBranchLabelConfig reads the buf.yaml from dirPath and returns the
+// auto-label configuration. Returns ok=false if the buf.yaml cannot be read.
+func readGitBranchLabelConfig(dirPath string) (useGitBranchAsLabel []string, disableLabelForBranch []string, ok bool) {
+	data, err := os.ReadFile(dirPath + "/buf.yaml")
+	if err != nil {
+		return nil, nil, false
+	}
+	bufYAMLFile, err := bufconfig.ReadBufYAMLFile(bytes.NewReader(data), "buf.yaml")
+	if err != nil {
+		return nil, nil, false
+	}
+	return bufYAMLFile.UseGitBranchAsLabel(), bufYAMLFile.DisableLabelForBranch(), true
 }

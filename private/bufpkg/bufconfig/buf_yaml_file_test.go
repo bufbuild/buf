@@ -507,6 +507,85 @@ policies:
 	)
 }
 
+func TestReadWriteBufYAMLFileGitBranchAsLabel(t *testing.T) {
+	t.Parallel()
+
+	// Round-trip with both fields set.
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+use_git_branch_as_label:
+  - buf.build/acme/weather
+  - buf.build/acme/petapis
+disable_label_for_branch:
+  - main
+  - production
+`,
+		// expected output
+		`version: v2
+use_git_branch_as_label:
+  - buf.build/acme/weather
+  - buf.build/acme/petapis
+disable_label_for_branch:
+  - main
+  - production
+`,
+	)
+
+	// Round-trip with only use_git_branch_as_label set (disable_label_for_branch
+	// defaults to ["main", "master"] during parsing but is not written if it
+	// matches the default — actually it IS written since we store it).
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+use_git_branch_as_label:
+  - buf.build/acme/weather
+`,
+		// expected output (default disable_label_for_branch is populated)
+		`version: v2
+use_git_branch_as_label:
+  - buf.build/acme/weather
+disable_label_for_branch:
+  - main
+  - master
+`,
+	)
+
+	// Verify field values are accessible.
+	bufYAMLFile := testReadBufYAMLFile(
+		t,
+		`version: v2
+use_git_branch_as_label:
+  - buf.build/acme/weather
+disable_label_for_branch:
+  - main
+  - staging
+`,
+	)
+	require.Equal(t, []string{"buf.build/acme/weather"}, bufYAMLFile.UseGitBranchAsLabel())
+	require.Equal(t, []string{"main", "staging"}, bufYAMLFile.DisableLabelForBranch())
+
+	// Without the field, both should be nil.
+	bufYAMLFile = testReadBufYAMLFile(
+		t,
+		`version: v2
+`,
+	)
+	require.Nil(t, bufYAMLFile.UseGitBranchAsLabel())
+	require.Nil(t, bufYAMLFile.DisableLabelForBranch())
+
+	// V1 files should always return nil.
+	bufYAMLFile = testReadBufYAMLFile(
+		t,
+		`version: v1
+`,
+	)
+	require.Nil(t, bufYAMLFile.UseGitBranchAsLabel())
+	require.Nil(t, bufYAMLFile.DisableLabelForBranch())
+}
+
 func TestBufYAMLFileLintDisabled(t *testing.T) {
 	t.Parallel()
 

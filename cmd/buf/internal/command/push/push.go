@@ -15,9 +15,11 @@
 package push
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"slices"
 	"strings"
 
@@ -31,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -256,6 +259,17 @@ func run(
 	}
 	if flags.ExcludeUnnamed {
 		uploadOptions = append(uploadOptions, bufmodule.UploadWithExcludeUnnamed())
+	}
+	// Auto-label: if use_git_branch_as_label is configured in buf.yaml and any module
+	// being pushed matches the list, add the current git branch as a label.
+	if workspace.IsV2() {
+		branchLabelOption, err := getGitBranchLabelUploadOption(ctx, container, workspace)
+		if err != nil {
+			return err
+		}
+		if branchLabelOption != nil {
+			uploadOptions = append(uploadOptions, branchLabelOption)
+		}
 	}
 
 	commits, err := uploader.Upload(ctx, workspace, uploadOptions...)
@@ -560,4 +574,59 @@ func getLabelUploadOption(flags *flags) bufmodule.UploadOption {
 		return bufmodule.UploadWithLabels(flags.Draft)
 	}
 	return nil
+}
+
+// getGitBranchLabelUploadOption reads the buf.yaml for the workspace's source
+// directory and returns an UploadWithLabels option if auto-label is enabled for
+// any of the modules being pushed.
+func getGitBranchLabelUploadOption(
+	ctx context.Context,
+	container appext.Container,
+	workspace bufworkspace.Workspace,
+) (bufmodule.UploadOption, error) {
+	source, err := bufcli.GetInputValue(container, "", ".")
+	if err != nil {
+		return nil, err
+	}
+	useGitBranchAsLabel, disableLabelForBranch, ok := readGitBranchLabelConfig(source)
+	if !ok || len(useGitBranchAsLabel) == 0 {
+		return nil, nil
+	}
+	// Check if any target module's name matches the use_git_branch_as_label list.
+	for _, module := range bufmodule.ModuleSetTargetModules(workspace) {
+		fullName := module.FullName()
+		if fullName == nil {
+			continue
+		}
+		branchName, enabled, err := bufcli.GetGitBranchLabelForModule(
+			ctx,
+			container.Logger(),
+			container,
+			source,
+			fullName.String(),
+			useGitBranchAsLabel,
+			disableLabelForBranch,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if enabled {
+			return bufmodule.UploadWithLabels(branchName), nil
+		}
+	}
+	return nil, nil
+}
+
+// readGitBranchLabelConfig reads the buf.yaml from dirPath and returns the
+// auto-label configuration. Returns ok=false if the buf.yaml cannot be read.
+func readGitBranchLabelConfig(dirPath string) (useGitBranchAsLabel []string, disableLabelForBranch []string, ok bool) {
+	data, err := os.ReadFile(dirPath + "/buf.yaml")
+	if err != nil {
+		return nil, nil, false
+	}
+	bufYAMLFile, err := bufconfig.ReadBufYAMLFile(bytes.NewReader(data), "buf.yaml")
+	if err != nil {
+		return nil, nil, false
+	}
+	return bufYAMLFile.UseGitBranchAsLabel(), bufYAMLFile.DisableLabelForBranch(), true
 }
