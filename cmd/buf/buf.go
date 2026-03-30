@@ -116,6 +116,7 @@ import (
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/sdk/sdkinfo"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/sdk/version"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/whoami"
+	"github.com/bufbuild/buf/cmd/buf/internal/command/scaffold"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/source/sourceedit/sourceeditdeprecate"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/stats"
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -157,6 +158,7 @@ func newRootCommand(name string) *appcmd.Command {
 			push.NewCommand("push", builder),
 			convert.NewCommand("convert", builder),
 			curl.NewCommand("curl", builder),
+			scaffold.NewCommand("scaffold", builder),
 			{
 				Use:   "dep",
 				Short: "Work with dependencies",
