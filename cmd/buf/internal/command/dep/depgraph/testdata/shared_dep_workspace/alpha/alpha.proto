@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package alpha.v1;
+
+import "common.proto";
+
+message Foo {
+  common.v1.Shared shared = 1;
+}

@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Fix `buf dep graph --format json` silently dropping dependencies when a dependency was already seen.
 - Add support for `--rbs_out` as a `protoc_builtin` plugin (requires protoc v34.0+).
 - Add relevant links from CEL LSP hover documentation to either <celbyexample.com> or <protovalidate.com>
 - Skip writing unchanged output files in `buf generate` to preserve modification times
