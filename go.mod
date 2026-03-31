@@ -13,7 +13,7 @@ require (
 	buf.build/go/protovalidate v1.1.3
 	buf.build/go/protoyaml v0.6.0
 	buf.build/go/spdx v0.2.0
-	buf.build/go/standard v0.1.1-0.20260320140628-2996a887cf13
+	buf.build/go/standard v0.1.1-0.20260325175353-2b287e071df5
 	connectrpc.com/connect v1.19.1
 	connectrpc.com/grpcreflect v1.3.0
 	connectrpc.com/otelconnect v0.9.0

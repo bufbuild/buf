@@ -18,6 +18,8 @@ goos() {
     Darwin) echo darwin ;;
     Linux) echo linux ;;
     Windows) echo windows ;;
+    OpenBSD) echo openbsd ;;
+    FreeBSD) echo freebsd ;;
     *) echo "unsupported"; return 1 ;;
   esac
 }
@@ -86,7 +88,7 @@ rm -rf "${RELEASE_DIR}"
 mkdir -p "${RELEASE_DIR}"
 cd "${RELEASE_DIR}"
 
-for os in Darwin Linux Windows; do
+for os in Darwin Linux Windows OpenBSD FreeBSD; do
   for arch in x86_64 riscv64 arm64 armv7 ppc64le s390x; do
     # our goal is to have the binaries be suffixed with $(uname -s)-$(uname -m)
     # on mac, this is arm64, on linux, this is aarch64, for historical reasons
@@ -119,7 +121,7 @@ for os in Darwin Linux Windows; do
   done
 done
 
-for os in Darwin Linux Windows; do
+for os in Darwin Linux Windows OpenBSD FreeBSD; do
   for arch in x86_64 riscv64 arm64 armv7 ppc64le s390x; do
     if [[ ! "${arch}" =~ x86_64|arm64 ]] && [ "${os}" != "Linux" ]; then
       continue
@@ -129,7 +131,7 @@ for os in Darwin Linux Windows; do
     fi
     dir="${os}/${arch}/${BASE_NAME}"
     cp -R "${DIR}/LICENSE" "${dir}/LICENSE"
-    if [ "${os}" == "Darwin" ] || [ "${os}" == "Linux" ]; then
+    if [ "${os}" == "Darwin" ] || [ "${os}" == "Linux" ] || [ "${os}" == "OpenBSD" ] || [ "${os}" == "FreeBSD" ]; then
       mkdir -p "${dir}/etc/bash_completion.d"
       mkdir -p "${dir}/share/fish/vendor_completions.d"
       mkdir -p "${dir}/share/zsh/site-functions"
@@ -142,7 +144,7 @@ for os in Darwin Linux Windows; do
   done
 done
 
-for os in Darwin Linux; do
+for os in Darwin Linux OpenBSD FreeBSD; do
   for arch in x86_64 riscv64 arm64 armv7 ppc64le s390x; do
     if [[ ! "${arch}" =~ x86_64|arm64 ]] && [ "${os}" != "Linux" ]; then
       continue
