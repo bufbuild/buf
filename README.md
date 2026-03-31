@@ -102,14 +102,14 @@ After completing the tour, check out the remainder of the [docs] for your specif
 
 The following is a breakdown of the binaries by CPU architecture and operating system available through our [releases]:
 
-|  | Linux | MacOS | Windows |
-| --- | --- | --- | --- |
-| x86 (64-bit) | ✅ | ✅ | ✅ |
-| ARM (64-bit) | ✅ | ✅ | ✅ |
-| ARMv7 (32-bit) | ✅ | ❌ | ❌ |
-| RISC-V (64-bit) | ✅ | ❌ | ❌ |
-| ppc64le | ✅ | ❌ | ❌ |
-| s390x | ✅ | ❌ | ❌ |
+|  | Linux | MacOS | Windows | OpenBSD | FreeBSD |
+| --- | --- | --- | --- | --- | --- |
+| x86 (64-bit) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| ARM (64-bit) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| ARMv7 (32-bit) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| RISC-V (64-bit) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| ppc64le | ✅ | ❌ | ❌ | ❌ | ❌ |
+| s390x | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 ## Community
 
