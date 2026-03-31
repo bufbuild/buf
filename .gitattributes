@@ -9,3 +9,7 @@
 **/corpus/** linguist-generated=true
 **/usage.gen.go linguist-generated=true
 /private/gen/** linguist-generated=true
+
+# Use union merge for CHANGELOG to avoid conflicts when multiple branches
+# add entries under [Unreleased]
+CHANGELOG.md merge=union
