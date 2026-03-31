@@ -219,7 +219,7 @@ func run(
 				return err
 			}
 		}
-		if err := responseWriter.Close(); err != nil {
+		if err := responseWriter.Close(ctx); err != nil {
 			return err
 		}
 		return nil
