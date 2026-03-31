@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package bufcobra
 
 import (
-	"fmt"
 	"regexp"
 
 	"buf.build/go/standard/xslices"
@@ -24,8 +23,7 @@ import (
 )
 
 const (
-	webpagesConfigFlagName     = "config"
-	includeFrontMatterFlagName = "include-front-matter"
+	webpagesConfigFlagName = "config"
 
 	indexFileName         = "index.md"
 	markdownFileExtension = ".md"
@@ -40,13 +38,7 @@ func NewWebpagesCommand(name string, cobraCommand *cobra.Command) *cobra.Command
 		Use:    name,
 		Hidden: true,
 		Short:  "Generate markdown files for CLI reference documentation.",
-		Long: fmt.Sprintf(`Generate markdown files for CLI reference documentation.
-
-By default, this generates markdown pages with the command name as a H1 title. For markdown
-files with Docusaurus compatible front matter, use --%s flag.`,
-			includeFrontMatterFlagName,
-		),
-		Args: cobra.NoArgs,
+		Args:   cobra.NoArgs,
 		RunE: func(command *cobra.Command, _ []string) error {
 			return run(command.Flags(), cobraCommand)
 		},
@@ -55,11 +47,6 @@ files with Docusaurus compatible front matter, use --%s flag.`,
 		webpagesConfigFlagName,
 		"",
 		"Path to config file to use",
-	)
-	webpagesCommand.Flags().Bool(
-		includeFrontMatterFlagName,
-		false,
-		"Include Docusaurus compatible front matter in generated markdown.",
 	)
 	return webpagesCommand
 }
@@ -83,14 +70,9 @@ func run(
 			command.Hidden = true
 		}
 	}
-	includeFrontMatter, err := flags.GetBool(includeFrontMatterFlagName)
-	if err != nil {
-		return err
-	}
 	return generateMarkdownTree(
 		cobraCommand,
 		config,
 		config.OutputDir,
-		includeFrontMatter,
 	)
 }

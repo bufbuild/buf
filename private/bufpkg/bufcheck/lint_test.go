@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1526,7 +1526,7 @@ func testLintWithOptions(
 	imageModifier func(bufimage.Image) bufimage.Image,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second) // Increased timeout for Wasm runtime
+	ctx, cancel := context.WithTimeout(t.Context(), 60*time.Second) // Increased timeout for Wasm runtime
 	defer cancel()
 
 	baseDirPath := filepath.Join("testdata", "lint")

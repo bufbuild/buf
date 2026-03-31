@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package oauth2
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -93,7 +92,7 @@ func TestRegisterDevice(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := context.Background()
+			ctx := t.Context()
 			c := NewClient("https://buf.build", &http.Client{
 				Transport: testRoundTripFunc(func(r *http.Request) (*http.Response, error) {
 					assert.Equal(t, r.Method, http.MethodPost)
@@ -205,7 +204,7 @@ func TestAuthorizeDevice(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := context.Background()
+			ctx := t.Context()
 			c := NewClient("https://buf.build", &http.Client{
 				Transport: testRoundTripFunc(func(r *http.Request) (*http.Response, error) {
 					assert.Equal(t, r.Method, http.MethodPost)
@@ -311,7 +310,7 @@ func TestAccessDeviceToken(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := context.Background()
+			ctx := t.Context()
 			c := NewClient("https://buf.build", &http.Client{
 				Transport: testRoundTripFunc(func(r *http.Request) (*http.Response, error) {
 					assert.Equal(t, r.Method, http.MethodPost)

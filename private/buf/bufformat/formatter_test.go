@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package bufformat
 
 import (
-	"context"
 	"io"
 	"strings"
 	"testing"
@@ -76,7 +75,7 @@ func testFormatHeader(t *testing.T) {
 
 func testFormatNoDiff(t *testing.T, path string) {
 	t.Run(path, func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		bucket, err := storageos.NewProvider().NewReadWriteBucket(path)
 		require.NoError(t, err)
 
@@ -117,6 +116,20 @@ func testFormatNoDiff(t *testing.T, path string) {
 	})
 }
 
+func testFormatError(t *testing.T, path string, errContains string) {
+	t.Run(path, func(t *testing.T) {
+		ctx := t.Context()
+		bucket, err := storageos.NewProvider().NewReadWriteBucket(path)
+		require.NoError(t, err)
+		moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, slogtestext.NewLogger(t), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+		moduleSetBuilder.AddLocalModule(bucket, path, true)
+		moduleSet, err := moduleSetBuilder.Build()
+		require.NoError(t, err)
+		_, err = FormatModuleSet(ctx, moduleSet)
+		require.ErrorContains(t, err, errContains)
+	})
+}
+
 func TestFormatterWithDeprecation(t *testing.T) {
 	t.Parallel()
 	// Test basic deprecation with prefix matching
@@ -136,7 +149,7 @@ func TestFormatterWithDeprecation(t *testing.T) {
 
 func testDeprecateNoDiff(t *testing.T, name string, path string, deprecatePrefixes []string, files []string) {
 	t.Run(name, func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		bucket, err := storageos.NewProvider().NewReadWriteBucket(path)
 		require.NoError(t, err)
 		var opts []FormatOption
@@ -180,7 +193,7 @@ func testDeprecateNoDiff(t *testing.T, name string, path string, deprecatePrefix
 
 func TestFormatBucketNoTypesMatchedError(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 	bucket, err := storageos.NewProvider().NewReadWriteBucket("testdata/deprecate")
 	require.NoError(t, err)
 	// Use a prefix that won't match anything in the deprecate testdata

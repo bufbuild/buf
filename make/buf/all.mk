@@ -1,6 +1,7 @@
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
 GO_GET_PKGS := $(GO_GET_PKGS) \
-	github.com/bufbuild/protocompile@main
+	github.com/bufbuild/protocompile@main \
+	buf.build/go/standard@main
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
@@ -42,7 +43,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	private/pkg/storage/storageos/tmp/
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
-LICENSE_HEADER_YEAR_RANGE := 2020-2025
+LICENSE_HEADER_YEAR_RANGE := 2020-2026
 LICENSE_HEADER_IGNORES := \/testdata enterprise
 BANDEPS_CONFIG := etc/bandeps/bandeps.yaml
 BUFPRIVATEUSAGE_PKGS := ./private/...
@@ -70,10 +71,10 @@ include make/go/docker.mk
 include make/go/license_header.mk
 include make/go/buf.mk
 
-installtest:: $(PROTOC) $(PROTOC_GEN_GO)
+installtest:: $(PROTOC) $(PROTOC_INCLUDE) $(PROTOC_GEN_GO)
 
 .PHONY: godata
-godata: installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC)
+godata: installwkt-go-data installbuf-legacyfederation-go-data $(PROTOC) $(PROTOC_INCLUDE)
 	rm -rf private/gen/data/datawkt
 	mkdir -p private/gen/data/datawkt
 	wkt-go-data "$(CACHE_INCLUDE)" --package datawkt --protobuf-version "$(PROTOC_VERSION)" > private/gen/data/datawkt/datawkt.gen.go
@@ -101,8 +102,7 @@ bufgeneratecleango:
 bufgeneratecleantestdata:
 	rm -rf cmd/buf/testdata/check_plugins/current/vendor/protovalidate
 	rm -rf cmd/buf/testdata/check_plugins/previous/vendor/protovalidate
-	rm -rf private/buf/buflsp/testdata/hover/vendor/protovalidate
-	rm -rf private/buf/buflsp/testdata/semantic_tokens/vendor/protovalidate
+	rm -rf private/buf/buflsp/testdata/vendor/protovalidate
 	rm -rf private/bufpkg/bufcheck/testdata/lint/protovalidate/vendor/protovalidate
 	rm -rf private/bufpkg/bufcheck/testdata/lint/protovalidate_predefines/vendor/protovalidate
 
@@ -125,10 +125,7 @@ bufgeneratetestdata:
 		--output cmd/buf/testdata/check_plugins/previous/vendor/protovalidate
 	$(BUF_BIN) export \
 		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
-		--output private/buf/buflsp/testdata/hover/vendor/protovalidate
-	$(BUF_BIN) export \
-		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
-		--output private/buf/buflsp/testdata/semantic_tokens/vendor/protovalidate
+		--output private/buf/buflsp/testdata/vendor/protovalidate
 	$(BUF_BIN) export \
 		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
 		--output private/bufpkg/bufcheck/testdata/lint/protovalidate/vendor/protovalidate

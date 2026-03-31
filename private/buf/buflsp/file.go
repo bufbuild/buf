@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -964,6 +964,23 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 		}
 	}
 	return symbols
+}
+
+// findSymbolByFullName searches for a referenceable symbol with the given full name
+// in the current file and its workspace.
+func (f *file) findSymbolByFullName(fullName ir.FullName) *symbol {
+	if sym, ok := f.referenceableSymbols[fullName]; ok {
+		return sym
+	}
+	if f.workspace == nil {
+		return nil
+	}
+	for _, wsFile := range f.workspace.PathToFile() {
+		if sym, ok := wsFile.referenceableSymbols[fullName]; ok {
+			return sym
+		}
+	}
+	return nil
 }
 
 // resolveASTDefinition is a helper for resolving the [ast.DeclDef] to the *[symbol], if

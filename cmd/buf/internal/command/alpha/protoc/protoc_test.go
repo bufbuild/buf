@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package protoc
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -222,7 +221,7 @@ func testInsertionPointMixedPathsSuccess(t *testing.T, receiverOut string, write
 		fmt.Sprintf("--%s_out=%s", "insertion-point-writer", writerOut),
 	}
 	err := prototesting.RunProtoc(
-		context.Background(),
+		t.Context(),
 		[]string{dirPath},
 		filePaths,
 		false,
@@ -338,7 +337,7 @@ func testCompareGeneratedStubs(
 	)
 	require.NoError(t, err)
 	diff, err := storage.DiffBytes(
-		context.Background(),
+		t.Context(),
 		actualReadWriteBucket,
 		bufReadWriteBucket,
 	)
@@ -418,7 +417,7 @@ func testCompareGeneratedStubsArchive(
 	require.NoError(t, err)
 	actualReadWriteBucket := storagemem.NewReadWriteBucket()
 	err = storagearchive.Unzip(
-		context.Background(),
+		t.Context(),
 		bytes.NewReader(actualData),
 		int64(len(actualData)),
 		actualReadWriteBucket,
@@ -428,14 +427,14 @@ func testCompareGeneratedStubsArchive(
 	require.NoError(t, err)
 	bufReadWriteBucket := storagemem.NewReadWriteBucket()
 	err = storagearchive.Unzip(
-		context.Background(),
+		t.Context(),
 		bytes.NewReader(bufData),
 		int64(len(bufData)),
 		bufReadWriteBucket,
 	)
 	require.NoError(t, err)
 	diff, err := storage.DiffBytes(
-		context.Background(),
+		t.Context(),
 		actualReadWriteBucket,
 		bufReadWriteBucket,
 	)

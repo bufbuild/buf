@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package buffetch
 
 import (
-	"context"
 	"io"
 	"log/slog"
 	"path/filepath"
@@ -106,7 +105,7 @@ func testRoundTripLocalFile(
 	reader := testNewFetchReader(logger)
 	writer := testNewFetchWriter(logger)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	container := app.NewContainer(nil, nil, nil, nil)
 
 	tmpDir := t.TempDir()

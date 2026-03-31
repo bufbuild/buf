@@ -2,7 +2,16 @@
 
 ## [Unreleased]
 
+- Fix `buf dep graph --format json` silently dropping dependencies when a dependency was already seen.
+- Add support for `--rbs_out` as a `protoc_builtin` plugin (requires protoc v34.0+).
+- Add relevant links from CEL LSP hover documentation to either <celbyexample.com> or <protovalidate.com>
+- Add OpenBSD and FreeBSD release binaries for amd64 and arm64.
+- Skip writing unchanged output files in `buf generate` to preserve modification times
 - Add support for Edition 2024 syntax to `buf format`.
+
+## [v1.66.1] - 2026-03-09
+
+- Fix `exclude_types` in `buf generate` dropping transitive dependencies of import files retained for their extension fields.
 
 ## [v1.66.0] - 2026-02-23
 
@@ -1496,7 +1505,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.66.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.66.1...HEAD
+[v1.66.1]: https://github.com/bufbuild/buf/compare/v1.66.0...v1.66.1
 [v1.66.0]: https://github.com/bufbuild/buf/compare/v1.65.0...v1.66.0
 [v1.65.0]: https://github.com/bufbuild/buf/compare/v1.64.0...v1.65.0
 [v1.64.0]: https://github.com/bufbuild/buf/compare/v1.63.0...v1.64.0

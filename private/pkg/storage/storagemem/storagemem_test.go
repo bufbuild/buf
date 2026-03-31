@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package storagemem_test
 
 import (
-	"context"
 	"path/filepath"
 	"testing"
 
@@ -49,7 +48,7 @@ func testNewReadBucket(t *testing.T, dirPath string, storageosProvider storageos
 	require.NoError(t, err)
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	_, err = storage.Copy(
-		context.Background(),
+		t.Context(),
 		osBucket,
 		readWriteBucket,
 		storage.CopyWithExternalAndLocalPaths(),

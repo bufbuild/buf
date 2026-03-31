@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"time"
 
-	"buf.build/go/standard/xlog/xslog"
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -344,7 +344,7 @@ func newModuleSet(
 	// may be nil
 	commitIDToCreateTime map[uuid.UUID]time.Time,
 ) (bufmodule.ModuleSet, error) {
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(context.Background(), xslog.NopLogger, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(context.Background(), slog.New(slog.DiscardHandler), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	for i, moduleData := range moduleDatas {
 		if err := addModuleDataToModuleSetBuilder(
 			moduleSetBuilder,

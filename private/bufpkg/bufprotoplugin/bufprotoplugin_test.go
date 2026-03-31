@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package bufprotoplugin
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -49,7 +48,7 @@ at varied indentation levels
 		}
 
 		postInsertionContent, err := writeInsertionPoint(
-			context.Background(),
+			t.Context(),
 			insertionPointConsumer,
 			strings.NewReader(targetFileContent),
 		)
@@ -76,7 +75,7 @@ at varied indentation levels
 		}
 
 		postInsertionContent, err := writeInsertionPoint(
-			context.Background(),
+			t.Context(),
 			insertionPointConsumer,
 			strings.NewReader(targetFileContent),
 		)
@@ -103,7 +102,7 @@ at varied indentation levels
 		}
 
 		postInsertionContent, err := writeInsertionPoint(
-			context.Background(),
+			t.Context(),
 			insertionPointConsumer,
 			strings.NewReader(targetFileContent),
 		)
@@ -133,7 +132,7 @@ at varied indentation levels
 			Content:        &insertionPointContent,
 		}
 		_, err := writeInsertionPoint(
-			context.Background(),
+			t.Context(),
 			insertionPointConsumer,
 			strings.NewReader(targetFileContent),
 		)
@@ -148,7 +147,7 @@ at varied indentation levels
 			Content:        &insertionPointContent,
 		}
 		_, err := writeInsertionPoint(
-			context.Background(),
+			t.Context(),
 			insertionPointConsumer,
 			strings.NewReader(targetFileContent),
 		)
@@ -200,7 +199,7 @@ at varied indentation levels` + whitespacePrefix + "// @@protoc_insertion_point(
 			b.ReportAllocs()
 
 			postInsertionContent, _ = writeInsertionPoint(
-				context.Background(),
+				b.Context(),
 				insertionPointConsumer,
 				strings.NewReader(targetFileContent),
 			)
@@ -234,7 +233,7 @@ at varied indentation levels` + whitespacePrefix + "// @@protoc_insertion_point(
 			b.ReportAllocs()
 
 			postInsertionContent, _ = writeInsertionPoint(
-				context.Background(),
+				b.Context(),
 				insertionPointConsumer,
 				strings.NewReader(inflatedTargetFileContent.String()),
 			)

@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@ package buftesting
 import (
 	"context"
 	"io"
+	"log/slog"
 	"net/http"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/buf/bufprotoc"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/github/githubtesting"
@@ -48,7 +48,7 @@ var (
 	}
 	testStorageosProvider = storageos.NewProvider(storageos.ProviderWithSymlinks())
 	testArchiveReader     = githubtesting.NewArchiveReader(
-		xslog.NopLogger,
+		slog.New(slog.DiscardHandler),
 		testStorageosProvider,
 		testHTTPClient,
 	)
@@ -64,7 +64,7 @@ func GetActualProtocFileDescriptorSet(
 	filePaths []string,
 ) *descriptorpb.FileDescriptorSet {
 	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
-		context.Background(),
+		t.Context(),
 		[]string{dirPath},
 		filePaths,
 		includeImports,
@@ -86,7 +86,7 @@ func RunActualProtoc(
 	extraFlags ...string,
 ) {
 	err := prototesting.RunProtoc(
-		context.Background(),
+		t.Context(),
 		[]string{dirPath},
 		filePaths,
 		includeImports,
@@ -104,7 +104,7 @@ func GetGoogleapisDirPath(t *testing.T, buftestingDirPath string) string {
 	require.NoError(
 		t,
 		testArchiveReader.GetArchive(
-			context.Background(),
+			t.Context(),
 			googleapisDirPath,
 			"googleapis",
 			"googleapis",
@@ -119,7 +119,7 @@ func GetGoogleapisDirPath(t *testing.T, buftestingDirPath string) string {
 // Limit limits the number of files returned if > 0.
 // protoc has a fixed size for number of characters to argument list.
 func GetProtocFilePaths(t *testing.T, dirPath string, limit int) []string {
-	realFilePaths, err := GetProtocFilePathsErr(context.Background(), dirPath, limit)
+	realFilePaths, err := GetProtocFilePathsErr(t.Context(), dirPath, limit)
 	require.NoError(t, err)
 	return realFilePaths
 }
@@ -130,7 +130,7 @@ func GetProtocFilePathsErr(ctx context.Context, dirPath string, limit int) ([]st
 	// impact on our dependency tree.
 	moduleSet, err := bufprotoc.NewModuleSetForProtoc(
 		ctx,
-		xslog.NopLogger,
+		slog.New(slog.DiscardHandler),
 		testStorageosProvider,
 		[]string{dirPath},
 		nil,

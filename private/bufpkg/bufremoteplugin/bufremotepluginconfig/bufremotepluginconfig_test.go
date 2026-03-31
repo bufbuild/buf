@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package bufremotepluginconfig
 
 import (
-	"context"
 	"math"
 	"os"
 	"path/filepath"
@@ -35,7 +34,7 @@ func TestGetConfigForBucket(t *testing.T) {
 	storageosProvider := storageos.NewProvider()
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "success", "go"))
 	require.NoError(t, err)
-	pluginConfig, err := GetConfigForBucket(context.Background(), readWriteBucket)
+	pluginConfig, err := GetConfigForBucket(t.Context(), readWriteBucket)
 	require.NoError(t, err)
 	pluginIdentity, err := bufremotepluginref.PluginIdentityForString("buf.build/library/go-grpc")
 	require.NoError(t, err)
@@ -524,7 +523,7 @@ func verifyDependencies(t testing.TB, validConfigBytes []byte, fail bool, invali
 	cloned.Deps = slices.Clone(invalidDependencies)
 	yamlBytes, err := yaml.Marshal(cloned)
 	require.NoError(t, err)
-	_, err = GetConfigForData(context.Background(), yamlBytes)
+	_, err = GetConfigForData(t.Context(), yamlBytes)
 	if fail {
 		assert.Error(t, err)
 	} else {

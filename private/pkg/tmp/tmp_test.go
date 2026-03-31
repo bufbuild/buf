@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import (
 
 func TestFile(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 	tmpFile, err := NewFile(ctx, strings.NewReader("foo"))
 	require.NoError(t, err)
 	assert.True(t, filepath.IsAbs(tmpFile.Path()))
@@ -42,7 +42,7 @@ func TestFile(t *testing.T) {
 
 func TestFileCancel(t *testing.T) {
 	t.Parallel()
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	tmpFile, err := NewFile(ctx, strings.NewReader("foo"))
 	require.NoError(t, err)
 	_, err = os.ReadFile(tmpFile.Path())
@@ -55,7 +55,7 @@ func TestFileCancel(t *testing.T) {
 
 func TestDir(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 	tmpDir, err := NewDir(ctx)
 	require.NoError(t, err)
 	assert.True(t, filepath.IsAbs(tmpDir.Path()))
@@ -69,7 +69,7 @@ func TestDir(t *testing.T) {
 
 func TestDirCancel(t *testing.T) {
 	t.Parallel()
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	tmpDir, err := NewDir(ctx)
 	require.NoError(t, err)
 	_, err = os.Lstat(tmpDir.Path())

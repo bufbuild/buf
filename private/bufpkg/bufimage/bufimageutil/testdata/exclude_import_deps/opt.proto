@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package opt;
+
+import "dep.proto";
+import "google/protobuf/descriptor.proto";
+
+// my_service_option is used in user.proto, causing opt.proto to be retained
+// in the filtered image. Since opt.proto also imports dep.proto (via
+// OptMessage), dep.proto must also be retained.
+extend google.protobuf.ServiceOptions {
+  optional string my_service_option = 50001;
+}
+
+// OptMessage references dep.DepMessage, so opt.proto depends on dep.proto.
+message OptMessage {
+  dep.DepMessage dep_field = 1;
+}

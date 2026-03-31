@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -301,7 +301,7 @@ func testRunHandlerFunc(
 
 	exitCode := app.GetExitCode(
 		protoplugin.Run(
-			context.Background(),
+			t.Context(),
 			protoplugin.Env{
 				Args:    nil,
 				Stdin:   stdin,
@@ -331,7 +331,7 @@ func testBuildRequest(
 	fileToGenerate []string,
 ) protoplugin.Request {
 	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
-		context.Background(),
+		t.Context(),
 		[]string{root},
 		realFilePaths,
 		true,

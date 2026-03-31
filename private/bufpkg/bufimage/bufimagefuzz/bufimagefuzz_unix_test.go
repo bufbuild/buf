@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,12 +21,12 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/buf/buftesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -42,7 +42,7 @@ func TestCorpus(t *testing.T) {
 	t.Parallel()
 	// To focus on just one test in the corpus, put its file name here. Don't forget to revert before committing.
 	focus := ""
-	ctx := context.Background()
+	ctx := t.Context()
 	require.NoError(t, filepath.Walk("corpus", func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -141,7 +141,7 @@ func fuzzBuild(ctx context.Context, dirPath string) (bufimage.Image, error) {
 	}
 	return bufimage.BuildImage(
 		ctx,
-		xslog.NopLogger,
+		slog.New(slog.DiscardHandler),
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)

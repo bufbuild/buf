@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -67,6 +67,13 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 			if err := closure.addElement(fileDescriptorProto, "", false, imageIndex, options); err != nil {
 				return nil, err
 			}
+		}
+		// Import files that were pulled in only as namespace containers for
+		// extension fields haven't had their own types walked, so their
+		// field-type dependencies are absent from closure.imports. Traverse
+		// those files now, recursing until the closure is stable.
+		if err := closure.traverseRetainedImportFiles(image, imageIndex, options); err != nil {
+			return nil, err
 		}
 	}
 	// After all types are added, add their known extensions

@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -303,10 +303,10 @@ func formatDelegateError(delegate *checkClientSpec, err error) error {
 	}
 	var errorMsg strings.Builder
 	errorMsg.WriteString("plugin ")
-	errorMsg.WriteString(fmt.Sprintf("%q", delegate.PluginName))
+	fmt.Fprintf(&errorMsg, "%q", delegate.PluginName)
 	if delegate.PolicyName != "" {
 		errorMsg.WriteString(" from policy ")
-		errorMsg.WriteString(fmt.Sprintf("%q", delegate.PolicyName))
+		fmt.Fprintf(&errorMsg, "%q", delegate.PolicyName)
 	}
 	errorMsg.WriteString(" failed: ")
 	return fmt.Errorf("%s%w", errorMsg.String(), err)

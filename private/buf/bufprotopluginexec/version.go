@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -148,6 +148,15 @@ func getRustSupportedAsBuiltin(version *pluginpb.Version) bool {
 	}
 	// version.GetMajor() 4 5
 	return true
+}
+
+// Is rbs supported as a builtin plugin?
+func getRbsSupportedAsBuiltin(version *pluginpb.Version) bool {
+	if version.GetSuffix() == "buf" {
+		return true
+	}
+	// rbs was added in protoc v34.0
+	return version.GetMajor() >= 34
 }
 
 // Is js supported as a builtin plugin?

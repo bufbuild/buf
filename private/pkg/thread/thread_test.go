@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ func TestParallelizeWithImmediateCancellation(t *testing.T) {
 				return nil
 			})
 		}
-		err := Parallelize(context.Background(), jobs)
+		err := Parallelize(t.Context(), jobs)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(jobsToExecute), executed.Load(), "jobs executed")
 	})
@@ -53,7 +53,7 @@ func TestParallelizeWithImmediateCancellation(t *testing.T) {
 				return nil
 			})
 		}
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 		err := Parallelize(ctx, jobs)
 		assert.Error(t, err)

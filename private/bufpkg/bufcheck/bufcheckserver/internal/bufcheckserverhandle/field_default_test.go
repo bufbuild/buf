@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package bufcheckserverhandle
 
 import (
-	"context"
 	"math"
 	"testing"
 
@@ -119,7 +118,7 @@ func TestGetDefault(t *testing.T) {
 			}),
 		},
 	}
-	results, err := compiler.Compile(context.Background(), "test.proto")
+	results, err := compiler.Compile(t.Context(), "test.proto")
 	require.NoError(t, err)
 	msg := results[0].Messages().ByName("A")
 

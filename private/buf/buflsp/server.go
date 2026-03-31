@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -388,6 +388,12 @@ func (s *server) Definition(
 	ctx context.Context,
 	params *protocol.DefinitionParams,
 ) ([]protocol.Location, error) {
+	// First, try to resolve a CEL definition (e.g. `this` → field or message).
+	if file := s.fileManager.Get(params.TextDocument.URI); file != nil {
+		if loc := getCELDefinition(file, params.Position, s.celEnv); loc != nil {
+			return []protocol.Location{*loc}, nil
+		}
+	}
 	symbol := s.getSymbol(ctx, params.TextDocument.URI, params.Position)
 	if symbol == nil {
 		return nil, nil
@@ -439,6 +445,13 @@ func (s *server) Completion(
 	if file == nil {
 		return nil, nil
 	}
+
+	// First, try CEL completion when the cursor is inside a protovalidate expression.
+	if celItems := getCELCompletionItems(file, params.Position, s.celEnv); celItems != nil {
+		return &protocol.CompletionList{Items: celItems}, nil
+	}
+
+	// Fall back to proto-level completions.
 	items := getCompletionItems(ctx, file, params.Position)
 	if len(items) == 0 {
 		return nil, nil

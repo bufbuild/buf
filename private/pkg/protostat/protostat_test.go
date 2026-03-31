@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -215,7 +215,7 @@ func TestGetStatsDeprecatedTypes(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			walker := &testFileWalker{contents: []string{tc.content}}
-			stats, err := GetStats(context.Background(), walker)
+			stats, err := GetStats(t.Context(), walker)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedTypes, stats.Types, "Types count mismatch")
 			assert.Equal(t, tc.expectedDeprecatedMessages, stats.DeprecatedMessages, "DeprecatedMessages count mismatch")
@@ -245,7 +245,7 @@ func TestGetStatsMultipleFiles(t *testing.T) {
 	`
 
 	walker := &testFileWalker{contents: []string{file1, file2}}
-	stats, err := GetStats(context.Background(), walker)
+	stats, err := GetStats(t.Context(), walker)
 	require.NoError(t, err)
 
 	assert.Equal(t, 2, stats.Files)

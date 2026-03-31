@@ -1,9 +1,12 @@
 version: v2
 modules:
   - path: .
+  - path: vendor/protovalidate
 lint:
   use:
     - STANDARD
+  ignore:
+    - vendor/protovalidate
 breaking:
   use:
     - FILE

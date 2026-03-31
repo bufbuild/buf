@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ func run(ctx context.Context, container appext.Container, flags *flags) error {
 	if protobufVersion == "" {
 		return appcmd.NewInvalidArgumentErrorf("--%s is required", protobufVersionFlagName)
 	}
-	readWriteBucket, err := storageos.NewProvider(storageos.ProviderWithSymlinks()).NewReadWriteBucket(dirPath)
+	readWriteBucket, err := storageos.NewProvider(storageos.ProviderWithSymlinks()).NewReadWriteBucket(dirPath, storageos.ReadWriteBucketWithSymlinksIfSupported())
 	if err != nil {
 		return err
 	}

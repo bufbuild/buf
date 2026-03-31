@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package zeta.v1;
+
+import "common.proto";
+import "alpha.proto";
+
+message Bar {
+  common.v1.Shared shared = 1;
+  alpha.v1.Foo foo = 2;
+}

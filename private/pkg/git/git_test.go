@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import (
 
 func TestGitCloner(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 	container, err := app.NewContainerForOS()
 	require.NoError(t, err)
 	originDir, workDir := createGitDirs(ctx, t, container)
@@ -463,7 +463,7 @@ func createGitDirs(
 	require.NoError(t, os.WriteFile(filepath.Join(originPath, "a.proto"), []byte("// commit 4"), 0600))
 	runCommand(ctx, t, container, "git", "-C", originPath, "add", "a.proto")
 	runCommand(ctx, t, container, "git", "-C", originPath, "commit", "-m", "commit 4")
-	runCommand(ctx, t, container, "git", "-C", originPath, "tag", "remote-tag")
+	runCommand(ctx, t, container, "git", "-C", originPath, "tag", "remote-tag", "--no-sign")
 	runCommand(ctx, t, container, "git", "-C", originPath, "tag", "-a", "remote-annotated-tag", "-m", "annotated tag")
 
 	runCommand(ctx, t, container, "git", "-C", workPath, "fetch", "origin")

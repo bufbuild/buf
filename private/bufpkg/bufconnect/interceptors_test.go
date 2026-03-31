@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,8 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"strings"
+	"fmt"
 	"testing"
-	"time"
 
 	"buf.build/go/app"
 	"buf.build/go/app/appext"
@@ -122,7 +121,7 @@ func TestCLIWarningInterceptor(t *testing.T) {
 		return resp, nil
 	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
-	assertWarnLog(t, warningMessage, buf.String())
+	assert.Equal(t, fmt.Sprintf("WARN\t%s\n", warningMessage), buf.String())
 
 	// testing no warning message in valid response with no header
 	buf.Reset()
@@ -146,7 +145,7 @@ func TestCLIWarningInterceptorFromError(t *testing.T) {
 		return nil, err
 	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
 	assert.Error(t, err)
-	assertWarnLog(t, warningMessage, buf.String())
+	assert.Equal(t, fmt.Sprintf("WARN\t%s\n", warningMessage), buf.String())
 }
 
 type testRequest[T any] struct {
@@ -162,19 +161,6 @@ func (r testRequest[_]) Peer() connect.Peer {
 	return connect.Peer{
 		Addr: "example.com",
 	}
-}
-
-// assertWarnLog verifies that logOutput contains a single WARN log line with the
-// given message. The console handler prepends an RFC3339 timestamp, so this
-// helper parses the three tab-separated fields and checks each one.
-func assertWarnLog(t *testing.T, message, logOutput string) {
-	t.Helper()
-	parts := strings.SplitN(strings.TrimRight(logOutput, "\n"), "\t", 3)
-	require.Len(t, parts, 3, "expected 3 tab-separated fields in log output")
-	_, err := time.Parse(time.RFC3339, parts[0])
-	assert.NoError(t, err, "expected valid RFC3339 timestamp")
-	assert.Equal(t, "WARN", parts[1])
-	assert.Equal(t, message, parts[2])
 }
 
 func TestNewAugmentedConnectErrorInterceptor(t *testing.T) {

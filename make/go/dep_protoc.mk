@@ -10,9 +10,9 @@ $(call _assert_var,CACHE_INCLUDE)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/protocolbuffers/protobuf/releases 20250528 checked 20250603
+# https://github.com/protocolbuffers/protobuf/releases 20250225 checked 20250310
 # NOTE: Set to version compatible with genproto source code (only used in tests).
-PROTOC_VERSION ?= 31.1
+PROTOC_VERSION ?= 33.3
 
 # Google adds a dash to release candidate versions in the name of the
 # release artifact, i.e. v27.0-rc1 -> v27.0-rc-1
@@ -35,19 +35,31 @@ PROTOC_OS = linux
 PROTOC_ARCH := $(UNAME_ARCH)
 endif
 
-PROTOC := $(CACHE_VERSIONS)/protoc/$(PROTOC_VERSION)
-$(PROTOC):
+PROTOC := $(CACHE_BIN)/protoc
+PROTOC_INCLUDE := $(CACHE_INCLUDE)/google
+
+$(CACHE_VERSIONS)/protoc/protoc-$(PROTOC_VERSION):
 	@if ! command -v curl >/dev/null 2>/dev/null; then echo "error: curl must be installed"  >&2; exit 1; fi
 	@if ! command -v unzip >/dev/null 2>/dev/null; then echo "error: unzip must be installed"  >&2; exit 1; fi
-	@rm -f $(CACHE_BIN)/protoc
-	@rm -rf $(CACHE_INCLUDE)/google
-	@mkdir -p $(CACHE_BIN) $(CACHE_INCLUDE)
+	@rm -f $(PROTOC)
+	@rm -rf $(PROTOC_INCLUDE)
+	@rm -rf $(dir $@)
+	@mkdir -p $(dir $@)
+	@mkdir -p $(CACHE_VERSIONS)/protoc/protoc-$(PROTOC_VERSION)-include
 	$(eval PROTOC_TMP := $(shell mktemp -d))
 	cd $(PROTOC_TMP); curl -sSL https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOC_VERSION)/protoc-$(PROTOC_RELEASE_VERSION)-$(PROTOC_OS)-$(PROTOC_ARCH).zip -o protoc.zip
-	cd $(PROTOC_TMP); unzip protoc.zip && mv bin/protoc $(CACHE_BIN)/protoc && mv include/google $(CACHE_INCLUDE)/google
+	cd $(PROTOC_TMP); unzip protoc.zip && mv bin/protoc $@ && mv include/google $(CACHE_VERSIONS)/protoc/protoc-$(PROTOC_VERSION)-include/google
 	@rm -rf $(PROTOC_TMP)
-	@rm -rf $(dir $(PROTOC))
-	@mkdir -p $(dir $(PROTOC))
-	@touch $(PROTOC)
+	@chmod +x $@
+	@test -x $@
+	@touch $@
 
-dockerdeps:: $(PROTOC)
+$(PROTOC): $(CACHE_VERSIONS)/protoc/protoc-$(PROTOC_VERSION)
+	@mkdir -p $(dir $@)
+	@ln -sf $< $@
+
+$(PROTOC_INCLUDE): $(CACHE_VERSIONS)/protoc/protoc-$(PROTOC_VERSION)
+	@mkdir -p $(dir $@)
+	@ln -sf $(CACHE_VERSIONS)/protoc/protoc-$(PROTOC_VERSION)-include/google $@
+
+dockerdeps:: $(PROTOC) $(PROTOC_INCLUDE)

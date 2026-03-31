@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package depupdate
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 
@@ -26,7 +25,11 @@ import (
 	"github.com/bufbuild/buf/cmd/buf/internal/command/dep/internal"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
@@ -87,7 +90,7 @@ func run(
 	ctx context.Context,
 	container appext.Container,
 	flags *flags,
-) (retErr error) {
+) error {
 	dirPath := "."
 	if container.NumArgs() > 0 {
 		dirPath = container.Arg(0)
@@ -125,7 +128,6 @@ func run(
 		slog.Any("deps", xslices.Map(configuredDepModuleKeys, bufmodule.ModuleKey.String)),
 	)
 
-	// Store the existing buf.lock data.
 	existingDepModuleKeys, err := workspaceDepManager.ExistingBufLockFileDepModuleKeys(ctx)
 	if err != nil {
 		return err
@@ -152,22 +154,29 @@ func run(
 		return err
 	}
 
-	// We're about to edit the buf.lock file on disk. If we have a subsequent error,
-	// attempt to revert the buf.lock file.
-	//
-	// TODO FUTURE: We should be able to update the buf.lock file in an in-memory bucket, then do the rebuild,
-	// and if the rebuild is successful, then actually write to disk. It shouldn't even be that much work - just
-	// overlay the new buf.lock file in a union bucket.
-	defer func() {
-		if retErr != nil {
-			retErr = errors.Join(retErr, workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys, existingRemotePluginKeys, existingRemotePolicyKeys, existingPolicyNameToRemotePluginKeys))
-		}
-	}()
-	// Edit the buf.lock file with the unpruned dependencies.
-	if err := workspaceDepManager.UpdateBufLockFile(ctx, configuredDepModuleKeys, existingRemotePluginKeys, existingRemotePolicyKeys, existingPolicyNameToRemotePluginKeys); err != nil {
+	// Write the updated buf.lock to an in-memory bucket and overlay it on top of
+	// the workspace bucket for validation. Only persist to disk after the workspace
+	// builds successfully.
+	overlayBucket := storagemem.NewReadWriteBucket()
+	bufLockFile, err := newBufLockFile(
+		workspaceDepManager.BufLockFileDigestType(),
+		configuredDepModuleKeys,
+		existingRemotePluginKeys,
+		existingRemotePolicyKeys,
+		existingPolicyNameToRemotePluginKeys,
+	)
+	if err != nil {
 		return err
 	}
-	workspace, err := controller.GetWorkspace(ctx, dirPath, bufctl.WithIgnoreAndDisallowV1BufWorkYAMLs())
+	if err := bufconfig.PutBufLockFileForPrefix(ctx, overlayBucket, ".", bufLockFile); err != nil {
+		return err
+	}
+	workspace, err := controller.GetWorkspace(
+		ctx,
+		dirPath,
+		bufctl.WithIgnoreAndDisallowV1BufWorkYAMLs(),
+		bufctl.WithBucketOverlay(overlayBucket),
+	)
 	if err != nil {
 		return err
 	}
@@ -181,6 +190,45 @@ func run(
 	); err != nil {
 		return err
 	}
+	// Build succeeded, persist the buf.lock to disk.
+	if err := workspaceDepManager.UpdateBufLockFile(
+		ctx,
+		configuredDepModuleKeys,
+		existingRemotePluginKeys,
+		existingRemotePolicyKeys,
+		existingPolicyNameToRemotePluginKeys,
+	); err != nil {
+		return err
+	}
 	// Log warnings for users on unused configured deps.
 	return internal.LogUnusedConfiguredDepsForWorkspace(workspace, logger)
+}
+
+// newBufLockFile creates a BufLockFile for the given digest type and keys.
+func newBufLockFile(
+	digestType bufmodule.DigestType,
+	depModuleKeys []bufmodule.ModuleKey,
+	remotePluginKeys []bufplugin.PluginKey,
+	remotePolicyKeys []bufpolicy.PolicyKey,
+	policyNameToRemotePluginKeys map[string][]bufplugin.PluginKey,
+) (bufconfig.BufLockFile, error) {
+	switch digestType {
+	case bufmodule.DigestTypeB5:
+		return bufconfig.NewBufLockFile(
+			bufconfig.FileVersionV2,
+			depModuleKeys,
+			remotePluginKeys,
+			remotePolicyKeys,
+			policyNameToRemotePluginKeys,
+		)
+	default:
+		// For v1beta1/v1 workspaces, plugins and policies are not supported.
+		return bufconfig.NewBufLockFile(
+			bufconfig.FileVersionV1,
+			depModuleKeys,
+			nil,
+			nil,
+			nil,
+		)
+	}
 }

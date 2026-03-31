@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package policyupdate
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"maps"
 
@@ -81,7 +80,7 @@ func run(
 	ctx context.Context,
 	container appext.Container,
 	flags *flags,
-) (retErr error) {
+) error {
 	dirPath := "."
 	if container.NumArgs() > 0 {
 		dirPath = container.Arg(0)
@@ -170,24 +169,8 @@ func run(
 	if err != nil {
 		return err
 	}
-	// We're about to edit the buf.lock file on disk. If we have a subsequent error,
-	// attempt to revert the buf.lock file.
-	//
-	// TODO FUTURE: We should be able to update the buf.lock file in an in-memory bucket, then do the rebuild,
-	// and if the rebuild is successful, then actually write to disk. It shouldn't even be that much work - just
-	// overlay the new buf.lock file in a union bucket.
-	defer func() {
-		if retErr != nil {
-			retErr = errors.Join(retErr, workspaceDepManager.UpdateBufLockFile(
-				ctx, existingDepModuleKeys, existingRemotePluginKeys, existingRemotePolicyKeys, existingPolicyNameToRemotePluginKeys,
-			))
-		}
-	}()
-	// Edit the buf.lock file with the updated remote plugins.
-	if err := workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys, existingRemotePluginKeys, configuredRemotePolicyKeys, configuredPolicyNameToRemotePluginKeys); err != nil {
-		return err
-	}
-	return nil
+	// Edit the buf.lock file with the updated remote policies.
+	return workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys, existingRemotePluginKeys, configuredRemotePolicyKeys, configuredPolicyNameToRemotePluginKeys)
 }
 
 func getPolicyKeyPluginKeysForPolicyKeys(

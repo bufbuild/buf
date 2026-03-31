@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -828,6 +828,54 @@ func (t *transitiveClosure) addExtensions(
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+// traverseRetainedImportFiles walks import files that are present in
+// closure.imports but were added only as namespace containers
+// (inclusionModeEnclosing) for extension fields. Such files have not had
+// their own types walked, so their field-type imports are absent from
+// closure.imports. Calling addElement for each such file fills in the missing
+// entries. After processing one file, the function recurses because that
+// traversal may add further enclosing import files.
+//
+// Only used in exclude-only mode (includeTypes == nil).
+func (t *transitiveClosure) traverseRetainedImportFiles(
+	image bufimage.Image,
+	imageIndex *imageIndex,
+	opts *imageFilterOptions,
+) error {
+	for _, file := range image.Files() {
+		if !file.IsImport() {
+			continue
+		}
+		fileDescriptorProto := file.FileDescriptorProto()
+		// Only act on files retained as namespace containers; files already
+		// fully traversed (Explicit/Implicit/Excluded) are skipped.
+		if mode, ok := t.elements[fileDescriptorProto]; !ok || mode != inclusionModeEnclosing {
+			continue
+		}
+		// Check whether any of this file's declared dependencies are absent
+		// from the tracked import set. If all are accounted for, the closure
+		// is already complete and there is nothing to do.
+		importsRequired := t.imports[file.Path()]
+		needsTraversal := false
+		for _, dep := range fileDescriptorProto.GetDependency() {
+			if _, ok := importsRequired[dep]; !ok {
+				needsTraversal = true
+				break
+			}
+		}
+		if !needsTraversal {
+			continue
+		}
+		if err := t.addElement(fileDescriptorProto, "", false, imageIndex, opts); err != nil {
+			return err
+		}
+		// Recurse from the top: addElement may have introduced additional
+		// enclosing import files that also need traversal.
+		return t.traverseRetainedImportFiles(image, imageIndex, opts)
 	}
 	return nil
 }

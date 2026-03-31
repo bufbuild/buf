@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appcmd/appcmdtesting"
@@ -165,7 +166,7 @@ func TestGenerateV2LocalPluginBasic(t *testing.T) {
 	actual, err := storageos.NewProvider().NewReadWriteBucket(tempDirPath)
 	require.NoError(t, err)
 
-	diff, err := storage.DiffBytes(context.Background(), expected, actual)
+	diff, err := storage.DiffBytes(t.Context(), expected, actual)
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
 }
@@ -188,7 +189,7 @@ func TestGenerateV2LocalPluginTypes(t *testing.T) {
 		actual, err := storageos.NewProvider().NewReadWriteBucket(tempDirPath)
 		require.NoError(t, err)
 
-		diff, err := storage.DiffBytes(context.Background(), expected, actual)
+		diff, err := storage.DiffBytes(t.Context(), expected, actual)
 		require.NoError(t, err)
 		require.Empty(t, string(diff))
 	}
@@ -369,6 +370,25 @@ func TestOutputFlag(t *testing.T) {
 		_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
 		require.NoError(t, err)
 	}
+}
+
+func TestSmartCleanPreservesMtime(t *testing.T) {
+	t.Parallel()
+	tempDirPath := t.TempDir()
+	template := filepath.Join("testdata", "simple", "buf.gen.yaml")
+	input := filepath.Join("testdata", "simple")
+	outFile := filepath.Join(tempDirPath, "java", "a", "v1", "A.java")
+
+	testRunSuccess(t, "--output", tempDirPath, "--template", template, input)
+
+	past := time.Now().Add(-time.Hour)
+	require.NoError(t, os.Chtimes(outFile, past, past))
+
+	testRunSuccess(t, "--output", tempDirPath, "--template", template, input)
+
+	info, err := os.Stat(outFile)
+	require.NoError(t, err)
+	require.Equal(t, past.Truncate(time.Second), info.ModTime().Truncate(time.Second))
 }
 
 func TestProtoFileRefIncludePackageFiles(t *testing.T) {
@@ -657,7 +677,7 @@ func testGenerateInsertionPoint(
 ) {
 	storageosProvider := storageos.NewProvider()
 	tempDir, readWriteBucket := internaltesting.CopyReadBucketToTempDir(
-		context.Background(),
+		t.Context(),
 		t,
 		storageosProvider,
 		storagemem.NewReadWriteBucket(),
@@ -672,7 +692,7 @@ func testGenerateInsertionPoint(
 	)
 	expectedOutput, err := storageosProvider.NewReadWriteBucket(expectedOutputPath)
 	require.NoError(t, err)
-	diff, err := storage.DiffBytes(context.Background(), expectedOutput, readWriteBucket)
+	diff, err := storage.DiffBytes(t.Context(), expectedOutput, readWriteBucket)
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
 }
@@ -802,7 +822,7 @@ func testCompareGeneratedStubs(
 	)
 	require.NoError(t, err)
 	diff, err := storage.DiffBytes(
-		context.Background(),
+		t.Context(),
 		actualReadWriteBucket,
 		bufReadWriteBucket,
 		transformGolangProtocVersionToUnknown(t),
@@ -864,7 +884,7 @@ func testCompareGeneratedStubsArchive(
 	require.NoError(t, err)
 	actualReadWriteBucket := storagemem.NewReadWriteBucket()
 	err = storagearchive.Unzip(
-		context.Background(),
+		t.Context(),
 		bytes.NewReader(actualData),
 		int64(len(actualData)),
 		actualReadWriteBucket,
@@ -874,14 +894,14 @@ func testCompareGeneratedStubsArchive(
 	require.NoError(t, err)
 	bufReadWriteBucket := storagemem.NewReadWriteBucket()
 	err = storagearchive.Unzip(
-		context.Background(),
+		t.Context(),
 		bytes.NewReader(bufData),
 		int64(len(bufData)),
 		bufReadWriteBucket,
 	)
 	require.NoError(t, err)
 	diff, err := storage.DiffBytes(
-		context.Background(),
+		t.Context(),
 		actualReadWriteBucket,
 		bufReadWriteBucket,
 		transformGolangProtocVersionToUnknown(t),
@@ -938,7 +958,7 @@ func testGenerateDeleteOutsWithArgAndConfig(
 			},
 		)
 	}
-	ctx := context.Background()
+	ctx := t.Context()
 	tmpDirPath := t.TempDir()
 	storageBucket, err := storageos.NewProvider().NewReadWriteBucket(tmpDirPath)
 	require.NoError(t, err)

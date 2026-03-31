@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -118,12 +118,12 @@ func RunProtoc(
 	if err != nil {
 		return err
 	}
-	if resolved, err := filepath.EvalSymlinks(protocBinPath); err == nil {
-		protocBinPath = resolved
-	}
 	protocIncludePath, err := getProtocIncludePath(protocBinPath)
 	if err != nil {
 		return err
+	}
+	if resolved, err := filepath.EvalSymlinks(protocBinPath); err == nil {
+		protocBinPath = resolved
 	}
 	args := []string{"-I", protocIncludePath}
 	for _, root := range roots {
@@ -228,7 +228,7 @@ func AssertFileDescriptorSetsEqual(
 	one *descriptorpb.FileDescriptorSet,
 	two *descriptorpb.FileDescriptorSet,
 ) {
-	diff, err := DiffFileDescriptorSetsJSON(context.Background(), one, two, "buf", "protoc")
+	diff, err := DiffFileDescriptorSetsJSON(t.Context(), one, two, "buf", "protoc")
 	assert.NoError(t, err)
 	assert.Empty(t, diff)
 	diff = DiffFileDescriptorSetsCompare(one, two)

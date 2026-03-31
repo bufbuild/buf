@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ func TestBasicV2(t *testing.T) {
 }
 
 func testBasic(t *testing.T, subDirPath string, isV2 bool) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// This represents some external dependencies from the BSR.
 	workspaceProvider := testNewWorkspaceProvider(
@@ -199,7 +199,7 @@ func testBasic(t *testing.T, subDirPath string, isV2 bool) {
 
 func TestUnusedDep(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// This represents some external dependencies from the BSR.
 	workspaceProvider := testNewWorkspaceProvider(
@@ -249,7 +249,7 @@ func TestUnusedDep(t *testing.T) {
 
 func TestDuplicatePath(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// This represents some external dependencies from the BSR.
 	workspaceProvider := testNewWorkspaceProvider(
@@ -329,7 +329,7 @@ func testNewWorkspaceProvider(t *testing.T, testModuleDatas ...bufmoduletesting.
 
 func requireModuleContainFileNames(t *testing.T, module bufmodule.Module, expectedFileNames ...string) {
 	fileNamesToBeSeen := xslices.ToStructMap(expectedFileNames)
-	require.NoError(t, module.WalkFileInfos(context.Background(), func(fi bufmodule.FileInfo) error {
+	require.NoError(t, module.WalkFileInfos(t.Context(), func(fi bufmodule.FileInfo) error {
 		path := fi.Path()
 		if _, ok := fileNamesToBeSeen[path]; !ok {
 			return fmt.Errorf("module has unexpected file: %s", path)

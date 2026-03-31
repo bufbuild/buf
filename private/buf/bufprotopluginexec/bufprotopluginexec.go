@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,9 +40,9 @@ const (
 	// defaultMajorVersion is the default major version.
 	defaultMajorVersion = 6
 	// defaultMinorVersion is the default minor version.
-	defaultMinorVersion = 31
+	defaultMinorVersion = 33
 	// defaultPatchVersion is the default patch version.
-	defaultPatchVersion = 1
+	defaultPatchVersion = 3
 	// defaultSuffixVersion is the default suffix version.
 	defaultSuffixVersion = ""
 )

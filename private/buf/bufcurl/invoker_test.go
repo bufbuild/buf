@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package bufcurl
 
 import (
-	"context"
 	"os"
 	"testing"
 
@@ -32,7 +31,7 @@ func TestCountUnrecognized(t *testing.T) {
 		Resolver: &protocompile.SourceResolver{
 			ImportPaths: []string{"./testdata"},
 		},
-	}).Compile(context.Background(), "test.proto")
+	}).Compile(t.Context(), "test.proto")
 	require.NoError(t, err)
 	msgType, err := descriptors.AsResolver().FindMessageByName("foo.bar.Message")
 	require.NoError(t, err)

@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,11 +36,10 @@ import (
 	"buf.build/go/app"
 	"buf.build/go/standard/xos/xexec"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
-	"github.com/docker/docker/api/types"
-	dockerimage "github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/jsonmessage"
-	"github.com/docker/docker/pkg/stringid"
+	dockerimage "github.com/moby/moby/api/types/image"
+	"github.com/moby/moby/api/types/jsonstream"
+	"github.com/moby/moby/client"
+	"github.com/moby/moby/client/pkg/stringid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -49,9 +48,7 @@ const (
 	dockerVersion = "1.41"
 )
 
-var (
-	imagePattern = regexp.MustCompile("^(?P<image>[^/]+/[^/]+/[^/:]+)(?::(?P<tag>[^/]+))?(?:/(?P<op>[^/]+))?$")
-)
+var imagePattern = regexp.MustCompile("^(?P<image>[^/]+/[^/]+/[^/:]+)(?::(?P<tag>[^/]+))?(?:/(?P<op>[^/]+))?$")
 
 func TestPushSuccess(t *testing.T) {
 	t.Parallel()
@@ -61,7 +58,7 @@ func TestPushSuccess(t *testing.T) {
 	image, err := buildDockerPlugin(t, "testdata/success/Dockerfile", listenerAddr+"/library/go")
 	require.Nilf(t, err, "failed to build docker plugin")
 	require.NotEmpty(t, image)
-	pushResponse, err := dockerClient.Push(context.Background(), image, &RegistryAuthConfig{})
+	pushResponse, err := dockerClient.Push(t.Context(), image, &RegistryAuthConfig{})
 	require.Nilf(t, err, "failed to push docker plugin")
 	require.NotNil(t, pushResponse)
 	assert.NotEmpty(t, pushResponse.Digest)
@@ -77,17 +74,17 @@ func TestPushError(t *testing.T) {
 	image, err := buildDockerPlugin(t, "testdata/success/Dockerfile", listenerAddr+"/library/go")
 	require.Nilf(t, err, "failed to build docker plugin")
 	require.NotEmpty(t, image)
-	_, err = dockerClient.Push(context.Background(), image, &RegistryAuthConfig{})
+	_, err = dockerClient.Push(t.Context(), image, &RegistryAuthConfig{})
 	require.NotNil(t, err, "expected error")
 	assert.Equal(t, server.pushErr.Error(), err.Error())
 }
 
 func TestMain(m *testing.M) {
 	var dockerEnabled bool
-	if cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation()); err == nil {
+	if cli, err := client.New(client.FromEnv); err == nil {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
-		if _, err := cli.Ping(ctx); err == nil {
+		if _, err := cli.Ping(ctx, client.PingOptions{}); err == nil {
 			dockerEnabled = true
 		}
 		_ = cli.Close()
@@ -96,7 +93,6 @@ func TestMain(m *testing.M) {
 		// Windows runners don't support building Linux images - need to disable for now.
 		dockerEnabled = false
 	}
-	// call flag.Parse() here if TestMain uses flags
 	if dockerEnabled {
 		os.Exit(m.Run())
 	}
@@ -124,7 +120,7 @@ func TestGetImageDigestFromMessage(t *testing.T) {
 
 func assertImageDigestFromStatusString(t *testing.T, status string, expectedDigest string) {
 	t.Helper()
-	digest := getImageDigestFromMessage(jsonmessage.JSONMessage{Status: status})
+	digest := getImageDigestFromMessage(jsonstream.Message{Status: status})
 	assert.Equal(t, expectedDigest, digest)
 }
 
@@ -150,7 +146,7 @@ func buildDockerPlugin(t testing.TB, dockerfilePath string, pluginIdentity strin
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
 	if err := xexec.Run(
-		context.Background(),
+		t.Context(),
 		docker,
 		xexec.WithArgs("build", "-t", imageName, "."),
 		xexec.WithDir(filepath.Dir(dockerfilePath)),
@@ -163,7 +159,7 @@ func buildDockerPlugin(t testing.TB, dockerfilePath string, pluginIdentity strin
 	t.Logf("created image: %s", imageName)
 	t.Cleanup(func() {
 		if err := xexec.Run(
-			context.Background(),
+			t.Context(),
 			docker,
 			xexec.WithArgs("rmi", "--force", imageName),
 			xexec.WithDir(filepath.Dir(dockerfilePath)),
@@ -202,9 +198,10 @@ func newDockerServer(t testing.TB, version string) *dockerServer {
 	mux := http.NewServeMux()
 	mux.HandleFunc(versionPrefix+"/images/", dockerServer.imagesHandler)
 	mux.HandleFunc("/_ping", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(&types.Ping{APIVersion: version}); err != nil {
-			t.Fatalf("failed to encode response: %v", err)
+		w.Header().Set("Api-Version", version)
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write([]byte("OK")); err != nil {
+			t.Fatalf("failed to write ping response: %v", err)
 		}
 	})
 	protocols := new(http.Protocols)
@@ -229,7 +226,7 @@ func (d *dockerServer) imagesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	image, tag, operation := submatches[1], submatches[2], submatches[3]
-	// ImageInspectWithRaw
+	// ImageInspect
 	if r.Method == http.MethodGet && operation == "json" {
 		d.mu.RLock()
 		defer d.mu.RUnlock()
@@ -285,8 +282,8 @@ func (d *dockerServer) imagesHandler(w http.ResponseWriter, r *http.Request) {
 		d.writeError(w, err)
 		return
 	}
-	if err := json.NewEncoder(w).Encode(&jsonmessage.JSONMessage{
-		Progress: &jsonmessage.JSONProgress{},
+	if err := json.NewEncoder(w).Encode(&jsonstream.Message{
+		Progress: &jsonstream.Progress{},
 		Aux:      (*json.RawMessage)(&auxJSON),
 	}); err != nil {
 		d.t.Error("failed to write JSON:", err)
@@ -306,7 +303,7 @@ func (d *dockerServer) findImageIDFromName(name string) string {
 }
 
 func (d *dockerServer) writeError(w http.ResponseWriter, err error) {
-	if err := json.NewEncoder(w).Encode(&jsonmessage.JSONMessage{Error: &jsonmessage.JSONError{Message: err.Error()}}); err != nil {
+	if err := json.NewEncoder(w).Encode(&jsonstream.Message{Error: &jsonstream.Error{Message: err.Error()}}); err != nil {
 		d.t.Error("failed to write json message:", err)
 	}
 	if _, err := w.Write([]byte{'\r', '\n'}); err != nil {

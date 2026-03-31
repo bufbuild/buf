@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package configmigrate
 
 import (
 	"bytes"
-	"context"
 	"path/filepath"
 	"testing"
 
@@ -54,7 +53,7 @@ func testCompareConfigMigrate(t *testing.T, dir string, expectCode int, expectSt
 	tempDir := t.TempDir()
 	tempBucket, err := storageosProvider.NewReadWriteBucket(tempDir)
 	require.NoError(t, err)
-	ctx := context.Background()
+	ctx := t.Context()
 	_, err = storage.Copy(ctx, inputBucket, tempBucket)
 	require.NoError(t, err)
 	var outputBucket storage.ReadWriteBucket

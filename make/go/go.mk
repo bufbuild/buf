@@ -25,7 +25,7 @@ GO_TEST_WASM_BINS ?=
 # Settable
 GO_GET_PKGS ?=
 # Settable
-GO_MOD_VERSION ?= 1.25.0
+GO_MOD_VERSION ?= 1.25.6
 # Settable
 GO_MOD_TOOLCHAIN ?=
 # Settable

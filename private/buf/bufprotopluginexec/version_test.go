@@ -1,4 +1,4 @@
-// Copyright 2020-2025 Buf Technologies, Inc.
+// Copyright 2020-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -73,6 +73,15 @@ func TestGetRustSupportedAsBuiltin(t *testing.T) {
 	assert.True(t, getRustSupportedAsBuiltin(newVersion(21, 1, 0, "buf")))
 	assert.False(t, getRustSupportedAsBuiltin(newVersion(4, 22, 1, "")))
 	assert.False(t, getRustSupportedAsBuiltin(newVersion(3, 14, 1, "")))
+}
+
+func TestGetRbsSupportedAsBuiltin(t *testing.T) {
+	t.Parallel()
+	assert.True(t, getRbsSupportedAsBuiltin(newVersion(3, 11, 1, "buf")))
+	assert.True(t, getRbsSupportedAsBuiltin(newVersion(34, 0, 0, "")))
+	assert.True(t, getRbsSupportedAsBuiltin(newVersion(35, 0, 0, "")))
+	assert.False(t, getRbsSupportedAsBuiltin(newVersion(33, 5, 0, "")))
+	assert.False(t, getRbsSupportedAsBuiltin(newVersion(21, 1, 0, "")))
 }
 
 func TestGetJSSupportedAsBuiltin(t *testing.T) {
