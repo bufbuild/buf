@@ -79,7 +79,7 @@ func (m *moduleFileResolver) Open(path string) (_ *source.File, retErr error) {
 			if err := m.addPath(path, path, "", nil, uuid.Nil); err != nil {
 				return nil, err
 			}
-			return readObjectCloserToSourceFile(path, wktModuleFile)
+			return readObjectCloserToSourceFile(wktModuleFile)
 		}
 		return nil, moduleErr
 	}
@@ -99,7 +99,7 @@ func (m *moduleFileResolver) Open(path string) (_ *source.File, retErr error) {
 	); err != nil {
 		return nil, err
 	}
-	return readObjectCloserToSourceFile(moduleFile.LocalPath(), moduleFile)
+	return readObjectCloserToSourceFile(moduleFile)
 }
 
 // ExternalPath returns the external path for the input path.
@@ -181,13 +181,15 @@ func (m *moduleFileResolver) addPath(
 
 // readObjectCloserToSourceFile is a helper function that takes a given [storage.ReadObjectCloser]
 // and returns the corresponding [*source.File].
-func readObjectCloserToSourceFile(
-	path string,
-	readObjectCloser storage.ReadObjectCloser,
-) (*source.File, error) {
+func readObjectCloserToSourceFile(readObjectCloser storage.ReadObjectCloser) (*source.File, error) {
 	var buf strings.Builder
 	if _, err := io.Copy(&buf, readObjectCloser); err != nil {
 		return nil, err
+	}
+	path := readObjectCloser.LocalPath()
+	if path == "" {
+		// Fallback to using Path() -- in-mem buckets, for example, will not have a LocalPath
+		path = readObjectCloser.Path()
 	}
 	return source.NewFile(path, buf.String()), nil
 }

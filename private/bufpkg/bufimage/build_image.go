@@ -129,6 +129,10 @@ func compileImage(
 		// We resolve the path and external path using moduleFileResolver, since the span
 		// uses the path set by moduleFileResolver, which is the moduleFile.LocalPath().
 		path := moduleFileResolver.PathForLocalPath(primary.Path())
+		if path == "" {
+			// If there is no path, fallback to using the path from the diagnostic span directly.
+			path = primary.Path()
+		}
 		fileAnnotations = append(
 			fileAnnotations,
 			bufanalysis.NewFileAnnotation(
