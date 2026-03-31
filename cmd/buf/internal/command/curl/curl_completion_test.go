@@ -373,7 +373,7 @@ func TestMakeCompletionHTTPClient(t *testing.T) {
 	t.Run("https returns client", func(t *testing.T) {
 		t.Parallel()
 		cmd := newCompletionCmd()
-		client, ok := makeCompletionHTTPClient(cmd, true)
+		client, ok := makeCompletionHTTPClient(cmd, true, "localhost:443")
 		assert.True(t, ok)
 		assert.NotNil(t, client)
 	})
@@ -381,7 +381,7 @@ func TestMakeCompletionHTTPClient(t *testing.T) {
 	t.Run("http without prior knowledge returns nothing", func(t *testing.T) {
 		t.Parallel()
 		cmd := newCompletionCmd()
-		client, ok := makeCompletionHTTPClient(cmd, false)
+		client, ok := makeCompletionHTTPClient(cmd, false, "localhost:80")
 		assert.False(t, ok)
 		assert.Nil(t, client)
 	})
@@ -390,7 +390,7 @@ func TestMakeCompletionHTTPClient(t *testing.T) {
 		t.Parallel()
 		cmd := newCompletionCmd()
 		require.NoError(t, cmd.Flags().Set(http2PriorKnowledgeFlagName, "true"))
-		client, ok := makeCompletionHTTPClient(cmd, false)
+		client, ok := makeCompletionHTTPClient(cmd, false, "localhost:80")
 		assert.True(t, ok)
 		assert.NotNil(t, client)
 	})

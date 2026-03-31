@@ -1257,7 +1257,7 @@ func completeURL(cmd *cobra.Command, _ []string, toComplete string) ([]string, c
 
 	// 2. Live server reflection.
 	isSecure := parsed.Scheme == "https"
-	if httpClient, ok := makeCompletionHTTPClient(cmd, isSecure); ok {
+	if httpClient, ok := makeCompletionHTTPClient(cmd, isSecure, parsed.Host); ok {
 		if completions, directive, ok := completeURLFromReflection(ctx, httpClient, baseURL, rawPath); ok {
 			return completions, directive
 		}
@@ -1278,9 +1278,8 @@ func completeURL(cmd *cobra.Command, _ []string, toComplete string) ([]string, c
 // was empty or no completions matched — that is a valid reflection result.
 //
 // Reflection for completion always uses gRPC regardless of --protocol or
-// --reflect-protocol, and does not forward --reflect-header, --cert, --key,
-// --cacert, or --servername. Servers that require auth on the reflection
-// endpoint will silently produce no completions.
+// --reflect-protocol, and does not forward --reflect-header. Servers that
+// require auth on the reflection endpoint will silently produce no completions.
 func completeURLFromReflection(ctx context.Context, httpClient connect.HTTPClient, baseURL, rawPath string) ([]string, cobra.ShellCompDirective, bool) {
 	reflectionResolver, closeResolver := bufcurl.NewServerReflectionResolver(
 		ctx,
@@ -1469,33 +1468,32 @@ func completePathFromServices(
 	}
 }
 
-// makeCompletionHTTPClient builds a minimal HTTP client for use during shell
+// makeCompletionHTTPClient builds an HTTP client for use during shell
 // completion. Returns (client, true) on success, or (nil, false) when
 // reflection is not possible (e.g. plain HTTP without HTTP/2 prior knowledge).
-func makeCompletionHTTPClient(cmd *cobra.Command, isSecure bool) (connect.HTTPClient, bool) {
-	protocols := new(http.Protocols)
-	if isSecure {
-		insecure, _ := cmd.Flags().GetBool(insecureFlagName)
-		protocols.SetHTTP1(true)
-		protocols.SetHTTP2(true)
-		return &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig:   &tls.Config{InsecureSkipVerify: insecure},
-				ForceAttemptHTTP2: true,
-				Protocols:         protocols,
-			},
-		}, true
-	}
-	// Plain HTTP: server reflection requires HTTP/2, which needs prior knowledge
-	// over a cleartext connection. Skip completion if the flag is not set.
+func makeCompletionHTTPClient(cmd *cobra.Command, isSecure bool, authority string) (connect.HTTPClient, bool) {
+	insecure, _ := cmd.Flags().GetBool(insecureFlagName)
 	http2PriorKnowledge, _ := cmd.Flags().GetBool(http2PriorKnowledgeFlagName)
-	if !http2PriorKnowledge {
+	if !isSecure && !http2PriorKnowledge {
+		// Plain HTTP: server reflection requires HTTP/2, which needs prior knowledge
+		// over a cleartext connection. Skip completion if the flag is not set.
 		return nil, false
 	}
-	protocols.SetUnencryptedHTTP2(true)
-	return &http.Client{
-		Transport: &http.Transport{
-			Protocols: protocols,
-		},
-	}, true
+	key, _ := cmd.Flags().GetString(keyFlagName)
+	cert, _ := cmd.Flags().GetString(certFlagName)
+	caCert, _ := cmd.Flags().GetString(caCertFlagName)
+	serverName, _ := cmd.Flags().GetString(serverNameFlagName)
+	f := &flags{
+		Key:                 key,
+		Cert:                cert,
+		CACert:              caCert,
+		ServerName:          serverName,
+		Insecure:            insecure,
+		HTTP2PriorKnowledge: http2PriorKnowledge,
+	}
+	rt, err := makeHTTPRoundTripper(f, isSecure, authority, verbose.NopPrinter)
+	if err != nil {
+		return nil, false
+	}
+	return bufcurl.NewVerboseHTTPClient(rt, verbose.NopPrinter), true
 }
