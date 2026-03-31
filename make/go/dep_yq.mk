@@ -29,14 +29,19 @@ YQ_ARCH := $(UNAME_ARCH)
 endif
 
 
-YQ := $(CACHE_VERSIONS)/yq/$(YQ_VERSION)
-$(YQ):
-	@rm -f $(CACHE_BIN)/yq
-	@mkdir -p $(CACHE_BIN)
+YQ := $(CACHE_BIN)/yq
+
+$(CACHE_VERSIONS)/yq/yq-$(YQ_VERSION):
+	@rm -f $(YQ)
+	@rm -rf $(dir $@)
+	@mkdir -p $(dir $@)
 	curl -sSL \
 		https://github.com/mikefarah/yq/releases/download/$(YQ_VERSION)/yq_$(YQ_OS)_$(YQ_ARCH) \
-		-o $(CACHE_BIN)/yq
-	chmod +x $(CACHE_BIN)/yq
-	@rm -rf $(dir $(YQ))
-	@mkdir -p $(dir $(YQ))
-	@touch $(YQ)
+		-o $@
+	@chmod +x $@
+	@test -x $@
+	@touch $@
+
+$(YQ): $(CACHE_VERSIONS)/yq/yq-$(YQ_VERSION)
+	@mkdir -p $(dir $@)
+	@ln -sf $< $@
