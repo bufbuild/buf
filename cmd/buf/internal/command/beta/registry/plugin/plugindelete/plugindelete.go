@@ -49,13 +49,24 @@ func NewCommand(
 	}
 }
 
-type flags struct{}
+const forceFlagName = "force"
+
+type flags struct {
+	Force bool
+}
 
 func newFlags() *flags {
 	return &flags{}
 }
 
-func (f *flags) Bind(flagSet *pflag.FlagSet) {}
+func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	flagSet.BoolVar(
+		&f.Force,
+		forceFlagName,
+		false,
+		"Force deletion without confirming. Use with caution",
+	)
+}
 
 func run(
 	ctx context.Context,
@@ -71,6 +82,11 @@ func run(
 	if version != "" {
 		if err := bufremotepluginref.ValidatePluginVersion(version); err != nil {
 			return appcmd.WrapInvalidArgumentError(err)
+		}
+	}
+	if !flags.Force {
+		if err := bufcli.PromptUserForDelete(container, "plugin", pluginIdentity.Plugin()); err != nil {
+			return err
 		}
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
@@ -97,5 +113,6 @@ func run(
 		}
 		return err
 	}
-	return nil
+	_, err = fmt.Fprintf(container.Stdout(), "Deleted %s.\n", container.Arg(0))
+	return err
 }

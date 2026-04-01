@@ -372,7 +372,7 @@ func TestOutputFlag(t *testing.T) {
 	}
 }
 
-func TestSkipWriteWhenUnchanged(t *testing.T) {
+func TestSmartCleanPreservesMtime(t *testing.T) {
 	t.Parallel()
 	tempDirPath := t.TempDir()
 	template := filepath.Join("testdata", "simple", "buf.gen.yaml")
