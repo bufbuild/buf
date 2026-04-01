@@ -298,15 +298,16 @@ func celExtractReceiver(s string) string {
 }
 
 // celScanBalanced scans backwards from position i in s to find the matching
-// open delimiter for the close delimiter at s[i-1]. Returns the new position
+// open delimiter for the closing delimiter at s[i-1]. Returns the new position
 // and true on success, or (0, false) if the delimiters are unbalanced.
-func celScanBalanced(s string, i int, open, close byte) (int, bool) {
+func celScanBalanced(s string, i int, open, closeDelim byte) (int, bool) {
 	depth := 1
 	i--
 	for i > 0 && depth > 0 {
-		if s[i-1] == close {
+		switch s[i-1] {
+		case closeDelim:
 			depth++
-		} else if s[i-1] == open {
+		case open:
 			depth--
 		}
 		i--
