@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.67.0] - 2026-04-01
 
 - Fix LSP not skipping `buf.build/docs` links for lint rules from check plugins and policies.
@@ -1507,6 +1511,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.67.0...HEAD
 [v1.67.0]: https://github.com/bufbuild/buf/compare/v1.66.1...v1.67.0
 [v1.66.1]: https://github.com/bufbuild/buf/compare/v1.66.0...v1.66.1
 [v1.66.0]: https://github.com/bufbuild/buf/compare/v1.65.0...v1.66.0
