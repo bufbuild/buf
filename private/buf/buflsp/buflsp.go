@@ -51,11 +51,6 @@ func Serve(
 	stream jsonrpc2.Stream,
 	queryExecutor *incremental.Executor,
 ) (jsonrpc2.Conn, error) {
-	// Prefer build info version if available
-	if buildInfo, ok := debug.ReadBuildInfo(); ok && buildInfo.Main.Version != "" {
-		bufVersion = buildInfo.Main.Version
-	}
-
 	logger := container.Logger()
 	logger = logger.With(slog.String("buf_version", bufVersion))
 	logger.Info("starting LSP server")
