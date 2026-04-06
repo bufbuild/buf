@@ -242,6 +242,10 @@ func PrintFileAnnotationSet(writer io.Writer, fileAnnotationSet FileAnnotationSe
 	switch format {
 	case FormatText:
 		if diagnosticReport := fileAnnotationSet.diagnosticReport(); diagnosticReport != nil {
+			// TODO: There is a follow-up effort to organize the way compiler warnings are
+			// handled vs. lint/breaking change rules. For now, only render the errors and
+			// suppress compiler warnings.
+			diagnosticReport.Options.SuppressWarnings = true
 			renderer := report.Renderer{}
 			_, _, err := renderer.Render(diagnosticReport, writer)
 			return err
