@@ -137,13 +137,13 @@ func TestFlagCompletions(t *testing.T) {
 	protocolFn, _ := cmd.GetFlagCompletionFunc(protocolFlagName)
 	require.NotNil(t, protocolFn)
 	protocols, directive := protocolFn(cmd, nil, "")
-	assert.Equal(t, cobra.ShellCompDirectiveNoFileComp, directive)
+	assert.Equal(t, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder, directive)
 	assert.ElementsMatch(t, []string{connect.ProtocolConnect, connect.ProtocolGRPC, connect.ProtocolGRPCWeb}, protocols)
 
 	reflectFn, _ := cmd.GetFlagCompletionFunc(reflectProtocolFlagName)
 	require.NotNil(t, reflectFn)
 	reflectProtocols, directive := reflectFn(cmd, nil, "")
-	assert.Equal(t, cobra.ShellCompDirectiveNoFileComp, directive)
+	assert.Equal(t, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder, directive)
 	assert.ElementsMatch(t, []string{"grpc-v1", "grpc-v1alpha"}, reflectProtocols)
 }
 

@@ -196,29 +196,8 @@ exit code that is the gRPC code, shifted three bits to the left.
 				return run(ctx, container, flags)
 			},
 		),
-		BindFlags: flags.Bind,
-		ModifyCobra: func(cmd *cobra.Command) error {
-			if err := errors.Join(
-				cmd.RegisterFlagCompletionFunc(
-					protocolFlagName,
-					cobra.FixedCompletions([]string{
-						connect.ProtocolConnect,
-						connect.ProtocolGRPC,
-						connect.ProtocolGRPCWeb,
-					}, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
-				),
-				cmd.RegisterFlagCompletionFunc(
-					reflectProtocolFlagName,
-					cobra.FixedCompletions(bufcurl.AllKnownReflectProtocolStrings, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
-				),
-				cmd.RegisterFlagCompletionFunc(headerFlagName, cobra.NoFileCompletions),
-				cmd.RegisterFlagCompletionFunc(reflectHeaderFlagName, cobra.NoFileCompletions),
-			); err != nil {
-				return err
-			}
-			cmd.ValidArgsFunction = completeURL
-			return nil
-		},
+		BindFlags:   flags.Bind,
+		ModifyCobra: completeCurlCommand,
 	}
 }
 
@@ -756,6 +735,29 @@ func (f *flags) getTLSConfig(authority string, printer verbose.Printer) (*tls.Co
 		HTTP2PriorKnowledge: f.HTTP2PriorKnowledge,
 		HTTP3:               f.HTTP3,
 	}, authority, printer)
+}
+
+func completeCurlCommand(cmd *cobra.Command) error {
+	if err := errors.Join(
+		cmd.RegisterFlagCompletionFunc(
+			protocolFlagName,
+			cobra.FixedCompletions([]string{
+				connect.ProtocolConnect,
+				connect.ProtocolGRPC,
+				connect.ProtocolGRPCWeb,
+			}, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
+		),
+		cmd.RegisterFlagCompletionFunc(
+			reflectProtocolFlagName,
+			cobra.FixedCompletions(bufcurl.AllKnownReflectProtocolStrings, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
+		),
+		cmd.RegisterFlagCompletionFunc(headerFlagName, cobra.NoFileCompletions),
+		cmd.RegisterFlagCompletionFunc(reflectHeaderFlagName, cobra.NoFileCompletions),
+	); err != nil {
+		return err
+	}
+	cmd.ValidArgsFunction = completeURL
+	return nil
 }
 
 func promptForPassword(ctx context.Context, container app.Container, prompt string) (string, error) {
