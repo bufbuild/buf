@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 - Improve shell completions for `buf` flags with fixed value sets and file/directory arguments.
+- Add `buf curl` URL path shell completions (service and method names) via
+  server reflection, `--schema`, or the local buf module.
 - Add support for Edition 2024 syntax to `buf format`.
 
 ## [v1.67.0] - 2026-04-01
@@ -11,8 +13,6 @@
 - Fix `buf dep graph --format json` silently dropping dependencies when a dependency was already seen.
 - Add support for `--rbs_out` as a `protoc_builtin` plugin (requires protoc v34.0+).
 - Add relevant links from CEL LSP hover documentation to either <celbyexample.com> or <protovalidate.com>
-- Add shell completions for `buf curl`: `--protocol` and `--reflect-protocol` flag values, and URL
-  path completion (service and method names) via server reflection, `--schema`, or the local buf module.
 - Add OpenBSD and FreeBSD release binaries for amd64 and arm64.
 - Skip writing unchanged output files in `buf generate` to preserve modification times
 - Update `buf beta registry plugin delete` to prompt the user for deletion, matching the UX of the other deletion commands.
