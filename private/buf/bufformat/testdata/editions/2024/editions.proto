@@ -3,3 +3,34 @@ edition = "2024";
 package a.b.c;
 
 import option "google/protobuf/descriptor.proto";
+import "c.proto";
+import option "b.proto";
+import public "a.proto";
+
+export message PublicApi {
+  string id = 1;
+}
+
+local message InternalHelper {
+  int32 code = 1;
+}
+
+message DefaultVisibility {
+  string name = 1;
+  export message Nested { string field = 1; }
+}
+
+export enum Status {
+  STATUS_UNSPECIFIED = 0;
+  OK = 1;
+  ERROR = 2;
+}
+
+local enum InternalCode {
+  INTERNAL_CODE_UNSPECIFIED = 0;
+  RETRY = 1;
+}
+
+enum DefaultEnum {
+  DEFAULT_ENUM_UNSPECIFIED = 0;
+}

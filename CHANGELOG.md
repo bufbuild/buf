@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Improve shell completions for `buf` flags with fixed value sets and file/directory arguments.
+- Add support for Edition 2024 syntax to `buf format`.
 
 ## [v1.67.0] - 2026-04-01
 
