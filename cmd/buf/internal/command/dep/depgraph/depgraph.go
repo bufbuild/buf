@@ -17,6 +17,7 @@ package depgraph
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -31,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/uuid"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -90,6 +92,18 @@ buf dep graph | dot -Tpng >| graph.png && open graph.png
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return errors.Join(
+				bufcli.RegisterFlagCompletionErrorFormat(cmd, errorFormatFlagName),
+				cmd.RegisterFlagCompletionFunc(
+					formatFlagName,
+					cobra.FixedCompletions([]string{
+						cobra.CompletionWithDesc(dotFormatString, "Graphviz DOT"),
+						jsonFormatString,
+					}, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
+				),
+			)
+		},
 	}
 }
 

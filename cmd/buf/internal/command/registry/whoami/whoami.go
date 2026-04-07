@@ -29,6 +29,7 @@ import (
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/netext"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -56,6 +57,9 @@ The <domain> argument will default to buf.build if not specified.`,
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return bufcli.RegisterFlagCompletionOutputFormat(cmd, formatFlagName)
+		},
 	}
 }
 

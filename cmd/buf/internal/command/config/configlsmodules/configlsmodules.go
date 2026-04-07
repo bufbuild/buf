@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -69,6 +70,16 @@ func NewCommand(
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return cmd.RegisterFlagCompletionFunc(
+				formatFlagName,
+				cobra.FixedCompletions([]string{
+					formatPath,
+					formatName,
+					formatJSON,
+				}, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
+			)
+		},
 	}
 }
 

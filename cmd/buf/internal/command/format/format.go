@@ -35,6 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -165,6 +166,9 @@ The -w and -o flags cannot be used together in a single invocation.
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return bufcli.RegisterFlagCompletionErrorFormat(cmd, errorFormatFlagName)
+		},
 	}
 }
 

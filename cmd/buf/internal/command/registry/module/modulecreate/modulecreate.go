@@ -16,6 +16,7 @@ package modulecreate
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
@@ -28,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -55,6 +57,12 @@ func NewCommand(
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return errors.Join(
+				bufcli.RegisterFlagCompletionOutputFormat(cmd, formatFlagName),
+				bufcli.RegisterFlagCompletionVisibility(cmd, visibilityFlagName),
+			)
+		},
 	}
 }
 

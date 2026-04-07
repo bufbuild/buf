@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -64,6 +65,9 @@ If no reference is specified, it lists all commits in this plugin.
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return bufcli.RegisterFlagCompletionOutputFormat(cmd, formatFlagName)
+		},
 	}
 }
 

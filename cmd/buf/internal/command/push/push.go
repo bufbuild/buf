@@ -35,6 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -79,6 +80,13 @@ func NewCommand(
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return errors.Join(
+				bufcli.RegisterFlagCompletionErrorFormat(cmd, errorFormatFlagName),
+				cmd.RegisterFlagCompletionFunc(labelFlagName, cobra.NoFileCompletions),
+				cmd.RegisterFlagCompletionFunc(sourceControlURLFlagName, cobra.NoFileCompletions),
+			)
+		},
 	}
 }
 

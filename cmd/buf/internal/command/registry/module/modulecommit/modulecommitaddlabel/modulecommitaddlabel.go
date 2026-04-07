@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -54,6 +55,9 @@ func NewCommand(
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return bufcli.RegisterFlagCompletionOutputFormat(cmd, formatFlagName)
+		},
 	}
 }
 
