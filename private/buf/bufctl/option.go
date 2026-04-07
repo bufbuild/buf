@@ -16,7 +16,6 @@ package bufctl
 
 import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 // ControllerOption is a controller option.
@@ -144,17 +143,6 @@ func WithMessageValidation() FunctionOption {
 	}
 }
 
-// WithBucketOverlay returns a new FunctionOption that overlays the given ReadBucket
-// on top of the source bucket when building a workspace.
-//
-// Paths in the overlay take precedence over paths in the underlying bucket. This
-// is used to validate changes (such as an updated buf.lock) before persisting to disk.
-func WithBucketOverlay(overlay storage.ReadBucket) FunctionOption {
-	return func(functionOptions *functionOptions) {
-		functionOptions.bucketOverlay = overlay
-	}
-}
-
 // *** PRIVATE ***
 
 type functionOptions struct {
@@ -170,7 +158,6 @@ type functionOptions struct {
 	configOverride                  string
 	ignoreAndDisallowV1BufWorkYAMLs bool
 	messageValidation               bool
-	bucketOverlay                   storage.ReadBucket
 }
 
 func newFunctionOptions(controller *controller) *functionOptions {

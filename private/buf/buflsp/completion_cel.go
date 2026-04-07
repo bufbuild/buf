@@ -222,10 +222,11 @@ func getCELCompletionItems(
 // either right after a dot ("this.") or typing a member name ("this.ci").
 // Returns the receiver expression, the typed prefix (possibly empty), and ok=true.
 // Examples:
-//   - "this."     → ("this", "", true)
-//   - "this.ci"   → ("this", "ci", true)
-//   - "size("     → ("", "", false)
-//   - "si"        → ("", "", false)
+//   - "this."                        → ("this", "", true)
+//   - "this.ci"                      → ("this", "ci", true)
+//   - "this.create_time < this.up"   → ("this", "up", true)
+//   - "size("                        → ("", "", false)
+//   - "si"                           → ("", "", false)
 func celParseMemberAccess(celContent string) (receiverExpr, memberPrefix string, ok bool) {
 	// Peel off the identifier being typed at the end of celContent.
 	wordStart := len(celContent)
@@ -241,12 +242,80 @@ func celParseMemberAccess(celContent string) (receiverExpr, memberPrefix string,
 		return "", "", false
 	}
 
-	// Receiver expression is everything before the dot.
-	receiver := strings.TrimRight(trimmed[:len(trimmed)-1], " \t\r\n")
+	// Extract just the receiver expression before the dot by scanning backwards.
+	// The receiver can contain identifiers, dots (chained access), balanced brackets,
+	// and balanced parens (function calls). Operators and other tokens are boundaries.
+	receiver := celExtractReceiver(trimmed[:len(trimmed)-1])
 	if receiver == "" {
 		return "", "", false
 	}
 	return receiver, prefix, true
+}
+
+// celExtractReceiver scans backwards from the end of s to extract the receiver
+// expression for a member access. It handles dot chains (this.field), bracket
+// indexing (this.items[0]), and function calls (size(x)). Stops at operator
+// boundaries, commas, and unbalanced punctuation.
+//
+// String literals inside bracket expressions (e.g. this.items["key with spaces"])
+// are not parsed; the scanner treats bracket contents as raw bytes.
+func celExtractReceiver(s string) string {
+	s = strings.TrimRight(s, " \t\r\n")
+	if s == "" {
+		return ""
+	}
+	i := len(s)
+	for i > 0 {
+		c := s[i-1]
+		switch {
+		case celIsIdentChar(c):
+			for i > 0 && celIsIdentChar(s[i-1]) {
+				i--
+			}
+		case c == '.':
+			i--
+		case c == ']':
+			var ok bool
+			if i, ok = celScanBalanced(s, i, '[', ']'); !ok {
+				return ""
+			}
+		case c == ')':
+			var ok bool
+			if i, ok = celScanBalanced(s, i, '(', ')'); !ok {
+				return ""
+			}
+			// Include the function name before '('.
+			for i > 0 && celIsIdentChar(s[i-1]) {
+				i--
+			}
+		default:
+			// Strip leading whitespace that may sit between the operator
+			// boundary and the start of the receiver expression.
+			return strings.TrimLeft(s[i:], " \t\r\n")
+		}
+	}
+	return s[i:]
+}
+
+// celScanBalanced scans backwards from position i in s to find the matching
+// open delimiter for the closing delimiter at s[i-1]. Returns the new position
+// and true on success, or (0, false) if the delimiters are unbalanced.
+func celScanBalanced(s string, i int, open, closeDelim byte) (int, bool) {
+	depth := 1
+	i--
+	for i > 0 && depth > 0 {
+		switch s[i-1] {
+		case closeDelim:
+			depth++
+		case open:
+			depth--
+		}
+		i--
+	}
+	if depth != 0 {
+		return 0, false
+	}
+	return i, true
 }
 
 // celParseHasArg detects if the cursor is inside the argument of a has() macro call.
