@@ -173,16 +173,20 @@ func (w *workspace) Refresh(ctx context.Context) error {
 			return err
 		}
 	}
-	// Get the check client for the workspace.
-	checkClient, err := w.lsp.controller.GetCheckClientForWorkspace(ctx, bufWorkspace, w.lsp.wasmRuntime)
-	if err != nil {
-		w.lsp.logger.Warn("workspace: get check client", slog.String("file", fileName), xslog.ErrorAttr(err))
-	}
 
-	// Update the workspace.
+	// Creating a new bufcheck.Client is expensive: it constructs multiple CEL
+	// environments and protovalidate validators. Only create it once per
+	// workspace lifetime. If plugin/policy configs change (buf.yaml edits),
+	// the user must restart the LSP to pick up the new configuration.
+	if w.checkClient == nil {
+		checkClient, err := w.lsp.controller.GetCheckClientForWorkspace(ctx, bufWorkspace, w.lsp.wasmRuntime)
+		if err != nil {
+			w.lsp.logger.Warn("workspace: get check client", slog.String("file", fileName), xslog.ErrorAttr(err))
+		}
+		w.checkClient = checkClient
+	}
 	w.workspace = bufWorkspace
 	w.fileNameToFileInfo = fileNameToFileInfo
-	w.checkClient = checkClient
 	w.indexFiles(ctx)
 	return nil
 }
