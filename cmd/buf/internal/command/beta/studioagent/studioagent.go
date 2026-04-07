@@ -145,7 +145,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.PrivateNetwork,
 		privateNetworkFlagName,
 		false,
-		`Use the agent with private network CORS`,
+		"No-op: private network CORS is no longer supported",
 	)
 }
 
@@ -179,14 +179,16 @@ func run(
 			return fmt.Errorf("cannot create new server TLS config: %w", err)
 		}
 	}
-	mux := bufstudioagent.NewHandler(
+	mux, err := bufstudioagent.NewHandler(
 		container.Logger(),
 		flags.Origin,
 		clientTLSConfig,
 		xslices.ToStructMap(flags.DisallowedHeaders),
 		flags.ForwardHeaders,
-		flags.PrivateNetwork,
 	)
+	if err != nil {
+		return fmt.Errorf("cannot create CORS handler: %w", err)
+	}
 	var httpListenConfig net.ListenConfig
 	httpListener, err := httpListenConfig.Listen(ctx, "tcp", fmt.Sprintf("%s:%s", flags.BindAddress, flags.Port))
 	if err != nil {

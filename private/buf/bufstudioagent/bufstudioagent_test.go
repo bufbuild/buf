@@ -58,16 +58,15 @@ func TestPlainPostHandlerH2C(t *testing.T) {
 }
 
 func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
-	agentServer := httptest.NewTLSServer(
-		NewHandler(
-			slogtestext.NewLogger(t),
-			"https://example.buf.build",
-			upstreamServer.TLS,
-			nil,
-			map[string]string{"foo": "bar"},
-			false,
-		),
+	handler, err := NewHandler(
+		slogtestext.NewLogger(t),
+		"https://example.buf.build",
+		upstreamServer.TLS,
+		nil,
+		map[string]string{"foo": "bar"},
 	)
+	require.NoError(t, err)
+	agentServer := httptest.NewTLSServer(handler)
 	defer agentServer.Close()
 
 	t.Run("content_type_grpc_proto", func(t *testing.T) {
@@ -136,16 +135,15 @@ func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
 }
 
 func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
-	agentServer := httptest.NewTLSServer(
-		NewHandler(
-			slog.New(slog.DiscardHandler),
-			"https://example.buf.build",
-			upstreamServer.TLS,
-			map[string]struct{}{"forbidden-header": {}},
-			nil,
-			false,
-		),
+	handler, err := NewHandler(
+		slog.New(slog.DiscardHandler),
+		"https://example.buf.build",
+		upstreamServer.TLS,
+		map[string]struct{}{"forbidden-header": {}},
+		nil,
 	)
+	require.NoError(t, err)
+	agentServer := httptest.NewTLSServer(handler)
 	defer agentServer.Close()
 
 	t.Run("forbidden_header", func(t *testing.T) {
