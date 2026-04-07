@@ -224,6 +224,27 @@ message ChainedComprehensionHolder {
   };
 }
 
+// MultiThisHolder exercises completions when `this.` appears multiple times
+// in a single CEL expression separated by an operator. The second `this.`
+// must still resolve to the message type and offer field completions.
+message MultiThisHolder {
+  google.protobuf.Timestamp create_time = 1;
+  google.protobuf.Timestamp update_time = 2;
+
+  option (buf.validate.message).cel = {
+    id: "multi.this.first"
+    expression: "this."
+  };
+  option (buf.validate.message).cel = {
+    id: "multi.this.second"
+    expression: "this.create_time < this."
+  };
+  option (buf.validate.message).cel = {
+    id: "multi.this.prefix"
+    expression: "this.create_time < this.up"
+  };
+}
+
 // InOperatorHolder verifies that the "in" membership operator does not appear
 // as a callable function completion ("in()") when typed as a prefix.
 // "in" is a binary infix operator ("value in list"), not a function call.

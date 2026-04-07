@@ -57,7 +57,10 @@ func TestCELCompletion(t *testing.T) {
 	// 206:  `    expression: "this.items[0]."`                                     (IndexAccessHolder — indexed into list, yields element fields)
 	// 210:  `    expression: "this.locations[\"key\"]."`                           (IndexAccessHolder — indexed into map, yields value fields)
 	// 222:  `    expression: "this.items.filter(item, item.zip_code > 0).all(addr, addr."` (ChainedComprehensionHolder)
-	// 232:  `    expression: "in"`                                                    (InOperatorHolder — "in" is an operator, not a function)
+	// 235:  `    expression: "this."`                                                 (MultiThisHolder — first this, message fields)
+	// 239:  `    expression: "this.create_time < this."`                              (MultiThisHolder — second this after operator)
+	// 243:  `    expression: "this.create_time < this.up"`                            (MultiThisHolder — second this with prefix)
+	// 253:  `    expression: "in"`                                                    (InOperatorHolder — "in" is an operator, not a function)
 	tests := []struct {
 		name                string
 		line                uint32
@@ -452,11 +455,48 @@ func TestCELCompletion(t *testing.T) {
 			expectedNotContains: []string{"size", "all", "true", "false", "null"},
 		},
 		{
+			// MultiThisHolder: first `this.` in the expression. Cursor at closing `"` of `"this."`.
+			// `this` refers to MultiThisHolder; field completions should include create_time and update_time.
+			name:      "multi_this_first_dot",
+			line:      235,
+			character: 22, // closing `"` after `this.`
+			expectedContains: []string{
+				"create_time",
+				"update_time",
+			},
+			expectedNotContains: []string{"true", "false", "null"},
+		},
+		{
+			// MultiThisHolder: second `this.` after `<` operator. Cursor at closing `"` of
+			// `"this.create_time < this."`. The second `this.` must still resolve to
+			// MultiThisHolder and offer field completions.
+			name:      "multi_this_second_dot",
+			line:      239,
+			character: 41, // closing `"` after `this.create_time < this.`
+			expectedContains: []string{
+				"create_time",
+				"update_time",
+			},
+			expectedNotContains: []string{"true", "false", "null"},
+		},
+		{
+			// MultiThisHolder: second `this.` with prefix "up" after `<` operator.
+			// Cursor at closing `"` of `"this.create_time < this.up"`. Should filter
+			// to update_time only.
+			name:      "multi_this_prefix",
+			line:      243,
+			character: 43, // closing `"` after `this.create_time < this.up`
+			expectedContains: []string{
+				"update_time",
+			},
+			expectedNotContains: []string{"create_time", "true", "false", "null"},
+		},
+		{
 			// Cursor at closing `"` of `"in"` — prefix "in".
 			// `in` is a CEL binary membership operator ("value in list"), not a
 			// callable function. It must NOT appear as a function completion "in()".
 			name:                "in_operator_not_function_completion",
-			line:                232,
+			line:                253,
 			character:           19, // closing `"` after `in`
 			expectedNotContains: []string{"in"},
 		},
