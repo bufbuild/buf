@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add support for Edition 2024 syntax to `buf format`.
 
 ## [v1.67.0] - 2026-04-01
 
@@ -12,7 +12,6 @@
 - Add relevant links from CEL LSP hover documentation to either <celbyexample.com> or <protovalidate.com>
 - Add OpenBSD and FreeBSD release binaries for amd64 and arm64.
 - Skip writing unchanged output files in `buf generate` to preserve modification times
-- Add support for Edition 2024 syntax to `buf format`.
 - Update `buf beta registry plugin delete` to prompt the user for deletion, matching the UX of the other deletion commands.
   Use `--force` to restore the old behavior.
 
