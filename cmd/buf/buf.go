@@ -462,7 +462,14 @@ func newRootCommand(name string) *appcmd.Command {
 		},
 		ModifyCobra: func(cobraCommand *cobra.Command) error {
 			cobraCommand.AddCommand(bufcobra.NewWebpagesCommand("webpages", cobraCommand))
-			return nil
+			return cobraCommand.RegisterFlagCompletionFunc(
+				"log-format",
+				cobra.FixedCompletions([]string{
+					appext.LogFormatText.String(),
+					appext.LogFormatColor.String(),
+					appext.LogFormatJSON.String(),
+				}, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
+			)
 		},
 	}
 }

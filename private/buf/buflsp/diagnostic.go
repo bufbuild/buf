@@ -18,7 +18,7 @@ package buflsp
 
 import (
 	"github.com/bufbuild/protocompile/experimental/report"
-	"github.com/bufbuild/protocompile/experimental/report/tags"
+	"github.com/bufbuild/protocompile/experimental/report/rtags"
 	"github.com/bufbuild/protocompile/experimental/source/length"
 	"go.lsp.dev/protocol"
 )
@@ -61,11 +61,11 @@ func reportDiagnosticToProtocolDiagnostic(
 		}
 	}
 	switch reportDiagnostic.Tag() {
-	case tags.UnusedImport:
+	case rtags.UnusedImport:
 		diagnostic.Tags = []protocol.DiagnosticTag{
 			protocol.DiagnosticTagUnnecessary,
 		}
-	case tags.Deprecated:
+	case rtags.Deprecated:
 		diagnostic.Tags = []protocol.DiagnosticTag{
 			protocol.DiagnosticTagDeprecated,
 		}

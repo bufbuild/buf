@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -122,6 +123,9 @@ In this case, the SDK version provided resolves to a different commit than the c
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return bufcli.RegisterFlagCompletionOutputFormat(cmd, formatFlagName)
+		},
 	}
 }
 

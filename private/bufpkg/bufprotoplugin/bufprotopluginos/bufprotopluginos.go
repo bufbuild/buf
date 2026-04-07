@@ -17,7 +17,6 @@ package bufprotopluginos
 
 import (
 	"context"
-	"io"
 	"log/slog"
 
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -26,9 +25,11 @@ import (
 
 // ResponseWriter writes CodeGeneratorResponses to the OS filesystem.
 type ResponseWriter interface {
-	// Close writes all of the responses to disk. No further calls can be
-	// made to the ResponseWriter after this call.
-	io.Closer
+	// Close writes all of the responses to disk and, when
+	// ResponseWriterWithDeleteOuts is enabled, removes stale files from
+	// output directories. No further calls can be made to the
+	// ResponseWriter after this call.
+	Close(ctx context.Context) error
 
 	// AddResponse adds the response to the writer, switching on the file extension.
 	// If there is a .jar extension, this generates a jar. If there is a .zip
@@ -67,15 +68,14 @@ func ResponseWriterWithCreateOutDirIfNotExists() ResponseWriterOption {
 	}
 }
 
-// Cleaner deletes output locations prior to generation.
-//
-// This must be done before any interaction with  ResponseWriters, as multiple plugins may output to a single
-// location.
-type Cleaner interface {
-	DeleteOuts(ctx context.Context, pluginOuts []string) error
-}
-
-// NewCleaner returns a new Cleaner.
-func NewCleaner(storageosProvider storageos.Provider) Cleaner {
-	return newCleaner(storageosProvider)
+// ResponseWriterWithDeleteOuts returns a ResponseWriterOption that deletes files
+// on Close that were not written during generation. For directory outputs, any
+// file on disk that was not part of the generated output is deleted after all
+// new content is written, and empty directories are removed. For zip/jar outputs,
+// the file is only rewritten when the generated content differs from what is
+// already on disk.
+func ResponseWriterWithDeleteOuts() ResponseWriterOption {
+	return func(responseWriterOptions *responseWriterOptions) {
+		responseWriterOptions.deleteOuts = true
+	}
 }

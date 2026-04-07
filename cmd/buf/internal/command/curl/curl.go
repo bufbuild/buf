@@ -196,8 +196,26 @@ exit code that is the gRPC code, shifted three bits to the left.
 				return run(ctx, container, flags)
 			},
 		),
-		BindFlags:   flags.Bind,
-		ModifyCobra: completeCurlCommand,
+		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return errors.Join(
+				cmd.RegisterFlagCompletionFunc(
+					protocolFlagName,
+					cobra.FixedCompletions([]string{
+						connect.ProtocolConnect,
+						connect.ProtocolGRPC,
+						connect.ProtocolGRPCWeb,
+					}, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
+				),
+				cmd.RegisterFlagCompletionFunc(
+					reflectProtocolFlagName,
+					cobra.FixedCompletions(bufcurl.AllKnownReflectProtocolStrings, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
+				),
+				cmd.RegisterFlagCompletionFunc(headerFlagName, cobra.NoFileCompletions),
+				cmd.RegisterFlagCompletionFunc(reflectHeaderFlagName, cobra.NoFileCompletions),
+				cmd.ValidArgsFunction = completeURL
+			)
+		},
 	}
 }
 
@@ -1195,28 +1213,6 @@ func makeHTTP3RoundTripper(f *flags, authority string, printer verbose.Printer) 
 
 func secondsToDuration(secs float64) time.Duration {
 	return time.Duration(float64(time.Second) * secs)
-}
-
-// completeCurlCommand wires up shell completions for buf curl.
-func completeCurlCommand(cmd *cobra.Command) error {
-	if err := cmd.RegisterFlagCompletionFunc(
-		protocolFlagName,
-		func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-			return []string{connect.ProtocolConnect, connect.ProtocolGRPC, connect.ProtocolGRPCWeb}, cobra.ShellCompDirectiveNoFileComp
-		},
-	); err != nil {
-		return err
-	}
-	if err := cmd.RegisterFlagCompletionFunc(
-		reflectProtocolFlagName,
-		func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-			return bufcurl.AllKnownReflectProtocolStrings, cobra.ShellCompDirectiveNoFileComp
-		},
-	); err != nil {
-		return err
-	}
-	cmd.ValidArgsFunction = completeURL
-	return nil
 }
 
 // completeURL provides shell completions for the <url> positional argument.

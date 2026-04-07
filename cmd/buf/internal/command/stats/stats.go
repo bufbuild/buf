@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/protostat"
 	"github.com/bufbuild/buf/private/pkg/protostat/protostatstorage"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -51,6 +52,9 @@ func NewCommand(
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return bufcli.RegisterFlagCompletionOutputFormat(cmd, formatFlagName)
+		},
 	}
 }
 

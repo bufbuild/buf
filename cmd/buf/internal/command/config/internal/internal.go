@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -66,6 +67,12 @@ func NewLSCommand(
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return errors.Join(
+				bufcli.RegisterFlagCompletionRuleFormat(cmd, formatFlagName),
+				bufcli.RegisterFlagCompletionFileVersion(cmd, versionFlagName),
+			)
+		},
 	}
 }
 
@@ -123,11 +130,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fmt.Sprintf(
 			"List all the rules for the given configuration version. By default, the version in the buf.yaml in the current directory is used, or the latest version otherwise (currently v2). Cannot be set if --%s is set. Must be one of %s",
 			configuredOnlyFlagName,
-			xslices.Map(
-				bufconfig.AllFileVersions,
-				func(fileVersion bufconfig.FileVersion) string {
-					return fileVersion.String()
-				},
+			xstrings.SliceToString(
+				xslices.Map(
+					bufconfig.AllFileVersions,
+					func(fileVersion bufconfig.FileVersion) string {
+						return fileVersion.String()
+					},
+				),
 			),
 		),
 	)

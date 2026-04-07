@@ -1147,14 +1147,18 @@ func (f *file) appendAnnotations(source string, annotations []bufanalysis.FileAn
 		endLocation := f.file.InverseLocation(annotation.EndLine(), annotation.EndColumn(), positionalEncoding)
 		protocolRange := reportLocationsToProtocolRange(startLocation, endLocation)
 		diagnostic := protocol.Diagnostic{
-			Range: protocolRange,
-			Code:  annotation.Type(),
-			CodeDescription: &protocol.CodeDescription{
-				Href: protocol.URI("https://buf.build/docs/lint/rules/#" + strings.ToLower(annotation.Type())),
-			},
+			Range:    protocolRange,
+			Code:     annotation.Type(),
 			Severity: protocol.DiagnosticSeverityWarning,
 			Source:   source,
 			Message:  annotation.Message(),
+		}
+		// Only link to buf.build/docs for built-in rules. Plugin and policy
+		// rules have their own documentation, so we skip the link entirely.
+		if annotation.PluginName() == "" && annotation.PolicyName() == "" {
+			diagnostic.CodeDescription = &protocol.CodeDescription{
+				Href: protocol.URI("https://buf.build/docs/lint/rules/#" + strings.ToLower(annotation.Type())),
+			}
 		}
 		if annotation.Type() == "IMPORT_USED" {
 			diagnostic.Tags = []protocol.DiagnosticTag{
