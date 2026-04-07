@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
@@ -151,26 +152,26 @@ Examples:
 Issue a unary RPC to a plain-text (i.e. "h2c") gRPC server, where the schema for the service is
 in a Buf module in the current directory, using an empty request message:
 
-    $ buf curl --schema . --protocol grpc --http2-prior-knowledge  \
+    $ buf curl --schema . --protocol grpc --http2-prior-knowledge \
          http://localhost:20202/foo.bar.v1.FooService/DoSomething
 
 Issue an RPC to a Connect server, where the schema comes from the Buf Schema Registry, using
 a request that is defined as a command-line argument:
 
-    $ buf curl --schema buf.build/connectrpc/eliza  \
-         --data '{"name": "Bob Loblaw"}'          \
+    $ buf curl --schema buf.build/connectrpc/eliza \
+         --data '{"name": "Bob Loblaw"}' \
          https://demo.connectrpc.com/connectrpc.eliza.v1.ElizaService/Introduce
 
 Issue a unary RPC to a server that supports reflection, with verbose output:
 
-    $ buf curl --data '{"sentence": "I am not feeling well."}' -v  \
-		 https://demo.connectrpc.com/connectrpc.eliza.v1.ElizaService/Say
+    $ buf curl --data '{"sentence": "I am not feeling well."}' -v \
+         https://demo.connectrpc.com/connectrpc.eliza.v1.ElizaService/Say
 
 Issue a client-streaming RPC to a gRPC-web server that supports reflection, where custom
 headers and request data are both in a heredoc:
 
-    $ buf curl --data @- --header @- --protocol grpcweb                              \
-		 https://demo.connectrpc.com/connectrpc.eliza.v1.ElizaService/Converse  \
+    $ buf curl --data @- --header @- --protocol grpcweb \
+         https://demo.connectrpc.com/connectrpc.eliza.v1.ElizaService/Converse \
        <<EOM
     Custom-Header-1: foo-bar-baz
     Authorization: token jas8374hgnkvje9wpkerebncjqol4
@@ -195,25 +196,8 @@ exit code that is the gRPC code, shifted three bits to the left.
 				return run(ctx, container, flags)
 			},
 		),
-		BindFlags: flags.Bind,
-		ModifyCobra: func(cmd *cobra.Command) error {
-			return errors.Join(
-				cmd.RegisterFlagCompletionFunc(
-					protocolFlagName,
-					cobra.FixedCompletions([]string{
-						connect.ProtocolConnect,
-						connect.ProtocolGRPC,
-						connect.ProtocolGRPCWeb,
-					}, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
-				),
-				cmd.RegisterFlagCompletionFunc(
-					reflectProtocolFlagName,
-					cobra.FixedCompletions(bufcurl.AllKnownReflectProtocolStrings, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
-				),
-				cmd.RegisterFlagCompletionFunc(headerFlagName, cobra.NoFileCompletions),
-				cmd.RegisterFlagCompletionFunc(reflectHeaderFlagName, cobra.NoFileCompletions),
-			)
-		},
+		BindFlags:   flags.Bind,
+		ModifyCobra: completeCurlCommand,
 	}
 }
 
@@ -753,6 +737,29 @@ func (f *flags) getTLSConfig(authority string, printer verbose.Printer) (*tls.Co
 	}, authority, printer)
 }
 
+func completeCurlCommand(cmd *cobra.Command) error {
+	if err := errors.Join(
+		cmd.RegisterFlagCompletionFunc(
+			protocolFlagName,
+			cobra.FixedCompletions([]string{
+				connect.ProtocolConnect,
+				connect.ProtocolGRPC,
+				connect.ProtocolGRPCWeb,
+			}, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
+		),
+		cmd.RegisterFlagCompletionFunc(
+			reflectProtocolFlagName,
+			cobra.FixedCompletions(bufcurl.AllKnownReflectProtocolStrings, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
+		),
+		cmd.RegisterFlagCompletionFunc(headerFlagName, cobra.NoFileCompletions),
+		cmd.RegisterFlagCompletionFunc(reflectHeaderFlagName, cobra.NoFileCompletions),
+	); err != nil {
+		return err
+	}
+	cmd.ValidArgsFunction = completeURL
+	return nil
+}
+
 func promptForPassword(ctx context.Context, container app.Container, prompt string) (string, error) {
 	// NB: The comments below and the mechanism of handling I/O async was
 	// copied from the "registry login" command.
@@ -1211,4 +1218,283 @@ func makeHTTP3RoundTripper(f *flags, authority string, printer verbose.Printer) 
 
 func secondsToDuration(secs float64) time.Duration {
 	return time.Duration(float64(time.Second) * secs)
+}
+
+// completeURL provides shell completions for the <url> positional argument.
+// It completes service and method name path components using the first source
+// that succeeds, tried in order:
+//
+//  1. --schema flag (explicit schemas provided by the user)
+//  2. Live server reflection against the URL being completed
+//  3. The buf module found by walking up from the current working directory
+//
+// Sources 2 and 3 are tried in order so that a running server takes precedence,
+// but local development against a service without a live server still works.
+func completeURL(cmd *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if toComplete == "" {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	parsed, err := url.Parse(toComplete)
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	baseURL := parsed.Scheme + "://" + parsed.Host
+	// rawPath is everything after the leading slash, e.g.:
+	//   ""                                    → completing package prefix
+	//   "acme."                               → completing next package segment
+	//   "acme.foo.v1.FooService"              → completing up to trailing slash
+	//   "acme.foo.v1.FooService/"             → completing method name
+	//   "acme.foo.v1.FooService/Get"          → completing method name (partial)
+	rawPath := strings.TrimPrefix(parsed.Path, "/")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 1. Explicit --schema flag.
+	schemas, _ := cmd.Flags().GetStringSlice(schemaFlagName)
+	if len(schemas) > 0 {
+		return completeURLFromSchema(ctx, schemas, baseURL, rawPath, "--schema")
+	}
+
+	// 2. Live server reflection.
+	isSecure := parsed.Scheme == "https"
+	if httpClient, ok := makeCompletionHTTPClient(cmd, isSecure, parsed.Host); ok {
+		if completions, directive, ok := completeURLFromReflection(ctx, httpClient, baseURL, rawPath); ok {
+			return completions, directive
+		}
+	}
+
+	// 3. Buf module in the current working directory (walks up to find buf.yaml /
+	// buf.work.yaml). This covers the common local-dev case: the user is working
+	// inside a buf workspace and hasn't started the server yet, or the server
+	// doesn't expose reflection.
+	return completeURLFromSchema(ctx, []string{"."}, baseURL, rawPath, "local module")
+}
+
+// completeURLFromReflection attempts server reflection against baseURL and
+// returns completions if the server is reachable and supports reflection.
+// The third return value is false if reflection was unavailable (connection
+// refused, server unreachable, reflection not implemented), in which case the
+// caller should try an alternative source. It is true even if the service list
+// was empty or no completions matched — that is a valid reflection result.
+//
+// Reflection for completion always uses gRPC regardless of --protocol or
+// --reflect-protocol, and does not forward --reflect-header. Servers that
+// require auth on the reflection endpoint will silently produce no completions.
+func completeURLFromReflection(ctx context.Context, httpClient connect.HTTPClient, baseURL, rawPath string) ([]string, cobra.ShellCompDirective, bool) {
+	reflectionResolver, closeResolver := bufcurl.NewServerReflectionResolver(
+		ctx,
+		httpClient,
+		[]connect.ClientOption{connect.WithGRPC()},
+		baseURL,
+		bufcurl.ReflectProtocolUnknown,
+		http.Header{},
+		verbose.NopPrinter,
+	)
+	defer closeResolver()
+
+	serviceNames, err := reflectionResolver.ListServices()
+	if err != nil {
+		// Reflection unavailable or server unreachable; let the caller try another source.
+		return nil, cobra.ShellCompDirectiveNoFileComp, false
+	}
+	completions, directive := completePathFromServices(
+		baseURL,
+		serviceNames,
+		rawPath,
+		func(svcName string) (protoreflect.ServiceDescriptor, error) {
+			return bufcurl.ResolveServiceDescriptor(reflectionResolver, svcName)
+		},
+		"reflection",
+	)
+	return completions, directive, true
+}
+
+// completeURLFromSchema builds a resolver from the given schemas using the full
+// schema-loading stack (BSR auth, caching, etc.) and uses it to complete
+// service and method name path components.
+func completeURLFromSchema(ctx context.Context, schemas []string, baseURL, rawPath, source string) ([]string, cobra.ShellCompDirective) {
+	// Only surface errors when the user explicitly provided a source (e.g.
+	// --schema). The CWD fallback ("local module") is silent because there may
+	// simply be no buf.yaml in the current directory.
+	reportError := func(format string, args ...any) {
+		if source != "local module" {
+			cobra.CompErrorln(fmt.Sprintf("buf curl completion: "+format, args...))
+		}
+	}
+
+	baseContainer, err := app.NewContainerForOS()
+	if err != nil {
+		reportError("%v", err)
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	nameContainer, err := appext.NewNameContainer(baseContainer, "buf")
+	if err != nil {
+		reportError("%v", err)
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	// Discard log output during shell completion.
+	container := appext.NewContainer(nameContainer, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	controller, err := bufcli.NewController(container)
+	if err != nil {
+		reportError("%v", err)
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	resolvers := make([]bufcurl.Resolver, 0, len(schemas))
+	for _, schema := range schemas {
+		image, err := controller.GetImage(ctx, schema)
+		if err != nil {
+			reportError("failed to load schema %q: %v", schema, err)
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		resolvers = append(resolvers, bufcurl.ResolverForImage(image))
+	}
+	resolver := bufcurl.CombineResolvers(resolvers...)
+
+	serviceNames, err := resolver.ListServices()
+	if err != nil {
+		reportError("%v", err)
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return completePathFromServices(
+		baseURL,
+		serviceNames,
+		rawPath,
+		func(svcName string) (protoreflect.ServiceDescriptor, error) {
+			return bufcurl.ResolveServiceDescriptor(resolver, svcName)
+		},
+		source,
+	)
+}
+
+// completePathFromServices computes URL completions given a list of known
+// service names and the raw path typed so far (everything after the host).
+//
+// Service-level completions advance through unambiguous dot-segments automatically
+// so a single tab press reaches the first real fork in the name hierarchy. For
+// example, given services
+//
+//	acme.foo.v1.FooService
+//	acme.bar.v1.BarService
+//
+// the progression is:
+//
+//	""       → "https://host/acme.foo." and "https://host/acme.bar."  (skips unambiguous "acme.")
+//	"acme.foo." → "https://host/acme.foo.v1.FooService/"              (skips unambiguous "v1.")
+//	"acme.foo.v1.FooService/" → method names
+func completePathFromServices(
+	baseURL string,
+	serviceNames []protoreflect.FullName,
+	rawPath string,
+	getServiceDescriptor func(serviceName string) (protoreflect.ServiceDescriptor, error),
+	source string,
+) ([]string, cobra.ShellCompDirective) {
+	serviceName, methodPrefix, hasSlash := strings.Cut(rawPath, "/")
+	if hasSlash {
+		// Method completion.
+		desc, err := getServiceDescriptor(serviceName)
+		if err != nil {
+			// The service name was already listed, so failing to fetch its
+			// descriptor is unexpected — surface it regardless of source.
+			if source != "" {
+				cobra.CompErrorln(fmt.Sprintf("buf curl completion: failed to resolve service %q: %v", serviceName, err))
+			}
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		methods := desc.Methods()
+		completions := make([]string, 0, methods.Len())
+		for i := range methods.Len() {
+			name := string(methods.Get(i).Name())
+			if strings.HasPrefix(name, methodPrefix) {
+				item := baseURL + "/" + serviceName + "/" + name
+				if source != "" {
+					item += "\t" + source
+				}
+				completions = append(completions, item)
+			}
+		}
+		slices.Sort(completions)
+		return completions, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	// Service/package name completion. We loop, advancing the prefix through
+	// dot-segments until we reach a fork (multiple candidates) or a terminal
+	// service name (ends with "/"). This means a single tab press skips over
+	// any unambiguous prefix segments.
+	prefix := rawPath
+	for {
+		seen := make(map[string]struct{})
+		for _, svc := range serviceNames {
+			svcStr := string(svc)
+			if !strings.HasPrefix(svcStr, prefix) {
+				continue
+			}
+			remainder := svcStr[len(prefix):]
+			if idx := strings.Index(remainder, "."); idx >= 0 {
+				// More package components remain: offer only the next segment.
+				seen[prefix+remainder[:idx+1]] = struct{}{}
+			} else {
+				// No more dots: full service name; add trailing slash.
+				seen[svcStr+"/"] = struct{}{}
+			}
+		}
+		// If there is exactly one candidate and it is not yet a terminal service
+		// name (i.e. it ends with "." not "/"), advance and loop so the next
+		// segment is also consumed without requiring another tab press.
+		if len(seen) == 1 {
+			var only string
+			for k := range seen {
+				only = k
+			}
+			if !strings.HasSuffix(only, "/") {
+				prefix = only
+				continue
+			}
+		}
+		completions := make([]string, 0, len(seen))
+		for p := range seen {
+			item := baseURL + "/" + p
+			// Add source description only to terminal service names (ending with "/"),
+			// not to intermediate package segments (ending with ".").
+			if source != "" && strings.HasSuffix(p, "/") {
+				item += "\t" + source
+			}
+			completions = append(completions, item)
+		}
+		slices.Sort(completions)
+		// NoSpace so the shell does not insert a space after a trailing dot or
+		// slash, letting the user continue typing the next segment immediately.
+		return completions, cobra.ShellCompDirectiveNoSpace | cobra.ShellCompDirectiveNoFileComp
+	}
+}
+
+// makeCompletionHTTPClient builds an HTTP client for use during shell
+// completion. Returns (client, true) on success, or (nil, false) when
+// reflection is not possible (e.g. plain HTTP without HTTP/2 prior knowledge).
+func makeCompletionHTTPClient(cmd *cobra.Command, isSecure bool, authority string) (connect.HTTPClient, bool) {
+	insecure, _ := cmd.Flags().GetBool(insecureFlagName)
+	http2PriorKnowledge, _ := cmd.Flags().GetBool(http2PriorKnowledgeFlagName)
+	if !isSecure && !http2PriorKnowledge {
+		// Plain HTTP: server reflection requires HTTP/2, which needs prior knowledge
+		// over a cleartext connection. Skip completion if the flag is not set.
+		return nil, false
+	}
+	key, _ := cmd.Flags().GetString(keyFlagName)
+	cert, _ := cmd.Flags().GetString(certFlagName)
+	caCert, _ := cmd.Flags().GetString(caCertFlagName)
+	serverName, _ := cmd.Flags().GetString(serverNameFlagName)
+	f := &flags{
+		Key:                 key,
+		Cert:                cert,
+		CACert:              caCert,
+		ServerName:          serverName,
+		Insecure:            insecure,
+		HTTP2PriorKnowledge: http2PriorKnowledge,
+	}
+	rt, err := makeHTTPRoundTripper(f, isSecure, authority, verbose.NopPrinter)
+	if err != nil {
+		return nil, false
+	}
+	return bufcurl.NewVerboseHTTPClient(rt, verbose.NopPrinter), true
 }
