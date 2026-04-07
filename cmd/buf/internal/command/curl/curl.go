@@ -198,7 +198,7 @@ exit code that is the gRPC code, shifted three bits to the left.
 		),
 		BindFlags: flags.Bind,
 		ModifyCobra: func(cmd *cobra.Command) error {
-			return errors.Join(
+			if err := errors.Join(
 				cmd.RegisterFlagCompletionFunc(
 					protocolFlagName,
 					cobra.FixedCompletions([]string{
@@ -213,8 +213,11 @@ exit code that is the gRPC code, shifted three bits to the left.
 				),
 				cmd.RegisterFlagCompletionFunc(headerFlagName, cobra.NoFileCompletions),
 				cmd.RegisterFlagCompletionFunc(reflectHeaderFlagName, cobra.NoFileCompletions),
-				cmd.ValidArgsFunction = completeURL
-			)
+			); err != nil {
+				return err
+			}
+			cmd.ValidArgsFunction = completeURL
+			return nil
 		},
 	}
 }
