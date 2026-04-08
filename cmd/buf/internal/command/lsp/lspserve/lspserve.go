@@ -22,10 +22,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
-	"net/http"
-	_ "net/http/pprof" // Register pprof handlers on DefaultServeMux.
-	"runtime"
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
@@ -39,8 +37,8 @@ import (
 
 const (
 	// pipe is chosen because that's what the vscode LSP client expects.
-	pipeFlagName    = "pipe"
-	profileFlagName = "profile"
+	pipeFlagName         = "pipe"
+	debugAddressFlagName = "debug-address"
 )
 
 // NewCommand constructs the CLI command for executing the LSP.
@@ -73,8 +71,8 @@ func NewCommand(
 type flags struct {
 	// A file path to a UNIX socket to use for IPC. If empty, stdio is used instead.
 	PipePath string
-	// An address (host:port) to serve pprof endpoints on. If empty, no profile server is started.
-	ProfileAddress string
+	// An address (host:port) to serve the debug server on. If empty, no debug server is started.
+	DebugAddress string
 }
 
 // Bind sets up the CLI flags that the LSP needs.
@@ -86,10 +84,10 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"path to a UNIX socket to listen on; uses stdio if not specified",
 	)
 	flagSet.StringVar(
-		&f.ProfileAddress,
-		profileFlagName,
+		&f.DebugAddress,
+		debugAddressFlagName,
 		"",
-		"address to serve pprof endpoints on (e.g. localhost:6060); disabled if not specified",
+		"address to serve debug endpoints on (e.g. localhost:6060); disabled if not specified",
 	)
 }
 
@@ -103,21 +101,17 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) (retErr error) {
-	if flags.ProfileAddress != "" {
-		runtime.SetBlockProfileRate(1)
-		runtime.SetMutexProfileFraction(1)
-
-		listener, err := net.Listen("tcp", flags.ProfileAddress)
+	if flags.DebugAddress != "" {
+		server, err := newDebugServer(flags.DebugAddress, bufcli.Version)
 		if err != nil {
-			return fmt.Errorf("could not start debug server: %w", err)
+			return err
 		}
-		// Always print the address to stderr so it's visible regardless of log level.
-		// This is especially important with ":0" where the OS picks the port.
-		fmt.Fprintf(container.Stderr(), "profile server listening on %s\n", listener.Addr().String())
-		profileServer := &http.Server{Handler: http.DefaultServeMux}
-		go func() { _ = profileServer.Serve(listener) }()
+		container.Logger().Info(
+			"debug server listening",
+			slog.String("address", server.Addr().String()),
+		)
 		defer func() {
-			retErr = errors.Join(retErr, profileServer.Close())
+			retErr = errors.Join(retErr, server.Close())
 		}()
 	}
 
