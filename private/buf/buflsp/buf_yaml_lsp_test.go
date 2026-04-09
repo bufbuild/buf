@@ -15,12 +15,11 @@
 package buflsp_test
 
 import (
-	"context"
-	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -47,39 +46,6 @@ import (
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
 )
-
-// mockModuleKeyProvider is a ModuleKeyProvider that returns fixed latest commits for testing.
-type mockModuleKeyProvider struct {
-	// latestByFullName maps module full name string ("registry/owner/name") to the
-	// commit UUID that represents the "latest" version on the BSR.
-	latestByFullName map[string]uuid.UUID
-}
-
-func (m *mockModuleKeyProvider) GetModuleKeysForModuleRefs(
-	_ context.Context,
-	refs []bufparse.Ref,
-	_ bufmodule.DigestType,
-) ([]bufmodule.ModuleKey, error) {
-	keys := make([]bufmodule.ModuleKey, 0, len(refs))
-	for _, ref := range refs {
-		commitID, ok := m.latestByFullName[ref.FullName().String()]
-		if !ok {
-			return nil, fmt.Errorf("mockModuleKeyProvider: no mock commit for %s", ref.FullName())
-		}
-		key, err := bufmodule.NewModuleKey(
-			ref.FullName(),
-			commitID,
-			func() (bufmodule.Digest, error) {
-				return nil, fmt.Errorf("digest not available in mock")
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-		keys = append(keys, key)
-	}
-	return keys, nil
-}
 
 // setupLSPServerForBufYAML creates an LSP server initialized for buf.yaml testing.
 // It opens the buf.yaml file at bufYAMLPath via didOpen and returns the client
@@ -355,10 +321,12 @@ func TestBufYAMLCheckUpdates(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			mkp := &mockModuleKeyProvider{latestByFullName: make(map[string]uuid.UUID, len(tc.latestCommits))}
+			var keys []bufmodule.ModuleKey
 			for mod, uuidStr := range tc.latestCommits {
-				mkp.latestByFullName[mod] = mustParseUUID(t, uuidStr)
+				keys = append(keys, mustNewModuleKey(t, mod, uuidStr))
 			}
+			mkp, err := bufmodule.NewStaticModuleKeyProvider(keys)
+			require.NoError(t, err)
 
 			absPath, err := filepath.Abs(tc.fixture)
 			require.NoError(t, err)
@@ -388,12 +356,11 @@ func TestBufYAMLDiagnostics_ClearedOnClose(t *testing.T) {
 	t.Parallel()
 
 	// Both deps outdated so we get diagnostics after the check.
-	mkp := &mockModuleKeyProvider{
-		latestByFullName: map[string]uuid.UUID{
-			"buf.build/bufbuild/protovalidate": mustParseUUID(t, "00000000-0000-0000-0000-000000000011"),
-			"buf.build/googleapis/googleapis":  mustParseUUID(t, "00000000-0000-0000-0000-000000000022"),
-		},
-	}
+	mkp, err := bufmodule.NewStaticModuleKeyProvider([]bufmodule.ModuleKey{
+		mustNewModuleKey(t, "buf.build/bufbuild/protovalidate", "00000000-0000-0000-0000-000000000011"),
+		mustNewModuleKey(t, "buf.build/googleapis/googleapis", "00000000-0000-0000-0000-000000000022"),
+	})
+	require.NoError(t, err)
 
 	absPath, err := filepath.Abs("testdata/buf_yaml/with_deps/buf.yaml")
 	require.NoError(t, err)
@@ -438,12 +405,11 @@ func TestBufYAMLDiagnostics_ClearedOnClose(t *testing.T) {
 func TestBufYAMLCheckUpdates_FileChange(t *testing.T) {
 	t.Parallel()
 
-	mkp := &mockModuleKeyProvider{
-		latestByFullName: map[string]uuid.UUID{
-			"buf.build/bufbuild/protovalidate": mustParseUUID(t, "00000000-0000-0000-0000-000000000011"),
-			"buf.build/googleapis/googleapis":  mustParseUUID(t, "00000000-0000-0000-0000-000000000002"),
-		},
-	}
+	mkp, err := bufmodule.NewStaticModuleKeyProvider([]bufmodule.ModuleKey{
+		mustNewModuleKey(t, "buf.build/bufbuild/protovalidate", "00000000-0000-0000-0000-000000000011"),
+		mustNewModuleKey(t, "buf.build/googleapis/googleapis", "00000000-0000-0000-0000-000000000002"),
+	})
+	require.NoError(t, err)
 
 	absPath, err := filepath.Abs("testdata/buf_yaml/with_deps/buf.yaml")
 	require.NoError(t, err)
@@ -480,4 +446,19 @@ func mustParseUUID(t *testing.T, s string) uuid.UUID {
 	id, err := uuid.Parse(s)
 	require.NoError(t, err)
 	return id
+}
+
+// mustNewModuleKey constructs a ModuleKey with the given full name and commit ID for use
+// in test data. A synthetic b5 digest of all-zeros is used; the digest is not validated
+// during test execution but must have the correct type to satisfy the staticModuleKeyProvider.
+func mustNewModuleKey(t *testing.T, fullNameStr, commitIDStr string) bufmodule.ModuleKey {
+	t.Helper()
+	fullName, err := bufparse.ParseFullName(fullNameStr)
+	require.NoError(t, err)
+	commitID := mustParseUUID(t, commitIDStr)
+	key, err := bufmodule.NewModuleKey(fullName, commitID, func() (bufmodule.Digest, error) {
+		return bufmodule.ParseDigest("b5:" + strings.Repeat("0", 128))
+	})
+	require.NoError(t, err)
+	return key
 }
