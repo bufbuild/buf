@@ -27,6 +27,7 @@ import (
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/bufbuild/protocompile/experimental/incremental"
@@ -36,6 +37,20 @@ import (
 	"go.lsp.dev/protocol"
 	"go.uber.org/zap"
 )
+
+// ServeOption is an option for the Serve function.
+type ServeOption func(*lsp)
+
+// WithModuleKeyProvider overrides the ModuleKeyProvider used by the LSP server
+// when checking for dependency updates (buf.dep.checkUpdates command).
+//
+// This is intended for testing; in production the server creates a provider
+// from the container credentials automatically.
+func WithModuleKeyProvider(mkp bufmodule.ModuleKeyProvider) ServeOption {
+	return func(l *lsp) {
+		l.moduleKeyProvider = mkp
+	}
+}
 
 // Serve spawns a new LSP server, listening on the given stream.
 //
@@ -49,6 +64,7 @@ func Serve(
 	wasmRuntime wasm.Runtime,
 	stream jsonrpc2.Stream,
 	queryExecutor *incremental.Executor,
+	options ...ServeOption,
 ) (jsonrpc2.Conn, error) {
 	logger := container.Logger()
 	logger = logger.With(slog.String("buf_version", bufVersion))
@@ -84,8 +100,12 @@ func Serve(
 		connCtx:       connCtx,
 		connCancel:    connCancel,
 	}
+	for _, option := range options {
+		option(lsp)
+	}
 	lsp.fileManager = newFileManager(lsp)
 	lsp.workspaceManager = newWorkspaceManager(lsp)
+	lsp.bufYAMLManager = newBufYAMLManager(lsp)
 	off := protocol.TraceOff
 	lsp.traceValue.Store(&off)
 
@@ -119,11 +139,16 @@ type lsp struct {
 	wasmRuntime      wasm.Runtime
 	fileManager      *fileManager
 	workspaceManager *workspaceManager
+	bufYAMLManager   *bufYAMLManager
 	queryExecutor    *incremental.Executor
 	opener           source.Map
 	irSession        *ir.Session
 	wktBucket        storage.ReadBucket
 	shutdown         bool
+
+	// moduleKeyProvider, if non-nil, overrides the provider created from container
+	// credentials for the buf.dep.checkUpdates command. Set via WithModuleKeyProvider.
+	moduleKeyProvider bufmodule.ModuleKeyProvider
 
 	lock sync.Mutex
 

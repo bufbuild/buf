@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add LSP code lenses for `buf.yaml` files to update all dependencies (`buf.dep.updateAll`) or check for available updates (`buf.dep.checkUpdates`).
 - Improve shell completions for `buf` flags with fixed value sets and file/directory arguments.
 - Add `buf curl` URL path shell completions (service and method names) via
   server reflection, `--schema`, or the local buf module.
