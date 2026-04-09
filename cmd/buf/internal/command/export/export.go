@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -86,6 +87,12 @@ Export a git repo to a local directory.
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return cmd.RegisterFlagCompletionFunc(
+				outputFlagName,
+				cobra.FixedCompletions(nil, cobra.ShellCompDirectiveFilterDirs),
+			)
+		},
 	}
 }
 

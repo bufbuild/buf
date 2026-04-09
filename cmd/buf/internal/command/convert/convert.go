@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -91,6 +92,9 @@ Use a module on the bsr:
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return bufcli.RegisterFlagCompletionErrorFormat(cmd, errorFormatFlagName)
+		},
 	}
 }
 

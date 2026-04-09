@@ -16,6 +16,7 @@ package generate
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -33,6 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -384,6 +386,21 @@ Insertion points are processed in the order the plugins are specified in the tem
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return errors.Join(
+				bufcli.RegisterFlagCompletionErrorFormat(cmd, errorFormatFlagName),
+				cmd.RegisterFlagCompletionFunc(
+					templateFlagName,
+					cobra.FixedCompletions([]string{"yaml", "yml", "json"}, cobra.ShellCompDirectiveFilterFileExt),
+				),
+				cmd.RegisterFlagCompletionFunc(
+					baseOutDirPathFlagName,
+					cobra.FixedCompletions(nil, cobra.ShellCompDirectiveFilterDirs),
+				),
+				cmd.RegisterFlagCompletionFunc(typeFlagName, cobra.NoFileCompletions),
+				cmd.RegisterFlagCompletionFunc(excludeTypeFlagName, cobra.NoFileCompletions),
+			)
+		},
 	}
 }
 

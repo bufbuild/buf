@@ -33,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -98,6 +99,9 @@ Display a diff of the changes instead of rewriting files:
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return bufcli.RegisterFlagCompletionErrorFormat(cmd, errorFormatFlagName)
+		},
 	}
 }
 

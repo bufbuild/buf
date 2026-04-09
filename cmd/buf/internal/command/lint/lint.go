@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -55,6 +56,9 @@ func NewCommand(
 			},
 		),
 		BindFlags: flags.Bind,
+		ModifyCobra: func(cmd *cobra.Command) error {
+			return bufcli.RegisterFlagCompletionLintErrorFormat(cmd, errorFormatFlagName)
+		},
 	}
 }
 
