@@ -192,11 +192,11 @@ func TestDiagnostics(t *testing.T) {
 				{
 					Range: protocol.Range{
 						Start: protocol.Position{Line: 8, Character: 0},
-						End:   protocol.Position{Line: 8, Character: 0},
+						End:   protocol.Position{Line: 8, Character: 1},
 					},
 					Severity: protocol.DiagnosticSeverityError,
 					Source:   "buf-lsp",
-					Message:  "syntax error: expecting ';'",
+					Message:  "unexpected `}` after definition",
 				},
 			},
 		},
@@ -226,12 +226,12 @@ func TestDiagnostics(t *testing.T) {
 			expectedDiagnostics: []protocol.Diagnostic{
 				{
 					Range: protocol.Range{
-						Start: protocol.Position{Line: 5, Character: 7},
-						End:   protocol.Position{Line: 5, Character: 28},
+						Start: protocol.Position{Line: 5, Character: 0},
+						End:   protocol.Position{Line: 5, Character: 30},
 					},
 					Severity: protocol.DiagnosticSeverityError,
 					Source:   "buf-lsp",
-					Message:  `does/not/exist.proto: file does not exist`,
+					Message:  "imported file does not exist",
 				},
 			},
 		},

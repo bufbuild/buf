@@ -26,7 +26,7 @@ import (
 // foldingRange generates folding ranges for a file.
 // It finds messages, services, enums, and multi-line comment blocks.
 func (s *server) foldingRange(file *file) []protocol.FoldingRange {
-	if file.ir == nil {
+	if file.ir == nil || !file.ir.Lowered() {
 		return nil
 	}
 
