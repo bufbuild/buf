@@ -84,8 +84,6 @@ func (m *mockModuleKeyProvider) GetModuleKeysForModuleRefs(
 // setupLSPServerForBufYAML creates an LSP server initialized for buf.yaml testing.
 // It opens the buf.yaml file at bufYAMLPath via didOpen and returns the client
 // connection, the buf.yaml URI, and a diagnostics capture for async notifications.
-//
-// If mkp is non-nil it is injected as the ModuleKeyProvider for checkUpdates.
 func setupLSPServerForBufYAML(
 	t *testing.T,
 	bufYAMLPath string,
@@ -145,9 +143,9 @@ func setupLSPServerForBufYAML(
 		require.NoError(t, clientConn.Close())
 	})
 
-	var serveOptions []buflsp.ServeOption
+	moduleKeyProvider := bufmodule.ModuleKeyProvider(nopModuleKeyProvider{})
 	if mkp != nil {
-		serveOptions = append(serveOptions, buflsp.WithModuleKeyProvider(mkp))
+		moduleKeyProvider = mkp
 	}
 
 	conn, err := buflsp.Serve(
@@ -159,7 +157,8 @@ func setupLSPServerForBufYAML(
 		wasmRuntime,
 		jsonrpc2.NewStream(serverConn),
 		queryExecutor,
-		serveOptions...,
+		moduleKeyProvider,
+		bufmodule.NopGraphProvider,
 	)
 	require.NoError(t, err)
 	t.Cleanup(func() {

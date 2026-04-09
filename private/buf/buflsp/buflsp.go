@@ -38,25 +38,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// ServeOption is an option for the Serve function.
-type ServeOption func(*lsp)
-
-// WithModuleKeyProvider sets the ModuleKeyProvider used by the LSP server when
-// checking for or updating dependency versions.
-func WithModuleKeyProvider(mkp bufmodule.ModuleKeyProvider) ServeOption {
-	return func(l *lsp) {
-		l.moduleKeyProvider = mkp
-	}
-}
-
-// WithGraphProvider sets the GraphProvider used by the LSP server when resolving
-// transitive dependencies during a dependency update.
-func WithGraphProvider(gp bufmodule.GraphProvider) ServeOption {
-	return func(l *lsp) {
-		l.graphProvider = gp
-	}
-}
-
 // Serve spawns a new LSP server, listening on the given stream.
 //
 // Returns a context for managing the server.
@@ -69,7 +50,8 @@ func Serve(
 	wasmRuntime wasm.Runtime,
 	stream jsonrpc2.Stream,
 	queryExecutor *incremental.Executor,
-	options ...ServeOption,
+	moduleKeyProvider bufmodule.ModuleKeyProvider,
+	graphProvider bufmodule.GraphProvider,
 ) (jsonrpc2.Conn, error) {
 	logger := container.Logger()
 	logger = logger.With(slog.String("buf_version", bufVersion))
@@ -93,20 +75,19 @@ func Serve(
 			&connWrapper{Conn: conn, logger: logger},
 			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
-		container:     container,
-		logger:        logger,
-		bufVersion:    bufVersion,
-		controller:    controller,
-		wasmRuntime:   wasmRuntime,
-		wktBucket:     wktBucket,
-		queryExecutor: queryExecutor,
-		opener:        source.NewMap(nil),
-		irSession:     new(ir.Session),
-		connCtx:       connCtx,
-		connCancel:    connCancel,
-	}
-	for _, option := range options {
-		option(lsp)
+		container:         container,
+		logger:            logger,
+		bufVersion:        bufVersion,
+		controller:        controller,
+		wasmRuntime:       wasmRuntime,
+		wktBucket:         wktBucket,
+		queryExecutor:     queryExecutor,
+		opener:            source.NewMap(nil),
+		irSession:         new(ir.Session),
+		connCtx:           connCtx,
+		connCancel:        connCancel,
+		moduleKeyProvider: moduleKeyProvider,
+		graphProvider:     graphProvider,
 	}
 	lsp.fileManager = newFileManager(lsp)
 	lsp.workspaceManager = newWorkspaceManager(lsp)

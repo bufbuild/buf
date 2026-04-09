@@ -137,8 +137,8 @@ func run(
 		wasmRuntime,
 		jsonrpc2.NewStream(transport),
 		incremental.New(),
-		buflsp.WithModuleKeyProvider(moduleKeyProvider),
-		buflsp.WithGraphProvider(graphProvider),
+		moduleKeyProvider,
+		graphProvider,
 	)
 	if err != nil {
 		return err

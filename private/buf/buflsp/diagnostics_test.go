@@ -125,6 +125,8 @@ func setupLSPServerWithDiagnostics(
 		wasmRuntime,
 		stream,
 		queryExecutor,
+		nopModuleKeyProvider{},
+		bufmodule.NopGraphProvider,
 	)
 	require.NoError(t, err)
 	t.Cleanup(func() {

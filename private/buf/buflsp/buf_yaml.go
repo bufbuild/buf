@@ -189,11 +189,7 @@ func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.U
 		depPosByFullName[ref.FullName().String()] = dep.depRange
 	}
 
-	moduleKeyProvider := m.lsp.moduleKeyProvider
-	if moduleKeyProvider == nil {
-		return fmt.Errorf("no module key provider configured")
-	}
-	latestKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
+	latestKeys, err := m.lsp.moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
 		configuredRefs,
 		workspaceDepManager.BufLockFileDigestType(),
@@ -259,11 +255,7 @@ func updateDeps(ctx context.Context, l *lsp, dirPath string) error {
 	if len(refs) == 0 {
 		return nil
 	}
-	moduleKeyProvider := l.moduleKeyProvider
-	if moduleKeyProvider == nil {
-		return fmt.Errorf("no module key provider configured")
-	}
-	moduleKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
+	moduleKeys, err := l.moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
 		refs,
 		workspaceDepManager.BufLockFileDigestType(),
@@ -303,9 +295,6 @@ func moduleKeysWithTransitiveDeps(
 	l *lsp,
 	moduleKeys []bufmodule.ModuleKey,
 ) ([]bufmodule.ModuleKey, error) {
-	if l.graphProvider == nil {
-		return nil, fmt.Errorf("no graph provider configured")
-	}
 	graph, err := l.graphProvider.GetGraphForModuleKeys(ctx, moduleKeys)
 	if err != nil {
 		return nil, err
