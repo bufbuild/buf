@@ -118,6 +118,16 @@ func run(
 		retErr = errors.Join(retErr, wasmRuntime.Close(ctx))
 	}()
 
+	moduleKeyProvider, err := bufcli.NewModuleKeyProvider(container)
+	if err != nil {
+		return err
+	}
+
+	graphProvider, err := bufcli.NewGraphProvider(container)
+	if err != nil {
+		return err
+	}
+
 	conn, err := buflsp.Serve(
 		ctx,
 		bufcli.Version,
@@ -127,6 +137,8 @@ func run(
 		wasmRuntime,
 		jsonrpc2.NewStream(transport),
 		incremental.New(),
+		buflsp.WithModuleKeyProvider(moduleKeyProvider),
+		buflsp.WithGraphProvider(graphProvider),
 	)
 	if err != nil {
 		return err

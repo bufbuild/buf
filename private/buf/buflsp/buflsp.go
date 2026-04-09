@@ -41,14 +41,19 @@ import (
 // ServeOption is an option for the Serve function.
 type ServeOption func(*lsp)
 
-// WithModuleKeyProvider overrides the ModuleKeyProvider used by the LSP server
-// when checking for dependency updates (buf.dep.checkUpdates command).
-//
-// This is intended for testing; in production the server creates a provider
-// from the container credentials automatically.
+// WithModuleKeyProvider sets the ModuleKeyProvider used by the LSP server when
+// checking for or updating dependency versions.
 func WithModuleKeyProvider(mkp bufmodule.ModuleKeyProvider) ServeOption {
 	return func(l *lsp) {
 		l.moduleKeyProvider = mkp
+	}
+}
+
+// WithGraphProvider sets the GraphProvider used by the LSP server when resolving
+// transitive dependencies during a dependency update.
+func WithGraphProvider(gp bufmodule.GraphProvider) ServeOption {
+	return func(l *lsp) {
+		l.graphProvider = gp
 	}
 }
 
@@ -146,9 +151,10 @@ type lsp struct {
 	wktBucket        storage.ReadBucket
 	shutdown         bool
 
-	// moduleKeyProvider, if non-nil, overrides the provider created from container
-	// credentials for the buf.dep.checkUpdates command. Set via WithModuleKeyProvider.
+	// moduleKeyProvider resolves module refs to their latest commits (BSR). Set via WithModuleKeyProvider.
 	moduleKeyProvider bufmodule.ModuleKeyProvider
+	// graphProvider resolves transitive dependencies for a set of module keys. Set via WithGraphProvider.
+	graphProvider bufmodule.GraphProvider
 
 	lock sync.Mutex
 

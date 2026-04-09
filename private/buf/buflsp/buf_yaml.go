@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -190,16 +189,9 @@ func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.U
 		depPosByFullName[ref.FullName().String()] = dep.depRange
 	}
 
-	// Resolve each configured ref to its latest commit via the BSR.
-	// Use the injected provider when one is set (e.g. in tests), otherwise
-	// create a real BSR client from the container credentials.
 	moduleKeyProvider := m.lsp.moduleKeyProvider
 	if moduleKeyProvider == nil {
-		var err error
-		moduleKeyProvider, err = bufcli.NewModuleKeyProvider(m.lsp.container)
-		if err != nil {
-			return fmt.Errorf("creating module key provider: %w", err)
-		}
+		return fmt.Errorf("no module key provider configured")
 	}
 	latestKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
@@ -269,10 +261,7 @@ func updateDeps(ctx context.Context, l *lsp, dirPath string) error {
 	}
 	moduleKeyProvider := l.moduleKeyProvider
 	if moduleKeyProvider == nil {
-		moduleKeyProvider, err = bufcli.NewModuleKeyProvider(l.container)
-		if err != nil {
-			return fmt.Errorf("creating module key provider: %w", err)
-		}
+		return fmt.Errorf("no module key provider configured")
 	}
 	moduleKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
@@ -314,11 +303,10 @@ func moduleKeysWithTransitiveDeps(
 	l *lsp,
 	moduleKeys []bufmodule.ModuleKey,
 ) ([]bufmodule.ModuleKey, error) {
-	graphProvider, err := bufcli.NewGraphProvider(l.container)
-	if err != nil {
-		return nil, err
+	if l.graphProvider == nil {
+		return nil, fmt.Errorf("no graph provider configured")
 	}
-	graph, err := graphProvider.GetGraphForModuleKeys(ctx, moduleKeys)
+	graph, err := l.graphProvider.GetGraphForModuleKeys(ctx, moduleKeys)
 	if err != nil {
 		return nil, err
 	}
