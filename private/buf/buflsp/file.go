@@ -362,8 +362,8 @@ func (f *file) IndexSymbols(ctx context.Context) {
 		f.diagnostics = append(f.diagnostics, protocol.Diagnostic{
 			Source:   serverName,
 			Severity: protocol.DiagnosticSeverityError,
-			Message: fmt.Sprintf(`the symbols for this file have not been fully resolved due to an invalid version of descriptor.proto located at: %q.
-this is likely due to a vendored descriptor.proto.`,
+			Message: fmt.Sprintf(`The symbols for this file have not been fully resolved due to an invalid version of descriptor.proto located at: %q.
+This is likely due to a vendored descriptor.proto.`,
 				f.descriptorProtoLocalPath,
 			),
 		})
@@ -921,7 +921,7 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 		// each path component.
 		for element := range seq.Values(field.Elements()) {
 			key := field.KeyASTs().At(element.ValueNodeIndex())
-			components := slices.Collect(key.AsPath().Components)
+			components := slices.Collect(key.AsPath().Components())
 			// If there are no path components for an element, then we skip it, since there are
 			// no symbols to track.
 			if len(components) == 0 {
