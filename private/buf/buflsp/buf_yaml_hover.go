@@ -16,6 +16,7 @@ package buflsp
 
 import (
 	"fmt"
+	"strings"
 
 	"go.lsp.dev/protocol"
 	"gopkg.in/yaml.v3"
@@ -414,4 +415,14 @@ func yamlNodeRange(node *yaml.Node) protocol.Range {
 		Start: protocol.Position{Line: line, Character: col},
 		End:   protocol.Position{Line: line, Character: col + uint32(len(node.Value))},
 	}
+}
+
+// parseYAMLDoc decodes text as a YAML document and returns the document node,
+// or nil if parsing fails.
+func parseYAMLDoc(text string) *yaml.Node {
+	var doc yaml.Node
+	if err := yaml.NewDecoder(strings.NewReader(text)).Decode(&doc); err != nil {
+		return nil
+	}
+	return &doc
 }

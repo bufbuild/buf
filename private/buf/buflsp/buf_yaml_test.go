@@ -123,3 +123,104 @@ func TestIsBufYAMLURI(t *testing.T) {
 		})
 	}
 }
+
+func TestIsBufGenYAMLURI(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		uri      protocol.URI
+		expected bool
+	}{
+		{"file:///home/user/project/buf.gen.yaml", true},
+		{"file:///home/user/project/buf.yaml", false},
+		{"file:///home/user/project/buf.gen.yaml.bak", false},
+		{"file:///home/user/project/foo.proto", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.uri), func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tt.expected, isBufGenYAMLURI(tt.uri))
+		})
+	}
+}
+
+func TestIsBufPolicyYAMLURI(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		uri      protocol.URI
+		expected bool
+	}{
+		{"file:///home/user/project/buf.policy.yaml", true},
+		{"file:///home/user/project/buf.yaml", false},
+		{"file:///home/user/project/buf.policy.yaml.bak", false},
+		{"file:///home/user/project/foo.proto", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.uri), func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tt.expected, isBufPolicyYAMLURI(tt.uri))
+		})
+	}
+}
+
+func TestIsBufLockURI(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		uri      protocol.URI
+		expected bool
+	}{
+		{"file:///home/user/project/buf.lock", true},
+		{"file:///home/user/project/buf.yaml", false},
+		{"file:///home/user/project/buf.lock.bak", false},
+		{"file:///home/user/project/foo.proto", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.uri), func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tt.expected, isBufLockURI(tt.uri))
+		})
+	}
+}
+
+func TestParseYAMLDoc(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		text    string
+		wantNil bool
+	}{
+		{
+			name: "valid_yaml",
+			text: "version: v2\ndeps: []\n",
+		},
+		{
+			name: "empty_string",
+			text: "",
+			// yaml decoder returns io.EOF for empty input — parseYAMLDoc returns nil.
+			wantNil: true,
+		},
+		{
+			name:    "invalid_yaml",
+			text:    ": this is not valid yaml: [\n  unclosed bracket\n",
+			wantNil: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := parseYAMLDoc(tt.text)
+			if tt.wantNil {
+				assert.Nil(t, got)
+			} else {
+				assert.NotNil(t, got)
+			}
+		})
+	}
+}
