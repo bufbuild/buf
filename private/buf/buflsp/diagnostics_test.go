@@ -237,6 +237,147 @@ func TestDiagnostics(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:      "invalid_map_key_type_with_help",
+			protoFile: "testdata/diagnostics/invalid_map_key.proto",
+			expectedDiagnostics: []protocol.Diagnostic{
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 6, Character: 6},
+						End:   protocol.Position{Line: 6, Character: 12},
+					},
+					Severity: protocol.DiagnosticSeverityError,
+					Source:   "buf-lsp",
+					Message:  "expected map key type, found scalar type `double`\nhelp: valid map key types are integer types, `string`, and `bool`",
+				},
+			},
+		},
+		{
+			name:      "enum_map_key_type_with_multiple_helps",
+			protoFile: "testdata/diagnostics/enum_map_key.proto",
+			expectedDiagnostics: []protocol.Diagnostic{
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 10, Character: 6},
+						End:   protocol.Position{Line: 10, Character: 12},
+					},
+					Severity: protocol.DiagnosticSeverityError,
+					Source:   "buf-lsp",
+					Message:  "expected map key type, found enum type `diagnostics.v1.Status`\nhelp: valid map key types are integer types, `string`, and `bool`\nhelp: counterintuitively, user-defined enum types cannot be used as keys",
+				},
+			},
+		},
+		{
+			name:      "unknown_type_with_scope_help",
+			protoFile: "testdata/diagnostics/unknown_type.proto",
+			expectedDiagnostics: []protocol.Diagnostic{
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 6, Character: 2},
+						End:   protocol.Position{Line: 6, Character: 13},
+					},
+					Severity: protocol.DiagnosticSeverityError,
+					Source:   "buf-lsp",
+					Message:  "cannot find `UnknownType` in this scope\nhelp: the full name of this scope is `diagnostics.v1.TestMessage`",
+				},
+			},
+		},
+		{
+			// group syntax is only valid in proto2; using it in proto3 produces
+			// an error with a note pointing to the correct syntax version.
+			name:      "group_syntax_in_proto3_with_note",
+			protoFile: "testdata/diagnostics/group_proto3.proto",
+			expectedDiagnostics: []protocol.Diagnostic{
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 6, Character: 2},
+						End:   protocol.Position{Line: 6, Character: 7},
+					},
+					Severity: protocol.DiagnosticSeverityError,
+					Source:   "buf-lsp",
+					Message:  "group syntax is not supported\nnote: group syntax is only available in proto2",
+				},
+			},
+		},
+		{
+			// map-typed extensions are not supported; the error includes a help
+			// message suggesting a workaround.
+			name:      "map_typed_extension_with_help",
+			protoFile: "testdata/diagnostics/map_typed_extension.proto",
+			expectedDiagnostics: []protocol.Diagnostic{
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 10, Character: 2},
+						End:   protocol.Position{Line: 10, Character: 21},
+					},
+					Severity: protocol.DiagnosticSeverityError,
+					Source:   "buf-lsp",
+					Message:  "unsupported map-typed extension\nhelp: extensions cannot be map-typed; instead, define a message type with a map-typed field",
+				},
+			},
+		},
+		{
+			// placing package before syntax triggers an error with a note explaining
+			// that syntax must be the first declaration. Without a valid syntax
+			// declaration, the parser falls back to proto2 mode and also produces a
+			// secondary error for proto3-style unqualified field declarations.
+			name:      "syntax_not_first_with_note",
+			protoFile: "testdata/diagnostics/syntax_not_first.proto",
+			expectedDiagnostics: []protocol.Diagnostic{
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 2, Character: 0},
+						End:   protocol.Position{Line: 2, Character: 18},
+					},
+					Severity: protocol.DiagnosticSeverityError,
+					Source:   "buf-lsp",
+					Message:  "unexpected `syntax` declaration\nnote: a `syntax` declaration must be the first declaration in a file",
+				},
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 5, Character: 2},
+						End:   protocol.Position{Line: 5, Character: 8},
+					},
+					Severity: protocol.DiagnosticSeverityError,
+					Source:   "buf-lsp",
+					Message:  "unexpected type name\nnote: modifiers are required in proto2",
+				},
+			},
+		},
+		{
+			// using a synthetic map entry type as a field type is not permitted;
+			// the error includes a help message explaining why.
+			name:      "map_entry_type_misuse_with_help",
+			protoFile: "testdata/diagnostics/map_entry_type_misuse.proto",
+			expectedDiagnostics: []protocol.Diagnostic{
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 7, Character: 2},
+						End:   protocol.Position{Line: 7, Character: 13},
+					},
+					Severity: protocol.DiagnosticSeverityError,
+					Source:   "buf-lsp",
+					Message:  "use of synthetic map entry type\nhelp: despite having a user-visible symbol, map entry types cannot be used as field types",
+				},
+			},
+		},
+		{
+			// compact_option_colon uses ':' instead of '=' inside [...] options,
+			// which triggers a note explaining the correct syntax.
+			name:      "compact_option_colon_with_note",
+			protoFile: "testdata/diagnostics/compact_option_colon.proto",
+			expectedDiagnostics: []protocol.Diagnostic{
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 7, Character: 29},
+						End:   protocol.Position{Line: 7, Character: 30},
+					},
+					Severity: protocol.DiagnosticSeverityError,
+					Source:   "buf-lsp",
+					Message:  "unexpected `:` in compact option\nnote: top-level `option` assignment uses `=`, not `:`",
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

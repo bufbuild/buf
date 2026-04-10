@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package diagnostics.v1;
+
+// Using ':' instead of '=' in a compact option triggers a note explaining the
+// correct syntax for top-level option assignments.
+message TestMessage {
+  string name = 1 [deprecated: true];
+}

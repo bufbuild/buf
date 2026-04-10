@@ -43,12 +43,21 @@ var reportLevelToDiagnosticSeverity = map[report.Level]protocol.DiagnosticSeveri
 func reportDiagnosticToProtocolDiagnostic(
 	reportDiagnostic report.Diagnostic,
 ) protocol.Diagnostic {
-	message := reportDiagnostic.Message()
-	if reportDiagnostic.Level() == report.ICE {
-		// Include notes for ICE
-		notes := append([]string{message}, reportDiagnostic.Notes()...)
-		message = strings.Join(notes, " ")
+	parts := []string{reportDiagnostic.Message()}
+	for _, note := range reportDiagnostic.Notes() {
+		parts = append(parts, "note: "+note)
 	}
+	for _, help := range reportDiagnostic.Help() {
+		parts = append(parts, "help: "+help)
+	}
+	// Debug info is implementation-level detail; only include it for ICE where
+	// all available context helps diagnose the unexpected failure.
+	if reportDiagnostic.Level() == report.ICE {
+		for _, debug := range reportDiagnostic.Debug() {
+			parts = append(parts, "debug: "+debug)
+		}
+	}
+	message := strings.Join(parts, "\n")
 	diagnostic := protocol.Diagnostic{
 		Source:   serverName,
 		Severity: reportLevelToDiagnosticSeverity[reportDiagnostic.Level()],

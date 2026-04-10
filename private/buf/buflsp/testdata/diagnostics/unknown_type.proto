@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package diagnostics.v1;
+
+// A field referencing a type that doesn't exist
+message TestMessage {
+  UnknownType field = 1;
+}
