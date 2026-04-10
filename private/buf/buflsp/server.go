@@ -230,6 +230,18 @@ func (s *server) DidOpen(
 		s.bufYAMLManager.Track(params.TextDocument.URI, params.TextDocument.Text)
 		return nil
 	}
+	if isBufGenYAMLURI(params.TextDocument.URI) {
+		s.bufGenYAMLManager.Track(params.TextDocument.URI, params.TextDocument.Text)
+		return nil
+	}
+	if isBufPolicyYAMLURI(params.TextDocument.URI) {
+		s.bufPolicyYAMLManager.Track(params.TextDocument.URI, params.TextDocument.Text)
+		return nil
+	}
+	if isBufLockURI(params.TextDocument.URI) {
+		s.bufLockManager.Track(params.TextDocument.URI, params.TextDocument.Text)
+		return nil
+	}
 	file := s.fileManager.Track(params.TextDocument.URI)
 	file.RefreshWorkspace(ctx)
 	file.Update(ctx, params.TextDocument.Version, params.TextDocument.Text)
@@ -244,6 +256,18 @@ func (s *server) DidChange(
 ) error {
 	if isBufYAMLURI(params.TextDocument.URI) {
 		s.bufYAMLManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
+		return nil
+	}
+	if isBufGenYAMLURI(params.TextDocument.URI) {
+		s.bufGenYAMLManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
+		return nil
+	}
+	if isBufPolicyYAMLURI(params.TextDocument.URI) {
+		s.bufPolicyYAMLManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
+		return nil
+	}
+	if isBufLockURI(params.TextDocument.URI) {
+		s.bufLockManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
 		return nil
 	}
 	file := s.fileManager.Get(params.TextDocument.URI)
@@ -261,7 +285,8 @@ func (s *server) DidSave(
 	ctx context.Context,
 	params *protocol.DidSaveTextDocumentParams,
 ) error {
-	if isBufYAMLURI(params.TextDocument.URI) {
+	if isBufYAMLURI(params.TextDocument.URI) || isBufGenYAMLURI(params.TextDocument.URI) ||
+		isBufPolicyYAMLURI(params.TextDocument.URI) || isBufLockURI(params.TextDocument.URI) {
 		return nil
 	}
 	// We use this as an opportunity to do a refresh; some lints, such as
@@ -284,7 +309,8 @@ func (s *server) Formatting(
 	ctx context.Context,
 	params *protocol.DocumentFormattingParams,
 ) ([]protocol.TextEdit, error) {
-	if isBufYAMLURI(params.TextDocument.URI) {
+	if isBufYAMLURI(params.TextDocument.URI) || isBufGenYAMLURI(params.TextDocument.URI) ||
+		isBufPolicyYAMLURI(params.TextDocument.URI) || isBufLockURI(params.TextDocument.URI) {
 		return nil, nil
 	}
 	file := s.fileManager.Get(params.TextDocument.URI)
@@ -356,6 +382,18 @@ func (s *server) DidClose(
 		s.bufYAMLManager.Close(ctx, params.TextDocument.URI)
 		return nil
 	}
+	if isBufGenYAMLURI(params.TextDocument.URI) {
+		s.bufGenYAMLManager.Close(params.TextDocument.URI)
+		return nil
+	}
+	if isBufPolicyYAMLURI(params.TextDocument.URI) {
+		s.bufPolicyYAMLManager.Close(params.TextDocument.URI)
+		return nil
+	}
+	if isBufLockURI(params.TextDocument.URI) {
+		s.bufLockManager.Close(params.TextDocument.URI)
+		return nil
+	}
 	if file := s.fileManager.Get(params.TextDocument.URI); file != nil {
 		file.Close(ctx)
 	}
@@ -371,6 +409,15 @@ func (s *server) Hover(
 ) (*protocol.Hover, error) {
 	if isBufYAMLURI(params.TextDocument.URI) {
 		return s.bufYAMLManager.GetHover(params.TextDocument.URI, params.Position), nil
+	}
+	if isBufGenYAMLURI(params.TextDocument.URI) {
+		return s.bufGenYAMLManager.GetHover(params.TextDocument.URI, params.Position), nil
+	}
+	if isBufPolicyYAMLURI(params.TextDocument.URI) {
+		return s.bufPolicyYAMLManager.GetHover(params.TextDocument.URI, params.Position), nil
+	}
+	if isBufLockURI(params.TextDocument.URI) {
+		return s.bufLockManager.GetHover(params.TextDocument.URI, params.Position), nil
 	}
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {

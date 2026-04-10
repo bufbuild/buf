@@ -92,6 +92,9 @@ func Serve(
 	lsp.fileManager = newFileManager(lsp)
 	lsp.workspaceManager = newWorkspaceManager(lsp)
 	lsp.bufYAMLManager = newBufYAMLManager(lsp)
+	lsp.bufGenYAMLManager = newBufGenYAMLManager()
+	lsp.bufPolicyYAMLManager = newBufPolicyYAMLManager()
+	lsp.bufLockManager = newBufLockManager()
 	off := protocol.TraceOff
 	lsp.traceValue.Store(&off)
 
@@ -119,18 +122,21 @@ type lsp struct {
 	connCtx    context.Context    // cancelled when the connection is done
 	connCancel context.CancelFunc // cancels connCtx
 
-	logger           *slog.Logger
-	bufVersion       string // buf version, set at server creation
-	controller       bufctl.Controller
-	wasmRuntime      wasm.Runtime
-	fileManager      *fileManager
-	workspaceManager *workspaceManager
-	bufYAMLManager   *bufYAMLManager
-	queryExecutor    *incremental.Executor
-	opener           source.Map
-	irSession        *ir.Session
-	wktBucket        storage.ReadBucket
-	shutdown         bool
+	logger               *slog.Logger
+	bufVersion           string // buf version, set at server creation
+	controller           bufctl.Controller
+	wasmRuntime          wasm.Runtime
+	fileManager          *fileManager
+	workspaceManager     *workspaceManager
+	bufYAMLManager       *bufYAMLManager
+	bufGenYAMLManager    *bufGenYAMLManager
+	bufPolicyYAMLManager *bufPolicyYAMLManager
+	bufLockManager       *bufLockManager
+	queryExecutor        *incremental.Executor
+	opener               source.Map
+	irSession            *ir.Session
+	wktBucket            storage.ReadBucket
+	shutdown             bool
 
 	// moduleKeyProvider resolves module refs to their latest commits (BSR). Set via WithModuleKeyProvider.
 	moduleKeyProvider bufmodule.ModuleKeyProvider
