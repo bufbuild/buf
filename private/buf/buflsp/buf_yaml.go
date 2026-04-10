@@ -322,23 +322,20 @@ func (m *bufYAMLManager) GetDocumentLinks(uri protocol.URI) []protocol.DocumentL
 	if !ok {
 		return nil
 	}
-	var links []protocol.DocumentLink
+	links := make([]protocol.DocumentLink, 0, len(f.deps))
 	for _, dep := range f.deps {
 		ref, err := bufparse.ParseRef(dep.ref)
 		if err != nil {
 			continue
 		}
 		fullName := ref.FullName()
-		base := "https://" + fullName.Registry() + "/" + fullName.Owner() + "/" + fullName.Name()
-		var target string
+		url := "https://" + fullName.Registry() + "/" + fullName.Owner() + "/" + fullName.Name()
 		if ref.Ref() != "" {
-			target = base + "/docs/" + ref.Ref()
-		} else {
-			target = base
+			url += "/docs/" + ref.Ref()
 		}
 		links = append(links, protocol.DocumentLink{
 			Range:  dep.depRange,
-			Target: protocol.DocumentURI(target),
+			Target: protocol.DocumentURI(url),
 		})
 	}
 	return links

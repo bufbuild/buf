@@ -467,7 +467,6 @@ func TestBufYAMLDocumentLinks(t *testing.T) {
 			fixture: "testdata/buf_yaml/with_deps/buf.yaml",
 			wantLinks: []protocol.DocumentLink{
 				{
-					// buf.build/bufbuild/protovalidate on line 2, cols 4–36.
 					Range: protocol.Range{
 						Start: protocol.Position{Line: 2, Character: 4},
 						End:   protocol.Position{Line: 2, Character: 36},
@@ -475,7 +474,6 @@ func TestBufYAMLDocumentLinks(t *testing.T) {
 					Target: "https://buf.build/bufbuild/protovalidate",
 				},
 				{
-					// buf.build/googleapis/googleapis on line 3, cols 4–35.
 					Range: protocol.Range{
 						Start: protocol.Position{Line: 3, Character: 4},
 						End:   protocol.Position{Line: 3, Character: 35},
@@ -490,7 +488,6 @@ func TestBufYAMLDocumentLinks(t *testing.T) {
 			fixture: "testdata/buf_yaml/deps_with_ref/buf.yaml",
 			wantLinks: []protocol.DocumentLink{
 				{
-					// buf.build/bufbuild/protovalidate:v1.1.1 on line 2, cols 4–43.
 					Range: protocol.Range{
 						Start: protocol.Position{Line: 2, Character: 4},
 						End:   protocol.Position{Line: 2, Character: 43},
