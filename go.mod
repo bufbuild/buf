@@ -18,7 +18,7 @@ require (
 	connectrpc.com/connect v1.19.1
 	connectrpc.com/grpcreflect v1.3.0
 	connectrpc.com/otelconnect v0.9.0
-	github.com/bufbuild/protocompile v0.14.2-0.20260409205102-f58612be4b0a
+	github.com/bufbuild/protocompile v0.14.2-0.20260410160725-0b5e706465a9
 	github.com/bufbuild/protoplugin v0.0.0-20250218205857-750e09ce93e1
 	github.com/cli/browser v1.3.0
 	github.com/gofrs/flock v0.13.0
