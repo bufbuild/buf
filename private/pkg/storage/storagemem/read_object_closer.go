@@ -16,6 +16,7 @@ package storagemem
 
 import (
 	"bytes"
+	"io"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem/internal"
@@ -47,6 +48,13 @@ func (r *readObjectCloser) Read(p []byte) (int, error) {
 		return 0, storage.ErrClosed
 	}
 	return r.reader.Read(p)
+}
+
+func (r *readObjectCloser) WriteTo(w io.Writer) (int64, error) {
+	if r.closed {
+		return 0, storage.ErrClosed
+	}
+	return r.reader.WriteTo(w)
 }
 
 func (r *readObjectCloser) Close() error {

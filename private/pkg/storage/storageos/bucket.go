@@ -17,6 +17,7 @@ package storageos
 import (
 	"context"
 	"errors"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -371,6 +372,11 @@ func newReadObjectCloser(
 
 func (r *readObjectCloser) Read(p []byte) (int, error) {
 	n, err := r.file.Read(p)
+	return n, toStorageError(err)
+}
+
+func (r *readObjectCloser) WriteTo(w io.Writer) (int64, error) {
+	n, err := r.file.WriteTo(w)
 	return n, toStorageError(err)
 }
 
