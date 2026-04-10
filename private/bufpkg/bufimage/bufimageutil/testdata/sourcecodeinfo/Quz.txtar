@@ -95,20 +95,6 @@ enum Quz {
         5,
         0,
         2,
-        0,
-        1
-      ],
-      "span": [
-        119,
-        2,
-        17
-      ]
-    },
-    {
-      "path": [
-        5,
-        0,
-        2,
         0
       ],
       "span": [
@@ -117,6 +103,20 @@ enum Quz {
         22
       ],
       "leadingComments": " Keep if Quz: comment on enum value QUZ_UNSPECIFIED\n"
+    },
+    {
+      "path": [
+        5,
+        0,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        119,
+        2,
+        17
+      ]
     },
     {
       "path": [

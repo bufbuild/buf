@@ -17,7 +17,6 @@
 package main
 
 import (
-	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -27,24 +26,24 @@ import (
 func TestWorkspaceSymlinkFail(t *testing.T) {
 	t.Parallel()
 	// The workspace includes a symlink that isn't buildable.
-	for _, dirPath := range []string{
-		"symlink",
-		"v2/symlink",
-	} {
-		symlinkImportError := fmt.Sprintf(
-			"%[1]s:5:1:imported file does not exist\n%[1]s:8:5:cannot find `c.C` in this scope",
-			filepath.FromSlash("testdata/workspace/fail/"+dirPath+"/b/b.proto"),
-		)
-		testRunStdoutStderrNoWarn(
-			t,
-			nil,
-			bufctl.ExitCodeFileAnnotation,
-			``,
-			symlinkImportError,
-			"build",
-			filepath.Join("testdata", "workspace", "fail", filepath.FromSlash(dirPath)),
-		)
-	}
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		``,
+		filepath.FromSlash(`testdata/workspace/fail/symlink/b/b.proto:5:8:import "c.proto": file does not exist`),
+		"build",
+		filepath.Join("testdata", "workspace", "fail", "symlink"),
+	)
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		``,
+		filepath.FromSlash(`testdata/workspace/fail/v2/symlink/b/b.proto:5:8:import "c.proto": file does not exist`),
+		"build",
+		filepath.Join("testdata", "workspace", "fail", "v2", "symlink"),
+	)
 }
 
 func TestWorkspaceSymlink(t *testing.T) {

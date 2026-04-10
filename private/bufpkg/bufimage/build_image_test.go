@@ -236,7 +236,7 @@ func TestCustomOptionsError1(t *testing.T) {
 		t,
 		"customoptionserror1",
 		true,
-		filepath.FromSlash("testdata/customoptionserror1/b.proto:9:26:cannot find message field `bat` in `a.Foo`"),
+		filepath.FromSlash("testdata/customoptionserror1/b.proto:9:27:field a.Baz.bat: option (a.foo).bat: field bat of a.Foo does not exist"),
 	)
 }
 
@@ -246,7 +246,7 @@ func TestNotAMessageType(t *testing.T) {
 		t,
 		"notamessagetype",
 		true,
-		filepath.FromSlash("testdata/notamessagetype/a.proto:9:11:expected message type, found service method `a.MyService.Foo`"),
+		filepath.FromSlash("testdata/notamessagetype/a.proto:9:11:method a.MyService.Foo: invalid request type: a.MyService.Foo is a method, not a message"),
 	)
 }
 
@@ -256,9 +256,8 @@ func TestSpaceBetweenNumberAndID(t *testing.T) {
 		t,
 		"spacebetweennumberandid",
 		true,
-		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:14:field number out of range"),
-		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:16:invalid digit in decimal integer literal"),
-		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:19:unexpected `max` in extension range"),
+		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:14:invalid syntax in integer value: 10to"),
+		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:14:syntax error: unexpected error, expecting int literal"),
 	)
 }
 
@@ -268,8 +267,10 @@ func TestCyclicImport(t *testing.T) {
 		t,
 		"cyclicimport",
 		false,
-		fmt.Sprintf(
-			`%s:5:1:detected cyclic import while importing "a/a.proto"`,
+		// Since the compiler is multi-threaded, order of file compilation can happen one of two ways
+		fmt.Sprintf(`%s:5:8:cycle found in imports: "a/a.proto" -> "b/b.proto" -> "a/a.proto"
+				|| %s:5:8:cycle found in imports: "b/b.proto" -> "a/a.proto" -> "b/b.proto"`,
+			filepath.FromSlash("testdata/cyclicimport/a/a.proto"),
 			filepath.FromSlash("testdata/cyclicimport/b/b.proto"),
 		),
 	)
@@ -277,17 +278,18 @@ func TestCyclicImport(t *testing.T) {
 
 func TestDuplicateSyntheticOneofs(t *testing.T) {
 	// https://github.com/bufbuild/buf/issues/1071
-	//
-	// However, this issue no longer applies to the new compiler, since the new compiler does
-	// not produce a symbol for the synthetic one-of types for its IR (these are generated
-	// for the file descriptor set on-demand). It also only surfaces duplicate symbol fqn's
-	// for the highest level, which is the message in the case of this test.
 	t.Parallel()
 	testFileAnnotations(
 		t,
 		"duplicatesyntheticoneofs",
+		// Since the compiler is multi-threaded, order of file compilation can happen one of two ways
 		false,
-		filepath.FromSlash("testdata/duplicatesyntheticoneofs/a1.proto:5:9:`Foo` declared multiple times"),
+		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:5:9:symbol "a.Foo" already defined at a2.proto:5:9
+				|| testdata/duplicatesyntheticoneofs/a2.proto:5:9:symbol "a.Foo" already defined at a1.proto:5:9`),
+		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:6:19:symbol "a.Foo._bar" already defined at a2.proto:6:19
+				|| testdata/duplicatesyntheticoneofs/a2.proto:6:19:symbol "a.Foo._bar" already defined at a1.proto:6:19`),
+		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:6:19:symbol "a.Foo.bar" already defined at a2.proto:6:19
+				|| testdata/duplicatesyntheticoneofs/a2.proto:6:19:symbol "a.Foo.bar" already defined at a1.proto:6:19`),
 	)
 }
 

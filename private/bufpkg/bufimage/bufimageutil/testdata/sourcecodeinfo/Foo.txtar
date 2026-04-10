@@ -109,20 +109,6 @@ message Foo {
         4,
         0,
         2,
-        0,
-        4
-      ],
-      "span": [
-        49,
-        2,
-        10
-      ]
-    },
-    {
-      "path": [
-        4,
-        0,
-        2,
         0
       ],
       "span": [
@@ -131,6 +117,20 @@ message Foo {
         27
       ],
       "leadingComments": " Keep if Foo: comment on field name\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        0,
+        4
+      ],
+      "span": [
+        49,
+        2,
+        10
+      ]
     },
     {
       "path": [
@@ -179,20 +179,6 @@ message Foo {
         4,
         0,
         2,
-        1,
-        4
-      ],
-      "span": [
-        51,
-        2,
-        10
-      ]
-    },
-    {
-      "path": [
-        4,
-        0,
-        2,
         1
       ],
       "span": [
@@ -201,6 +187,20 @@ message Foo {
         26
       ],
       "leadingComments": " Keep if Foo: comment on field bits\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        1,
+        4
+      ],
+      "span": [
+        51,
+        2,
+        10
+      ]
     },
     {
       "path": [
@@ -262,13 +262,12 @@ message Foo {
         4,
         0,
         9,
-        0,
-        1
+        0
       ],
       "span": [
         54,
         11,
-        13
+        19
       ]
     },
     {
@@ -276,12 +275,13 @@ message Foo {
         4,
         0,
         9,
-        0
+        0,
+        1
       ],
       "span": [
         54,
         11,
-        19
+        13
       ]
     },
     {
@@ -368,13 +368,12 @@ message Foo {
         4,
         0,
         5,
-        0,
-        1
+        0
       ],
       "span": [
         58,
         13,
-        16
+        23
       ]
     },
     {
@@ -382,12 +381,13 @@ message Foo {
         4,
         0,
         5,
-        0
+        0,
+        1
       ],
       "span": [
         58,
         13,
-        23
+        16
       ]
     },
     {

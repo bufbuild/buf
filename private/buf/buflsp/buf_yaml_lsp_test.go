@@ -66,7 +66,7 @@ func setupLSPServerForBufYAML(
 
 	nameContainer, err := appext.NewNameContainer(appContainer, "buf-test")
 	require.NoError(t, err)
-	appextContainer := appext.NewContainer(nameContainer, logger, appext.LogLevelInfo, appext.LogFormatText)
+	appextContainer := appext.NewContainer(nameContainer, logger)
 
 	tmpDir := t.TempDir()
 	storageBucket, err := storageos.NewProvider().NewReadWriteBucket(tmpDir)

@@ -4493,10 +4493,7 @@ func TestProtoFileNoWorkspaceOrModule(t *testing.T) {
 		nil,
 		bufctl.ExitCodeFileAnnotation,
 		"", // no stdout
-		fmt.Sprintf(
-			"%[1]s:3:1:imported file does not exist\n%[1]s:6:3:cannot find `google.type.Date` in this scope",
-			filepath.FromSlash("testdata/protofileref/noworkspaceormodule/fail/import.proto"),
-		),
+		filepath.FromSlash(`testdata/protofileref/noworkspaceormodule/fail/import.proto:3:8:import "`)+`google/type/date.proto": file does not exist`,
 		"build",
 		filepath.Join("testdata", "protofileref", "noworkspaceormodule", "fail", "import.proto"),
 	)
