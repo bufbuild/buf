@@ -311,6 +311,36 @@ func moduleKeysWithTransitiveDeps(
 	return all, nil
 }
 
+// GetDocumentLinks returns document links for all dep entries in the buf.yaml
+// file. If the dep has an explicit ref (e.g. "buf.build/acme/mod:v1.2.3"),
+// the link points to that specific label or commit on BSR. Otherwise it
+// points to the module root.
+func (m *bufYAMLManager) GetDocumentLinks(uri protocol.URI) []protocol.DocumentLink {
+	m.mu.Lock()
+	f, ok := m.uriToFile[normalizeURI(uri)]
+	m.mu.Unlock()
+	if !ok {
+		return nil
+	}
+	links := make([]protocol.DocumentLink, 0, len(f.deps))
+	for _, dep := range f.deps {
+		ref, err := bufparse.ParseRef(dep.ref)
+		if err != nil {
+			continue
+		}
+		fullName := ref.FullName()
+		url := "https://" + fullName.Registry() + "/" + fullName.Owner() + "/" + fullName.Name()
+		if ref.Ref() != "" {
+			url += "/docs/" + ref.Ref()
+		}
+		links = append(links, protocol.DocumentLink{
+			Range:  dep.depRange,
+			Target: protocol.DocumentURI(url),
+		})
+	}
+	return links
+}
+
 // parseBufYAMLDeps parses the top-level deps sequence from buf.yaml content.
 // It returns the 0-indexed line of the "deps:" key, the dep entries with their
 // source positions, and any parse error.

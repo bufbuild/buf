@@ -681,6 +681,9 @@ func (s *server) DocumentLink(
 	ctx context.Context,
 	params *protocol.DocumentLinkParams,
 ) ([]protocol.DocumentLink, error) {
+	if isBufYAMLURI(params.TextDocument.URI) {
+		return s.bufYAMLManager.GetDocumentLinks(params.TextDocument.URI), nil
+	}
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {
 		return nil, nil
