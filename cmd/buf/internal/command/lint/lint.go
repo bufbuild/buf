@@ -120,6 +120,7 @@ func run(
 		container,
 		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
 		bufctl.WithFileAnnotationErrorFormat(controllerErrorFormat),
+		bufctl.WithColorizedFileAnnotationSetDiagnosticReport(container.LogFormat() == appext.LogFormatColor),
 		bufctl.WithFileAnnotationsToStdout(),
 	)
 	if err != nil {
