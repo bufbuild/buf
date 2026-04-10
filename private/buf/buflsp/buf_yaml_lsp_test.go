@@ -522,6 +522,371 @@ func TestBufYAMLDocumentLinks(t *testing.T) {
 	}
 }
 
+// TestBufYAMLHover verifies that hovering over buf.yaml keys and rule names
+// returns the correct markdown documentation, and that unrecognised positions
+// return no hover.
+func TestBufYAMLHover(t *testing.T) {
+	t.Parallel()
+
+	// All cases use the same comprehensive fixture.
+	fixture := "testdata/buf_yaml/hover/buf.yaml"
+
+	// The fixture layout (0-indexed lines):
+	//  0: version: v2
+	//  1: modules:
+	//  2:   - path: .
+	//  3:     name: buf.build/acme/petapis
+	//  4:     includes:
+	//  5:       - proto
+	//  6:     excludes:
+	//  7:       - proto/vendor
+	//  8: deps:
+	//  9:   - buf.build/bufbuild/protovalidate
+	// 10: lint:
+	// 11:   use:
+	// 12:     - STANDARD
+	// 13:     - COMMENTS
+	// 14:     - ENUM_PASCAL_CASE
+	// 15:   except:
+	// 16:     - IMPORT_USED
+	// 17:   ignore:
+	// 18:     - foo/bar.proto
+	// 19:   ignore_only:
+	// 20:     ENUM_VALUE_UPPER_SNAKE_CASE:
+	// 21:       - legacy/foo.proto
+	// 22:   enum_zero_value_suffix: _UNSPECIFIED
+	// 23:   service_suffix: Service
+	// 24:   rpc_allow_same_request_response: false
+	// 25:   rpc_allow_google_protobuf_empty_requests: false
+	// 26:   rpc_allow_google_protobuf_empty_responses: false
+	// 27:   disallow_comment_ignores: false
+	// 28:   disable_builtin: false
+	// 29: breaking:
+	// 30:   use:
+	// 31:     - FILE
+	// 32:     - FIELD_NO_DELETE
+	// 33:   except:
+	// 34:     - ENUM_NO_DELETE
+	// 35:   ignore:
+	// 36:     - legacy/
+	// 37:   ignore_only:
+	// 38:     MESSAGE_NO_DELETE:
+	// 39:       - alpha/
+	// 40:   ignore_unstable_packages: true
+	// 41:   disable_builtin: false
+
+	tests := []struct {
+		name      string
+		line      uint32
+		character uint32
+		// expectedContains lists substrings that must appear in the hover markdown.
+		// All strings must be present; leave nil to assert no hover is returned.
+		expectedContains []string
+		expectNoHover    bool
+	}{
+		// ── Top-level keys ──────────────────────────────────────────────────────
+		{
+			name: "version_key",
+			line: 0, character: 0,
+			expectedContains: []string{"version", "configuration format version", "https://buf.build/docs/configuration/v2/buf-yaml/#version"},
+		},
+		{
+			name: "modules_key",
+			line: 1, character: 0,
+			expectedContains: []string{"modules", "Protobuf modules", "https://buf.build/docs/configuration/v2/buf-yaml/#modules"},
+		},
+		{
+			name: "deps_key",
+			line: 8, character: 0,
+			expectedContains: []string{"deps", "Buf Schema Registry", "https://buf.build/docs/configuration/v2/buf-lock/", "https://buf.build/docs/configuration/v2/buf-yaml/#deps"},
+		},
+		{
+			name: "lint_key",
+			line: 10, character: 0,
+			expectedContains: []string{"lint", "lint rules", "https://buf.build/docs/configuration/v2/buf-yaml/#lint"},
+		},
+		{
+			name: "breaking_key",
+			line: 29, character: 0,
+			expectedContains: []string{"breaking", "breaking change", "https://buf.build/docs/configuration/v2/buf-yaml/#breaking"},
+		},
+
+		// ── Module entry sub-keys ────────────────────────────────────────────
+		{
+			name: "module_path_key",
+			line: 2, character: 4,
+			expectedContains: []string{"path", "Protobuf files", "https://buf.build/docs/configuration/v2/buf-yaml/#path"},
+		},
+		{
+			name: "module_name_key",
+			line: 3, character: 4,
+			expectedContains: []string{"name", "Buf Schema Registry path", "https://buf.build/docs/configuration/v2/buf-yaml/#name"},
+		},
+		{
+			name: "module_includes_key",
+			line: 4, character: 4,
+			expectedContains: []string{"includes", "Subdirectories to include", "https://buf.build/docs/configuration/v2/buf-yaml/#includes"},
+		},
+		{
+			name: "module_excludes_key",
+			line: 6, character: 4,
+			expectedContains: []string{"excludes", "Subdirectories to exclude", "https://buf.build/docs/configuration/v2/buf-yaml/#excludes"},
+		},
+
+		// ── lint sub-keys ────────────────────────────────────────────────────
+		{
+			name: "lint_use_key",
+			line: 11, character: 2,
+			expectedContains: []string{"lint.use", "rule categories", "https://buf.build/docs/lint/rules/"},
+		},
+		{
+			name: "lint_except_key",
+			line: 15, character: 2,
+			expectedContains: []string{"lint.except", "Removes specific rules", "https://buf.build/docs/configuration/v2/buf-yaml/#lint"},
+		},
+		{
+			name: "lint_ignore_key",
+			line: 17, character: 2,
+			expectedContains: []string{"lint.ignore", "excluded from all lint rules", "https://buf.build/docs/configuration/v2/buf-yaml/#lint"},
+		},
+		{
+			name: "lint_ignore_only_key",
+			line: 19, character: 2,
+			expectedContains: []string{"lint.ignore_only", "specific files or directories", "https://buf.build/docs/configuration/v2/buf-yaml/#lint"},
+		},
+		{
+			name: "lint_enum_zero_value_suffix_key",
+			line: 22, character: 2,
+			expectedContains: []string{"lint.enum_zero_value_suffix", "ENUM_ZERO_VALUE_SUFFIX", "https://buf.build/docs/configuration/v2/buf-yaml/#lint"},
+		},
+		{
+			name: "lint_service_suffix_key",
+			line: 23, character: 2,
+			expectedContains: []string{"lint.service_suffix", "SERVICE_SUFFIX", "https://buf.build/docs/configuration/v2/buf-yaml/#lint"},
+		},
+		{
+			name: "lint_rpc_allow_same_request_response_key",
+			line: 24, character: 2,
+			expectedContains: []string{"lint.rpc_allow_same_request_response", "same message type", "https://buf.build/docs/configuration/v2/buf-yaml/#lint"},
+		},
+		{
+			name: "lint_rpc_allow_google_protobuf_empty_requests_key",
+			line: 25, character: 2,
+			expectedContains: []string{"lint.rpc_allow_google_protobuf_empty_requests", "google.protobuf.Empty", "https://buf.build/docs/configuration/v2/buf-yaml/#lint"},
+		},
+		{
+			name: "lint_rpc_allow_google_protobuf_empty_responses_key",
+			line: 26, character: 2,
+			expectedContains: []string{"lint.rpc_allow_google_protobuf_empty_responses", "google.protobuf.Empty", "https://buf.build/docs/configuration/v2/buf-yaml/#lint"},
+		},
+		{
+			name: "lint_disallow_comment_ignores_key",
+			line: 27, character: 2,
+			expectedContains: []string{"lint.disallow_comment_ignores", "buf:lint:ignore", "https://buf.build/docs/configuration/v2/buf-yaml/#lint"},
+		},
+		{
+			name: "lint_disable_builtin_key",
+			line: 28, character: 2,
+			expectedContains: []string{"lint.disable_builtin", "built-in lint rules", "https://buf.build/docs/configuration/v2/buf-yaml/#lint"},
+		},
+
+		// ── breaking sub-keys ────────────────────────────────────────────────
+		{
+			name: "breaking_use_key",
+			line: 30, character: 2,
+			expectedContains: []string{"breaking.use", "rule categories", "https://buf.build/docs/breaking/rules/"},
+		},
+		{
+			name: "breaking_except_key",
+			line: 33, character: 2,
+			expectedContains: []string{"breaking.except", "Removes specific rules", "https://buf.build/docs/configuration/v2/buf-yaml/#breaking"},
+		},
+		{
+			name: "breaking_ignore_key",
+			line: 35, character: 2,
+			expectedContains: []string{"breaking.ignore", "excluded from all breaking", "https://buf.build/docs/configuration/v2/buf-yaml/#breaking"},
+		},
+		{
+			name: "breaking_ignore_only_key",
+			line: 37, character: 2,
+			expectedContains: []string{"breaking.ignore_only", "specific files or directories", "https://buf.build/docs/configuration/v2/buf-yaml/#breaking"},
+		},
+		{
+			name: "breaking_ignore_unstable_packages_key",
+			line: 40, character: 2,
+			expectedContains: []string{"breaking.ignore_unstable_packages", "v1alpha1", "https://buf.build/docs/configuration/v2/buf-yaml/#breaking"},
+		},
+		{
+			name: "breaking_disable_builtin_key",
+			line: 41, character: 2,
+			expectedContains: []string{"breaking.disable_builtin", "built-in breaking", "https://buf.build/docs/configuration/v2/buf-yaml/#breaking"},
+		},
+
+		// ── Rule/category names as values in lint.use ─────────────────────────
+		{
+			name: "lint_use_value_STANDARD",
+			line: 12, character: 6,
+			expectedContains: []string{"STANDARD", "default lint rule set", "protovalidate", "https://protovalidate.com", "https://buf.build/docs/lint/rules/"},
+		},
+		{
+			name: "lint_use_value_COMMENTS",
+			line: 13, character: 6,
+			expectedContains: []string{"COMMENTS", "non-empty leading comments", "https://buf.build/docs/lint/rules/"},
+		},
+		{
+			name: "lint_use_value_ENUM_PASCAL_CASE",
+			line: 14, character: 6,
+			expectedContains: []string{"ENUM_PASCAL_CASE", "PascalCase", "https://buf.build/docs/lint/rules/"},
+		},
+
+		// ── Rule/category names as values in lint.except ──────────────────────
+		{
+			name: "lint_except_value_IMPORT_USED",
+			line: 16, character: 6,
+			expectedContains: []string{"IMPORT_USED", "imported files must be used", "https://buf.build/docs/lint/rules/"},
+		},
+
+		// ── Rule names as keys in lint.ignore_only ────────────────────────────
+		{
+			name: "lint_ignore_only_rule_key",
+			line: 20, character: 4,
+			expectedContains: []string{"ENUM_VALUE_UPPER_SNAKE_CASE", "UPPER_SNAKE_CASE", "https://buf.build/docs/lint/rules/"},
+		},
+
+		// ── Rule/category names as values in breaking.use ─────────────────────
+		{
+			name: "breaking_use_value_FILE",
+			line: 31, character: 6,
+			expectedContains: []string{"FILE", "generated code", "https://buf.build/docs/breaking/rules/"},
+		},
+		{
+			name: "breaking_use_value_FIELD_NO_DELETE",
+			line: 32, character: 6,
+			expectedContains: []string{"FIELD_NO_DELETE", "message field is deleted", "https://buf.build/docs/breaking/rules/"},
+		},
+
+		// ── Rule/category names as values in breaking.except ──────────────────
+		{
+			name: "breaking_except_value_ENUM_NO_DELETE",
+			line: 34, character: 6,
+			expectedContains: []string{"ENUM_NO_DELETE", "enum type is deleted", "https://buf.build/docs/breaking/rules/"},
+		},
+
+		// ── Rule names as keys in breaking.ignore_only ────────────────────────
+		{
+			name: "breaking_ignore_only_rule_key",
+			line: 38, character: 4,
+			expectedContains: []string{"MESSAGE_NO_DELETE", "message type is deleted", "https://buf.build/docs/breaking/rules/"},
+		},
+
+		// ── Positions that should return no hover ─────────────────────────────
+		{
+			// Plain file path in lint.ignore: not a known rule name.
+			name: "lint_ignore_value_no_hover",
+			line: 18, character: 6,
+			expectNoHover: true,
+		},
+		{
+			// Plain file path in breaking.ignore: not a known rule name.
+			name: "breaking_ignore_value_no_hover",
+			line: 36, character: 6,
+			expectNoHover: true,
+		},
+		{
+			// Off the end of the file entirely.
+			name: "off_file_no_hover",
+			line: 999, character: 0,
+			expectNoHover: true,
+		},
+		{
+			// Mid-line whitespace.
+			name: "whitespace_no_hover",
+			line: 11, character: 0,
+			expectNoHover: true,
+		},
+	}
+
+	absPath, err := filepath.Abs(fixture)
+	require.NoError(t, err)
+
+	clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil)
+	ctx := t.Context()
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			var hover *protocol.Hover
+			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
+					Position:     protocol.Position{Line: tc.line, Character: tc.character},
+				},
+			}, &hover)
+			require.NoError(t, err)
+
+			if tc.expectNoHover {
+				assert.Nil(t, hover, "expected no hover at (%d, %d)", tc.line, tc.character)
+				return
+			}
+			require.NotNil(t, hover, "expected hover at (%d, %d)", tc.line, tc.character)
+			assert.Equal(t, protocol.Markdown, hover.Contents.Kind)
+			for _, want := range tc.expectedContains {
+				assert.Contains(t, hover.Contents.Value, want,
+					"hover at (%d, %d) should contain %q", tc.line, tc.character, want)
+			}
+		})
+	}
+}
+
+// TestBufYAMLHover_OtherFixtures verifies hover returns nil for buf.yaml files
+// with no recognized fields at the tested positions, and does not panic on
+// invalid YAML.
+func TestBufYAMLHover_OtherFixtures(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		fixture   string
+		line      uint32
+		character uint32
+	}{
+		{
+			// A minimal file with no lint/breaking sections.
+			name:    "no_deps",
+			fixture: "testdata/buf_yaml/no_deps/buf.yaml",
+			line:    0, character: 0, // "version"
+		},
+		{
+			// Malformed YAML must not crash the server.
+			name:    "invalid",
+			fixture: "testdata/buf_yaml/invalid/buf.yaml",
+			line:    0, character: 0,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			absPath, err := filepath.Abs(tc.fixture)
+			require.NoError(t, err)
+
+			clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil)
+			ctx := t.Context()
+
+			var hover *protocol.Hover
+			_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
+					Position:     protocol.Position{Line: tc.line, Character: tc.character},
+				},
+			}, &hover)
+			require.NoError(t, err, "hover must not error even on edge-case files")
+		})
+	}
+}
+
 // mustParseUUID parses a UUID string for use in test data, failing the test on error.
 func mustParseUUID(t *testing.T, s string) uuid.UUID {
 	t.Helper()

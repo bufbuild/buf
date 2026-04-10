@@ -366,6 +366,9 @@ func (s *server) Hover(
 	ctx context.Context,
 	params *protocol.HoverParams,
 ) (*protocol.Hover, error) {
+	if isBufYAMLURI(params.TextDocument.URI) {
+		return s.bufYAMLManager.GetHover(params.TextDocument.URI, params.Position), nil
+	}
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {
 		return nil, nil

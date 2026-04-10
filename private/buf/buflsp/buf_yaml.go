@@ -63,6 +63,7 @@ func newBufYAMLManager(lsp *lsp) *bufYAMLManager {
 type bufYAMLFile struct {
 	depsKeyLine uint32 // 0-indexed line of the "deps:" key
 	deps        []bufYAMLDep
+	docNode     *yaml.Node // parsed YAML document node, nil if parse failed
 }
 
 // bufYAMLDep is a single entry in the deps sequence with its source position.
@@ -82,7 +83,7 @@ func isBufYAMLURI(uri protocol.URI) bool {
 func (m *bufYAMLManager) Track(uri protocol.URI, text string) {
 	normalized := normalizeURI(uri)
 	f := &bufYAMLFile{}
-	f.depsKeyLine, f.deps, _ = parseBufYAMLDeps([]byte(text))
+	f.depsKeyLine, f.deps, f.docNode, _ = parseBufYAMLDeps([]byte(text))
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.uriToFile[normalized] = f
@@ -341,23 +342,36 @@ func (m *bufYAMLManager) GetDocumentLinks(uri protocol.URI) []protocol.DocumentL
 	return links
 }
 
+// GetHover returns hover documentation for the buf.yaml field or rule at the
+// given position, or nil if the position does not correspond to a known element.
+func (m *bufYAMLManager) GetHover(uri protocol.URI, pos protocol.Position) *protocol.Hover {
+	m.mu.Lock()
+	f, ok := m.uriToFile[normalizeURI(uri)]
+	m.mu.Unlock()
+	if !ok || f.docNode == nil {
+		return nil
+	}
+	return bufYAMLHover(f.docNode, pos)
+}
+
 // parseBufYAMLDeps parses the top-level deps sequence from buf.yaml content.
 // It returns the 0-indexed line of the "deps:" key, the dep entries with their
-// source positions, and any parse error.
+// source positions, the parsed YAML document node for further traversal, and
+// any parse error.
 //
 // Both v1/v1beta1 and v2 buf.yaml formats are supported, as both have a
 // top-level deps key containing a sequence of module reference strings.
-func parseBufYAMLDeps(content []byte) (depsKeyLine uint32, deps []bufYAMLDep, _ error) {
-	var docNode yaml.Node
-	if err := yaml.NewDecoder(bytes.NewReader(content)).Decode(&docNode); err != nil {
-		return 0, nil, err
+func parseBufYAMLDeps(content []byte) (depsKeyLine uint32, deps []bufYAMLDep, docNode *yaml.Node, _ error) {
+	var doc yaml.Node
+	if err := yaml.NewDecoder(bytes.NewReader(content)).Decode(&doc); err != nil {
+		return 0, nil, nil, err
 	}
-	if docNode.Kind != yaml.DocumentNode || len(docNode.Content) == 0 {
-		return 0, nil, nil
+	if doc.Kind != yaml.DocumentNode || len(doc.Content) == 0 {
+		return 0, nil, &doc, nil
 	}
-	mapping := docNode.Content[0]
+	mapping := doc.Content[0]
 	if mapping.Kind != yaml.MappingNode {
-		return 0, nil, nil
+		return 0, nil, &doc, nil
 	}
 	for i := 0; i+1 < len(mapping.Content); i += 2 {
 		keyNode := mapping.Content[i]
@@ -368,25 +382,19 @@ func parseBufYAMLDeps(content []byte) (depsKeyLine uint32, deps []bufYAMLDep, _ 
 		depsKeyLine = uint32(keyNode.Line - 1)
 		seqNode := mapping.Content[i+1]
 		if seqNode.Kind != yaml.SequenceNode {
-			return depsKeyLine, nil, nil
+			return depsKeyLine, nil, &doc, nil
 		}
 		deps = make([]bufYAMLDep, 0, len(seqNode.Content))
 		for _, node := range seqNode.Content {
 			if node.Kind != yaml.ScalarNode {
 				continue
 			}
-			startLine := uint32(node.Line - 1)
-			startChar := uint32(node.Column - 1)
-			endChar := startChar + uint32(len(node.Value))
 			deps = append(deps, bufYAMLDep{
-				ref: node.Value,
-				depRange: protocol.Range{
-					Start: protocol.Position{Line: startLine, Character: startChar},
-					End:   protocol.Position{Line: startLine, Character: endChar},
-				},
+				ref:      node.Value,
+				depRange: yamlNodeRange(node),
 			})
 		}
-		return depsKeyLine, deps, nil
+		return depsKeyLine, deps, &doc, nil
 	}
-	return 0, nil, nil
+	return 0, nil, &doc, nil
 }
