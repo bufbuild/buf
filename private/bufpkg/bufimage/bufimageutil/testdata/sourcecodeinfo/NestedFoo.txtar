@@ -325,22 +325,6 @@ message Foo {
         3,
         0,
         2,
-        0
-      ],
-      "span": [
-        69,
-        4,
-        28
-      ],
-      "leadingComments": " Keep if NestedFoo: comment on field uid\n"
-    },
-    {
-      "path": [
-        4,
-        0,
-        3,
-        0,
-        2,
         0,
         4
       ],
@@ -349,6 +333,22 @@ message Foo {
         4,
         12
       ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        0
+      ],
+      "span": [
+        69,
+        4,
+        28
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on field uid\n"
     },
     {
       "path": [
@@ -405,22 +405,6 @@ message Foo {
         3,
         0,
         2,
-        1
-      ],
-      "span": [
-        71,
-        4,
-        42
-      ],
-      "leadingComments": " Keep if NestedFoo: comment on field meta\n"
-    },
-    {
-      "path": [
-        4,
-        0,
-        3,
-        0,
-        2,
         1,
         4
       ],
@@ -429,6 +413,22 @@ message Foo {
         4,
         12
       ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        1
+      ],
+      "span": [
+        71,
+        4,
+        42
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on field meta\n"
     },
     {
       "path": [
@@ -485,22 +485,6 @@ message Foo {
         3,
         0,
         2,
-        2
-      ],
-      "span": [
-        73,
-        4,
-        29
-      ],
-      "leadingComments": " Keep if NestedFoo: comment on field state\n"
-    },
-    {
-      "path": [
-        4,
-        0,
-        3,
-        0,
-        2,
         2,
         4
       ],
@@ -509,6 +493,22 @@ message Foo {
         4,
         12
       ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        2
+      ],
+      "span": [
+        73,
+        4,
+        29
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on field state\n"
     },
     {
       "path": [
@@ -600,14 +600,14 @@ message Foo {
         4,
         0,
         2,
-        0
+        0,
+        1
       ],
       "span": [
         78,
         6,
-        28
-      ],
-      "leadingComments": " Keep if NestedFoo: comment on enum value STATE_UNSPECIFIED\n"
+        23
+      ]
     },
     {
       "path": [
@@ -618,14 +618,14 @@ message Foo {
         4,
         0,
         2,
-        0,
-        1
+        0
       ],
       "span": [
         78,
         6,
-        23
-      ]
+        28
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on enum value STATE_UNSPECIFIED\n"
     },
     {
       "path": [
@@ -654,14 +654,14 @@ message Foo {
         4,
         0,
         2,
+        1,
         1
       ],
       "span": [
         80,
         6,
-        21
-      ],
-      "leadingComments": " Keep if NestedFoo: comment on enum value STATE_GOOD\n"
+        16
+      ]
     },
     {
       "path": [
@@ -672,14 +672,14 @@ message Foo {
         4,
         0,
         2,
-        1,
         1
       ],
       "span": [
         80,
         6,
-        16
-      ]
+        21
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on enum value STATE_GOOD\n"
     },
     {
       "path": [

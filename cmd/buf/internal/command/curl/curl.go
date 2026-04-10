@@ -1334,7 +1334,12 @@ func completeURLFromSchema(ctx context.Context, schemas []string, baseURL, rawPa
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 	// Discard log output during shell completion.
-	container := appext.NewContainer(nameContainer, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	container := appext.NewContainer(
+		nameContainer,
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
+		appext.LogLevelError, // Doesn't matter, logs are discarded
+		appext.LogFormatText, // Doesn't matter, logs are discarded
+	)
 	controller, err := bufcli.NewController(container)
 	if err != nil {
 		reportError("%v", err)

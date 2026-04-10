@@ -107,7 +107,7 @@ func WithAllowIncludeOfImportedType() ImageFilterOption {
 // For example, "google.protobuf.Any" or "buf.validate". Types may be nested,
 // and can be any package, message, enum, extension, service or method name.
 //
-// If the  type does not exist in the image, an error wrapping
+// If the type does not exist in the image, an error wrapping
 // [ErrImageFilterTypeNotFound] will be returned.
 func WithIncludeTypes(typeNames ...string) ImageFilterOption {
 	return func(opts *imageFilterOptions) {
