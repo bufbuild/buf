@@ -7,6 +7,7 @@
 - Add `buf curl` URL path shell completions (service and method names) via
   server reflection, `--schema`, or the local buf module.
 - Add support for Edition 2024 syntax to `buf format`.
+- Fix `buf generate --clean` deleting files from nested plugin output directories.
 
 ## [v1.67.0] - 2026-04-01
 
