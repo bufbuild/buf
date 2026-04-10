@@ -1677,7 +1677,7 @@ func handleBreakingFieldSameDefault(
 			withBackupLocation(field.DefaultLocation(), field.Location()),
 			withBackupLocation(previousField.DefaultLocation(), previousField.Location()),
 			field.File().Path(),
-			`%s changed default value from %v to %v.`,
+			`% changed default value from %v to %v.`,
 			fieldDescription(field),
 			previousDefault.printable,
 			currentDefault.printable,

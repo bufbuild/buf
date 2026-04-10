@@ -15,7 +15,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"path/filepath"
 	"strings"
@@ -149,10 +148,7 @@ func TestInvalidNonexistentImport(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
 		t, nil, bufctl.ExitCodeFileAnnotation,
-		fmt.Sprintf(
-			"%[1]s:5:1:imported file does not exist",
-			filepath.FromSlash("testdata/imports/failure/people/people/v1/people1.proto"),
-		),
+		filepath.FromSlash(`testdata/imports/failure/people/people/v1/people1.proto:5:8:import "nonexistent.proto": file does not exist`),
 		"build",
 		filepath.Join("testdata", "imports", "failure", "people"),
 	)
@@ -162,10 +158,7 @@ func TestInvalidNonexistentImportFromDirectDep(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
 		t, nil, bufctl.ExitCodeFileAnnotation,
-		fmt.Sprintf(
-			"%[1]s:6:1:imported file does not exist\n%[1]s:10:3:cannot find `people.v1.Person2` in this scope",
-			filepath.FromSlash("testdata/imports/failure/students/students/v1/students.proto"),
-		),
+		filepath.FromSlash(`testdata/imports/failure/students/students/v1/students.proto:`)+`6:8:import "people/v1/people_nonexistent.proto": file does not exist`,
 		"build",
 		filepath.Join("testdata", "imports", "failure", "students"),
 	)

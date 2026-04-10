@@ -720,6 +720,18 @@ extend google.protobuf.ServiceOptions {
     {
       "path": [
         7,
+        0
+      ],
+      "span": [
+        21,
+        2,
+        33
+      ],
+      "leadingComments": " Keep if ext: comment on custom option bizniz\n"
+    },
+    {
+      "path": [
+        7,
         0,
         2
       ],
@@ -740,18 +752,6 @@ extend google.protobuf.ServiceOptions {
         2,
         10
       ]
-    },
-    {
-      "path": [
-        7,
-        0
-      ],
-      "span": [
-        21,
-        2,
-        33
-      ],
-      "leadingComments": " Keep if ext: comment on custom option bizniz\n"
     },
     {
       "path": [
@@ -804,6 +804,18 @@ extend google.protobuf.ServiceOptions {
     {
       "path": [
         7,
+        1
+      ],
+      "span": [
+        27,
+        2,
+        35
+      ],
+      "leadingComments": " Keep if ext + Svc: comment on custom option fizzbuzz\n"
+    },
+    {
+      "path": [
+        7,
         1,
         2
       ],
@@ -824,18 +836,6 @@ extend google.protobuf.ServiceOptions {
         2,
         10
       ]
-    },
-    {
-      "path": [
-        7,
-        1
-      ],
-      "span": [
-        27,
-        2,
-        35
-      ],
-      "leadingComments": " Keep if ext + Svc: comment on custom option fizzbuzz\n"
     },
     {
       "path": [
@@ -903,20 +903,6 @@ extend google.protobuf.ServiceOptions {
         4,
         0,
         2,
-        0,
-        4
-      ],
-      "span": [
-        33,
-        2,
-        10
-      ]
-    },
-    {
-      "path": [
-        4,
-        0,
-        2,
         0
       ],
       "span": [
@@ -925,6 +911,20 @@ extend google.protobuf.ServiceOptions {
         25
       ],
       "leadingComments": " Keep if all: comment on field xyz\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        0,
+        4
+      ],
+      "span": [
+        33,
+        2,
+        10
+      ]
     },
     {
       "path": [
@@ -1028,20 +1028,6 @@ extend google.protobuf.ServiceOptions {
         4,
         1,
         2,
-        0,
-        4
-      ],
-      "span": [
-        49,
-        2,
-        10
-      ]
-    },
-    {
-      "path": [
-        4,
-        1,
-        2,
         0
       ],
       "span": [
@@ -1050,6 +1036,20 @@ extend google.protobuf.ServiceOptions {
         27
       ],
       "leadingComments": " Keep if Foo: comment on field name\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        2,
+        0,
+        4
+      ],
+      "span": [
+        49,
+        2,
+        10
+      ]
     },
     {
       "path": [
@@ -1098,20 +1098,6 @@ extend google.protobuf.ServiceOptions {
         4,
         1,
         2,
-        1,
-        4
-      ],
-      "span": [
-        51,
-        2,
-        10
-      ]
-    },
-    {
-      "path": [
-        4,
-        1,
-        2,
         1
       ],
       "span": [
@@ -1120,6 +1106,20 @@ extend google.protobuf.ServiceOptions {
         26
       ],
       "leadingComments": " Keep if Foo: comment on field bits\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        2,
+        1,
+        4
+      ],
+      "span": [
+        51,
+        2,
+        10
+      ]
     },
     {
       "path": [
@@ -1181,13 +1181,12 @@ extend google.protobuf.ServiceOptions {
         4,
         1,
         9,
-        0,
-        1
+        0
       ],
       "span": [
         54,
         11,
-        13
+        19
       ]
     },
     {
@@ -1195,12 +1194,13 @@ extend google.protobuf.ServiceOptions {
         4,
         1,
         9,
-        0
+        0,
+        1
       ],
       "span": [
         54,
         11,
-        19
+        13
       ]
     },
     {
@@ -1287,13 +1287,12 @@ extend google.protobuf.ServiceOptions {
         4,
         1,
         5,
-        0,
-        1
+        0
       ],
       "span": [
         58,
         13,
-        16
+        23
       ]
     },
     {
@@ -1301,12 +1300,13 @@ extend google.protobuf.ServiceOptions {
         4,
         1,
         5,
-        0
+        0,
+        1
       ],
       "span": [
         58,
         13,
-        23
+        16
       ]
     },
     {
@@ -1390,22 +1390,6 @@ extend google.protobuf.ServiceOptions {
         3,
         0,
         2,
-        0,
-        4
-      ],
-      "span": [
-        69,
-        4,
-        12
-      ]
-    },
-    {
-      "path": [
-        4,
-        1,
-        3,
-        0,
-        2,
         0
       ],
       "span": [
@@ -1414,6 +1398,22 @@ extend google.protobuf.ServiceOptions {
         28
       ],
       "leadingComments": " Keep if NestedFoo: comment on field uid\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        0,
+        4
+      ],
+      "span": [
+        69,
+        4,
+        12
+      ]
     },
     {
       "path": [
@@ -1470,22 +1470,6 @@ extend google.protobuf.ServiceOptions {
         3,
         0,
         2,
-        1,
-        4
-      ],
-      "span": [
-        71,
-        4,
-        12
-      ]
-    },
-    {
-      "path": [
-        4,
-        1,
-        3,
-        0,
-        2,
         1
       ],
       "span": [
@@ -1494,6 +1478,22 @@ extend google.protobuf.ServiceOptions {
         42
       ],
       "leadingComments": " Keep if NestedFoo: comment on field meta\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        1,
+        4
+      ],
+      "span": [
+        71,
+        4,
+        12
+      ]
     },
     {
       "path": [
@@ -1550,22 +1550,6 @@ extend google.protobuf.ServiceOptions {
         3,
         0,
         2,
-        2,
-        4
-      ],
-      "span": [
-        73,
-        4,
-        12
-      ]
-    },
-    {
-      "path": [
-        4,
-        1,
-        3,
-        0,
-        2,
         2
       ],
       "span": [
@@ -1574,6 +1558,22 @@ extend google.protobuf.ServiceOptions {
         29
       ],
       "leadingComments": " Keep if NestedFoo: comment on field state\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        2,
+        4
+      ],
+      "span": [
+        73,
+        4,
+        12
+      ]
     },
     {
       "path": [
@@ -1665,14 +1665,14 @@ extend google.protobuf.ServiceOptions {
         4,
         0,
         2,
-        0,
-        1
+        0
       ],
       "span": [
         78,
         6,
-        23
-      ]
+        28
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on enum value STATE_UNSPECIFIED\n"
     },
     {
       "path": [
@@ -1683,14 +1683,14 @@ extend google.protobuf.ServiceOptions {
         4,
         0,
         2,
-        0
+        0,
+        1
       ],
       "span": [
         78,
         6,
-        28
-      ],
-      "leadingComments": " Keep if NestedFoo: comment on enum value STATE_UNSPECIFIED\n"
+        23
+      ]
     },
     {
       "path": [
@@ -1719,14 +1719,14 @@ extend google.protobuf.ServiceOptions {
         4,
         0,
         2,
-        1,
         1
       ],
       "span": [
         80,
         6,
-        16
-      ]
+        21
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on enum value STATE_GOOD\n"
     },
     {
       "path": [
@@ -1737,14 +1737,14 @@ extend google.protobuf.ServiceOptions {
         4,
         0,
         2,
+        1,
         1
       ],
       "span": [
         80,
         6,
-        21
-      ],
-      "leadingComments": " Keep if NestedFoo: comment on enum value STATE_GOOD\n"
+        16
+      ]
     },
     {
       "path": [
@@ -1787,6 +1787,22 @@ extend google.protobuf.ServiceOptions {
         3,
         0,
         6,
+        0
+      ],
+      "span": [
+        86,
+        6,
+        32
+      ],
+      "leadingComments": " Keep if Foo + ext: comment on extension blah\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        6,
         0,
         2
       ],
@@ -1811,22 +1827,6 @@ extend google.protobuf.ServiceOptions {
         6,
         14
       ]
-    },
-    {
-      "path": [
-        4,
-        1,
-        3,
-        0,
-        6,
-        0
-      ],
-      "span": [
-        86,
-        6,
-        32
-      ],
-      "leadingComments": " Keep if Foo + ext: comment on extension blah\n"
     },
     {
       "path": [
@@ -1909,20 +1909,6 @@ extend google.protobuf.ServiceOptions {
         4,
         2,
         2,
-        0,
-        4
-      ],
-      "span": [
-        97,
-        2,
-        10
-      ]
-    },
-    {
-      "path": [
-        4,
-        2,
-        2,
         0
       ],
       "span": [
@@ -1931,6 +1917,20 @@ extend google.protobuf.ServiceOptions {
         23
       ],
       "leadingComments": " Keep if Bar: comment on field foo\n"
+    },
+    {
+      "path": [
+        4,
+        2,
+        2,
+        0,
+        4
+      ],
+      "span": [
+        97,
+        2,
+        10
+      ]
     },
     {
       "path": [
@@ -2008,20 +2008,6 @@ extend google.protobuf.ServiceOptions {
         4,
         2,
         2,
-        1,
-        6
-      ],
-      "span": [
-        101,
-        4,
-        7
-      ]
-    },
-    {
-      "path": [
-        4,
-        2,
-        2,
         1
       ],
       "span": [
@@ -2030,6 +2016,20 @@ extend google.protobuf.ServiceOptions {
         16
       ],
       "leadingComments": " Keep if Bar: comment on field baz\n"
+    },
+    {
+      "path": [
+        4,
+        2,
+        2,
+        1,
+        6
+      ],
+      "span": [
+        101,
+        4,
+        7
+      ]
     },
     {
       "path": [
@@ -2064,20 +2064,6 @@ extend google.protobuf.ServiceOptions {
         4,
         2,
         2,
-        2,
-        6
-      ],
-      "span": [
-        103,
-        4,
-        7
-      ]
-    },
-    {
-      "path": [
-        4,
-        2,
-        2,
         2
       ],
       "span": [
@@ -2086,6 +2072,20 @@ extend google.protobuf.ServiceOptions {
         16
       ],
       "leadingComments": " Keep if Bar: comment on field quz\n"
+    },
+    {
+      "path": [
+        4,
+        2,
+        2,
+        2,
+        6
+      ],
+      "span": [
+        103,
+        4,
+        7
+      ]
     },
     {
       "path": [
@@ -2148,20 +2148,6 @@ extend google.protobuf.ServiceOptions {
         5,
         0,
         2,
-        0,
-        1
-      ],
-      "span": [
-        113,
-        2,
-        17
-      ]
-    },
-    {
-      "path": [
-        5,
-        0,
-        2,
         0
       ],
       "span": [
@@ -2170,6 +2156,20 @@ extend google.protobuf.ServiceOptions {
         22
       ],
       "leadingComments": " Keep if Baz: comment on enum value BAZ_UNSPECIFIED\n"
+    },
+    {
+      "path": [
+        5,
+        0,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        113,
+        2,
+        17
+      ]
     },
     {
       "path": [
@@ -2215,20 +2215,6 @@ extend google.protobuf.ServiceOptions {
         5,
         1,
         2,
-        0,
-        1
-      ],
-      "span": [
-        119,
-        2,
-        17
-      ]
-    },
-    {
-      "path": [
-        5,
-        1,
-        2,
         0
       ],
       "span": [
@@ -2237,6 +2223,20 @@ extend google.protobuf.ServiceOptions {
         22
       ],
       "leadingComments": " Keep if Quz: comment on enum value QUZ_UNSPECIFIED\n"
+    },
+    {
+      "path": [
+        5,
+        1,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        119,
+        2,
+        17
+      ]
     },
     {
       "path": [
@@ -2282,20 +2282,6 @@ extend google.protobuf.ServiceOptions {
         4,
         3,
         2,
-        0,
-        4
-      ],
-      "span": [
-        125,
-        2,
-        10
-      ]
-    },
-    {
-      "path": [
-        4,
-        3,
-        2,
         0
       ],
       "span": [
@@ -2304,6 +2290,20 @@ extend google.protobuf.ServiceOptions {
         24
       ],
       "leadingComments": " Keep if all: comment on field s\n"
+    },
+    {
+      "path": [
+        4,
+        3,
+        2,
+        0,
+        4
+      ],
+      "span": [
+        125,
+        2,
+        10
+      ]
     },
     {
       "path": [
@@ -2377,20 +2377,6 @@ extend google.protobuf.ServiceOptions {
         4,
         4,
         2,
-        0,
-        4
-      ],
-      "span": [
-        131,
-        2,
-        10
-      ]
-    },
-    {
-      "path": [
-        4,
-        4,
-        2,
         0
       ],
       "span": [
@@ -2399,6 +2385,20 @@ extend google.protobuf.ServiceOptions {
         24
       ],
       "leadingComments": " Keep if all: comment on field t\n"
+    },
+    {
+      "path": [
+        4,
+        4,
+        2,
+        0,
+        4
+      ],
+      "span": [
+        131,
+        2,
+        10
+      ]
     },
     {
       "path": [
