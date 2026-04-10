@@ -1,4 +1,4 @@
-![The Buf logo](./.github/buf-logo.svg)
+![The Buf logo](https://raw.githubusercontent.com/bufbuild/buf/main/.github/buf-logo.svg)
 
 # Buf
 
