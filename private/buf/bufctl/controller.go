@@ -1380,7 +1380,6 @@ func (c *controller) handleFileAnnotationSetRetError(retErrAddr *error) {
 			if ok {
 				printDiagnosticReport = term.IsTerminal(int(file.Fd()))
 			}
-
 		}
 		if err := bufanalysis.PrintFileAnnotationSet(
 			writer,
