@@ -431,7 +431,7 @@ func testFileAnnotations(t *testing.T, relDirPath string, parallelism bool, want
 	for i, annotation := range fileAnnotations {
 		got[i] = annotation.String()
 	}
-	assert.Equal(t, len(want), len(got))
+	require.Equal(t, len(want), len(got))
 	for i := range want {
 		options := strings.Split(want[i], "||")
 		matched := false

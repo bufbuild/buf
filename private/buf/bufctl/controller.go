@@ -1376,10 +1376,11 @@ func (c *controller) handleFileAnnotationSetRetError(retErrAddr *error) {
 		} else {
 			// When writing to stderr, check if the input is TTY, if so, allow printing the
 			// diagnostic report.
-			file, ok := c.container.Stdin().(*os.File)
-			if ok {
-				printDiagnosticReport = term.IsTerminal(int(file.Fd()))
-			}
+			//
+			// HACK: We need to check os.Stderr rather than writer, since c.container.Stderr()
+			// returns wrapped writer, which only implements io.Writer. A fix needs to be made
+			// upstream in order to address this.
+			printDiagnosticReport = term.IsTerminal(int(os.Stderr.Fd()))
 		}
 		if err := bufanalysis.PrintFileAnnotationSet(
 			writer,
