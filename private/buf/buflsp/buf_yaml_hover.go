@@ -37,7 +37,7 @@ type bufYAMLDoc struct {
 
 // bufYAMLTopLevelDocs maps top-level buf.yaml keys to their documentation.
 var bufYAMLTopLevelDocs = map[string]bufYAMLDoc{
-	"version":  {summary: "Defines the configuration format version. Must be `v1`, `v1beta1`, or `v2`.", url: bufYAMLDocsURL + "#version"},
+	"version":  {summary: "Defines the configuration format version. Must be `v2`, `v1` or `v1beta1`.", url: bufYAMLDocsURL + "#version"},
 	"modules":  {summary: "Defines the Protobuf modules in the workspace. Each entry specifies a directory of Protobuf files with optional per-module lint and breaking settings.", url: bufYAMLDocsURL + "#modules"},
 	"deps":     {summary: "Declares module dependencies hosted on the Buf Schema Registry. Dependencies can pin a specific commit or label using the format `buf.build/owner/module:reference`. Pinned versions are stored in [`buf.lock`](https://buf.build/docs/configuration/v2/buf-lock/).", url: bufYAMLDocsURL + "#deps"},
 	"lint":     {summary: "Configures lint rules applied to all modules in the workspace. Module-specific lint settings override these defaults entirely. If unspecified, the `STANDARD` rule category is used.", url: bufYAMLDocsURL + "#lint"},

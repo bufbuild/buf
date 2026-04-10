@@ -284,6 +284,9 @@ func (s *server) Formatting(
 	ctx context.Context,
 	params *protocol.DocumentFormattingParams,
 ) ([]protocol.TextEdit, error) {
+	if isBufYAMLURI(params.TextDocument.URI) {
+		return nil, nil
+	}
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {
 		// Format for a file we don't know about? Seems bad!
