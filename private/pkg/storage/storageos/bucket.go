@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync/atomic"
+	"time"
 
 	"buf.build/go/standard/xpath/xfilepath"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -57,12 +58,12 @@ func newBucket(rootPath string, symlinks bool) (*bucket, error) {
 	}, nil
 }
 
-func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser, error) {
+func (b *bucket) Get(ctx context.Context, path string) (_ storage.ReadObjectCloser, retErr error) {
 	externalPath, err := b.getExternalPath(path)
 	if err != nil {
 		return nil, err
 	}
-	if err := b.validateExternalPath(path, externalPath); err != nil {
+	if _, err := b.validateExternalPath(path, externalPath); err != nil {
 		return nil, err
 	}
 	resolvedPath := externalPath
@@ -76,12 +77,17 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if retErr != nil {
+			retErr = errors.Join(retErr, file.Close())
+		}
+	}()
 	// we could use fileInfo.Name() however we might as well use the externalPath
 	return newReadObjectCloser(
 		path,
 		externalPath,
 		file,
-	), nil
+	)
 }
 
 func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
@@ -89,16 +95,12 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 	if err != nil {
 		return nil, err
 	}
-	if err := b.validateExternalPath(path, externalPath); err != nil {
+	fileInfo, err := b.validateExternalPath(path, externalPath)
+	if err != nil {
 		return nil, err
 	}
 	// we could use fileInfo.Name() however we might as well use the externalPath
-	return storageutil.NewObjectInfo(
-		path,
-		externalPath,
-		// In storageos, the external path is also the local path.
-		externalPath,
-	), nil
+	return newOSObjectInfo(path, externalPath, fileInfo), nil
 }
 
 func (b *bucket) Walk(
@@ -143,14 +145,7 @@ func (b *bucket) Walk(
 				if err != nil {
 					return err
 				}
-				if err := f(
-					storageutil.NewObjectInfo(
-						path,
-						externalPath,
-						// In storageos, the external path is also the local path.
-						externalPath,
-					),
-				); err != nil {
+				if err := f(newOSObjectInfo(path, externalPath, fileInfo)); err != nil {
 					return err
 				}
 			}
@@ -255,7 +250,7 @@ func (b *bucket) getExternalPath(path string) (string, error) {
 	return normalpath.Unnormalize(realClean), nil
 }
 
-func (b *bucket) validateExternalPath(path string, externalPath string) error {
+func (b *bucket) validateExternalPath(path string, externalPath string) (os.FileInfo, error) {
 	// this is potentially introducing two calls to a file
 	// instead of one, ie we do both Stat and Open as opposed to just Open
 	// we do this to make sure we are only reading regular files
@@ -268,7 +263,7 @@ func (b *bucket) validateExternalPath(path string, externalPath string) error {
 	}
 	if err != nil {
 		if os.IsNotExist(err) {
-			return &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
+			return nil, &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
 		}
 		// The path might have a regular file in one of its
 		// elements (e.g. 'foo/bar/baz.proto' where 'bar' is a
@@ -294,17 +289,17 @@ func (b *bucket) validateExternalPath(path string, externalPath string) error {
 				// This error primarily serves as a sentinel error,
 				// but we preserve the original path argument so that
 				// the error still makes sense to the user.
-				return &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
+				return nil, &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
 			}
 		}
-		return err
+		return nil, err
 	}
 	if !fileInfo.Mode().IsRegular() {
 		// making this a user error as any access means this was generally requested
 		// by the user, since we only call the function for Walk on regular files
-		return &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
+		return nil, &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
 	}
-	return nil
+	return fileInfo, nil
 }
 
 func (b *bucket) getExternalPrefix(prefix string) (string, error) {
@@ -319,11 +314,42 @@ func (b *bucket) getExternalPrefix(prefix string) (string, error) {
 	return normalpath.Unnormalize(realClean), nil
 }
 
-type readObjectCloser struct {
-	// we use ObjectInfo for Path, ExternalPath, etc to make sure this is static
-	// we put ObjectInfos in maps in other places so we do not want this to change
-	// this could be a problem if the underlying file is concurrently moved or resized however
+// osObjectInfo is an ObjectInfo that includes file size and modification time.
+//
+// It implements storage.Sizer and storage.ModTimeProvider.
+type osObjectInfo struct {
 	storageutil.ObjectInfo
+	size    int64
+	modTime time.Time
+}
+
+func newOSObjectInfo(path string, externalPath string, fileInfo os.FileInfo) *osObjectInfo {
+	return &osObjectInfo{
+		ObjectInfo: storageutil.NewObjectInfo(
+			path,
+			externalPath,
+			// In storageos, the external path is also the local path.
+			externalPath,
+		),
+		size:    fileInfo.Size(),
+		modTime: fileInfo.ModTime(),
+	}
+}
+
+func (o *osObjectInfo) Size() int64 {
+	return o.size
+}
+
+func (o *osObjectInfo) ModTime() time.Time {
+	return o.modTime
+}
+
+type readObjectCloser struct {
+	// We embed osObjectInfo for Path, ExternalPath, Size, ModTime, etc.
+	// to make sure this is static. We put ObjectInfos in maps in other places
+	// so we do not want this to change. This could be a problem if the
+	// underlying file is concurrently moved or resized however.
+	*osObjectInfo
 
 	file *os.File
 }
@@ -332,16 +358,15 @@ func newReadObjectCloser(
 	path string,
 	externalPath string,
 	file *os.File,
-) *readObjectCloser {
-	return &readObjectCloser{
-		ObjectInfo: storageutil.NewObjectInfo(
-			path,
-			externalPath,
-			// In storageos, the external path is the local path
-			externalPath,
-		),
-		file: file,
+) (*readObjectCloser, error) {
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return nil, err
 	}
+	return &readObjectCloser{
+		osObjectInfo: newOSObjectInfo(path, externalPath, fileInfo),
+		file:         file,
+	}, nil
 }
 
 func (r *readObjectCloser) Read(p []byte) (int, error) {

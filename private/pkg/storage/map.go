@@ -22,7 +22,6 @@ import (
 	"io/fs"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 )
 
 // MapReadBucket maps the ReadBucket.
@@ -301,10 +300,11 @@ func replaceObjectInfoPath(objectInfo ObjectInfo, path string) ObjectInfo {
 	if objectInfo.Path() == path {
 		return objectInfo
 	}
-	return storageutil.NewObjectInfo(
+	return newWrappedObjectInfo(
 		path,
 		objectInfo.ExternalPath(),
 		objectInfo.LocalPath(),
+		objectInfo,
 	)
 }
 
@@ -312,7 +312,7 @@ func replaceReadObjectCloserPath(readObjectCloser ReadObjectCloser, path string)
 	if readObjectCloser.Path() == path {
 		return readObjectCloser
 	}
-	return compositeReadObjectCloser{replaceObjectInfoPath(readObjectCloser, path), readObjectCloser}
+	return newCompositeReadObjectCloser(replaceObjectInfoPath(readObjectCloser, path), readObjectCloser)
 }
 
 func replaceWriteObjectCloserExternalAndLocalPathsNotSupported(writeObjectCloser WriteObjectCloser) WriteObjectCloser {

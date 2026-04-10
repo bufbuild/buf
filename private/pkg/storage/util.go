@@ -19,6 +19,8 @@ import (
 	"errors"
 	"io"
 	"sort"
+
+	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 )
 
 // errIsNotEmpty is used to break out of the Walk function early in IsEmpty.
@@ -205,9 +207,53 @@ func sortObjectInfos(objectInfos []ObjectInfo) {
 	)
 }
 
+// wrappedObjectInfo wraps an ObjectInfo with replacement path fields while
+// preserving the original for unwrapping and metadata delegation.
+type wrappedObjectInfo struct {
+	storageutil.ObjectInfo
+	original ObjectInfo
+}
+
+func newWrappedObjectInfo(path string, externalPath string, localPath string, original ObjectInfo) *wrappedObjectInfo {
+	return &wrappedObjectInfo{
+		ObjectInfo: storageutil.NewObjectInfo(path, externalPath, localPath),
+		original:   original,
+	}
+}
+
+func (w *wrappedObjectInfo) UnwrapObjectInfo() ObjectInfo {
+	return w.original
+}
+
 type compositeReadObjectCloser struct {
 	ObjectInfo
 	io.ReadCloser
+}
+
+// compositeReadObjectCloserWithWriterTo preserves io.WriterTo from the
+// underlying ReadCloser (e.g. *os.File) through the wrapper chain.
+type compositeReadObjectCloserWithWriterTo struct {
+	ObjectInfo
+	io.ReadCloser
+	writerTo io.WriterTo
+}
+
+func (c *compositeReadObjectCloserWithWriterTo) WriteTo(w io.Writer) (int64, error) {
+	return c.writerTo.WriteTo(w)
+}
+
+// newCompositeReadObjectCloser creates a ReadObjectCloser that combines an
+// ObjectInfo with an io.ReadCloser. If the ReadCloser implements io.WriterTo,
+// the returned value preserves that interface.
+func newCompositeReadObjectCloser(objectInfo ObjectInfo, readCloser io.ReadCloser) ReadObjectCloser {
+	if writerTo, ok := readCloser.(io.WriterTo); ok {
+		return &compositeReadObjectCloserWithWriterTo{
+			ObjectInfo: objectInfo,
+			ReadCloser: readCloser,
+			writerTo:   writerTo,
+		}
+	}
+	return compositeReadObjectCloser{ObjectInfo: objectInfo, ReadCloser: readCloser}
 }
 
 type compositeReadWriteBucketCloser struct {

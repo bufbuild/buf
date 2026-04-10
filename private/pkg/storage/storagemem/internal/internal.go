@@ -56,3 +56,8 @@ func NewImmutableObject(
 func (i *ImmutableObject) Data() []byte {
 	return i.data
 }
+
+// Size returns the size of the data in bytes.
+func (i *ImmutableObject) Size() int64 {
+	return int64(len(i.data))
+}

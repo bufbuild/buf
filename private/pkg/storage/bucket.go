@@ -17,6 +17,7 @@ package storage
 import (
 	"context"
 	"io"
+	"time"
 )
 
 // ReadBucket is a simple read-only bucket.
@@ -132,6 +133,17 @@ func NopReadWriteBucketCloser(readWriteBucket ReadWriteBucket) ReadWriteBucketCl
 
 // ObjectInfo contains object info.
 //
+// Size and last-modified time are not part of this interface because
+// ObjectInfo is embedded by types outside this package (e.g.
+// bufmodule.FileInfo) that cannot be extended. Instead, implementations
+// may optionally implement Sizer and ModTimeProvider. Use
+// ObjectInfoSize and ObjectInfoModTime to access these through the
+// wrapper chain.
+//
+// Wrapper implementations (map, strip) should implement
+// ObjectInfoUnwrapper so that callers can traverse the chain to reach
+// provider-specific ObjectInfo types via ObjectInfoAs.
+//
 // An ObjectInfo will always be the same for a given path within a given Bucket,
 // that is an ObjectInfo is cacheable for a given Bucket.
 type ObjectInfo interface {
@@ -174,6 +186,81 @@ type ObjectInfo interface {
 	// Will not be present if the path did not originate from disk. For example, objects that originated
 	// from archives, git repositories, or object stores will not have this present.
 	LocalPath() string
+}
+
+// Sizer is an optional interface implemented by ObjectInfo values that can
+// report the size of the object in bytes.
+//
+// Implementations should return -1 if the size is unknown.
+// Use ObjectInfoSize to retrieve the size from an ObjectInfo, which returns
+// -1 when the ObjectInfo does not implement Sizer.
+type Sizer interface {
+	Size() int64
+}
+
+// ModTimeProvider is an optional interface implemented by ObjectInfo values
+// that can report when the object was last modified.
+//
+// Implementations should return a zero time.Time if the modification time is
+// unknown. Use ObjectInfoModTime to retrieve the time from an ObjectInfo,
+// which returns a zero time.Time when the ObjectInfo does not implement
+// ModTimeProvider.
+type ModTimeProvider interface {
+	ModTime() time.Time
+}
+
+// ObjectInfoUnwrapper is an optional interface implemented by ObjectInfo
+// wrapper values to expose the ObjectInfo they are wrapping.
+//
+// This enables callers to traverse the wrapper chain and access
+// provider-specific ObjectInfo implementations. Use ObjectInfoAs to find
+// a specific type in the chain.
+type ObjectInfoUnwrapper interface {
+	UnwrapObjectInfo() ObjectInfo
+}
+
+// ObjectInfoAs finds the first value in the ObjectInfo unwrap chain that is
+// assignable to T, and returns it. Returns the zero value and false if no
+// match exists in the chain.
+//
+// The chain consists of objectInfo itself followed by the sequence of
+// ObjectInfos obtained by calling UnwrapObjectInfo repeatedly.
+//
+// T is unconstrained so that callers can search for both concrete ObjectInfo
+// implementations (e.g. a provider-specific type) and optional interfaces
+// such as Sizer or ModTimeProvider.
+func ObjectInfoAs[T any](objectInfo ObjectInfo) (T, bool) {
+	for objectInfo != nil {
+		if typed, ok := objectInfo.(T); ok {
+			return typed, true
+		}
+		unwrapper, ok := objectInfo.(ObjectInfoUnwrapper)
+		if !ok {
+			break
+		}
+		objectInfo = unwrapper.UnwrapObjectInfo()
+	}
+	var zero T
+	return zero, false
+}
+
+// ObjectInfoSize returns the size of the object in bytes by traversing the
+// ObjectInfo unwrap chain for a Sizer. Returns -1 if no Sizer is found.
+func ObjectInfoSize(objectInfo ObjectInfo) int64 {
+	if sizer, ok := ObjectInfoAs[Sizer](objectInfo); ok {
+		return sizer.Size()
+	}
+	return -1
+}
+
+// ObjectInfoModTime returns the last-modified time by traversing the
+// ObjectInfo unwrap chain for a ModTimeProvider. Returns a zero time.Time
+// if no ModTimeProvider is found.
+func ObjectInfoModTime(objectInfo ObjectInfo) time.Time {
+	if provider, ok := ObjectInfoAs[ModTimeProvider](objectInfo); ok {
+		return provider.ModTime()
+	}
+	return time.Time{}
 }
 
 // ReadObject is an object read from a bucket.

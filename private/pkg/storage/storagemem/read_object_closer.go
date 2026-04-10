@@ -26,6 +26,7 @@ type readObjectCloser struct {
 	storageutil.ObjectInfo
 
 	reader *bytes.Reader
+	size   int64
 	closed bool
 }
 
@@ -33,7 +34,12 @@ func newReadObjectCloser(immutableObject *internal.ImmutableObject) *readObjectC
 	return &readObjectCloser{
 		ObjectInfo: immutableObject.ObjectInfo,
 		reader:     bytes.NewReader(immutableObject.Data()),
+		size:       immutableObject.Size(),
 	}
+}
+
+func (r *readObjectCloser) Size() int64 {
+	return r.size
 }
 
 func (r *readObjectCloser) Read(p []byte) (int, error) {

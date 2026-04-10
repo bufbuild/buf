@@ -16,8 +16,6 @@ package storage
 
 import (
 	"context"
-
-	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 )
 
 // StripReadBucketExternalPaths strips the differentiated ExternalPaths from objects
@@ -70,12 +68,12 @@ func stripObjectInfoExternalPath(objectInfo ObjectInfo) ObjectInfo {
 	if path == objectInfo.ExternalPath() {
 		return objectInfo
 	}
-	return storageutil.NewObjectInfo(path, path, objectInfo.LocalPath())
+	return newWrappedObjectInfo(path, path, objectInfo.LocalPath(), objectInfo)
 }
 
 func stripReadObjectCloserExternalPath(readObjectCloser ReadObjectCloser) ReadObjectCloser {
 	if readObjectCloser.Path() == readObjectCloser.ExternalPath() {
 		return readObjectCloser
 	}
-	return compositeReadObjectCloser{stripObjectInfoExternalPath(readObjectCloser), readObjectCloser}
+	return newCompositeReadObjectCloser(stripObjectInfoExternalPath(readObjectCloser), readObjectCloser)
 }
