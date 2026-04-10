@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package diagnostics.v1;
+
+// Referencing a synthetic map entry type directly is not permitted
+message Foo {
+  map<int32, int32> foo_bar = 1;
+  FooBarEntry bad_field = 2;
+}

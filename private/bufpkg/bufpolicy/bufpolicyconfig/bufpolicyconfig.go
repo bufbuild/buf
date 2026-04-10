@@ -13,3 +13,6 @@
 // limitations under the License.
 
 package bufpolicyconfig
+
+// DefaultBufPolicyYAMLFileName is the default name for the buf.policy.yaml file.
+const DefaultBufPolicyYAMLFileName = "buf.policy.yaml"

@@ -166,6 +166,10 @@ func (s *server) Initialize(
 			DocumentSymbolProvider:  true,
 			FoldingRangeProvider:    true,
 			DocumentLinkProvider:    &protocol.DocumentLinkOptions{},
+			CodeLensProvider:        &protocol.CodeLensOptions{},
+			ExecuteCommandProvider: &protocol.ExecuteCommandOptions{
+				Commands: []string{commandUpdateAllDeps, commandCheckUpdates},
+			},
 		},
 		ServerInfo: info,
 	}, nil
@@ -222,6 +226,22 @@ func (s *server) DidOpen(
 	ctx context.Context,
 	params *protocol.DidOpenTextDocumentParams,
 ) error {
+	if isBufYAMLURI(params.TextDocument.URI) {
+		s.bufYAMLManager.Track(params.TextDocument.URI, params.TextDocument.Text)
+		return nil
+	}
+	if isBufGenYAMLURI(params.TextDocument.URI) {
+		s.bufGenYAMLManager.Track(params.TextDocument.URI, params.TextDocument.Text)
+		return nil
+	}
+	if isBufPolicyYAMLURI(params.TextDocument.URI) {
+		s.bufPolicyYAMLManager.Track(params.TextDocument.URI, params.TextDocument.Text)
+		return nil
+	}
+	if isBufLockURI(params.TextDocument.URI) {
+		s.bufLockManager.Track(params.TextDocument.URI, params.TextDocument.Text)
+		return nil
+	}
 	file := s.fileManager.Track(params.TextDocument.URI)
 	file.RefreshWorkspace(ctx)
 	file.Update(ctx, params.TextDocument.Version, params.TextDocument.Text)
@@ -234,6 +254,22 @@ func (s *server) DidChange(
 	ctx context.Context,
 	params *protocol.DidChangeTextDocumentParams,
 ) error {
+	if isBufYAMLURI(params.TextDocument.URI) {
+		s.bufYAMLManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
+		return nil
+	}
+	if isBufGenYAMLURI(params.TextDocument.URI) {
+		s.bufGenYAMLManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
+		return nil
+	}
+	if isBufPolicyYAMLURI(params.TextDocument.URI) {
+		s.bufPolicyYAMLManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
+		return nil
+	}
+	if isBufLockURI(params.TextDocument.URI) {
+		s.bufLockManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
+		return nil
+	}
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {
 		// Update for a file we don't know about? Seems bad!
@@ -249,6 +285,10 @@ func (s *server) DidSave(
 	ctx context.Context,
 	params *protocol.DidSaveTextDocumentParams,
 ) error {
+	if isBufYAMLURI(params.TextDocument.URI) || isBufGenYAMLURI(params.TextDocument.URI) ||
+		isBufPolicyYAMLURI(params.TextDocument.URI) || isBufLockURI(params.TextDocument.URI) {
+		return nil
+	}
 	// We use this as an opportunity to do a refresh; some lints, such as
 	// breaking-against-last-saved, rely on this.
 	file := s.fileManager.Get(params.TextDocument.URI)
@@ -269,6 +309,10 @@ func (s *server) Formatting(
 	ctx context.Context,
 	params *protocol.DocumentFormattingParams,
 ) ([]protocol.TextEdit, error) {
+	if isBufYAMLURI(params.TextDocument.URI) || isBufGenYAMLURI(params.TextDocument.URI) ||
+		isBufPolicyYAMLURI(params.TextDocument.URI) || isBufLockURI(params.TextDocument.URI) {
+		return nil, nil
+	}
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {
 		// Format for a file we don't know about? Seems bad!
@@ -334,6 +378,22 @@ func (s *server) DidClose(
 	ctx context.Context,
 	params *protocol.DidCloseTextDocumentParams,
 ) error {
+	if isBufYAMLURI(params.TextDocument.URI) {
+		s.bufYAMLManager.Close(ctx, params.TextDocument.URI)
+		return nil
+	}
+	if isBufGenYAMLURI(params.TextDocument.URI) {
+		s.bufGenYAMLManager.Close(params.TextDocument.URI)
+		return nil
+	}
+	if isBufPolicyYAMLURI(params.TextDocument.URI) {
+		s.bufPolicyYAMLManager.Close(params.TextDocument.URI)
+		return nil
+	}
+	if isBufLockURI(params.TextDocument.URI) {
+		s.bufLockManager.Close(params.TextDocument.URI)
+		return nil
+	}
 	if file := s.fileManager.Get(params.TextDocument.URI); file != nil {
 		file.Close(ctx)
 	}
@@ -347,6 +407,18 @@ func (s *server) Hover(
 	ctx context.Context,
 	params *protocol.HoverParams,
 ) (*protocol.Hover, error) {
+	if isBufYAMLURI(params.TextDocument.URI) {
+		return s.bufYAMLManager.GetHover(params.TextDocument.URI, params.Position), nil
+	}
+	if isBufGenYAMLURI(params.TextDocument.URI) {
+		return s.bufGenYAMLManager.GetHover(params.TextDocument.URI, params.Position), nil
+	}
+	if isBufPolicyYAMLURI(params.TextDocument.URI) {
+		return s.bufPolicyYAMLManager.GetHover(params.TextDocument.URI, params.Position), nil
+	}
+	if isBufLockURI(params.TextDocument.URI) {
+		return s.bufLockManager.GetHover(params.TextDocument.URI, params.Position), nil
+	}
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {
 		return nil, nil
@@ -551,6 +623,50 @@ func (s *server) CodeAction(ctx context.Context, params *protocol.CodeActionPara
 	return actions, nil
 }
 
+// CodeLens is called when the client requests code lenses for a document.
+//
+// For buf.yaml files, this returns whole-file lenses on the deps: key line to
+// trigger dependency updates via the buf.dep.updateAll and buf.dep.checkUpdates
+// workspace commands.
+func (s *server) CodeLens(ctx context.Context, params *protocol.CodeLensParams) ([]protocol.CodeLens, error) {
+	if !isBufYAMLURI(params.TextDocument.URI) {
+		return nil, nil
+	}
+	return s.bufYAMLManager.GetCodeLenses(params.TextDocument.URI), nil
+}
+
+// ExecuteCommand is called when the client invokes a workspace command registered
+// by this server.
+//
+// Supported commands:
+//   - buf.dep.updateAll: update all dependencies in the buf.yaml at the given URI.
+//   - buf.dep.checkUpdates: check for newer versions of dependencies and publish
+//     informational diagnostics for any that are outdated.
+func (s *server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (any, error) {
+	if len(params.Arguments) < 1 {
+		return nil, fmt.Errorf("%s: expected at least 1 argument (buf.yaml URI), got %d", params.Command, len(params.Arguments))
+	}
+	uriStr, ok := params.Arguments[0].(string)
+	if !ok {
+		return nil, fmt.Errorf("%s: argument 0 must be a string URI, got %T", params.Command, params.Arguments[0])
+	}
+	uri := protocol.URI(uriStr)
+	switch params.Command {
+	case commandUpdateAllDeps:
+		if err := s.bufYAMLManager.ExecuteUpdateAll(ctx, uri); err != nil {
+			return nil, fmt.Errorf("%s: %w", params.Command, err)
+		}
+		return nil, nil
+	case commandCheckUpdates:
+		if err := s.bufYAMLManager.ExecuteCheckUpdates(ctx, uri); err != nil {
+			return nil, fmt.Errorf("%s: %w", params.Command, err)
+		}
+		return nil, nil
+	default:
+		return nil, fmt.Errorf("unknown command: %q", params.Command)
+	}
+}
+
 // PrepareRename is the entry point for checking workspace wide renaming of a symbol.
 //
 // If a symbol can be renamed, PrepareRename will return the range for the rename. Returning
@@ -618,6 +734,9 @@ func (s *server) DocumentLink(
 	ctx context.Context,
 	params *protocol.DocumentLinkParams,
 ) ([]protocol.DocumentLink, error) {
+	if isBufYAMLURI(params.TextDocument.URI) {
+		return s.bufYAMLManager.GetDocumentLinks(params.TextDocument.URI), nil
+	}
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {
 		return nil, nil

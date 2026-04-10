@@ -286,7 +286,7 @@ func validateDigestParameters(digestType DigestType, value []byte) error {
 		}
 	case DigestTypeSha256:
 		if len(value) != sha256DigestLength {
-			return fmt.Errorf("invalid shake256 digest value: expected %d bytes, got %d", sha256DigestLength, len(value))
+			return fmt.Errorf("invalid sha256 digest value: expected %d bytes, got %d", sha256DigestLength, len(value))
 		}
 	default:
 		// This is really always a system error, but little harm in including it here, even

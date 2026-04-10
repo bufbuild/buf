@@ -2,10 +2,13 @@
 
 ## [Unreleased]
 
+- Add LSP document links for `buf.yaml` dep entries, making each dependency a clickable link to its BSR module page.
+- Add LSP code lenses for `buf.yaml` files to update all dependencies (`buf.dep.updateAll`) or check for available updates (`buf.dep.checkUpdates`).
 - Improve shell completions for `buf` flags with fixed value sets and file/directory arguments.
 - Add `buf curl` URL path shell completions (service and method names) via
   server reflection, `--schema`, or the local buf module.
 - Add support for Edition 2024 syntax to `buf format`.
+- Fix `buf generate --clean` deleting files from nested plugin output directories.
 
 ## [v1.67.0] - 2026-04-01
 

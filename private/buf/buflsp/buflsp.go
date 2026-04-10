@@ -27,6 +27,7 @@ import (
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/bufbuild/protocompile/experimental/incremental"
@@ -49,6 +50,8 @@ func Serve(
 	wasmRuntime wasm.Runtime,
 	stream jsonrpc2.Stream,
 	queryExecutor *incremental.Executor,
+	moduleKeyProvider bufmodule.ModuleKeyProvider,
+	graphProvider bufmodule.GraphProvider,
 ) (jsonrpc2.Conn, error) {
 	logger := container.Logger()
 	logger = logger.With(slog.String("buf_version", bufVersion))
@@ -72,20 +75,26 @@ func Serve(
 			&connWrapper{Conn: conn, logger: logger},
 			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
-		container:     container,
-		logger:        logger,
-		bufVersion:    bufVersion,
-		controller:    controller,
-		wasmRuntime:   wasmRuntime,
-		wktBucket:     wktBucket,
-		queryExecutor: queryExecutor,
-		opener:        source.NewMap(nil),
-		irSession:     new(ir.Session),
-		connCtx:       connCtx,
-		connCancel:    connCancel,
+		container:         container,
+		logger:            logger,
+		bufVersion:        bufVersion,
+		controller:        controller,
+		wasmRuntime:       wasmRuntime,
+		wktBucket:         wktBucket,
+		queryExecutor:     queryExecutor,
+		opener:            source.NewMap(nil),
+		irSession:         new(ir.Session),
+		connCtx:           connCtx,
+		connCancel:        connCancel,
+		moduleKeyProvider: moduleKeyProvider,
+		graphProvider:     graphProvider,
 	}
 	lsp.fileManager = newFileManager(lsp)
 	lsp.workspaceManager = newWorkspaceManager(lsp)
+	lsp.bufYAMLManager = newBufYAMLManager(lsp)
+	lsp.bufGenYAMLManager = newBufGenYAMLManager()
+	lsp.bufPolicyYAMLManager = newBufPolicyYAMLManager()
+	lsp.bufLockManager = newBufLockManager()
 	off := protocol.TraceOff
 	lsp.traceValue.Store(&off)
 
@@ -113,17 +122,26 @@ type lsp struct {
 	connCtx    context.Context    // cancelled when the connection is done
 	connCancel context.CancelFunc // cancels connCtx
 
-	logger           *slog.Logger
-	bufVersion       string // buf version, set at server creation
-	controller       bufctl.Controller
-	wasmRuntime      wasm.Runtime
-	fileManager      *fileManager
-	workspaceManager *workspaceManager
-	queryExecutor    *incremental.Executor
-	opener           source.Map
-	irSession        *ir.Session
-	wktBucket        storage.ReadBucket
-	shutdown         bool
+	logger               *slog.Logger
+	bufVersion           string // buf version, set at server creation
+	controller           bufctl.Controller
+	wasmRuntime          wasm.Runtime
+	fileManager          *fileManager
+	workspaceManager     *workspaceManager
+	bufYAMLManager       *bufYAMLManager
+	bufGenYAMLManager    *bufGenYAMLManager
+	bufPolicyYAMLManager *bufPolicyYAMLManager
+	bufLockManager       *bufLockManager
+	queryExecutor        *incremental.Executor
+	opener               source.Map
+	irSession            *ir.Session
+	wktBucket            storage.ReadBucket
+	shutdown             bool
+
+	// moduleKeyProvider resolves module refs to their latest commits (BSR). Set via WithModuleKeyProvider.
+	moduleKeyProvider bufmodule.ModuleKeyProvider
+	// graphProvider resolves transitive dependencies for a set of module keys. Set via WithGraphProvider.
+	graphProvider bufmodule.GraphProvider
 
 	lock sync.Mutex
 

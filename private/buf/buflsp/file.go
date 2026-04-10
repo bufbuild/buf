@@ -57,6 +57,8 @@ type file struct {
 	// diagnostics or symbols an operating refers to.
 	version int32
 	hasText bool // Whether this file has ever had text read into it.
+	// The local path of the descriptor.proto file used for compilation. This is stored for diagnostics.
+	descriptorProtoLocalPath string
 
 	workspace  *workspace         // May be nil.
 	objectInfo storage.ObjectInfo // Info in the context of the workspace.
@@ -240,7 +242,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 	for path, file := range pathToFiles {
 		current := openerMap[path]
 		// If there is no entry for the current path or if the file content has changed, we
-		// update the opener and set a new query.
+		// update the opener and evict stale [queries.File] queries.
 		if current == nil || current.Text() != file.file.Text() {
 			openerMap[path] = file.file
 			if current != nil {
@@ -250,6 +252,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 		}
 		files = append(files, file)
 	}
+
 	// Remove paths that are no longer in the current workspace and evict stale query keys.
 	for path := range openerMap {
 		if _, ok := pathToFiles[path]; !ok {
@@ -276,21 +279,30 @@ func (f *file) RefreshIR(ctx context.Context) {
 		)
 		return
 	}
+
 	for i, file := range files {
 		file.ir = results[i].Value
+		if file.objectInfo.Path() == "google/protobuf/descriptor.proto" {
+			// Set local path for the descriptor.proto file used for diagnostics.
+			f.descriptorProtoLocalPath = file.objectInfo.LocalPath()
+		}
 		if f != file {
 			// Update symbols for imports.
 			file.IndexSymbols(ctx)
 		}
 	}
+
 	// Store the IR report for code actions
 	f.irReport = diagnosticReport
 
-	// Only hold on to diagnostics where the primary span is for this path.
+	// Only hold on to diagnostics where the primary span is for this file.
 	fileDiagnostics := xslices.Filter(diagnosticReport.Diagnostics, func(d report.Diagnostic) bool {
-		return d.Primary().Path() == f.objectInfo.Path()
+		// We avoid returning warnings from the compiler for now, since these may conflate with
+		// lint checks.
+		return d.Primary().Path() == f.objectInfo.LocalPath() && d.Level() < report.Warning
 	})
 	f.diagnostics = xslices.Map(fileDiagnostics, reportDiagnosticToProtocolDiagnostic)
+
 	f.lsp.logger.DebugContext(
 		ctx, "ir diagnostic(s)",
 		slog.String("uri", f.uri.Filename()),
@@ -338,8 +350,23 @@ func (f *file) queryFileKeys() []any {
 // This operation requires RefreshIR.
 func (f *file) IndexSymbols(ctx context.Context) {
 	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
-	// We cannot index symbols without the IR, so we keep the symbols as-is.
+
 	if f.ir == nil {
+		return
+	}
+
+	// The file has not completed lowering, so we cannot continue with symbol indexing here.
+	// To help the user better understand/diagnose this problem, we surface an additional
+	// diagnostic here.
+	if !f.ir.Lowered() {
+		f.diagnostics = append(f.diagnostics, protocol.Diagnostic{
+			Source:   serverName,
+			Severity: protocol.DiagnosticSeverityError,
+			Message: fmt.Sprintf(`The symbols for this file have not been fully resolved due to an invalid version of descriptor.proto located at: %q.
+This is likely due to a vendored descriptor.proto.`,
+				f.descriptorProtoLocalPath,
+			),
+		})
 		return
 	}
 

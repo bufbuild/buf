@@ -172,7 +172,8 @@ func (w *responseWriter) Close(ctx context.Context) error {
 	}
 	// Delete stale files and remove empty directories.
 	for outDirPath, retainPaths := range dirOutputPaths {
-		if err := w.deleteStaleFilesAndEmptyDirs(ctx, outDirPath, retainPaths); err != nil {
+		nestedOutDirs := nestedOutputDirs(outDirPath, dirOutputPaths)
+		if err := w.deleteStaleFilesAndEmptyDirs(ctx, outDirPath, retainPaths, nestedOutDirs); err != nil {
 			return err
 		}
 	}
@@ -385,10 +386,13 @@ func (w *responseWriter) copySkipUnchanged(
 
 // deleteStaleFilesAndEmptyDirs deletes files present in outDirPath that are
 // not in retainPaths, then removes any directories that are now empty.
+// Files under nestedOutDirs are skipped because they are managed by a
+// nested output directory's own clean pass.
 func (w *responseWriter) deleteStaleFilesAndEmptyDirs(
 	ctx context.Context,
 	outDirPath string,
 	retainPaths map[string]struct{},
+	nestedOutDirs map[string]struct{},
 ) error {
 	osReadWriteBucket, err := w.storageosProvider.NewReadWriteBucket(
 		outDirPath,
@@ -407,20 +411,45 @@ func (w *responseWriter) deleteStaleFilesAndEmptyDirs(
 	}
 	var deleteJobs []func(context.Context) error
 	for _, existingPath := range existingPaths {
-		if _, ok := retainPaths[existingPath]; !ok {
-			deleteJobs = append(deleteJobs, func(ctx context.Context) error {
-				w.logger.DebugContext(ctx, "deleting stale generated file", slog.String("path", existingPath))
-				if err := osReadWriteBucket.Delete(ctx, existingPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
-					return err
-				}
-				return nil
-			})
+		if _, ok := retainPaths[existingPath]; ok {
+			continue
 		}
+		if normalpath.MapHasEqualOrContainingPath(nestedOutDirs, existingPath, normalpath.Relative) {
+			continue
+		}
+		deleteJobs = append(deleteJobs, func(ctx context.Context) error {
+			w.logger.DebugContext(ctx, "deleting stale generated file", slog.String("path", existingPath))
+			if err := osReadWriteBucket.Delete(ctx, existingPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
+				return err
+			}
+			return nil
+		})
 	}
 	if err := thread.Parallelize(ctx, deleteJobs); err != nil {
 		return err
 	}
 	return removeEmptyDirs(outDirPath)
+}
+
+// nestedOutputDirs returns the set of relative directory paths for output
+// directories in dirOutputPaths that are nested under parentDir. Both
+// parentDir and the map keys are OS-native absolute paths; the returned
+// paths are normalized (forward slashes) for use with storage bucket paths.
+func nestedOutputDirs(parentDir string, dirOutputPaths map[string]map[string]struct{}) map[string]struct{} {
+	normalizedParent := normalpath.Normalize(parentDir)
+	nestedDirs := make(map[string]struct{})
+	for outDir := range dirOutputPaths {
+		normalizedOutDir := normalpath.Normalize(outDir)
+		if !normalpath.ContainsPath(normalizedParent, normalizedOutDir, normalpath.Absolute) {
+			continue
+		}
+		rel, err := normalpath.Rel(normalizedParent, normalizedOutDir)
+		if err != nil {
+			continue
+		}
+		nestedDirs[rel] = struct{}{}
+	}
+	return nestedDirs
 }
 
 // removeEmptyDirs recursively removes all empty directories under rootDir.
