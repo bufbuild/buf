@@ -440,6 +440,91 @@ func TestBufYAMLCheckUpdates_FileChange(t *testing.T) {
 	})
 }
 
+// TestBufYAMLDocumentLinks verifies that document links are returned for buf.yaml dep
+// entries. Links resolve to /docs/<ref> when the dep has an explicit ref, and to
+// the module root otherwise.
+func TestBufYAMLDocumentLinks(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		fixture   string
+		wantLinks []protocol.DocumentLink
+	}{
+		{
+			name:    "no_deps",
+			fixture: "testdata/buf_yaml/no_deps/buf.yaml",
+			// No deps, so no links.
+		},
+		{
+			name:    "invalid",
+			fixture: "testdata/buf_yaml/invalid/buf.yaml",
+			// Malformed YAML must not crash; returns no links.
+		},
+		{
+			// Deps without an explicit ref link to the module root.
+			name:    "with_deps",
+			fixture: "testdata/buf_yaml/with_deps/buf.yaml",
+			wantLinks: []protocol.DocumentLink{
+				{
+					// buf.build/bufbuild/protovalidate on line 2, cols 4–36.
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 2, Character: 4},
+						End:   protocol.Position{Line: 2, Character: 36},
+					},
+					Target: "https://buf.build/bufbuild/protovalidate",
+				},
+				{
+					// buf.build/googleapis/googleapis on line 3, cols 4–35.
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 3, Character: 4},
+						End:   protocol.Position{Line: 3, Character: 35},
+					},
+					Target: "https://buf.build/googleapis/googleapis",
+				},
+			},
+		},
+		{
+			// A dep with an explicit label ref links to /docs/<ref>.
+			name:    "deps_with_ref",
+			fixture: "testdata/buf_yaml/deps_with_ref/buf.yaml",
+			wantLinks: []protocol.DocumentLink{
+				{
+					// buf.build/bufbuild/protovalidate:v1.1.1 on line 2, cols 4–43.
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 2, Character: 4},
+						End:   protocol.Position{Line: 2, Character: 43},
+					},
+					Target: "https://buf.build/bufbuild/protovalidate/docs/v1.1.1",
+				},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			absPath, err := filepath.Abs(tc.fixture)
+			require.NoError(t, err)
+
+			clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil)
+			ctx := t.Context()
+
+			var links []protocol.DocumentLink
+			_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentLink, &protocol.DocumentLinkParams{
+				TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
+			}, &links)
+			require.NoError(t, err)
+			require.Len(t, links, len(tc.wantLinks))
+			for i, want := range tc.wantLinks {
+				assert.Equal(t, want.Range, links[i].Range, "link %d range", i)
+				assert.Equal(t, want.Target, links[i].Target, "link %d target", i)
+			}
+		})
+	}
+}
+
 // mustParseUUID parses a UUID string for use in test data, failing the test on error.
 func mustParseUUID(t *testing.T, s string) uuid.UUID {
 	t.Helper()
