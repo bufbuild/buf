@@ -95,7 +95,7 @@ deps:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			gotKeyLine, gotDeps, err := parseBufYAMLDeps([]byte(tt.content))
+			gotKeyLine, gotDeps, _, err := parseBufYAMLDeps([]byte(tt.content))
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantDepsKeyLine, gotKeyLine)
 			assert.Equal(t, tt.wantDeps, gotDeps)
