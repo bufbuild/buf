@@ -894,7 +894,7 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 		// each path component.
 		for element := range seq.Values(field.Elements()) {
 			key := field.KeyASTs().At(element.ValueNodeIndex())
-			components := slices.Collect(key.AsPath().Components)
+			components := slices.Collect(key.AsPath().Components())
 			// If there are no path components for an element, then we skip it, since there are
 			// no symbols to track.
 			if len(components) == 0 {

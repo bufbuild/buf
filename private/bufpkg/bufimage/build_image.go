@@ -165,6 +165,17 @@ func compileImage(
 	}
 	irFiles := results[0].Value
 
+	// Validate that all files have completed lowering. If not, then symbols have not been
+	// properly resolved and cannot generate a valid file descriptor set.
+	for _, irFile := range irFiles {
+		if !irFile.Lowered() {
+			return nil, fmt.Errorf(`The symbols for file %q have not been fully resolved due to an invalid version of descriptor.proto, located at %q. This is likely due to a vendored descriptor.proto.`,
+				moduleFileResolver.ExternalPath(irFile.Path()),
+				moduleFileResolver.ExternalPath("google/protobuf/descriptor.proto"),
+			)
+		}
+	}
+
 	bytes, err := fdp.DescriptorSetBytes(
 		irFiles,
 		// When compiling the [descriptorpb.FileDescriptorSet], we always include the source
