@@ -441,6 +441,13 @@ linters:
         text: "G115:"
       - linters:
           - gosec
+        # G115: uintptr->int conversion for passing a terminal file descriptor
+        # to term.IsTerminal, which requires int. Safe on all supported platforms;
+        # fd values fit in int.
+        path: private/buf/bufctl/controller.go
+        text: "G115:"
+      - linters:
+          - gosec
         # G602: false positive — the loop index i is bounded by the length of
         # both slices, which are verified equal before the loop.
         path: private/bufpkg/bufimage/build_image_test.go

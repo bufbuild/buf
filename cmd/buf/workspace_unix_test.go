@@ -31,24 +31,9 @@ func TestWorkspaceSymlinkFail(t *testing.T) {
 		"symlink",
 		"v2/symlink",
 	} {
-		symlinkImportError := fmt.Sprintf(`error: imported file does not exist
---> %[1]s:5:1
-|
-5 | import "c.proto";
-| ^^^^^^^^^^^^^^^^^ imported here
-
-error: cannot find %[2]s in this scope
---> %[1]s:8:5
-|
-8 |     c.C c = 1;
-|     ^^^ not found in this scope
-|
-= help: the full name of this scope is %[3]s
-
-encountered 2 errors`,
+		symlinkImportError := fmt.Sprintf(
+			"%[1]s:5:1:imported file does not exist\n%[1]s:8:5:cannot find `c.C` in this scope",
 			filepath.FromSlash("testdata/workspace/fail/"+dirPath+"/b/b.proto"),
-			"`c.C`",
-			"`b.B`",
 		)
 		testRunStdoutStderrNoWarn(
 			t,

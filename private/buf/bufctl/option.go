@@ -42,6 +42,14 @@ func WithFileAnnotationsToStdout() ControllerOption {
 	}
 }
 
+// WithColorizedFileAnnotationSetDiagnosticReport returns a new ControllerOptions that sets
+// whether or not to render a colorized diagnostic report for the FileAnnotationSet.
+func WithColorizedFileAnnotationSetDiagnosticReport(colorizedFileAnnotationSetDiagnosticReport bool) ControllerOption {
+	return func(controller *controller) {
+		controller.colorizedFileAnnotationSetDiagnosticReport = colorizedFileAnnotationSetDiagnosticReport
+	}
+}
+
 // WithCopyToInMemory returns a new ControllerOption that copies to memory.
 func WithCopyToInMemory() ControllerOption {
 	return func(controller *controller) {

@@ -232,8 +232,36 @@ func NewFileAnnotationSet(diagnosticReport *report.Report, fileAnnotations ...Fi
 	return newFileAnnotationSet(diagnosticReport, fileAnnotations)
 }
 
+// PrintFileAnnotationSetOption is an option for printing the FileAnnotationSet.
+type PrintFileAnnotationSetOption func(*printFileAnnotationSetOptions)
+
+// WithPrintDiagnosticReport returns a new PrintFileAnnotationSetOption that sets whether
+// or not to print the diagnostic report.
+//
+// The diagnostic report is only use for text outputs.
+func WithPrintDiagnosticReport(printDiagnosticReport bool) PrintFileAnnotationSetOption {
+	return func(options *printFileAnnotationSetOptions) {
+		options.printDiagnosticReport = printDiagnosticReport
+	}
+}
+
+// WithRenderColorizedDiagnosticReport returns a new PrintFileAnnotationSetOption that sets
+// whether or not to render a colorized diagnostic report.
+//
+// The diagnostic report is only use for text outputs.
+func WithRenderColorizedDiagnosticReport(colorizedDiagnosticReport bool) PrintFileAnnotationSetOption {
+	return func(options *printFileAnnotationSetOptions) {
+		options.colorizedDiagnosticReport = colorizedDiagnosticReport
+	}
+}
+
 // PrintFileAnnotationSet prints the file annotations separated by newlines.
-func PrintFileAnnotationSet(writer io.Writer, fileAnnotationSet FileAnnotationSet, formatString string) error {
+func PrintFileAnnotationSet(writer io.Writer, fileAnnotationSet FileAnnotationSet, formatString string, options ...PrintFileAnnotationSetOption) error {
+	opts := &printFileAnnotationSetOptions{}
+	for _, option := range options {
+		option(opts)
+	}
+
 	format, err := ParseFormat(formatString)
 	if err != nil {
 		return err
@@ -241,12 +269,14 @@ func PrintFileAnnotationSet(writer io.Writer, fileAnnotationSet FileAnnotationSe
 
 	switch format {
 	case FormatText:
-		if diagnosticReport := fileAnnotationSet.diagnosticReport(); diagnosticReport != nil {
+		if diagnosticReport := fileAnnotationSet.diagnosticReport(); diagnosticReport != nil && opts.printDiagnosticReport {
 			// TODO: There is a follow-up effort to organize the way compiler warnings are
 			// handled vs. lint/breaking change rules. For now, only render the errors and
 			// suppress compiler warnings.
 			diagnosticReport.Options.SuppressWarnings = true
-			renderer := report.Renderer{}
+			renderer := report.Renderer{
+				Colorize: opts.colorizedDiagnosticReport,
+			}
 			_, _, err := renderer.Render(diagnosticReport, writer)
 			return err
 		}
@@ -264,4 +294,9 @@ func PrintFileAnnotationSet(writer io.Writer, fileAnnotationSet FileAnnotationSe
 	default:
 		return fmt.Errorf("unknown FileAnnotation Format: %v", format)
 	}
+}
+
+type printFileAnnotationSetOptions struct {
+	printDiagnosticReport     bool
+	colorizedDiagnosticReport bool
 }

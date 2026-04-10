@@ -125,6 +125,8 @@ func NewAppextContainerForPluginEnv(
 	return appext.NewContainer(
 		nameContainer,
 		logger,
+		logLevel,
+		logFormat,
 	), nil
 }
 

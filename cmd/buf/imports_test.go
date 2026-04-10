@@ -150,13 +150,7 @@ func TestInvalidNonexistentImport(t *testing.T) {
 	testRunStderrWithCache(
 		t, nil, bufctl.ExitCodeFileAnnotation,
 		fmt.Sprintf(
-			`error: imported file does not exist
---> %s:5:1
-|
-5 | import "nonexistent.proto";
-| ^^^^^^^^^^^^^^^^^^^^^^^^^^^ imported here
-
-encountered 1 error`,
+			"%[1]s:5:1:imported file does not exist",
 			filepath.FromSlash("testdata/imports/failure/people/people/v1/people1.proto"),
 		),
 		"build",
@@ -169,21 +163,7 @@ func TestInvalidNonexistentImportFromDirectDep(t *testing.T) {
 	testRunStderrWithCache(
 		t, nil, bufctl.ExitCodeFileAnnotation,
 		fmt.Sprintf(
-			`error: imported file does not exist
---> %[1]s:6:1
-|
-6 | import "people/v1/people_nonexistent.proto"; // but nonexistent file in explicit direct import
-| ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ imported here
-
-error: cannot find `+"`people.v1.Person2`"+` in this scope
---> %[1]s:10:3
-|
-10 |   people.v1.Person2 person2 = 2;
-|   ^^^^^^^^^^^^^^^^^ not found in this scope
-|
-= help: the full name of this scope is `+"`students.v1.Student`"+`
-
-encountered 2 errors`,
+			"%[1]s:6:1:imported file does not exist\n%[1]s:10:3:cannot find `people.v1.Person2` in this scope",
 			filepath.FromSlash("testdata/imports/failure/students/students/v1/students.proto"),
 		),
 		"build",

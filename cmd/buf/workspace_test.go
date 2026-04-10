@@ -141,24 +141,9 @@ func TestWorkspaceDir(t *testing.T) {
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 		)
-		dirImportError := fmt.Sprintf(`error: imported file does not exist
---> %[1]s:5:1
-|
-5 | import "request.proto";
-| ^^^^^^^^^^^^^^^^^^^^^^^ imported here
-
-error: cannot find %[2]s in this scope
---> %[1]s:8:5
-|
-8 |     request.Request req = 1;
-|     ^^^^^^^^^^^^^^^ not found in this scope
-|
-= help: the full name of this scope is %[3]s
-
-encountered 2 errors`,
+		dirImportError := fmt.Sprintf(
+			"%[1]s:5:1:imported file does not exist\n%[1]s:8:5:cannot find `request.Request` in this scope",
 			filepath.FromSlash("testdata/workspace/success/"+baseDirPath+"/proto/rpc.proto"),
-			"`request.Request`",
-			"`example.RPC`",
 		)
 		testRunStdoutStderrNoWarn(
 			t,
@@ -385,24 +370,9 @@ func TestWorkspaceDetached(t *testing.T) {
 		// we'd consider this a bug: you specified the proto directory, and no controlling workspace
 		// was discovered, therefore you build as if proto was the input directory, which results in
 		// request.proto not existing as an import.
-		detachedImportError := fmt.Sprintf(`error: imported file does not exist
---> %[1]s:5:1
-|
-5 | import "request.proto";
-| ^^^^^^^^^^^^^^^^^^^^^^^ imported here
-
-error: cannot find %[2]s in this scope
---> %[1]s:8:5
-|
-8 |     request.Request req = 1;
-|     ^^^^^^^^^^^^^^^ not found in this scope
-|
-= help: the full name of this scope is %[3]s
-
-encountered 2 errors`,
+		detachedImportError := fmt.Sprintf(
+			"%[1]s:5:1:imported file does not exist\n%[1]s:8:5:cannot find `request.Request` in this scope",
 			filepath.FromSlash("testdata/workspace/success/"+dirPath+"/proto/rpc.proto"),
-			"`request.Request`",
-			"`example.RPC`",
 		)
 		testRunStdoutStderrNoWarn(
 			t,

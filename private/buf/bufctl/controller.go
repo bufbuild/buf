@@ -22,6 +22,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"os"
 	"slices"
 	"sort"
 
@@ -53,6 +54,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/wasm"
+	"golang.org/x/term"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -213,10 +215,11 @@ type controller struct {
 	policyDataProvider bufpolicy.PolicyDataProvider
 	wktStore           bufwktstore.Store
 
-	disableSymlinks           bool
-	fileAnnotationErrorFormat string
-	fileAnnotationsToStdout   bool
-	copyToInMemory            bool
+	disableSymlinks                            bool
+	fileAnnotationErrorFormat                  string
+	fileAnnotationsToStdout                    bool
+	colorizedFileAnnotationSetDiagnosticReport bool
+	copyToInMemory                             bool
 
 	storageosProvider           storageos.Provider
 	buffetchRefParser           buffetch.RefParser
@@ -1365,15 +1368,26 @@ func (c *controller) handleFileAnnotationSetRetError(retErrAddr *error) {
 		return
 	}
 	var fileAnnotationSet bufanalysis.FileAnnotationSet
+	var printDiagnosticReport bool
 	if errors.As(*retErrAddr, &fileAnnotationSet) {
 		writer := c.container.Stderr()
 		if c.fileAnnotationsToStdout {
 			writer = c.container.Stdout()
+		} else {
+			// When writing to stderr, check if the input is TTY, if so, allow printing the
+			// diagnostic report.
+			file, ok := c.container.Stdin().(*os.File)
+			if ok {
+				printDiagnosticReport = term.IsTerminal(int(file.Fd()))
+			}
+
 		}
 		if err := bufanalysis.PrintFileAnnotationSet(
 			writer,
 			fileAnnotationSet,
 			c.fileAnnotationErrorFormat,
+			bufanalysis.WithPrintDiagnosticReport(printDiagnosticReport),
+			bufanalysis.WithRenderColorizedDiagnosticReport(c.colorizedFileAnnotationSetDiagnosticReport),
 		); err != nil {
 			*retErrAddr = err
 			return
