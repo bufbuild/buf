@@ -17,6 +17,8 @@
 package buflsp
 
 import (
+	"strings"
+
 	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/report/rtags"
 	"github.com/bufbuild/protocompile/experimental/source/length"
@@ -41,10 +43,16 @@ var reportLevelToDiagnosticSeverity = map[report.Level]protocol.DiagnosticSeveri
 func reportDiagnosticToProtocolDiagnostic(
 	reportDiagnostic report.Diagnostic,
 ) protocol.Diagnostic {
+	message := reportDiagnostic.Message()
+	if reportDiagnostic.Level() == report.ICE {
+		// Include notes for ICE
+		notes := append([]string{message}, reportDiagnostic.Notes()...)
+		message = strings.Join(notes, " ")
+	}
 	diagnostic := protocol.Diagnostic{
 		Source:   serverName,
 		Severity: reportLevelToDiagnosticSeverity[reportDiagnostic.Level()],
-		Message:  reportDiagnostic.Message(),
+		Message:  message,
 	}
 	if primary := reportDiagnostic.Primary(); !primary.IsZero() {
 		startLocation := primary.Location(primary.Start, positionalEncoding)

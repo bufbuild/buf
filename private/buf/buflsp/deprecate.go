@@ -42,8 +42,8 @@ func (s *server) getDeprecateCodeAction(
 		slog.Uint64("line", uint64(params.Range.Start.Line)),
 		slog.Uint64("char", uint64(params.Range.Start.Character)),
 	)
-	if file.workspace == nil || file.ir == nil {
-		s.logger.DebugContext(ctx, "deprecate: no workspace or IR")
+	if file.workspace == nil || file.ir == nil || !file.ir.Lowered() {
+		s.logger.DebugContext(ctx, "deprecate: no workspace or valid IR")
 		return nil
 	}
 
@@ -62,7 +62,7 @@ func (s *server) getDeprecateCodeAction(
 	checker := newFullNameMatcher(fqnPrefix)
 	edits := make(map[protocol.DocumentURI][]protocol.TextEdit)
 	for _, wsFile := range file.workspace.PathToFile() {
-		if wsFile.ir == nil {
+		if wsFile.ir == nil || !wsFile.ir.Lowered() {
 			continue
 		}
 		fileEdits := generateDeprecationEdits(wsFile, checker)
@@ -191,7 +191,7 @@ func generateDeprecationEdits(file *file, checker *fullNameMatcher) []protocol.T
 
 // getPackageFQN extracts the package FQN components from a file.
 func getPackageFQN(file *file) ir.FullName {
-	if file.ir == nil {
+	if file.ir == nil || !file.ir.Lowered() {
 		return ""
 	}
 	return file.ir.Package()
