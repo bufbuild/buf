@@ -158,7 +158,6 @@ func newRootCommand(name string) *appcmd.Command {
 			push.NewCommand("push", builder),
 			convert.NewCommand("convert", builder),
 			curl.NewCommand("curl", builder),
-			scaffold.NewCommand("scaffold", builder),
 			{
 				Use:   "dep",
 				Short: "Work with dependencies",
@@ -409,6 +408,7 @@ func newRootCommand(name string) *appcmd.Command {
 				SubCommands: []*appcmd.Command{
 					lspserve.NewCommand("lsp", builder, deprecatedMessage("buf lsp serve", "buf beta lsp"), true, true),
 					price.NewCommand("price", builder),
+					scaffold.NewCommand("scaffold", builder),
 					bufpluginv1beta1.NewCommand("buf-plugin-v1beta1", builder),
 					bufpluginv1.NewCommand("buf-plugin-v1", builder),
 					bufpluginv2.NewCommand("buf-plugin-v2", builder),
