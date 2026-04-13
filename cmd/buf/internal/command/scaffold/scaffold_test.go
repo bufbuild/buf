@@ -58,6 +58,11 @@ func TestScaffoldExistingBufYAML(t *testing.T) {
 	testScaffold(t, "testdata/existing_buf_yaml", 1, "buf.yaml already exists")
 }
 
+func TestScaffoldMismatchedPackage(t *testing.T) {
+	t.Parallel()
+	testScaffold(t, "testdata/mismatched_package", 0, "")
+}
+
 func TestScaffoldNotGitRoot(t *testing.T) {
 	t.Parallel()
 	testScaffoldWithOptions(t, "testdata/not_git_root", 1, "is not the root of a git repository", false)

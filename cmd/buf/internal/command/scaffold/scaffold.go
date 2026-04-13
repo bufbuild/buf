@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path"
@@ -30,8 +31,11 @@ import (
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/protocompile/experimental/parser"
-	"github.com/bufbuild/protocompile/experimental/report"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/protocompile/experimental/ast"
+	"github.com/bufbuild/protocompile/experimental/incremental"
+	"github.com/bufbuild/protocompile/experimental/incremental/queries"
 	"github.com/bufbuild/protocompile/experimental/source"
 )
 
@@ -69,22 +73,23 @@ func run(
 	if _, err := os.Stat(filepath.Join(dirPath, ".git")); err != nil {
 		return fmt.Errorf("%s is not the root of a git repository", dirPath)
 	}
-	exists, err := bufcli.BufYAMLFileExistsForDirPath(ctx, dirPath)
+	bucket, err := storageos.NewProvider(storageos.ProviderWithSymlinks()).NewReadWriteBucket(dirPath)
 	if err != nil {
 		return err
 	}
-	if exists {
+	if _, err := bufconfig.GetBufYAMLFileVersionForPrefix(ctx, bucket, "."); err == nil {
 		return fmt.Errorf("buf.yaml already exists in %s, will not overwrite", dirPath)
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		return err
 	}
-	fsys := os.DirFS(dirPath)
-	fileInfos, err := walkAndParseProtoFiles(fsys)
+	astFiles, err := walkAndParseProtoFiles(ctx, bucket)
 	if err != nil {
 		return err
 	}
-	if len(fileInfos) == 0 {
+	if len(astFiles) == 0 {
 		return errors.New("no .proto files found")
 	}
-	moduleRoots := inferModuleRoots(fileInfos)
+	moduleRoots := inferModuleRoots(astFiles)
 	if len(moduleRoots) == 0 {
 		return errors.New("could not determine module roots from .proto files")
 	}
@@ -103,7 +108,22 @@ func run(
 	if err != nil {
 		return err
 	}
-	return bufcli.PutBufYAMLFileForDirPath(ctx, dirPath, bufYAMLFile)
+	controller, err := bufcli.NewController(container)
+	if err != nil {
+		return err
+	}
+	// Write buf.yaml to disk, then validate it compiles. If validation
+	// fails, remove the file so we don't leave a broken config behind.
+	if err := bufconfig.PutBufYAMLFileForPrefix(ctx, bucket, ".", bufYAMLFile); err != nil {
+		return err
+	}
+	if _, err := controller.GetImage(ctx, dirPath); err != nil {
+		return errors.Join(
+			fmt.Errorf("generated buf.yaml does not compile: %w", err),
+			bucket.Delete(ctx, bufconfig.DefaultBufYAMLFileName),
+		)
+	}
+	return nil
 }
 
 func buildModuleConfigs(moduleRoots []string) ([]bufconfig.ModuleConfig, error) {
@@ -125,81 +145,101 @@ func buildModuleConfigs(moduleRoots []string) ([]bufconfig.ModuleConfig, error) 
 	return moduleConfigs, nil
 }
 
-type protoFileInfo struct {
-	filePath    string
-	packageName string
-}
-
-// walkAndParseProtoFiles walks the filesystem for .proto files and parses each one.
-// Files that fail to parse or have no package declaration are silently skipped.
-func walkAndParseProtoFiles(fsys fs.FS) ([]protoFileInfo, error) {
-	var fileInfos []protoFileInfo
-	err := fs.WalkDir(fsys, ".", func(filePath string, entry fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if entry.IsDir() || path.Ext(filePath) != ".proto" {
+// walkAndParseProtoFiles walks the bucket for .proto files and parses them in parallel.
+// Files that fail to parse are silently skipped.
+func walkAndParseProtoFiles(ctx context.Context, bucket storage.ReadBucket) ([]*ast.File, error) {
+	sourceMap := source.NewMap(nil)
+	var paths []string
+	if err := storage.WalkReadObjects(
+		ctx,
+		storage.FilterReadBucket(bucket, storage.MatchPathExt(".proto")),
+		"",
+		func(readObject storage.ReadObject) error {
+			data, err := io.ReadAll(readObject)
+			if err != nil {
+				return err
+			}
+			filePath := readObject.Path()
+			sourceMap.Add(filePath, string(data))
+			paths = append(paths, filePath)
 			return nil
-		}
-		data, err := fs.ReadFile(fsys, filePath)
-		if err != nil {
-			return err
-		}
-		sourceFile := source.NewFile(filePath, string(data))
-		astFile, ok := parser.Parse(filePath, sourceFile, new(report.Report))
-		if !ok || astFile == nil {
-			return nil
-		}
-		pkg := astFile.Package()
-		if pkg.IsZero() {
-			return nil
-		}
-		packagePath := pkg.Path()
-		if packagePath.IsZero() {
-			return nil
-		}
-		fileInfos = append(fileInfos, protoFileInfo{
-			filePath:    astFile.Path(),
-			packageName: packagePath.Canonicalized(),
+		},
+	); err != nil {
+		return nil, err
+	}
+	if len(paths) == 0 {
+		return nil, nil
+	}
+	astQueries := make([]incremental.Query[*ast.File], 0, len(paths))
+	for _, filePath := range paths {
+		astQueries = append(astQueries, queries.AST{
+			Opener: sourceMap,
+			Path:   filePath,
 		})
-		return nil
-	})
+	}
+	results, _, err := incremental.Run(ctx, incremental.New(), astQueries...)
 	if err != nil {
 		return nil, err
 	}
-	return fileInfos, nil
+	var astFiles []*ast.File
+	for _, result := range results {
+		if result.Fatal != nil || result.Value == nil {
+			continue
+		}
+		astFiles = append(astFiles, result.Value)
+	}
+	return astFiles, nil
 }
 
-// inferModuleRoots determines module root directories by deriving each file's
-// expected import path from its package declaration, then comparing against its
-// file path. The difference is the module root.
+// inferModuleRoots determines module root directories from parsed AST files.
+//
+// It first collects all import paths across files, then for each file, tries to
+// match its disk path against the import set using tail-to-front suffix matching.
+// Files that are never imported fall back to package-name-based inference.
 //
 // Returns sorted, unique module root paths. Returns nil if no roots can be inferred.
-func inferModuleRoots(files []protoFileInfo) []string {
-	rootMap := make(map[string]struct{})
+func inferModuleRoots(files []*ast.File) []string {
+	// Collect all import paths across all files.
+	importPaths := make(map[string]struct{})
 	for _, file := range files {
-		packageDir := strings.ReplaceAll(file.packageName, ".", "/")
-		fileName := path.Base(file.filePath)
-		expectedImportPath := packageDir + "/" + fileName
-		prefix := moduleRootPrefix(file.filePath, expectedImportPath)
-		if prefix != "" {
-			rootMap[prefix] = struct{}{}
+		for imp := range file.Imports() {
+			importPath := imp.ImportPath()
+			if importPath.IsZero() {
+				continue
+			}
+			literal := importPath.AsLiteral()
+			if literal.Token.IsZero() {
+				continue
+			}
+			importPaths[literal.AsString().Text()] = struct{}{}
 		}
 	}
-	if len(rootMap) == 0 {
+	// For each file, find its module root by matching against importPaths,
+	// falling back to the package declaration.
+	roots := make(map[string]struct{})
+	for _, file := range files {
+		if root, ok := inferRootFromImports(file.Path(), importPaths); ok {
+			roots[root] = struct{}{}
+			continue
+		}
+		if root, ok := inferRootFromPackage(file); ok {
+			roots[root] = struct{}{}
+		}
+	}
+	if len(roots) == 0 {
 		return nil
 	}
 	// "." means the entire repo is a single module, no other root can coexist.
-	if _, ok := rootMap["."]; ok {
+	if _, ok := roots["."]; ok {
 		return []string{"."}
 	}
-	roots := xslices.MapKeysToSortedSlice(rootMap)
+	sortedRoots := xslices.MapKeysToSortedSlice(roots)
 	// Remove roots that are children of other roots. A module root
 	// like "proto" already includes all files under "proto/internal",
 	// so "proto/internal" as a separate root would be invalid.
 	// After sorting, a parent always appears before its children.
 	var filtered []string
-	for _, root := range roots {
+	for _, root := range sortedRoots {
 		if !slices.ContainsFunc(filtered, func(parent string) bool {
 			return strings.HasPrefix(root, parent+"/")
 		}) {
@@ -209,15 +249,47 @@ func inferModuleRoots(files []protoFileInfo) []string {
 	return filtered
 }
 
-// moduleRootPrefix returns the prefix of filePath before importPath,
-// or "" if filePath does not end with importPath.
-func moduleRootPrefix(filePath, importPath string) string {
-	if filePath == importPath {
-		return "."
+// inferRootFromImports matches a file's path against known import paths by
+// checking progressively shorter suffixes. For "proto/foo/v1/bar.proto", it
+// checks "proto/foo/v1/bar.proto", then "foo/v1/bar.proto", then "v1/bar.proto",
+// then "bar.proto". The first match is the import path, and the prefix is the root.
+func inferRootFromImports(filePath string, importPaths map[string]struct{}) (string, bool) {
+	if _, ok := importPaths[filePath]; ok {
+		return ".", true
 	}
-	prefix, found := strings.CutSuffix(filePath, "/"+importPath)
+	suffix := filePath
+	for {
+		_, after, found := strings.Cut(suffix, "/")
+		if !found {
+			return "", false
+		}
+		suffix = after
+		if _, ok := importPaths[suffix]; ok {
+			return strings.TrimSuffix(filePath, "/"+suffix), true
+		}
+	}
+}
+
+// inferRootFromPackage infers a module root from the file's package declaration.
+// For a file at "proto/foo/v1/bar.proto" with "package foo.v1", the expected
+// import path is "foo/v1/bar.proto", and the root is "proto".
+func inferRootFromPackage(file *ast.File) (string, bool) {
+	pkg := file.Package()
+	if pkg.IsZero() {
+		return "", false
+	}
+	packagePath := pkg.Path()
+	if packagePath.IsZero() {
+		return "", false
+	}
+	packageDir := strings.ReplaceAll(packagePath.Canonicalized(), ".", "/")
+	expectedImportPath := packageDir + "/" + path.Base(file.Path())
+	if file.Path() == expectedImportPath {
+		return ".", true
+	}
+	prefix, found := strings.CutSuffix(file.Path(), "/"+expectedImportPath)
 	if found {
-		return prefix
+		return prefix, true
 	}
-	return ""
+	return "", false
 }
