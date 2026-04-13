@@ -117,6 +117,53 @@ func TestSemanticTokensKeywords(t *testing.T) {
 			},
 		},
 		{
+			name: "edition2024",
+			file: "testdata/semantic_tokens/edition2024.proto",
+			expectedTokens: []expectedToken{
+				// edition declaration
+				{0, 0, 7, semanticTypeKeyword, "'edition' keyword"},
+				{0, 10, 6, semanticTypeString, "'\"2024\"' string"},
+				// package declaration
+				{2, 0, 7, semanticTypeKeyword, "'package' keyword"},
+				{2, 8, 7, semanticTypeNamespace, "'test.v1' namespace"},
+				// export message
+				{4, 0, 6, semanticTypeModifier, "'export' modifier"},
+				{4, 7, 7, semanticTypeKeyword, "'message' keyword"},
+				{4, 15, 7, semanticTypeStruct, "'Product' struct"},
+				// string fields in Product
+				{5, 2, 6, semanticTypeType, "'string' type"},
+				{5, 9, 2, semanticTypeProperty, "'id' property"},
+				{5, 14, 1, semanticTypeNumber, "'1' field tag"},
+				{6, 2, 6, semanticTypeType, "'string' type"},
+				{6, 9, 4, semanticTypeProperty, "'name' property"},
+				{6, 16, 1, semanticTypeNumber, "'2' field tag"},
+				// local message
+				{9, 0, 5, semanticTypeModifier, "'local' modifier"},
+				{9, 6, 7, semanticTypeKeyword, "'message' keyword"},
+				{9, 14, 15, semanticTypeStruct, "'InternalProduct' struct"},
+				// export enum
+				{13, 0, 6, semanticTypeModifier, "'export' modifier"},
+				{13, 7, 4, semanticTypeKeyword, "'enum' keyword"},
+				{13, 12, 6, semanticTypeEnum, "'Status' enum"},
+				{14, 2, 18, semanticTypeEnumMember, "'STATUS_UNSPECIFIED' enum member"},
+				{14, 23, 1, semanticTypeNumber, "'0' enum value"},
+				// local enum
+				{17, 0, 5, semanticTypeModifier, "'local' modifier"},
+				{17, 6, 4, semanticTypeKeyword, "'enum' keyword"},
+				{17, 11, 14, semanticTypeEnum, "'InternalStatus' enum"},
+				{18, 2, 27, semanticTypeEnumMember, "'INTERNAL_STATUS_UNSPECIFIED' enum member"},
+				{18, 32, 1, semanticTypeNumber, "'0' enum value"},
+				// export service
+				{21, 0, 6, semanticTypeModifier, "'export' modifier"},
+				{21, 7, 7, semanticTypeKeyword, "'service' keyword"},
+				{21, 15, 14, semanticTypeInterface, "'ProductService' interface"},
+				// local service
+				{23, 0, 5, semanticTypeModifier, "'local' modifier"},
+				{23, 6, 7, semanticTypeKeyword, "'service' keyword"},
+				{23, 14, 15, semanticTypeInterface, "'InternalService' interface"},
+			},
+		},
+		{
 			name: "comprehensive",
 			file: "testdata/semantic_tokens/comprehensive.proto",
 			expectedTokens: []expectedToken{

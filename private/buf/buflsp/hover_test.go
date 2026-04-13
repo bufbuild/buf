@@ -181,6 +181,27 @@ func TestHover(t *testing.T) {
 			character:     8, // On "TestTopLevel"
 			expectNoHover: true,
 		},
+		{
+			name:             "hover_on_export_keyword",
+			protoFile:        "testdata/hover/edition2024.proto",
+			line:             5, // Line with "export message ExportedMessage {"
+			character:        1, // On "export"
+			expectedContains: "symbol-visibility",
+		},
+		{
+			name:             "hover_on_local_keyword",
+			protoFile:        "testdata/hover/edition2024.proto",
+			line:             10, // Line with "local message LocalMessage {"
+			character:        1,  // On "local"
+			expectedContains: "symbol-visibility",
+		},
+		{
+			name:             "hover_on_exported_message_name",
+			protoFile:        "testdata/hover/edition2024.proto",
+			line:             5,  // Line with "export message ExportedMessage {"
+			character:        16, // On "ExportedMessage"
+			expectedContains: "ExportedMessage is visible outside this file",
+		},
 	}
 
 	for _, tt := range tests {

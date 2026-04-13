@@ -91,13 +91,19 @@ type builtin struct {
 
 type tag struct{}
 
-func (*referenceable) isSymbolKind() {}
-func (*reference) isSymbolKind()     {}
-func (*option) isSymbolKind()        {}
-func (*static) isSymbolKind()        {}
-func (*imported) isSymbolKind()      {}
-func (*builtin) isSymbolKind()       {}
-func (*tag) isSymbolKind()           {}
+type keywordBuiltin struct {
+	name   string
+	anchor string
+}
+
+func (*referenceable) isSymbolKind()  {}
+func (*reference) isSymbolKind()      {}
+func (*option) isSymbolKind()         {}
+func (*static) isSymbolKind()         {}
+func (*imported) isSymbolKind()       {}
+func (*builtin) isSymbolKind()        {}
+func (*tag) isSymbolKind()            {}
+func (*keywordBuiltin) isSymbolKind() {}
 
 // Range constructs an LSP protocol code range for this symbol.
 func (s *symbol) Range() protocol.Range {
@@ -302,6 +308,22 @@ func (s *symbol) FormatDocs() string {
 					"`%s` is a Protobuf builtin. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#%s)",
 					builtin.predeclared,
 					anchor,
+				),
+			)
+			return strings.Join(comments, "\n")
+		}
+		return ""
+	case *keywordBuiltin:
+		kwBuiltin, _ := s.kind.(*keywordBuiltin)
+		comments, ok := builtinDocs[kwBuiltin.name]
+		if ok {
+			comments = append(
+				comments,
+				"",
+				fmt.Sprintf(
+					"`%s` is a Protobuf keyword. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#%s)",
+					kwBuiltin.name,
+					kwBuiltin.anchor,
 				),
 			)
 			return strings.Join(comments, "\n")

@@ -1337,8 +1337,8 @@ func completeURLFromSchema(ctx context.Context, schemas []string, baseURL, rawPa
 	container := appext.NewContainer(
 		nameContainer,
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
-		appext.LogLevelError, // Doesn't matter, logs are discarded
-		appext.LogFormatText, // Doesn't matter, logs are discarded
+		appext.LogLevelError, // Logs are discarded
+		appext.LogFormatText, // Logs are discarded
 	)
 	controller, err := bufcli.NewController(container)
 	if err != nil {

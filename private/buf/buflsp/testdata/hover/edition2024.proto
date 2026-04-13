@@ -1,0 +1,25 @@
+edition = "2024";
+
+package example.v1;
+
+// ExportedMessage is visible outside this file.
+export message ExportedMessage {
+  string id = 1;
+}
+
+// LocalMessage is only visible within this file.
+local message LocalMessage {
+  string id = 1;
+}
+
+export enum ExportedStatus {
+  EXPORTED_STATUS_UNSPECIFIED = 0;
+}
+
+local enum LocalStatus {
+  LOCAL_STATUS_UNSPECIFIED = 0;
+}
+
+export service ExportedService {}
+
+local service LocalService {}

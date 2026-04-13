@@ -514,3 +514,94 @@ func TestCompletionOptions(t *testing.T) {
 		})
 	}
 }
+
+func TestCompletionEdition2024(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+
+	testProtoPath, err := filepath.Abs("testdata/completion/edition2024_test.proto")
+	require.NoError(t, err)
+
+	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
+
+	tests := []struct {
+		name                string
+		line                uint32
+		character           uint32
+		expectedContains    []string
+		expectedNotContains []string
+	}{
+		{
+			// At top level, "ex" prefix matches "export": visibility modifier is offered.
+			name:             "toplevel_export_keyword",
+			line:             5, // "ex"
+			character:        2, // After the "ex"
+			expectedContains: []string{"export"},
+		},
+		{
+			// At top level, "lo" prefix matches "local": visibility modifier is offered.
+			name:             "toplevel_local_keyword",
+			line:             8, // "lo"
+			character:        2, // After the "lo"
+			expectedContains: []string{"local"},
+		},
+		{
+			// After "export " at top level, "mess" prefix matches "message".
+			// Only type declaration keywords (message, enum, service) should be offered.
+			name:             "after_export_toplevel",
+			line:             11, // "export mess"
+			character:        11, // After the "mess" in "export mess"
+			expectedContains: []string{"message"},
+			// Non-type-declaration top-level keywords should not be offered.
+			expectedNotContains: []string{"edition", "import", "package", "option", "syntax"},
+		},
+		{
+			// Inside a message, "lo" prefix matches "local": visibility modifier is offered.
+			name:             "message_local_keyword",
+			line:             15, // "  lo" (inside ExportedMessage)
+			character:        4,  // After the "lo"
+			expectedContains: []string{"local"},
+		},
+		{
+			// After "local " inside a message, "mess" prefix matches "message".
+			// Only nested type declaration keywords (message, enum) should be offered.
+			name:             "after_local_in_message",
+			line:             18, // "  local mess" (inside ExportedMessage)
+			character:        12, // After the "mess" in "  local mess"
+			expectedContains: []string{"message"},
+			// Services cannot be nested; other keywords should not appear.
+			expectedNotContains: []string{"service", "option", "oneof", "repeated", "optional"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			var completionList *protocol.CompletionList
+			_, completionErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: testURI,
+					},
+					Position: protocol.Position{
+						Line:      tt.line,
+						Character: tt.character,
+					},
+				},
+			}, &completionList)
+			require.NoError(t, completionErr)
+			require.NotNil(t, completionList, "expected completion list to be non-nil")
+			labels := make([]string, 0, len(completionList.Items))
+			for _, item := range completionList.Items {
+				labels = append(labels, item.Label)
+			}
+			for _, expected := range tt.expectedContains {
+				assert.Contains(t, labels, expected, "expected completion list to contain %q", expected)
+			}
+			for _, notExpected := range tt.expectedNotContains {
+				assert.NotContains(t, labels, notExpected, "expected completion list to not contain %q", notExpected)
+			}
+		})
+	}
+}

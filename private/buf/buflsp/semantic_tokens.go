@@ -219,12 +219,28 @@ func semanticTokensFull(file *file, celEnv *cel.Env) (*protocol.SemanticTokens, 
 			case ir.SymbolKindPackage:
 				semanticType = semanticTypeNamespace
 			case ir.SymbolKindMessage:
+				// Collect export/local visibility prefix (edition 2024+)
+				for prefix := range symbol.ir.AsType().AST().Prefixes() {
+					if kw := prefix.Prefix(); kw == keyword.Export || kw == keyword.Local {
+						if prefixTok := prefix.PrefixToken(); !prefixTok.IsZero() {
+							collectToken(prefixTok.Span(), semanticTypeModifier, 0, kw)
+						}
+					}
+				}
 				// Collect "message" keyword
 				if kwTok := symbol.ir.AsType().AST().KeywordToken(); !kwTok.IsZero() {
 					collectToken(kwTok.Span(), semanticTypeKeyword, 0, kwTok.Keyword())
 				}
 				semanticType = semanticTypeStruct
 			case ir.SymbolKindEnum:
+				// Collect export/local visibility prefix (edition 2024+)
+				for prefix := range symbol.ir.AsType().AST().Prefixes() {
+					if kw := prefix.Prefix(); kw == keyword.Export || kw == keyword.Local {
+						if prefixTok := prefix.PrefixToken(); !prefixTok.IsZero() {
+							collectToken(prefixTok.Span(), semanticTypeModifier, 0, kw)
+						}
+					}
+				}
 				// Collect "enum" keyword
 				if kwTok := symbol.ir.AsType().AST().KeywordToken(); !kwTok.IsZero() {
 					collectToken(kwTok.Span(), semanticTypeKeyword, 0, kwTok.Keyword())
@@ -257,6 +273,14 @@ func semanticTokensFull(file *file, celEnv *cel.Env) (*protocol.SemanticTokens, 
 				semanticType = semanticTypeType
 				semanticModifier += semanticModifierDefaultLibrary
 			case ir.SymbolKindService:
+				// Collect export/local visibility prefix (edition 2024+)
+				for prefix := range symbol.ir.AsService().AST().Prefixes() {
+					if kw := prefix.Prefix(); kw == keyword.Export || kw == keyword.Local {
+						if prefixTok := prefix.PrefixToken(); !prefixTok.IsZero() {
+							collectToken(prefixTok.Span(), semanticTypeModifier, 0, kw)
+						}
+					}
+				}
 				// Collect "service" keyword
 				if kwTok := symbol.ir.AsService().AST().KeywordToken(); !kwTok.IsZero() {
 					collectToken(kwTok.Span(), semanticTypeKeyword, 0, kwTok.Keyword())
