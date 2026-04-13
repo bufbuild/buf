@@ -120,6 +120,7 @@ func run(
 		container,
 		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
 		bufctl.WithFileAnnotationErrorFormat(controllerErrorFormat),
+		bufctl.WithColorizedFileAnnotationSetDiagnosticReport(container.LogFormat() == appext.LogFormatColor),
 		bufctl.WithFileAnnotationsToStdout(),
 	)
 	if err != nil {
@@ -172,7 +173,7 @@ func run(
 		}
 	}
 	if len(allFileAnnotations) > 0 {
-		allFileAnnotationSet := bufanalysis.NewFileAnnotationSet(allFileAnnotations...)
+		allFileAnnotationSet := bufanalysis.NewFileAnnotationSet(nil, allFileAnnotations...)
 		if flags.ErrorFormat == "config-ignore-yaml" {
 			if err := bufcli.PrintFileAnnotationSetLintConfigIgnoreYAMLV1(
 				container.Stdout(),

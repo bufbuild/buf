@@ -100,20 +100,6 @@ enum Baz {
         5,
         0,
         2,
-        0
-      ],
-      "span": [
-        113,
-        2,
-        22
-      ],
-      "leadingComments": " Keep if Baz: comment on enum value BAZ_UNSPECIFIED\n"
-    },
-    {
-      "path": [
-        5,
-        0,
-        2,
         0,
         1
       ],
@@ -122,6 +108,20 @@ enum Baz {
         2,
         17
       ]
+    },
+    {
+      "path": [
+        5,
+        0,
+        2,
+        0
+      ],
+      "span": [
+        113,
+        2,
+        22
+      ],
+      "leadingComments": " Keep if Baz: comment on enum value BAZ_UNSPECIFIED\n"
     },
     {
       "path": [

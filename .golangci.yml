@@ -253,7 +253,7 @@ linters:
       - linters:
           - containedctx
         # we actually want to embed a context here
-        path: private/bufpkg/bufimage/parser_accessor_handler.go
+        path: private/bufpkg/bufimage/module_file_resolver.go
       - linters:
           - containedctx
         # we actually want to embed a context here
@@ -448,6 +448,13 @@ linters:
         # G115: uintptr->int conversion to pass a writer's file descriptor to
         # term.IsTerminal. Safe on all supported platforms.
         path: private/pkg/slogapp/console.go
+        text: "G115:"
+      - linters:
+          - gosec
+        # G115: uintptr->int conversion for passing a terminal file descriptor
+        # to term.IsTerminal, which requires int. Safe on all supported platforms;
+        # fd values fit in int.
+        path: private/buf/bufctl/controller.go
         text: "G115:"
       - linters:
           - gosec

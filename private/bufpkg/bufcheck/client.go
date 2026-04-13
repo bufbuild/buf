@@ -163,6 +163,7 @@ func (c *client) Lint(
 		return nil
 	}
 	return bufanalysis.NewFileAnnotationSet(
+		nil,
 		annotationsToFileAnnotations(
 			imageToPathToExternalPath(
 				image,
@@ -302,6 +303,7 @@ func (c *client) Breaking(
 		return nil
 	}
 	return bufanalysis.NewFileAnnotationSet(
+		nil,
 		annotationsToFileAnnotations(
 			imageToPathToExternalPath(
 				image,

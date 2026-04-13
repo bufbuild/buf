@@ -438,18 +438,6 @@ extend google.protobuf.MessageOptions {
     {
       "path": [
         7,
-        0
-      ],
-      "span": [
-        21,
-        2,
-        33
-      ],
-      "leadingComments": " Keep if ext: comment on custom option bizniz\n"
-    },
-    {
-      "path": [
-        7,
         0,
         2
       ],
@@ -470,6 +458,18 @@ extend google.protobuf.MessageOptions {
         2,
         10
       ]
+    },
+    {
+      "path": [
+        7,
+        0
+      ],
+      "span": [
+        21,
+        2,
+        33
+      ],
+      "leadingComments": " Keep if ext: comment on custom option bizniz\n"
     },
     {
       "path": [
@@ -579,20 +579,6 @@ extend google.protobuf.MessageOptions {
         4,
         0,
         2,
-        0
-      ],
-      "span": [
-        49,
-        2,
-        27
-      ],
-      "leadingComments": " Keep if Foo: comment on field name\n"
-    },
-    {
-      "path": [
-        4,
-        0,
-        2,
         0,
         4
       ],
@@ -601,6 +587,20 @@ extend google.protobuf.MessageOptions {
         2,
         10
       ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        0
+      ],
+      "span": [
+        49,
+        2,
+        27
+      ],
+      "leadingComments": " Keep if Foo: comment on field name\n"
     },
     {
       "path": [
@@ -649,20 +649,6 @@ extend google.protobuf.MessageOptions {
         4,
         0,
         2,
-        1
-      ],
-      "span": [
-        51,
-        2,
-        26
-      ],
-      "leadingComments": " Keep if Foo: comment on field bits\n"
-    },
-    {
-      "path": [
-        4,
-        0,
-        2,
         1,
         4
       ],
@@ -671,6 +657,20 @@ extend google.protobuf.MessageOptions {
         2,
         10
       ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        1
+      ],
+      "span": [
+        51,
+        2,
+        26
+      ],
+      "leadingComments": " Keep if Foo: comment on field bits\n"
     },
     {
       "path": [
@@ -732,19 +732,6 @@ extend google.protobuf.MessageOptions {
         4,
         0,
         9,
-        0
-      ],
-      "span": [
-        54,
-        11,
-        19
-      ]
-    },
-    {
-      "path": [
-        4,
-        0,
-        9,
         0,
         1
       ],
@@ -752,6 +739,19 @@ extend google.protobuf.MessageOptions {
         54,
         11,
         13
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        9,
+        0
+      ],
+      "span": [
+        54,
+        11,
+        19
       ]
     },
     {
@@ -838,19 +838,6 @@ extend google.protobuf.MessageOptions {
         4,
         0,
         5,
-        0
-      ],
-      "span": [
-        58,
-        13,
-        23
-      ]
-    },
-    {
-      "path": [
-        4,
-        0,
-        5,
         0,
         1
       ],
@@ -858,6 +845,19 @@ extend google.protobuf.MessageOptions {
         58,
         13,
         16
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        5,
+        0
+      ],
+      "span": [
+        58,
+        13,
+        23
       ]
     },
     {
@@ -955,22 +955,6 @@ extend google.protobuf.MessageOptions {
         3,
         0,
         6,
-        0
-      ],
-      "span": [
-        86,
-        6,
-        32
-      ],
-      "leadingComments": " Keep if Foo + ext: comment on extension blah\n"
-    },
-    {
-      "path": [
-        4,
-        0,
-        3,
-        0,
-        6,
         0,
         2
       ],
@@ -995,6 +979,22 @@ extend google.protobuf.MessageOptions {
         6,
         14
       ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        6,
+        0
+      ],
+      "span": [
+        86,
+        6,
+        32
+      ],
+      "leadingComments": " Keep if Foo + ext: comment on extension blah\n"
     },
     {
       "path": [
