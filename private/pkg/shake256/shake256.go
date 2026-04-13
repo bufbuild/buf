@@ -16,11 +16,10 @@
 package shake256
 
 import (
+	"crypto/sha3"
 	"fmt"
 	"io"
 	"slices"
-
-	"golang.org/x/crypto/sha3"
 )
 
 const shake256Length = 64
@@ -39,9 +38,7 @@ func NewDigest(value []byte) (Digest, error) {
 
 // NewDigestForContent returns a new Digest for the content read from the Reader.
 func NewDigestForContent(reader io.Reader) (Digest, error) {
-	shakeHash := sha3.NewShake256()
-	// TODO FUTURE: remove in the future, this should have no effect
-	shakeHash.Reset()
+	shakeHash := sha3.NewSHAKE256()
 	if _, err := io.Copy(shakeHash, reader); err != nil {
 		return nil, err
 	}
