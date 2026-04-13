@@ -1,0 +1,24 @@
+edition = "2024";
+
+package test.v1;
+
+export message Product {
+  string id = 1;
+  string name = 2;
+}
+
+local message InternalProduct {
+  string id = 1;
+}
+
+export enum Status {
+  STATUS_UNSPECIFIED = 0;
+}
+
+local enum InternalStatus {
+  INTERNAL_STATUS_UNSPECIFIED = 0;
+}
+
+export service ProductService {}
+
+local service InternalService {}

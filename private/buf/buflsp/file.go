@@ -41,6 +41,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/seq"
 	"github.com/bufbuild/protocompile/experimental/source"
+	"github.com/bufbuild/protocompile/experimental/token/keyword"
 	"go.lsp.dev/protocol"
 )
 
@@ -564,6 +565,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		msg.def = msg
 		resolved = append(resolved, msg)
+		resolved = append(resolved, f.visibilityPrefixSymbols(irSymbol, irSymbol.AsType().AST())...)
 		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsType().Options())...)
 	case ir.SymbolKindEnum:
 		enum := &symbol{
@@ -576,6 +578,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		enum.def = enum
 		resolved = append(resolved, enum)
+		resolved = append(resolved, f.visibilityPrefixSymbols(irSymbol, irSymbol.AsType().AST())...)
 		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsType().Options())...)
 	case ir.SymbolKindEnumValue:
 		name := &symbol{
@@ -750,6 +753,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		service.def = service
 		resolved = append(resolved, service)
+		resolved = append(resolved, f.visibilityPrefixSymbols(irSymbol, irSymbol.AsService().AST())...)
 		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsService().Options())...)
 	case ir.SymbolKindMethod:
 		method := &symbol{
@@ -862,6 +866,30 @@ func getKindForMapType(typeAST ast.TypeAny, mapField ir.Member, isKey bool) (kin
 
 	// Fallback if we couldn't resolve
 	return &static{ast: mapField.AST()}, false
+}
+
+// visibilityPrefixSymbols returns keywordBuiltin symbols for any export/local visibility
+// prefix tokens on the given decl, to support hover documentation on those keywords.
+func (f *file) visibilityPrefixSymbols(irSymbol ir.Symbol, decl ast.DeclDef) []*symbol {
+	var syms []*symbol
+	for prefix := range decl.Prefixes() {
+		kw := prefix.Prefix()
+		if kw != keyword.Export && kw != keyword.Local {
+			continue
+		}
+		prefixTok := prefix.PrefixToken()
+		if prefixTok.IsZero() {
+			continue
+		}
+		kwSym := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: prefixTok.Span(),
+			kind: &keywordBuiltin{name: kw.String(), anchor: "symbol-visibility"},
+		}
+		syms = append(syms, kwSym)
+	}
+	return syms
 }
 
 // importToSymbol takes an [ir.Import] and returns a symbol for it.

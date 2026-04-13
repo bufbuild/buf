@@ -1,0 +1,20 @@
+edition = "2024";
+
+package example.v1;
+
+// toplevel_export_keyword
+ex
+
+// toplevel_local_keyword
+lo
+
+// after_export_toplevel: cursor after "export mess" at col 11
+export mess
+
+export message ExportedMessage {
+  // message_local_keyword: cursor after "  lo" at col 4
+  lo
+
+  // after_local_message: cursor after "  local mess" at col 12
+  local mess
+}
