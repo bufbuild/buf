@@ -43,7 +43,7 @@ require (
 	go.lsp.dev/uri v0.3.0
 	go.uber.org/zap v1.27.1
 	golang.org/x/crypto v0.49.0
-	golang.org/x/mod v0.34.0
+	golang.org/x/mod v0.35.0
 	golang.org/x/sync v0.20.0
 	golang.org/x/term v0.41.0
 	golang.org/x/tools v0.43.0
