@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Revert the use of the new compiler report format and properly ungate Editions 2024 features.
+- Fix absolute imports (leading-dot) marked unused in diagnostics.
 
 ## [v1.68.0] - 2026-04-14
 
