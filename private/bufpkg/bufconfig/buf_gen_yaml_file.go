@@ -25,6 +25,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
+// DefaultBufGenYAMLFileName is the default name for the buf.gen.yaml file.
+const DefaultBufGenYAMLFileName = defaultBufGenYAMLFileName
+
 const (
 	defaultBufGenYAMLFileName    = "buf.gen.yaml"
 	defaultBufGenYAMLFileVersion = FileVersionV1Beta1

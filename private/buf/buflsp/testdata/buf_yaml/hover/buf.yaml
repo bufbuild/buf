@@ -1,0 +1,42 @@
+version: v2
+modules:
+  - path: .
+    name: buf.build/acme/petapis
+    includes:
+      - proto
+    excludes:
+      - proto/vendor
+deps:
+  - buf.build/bufbuild/protovalidate
+lint:
+  use:
+    - STANDARD
+    - COMMENTS
+    - ENUM_PASCAL_CASE
+  except:
+    - IMPORT_USED
+  ignore:
+    - foo/bar.proto
+  ignore_only:
+    ENUM_VALUE_UPPER_SNAKE_CASE:
+      - legacy/foo.proto
+  enum_zero_value_suffix: _UNSPECIFIED
+  service_suffix: Service
+  rpc_allow_same_request_response: false
+  rpc_allow_google_protobuf_empty_requests: false
+  rpc_allow_google_protobuf_empty_responses: false
+  disallow_comment_ignores: false
+  disable_builtin: false
+breaking:
+  use:
+    - FILE
+    - FIELD_NO_DELETE
+  except:
+    - ENUM_NO_DELETE
+  ignore:
+    - legacy/
+  ignore_only:
+    MESSAGE_NO_DELETE:
+      - alpha/
+  ignore_unstable_packages: true
+  disable_builtin: false

@@ -1,0 +1,15 @@
+version: v2
+name: buf.build/acme/my-policy
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE
+plugins:
+  - plugin: buf.build/acme/my-lint-plugin
+    options:
+      key: value
+  - plugin: local-linter-binary
+    options:
+      key: value

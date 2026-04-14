@@ -1,0 +1,12 @@
+syntax = "proto2";
+
+package diagnostics.v1;
+
+message TestMessage {
+  extensions 100 to 199;
+}
+
+// Extensions cannot have map-typed fields
+extend TestMessage {
+  map<string, string> bad_extension = 100;
+}

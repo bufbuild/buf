@@ -68,7 +68,7 @@ func setupLSPServer(
 
 	nameContainer, err := appext.NewNameContainer(appContainer, "buf-test")
 	require.NoError(t, err)
-	appextContainer := appext.NewContainer(nameContainer, logger)
+	appextContainer := appext.NewContainer(nameContainer, logger, appext.LogLevelInfo, appext.LogFormatText)
 
 	graphProvider := bufmodule.NopGraphProvider
 	moduleDataProvider := bufmodule.NopModuleDataProvider
@@ -130,6 +130,8 @@ func setupLSPServer(
 		wasmRuntime,
 		stream,
 		queryExecutor,
+		nopModuleKeyProvider{},
+		bufmodule.NopGraphProvider,
 	)
 	require.NoError(t, err)
 	t.Cleanup(func() {

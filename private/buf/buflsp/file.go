@@ -41,6 +41,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/seq"
 	"github.com/bufbuild/protocompile/experimental/source"
+	"github.com/bufbuild/protocompile/experimental/token/keyword"
 	"go.lsp.dev/protocol"
 )
 
@@ -57,6 +58,8 @@ type file struct {
 	// diagnostics or symbols an operating refers to.
 	version int32
 	hasText bool // Whether this file has ever had text read into it.
+	// The local path of the descriptor.proto file used for compilation. This is stored for diagnostics.
+	descriptorProtoLocalPath string
 
 	workspace  *workspace         // May be nil.
 	objectInfo storage.ObjectInfo // Info in the context of the workspace.
@@ -240,7 +243,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 	for path, file := range pathToFiles {
 		current := openerMap[path]
 		// If there is no entry for the current path or if the file content has changed, we
-		// update the opener and set a new query.
+		// update the opener and evict stale [queries.File] queries.
 		if current == nil || current.Text() != file.file.Text() {
 			openerMap[path] = file.file
 			if current != nil {
@@ -250,6 +253,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 		}
 		files = append(files, file)
 	}
+
 	// Remove paths that are no longer in the current workspace and evict stale query keys.
 	for path := range openerMap {
 		if _, ok := pathToFiles[path]; !ok {
@@ -276,21 +280,30 @@ func (f *file) RefreshIR(ctx context.Context) {
 		)
 		return
 	}
+
 	for i, file := range files {
 		file.ir = results[i].Value
+		if file.objectInfo.Path() == "google/protobuf/descriptor.proto" {
+			// Set local path for the descriptor.proto file used for diagnostics.
+			f.descriptorProtoLocalPath = file.objectInfo.LocalPath()
+		}
 		if f != file {
 			// Update symbols for imports.
 			file.IndexSymbols(ctx)
 		}
 	}
+
 	// Store the IR report for code actions
 	f.irReport = diagnosticReport
 
-	// Only hold on to diagnostics where the primary span is for this path.
+	// Only hold on to diagnostics where the primary span is for this file.
 	fileDiagnostics := xslices.Filter(diagnosticReport.Diagnostics, func(d report.Diagnostic) bool {
-		return d.Primary().Path() == f.objectInfo.Path()
+		// We avoid returning warnings from the compiler for now, since these may conflate with
+		// lint checks.
+		return d.Primary().Path() == f.objectInfo.LocalPath() && d.Level() < report.Warning
 	})
 	f.diagnostics = xslices.Map(fileDiagnostics, reportDiagnosticToProtocolDiagnostic)
+
 	f.lsp.logger.DebugContext(
 		ctx, "ir diagnostic(s)",
 		slog.String("uri", f.uri.Filename()),
@@ -338,8 +351,23 @@ func (f *file) queryFileKeys() []any {
 // This operation requires RefreshIR.
 func (f *file) IndexSymbols(ctx context.Context) {
 	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
-	// We cannot index symbols without the IR, so we keep the symbols as-is.
+
 	if f.ir == nil {
+		return
+	}
+
+	// The file has not completed lowering, so we cannot continue with symbol indexing here.
+	// To help the user better understand/diagnose this problem, we surface an additional
+	// diagnostic here.
+	if !f.ir.Lowered() {
+		f.diagnostics = append(f.diagnostics, protocol.Diagnostic{
+			Source:   serverName,
+			Severity: protocol.DiagnosticSeverityError,
+			Message: fmt.Sprintf(`The symbols for this file have not been fully resolved due to an invalid version of descriptor.proto located at: %q.
+This is likely due to a vendored descriptor.proto.`,
+				f.descriptorProtoLocalPath,
+			),
+		})
 		return
 	}
 
@@ -537,6 +565,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		msg.def = msg
 		resolved = append(resolved, msg)
+		resolved = append(resolved, f.visibilityPrefixSymbols(irSymbol, irSymbol.AsType().AST())...)
 		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsType().Options())...)
 	case ir.SymbolKindEnum:
 		enum := &symbol{
@@ -549,6 +578,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		enum.def = enum
 		resolved = append(resolved, enum)
+		resolved = append(resolved, f.visibilityPrefixSymbols(irSymbol, irSymbol.AsType().AST())...)
 		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsType().Options())...)
 	case ir.SymbolKindEnumValue:
 		name := &symbol{
@@ -723,6 +753,7 @@ func (f *file) irToSymbols(irSymbol ir.Symbol) ([]*symbol, []*symbol) {
 		}
 		service.def = service
 		resolved = append(resolved, service)
+		resolved = append(resolved, f.visibilityPrefixSymbols(irSymbol, irSymbol.AsService().AST())...)
 		unresolved = append(unresolved, f.messageToSymbols(irSymbol.AsService().Options())...)
 	case ir.SymbolKindMethod:
 		method := &symbol{
@@ -837,6 +868,30 @@ func getKindForMapType(typeAST ast.TypeAny, mapField ir.Member, isKey bool) (kin
 	return &static{ast: mapField.AST()}, false
 }
 
+// visibilityPrefixSymbols returns keywordBuiltin symbols for any export/local visibility
+// prefix tokens on the given decl, to support hover documentation on those keywords.
+func (f *file) visibilityPrefixSymbols(irSymbol ir.Symbol, decl ast.DeclDef) []*symbol {
+	var syms []*symbol
+	for prefix := range decl.Prefixes() {
+		kw := prefix.Prefix()
+		if kw != keyword.Export && kw != keyword.Local {
+			continue
+		}
+		prefixTok := prefix.PrefixToken()
+		if prefixTok.IsZero() {
+			continue
+		}
+		kwSym := &symbol{
+			ir:   irSymbol,
+			file: f,
+			span: prefixTok.Span(),
+			kind: &keywordBuiltin{name: kw.String(), anchor: "symbol-visibility"},
+		}
+		syms = append(syms, kwSym)
+	}
+	return syms
+}
+
 // importToSymbol takes an [ir.Import] and returns a symbol for it.
 func (f *file) importToSymbol(imp ir.Import) *symbol {
 	return &symbol{
@@ -894,7 +949,7 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 		// each path component.
 		for element := range seq.Values(field.Elements()) {
 			key := field.KeyASTs().At(element.ValueNodeIndex())
-			components := slices.Collect(key.AsPath().Components)
+			components := slices.Collect(key.AsPath().Components())
 			// If there are no path components for an element, then we skip it, since there are
 			// no symbols to track.
 			if len(components) == 0 {

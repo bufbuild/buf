@@ -199,6 +199,16 @@ linters:
         path: private/buf/buflsp/organize_imports.go
         text: "G115:"
       - linters:
+          - gosec
+        # G115 checks for use of truncating conversions.
+        path: private/buf/buflsp/buf_yaml.go
+        text: "G115:"
+      - linters:
+          - gosec
+        # G115 checks for use of truncating conversions.
+        path: private/buf/buflsp/buf_yaml_hover.go
+        text: "G115:"
+      - linters:
           - containedctx
         # Type must implement an interface whose methods do not accept context. But this
         # implementation makes RPC calls, which need a context. So we allow creator of the
@@ -243,7 +253,7 @@ linters:
       - linters:
           - containedctx
         # we actually want to embed a context here
-        path: private/bufpkg/bufimage/parser_accessor_handler.go
+        path: private/bufpkg/bufimage/module_file_resolver.go
       - linters:
           - containedctx
         # we actually want to embed a context here
@@ -438,6 +448,13 @@ linters:
         # G115: uintptr->int conversion to pass a writer's file descriptor to
         # term.IsTerminal. Safe on all supported platforms.
         path: private/pkg/slogapp/console.go
+        text: "G115:"
+      - linters:
+          - gosec
+        # G115: uintptr->int conversion for passing a terminal file descriptor
+        # to term.IsTerminal, which requires int. Safe on all supported platforms;
+        # fd values fit in int.
+        path: private/buf/bufctl/controller.go
         text: "G115:"
       - linters:
           - gosec

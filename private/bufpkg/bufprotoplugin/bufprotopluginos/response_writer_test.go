@@ -307,6 +307,99 @@ func TestResponseWriterSmartCleanMultiplePluginsSameOutDir(t *testing.T) {
 	require.Equal(t, "package bar\n", string(barData))
 }
 
+func TestResponseWriterSmartCleanNestedPluginOutDirs(t *testing.T) {
+	t.Parallel()
+	outDir := t.TempDir()
+	// Simulate two plugins: one outputs to outDir, the other to outDir/schema.
+	// The nested plugin's files should not be deleted by the parent's clean pass.
+	writer := NewResponseWriter(
+		slogtestext.NewLogger(t),
+		storageos.NewProvider(),
+		ResponseWriterWithCreateOutDirIfNotExists(),
+		ResponseWriterWithDeleteOuts(),
+	)
+	// Plugin 1 writes to the root outDir.
+	require.NoError(t, writer.AddResponse(
+		t.Context(),
+		&pluginpb.CodeGeneratorResponse{File: []*pluginpb.CodeGeneratorResponse_File{
+			newResponseFile("test_pb.d.ts", "export declare const Test: any;\n"),
+			newResponseFile("test_pb.js", "export const Test = {};\n"),
+		}},
+		outDir,
+	))
+	// Plugin 2 writes to outDir/schema (nested).
+	require.NoError(t, writer.AddResponse(
+		t.Context(),
+		&pluginpb.CodeGeneratorResponse{File: []*pluginpb.CodeGeneratorResponse_File{
+			newResponseFile("test.schema.json", `{"type":"object"}`+"\n"),
+		}},
+		filepath.Join(outDir, "schema"),
+	))
+	require.NoError(t, writer.Close(t.Context()))
+
+	// All files from both plugins must be present.
+	data, err := os.ReadFile(filepath.Join(outDir, "test_pb.d.ts"))
+	require.NoError(t, err)
+	require.Equal(t, "export declare const Test: any;\n", string(data))
+	data, err = os.ReadFile(filepath.Join(outDir, "test_pb.js"))
+	require.NoError(t, err)
+	require.Equal(t, "export const Test = {};\n", string(data))
+	data, err = os.ReadFile(filepath.Join(outDir, "schema", "test.schema.json"))
+	require.NoError(t, err)
+	require.Equal(t, `{"type":"object"}`+"\n", string(data))
+}
+
+func TestResponseWriterSmartCleanNestedPluginOutDirsStaleInParent(t *testing.T) {
+	t.Parallel()
+	outDir := t.TempDir()
+	// Pre-populate the parent directory with a stale file that should still be cleaned.
+	stalePath := filepath.Join(outDir, "stale.go")
+	require.NoError(t, os.WriteFile(stalePath, []byte("package stale\n"), 0600))
+	// Pre-populate the nested dir with a stale file that should be cleaned by the nested pass.
+	require.NoError(t, os.MkdirAll(filepath.Join(outDir, "schema"), 0755))
+	nestedStalePath := filepath.Join(outDir, "schema", "old.json")
+	require.NoError(t, os.WriteFile(nestedStalePath, []byte("old\n"), 0600))
+
+	writer := NewResponseWriter(
+		slogtestext.NewLogger(t),
+		storageos.NewProvider(),
+		ResponseWriterWithCreateOutDirIfNotExists(),
+		ResponseWriterWithDeleteOuts(),
+	)
+	// Nested plugin first (order should not matter).
+	require.NoError(t, writer.AddResponse(
+		t.Context(),
+		&pluginpb.CodeGeneratorResponse{File: []*pluginpb.CodeGeneratorResponse_File{
+			newResponseFile("test.schema.json", `{"type":"object"}`+"\n"),
+		}},
+		filepath.Join(outDir, "schema"),
+	))
+	// Parent plugin second.
+	require.NoError(t, writer.AddResponse(
+		t.Context(),
+		&pluginpb.CodeGeneratorResponse{File: []*pluginpb.CodeGeneratorResponse_File{
+			newResponseFile("test_pb.js", "export const Test = {};\n"),
+		}},
+		outDir,
+	))
+	require.NoError(t, writer.Close(t.Context()))
+
+	// Nested plugin output preserved.
+	data, err := os.ReadFile(filepath.Join(outDir, "schema", "test.schema.json"))
+	require.NoError(t, err)
+	require.Equal(t, `{"type":"object"}`+"\n", string(data))
+	// Parent plugin output preserved.
+	data, err = os.ReadFile(filepath.Join(outDir, "test_pb.js"))
+	require.NoError(t, err)
+	require.Equal(t, "export const Test = {};\n", string(data))
+	// Stale file in parent deleted.
+	_, err = os.Stat(stalePath)
+	require.ErrorIs(t, err, os.ErrNotExist)
+	// Stale file in nested dir deleted by the nested pass.
+	_, err = os.Stat(nestedStalePath)
+	require.ErrorIs(t, err, os.ErrNotExist)
+}
+
 func runResponseWriter(t *testing.T, outPath string, deleteOuts bool, files ...*pluginpb.CodeGeneratorResponse_File) {
 	t.Helper()
 	opts := []ResponseWriterOption{

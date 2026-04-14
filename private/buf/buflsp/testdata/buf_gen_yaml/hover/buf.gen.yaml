@@ -1,0 +1,41 @@
+version: v2
+clean: false
+managed:
+  enabled: true
+  disable:
+    - file_option: go_package_prefix
+      module: buf.build/acme/petapis
+  override:
+    - file_option: java_package_prefix
+      value: com
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: gen/go
+    opt: paths=source_relative
+    include_imports: true
+    include_wkt: false
+    revision: 1
+  - local: protoc-gen-grpc-gateway
+    out: gen/grpc
+    strategy: all
+    exclude_types:
+      - acme.v1.Internal
+  - protoc_builtin: java
+    protoc_path: /usr/local/bin/protoc
+inputs:
+  - directory: proto
+    types:
+      - acme.v1.FooService
+    paths:
+      - acme/v1/foo.proto
+    exclude_paths:
+      - acme/v1/internal.proto
+  - module: buf.build/acme/petapis
+    exclude_types:
+      - acme.v1.Internal
+  - proto_file: acme/v1/bar.proto
+    include_package_files: true
+  - git_repo: github.com/acme/protos
+    branch: main
+    subdir: proto
+    depth: 1

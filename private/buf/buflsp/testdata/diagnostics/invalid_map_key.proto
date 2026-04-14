@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package diagnostics.v1;
+
+// A field with an invalid map key type (double is not a valid map key type)
+message TestMessage {
+  map<double, string> bad_map = 1;
+}

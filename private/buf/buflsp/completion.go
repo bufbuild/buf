@@ -282,6 +282,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 	hasStart := false // Start is a newline or open parenthesis for the start of a definition
 	hasTypeModifier := false
 	hasDeclaration := false
+	hasVisibilityModifier := false
 	typeSpan := extractAroundOffset(file, offset,
 		func(tok token.Token) bool {
 			if isTokenTypeDelimiter(tok) {
@@ -296,6 +297,8 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 					hasDeclaration = hasDeclaration || isDeclaration
 					_, isFieldModifier := typeModifierSet[tok.Keyword()]
 					hasTypeModifier = hasTypeModifier || isFieldModifier
+					_, isVisibilityMod := visibilityModifierSet[tok.Keyword()]
+					hasVisibilityModifier = hasVisibilityModifier || isVisibilityMod
 				}
 			}
 			if isTokenSpace(tok) {
@@ -340,6 +343,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		slog.Bool("has_start", hasStart),
 		slog.Bool("has_field_modifier", hasTypeModifier),
 		slog.Bool("has_declaration", hasDeclaration),
+		slog.Bool("has_visibility_modifier", hasVisibilityModifier),
 		slog.Bool("inside_map_type", insideMapType),
 		slog.Bool("is_map_key_position", isMapKeyPosition),
 	)
@@ -400,13 +404,29 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		return completionItemsForOptions(ctx, file, parentDef, def, offset)
 	}
 
-	// If at the top level, and on the first item, return top level keywords.
+	// If at the top level, return top level keywords.
 	if parentDef.IsZero() {
-		showKeywords := beforeCount == 0
-		if showKeywords {
+		editions := isEditions(file)
+		switch {
+		case beforeCount == 0:
+			// At the start of a definition: show all top-level keywords, plus
+			// visibility modifiers in edition 2024+ files.
 			file.lsp.logger.DebugContext(ctx, "completion: definition returning top-level keywords")
+			kws := topLevelKeywords()
+			if editions {
+				kws = joinSequences(kws, visibilityModifierKeywords())
+			}
 			return slices.Collect(keywordToCompletionItem(
-				topLevelKeywords(),
+				kws,
+				protocol.CompletionItemKindKeyword,
+				tokenSpan,
+				offset,
+			))
+		case editions && beforeCount == 1 && hasVisibilityModifier:
+			// After export/local, only type declaration keywords are valid.
+			file.lsp.logger.DebugContext(ctx, "completion: definition returning top-level type declaration keywords after visibility modifier")
+			return slices.Collect(keywordToCompletionItem(
+				topLevelTypeDeclarationKeywords(),
 				protocol.CompletionItemKindKeyword,
 				tokenSpan,
 				offset,
@@ -422,13 +442,13 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 		// - Show keywords for the first values (but not when inside map key position)
 		// - Show types if no type declaration and at first, or second position with field modifier.
 		// - Always show types if cursor is inside map<...> angle brackets
+		editions := isEditions(file)
 		showKeywords := beforeCount == 0 && !(insideMapType && isMapKeyPosition)
 		showTypes := insideMapType || (!hasDeclaration && (beforeCount == 0 || (hasTypeModifier && beforeCount == 1)))
 		if showKeywords {
-			isProto2 := isProto2(file)
 			iters = append(iters,
 				keywordToCompletionItem(
-					messageLevelKeywords(isProto2),
+					messageLevelKeywords(isProto2(file)),
 					protocol.CompletionItemKindKeyword,
 					tokenSpan,
 					offset,
@@ -440,6 +460,22 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 					offset,
 				),
 			)
+			if editions {
+				iters = append(iters, keywordToCompletionItem(
+					visibilityModifierKeywords(),
+					protocol.CompletionItemKindKeyword,
+					tokenSpan,
+					offset,
+				))
+			}
+		} else if editions && beforeCount == 1 && hasVisibilityModifier {
+			// After export/local inside a message, only nested type declarations are valid.
+			iters = append(iters, keywordToCompletionItem(
+				messageLevelTypeDeclarationKeywords(),
+				protocol.CompletionItemKindKeyword,
+				tokenSpan,
+				offset,
+			))
 		}
 		if showTypes {
 			// When inside map angle brackets, use only the prefix of the tokenSpan for filtering
@@ -818,6 +854,15 @@ var typeModifierSet = func() map[keyword.Keyword]struct{} {
 	return m
 }()
 
+// visibilityModifierSet is the set of edition 2024+ visibility modifier keywords.
+var visibilityModifierSet = func() map[keyword.Keyword]struct{} {
+	m := make(map[keyword.Keyword]struct{})
+	for kw := range visibilityModifierKeywords() {
+		m[kw] = struct{}{}
+	}
+	return m
+}()
+
 // topLevelKeywords returns keywords for the top-level.
 func topLevelKeywords() iter.Seq[keyword.Keyword] {
 	return func(yield func(keyword.Keyword) bool) {
@@ -830,6 +875,33 @@ func topLevelKeywords() iter.Seq[keyword.Keyword] {
 			yield(keyword.Option) &&
 			yield(keyword.Enum) &&
 			yield(keyword.Extend)
+	}
+}
+
+// topLevelTypeDeclarationKeywords returns the type declaration keywords that can
+// follow a visibility modifier (export/local) at the top level in edition 2024+.
+func topLevelTypeDeclarationKeywords() iter.Seq[keyword.Keyword] {
+	return func(yield func(keyword.Keyword) bool) {
+		_ = yield(keyword.Message) &&
+			yield(keyword.Enum) &&
+			yield(keyword.Service)
+	}
+}
+
+// messageLevelTypeDeclarationKeywords returns the type declaration keywords that can
+// follow a visibility modifier (export/local) inside a message in edition 2024+.
+func messageLevelTypeDeclarationKeywords() iter.Seq[keyword.Keyword] {
+	return func(yield func(keyword.Keyword) bool) {
+		_ = yield(keyword.Message) &&
+			yield(keyword.Enum)
+	}
+}
+
+// visibilityModifierKeywords returns the visibility modifier keywords for edition 2024+.
+func visibilityModifierKeywords() iter.Seq[keyword.Keyword] {
+	return func(yield func(keyword.Keyword) bool) {
+		_ = yield(keyword.Export) &&
+			yield(keyword.Local)
 	}
 }
 
@@ -1780,6 +1852,11 @@ func positionToOffset(file *file, position protocol.Position) int {
 // isProto2 returns true if the file has a syntax declaration of proto2.
 func isProto2(file *file) bool {
 	return file.ir.Syntax() == syntax.Proto2
+}
+
+// isEditions returns true if the file uses editions syntax.
+func isEditions(file *file) bool {
+	return file.ir.Syntax().IsEdition()
 }
 
 // findTypeBySpan returns the IR Type that corresponds to the given AST span.

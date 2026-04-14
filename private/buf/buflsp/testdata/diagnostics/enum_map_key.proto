@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package diagnostics.v1;
+
+// Using an enum type as a map key is not permitted
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+}
+
+message TestMessage {
+  map<Status, string> status_map = 1;
+}

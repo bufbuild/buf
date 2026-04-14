@@ -141,11 +141,15 @@ func TestWorkspaceDir(t *testing.T) {
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 		)
+		dirImportError := fmt.Sprintf(
+			"%[1]s:5:1:imported file does not exist\n%[1]s:8:5:cannot find `request.Request` in this scope",
+			filepath.FromSlash("testdata/workspace/success/"+baseDirPath+"/proto/rpc.proto"),
+		)
 		testRunStdoutStderrNoWarn(
 			t,
 			nil,
 			bufctl.ExitCodeFileAnnotation,
-			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:5:8:import "request.proto": file does not exist`),
+			dirImportError,
 			"",
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
@@ -156,7 +160,7 @@ func TestWorkspaceDir(t *testing.T) {
 			t,
 			nil,
 			bufctl.ExitCodeFileAnnotation,
-			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:5:8:import "request.proto": file does not exist`),
+			dirImportError,
 			"",
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
@@ -366,12 +370,16 @@ func TestWorkspaceDetached(t *testing.T) {
 		// we'd consider this a bug: you specified the proto directory, and no controlling workspace
 		// was discovered, therefore you build as if proto was the input directory, which results in
 		// request.proto not existing as an import.
+		detachedImportError := fmt.Sprintf(
+			"%[1]s:5:1:imported file does not exist\n%[1]s:8:5:cannot find `request.Request` in this scope",
+			filepath.FromSlash("testdata/workspace/success/"+dirPath+"/proto/rpc.proto"),
+		)
 		testRunStdoutStderrNoWarn(
 			t,
 			nil,
 			bufctl.ExitCodeFileAnnotation,
 			``,
-			filepath.FromSlash(`testdata/workspace/success/`+dirPath+`/proto/rpc.proto:5:8:import "request.proto": file does not exist`),
+			detachedImportError,
 			"build",
 			filepath.Join("testdata", "workspace", "success", dirPath, "proto"),
 		)
@@ -392,7 +400,7 @@ func TestWorkspaceDetached(t *testing.T) {
 			t,
 			nil,
 			bufctl.ExitCodeFileAnnotation,
-			filepath.FromSlash(`testdata/workspace/success/`+dirPath+`/proto/rpc.proto:5:8:import "request.proto": file does not exist`),
+			detachedImportError,
 			``,
 			"lint",
 			filepath.Join("testdata", "workspace", "success", dirPath, "proto"),

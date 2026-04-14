@@ -415,7 +415,7 @@ func checkRepeatedRules(
 	if !fieldDescriptor.IsList() {
 		baseAdder.addForPathf(
 			[]int32{repeatedRulesFieldNumber},
-			"Field %q is not repeated but has %s.",
+			"Field %q is not repeated but has %s rules.",
 			baseAdder.fieldName(),
 			baseAdder.getFieldRuleName(repeatedRulesFieldNumber),
 		)

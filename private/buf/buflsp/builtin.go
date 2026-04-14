@@ -109,4 +109,15 @@ var builtinDocs = map[string][]string{
 	"map": {
 		"A set of distinct keys, each of which is associated with a value.",
 	},
+
+	"export": {
+		"Marks a definition as exported, making it visible outside the current file.",
+		"",
+		"Available in edition 2024 and later.",
+	},
+	"local": {
+		"Marks a definition as local, restricting its visibility to the current file.",
+		"",
+		"Available in edition 2024 and later.",
+	},
 }
