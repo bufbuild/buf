@@ -29,7 +29,7 @@ const (
 	// MinSupportedEdition is the earliest edition supported by this repo.
 	MinSupportedEdition = descriptorpb.Edition_EDITION_2023
 	// MaxSupportedEdition is the latest edition supported by this repo.
-	MaxSupportedEdition = descriptorpb.Edition_EDITION_2023
+	MaxSupportedEdition = descriptorpb.Edition_EDITION_2024
 )
 
 // FileDescriptor is an interface that matches the methods on a *descriptorpb.FileDescriptorProto.
@@ -139,14 +139,11 @@ func ValidateFileDescriptor(fileDescriptor FileDescriptor) error {
 	}
 	if fileDescriptor.GetSyntax() == "editions" {
 		edition := fileDescriptor.GetEdition()
-		// protocompile should support the same editions as buf (or possibly a superset at
-		// some point in the future, like while support for a new edition is being implemented),
-		// but we check with it just in case.
-		if !protocompile.IsEditionSupported(edition) ||
-			edition < MinSupportedEdition ||
-			edition > MaxSupportedEdition {
-			return fmt.Errorf("%s uses unsupported edition %s",
-				fileDescriptor.GetName(), edition)
+		// Removed the check against [protocompile.IsEditionSupported], since we are using the
+		// new compiler now. Just checking against the local editions settings.
+		if edition < MinSupportedEdition || edition > MaxSupportedEdition {
+			return fmt.Errorf("%s uses unsupported edition %s %v",
+				fileDescriptor.GetName(), edition, protocompile.IsEditionSupported(edition))
 		}
 	}
 	return nil
