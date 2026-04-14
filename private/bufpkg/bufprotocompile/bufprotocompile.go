@@ -111,7 +111,7 @@ func FileAnnotationSetForErrorsWithPos(
 	if err != nil {
 		return nil, err
 	}
-	return bufanalysis.NewFileAnnotationSet(nil, fileAnnotations...), nil
+	return bufanalysis.NewFileAnnotationSet(fileAnnotations...), nil
 }
 
 // FileAnnotationOption is an option when creating a FileAnnotation.
