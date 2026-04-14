@@ -23,6 +23,88 @@ import (
 	"go.lsp.dev/protocol"
 )
 
+// TestBufPolicyYAMLDocumentLinks verifies that document links are returned for
+// BSR references in buf.policy.yaml files: the top-level name field and any
+// plugins[*].plugin values that are BSR references.
+func TestBufPolicyYAMLDocumentLinks(t *testing.T) {
+	t.Parallel()
+
+	// Fixture layout (0-indexed lines):
+	//  0: version: v2
+	//  1: name: buf.build/acme/my-policy
+	//  2: lint:
+	//  3:   use:
+	//  4:     - STANDARD
+	//  5: breaking:
+	//  6:   use:
+	//  7:     - FILE
+	//  8: plugins:
+	//  9:   - plugin: buf.build/acme/my-lint-plugin
+	// 10:     options:
+	// 11:       key: value
+	// 12:   - plugin: local-linter-binary
+	// 13:     options:
+	// 14:       key: value
+
+	tests := []struct {
+		name      string
+		fixture   string
+		wantLinks []protocol.DocumentLink
+	}{
+		{
+			name:    "invalid",
+			fixture: "testdata/buf_policy_yaml/invalid/buf.policy.yaml",
+			// Malformed YAML must not crash; returns no links.
+		},
+		{
+			name:    "with_bsr_name_and_plugins",
+			fixture: "testdata/buf_policy_yaml/document_link/buf.policy.yaml",
+			wantLinks: []protocol.DocumentLink{
+				{
+					// name: buf.build/acme/my-policy
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 1, Character: 6},
+						End:   protocol.Position{Line: 1, Character: 30},
+					},
+					Target: "https://buf.build/acme/my-policy",
+				},
+				{
+					// plugins[0].plugin: buf.build/acme/my-lint-plugin
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 9, Character: 12},
+						End:   protocol.Position{Line: 9, Character: 41},
+					},
+					Target: "https://buf.build/acme/my-lint-plugin",
+				},
+				// plugins[1].plugin: local-linter-binary is skipped (not a BSR ref).
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			absPath, err := filepath.Abs(tc.fixture)
+			require.NoError(t, err)
+
+			clientJSONConn, bufPolicyYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil)
+			ctx := t.Context()
+
+			var links []protocol.DocumentLink
+			_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentLink, &protocol.DocumentLinkParams{
+				TextDocument: protocol.TextDocumentIdentifier{URI: bufPolicyYAMLURI},
+			}, &links)
+			require.NoError(t, err)
+			require.Len(t, links, len(tc.wantLinks))
+			for i, want := range tc.wantLinks {
+				assert.Equal(t, want.Range, links[i].Range, "link %d range", i)
+				assert.Equal(t, want.Target, links[i].Target, "link %d target", i)
+			}
+		})
+	}
+}
+
 // TestBufPolicyYAMLHoverMalformedYAML verifies that hovering over a buf.policy.yaml
 // with invalid YAML syntax returns no hover and does not crash the server.
 func TestBufPolicyYAMLHoverMalformedYAML(t *testing.T) {

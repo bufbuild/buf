@@ -329,14 +329,9 @@ func (m *bufYAMLManager) GetDocumentLinks(uri protocol.URI) []protocol.DocumentL
 		if err != nil {
 			continue
 		}
-		fullName := ref.FullName()
-		url := "https://" + fullName.Registry() + "/" + fullName.Owner() + "/" + fullName.Name()
-		if ref.Ref() != "" {
-			url += "/docs/" + ref.Ref()
-		}
 		links = append(links, protocol.DocumentLink{
 			Range:  dep.depRange,
-			Target: protocol.DocumentURI(url),
+			Target: protocol.DocumentURI(bsrRefDocURL(ref)),
 		})
 	}
 	return links

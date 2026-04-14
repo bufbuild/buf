@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"go.lsp.dev/protocol"
 	"gopkg.in/yaml.v3"
 )
@@ -43,12 +44,17 @@ func newBufLockManager() *bufLockManager {
 // bufLockFile holds the parsed state of an open buf.lock file.
 type bufLockFile struct {
 	docNode *yaml.Node // parsed YAML document node, nil if parse failed
+	deps    []bsrRef   // deps[*].name BSR module references
 }
 
 // Track opens or refreshes a buf.lock file.
 func (m *bufLockManager) Track(uri protocol.URI, text string) {
 	normalized := normalizeURI(uri)
-	f := &bufLockFile{docNode: parseYAMLDoc(text)}
+	docNode := parseYAMLDoc(text)
+	f := &bufLockFile{
+		docNode: docNode,
+		deps:    parseBufLockDeps(docNode),
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.uriToFile[normalized] = f
@@ -71,4 +77,66 @@ func (m *bufLockManager) GetHover(uri protocol.URI, pos protocol.Position) *prot
 		return nil
 	}
 	return bufLockHover(f.docNode, pos)
+}
+
+// GetDocumentLinks returns document links for all deps[*].name module
+// references in the buf.lock file. Each link points to the BSR page for the
+// referenced module.
+func (m *bufLockManager) GetDocumentLinks(uri protocol.URI) []protocol.DocumentLink {
+	m.mu.Lock()
+	f, ok := m.uriToFile[normalizeURI(uri)]
+	m.mu.Unlock()
+	if !ok {
+		return nil
+	}
+	links := make([]protocol.DocumentLink, 0, len(f.deps))
+	for _, dep := range f.deps {
+		ref, err := bufparse.ParseRef(dep.ref)
+		if err != nil {
+			continue
+		}
+		links = append(links, protocol.DocumentLink{
+			Range:  dep.refRange,
+			Target: protocol.DocumentURI(bsrRefDocURL(ref)),
+		})
+	}
+	return links
+}
+
+// parseBufLockDeps walks the parsed buf.lock document and collects all
+// deps[*].name scalar values with their source positions.
+//
+// Returns nil if doc is nil or not a valid YAML document.
+func parseBufLockDeps(doc *yaml.Node) []bsrRef {
+	if doc == nil || doc.Kind != yaml.DocumentNode || len(doc.Content) == 0 {
+		return nil
+	}
+	mapping := doc.Content[0]
+	if mapping.Kind != yaml.MappingNode {
+		return nil
+	}
+	for i := 0; i+1 < len(mapping.Content); i += 2 {
+		keyNode := mapping.Content[i]
+		valNode := mapping.Content[i+1]
+		if keyNode.Value != "deps" || valNode.Kind != yaml.SequenceNode {
+			continue
+		}
+		var deps []bsrRef
+		for _, item := range valNode.Content {
+			if item.Kind != yaml.MappingNode {
+				continue
+			}
+			for j := 0; j+1 < len(item.Content); j += 2 {
+				k, v := item.Content[j], item.Content[j+1]
+				if k.Value == "name" && v.Kind == yaml.ScalarNode && v.Value != "" {
+					deps = append(deps, bsrRef{
+						ref:      v.Value,
+						refRange: yamlNodeRange(v),
+					})
+				}
+			}
+		}
+		return deps
+	}
+	return nil
 }

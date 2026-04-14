@@ -407,6 +407,17 @@ func yamlNodeContainsPosition(node *yaml.Node, pos protocol.Position) bool {
 	return pos.Character >= nodeCol && pos.Character < nodeCol+uint32(len(node.Value))
 }
 
+// bsrRef holds a BSR reference string and its source position in a YAML file.
+// It is used by the buf.yaml, buf.gen.yaml, buf.policy.yaml, and buf.lock
+// document-link implementations to track which YAML scalar values map to BSR
+// pages.
+type bsrRef struct {
+	// ref is the reference string, e.g. "buf.build/bufbuild/es:v2.2.2".
+	ref string
+	// refRange is the range spanning this value in the file.
+	refRange protocol.Range
+}
+
 // yamlNodeRange returns the LSP protocol Range for a scalar YAML node.
 func yamlNodeRange(node *yaml.Node) protocol.Range {
 	line := uint32(node.Line - 1)

@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Add LSP document links for `buf.yaml` dep entries, making each dependency a clickable link to its BSR module page.
+- Add LSP document links for `buf.yaml` deps, `buf.gen.yaml` remote plugins and input modules, `buf.policy.yaml` name and BSR plugins, and `buf.lock` dep names, making each a clickable link to its BSR page.
 - Add LSP code lenses for `buf.yaml` files to update all dependencies (`buf.dep.updateAll`) or check for available updates (`buf.dep.checkUpdates`).
 - Improve shell completions for `buf` flags with fixed value sets and file/directory arguments.
 - Add `buf curl` URL path shell completions (service and method names) via

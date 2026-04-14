@@ -17,6 +17,7 @@ package buflsp
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/experimental/token"
@@ -79,6 +80,17 @@ func (s *server) documentLink(file *file) []protocol.DocumentLink {
 	}
 
 	return links
+}
+
+// bsrRefDocURL builds a BSR page URL from a parsed reference.
+// When ref.Ref() is non-empty, the URL points to the versioned /docs/<ref> page.
+func bsrRefDocURL(ref bufparse.Ref) string {
+	fn := ref.FullName()
+	url := "https://" + fn.Registry() + "/" + fn.Owner() + "/" + fn.Name()
+	if ref.Ref() != "" {
+		url += "/docs/" + ref.Ref()
+	}
+	return url
 }
 
 // bsrURL constructs a BSR URL for a module.

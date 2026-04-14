@@ -23,6 +23,90 @@ import (
 	"go.lsp.dev/protocol"
 )
 
+// TestBufGenYAMLDocumentLinks verifies that document links are returned for
+// remote plugin and input module BSR references in buf.gen.yaml files.
+func TestBufGenYAMLDocumentLinks(t *testing.T) {
+	t.Parallel()
+
+	// Fixture layout (0-indexed lines):
+	//  0: version: v2
+	//  1: plugins:
+	//  2:   - remote: buf.build/protocolbuffers/go
+	//  3:     out: gen/go
+	//  4:   - remote: buf.build/bufbuild/es:v2.2.2
+	//  5:     out: gen/es
+	//  6:   - local: protoc-gen-custom
+	//  7:     out: gen/custom
+	//  8: inputs:
+	//  9:   - module: buf.build/acme/petapis
+	// 10:   - directory: proto
+
+	tests := []struct {
+		name      string
+		fixture   string
+		wantLinks []protocol.DocumentLink
+	}{
+		{
+			name:    "no_plugins_or_inputs",
+			fixture: "testdata/buf_gen_yaml/invalid/buf.gen.yaml",
+			// Malformed YAML must not crash; returns no links.
+		},
+		{
+			name:    "with_remote_plugins_and_input_modules",
+			fixture: "testdata/buf_gen_yaml/document_link/buf.gen.yaml",
+			wantLinks: []protocol.DocumentLink{
+				{
+					// plugins[0].remote: buf.build/protocolbuffers/go
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 2, Character: 12},
+						End:   protocol.Position{Line: 2, Character: 40},
+					},
+					Target: "https://buf.build/protocolbuffers/go",
+				},
+				{
+					// plugins[1].remote: buf.build/bufbuild/es:v2.2.2
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 4, Character: 12},
+						End:   protocol.Position{Line: 4, Character: 40},
+					},
+					Target: "https://buf.build/bufbuild/es/docs/v2.2.2",
+				},
+				{
+					// inputs[0].module: buf.build/acme/petapis
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 9, Character: 12},
+						End:   protocol.Position{Line: 9, Character: 34},
+					},
+					Target: "https://buf.build/acme/petapis",
+				},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			absPath, err := filepath.Abs(tc.fixture)
+			require.NoError(t, err)
+
+			clientJSONConn, bufGenYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil)
+			ctx := t.Context()
+
+			var links []protocol.DocumentLink
+			_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentLink, &protocol.DocumentLinkParams{
+				TextDocument: protocol.TextDocumentIdentifier{URI: bufGenYAMLURI},
+			}, &links)
+			require.NoError(t, err)
+			require.Len(t, links, len(tc.wantLinks))
+			for i, want := range tc.wantLinks {
+				assert.Equal(t, want.Range, links[i].Range, "link %d range", i)
+				assert.Equal(t, want.Target, links[i].Target, "link %d target", i)
+			}
+		})
+	}
+}
+
 // TestBufGenYAMLHoverMalformedYAML verifies that hovering over a buf.gen.yaml
 // with invalid YAML syntax returns no hover and does not crash the server.
 func TestBufGenYAMLHoverMalformedYAML(t *testing.T) {
