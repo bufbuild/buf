@@ -737,6 +737,15 @@ func (s *server) DocumentLink(
 	if isBufYAMLURI(params.TextDocument.URI) {
 		return s.bufYAMLManager.GetDocumentLinks(params.TextDocument.URI), nil
 	}
+	if isBufGenYAMLURI(params.TextDocument.URI) {
+		return s.bufGenYAMLManager.GetDocumentLinks(params.TextDocument.URI), nil
+	}
+	if isBufPolicyYAMLURI(params.TextDocument.URI) {
+		return s.bufPolicyYAMLManager.GetDocumentLinks(params.TextDocument.URI), nil
+	}
+	if isBufLockURI(params.TextDocument.URI) {
+		return s.bufLockManager.GetDocumentLinks(params.TextDocument.URI), nil
+	}
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {
 		return nil, nil
