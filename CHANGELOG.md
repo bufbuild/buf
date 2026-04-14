@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.68.0] - 2026-04-14
 
 - Add LSP document links for `buf.yaml` deps, `buf.gen.yaml` remote plugins and input modules, `buf.policy.yaml` name and BSR plugins, and `buf.lock` dep names, making each a clickable link to its BSR page.
 - Add LSP code lenses for `buf.yaml` files to update all dependencies (`buf.dep.updateAll`) or check for available updates (`buf.dep.checkUpdates`).
@@ -1517,7 +1517,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.67.0...HEAD
+[v1.68.0]: https://github.com/bufbuild/buf/compare/v1.67.0...v1.68.0
 [v1.67.0]: https://github.com/bufbuild/buf/compare/v1.66.1...v1.67.0
 [v1.66.1]: https://github.com/bufbuild/buf/compare/v1.66.0...v1.66.1
 [v1.66.0]: https://github.com/bufbuild/buf/compare/v1.65.0...v1.66.0
