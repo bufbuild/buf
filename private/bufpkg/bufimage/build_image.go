@@ -152,7 +152,7 @@ func compileImage(
 		)
 	}
 	if len(fileAnnotations) > 0 {
-		return nil, bufanalysis.NewFileAnnotationSet(diagnostics, fileAnnotations...)
+		return nil, bufanalysis.NewFileAnnotationSet(fileAnnotations...)
 	}
 
 	// Validate that there is a single result for all files

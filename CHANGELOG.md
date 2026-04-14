@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Revert the use of the new compiler report format and properly ungate Editions 2024 features.
 
 ## [v1.68.0] - 2026-04-14
 

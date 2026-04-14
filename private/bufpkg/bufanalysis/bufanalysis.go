@@ -19,8 +19,6 @@ import (
 	"io"
 	"strconv"
 	"strings"
-
-	"github.com/bufbuild/protocompile/experimental/report"
 )
 
 const (
@@ -209,59 +207,18 @@ type FileAnnotationSet interface {
 	// These will be deduplicated and sorted.
 	FileAnnotations() []FileAnnotation
 
-	// diagnosticReport returns the diagnostic [report.Report] for the [FileAnnotationSet],
-	// if set.
-	//
-	// This may be nil. If non-nil, it will be used as the output for
-	// [PrintFileAnnotationSet] when the format is set to "text", rendered
-	// with a [report.Renderer] configured by the given print options.
-	diagnosticReport() *report.Report
-
 	isFileAnnotationSet()
 }
 
 // NewFileAnnotationSet returns a new FileAnnotationSet.
 //
 // If len(fileAnnotations) is 0, this returns nil.
-//
-// The diagnosticReport is the [report.Report] from the compiler, if available.
-// If non-nil, it will be rendered by [PrintFileAnnotationSet] when the format
-// is "text". Otherwise, the individual file annotations will be used, same as
-// all other print formats.
-func NewFileAnnotationSet(diagnosticReport *report.Report, fileAnnotations ...FileAnnotation) FileAnnotationSet {
-	return newFileAnnotationSet(diagnosticReport, fileAnnotations)
-}
-
-// PrintFileAnnotationSetOption is an option for printing the FileAnnotationSet.
-type PrintFileAnnotationSetOption func(*printFileAnnotationSetOptions)
-
-// WithPrintDiagnosticReport returns a new PrintFileAnnotationSetOption that sets whether
-// or not to print the diagnostic report.
-//
-// The diagnostic report is only use for text outputs.
-func WithPrintDiagnosticReport(printDiagnosticReport bool) PrintFileAnnotationSetOption {
-	return func(options *printFileAnnotationSetOptions) {
-		options.printDiagnosticReport = printDiagnosticReport
-	}
-}
-
-// WithRenderColorizedDiagnosticReport returns a new PrintFileAnnotationSetOption that sets
-// whether or not to render a colorized diagnostic report.
-//
-// The diagnostic report is only use for text outputs.
-func WithRenderColorizedDiagnosticReport(colorizedDiagnosticReport bool) PrintFileAnnotationSetOption {
-	return func(options *printFileAnnotationSetOptions) {
-		options.colorizedDiagnosticReport = colorizedDiagnosticReport
-	}
+func NewFileAnnotationSet(fileAnnotations ...FileAnnotation) FileAnnotationSet {
+	return newFileAnnotationSet(fileAnnotations)
 }
 
 // PrintFileAnnotationSet prints the file annotations separated by newlines.
-func PrintFileAnnotationSet(writer io.Writer, fileAnnotationSet FileAnnotationSet, formatString string, options ...PrintFileAnnotationSetOption) error {
-	opts := &printFileAnnotationSetOptions{}
-	for _, option := range options {
-		option(opts)
-	}
-
+func PrintFileAnnotationSet(writer io.Writer, fileAnnotationSet FileAnnotationSet, formatString string) error {
 	format, err := ParseFormat(formatString)
 	if err != nil {
 		return err
@@ -269,17 +226,6 @@ func PrintFileAnnotationSet(writer io.Writer, fileAnnotationSet FileAnnotationSe
 
 	switch format {
 	case FormatText:
-		if diagnosticReport := fileAnnotationSet.diagnosticReport(); diagnosticReport != nil && opts.printDiagnosticReport {
-			// TODO: There is a follow-up effort to organize the way compiler warnings are
-			// handled vs. lint/breaking change rules. For now, only render the errors and
-			// suppress compiler warnings.
-			diagnosticReport.Options.SuppressWarnings = true
-			renderer := report.Renderer{
-				Colorize: opts.colorizedDiagnosticReport,
-			}
-			_, _, err := renderer.Render(diagnosticReport, writer)
-			return err
-		}
 		return printAsText(writer, fileAnnotationSet.FileAnnotations())
 	case FormatJSON:
 		return printAsJSON(writer, fileAnnotationSet.FileAnnotations())
@@ -294,9 +240,4 @@ func PrintFileAnnotationSet(writer io.Writer, fileAnnotationSet FileAnnotationSe
 	default:
 		return fmt.Errorf("unknown FileAnnotation Format: %v", format)
 	}
-}
-
-type printFileAnnotationSetOptions struct {
-	printDiagnosticReport     bool
-	colorizedDiagnosticReport bool
 }
