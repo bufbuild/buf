@@ -29,7 +29,7 @@ const (
 	// MinSupportedEdition is the earliest edition supported by this repo.
 	MinSupportedEdition = descriptorpb.Edition_EDITION_2023
 	// MaxSupportedEdition is the latest edition supported by this repo.
-	MaxSupportedEdition = descriptorpb.Edition_EDITION_2023
+	MaxSupportedEdition = descriptorpb.Edition_EDITION_2024
 )
 
 // FileDescriptor is an interface that matches the methods on a *descriptorpb.FileDescriptorProto.
