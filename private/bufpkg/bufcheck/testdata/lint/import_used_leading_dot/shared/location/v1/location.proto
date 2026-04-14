@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package shared.location.v1;
+
+message USAddress {
+  string street = 1;
+  string city = 2;
+  string state = 3;
+  string zip = 4;
+}

@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package a;
+
+import "shared/location/v1/location.proto";
+
+// Uses a leading-dot fully-qualified reference to a type from a
+// different top-level package. The leading dot is required for
+// cross-top-level-package resolution. This import should be
+// considered used.
+message MyMessage {
+  .shared.location.v1.USAddress address = 1;
+}
