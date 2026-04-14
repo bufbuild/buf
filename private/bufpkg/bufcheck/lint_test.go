@@ -184,6 +184,16 @@ func TestRunImportUsed(t *testing.T) {
 	)
 }
 
+func TestRunImportUsedLeadingDot(t *testing.T) {
+	t.Parallel()
+	// Leading-dot fully-qualified type references (e.g. .shared.location.v1.USAddress)
+	// must be recognized as using the import. No violations expected.
+	testLint(
+		t,
+		"import_used_leading_dot",
+	)
+}
+
 func TestRunEnumFirstValueZero(t *testing.T) {
 	t.Parallel()
 	testLint(
