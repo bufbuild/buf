@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 
 	"buf.build/go/app"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/protoplugin"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -121,11 +122,15 @@ func NewPluginResponse(
 	}
 }
 
-// ValidatePluginResponses validates that each file is only defined by a single *PluginResponse.
+// ValidatePluginResponses validates that each file is only defined by a single *PluginResponse,
+// and that all file names are relative paths.
 func ValidatePluginResponses(pluginResponses []*PluginResponse) error {
 	seen := make(map[string]string)
 	for _, pluginResponse := range pluginResponses {
 		for _, file := range pluginResponse.Response.File {
+			if _, err := normalpath.NormalizeAndValidate(file.GetName()); err != nil {
+				return fmt.Errorf("plugin %q returned invalid file path %q: %w", pluginResponse.PluginName, file.GetName(), err)
+			}
 			if file.GetInsertionPoint() != "" {
 				// We expect insertion points to write
 				// to files that already exist.

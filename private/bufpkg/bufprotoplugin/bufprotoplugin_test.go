@@ -23,6 +23,61 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+func TestValidatePluginResponsesAbsolutePath(t *testing.T) {
+	t.Parallel()
+	pluginName := "test-plugin"
+	t.Run("regular_file_absolute_path", func(t *testing.T) {
+		t.Parallel()
+		absoluteName := "/foo/bar_pb2.py"
+		resp := NewPluginResponse(
+			&pluginpb.CodeGeneratorResponse{
+				File: []*pluginpb.CodeGeneratorResponse_File{
+					{Name: &absoluteName},
+				},
+			},
+			pluginName,
+			"",
+		)
+		err := ValidatePluginResponses([]*PluginResponse{resp})
+		require.Error(t, err)
+		require.ErrorContains(t, err, absoluteName)
+	})
+	t.Run("insertion_point_absolute_path", func(t *testing.T) {
+		t.Parallel()
+		absoluteName := "/foo/bar_pb2.py"
+		insertionPoint := "some_point"
+		resp := NewPluginResponse(
+			&pluginpb.CodeGeneratorResponse{
+				File: []*pluginpb.CodeGeneratorResponse_File{
+					{Name: &absoluteName, InsertionPoint: &insertionPoint},
+				},
+			},
+			pluginName,
+			"",
+		)
+		err := ValidatePluginResponses([]*PluginResponse{resp})
+		require.Error(t, err)
+		require.ErrorContains(t, err, absoluteName)
+	})
+	t.Run("valid_relative_paths", func(t *testing.T) {
+		t.Parallel()
+		regularName := "foo/bar_pb2.py"
+		insertionPointName := "foo/bar_pb2.pyi"
+		insertionPoint := "some_point"
+		resp := NewPluginResponse(
+			&pluginpb.CodeGeneratorResponse{
+				File: []*pluginpb.CodeGeneratorResponse_File{
+					{Name: &regularName},
+					{Name: &insertionPointName, InsertionPoint: &insertionPoint},
+				},
+			},
+			pluginName,
+			"",
+		)
+		require.NoError(t, ValidatePluginResponses([]*PluginResponse{resp}))
+	})
+}
+
 func TestWriteInsertionPoint(t *testing.T) {
 	t.Parallel()
 	// \u205F is "Medium Mathematical Space"
