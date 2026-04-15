@@ -237,13 +237,13 @@ func checkCEL(
 		}
 		if compileIssues.Err() != nil {
 			allCelExpressionsCompile = false
-			for _, parsedIssue := range parseCelIssuesText(compileIssues.Err().Error()) {
+			for _, celErr := range compileIssues.Errors() {
 				add(
 					i,
 					"%s on %s fails to compile: %s",
 					expressionField,
 					parentName,
-					parsedIssue,
+					strings.TrimPrefix(celErr.Message, "Syntax error: "),
 				)
 			}
 		}
@@ -263,35 +263,4 @@ func checkCEL(
 		}
 	}
 	return allCelExpressionsCompile
-}
-
-// this depends on the undocumented behavior of cel-go's error message
-//
-// maps a string in this form:
-// "ERROR: <input>:1:6: found no matching overload for '_+_' applied to '(int, string)'
-// | this + 'xyz' > (this * 'xyz')
-// | .....^
-// ERROR: <input>:1:22: found no matching overload for '_*_' applied to '(int, string)'
-// | this + 'xyz' > (this * 'xyz')
-// | .....................^"
-// to a string slice:
-// [ "found no matching overload for '_+_' applied to '(int, string)'
-// | this + 'xyz' > (this * 'xyz')
-// | .....^",
-// "found no matching overload for '_*_' applied to '(int, string)'
-// | this + 'xyz' > (this * 'xyz')
-// | .....................^"]
-func parseCelIssuesText(issuesText string) []string {
-	issues := strings.Split(issuesText, "ERROR: <input>:")
-	parsedIssues := make([]string, 0, len(issues)-1)
-	for _, issue := range issues {
-		issue = strings.TrimSpace(issue)
-		if len(issue) == 0 {
-			continue
-		}
-		// now issue looks like 1:2:<error message>
-		parts := strings.SplitAfterN(issue, ":", 3)
-		parsedIssues = append(parsedIssues, strings.TrimSpace(parts[len(parts)-1]))
-	}
-	return parsedIssues
 }
