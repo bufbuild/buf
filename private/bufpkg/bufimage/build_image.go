@@ -232,16 +232,8 @@ func BuildImageFromOpener(
 		parallelism = 1
 	}
 	exec := incremental.New(incremental.WithParallelism(int64(parallelism)))
-
-	// Use context.WithoutCancel to prevent external context cancellation from
-	// triggering an early return in incremental.Resolve while background goroutines
-	// are still running. A bug in protocompile causes those goroutines to access
-	// the (now-nil) named return slice after early return, causing a nil-index panic.
-	// The queries are pure in-memory work and complete quickly; shielding them from
-	// cancellation does not cause meaningful delays. We check ctx.Err() after Run
-	// completes to propagate the original cancellation to the caller.
 	results, diagnostics, err := incremental.Run(
-		context.WithoutCancel(ctx),
+		ctx,
 		exec,
 		queries.Link{
 			Opener:    opener,
@@ -257,12 +249,6 @@ func BuildImageFromOpener(
 	if err != nil {
 		return nil, diagnostics, err
 	}
-	// Check if the caller's context was cancelled while we were compiling; if so,
-	// treat it as a cancellation error even though the build completed.
-	if ctx.Err() != nil {
-		return nil, diagnostics, context.Cause(ctx)
-	}
-
 	if len(results) != 1 {
 		return nil, diagnostics, fmt.Errorf("expected a single result from query, instead got: %d", len(results))
 	}
