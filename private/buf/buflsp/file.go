@@ -58,9 +58,6 @@ type file struct {
 	// diagnostics or symbols an operating refers to.
 	version int32
 	hasText bool // Whether this file has ever had text read into it.
-	// The local path of the descriptor.proto file used for compilation. This is stored for diagnostics.
-	descriptorProtoLocalPath string
-
 	workspace  *workspace         // May be nil.
 	objectInfo storage.ObjectInfo // Info in the context of the workspace.
 
@@ -283,10 +280,6 @@ func (f *file) RefreshIR(ctx context.Context) {
 
 	for i, file := range files {
 		file.ir = results[i].Value
-		if file.objectInfo.Path() == "google/protobuf/descriptor.proto" {
-			// Set local path for the descriptor.proto file used for diagnostics.
-			f.descriptorProtoLocalPath = file.objectInfo.LocalPath()
-		}
 		if f != file {
 			// Update symbols for imports.
 			file.IndexSymbols(ctx)
@@ -353,21 +346,6 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
 	if f.ir == nil {
-		return
-	}
-
-	// The file has not completed lowering, so we cannot continue with symbol indexing here.
-	// To help the user better understand/diagnose this problem, we surface an additional
-	// diagnostic here.
-	if !f.ir.Lowered() {
-		f.diagnostics = append(f.diagnostics, protocol.Diagnostic{
-			Source:   serverName,
-			Severity: protocol.DiagnosticSeverityError,
-			Message: fmt.Sprintf(`The symbols for this file have not been fully resolved due to an invalid version of descriptor.proto located at: %q.
-This is likely due to a vendored descriptor.proto.`,
-				f.descriptorProtoLocalPath,
-			),
-		})
 		return
 	}
 

@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Fix build failures for modules with a vendored `descriptor.proto`.
 - Fix CEL compilation error messages in `buf lint` to use the structured error API instead of parsing cel-go's text output.
 
 ## [v1.68.1] - 2026-04-14
