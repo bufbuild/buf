@@ -1106,10 +1106,16 @@ func (f *file) RunChecks(ctx context.Context) {
 	}
 	path := f.objectInfo.Path()
 
-	opener := make(fileOpener)
-	for path, file := range f.workspace.PathToFile() {
-		opener[path] = file.file.Text()
+	// Snapshot the current workspace files into a source.Openers so that the
+	// image build sees a consistent view of file contents, including any unsaved
+	// modifications. source.WKTs() provides a fallback for well-known types that
+	// may not be present in the workspace.
+	workspaceOpener := source.NewMap(nil)
+	workspaceFiles := workspaceOpener.Get()
+	for filePath, workspaceFile := range f.workspace.PathToFile() {
+		workspaceFiles[filePath] = workspaceFile.file
 	}
+	opener := &source.Openers{workspaceOpener, source.WKTs()}
 
 	const checkTimeout = 30 * time.Second
 	ctx, cancel := context.WithTimeout(f.lsp.connCtx, checkTimeout)
