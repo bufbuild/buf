@@ -25,6 +25,7 @@ import (
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/thread"
@@ -35,6 +36,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/experimental/source/length"
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
@@ -176,44 +178,135 @@ func compileImage(
 		}
 	}
 
-	bytes, err := fdp.DescriptorSetBytes(
-		irFiles,
-		// When compiling the [descriptorpb.FileDescriptorSet], we always include the source
-		// code info to get [descriptorv1.E_BufSourceCodeInfoExtension] information. The source
-		// code info may still be excluded from the final [Image] based on the options passed in.
-		fdp.IncludeSourceCodeInfo(true),
-		// This is needed for lint and breaking change detection annotations.
-		fdp.GenerateExtraOptionLocations(true),
-	)
+	fds, resolver, err := irFilesToFileDescriptorSet(irFiles)
 	if err != nil {
 		return nil, err
 	}
+	return fileDescriptorSetToImage(resolver, moduleFileResolver, paths, fds, excludeSourceCodeInfo)
+}
 
-	// First unmarshal to get the descriptors
-	fds := new(descriptorpb.FileDescriptorSet)
-	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(bytes, fds); err != nil {
-		return nil, err
+// imageFileMetadataResolver provides path metadata when constructing [ImageFile]s.
+// This abstraction allows image building to work both with a full [moduleFileResolver]
+// (which tracks module names, commit IDs, and external/local paths) and with a simpler
+// identity resolver (for cases like the LSP where path == externalPath).
+type imageFileMetadataResolver interface {
+	ExternalPath(path string) string
+	LocalPath(path string) string
+	FullName(path string) bufparse.FullName
+	CommitID(path string) uuid.UUID
+}
+
+// identityImageFileMetadataResolver is an [imageFileMetadataResolver] that returns
+// identity values: external path equals path, and no module metadata.
+// Used by [BuildImageFromOpener] where the caller owns the file contents directly.
+type identityImageFileMetadataResolver struct{}
+
+func (identityImageFileMetadataResolver) ExternalPath(path string) string     { return path }
+func (identityImageFileMetadataResolver) LocalPath(_ string) string           { return "" }
+func (identityImageFileMetadataResolver) FullName(_ string) bufparse.FullName { return nil }
+func (identityImageFileMetadataResolver) CommitID(_ string) uuid.UUID         { return uuid.Nil }
+
+// BuildImageFromOpener is like [BuildImage] but accepts a [source.Opener] directly
+// instead of a [bufmodule.ModuleReadBucket]. It is intended for use cases where the
+// caller controls the file contents directly, such as the LSP where files may have
+// unsaved modifications.
+//
+// The returned [*report.Report] always contains the full diagnostic output from
+// compilation, including both errors and warnings, regardless of whether the [Image]
+// is nil. The [Image] is nil only when a fatal error prevents descriptor generation.
+func BuildImageFromOpener(
+	ctx context.Context,
+	logger *slog.Logger,
+	opener source.Opener,
+	paths []string,
+	options ...BuildImageOption,
+) (Image, *report.Report, error) {
+	opts := newBuildImageOptions()
+	for _, option := range options {
+		option(opts)
 	}
 
-	// Create a resolver from the descriptors so extensions can be recognized.
-	// Specifically, we need to ensure that we are able to resolve the Buf-specific descriptor
-	// extensions for propagating compiler errors. In the future, we should have better
-	// integration with [report.Report] to handle warnings.
+	session := new(ir.Session)
+	parallelism := thread.Parallelism()
+	if opts.noParallelism {
+		parallelism = 1
+	}
+	exec := incremental.New(incremental.WithParallelism(int64(parallelism)))
+	results, diagnostics, err := incremental.Run(
+		ctx,
+		exec,
+		queries.Link{
+			Opener:    opener,
+			Session:   session,
+			Workspace: source.NewWorkspace(paths...),
+		},
+	)
+	// incremental.Run can return a nil report on a fatal internal error. Normalize
+	// to non-nil so callers can always range over Diagnostics safely.
+	if diagnostics == nil {
+		diagnostics = new(report.Report)
+	}
+	if err != nil {
+		return nil, diagnostics, err
+	}
+	if len(results) != 1 {
+		return nil, diagnostics, fmt.Errorf("expected a single result from query, instead got: %d", len(results))
+	}
+	if results[0].Fatal != nil {
+		return nil, diagnostics, results[0].Fatal
+	}
+	irFiles := results[0].Value
+
+	for _, irFile := range irFiles {
+		if !irFile.Lowered() {
+			logger.WarnContext(ctx, "file not fully lowered", slog.String("path", irFile.Path()))
+		}
+	}
+
+	fds, resolver, err := irFilesToFileDescriptorSet(irFiles)
+	if err != nil {
+		return nil, diagnostics, err
+	}
+	image, err := fileDescriptorSetToImage(resolver, identityImageFileMetadataResolver{}, paths, fds, opts.excludeSourceCodeInfo)
+	if err != nil {
+		return nil, diagnostics, err
+	}
+	return image, diagnostics, nil
+}
+
+// irFilesToFileDescriptorSet serializes linked [ir.File]s to a
+// [descriptorpb.FileDescriptorSet] and builds a [protoencoding.Resolver] with
+// Buf's custom descriptor extensions recognised, ready for [fileDescriptorSetToImage].
+func irFilesToFileDescriptorSet(irFiles []*ir.File) (*descriptorpb.FileDescriptorSet, protoencoding.Resolver, error) {
+	descriptorSetBytes, err := fdp.DescriptorSetBytes(
+		irFiles,
+		// Always include source code info to capture [descriptorv1.E_BufSourceCodeInfoExtension].
+		// Source code info may still be stripped from the final Image later.
+		fdp.IncludeSourceCodeInfo(true),
+		// Needed for lint and breaking change detection annotations.
+		fdp.GenerateExtraOptionLocations(true),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	fds := new(descriptorpb.FileDescriptorSet)
+	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(descriptorSetBytes, fds); err != nil {
+		return nil, nil, err
+	}
+	// Include Buf's descriptor proto alongside the compiled files so that
+	// ReparseExtensions can recognise [descriptorv1.E_BufSourceCodeInfoExtension]
+	// and convert unknown fields to typed extensions.
 	resolverFiles := []*descriptorpb.FileDescriptorProto{
 		protodesc.ToFileDescriptorProto(descriptorv1.File_buf_descriptor_v1_descriptor_proto),
 	}
 	resolverFiles = append(resolverFiles, fds.File...)
 	resolver := protoencoding.NewLazyResolver(resolverFiles...)
-
-	// Reparse extensions with the resolver in all FileDescriptorProtos to convert unknown
-	// fields into recognized extensions
 	for _, fileDescriptor := range fds.File {
 		if err := protoencoding.ReparseExtensions(resolver, fileDescriptor.ProtoReflect()); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
-
-	return fileDescriptorSetToImage(resolver, moduleFileResolver, paths, fds, excludeSourceCodeInfo)
+	return fds, resolver, nil
 }
 
 // fileDescriptorSetToImage is a helper function that converts a [descriptorpb.FileDescriptorSet]
@@ -226,7 +319,7 @@ func compileImage(
 // the ordering of the [ImageFile]s.
 func fileDescriptorSetToImage(
 	resolver protoencoding.Resolver,
-	moduleFileResolver *moduleFileResolver,
+	metadataResolver imageFileMetadataResolver,
 	paths []string,
 	fds *descriptorpb.FileDescriptorSet,
 	excludeSourceCodeInfo bool,
@@ -245,7 +338,7 @@ func fileDescriptorSetToImage(
 		imageFiles, err = getImageFilesForPath(
 			path,
 			pathToDescriptor,
-			moduleFileResolver,
+			metadataResolver,
 			excludeSourceCodeInfo,
 			seen,
 			nonImportPaths,
@@ -263,7 +356,7 @@ func fileDescriptorSetToImage(
 func getImageFilesForPath(
 	path string,
 	pathToDescriptor map[string]*descriptorpb.FileDescriptorProto,
-	moduleFileResolver *moduleFileResolver,
+	metadataResolver imageFileMetadataResolver,
 	excludeSourceCodeInfo bool,
 	seen map[string]struct{},
 	nonImportFilenames map[string]struct{},
@@ -284,7 +377,7 @@ func getImageFilesForPath(
 		imageFiles, err = getImageFilesForPath(
 			dependency,
 			pathToDescriptor,
-			moduleFileResolver,
+			metadataResolver,
 			excludeSourceCodeInfo,
 			seen,
 			nonImportFilenames,
@@ -298,7 +391,7 @@ func getImageFilesForPath(
 	_, isNotImport := nonImportFilenames[path]
 
 	imageFile, err := fileDescriptorProtoToImageFile(
-		moduleFileResolver,
+		metadataResolver,
 		fileDescriptor,
 		excludeSourceCodeInfo,
 		!isNotImport,
@@ -312,7 +405,7 @@ func getImageFilesForPath(
 // fileDescriptorProtoToImageFile is a helper function that converts a [descriptorpb.FileDescriptorProto]
 // to an [ImageFile].
 func fileDescriptorProtoToImageFile(
-	moduleFileResolver *moduleFileResolver,
+	metadataResolver imageFileMetadataResolver,
 	fileDescriptor *descriptorpb.FileDescriptorProto,
 	excludeSourceCodeInfo bool,
 	isImport bool,
@@ -348,10 +441,10 @@ func fileDescriptorProtoToImageFile(
 
 	return NewImageFile(
 		fileDescriptor,
-		moduleFileResolver.FullName(fileDescriptor.GetName()),
-		moduleFileResolver.CommitID(fileDescriptor.GetName()),
-		moduleFileResolver.ExternalPath(fileDescriptor.GetName()),
-		moduleFileResolver.LocalPath(fileDescriptor.GetName()),
+		metadataResolver.FullName(fileDescriptor.GetName()),
+		metadataResolver.CommitID(fileDescriptor.GetName()),
+		metadataResolver.ExternalPath(fileDescriptor.GetName()),
+		metadataResolver.LocalPath(fileDescriptor.GetName()),
 		isImport,
 		isSyntaxUnspecified,
 		unusedDependencyIndexes,
