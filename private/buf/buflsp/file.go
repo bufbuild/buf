@@ -56,8 +56,8 @@ type file struct {
 	// Version is an opaque version identifier given to us by the LSP client. This
 	// is used in the protocol to disambiguate which version of a file e.g. publishing
 	// diagnostics or symbols an operating refers to.
-	version int32
-	hasText bool // Whether this file has ever had text read into it.
+	version    int32
+	hasText    bool               // Whether this file has ever had text read into it.
 	workspace  *workspace         // May be nil.
 	objectInfo storage.ObjectInfo // Info in the context of the workspace.
 
