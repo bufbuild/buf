@@ -201,10 +201,10 @@ type imageFileMetadataResolver interface {
 // Used by [BuildImageFromOpener] where the caller owns the file contents directly.
 type identityImageFileMetadataResolver struct{}
 
-func (identityImageFileMetadataResolver) ExternalPath(path string) string  { return path }
-func (identityImageFileMetadataResolver) LocalPath(_ string) string        { return "" }
+func (identityImageFileMetadataResolver) ExternalPath(path string) string     { return path }
+func (identityImageFileMetadataResolver) LocalPath(_ string) string           { return "" }
 func (identityImageFileMetadataResolver) FullName(_ string) bufparse.FullName { return nil }
-func (identityImageFileMetadataResolver) CommitID(_ string) uuid.UUID      { return uuid.Nil }
+func (identityImageFileMetadataResolver) CommitID(_ string) uuid.UUID         { return uuid.Nil }
 
 // BuildImageFromOpener is like [BuildImage] but accepts a [source.Opener] directly
 // instead of a [bufmodule.ModuleReadBucket]. It is intended for use cases where the
