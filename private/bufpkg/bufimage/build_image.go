@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 
 	descriptorv1 "buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go/buf/descriptor/v1"
 	"buf.build/go/standard/xlog/xslog"
@@ -167,17 +168,6 @@ func compileImage(
 	}
 	irFiles := results[0].Value
 
-	// Validate that all files have completed lowering. If not, then symbols have not been
-	// properly resolved and cannot generate a valid file descriptor set.
-	for _, irFile := range irFiles {
-		if !irFile.Lowered() {
-			return nil, fmt.Errorf(`The symbols for file %q have not been fully resolved due to an invalid version of descriptor.proto, located at %q. This is likely due to a vendored descriptor.proto.`,
-				moduleFileResolver.ExternalPath(irFile.Path()),
-				moduleFileResolver.ExternalPath("google/protobuf/descriptor.proto"),
-			)
-		}
-	}
-
 	fds, resolver, err := irFilesToFileDescriptorSet(irFiles)
 	if err != nil {
 		return nil, err
@@ -257,12 +247,6 @@ func BuildImageFromOpener(
 	}
 	irFiles := results[0].Value
 
-	for _, irFile := range irFiles {
-		if !irFile.Lowered() {
-			logger.WarnContext(ctx, "file not fully lowered", slog.String("path", irFile.Path()))
-		}
-	}
-
 	fds, resolver, err := irFilesToFileDescriptorSet(irFiles)
 	if err != nil {
 		return nil, diagnostics, err
@@ -296,8 +280,21 @@ func irFilesToFileDescriptorSet(irFiles []*ir.File) (*descriptorpb.FileDescripto
 	// Include Buf's descriptor proto alongside the compiled files so that
 	// ReparseExtensions can recognise [descriptorv1.E_BufSourceCodeInfoExtension]
 	// and convert unknown fields to typed extensions.
-	resolverFiles := []*descriptorpb.FileDescriptorProto{
-		protodesc.ToFileDescriptorProto(descriptorv1.File_buf_descriptor_v1_descriptor_proto),
+	//
+	// We only prepend the buf descriptor proto when the compiled files do not already
+	// contain google/protobuf/descriptor.proto. When a vendored descriptor.proto is
+	// present in the compiled output, its FileDescriptorSet definition lacks extension
+	// ranges for the buf extension (field 536000000). protodesc.NewFiles validates
+	// that extension field numbers fall within declared extension ranges when the
+	// containing message is resolved (non-placeholder). Adding the buf descriptor
+	// proto alongside the vendored descriptor.proto causes this validation to fail.
+	var resolverFiles []*descriptorpb.FileDescriptorProto
+	if !slices.ContainsFunc(fds.File, func(file *descriptorpb.FileDescriptorProto) bool {
+		return file.GetName() == "google/protobuf/descriptor.proto"
+	}) {
+		resolverFiles = []*descriptorpb.FileDescriptorProto{
+			protodesc.ToFileDescriptorProto(descriptorv1.File_buf_descriptor_v1_descriptor_proto),
+		}
 	}
 	resolverFiles = append(resolverFiles, fds.File...)
 	resolver := protoencoding.NewLazyResolver(resolverFiles...)
