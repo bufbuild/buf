@@ -38,6 +38,13 @@ import (
 	"go.uber.org/zap"
 )
 
+// CuratedPluginVersionProvider checks for the latest version of a BSR-hosted curated plugin.
+type CuratedPluginVersionProvider interface {
+	// GetLatestVersion returns the latest semver version string for the plugin,
+	// or an empty string if the plugin is unknown or has no published versions.
+	GetLatestVersion(ctx context.Context, registry, owner, plugin string) (string, error)
+}
+
 // Serve spawns a new LSP server, listening on the given stream.
 //
 // Returns a context for managing the server.
@@ -52,6 +59,7 @@ func Serve(
 	queryExecutor *incremental.Executor,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	graphProvider bufmodule.GraphProvider,
+	curatedPluginVersionProvider CuratedPluginVersionProvider,
 ) (jsonrpc2.Conn, error) {
 	logger := container.Logger()
 	logger = logger.With(slog.String("buf_version", bufVersion))
@@ -75,24 +83,25 @@ func Serve(
 			&connWrapper{Conn: conn, logger: logger},
 			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
 		),
-		container:         container,
-		logger:            logger,
-		bufVersion:        bufVersion,
-		controller:        controller,
-		wasmRuntime:       wasmRuntime,
-		wktBucket:         wktBucket,
-		queryExecutor:     queryExecutor,
-		opener:            source.NewMap(nil),
-		irSession:         new(ir.Session),
-		connCtx:           connCtx,
-		connCancel:        connCancel,
-		moduleKeyProvider: moduleKeyProvider,
-		graphProvider:     graphProvider,
+		container:                    container,
+		logger:                       logger,
+		bufVersion:                   bufVersion,
+		controller:                   controller,
+		wasmRuntime:                  wasmRuntime,
+		wktBucket:                    wktBucket,
+		queryExecutor:                queryExecutor,
+		opener:                       source.NewMap(nil),
+		irSession:                    new(ir.Session),
+		connCtx:                      connCtx,
+		connCancel:                   connCancel,
+		moduleKeyProvider:            moduleKeyProvider,
+		graphProvider:                graphProvider,
+		curatedPluginVersionProvider: curatedPluginVersionProvider,
 	}
 	lsp.fileManager = newFileManager(lsp)
 	lsp.workspaceManager = newWorkspaceManager(lsp)
 	lsp.bufYAMLManager = newBufYAMLManager(lsp)
-	lsp.bufGenYAMLManager = newBufGenYAMLManager()
+	lsp.bufGenYAMLManager = newBufGenYAMLManager(lsp)
 	lsp.bufPolicyYAMLManager = newBufPolicyYAMLManager()
 	lsp.bufLockManager = newBufLockManager()
 	off := protocol.TraceOff
@@ -138,10 +147,12 @@ type lsp struct {
 	wktBucket            storage.ReadBucket
 	shutdown             bool
 
-	// moduleKeyProvider resolves module refs to their latest commits (BSR). Set via WithModuleKeyProvider.
+	// moduleKeyProvider resolves module refs to their latest commits (BSR).
 	moduleKeyProvider bufmodule.ModuleKeyProvider
-	// graphProvider resolves transitive dependencies for a set of module keys. Set via WithGraphProvider.
+	// graphProvider resolves transitive dependencies for a set of module keys.
 	graphProvider bufmodule.GraphProvider
+	// curatedPluginVersionProvider checks for the latest version of curated plugins (BSR).
+	curatedPluginVersionProvider CuratedPluginVersionProvider
 
 	lock sync.Mutex
 

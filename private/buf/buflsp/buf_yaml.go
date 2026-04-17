@@ -95,7 +95,7 @@ func (m *bufYAMLManager) Close(ctx context.Context, uri protocol.URI) {
 	m.mu.Lock()
 	delete(m.uriToFile, normalized)
 	m.mu.Unlock()
-	m.publishDiagnostics(ctx, normalized, nil)
+	publishDiagnostics(ctx, m.lsp.client, normalized, nil)
 }
 
 // GetCodeLenses returns code lenses for the given buf.yaml URI.
@@ -166,7 +166,7 @@ func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.U
 		return fmt.Errorf("getting configured dep module refs: %w", err)
 	}
 	if len(configuredRefs) == 0 {
-		m.publishDiagnostics(ctx, normalized, nil)
+		publishDiagnostics(ctx, m.lsp.client, normalized, nil)
 		return nil
 	}
 
@@ -175,9 +175,9 @@ func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.U
 	if err != nil {
 		return fmt.Errorf("getting existing buf.lock deps: %w", err)
 	}
-	currentByFullName := make(map[string]bufmodule.ModuleKey, len(currentKeys))
-	for _, key := range currentKeys {
-		currentByFullName[key.FullName().String()] = key
+	currentByFullName, err := bufparse.FullNameStringToUniqueValue(currentKeys)
+	if err != nil {
+		return fmt.Errorf("duplicate module keys in buf.lock: %w", err)
 	}
 
 	// Build a map from full name → YAML position for each dep entry.
@@ -227,16 +227,17 @@ func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.U
 			),
 		})
 	}
-	m.publishDiagnostics(ctx, normalized, diagnostics)
+	publishDiagnostics(ctx, m.lsp.client, normalized, diagnostics)
 	return nil
 }
 
-// publishDiagnostics clears existing diagnostics when passed nil.
-func (m *bufYAMLManager) publishDiagnostics(ctx context.Context, uri protocol.URI, diagnostics []protocol.Diagnostic) {
+// publishDiagnostics publishes diagnostics to the client, clearing any
+// previously published diagnostics for uri when passed nil.
+func publishDiagnostics(ctx context.Context, client protocol.Client, uri protocol.URI, diagnostics []protocol.Diagnostic) {
 	if diagnostics == nil {
 		diagnostics = []protocol.Diagnostic{}
 	}
-	_ = m.lsp.client.PublishDiagnostics(ctx, &protocol.PublishDiagnosticsParams{
+	_ = client.PublishDiagnostics(ctx, &protocol.PublishDiagnosticsParams{
 		URI:         uri,
 		Diagnostics: diagnostics,
 	})
