@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 
 	"buf.build/go/app/appcmd"
@@ -36,7 +37,8 @@ import (
 
 const (
 	// pipe is chosen because that's what the vscode LSP client expects.
-	pipeFlagName = "pipe"
+	pipeFlagName         = "pipe"
+	debugAddressFlagName = "debug-address"
 )
 
 // NewCommand constructs the CLI command for executing the LSP.
@@ -69,6 +71,8 @@ func NewCommand(
 type flags struct {
 	// A file path to a UNIX socket to use for IPC. If empty, stdio is used instead.
 	PipePath string
+	// An address (host:port) to serve the debug server on. If empty, no debug server is started.
+	DebugAddress string
 }
 
 // Bind sets up the CLI flags that the LSP needs.
@@ -78,6 +82,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		pipeFlagName,
 		"",
 		"path to a UNIX socket to listen on; uses stdio if not specified",
+	)
+	flagSet.StringVar(
+		&f.DebugAddress,
+		debugAddressFlagName,
+		"",
+		"address to serve debug endpoints on (e.g. localhost:6060); disabled if not specified",
 	)
 }
 
@@ -91,6 +101,20 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) (retErr error) {
+	if flags.DebugAddress != "" {
+		server, err := newDebugServer(flags.DebugAddress, bufcli.Version)
+		if err != nil {
+			return err
+		}
+		container.Logger().Info(
+			"debug server listening",
+			slog.String("address", server.Addr().String()),
+		)
+		defer func() {
+			retErr = errors.Join(retErr, server.Close())
+		}()
+	}
+
 	transport, err := dial(container, flags)
 	if err != nil {
 		return err
