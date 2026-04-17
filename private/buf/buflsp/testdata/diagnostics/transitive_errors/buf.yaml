@@ -1,0 +1,6 @@
+version: v2
+lint:
+  use:
+    - STANDARD
+  except:
+    - PACKAGE_DIRECTORY_MATCH
