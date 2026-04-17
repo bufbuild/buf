@@ -2,7 +2,15 @@
 
 ## [Unreleased]
 
+- Fix build failures for modules with a vendored `descriptor.proto`.
+- Fix LSP incorrectly reporting "edition '2024' not yet fully supported" errors.
+- Fix CEL compilation error messages in `buf lint` to use the structured error API instead of parsing cel-go's text output.
 - Add `--debug-address` flag to `buf lsp serve` to provide debug and profile support.
+
+## [v1.68.1] - 2026-04-14
+
+- Revert the use of the new compiler report format and properly ungate Editions 2024 features.
+- Fix absolute imports (leading-dot) marked unused in diagnostics.
 
 ## [v1.68.0] - 2026-04-14
 
@@ -1522,7 +1530,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.68.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.68.1...HEAD
+[v1.68.1]: https://github.com/bufbuild/buf/compare/v1.68.0...v1.68.1
 [v1.68.0]: https://github.com/bufbuild/buf/compare/v1.67.0...v1.68.0
 [v1.67.0]: https://github.com/bufbuild/buf/compare/v1.66.1...v1.67.0
 [v1.66.1]: https://github.com/bufbuild/buf/compare/v1.66.0...v1.66.1

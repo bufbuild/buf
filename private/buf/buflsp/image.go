@@ -17,230 +17,71 @@ package buflsp
 import (
 	"context"
 	"errors"
-	"fmt"
-	"io"
-	"io/fs"
 	"log/slog"
-	"slices"
-	"strings"
 
 	"buf.build/go/standard/xlog/xslog"
-	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/protocompile"
+	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/source"
-	"github.com/bufbuild/protocompile/linker"
-	"github.com/bufbuild/protocompile/parser"
-	"github.com/bufbuild/protocompile/protoutil"
-	"github.com/bufbuild/protocompile/reporter"
-	"github.com/google/uuid"
 	"go.lsp.dev/protocol"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-// fileOpener is a type that opens files as they are named in the import
-// statements of .proto files.
+// buildImage builds a Buf Image for the given path using the new experimental compiler.
+// This does not use the controller to build the image, because we need delicate control
+// over the input files: namely, for the case when we depend on a file that has been
+// opened and modified in the editor.
 //
-// This is the context given to [buildImage] to control what text to look up for
-// specific files, so that we can e.g. use file contents that are still unsaved
-// in the editor, or use files from a different commit for building an --against
-// image.
-type fileOpener map[string]string
-
-func (p fileOpener) Open(path string) (io.ReadCloser, error) {
-	text, ok := p[path]
-	if !ok {
-		return nil, fmt.Errorf("%s: %w", path, fs.ErrNotExist)
-	}
-	return io.NopCloser(strings.NewReader(text)), nil
-}
-
-// buildImage builds a Buf Image for the given path. This does not use the controller to build
-// the image, because we need delicate control over the input files: namely, for the case
-// when we depend on a file that has been opened and modified in the editor.
+// The opener should contain all files in the current workspace, including any unsaved
+// modifications. Files not present in the opener are resolved via [source.WKTs].
 func buildImage(
 	ctx context.Context,
 	path string,
 	logger *slog.Logger,
-	opener fileOpener,
+	opener source.Opener,
 ) (bufimage.Image, []protocol.Diagnostic) {
-	var errorsWithPos []reporter.ErrorWithPos
-	var warningErrorsWithPos []reporter.ErrorWithPos
-	var symbols linker.Symbols
-	compiler := protocompile.Compiler{
-		SourceInfoMode: protocompile.SourceInfoExtraOptionLocations,
-		Resolver:       &protocompile.SourceResolver{Accessor: opener.Open},
-		Symbols:        &symbols,
-		Reporter: reporter.NewReporter(
-			func(errorWithPos reporter.ErrorWithPos) error {
-				errorsWithPos = append(errorsWithPos, errorWithPos)
-				return nil
-			},
-			func(warningErrorWithPos reporter.ErrorWithPos) {
-				warningErrorsWithPos = append(warningErrorsWithPos, warningErrorWithPos)
-			},
-		),
+	image, rpt, err := bufimage.BuildImageFromOpener(ctx, logger, opener, []string{path})
+
+	// Resolve the target file's path via the opener. The opener is keyed by the
+	// workspace-relative path, but its *source.File records an absolute path
+	// (the editor URI filename), which is what diagnostic primary spans carry.
+	var targetPath string
+	if targetFile, _ := opener.Open(path); targetFile != nil {
+		targetPath = targetFile.Path()
 	}
 
 	var diagnostics []protocol.Diagnostic
-	compiled, err := compiler.Compile(ctx, path)
+	var hasErrors bool
+	for _, diagnostic := range rpt.Diagnostics {
+		primary := diagnostic.Primary()
+		if primary.IsZero() || diagnostic.Level() > report.Error {
+			continue
+		}
+		// Track errors across the whole compilation so we skip linting an
+		// incomplete image below, even when the error is in a transitive
+		// import.
+		hasErrors = true
+		// Only surface diagnostics whose primary span is in the target file.
+		// Errors in transitively-compiled imports belong to those files'
+		// diagnostic streams; publishing them here would overlay them onto
+		// the current file at the wrong line and column.
+		if targetPath != "" && primary.Path() != targetPath {
+			continue
+		}
+		diagnostics = append(diagnostics, reportDiagnosticToProtocolDiagnostic(diagnostic))
+	}
+
 	if err != nil {
 		if !errors.Is(err, context.Canceled) {
 			logger.WarnContext(ctx, "error building image", slog.String("path", path), xslog.ErrorAttr(err))
 		}
-		var errorWithPos reporter.ErrorWithPos
-		if errors.As(err, &errorWithPos) {
-			diagnostics = []protocol.Diagnostic{newDiagnostic(errorWithPos, false, opener, logger)}
-		}
-		if len(errorsWithPos) > 0 {
-			diagnostics = slices.Concat(diagnostics, xslices.Map(errorsWithPos, func(errorWithPos reporter.ErrorWithPos) protocol.Diagnostic {
-				return newDiagnostic(errorWithPos, false, opener, logger)
-			}))
-		}
-	}
-	if len(compiled) == 0 || compiled[0] == nil {
-		return nil, diagnostics // Image failed to build.
-	}
-	compiledFile := compiled[0]
-
-	syntaxMissing := make(map[string]bool)
-	pathToUnusedImports := make(map[string]map[string]bool)
-	for _, warningErrorWithPos := range warningErrorsWithPos {
-		if warningErrorWithPos.Unwrap() == parser.ErrNoSyntax {
-			syntaxMissing[warningErrorWithPos.GetPosition().Filename] = true
-		} else if unusedImport, ok := warningErrorWithPos.Unwrap().(linker.ErrorUnusedImport); ok {
-			path := warningErrorWithPos.GetPosition().Filename
-			unused, ok := pathToUnusedImports[path]
-			if !ok {
-				unused = map[string]bool{}
-				pathToUnusedImports[path] = unused
-			}
-			unused[unusedImport.UnusedImport()] = true
-		}
-	}
-
-	var imageFiles []bufimage.ImageFile
-	seen := map[string]bool{}
-
-	queue := []protoreflect.FileDescriptor{compiledFile}
-	for len(queue) > 0 {
-		descriptor := queue[len(queue)-1]
-		queue = queue[:len(queue)-1]
-
-		if seen[descriptor.Path()] {
-			continue
-		}
-		seen[descriptor.Path()] = true
-
-		unused, ok := pathToUnusedImports[descriptor.Path()]
-		var unusedIndices []int32
-		if ok {
-			unusedIndices = make([]int32, 0, len(unused))
-		}
-
-		imports := descriptor.Imports()
-		for i := range imports.Len() {
-			dep := imports.Get(i).FileDescriptor
-			if dep == nil {
-				logger.Warn(fmt.Sprintf("found nil FileDescriptor for import %s", imports.Get(i).Path()))
-				continue
-			}
-
-			queue = append(queue, dep)
-
-			if unused != nil {
-				if _, ok := unused[dep.Path()]; ok {
-					unusedIndices = append(unusedIndices, int32(i))
-				}
-			}
-		}
-
-		descriptorProto := protoutil.ProtoFromFileDescriptor(descriptor)
-		if descriptorProto == nil {
-			err = fmt.Errorf("protoutil.ProtoFromFileDescriptor() returned nil for %q", descriptor.Path())
-			break
-		}
-
-		var imageFile bufimage.ImageFile
-		imageFile, err = bufimage.NewImageFile(
-			descriptorProto,
-			nil,
-			uuid.UUID{},
-			"",
-			descriptor.Path(),
-			descriptor.Path() != path,
-			syntaxMissing[descriptor.Path()],
-			unusedIndices,
-		)
-		if err != nil {
-			break
-		}
-
-		imageFiles = append(imageFiles, imageFile)
-		logger.Debug(fmt.Sprintf("added image file for %s", descriptor.Path()))
-	}
-
-	if err != nil {
-		logger.Warn("could not build image", slog.String("path", path), xslog.ErrorAttr(err))
 		return nil, diagnostics
 	}
 
-	image, err := bufimage.NewImage(imageFiles)
-	if err != nil {
-		logger.Warn("could not build image", slog.String("path", path), xslog.ErrorAttr(err))
+	if hasErrors {
+		// Don't return an image when there are compile errors: the image may be
+		// incomplete, and lint checks on a broken image produce misleading results.
 		return nil, diagnostics
 	}
 
 	return image, diagnostics
-}
-
-// newDiagnostic converts a protocompile error into a diagnostic.
-//
-// Unfortunately, protocompile's errors are currently too meagre to provide full code
-// spans; that will require a fix in the compiler.
-func newDiagnostic(err reporter.ErrorWithPos, isWarning bool, opener fileOpener, logger *slog.Logger) protocol.Diagnostic {
-	startPos := err.Start()
-	endPos := err.End()
-	filename := startPos.Filename
-
-	// Convert positions to UTF-16 encoding for LSP.
-	// Fallback to byte-based column (will be wrong for non-ASCII).
-	startUtf16Col := startPos.Col - 1
-	endUtf16Col := endPos.Col - 1
-
-	// TODO: this is a temporary workaround for old diagnostic errors.
-	// When using the new compiler these conversions will be already handled.
-	if text, ok := opener[filename]; ok {
-		file := source.NewFile(filename, text)
-		startLoc := file.Location(startPos.Offset, positionalEncoding)
-		endLoc := file.Location(endPos.Offset, positionalEncoding)
-		startUtf16Col = startLoc.Column - 1
-		endUtf16Col = endLoc.Column - 1
-	} else {
-		logger.Warn(
-			"failed to open file for diagnostic position encoding",
-			slog.String("filename", filename),
-		)
-	}
-
-	start := protocol.Position{
-		Line:      uint32(startPos.Line - 1),
-		Character: uint32(startUtf16Col),
-	}
-	end := protocol.Position{
-		Line:      uint32(endPos.Line - 1),
-		Character: uint32(endUtf16Col),
-	}
-
-	severity := protocol.DiagnosticSeverityError
-	if isWarning {
-		severity = protocol.DiagnosticSeverityWarning
-	}
-
-	return protocol.Diagnostic{
-		Range:    protocol.Range{Start: start, End: end},
-		Severity: severity,
-		Message:  err.Unwrap().Error(),
-		Source:   serverName,
-	}
 }

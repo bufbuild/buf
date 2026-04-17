@@ -312,7 +312,6 @@ func getBuildableWorkspace(
 		container,
 		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
 		bufctl.WithFileAnnotationErrorFormat(flags.ErrorFormat),
-		bufctl.WithColorizedFileAnnotationSetDiagnosticReport(container.LogFormat() == appext.LogFormatColor),
 	)
 	if err != nil {
 		return nil, err

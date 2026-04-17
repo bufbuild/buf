@@ -438,16 +438,7 @@ func (f *formatter) writeImport(importNode *ast.ImportNode, forceCompact, first 
 	// leading comments.
 	f.writeStartMaybeCompact(importNode.Keyword, forceCompact, first && !f.importHasComment(importNode))
 	f.Space()
-	// We don't want to write the "public" and "weak" nodes
-	// if they aren't defined. One could be set, but never both.
-	switch {
-	case importNode.Public != nil:
-		f.writeInline(importNode.Public)
-		f.Space()
-	case importNode.Weak != nil:
-		f.writeInline(importNode.Weak)
-		f.Space()
-	case importNode.Modifier != nil:
+	if importNode.Modifier != nil {
 		f.writeInline(importNode.Modifier)
 		f.Space()
 	}
@@ -2507,8 +2498,7 @@ func (f *formatter) importHasComment(importNode *ast.ImportNode) bool {
 	return f.nodeHasComment(importNode.Keyword) ||
 		f.nodeHasComment(importNode.Name) ||
 		f.nodeHasComment(importNode.Semicolon) ||
-		f.nodeHasComment(importNode.Public) ||
-		f.nodeHasComment(importNode.Weak)
+		f.nodeHasComment(importNode.Modifier)
 }
 
 func (f *formatter) nodeHasComment(node ast.Node) bool {
@@ -2555,14 +2545,15 @@ func (n infoWithTrailingComments) TrailingComments() ast.Comments {
 // importSortOrder maps import types to a sort order number, so it can be compared and sorted.
 // Higher values sort first: `import`=3, `import public`=2, `import weak`=1.
 func importSortOrder(node *ast.ImportNode) int {
-	switch {
-	case node.Public != nil:
-		return 2
-	case node.Weak != nil:
-		return 1
-	default:
-		return 3
+	if node.Modifier != nil {
+		switch node.Modifier.Val {
+		case "public":
+			return 2
+		case "weak":
+			return 1
+		}
 	}
+	return 3
 }
 
 // isOptionImport reports whether the import has the "option" modifier.

@@ -56,11 +56,8 @@ type file struct {
 	// Version is an opaque version identifier given to us by the LSP client. This
 	// is used in the protocol to disambiguate which version of a file e.g. publishing
 	// diagnostics or symbols an operating refers to.
-	version int32
-	hasText bool // Whether this file has ever had text read into it.
-	// The local path of the descriptor.proto file used for compilation. This is stored for diagnostics.
-	descriptorProtoLocalPath string
-
+	version    int32
+	hasText    bool               // Whether this file has ever had text read into it.
 	workspace  *workspace         // May be nil.
 	objectInfo storage.ObjectInfo // Info in the context of the workspace.
 
@@ -283,10 +280,6 @@ func (f *file) RefreshIR(ctx context.Context) {
 
 	for i, file := range files {
 		file.ir = results[i].Value
-		if file.objectInfo.Path() == "google/protobuf/descriptor.proto" {
-			// Set local path for the descriptor.proto file used for diagnostics.
-			f.descriptorProtoLocalPath = file.objectInfo.LocalPath()
-		}
 		if f != file {
 			// Update symbols for imports.
 			file.IndexSymbols(ctx)
@@ -353,21 +346,6 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	defer xslog.DebugProfile(f.lsp.logger, slog.String("uri", string(f.uri)))()
 
 	if f.ir == nil {
-		return
-	}
-
-	// The file has not completed lowering, so we cannot continue with symbol indexing here.
-	// To help the user better understand/diagnose this problem, we surface an additional
-	// diagnostic here.
-	if !f.ir.Lowered() {
-		f.diagnostics = append(f.diagnostics, protocol.Diagnostic{
-			Source:   serverName,
-			Severity: protocol.DiagnosticSeverityError,
-			Message: fmt.Sprintf(`The symbols for this file have not been fully resolved due to an invalid version of descriptor.proto located at: %q.
-This is likely due to a vendored descriptor.proto.`,
-				f.descriptorProtoLocalPath,
-			),
-		})
 		return
 	}
 
@@ -1128,10 +1106,16 @@ func (f *file) RunChecks(ctx context.Context) {
 	}
 	path := f.objectInfo.Path()
 
-	opener := make(fileOpener)
-	for path, file := range f.workspace.PathToFile() {
-		opener[path] = file.file.Text()
+	// Snapshot the current workspace files into a source.Openers so that the
+	// image build sees a consistent view of file contents, including any unsaved
+	// modifications. source.WKTs() provides a fallback for well-known types that
+	// may not be present in the workspace.
+	workspaceOpener := source.NewMap(nil)
+	workspaceFiles := workspaceOpener.Get()
+	for filePath, workspaceFile := range f.workspace.PathToFile() {
+		workspaceFiles[filePath] = workspaceFile.file
 	}
+	opener := &source.Openers{workspaceOpener, source.WKTs()}
 
 	const checkTimeout = 30 * time.Second
 	ctx, cancel := context.WithTimeout(f.lsp.connCtx, checkTimeout)
