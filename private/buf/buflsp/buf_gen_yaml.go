@@ -30,10 +30,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const (
-	CommandRunGenerate        = "buf.generate.run"
-	CommandCheckPluginUpdates = "buf.generate.checkPluginUpdates"
-)
+// CommandRunGenerate is the LSP workspace command to run buf generate for a buf.gen.yaml file.
+const CommandRunGenerate = "buf.generate.run"
+
+// CommandCheckPluginUpdates is the LSP workspace command to check for newer versions of remote
+// plugins in a buf.gen.yaml file and publish informational diagnostics for any that are outdated.
+const CommandCheckPluginUpdates = "buf.generate.checkPluginUpdates"
 
 // isBufGenYAMLURI reports whether uri refers to a buf.gen.yaml file.
 func isBufGenYAMLURI(uri protocol.URI) bool {
@@ -254,7 +256,7 @@ func parseBufGenYAMLRefs(doc *yaml.Node) ([]bsrRef, []bsrRef, uint32) {
 			if valNode.Kind != yaml.SequenceNode {
 				continue
 			}
-			pluginsKeyLine = uint32(keyNode.Line - 1) //nolint:gosec // yaml.Node.Line is 1-indexed and always ≥ 1
+			pluginsKeyLine = uint32(keyNode.Line - 1) // yaml.Node.Line is 1-indexed and always ≥ 1
 			for _, item := range valNode.Content {
 				if item.Kind != yaml.MappingNode {
 					continue
