@@ -41,13 +41,32 @@ func buildImage(
 ) (bufimage.Image, []protocol.Diagnostic) {
 	image, rpt, err := bufimage.BuildImageFromOpener(ctx, logger, opener, []string{path})
 
+	// Resolve the target file's path via the opener. The opener is keyed by the
+	// workspace-relative path, but its *source.File records an absolute path
+	// (the editor URI filename), which is what diagnostic primary spans carry.
+	var targetPath string
+	if targetFile, _ := opener.Open(path); targetFile != nil {
+		targetPath = targetFile.Path()
+	}
+
 	var diagnostics []protocol.Diagnostic
 	var hasErrors bool
 	for _, diagnostic := range rpt.Diagnostics {
-		if diagnostic.Primary().IsZero() || diagnostic.Level() > report.Error {
+		primary := diagnostic.Primary()
+		if primary.IsZero() || diagnostic.Level() > report.Error {
 			continue
 		}
+		// Track errors across the whole compilation so we skip linting an
+		// incomplete image below, even when the error is in a transitive
+		// import.
 		hasErrors = true
+		// Only surface diagnostics whose primary span is in the target file.
+		// Errors in transitively-compiled imports belong to those files'
+		// diagnostic streams; publishing them here would overlay them onto
+		// the current file at the wrong line and column.
+		if targetPath != "" && primary.Path() != targetPath {
+			continue
+		}
 		diagnostics = append(diagnostics, reportDiagnosticToProtocolDiagnostic(diagnostic))
 	}
 

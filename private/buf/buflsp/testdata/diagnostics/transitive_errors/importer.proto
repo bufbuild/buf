@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package transitive.v1;
+
+import "broken.proto";
+
+// This file is syntactically valid and type-correct on its own.
+// Diagnostics produced by compiling broken.proto must not be attributed
+// to this file's URI by the LSP.
+message Importer {
+  Broken dep = 1;
+}

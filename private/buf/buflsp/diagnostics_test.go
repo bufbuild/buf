@@ -476,6 +476,41 @@ message TestMessage {
 	})
 }
 
+// TestDiagnosticsNoTransitiveLeak verifies that compile errors from a file
+// imported by the opened file do not get republished under the opened file's
+// URI. Diagnostics carry only a Range (no file path), so a leaked error lands
+// at the importing file's same line/column, appearing as an "overlay."
+func TestDiagnosticsNoTransitiveLeak(t *testing.T) {
+	t.Parallel()
+
+	synctest.Test(t, func(t *testing.T) {
+		importerPath, err := filepath.Abs("testdata/diagnostics/transitive_errors/importer.proto")
+		require.NoError(t, err)
+
+		_, testURI, capture := setupLSPServerWithDiagnostics(t, importerPath)
+
+		// Drain every goroutine in the bubble so the async RunChecks publish
+		// has definitely landed in the capture before we assert.
+		synctest.Wait()
+
+		diagnostics := capture.wait(t, testURI, time.Second, func(*protocol.PublishDiagnosticsParams) bool {
+			return true
+		})
+		require.NotNil(t, diagnostics)
+
+		// broken.proto has an `UnknownType` error at line 7 col 3. If the filter
+		// in buildImage regresses, that diagnostic resurfaces against
+		// importer.proto at the same (foreign) range.
+		for _, d := range diagnostics.Diagnostics {
+			assert.NotContains(
+				t, d.Message, "UnknownType",
+				"diagnostic from broken.proto leaked into importer.proto at %+v: %q",
+				d.Range, d.Message,
+			)
+		}
+	})
+}
+
 // diagnosticsCapture captures publishDiagnostics notifications from the LSP server.
 type diagnosticsCapture struct {
 	mu          sync.Mutex
