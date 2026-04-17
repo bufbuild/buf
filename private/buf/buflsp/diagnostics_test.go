@@ -479,7 +479,7 @@ message TestMessage {
 // TestDiagnosticsNoTransitiveLeak verifies that compile errors from a file
 // imported by the opened file do not get republished under the opened file's
 // URI. Diagnostics carry only a Range (no file path), so a leaked error lands
-// at the importing file's same line/column, appearing as an "overlay."
+// at the importing file's same line/column, appearing as an "overlay".
 func TestDiagnosticsNoTransitiveLeak(t *testing.T) {
 	t.Parallel()
 
