@@ -318,32 +318,13 @@ func (s *server) Formatting(
 		// Format for a file we don't know about? Seems bad!
 		return nil, fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
 	}
-	var errorsWithPos []reporter.ErrorWithPos
-	var warningErrorsWithPos []reporter.ErrorWithPos
-	handler := reporter.NewHandler(reporter.NewReporter(
-		func(errorWithPos reporter.ErrorWithPos) error {
-			errorsWithPos = append(errorsWithPos, errorWithPos)
-			return nil
-		},
-		func(errorWithPos reporter.ErrorWithPos) {
-			warningErrorsWithPos = append(warningErrorsWithPos, errorWithPos)
-		},
-	))
-	parsed, err := parser.Parse(file.uri.Filename(), strings.NewReader(file.file.Text()), handler)
-	if err == nil {
-		_, _ = parser.ResultFromAST(parsed, true, handler)
-	}
-	if len(errorsWithPos) > 0 {
-		return nil, fmt.Errorf("cannot format file %q, %v error(s) found", file.uri.Filename(), len(errorsWithPos))
-	}
-	// Currently we have no way to honor any of the parameters.
-	_ = params
-	if parsed == nil {
-		return nil, nil
+	parsed, err := parser.Parse(file.uri.Filename(), strings.NewReader(file.file.Text()), reporter.NewHandler(nil))
+	if err != nil {
+		return nil, fmt.Errorf("cannot format file: %w", err)
 	}
 	var out strings.Builder
 	if err := bufformat.FormatFileNode(&out, parsed); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("format failed: %w", err)
 	}
 	newText := out.String()
 	if newText == file.file.Text() {
