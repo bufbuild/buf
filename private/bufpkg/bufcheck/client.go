@@ -43,6 +43,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"pluginrpc.com/pluginrpc"
 )
 
@@ -822,18 +823,71 @@ func ignoreFileLocation(
 			return false, err
 		}
 		sourceLocations := protoreflectFileDescriptor.SourceLocations()
+		checkedSourcePathKeys := make(map[string]struct{}, len(associatedSourcePaths))
 		for _, associatedSourcePath := range associatedSourcePaths {
-			sourceLocation := sourceLocations.ByPath(associatedSourcePath)
-			if leadingComments := sourceLocation.LeadingComments; leadingComments != "" {
-				for _, line := range xstrings.SplitTrimLinesNoEmpty(leadingComments) {
-					if checkCommentLineForCheckIgnore(line, config.CommentIgnorePrefix, ruleID) {
-						return true, nil
-					}
+			if sourcePathHasCheckIgnore(sourceLocations, associatedSourcePath, checkedSourcePathKeys, config.CommentIgnorePrefix, ruleID) {
+				return true, nil
+			}
+			for _, siblingSourcePath := range sameSpanSiblingSourcePaths(sourceLocations, associatedSourcePath) {
+				if sourcePathHasCheckIgnore(sourceLocations, siblingSourcePath, checkedSourcePathKeys, config.CommentIgnorePrefix, ruleID) {
+					return true, nil
 				}
 			}
 		}
 	}
 	return false, nil
+}
+
+func sourcePathHasCheckIgnore(
+	sourceLocations protoreflect.SourceLocations,
+	sourcePath protoreflect.SourcePath,
+	checkedSourcePathKeys map[string]struct{},
+	commentIgnorePrefix string,
+	ruleID string,
+) bool {
+	sourcePathKey := sourcePath.String()
+	if _, ok := checkedSourcePathKeys[sourcePathKey]; ok {
+		return false
+	}
+	checkedSourcePathKeys[sourcePathKey] = struct{}{}
+	sourceLocation := sourceLocations.ByPath(sourcePath)
+	if sourceLocation.Path == nil {
+		return false
+	}
+	for _, line := range xstrings.SplitTrimLinesNoEmpty(sourceLocation.LeadingComments) {
+		if checkCommentLineForCheckIgnore(line, commentIgnorePrefix, ruleID) {
+			return true
+		}
+	}
+	return false
+}
+
+func sameSpanSiblingSourcePaths(
+	sourceLocations protoreflect.SourceLocations,
+	sourcePath protoreflect.SourcePath,
+) []protoreflect.SourcePath {
+	sourceLocation := sourceLocations.ByPath(sourcePath)
+	if sourceLocation.Path == nil {
+		return nil
+	}
+	// Groups are modeled as both a field and a synthetic nested message that share a span.
+	// Checking sibling paths with the same span lets comment ignores attached to one view
+	// suppress annotations emitted on the other.
+	var siblingSourcePaths []protoreflect.SourcePath
+	sourcePathKey := sourceLocation.Path.String()
+	for i := range sourceLocations.Len() {
+		candidate := sourceLocations.Get(i)
+		if candidate.Path == nil || sourcePathKey == candidate.Path.String() {
+			continue
+		}
+		if sourceLocation.StartLine == candidate.StartLine &&
+			sourceLocation.StartColumn == candidate.StartColumn &&
+			sourceLocation.EndLine == candidate.EndLine &&
+			sourceLocation.EndColumn == candidate.EndColumn {
+			siblingSourcePaths = append(siblingSourcePaths, candidate.Path)
+		}
+	}
+	return siblingSourcePaths
 }
 
 // checkCommentLineForCheckIgnore checks that the comment line starts with the configured

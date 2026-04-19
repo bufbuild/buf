@@ -402,6 +402,11 @@ func TestRunFieldNotRequired(t *testing.T) {
 	)
 }
 
+func TestRunFieldNotRequiredGroupCommentIgnore(t *testing.T) {
+	t.Parallel()
+	testLint(t, "field_not_required_group_comment_ignore")
+}
+
 func TestRunFileLowerSnakeCase(t *testing.T) {
 	t.Parallel()
 	testLint(
