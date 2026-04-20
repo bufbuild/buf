@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix `buf format` error handling for edition 2024.
 
 ## [v1.68.2] - 2026-04-17
 
