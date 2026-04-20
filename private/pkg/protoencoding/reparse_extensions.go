@@ -25,9 +25,27 @@ func ReparseExtensions(resolver Resolver, reflectMessage protoreflect.Message) e
 	if resolver == nil {
 		return nil
 	}
-	reparseBytes := reflectMessage.GetUnknown()
+	return reparseExtensions(
+		resolver,
+		map[protoreflect.MessageDescriptor][]protoreflect.FieldDescriptor{},
+		reflectMessage,
+	)
+}
 
-	if reflectMessage.Descriptor().ExtensionRanges().Len() > 0 {
+// reparseExtensions implements ReparseExtensions with a shared cache of
+// recursion-worthy fields per descriptor. The cache lives for the duration of
+// the top-level call, so memory is bounded by the descriptor types visited in
+// this one call tree.
+func reparseExtensions(
+	resolver Resolver,
+	messageFieldsCache map[protoreflect.MessageDescriptor][]protoreflect.FieldDescriptor,
+	reflectMessage protoreflect.Message,
+) error {
+	reparseBytes := reflectMessage.GetUnknown()
+	descriptor := reflectMessage.Descriptor()
+	hasExtensionRanges := descriptor.ExtensionRanges().Len() > 0
+
+	if hasExtensionRanges {
 		// Collect extensions into separate message so we can serialize
 		// *just* the extensions and then re-parse them below.
 		var msgExts protoreflect.Message
@@ -36,7 +54,7 @@ func ReparseExtensions(resolver Resolver, reflectMessage protoreflect.Message) e
 				return true
 			}
 			if msgExts == nil {
-				msgExts = reflectMessage.Type().New()
+				msgExts = reflectMessage.New()
 			}
 			msgExts.Set(field, value)
 			reflectMessage.Clear(field)
@@ -62,16 +80,74 @@ func ReparseExtensions(resolver Resolver, reflectMessage protoreflect.Message) e
 			return err
 		}
 	}
-	var err error
-	reflectMessage.Range(func(fieldDescriptor protoreflect.FieldDescriptor, value protoreflect.Value) bool {
-		err = reparseInField(resolver, fieldDescriptor, value)
-		return err == nil
-	})
-	return err
+	// Recurse into populated message-valued non-extension fields using the
+	// call-scoped cache. Scalar-only message types get an empty slice and skip
+	// this loop, avoiding a Range closure allocation.
+	for _, fieldDescriptor := range messageTypeFields(messageFieldsCache, descriptor) {
+		if !reflectMessage.Has(fieldDescriptor) {
+			continue
+		}
+		if err := reparseInField(
+			resolver,
+			messageFieldsCache,
+			fieldDescriptor,
+			reflectMessage.Get(fieldDescriptor),
+		); err != nil {
+			return err
+		}
+	}
+	// Extensions aren't in Fields(); use Range only when the schema allows them.
+	if hasExtensionRanges {
+		var err error
+		reflectMessage.Range(func(fieldDescriptor protoreflect.FieldDescriptor, value protoreflect.Value) bool {
+			if !fieldDescriptor.IsExtension() {
+				return true
+			}
+			err = reparseInField(resolver, messageFieldsCache, fieldDescriptor, value)
+			return err == nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// messageTypeFields returns the fields of descriptor that may hold a nested
+// message, using a call-scoped memoization map.
+func messageTypeFields(
+	cache map[protoreflect.MessageDescriptor][]protoreflect.FieldDescriptor,
+	descriptor protoreflect.MessageDescriptor,
+) []protoreflect.FieldDescriptor {
+	if cached, ok := cache[descriptor]; ok {
+		return cached
+	}
+	var result []protoreflect.FieldDescriptor
+	fields := descriptor.Fields()
+	for i := range fields.Len() {
+		fieldDescriptor := fields.Get(i)
+		if fieldMayContainMessage(fieldDescriptor) {
+			result = append(result, fieldDescriptor)
+		}
+	}
+	cache[descriptor] = result
+	return result
+}
+
+// fieldMayContainMessage reports whether a field holds a message, group, or
+// map with a message/group value.
+func fieldMayContainMessage(fieldDescriptor protoreflect.FieldDescriptor) bool {
+	if fieldDescriptor.IsMap() {
+		valueKind := fieldDescriptor.MapValue().Kind()
+		return valueKind == protoreflect.MessageKind || valueKind == protoreflect.GroupKind
+	}
+	kind := fieldDescriptor.Kind()
+	return kind == protoreflect.MessageKind || kind == protoreflect.GroupKind
 }
 
 func reparseInField(
 	resolver Resolver,
+	messageFieldsCache map[protoreflect.MessageDescriptor][]protoreflect.FieldDescriptor,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	value protoreflect.Value,
 ) error {
@@ -83,7 +159,7 @@ func reparseInField(
 		}
 		var err error
 		value.Map().Range(func(k protoreflect.MapKey, v protoreflect.Value) bool {
-			err = ReparseExtensions(resolver, v.Message())
+			err = reparseExtensions(resolver, messageFieldsCache, v.Message())
 			return err == nil
 		})
 		return err
@@ -95,11 +171,11 @@ func reparseInField(
 	if fieldDescriptor.IsList() {
 		list := value.List()
 		for i := range list.Len() {
-			if err := ReparseExtensions(resolver, list.Get(i).Message()); err != nil {
+			if err := reparseExtensions(resolver, messageFieldsCache, list.Get(i).Message()); err != nil {
 				return err
 			}
 		}
 		return nil
 	}
-	return ReparseExtensions(resolver, value.Message())
+	return reparseExtensions(resolver, messageFieldsCache, value.Message())
 }
