@@ -80,6 +80,9 @@ func (r *reparser) reparseExtensions(reflectMessage protoreflect.Message) {
 		r.reflectMessage = reflectMessage
 
 		reflectMessage.Range(r.visitExt)
+		if r.err != nil {
+			return
+		}
 		if r.msgExts != nil {
 			options := proto.MarshalOptions{AllowPartial: true}
 			var err error
@@ -121,7 +124,6 @@ func (r *reparser) reparseExtensions(reflectMessage protoreflect.Message) {
 			return
 		}
 	}
-	return
 }
 
 func (r *reparser) reparseInMessageField(msg protoreflect.Message, field protoreflect.FieldDescriptor) {
