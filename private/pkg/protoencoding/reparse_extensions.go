@@ -25,47 +25,68 @@ func ReparseExtensions(resolver Resolver, reflectMessage protoreflect.Message) e
 	if resolver == nil {
 		return nil
 	}
-	return reparseExtensions(
-		resolver,
-		map[protoreflect.MessageDescriptor][]protoreflect.FieldDescriptor{},
-		reflectMessage,
-	)
+	rep := newReparser(resolver)
+	rep.reparseExtensions(reflectMessage)
+	return rep.err
 }
 
-// reparseExtensions implements ReparseExtensions with a shared cache of
-// recursion-worthy fields per descriptor. The cache lives for the duration of
-// the top-level call, so memory is bounded by the descriptor types visited in
-// this one call tree.
-func reparseExtensions(
-	resolver Resolver,
-	messageFieldsCache map[protoreflect.MessageDescriptor][]protoreflect.FieldDescriptor,
-	reflectMessage protoreflect.Message,
-) error {
-	reparseBytes := reflectMessage.GetUnknown()
-	descriptor := reflectMessage.Descriptor()
-	hasExtensionRanges := descriptor.ExtensionRanges().Len() > 0
+type reparser struct {
+	resolver Resolver
 
-	if hasExtensionRanges {
+	// These fields hoist state up from reparseExtensions that could be local
+	// variables, but then would escape to the heap and result in many per-call
+	// allocations. So we allocate them once in this struct, which drastically
+	// improves the performance of the recursive calls by eliminating allocations.
+
+	reflectMessage protoreflect.Message
+	msgExts        protoreflect.Message
+	err            error
+
+	// visitExt refers to msgExts and reflectMessage, so those two fields
+	// must be reset prior to a Range call that uses visitExt.
+	visitExt      func(protoreflect.FieldDescriptor, protoreflect.Value) bool
+	visitMapEntry func(protoreflect.MapKey, protoreflect.Value) bool
+}
+
+func newReparser(resolver Resolver) *reparser {
+	result := &reparser{resolver: resolver}
+	result.visitExt = func(field protoreflect.FieldDescriptor, value protoreflect.Value) bool {
+		if !field.IsExtension() {
+			return true
+		}
+		if result.msgExts == nil {
+			result.msgExts = result.reflectMessage.New()
+		}
+		result.msgExts.Set(field, value)
+		result.reflectMessage.Clear(field)
+		return true
+	}
+	result.visitMapEntry = func(_ protoreflect.MapKey, value protoreflect.Value) bool {
+		result.reparseExtensions(value.Message())
+		return result.err == nil
+	}
+	return result
+}
+
+func (r *reparser) reparseExtensions(reflectMessage protoreflect.Message) {
+	reparseBytes := reflectMessage.GetUnknown()
+
+	if reflectMessage.Descriptor().ExtensionRanges().Len() > 0 {
 		// Collect extensions into separate message so we can serialize
 		// *just* the extensions and then re-parse them below.
-		var msgExts protoreflect.Message
-		reflectMessage.Range(func(field protoreflect.FieldDescriptor, value protoreflect.Value) bool {
-			if !field.IsExtension() {
-				return true
-			}
-			if msgExts == nil {
-				msgExts = reflectMessage.New()
-			}
-			msgExts.Set(field, value)
-			reflectMessage.Clear(field)
-			return true
-		})
-		if msgExts != nil {
+
+		// reset state for range
+		r.msgExts = nil
+		r.reflectMessage = reflectMessage
+
+		reflectMessage.Range(r.visitExt)
+		if r.msgExts != nil {
 			options := proto.MarshalOptions{AllowPartial: true}
 			var err error
-			reparseBytes, err = options.MarshalAppend(reparseBytes, msgExts.Interface())
+			reparseBytes, err = options.MarshalAppend(reparseBytes, r.msgExts.Interface())
 			if err != nil {
-				return err
+				r.err = err
+				return
 			}
 		}
 	}
@@ -73,109 +94,54 @@ func reparseExtensions(
 	if len(reparseBytes) > 0 {
 		reflectMessage.SetUnknown(nil)
 		options := proto.UnmarshalOptions{
-			Resolver: resolver,
+			Resolver: r.resolver,
 			Merge:    true,
 		}
 		if err := options.Unmarshal(reparseBytes, reflectMessage.Interface()); err != nil {
-			return err
+			r.err = err
+			return
 		}
 	}
-	// Recurse into populated message-valued non-extension fields using the
-	// call-scoped cache. Scalar-only message types get an empty slice and skip
-	// this loop, avoiding a Range closure allocation.
-	for _, fieldDescriptor := range messageTypeFields(messageFieldsCache, descriptor) {
-		if !reflectMessage.Has(fieldDescriptor) {
+	// Ideally, we'd use reflectMessage.Range here, but that allocates too much since it must
+	// allocate a wrapper for every repeated field that implements protoreflect.List. We don't
+	// care about visiting extensions (since we just resolved/reparsed those above), so we
+	// can iterate over the non-extension fields.
+	fields := reflectMessage.Descriptor().Fields()
+	for i := range fields.Len() {
+		field := fields.Get(i)
+		if field.Message() == nil {
+			// nothing to reparse if not a message
 			continue
 		}
-		if err := reparseInField(
-			resolver,
-			messageFieldsCache,
-			fieldDescriptor,
-			reflectMessage.Get(fieldDescriptor),
-		); err != nil {
-			return err
+		if !reflectMessage.Has(field) {
+			continue
+		}
+		r.reparseInMessageField(reflectMessage, field)
+		if r.err != nil {
+			return
 		}
 	}
-	// Extensions aren't in Fields(); use Range only when the schema allows them.
-	if hasExtensionRanges {
-		var err error
-		reflectMessage.Range(func(fieldDescriptor protoreflect.FieldDescriptor, value protoreflect.Value) bool {
-			if !fieldDescriptor.IsExtension() {
-				return true
-			}
-			err = reparseInField(resolver, messageFieldsCache, fieldDescriptor, value)
-			return err == nil
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return
 }
 
-// messageTypeFields returns the fields of descriptor that may hold a nested
-// message, using a call-scoped memoization map.
-func messageTypeFields(
-	cache map[protoreflect.MessageDescriptor][]protoreflect.FieldDescriptor,
-	descriptor protoreflect.MessageDescriptor,
-) []protoreflect.FieldDescriptor {
-	if cached, ok := cache[descriptor]; ok {
-		return cached
-	}
-	var result []protoreflect.FieldDescriptor
-	fields := descriptor.Fields()
-	for i := range fields.Len() {
-		fieldDescriptor := fields.Get(i)
-		if fieldMayContainMessage(fieldDescriptor) {
-			result = append(result, fieldDescriptor)
-		}
-	}
-	cache[descriptor] = result
-	return result
-}
-
-// fieldMayContainMessage reports whether a field holds a message, group, or
-// map with a message/group value.
-func fieldMayContainMessage(fieldDescriptor protoreflect.FieldDescriptor) bool {
-	if fieldDescriptor.IsMap() {
-		valueKind := fieldDescriptor.MapValue().Kind()
-		return valueKind == protoreflect.MessageKind || valueKind == protoreflect.GroupKind
-	}
-	kind := fieldDescriptor.Kind()
-	return kind == protoreflect.MessageKind || kind == protoreflect.GroupKind
-}
-
-func reparseInField(
-	resolver Resolver,
-	messageFieldsCache map[protoreflect.MessageDescriptor][]protoreflect.FieldDescriptor,
-	fieldDescriptor protoreflect.FieldDescriptor,
-	value protoreflect.Value,
-) error {
-	if fieldDescriptor.IsMap() {
-		valDesc := fieldDescriptor.MapValue()
-		if valDesc.Kind() != protoreflect.MessageKind && valDesc.Kind() != protoreflect.GroupKind {
+func (r *reparser) reparseInMessageField(msg protoreflect.Message, field protoreflect.FieldDescriptor) {
+	if field.IsMap() {
+		if field.MapValue().Message() == nil {
 			// nothing to reparse
-			return nil
+			return
 		}
-		var err error
-		value.Map().Range(func(k protoreflect.MapKey, v protoreflect.Value) bool {
-			err = reparseExtensions(resolver, messageFieldsCache, v.Message())
-			return err == nil
-		})
-		return err
+		msg.Get(field).Map().Range(r.visitMapEntry)
+		return
 	}
-	if fieldDescriptor.Kind() != protoreflect.MessageKind && fieldDescriptor.Kind() != protoreflect.GroupKind {
-		// nothing to reparse
-		return nil
-	}
-	if fieldDescriptor.IsList() {
-		list := value.List()
+	if field.IsList() {
+		list := msg.Get(field).List()
 		for i := range list.Len() {
-			if err := reparseExtensions(resolver, messageFieldsCache, list.Get(i).Message()); err != nil {
-				return err
+			r.reparseExtensions(list.Get(i).Message())
+			if r.err != nil {
+				return
 			}
 		}
-		return nil
+		return
 	}
-	return reparseExtensions(resolver, messageFieldsCache, value.Message())
+	r.reparseExtensions(msg.Get(field).Message())
 }
