@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"unicode/utf16"
@@ -25,6 +26,7 @@ import (
 	celpv "buf.build/go/protovalidate/cel"
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufformat"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
 	"github.com/google/cel-go/cel"
@@ -228,6 +230,7 @@ func (s *server) DidOpen(
 ) error {
 	if isBufYAMLURI(params.TextDocument.URI) {
 		s.bufYAMLManager.Track(params.TextDocument.URI, params.TextDocument.Text)
+		s.checkOutOfSyncAsync(params.TextDocument.URI)
 		return nil
 	}
 	if isBufGenYAMLURI(params.TextDocument.URI) {
@@ -240,6 +243,7 @@ func (s *server) DidOpen(
 	}
 	if isBufLockURI(params.TextDocument.URI) {
 		s.bufLockManager.Track(params.TextDocument.URI, params.TextDocument.Text)
+		s.checkOutOfSyncAsync(s.companionBufYAMLURI(params.TextDocument.URI))
 		return nil
 	}
 	file := s.fileManager.Track(params.TextDocument.URI)
@@ -256,6 +260,7 @@ func (s *server) DidChange(
 ) error {
 	if isBufYAMLURI(params.TextDocument.URI) {
 		s.bufYAMLManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
+		s.checkOutOfSyncAsync(params.TextDocument.URI)
 		return nil
 	}
 	if isBufGenYAMLURI(params.TextDocument.URI) {
@@ -268,6 +273,7 @@ func (s *server) DidChange(
 	}
 	if isBufLockURI(params.TextDocument.URI) {
 		s.bufLockManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
+		s.checkOutOfSyncAsync(s.companionBufYAMLURI(params.TextDocument.URI))
 		return nil
 	}
 	file := s.fileManager.Get(params.TextDocument.URI)
@@ -372,7 +378,7 @@ func (s *server) DidClose(
 		return nil
 	}
 	if isBufLockURI(params.TextDocument.URI) {
-		s.bufLockManager.Close(params.TextDocument.URI)
+		s.bufLockManager.Close(ctx, params.TextDocument.URI)
 		return nil
 	}
 	if file := s.fileManager.Get(params.TextDocument.URI); file != nil {
@@ -580,6 +586,12 @@ func (s *server) DocumentHighlight(ctx context.Context, params *protocol.Documen
 
 // CodeAction is called when the client requests code actions for a given range.
 func (s *server) CodeAction(ctx context.Context, params *protocol.CodeActionParams) ([]protocol.CodeAction, error) {
+	// buf.yaml and buf.lock files are handled by their own managers and are not
+	// tracked in the file manager.
+	if isBufYAMLURI(params.TextDocument.URI) || isBufLockURI(params.TextDocument.URI) {
+		return s.getDepSyncCodeActions(params), nil
+	}
+
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {
 		return nil, nil
@@ -602,6 +614,60 @@ func (s *server) CodeAction(ctx context.Context, params *protocol.CodeActionPara
 		actions = append(actions, lintIgnoreActions...)
 	}
 	return actions, nil
+}
+
+// getDepSyncCodeActions returns a QuickFix code action for the "buf dep update"
+// command when buf.yaml and buf.lock are out of sync. The action is only offered
+// when the requested range overlaps with line 0 (where the diagnostic sits).
+func (s *server) getDepSyncCodeActions(params *protocol.CodeActionParams) []protocol.CodeAction {
+	codeActionSet := xslices.ToStructMap(params.Context.Only)
+	if _, ok := codeActionSet[protocol.QuickFix]; len(codeActionSet) != 0 && !ok {
+		return nil
+	}
+
+	var bufYAMLURI protocol.URI
+	if isBufYAMLURI(params.TextDocument.URI) {
+		bufYAMLURI = params.TextDocument.URI
+	} else {
+		bufYAMLURI = s.companionBufYAMLURI(params.TextDocument.URI)
+	}
+
+	if !s.bufYAMLManager.IsOutOfSync(bufYAMLURI) {
+		return nil
+	}
+
+	// Only offer the action when the cursor is on line 0 (the diagnostic's line).
+	diagRange := protocol.Range{}
+	if !rangesOverlap(params.Range, diagRange) {
+		return nil
+	}
+
+	action := protocol.CodeAction{
+		Title:       outOfSyncCodeActionTitle,
+		Kind:        protocol.QuickFix,
+		IsPreferred: true,
+		Diagnostics: []protocol.Diagnostic{outOfSyncDiagnostic()},
+		Command: &protocol.Command{
+			Title:     outOfSyncCodeActionTitle,
+			Command:   commandUpdateAllDeps,
+			Arguments: []any{string(bufYAMLURI)},
+		},
+	}
+	return []protocol.CodeAction{action}
+}
+
+// checkOutOfSyncAsync spawns a goroutine to run CheckOutOfSync for the given
+// buf.yaml URI. Uses the connection-lifetime context so the check outlives the
+// current request.
+func (s *server) checkOutOfSyncAsync(bufYAMLURI protocol.URI) {
+	go s.bufYAMLManager.CheckOutOfSync(s.lsp.connCtx, bufYAMLURI)
+}
+
+// companionBufYAMLURI returns the URI for the buf.yaml that lives in the same
+// directory as the given buf.lock URI.
+func (s *server) companionBufYAMLURI(bufLockURI protocol.URI) protocol.URI {
+	bufYAMLPath := filepath.Join(filepath.Dir(bufLockURI.Filename()), bufconfig.DefaultBufYAMLFileName)
+	return FilePathToURI(bufYAMLPath)
 }
 
 // CodeLens is called when the client requests code lenses for a document.

@@ -43,6 +43,12 @@ const (
 	//
 	// Ref: https://buf.build/docs/configuration/v2/buf-yaml/#deps
 	bufYAMLDepsKey = "deps"
+
+	// outOfSyncMessage is the diagnostic message shown when buf.yaml deps are not
+	// all pinned in buf.lock.
+	outOfSyncMessage = "buf.yaml and buf.lock are out of sync; run buf dep update"
+	// outOfSyncCodeActionTitle is the code action title for fixing out-of-sync state.
+	outOfSyncCodeActionTitle = "Run buf dep update"
 )
 
 // bufYAMLManager tracks open buf.yaml files in the LSP session.
@@ -50,12 +56,17 @@ type bufYAMLManager struct {
 	lsp       *lsp
 	mu        sync.Mutex
 	uriToFile map[protocol.URI]*bufYAMLFile
+	// outOfSync records normalized buf.yaml URIs whose declared deps are not all
+	// pinned in the companion buf.lock. Used to offer the "Run buf dep update"
+	// code action.
+	outOfSync map[protocol.URI]bool
 }
 
 func newBufYAMLManager(lsp *lsp) *bufYAMLManager {
 	return &bufYAMLManager{
 		lsp:       lsp,
 		uriToFile: make(map[protocol.URI]*bufYAMLFile),
+		outOfSync: make(map[protocol.URI]bool),
 	}
 }
 
@@ -89,13 +100,17 @@ func (m *bufYAMLManager) Track(uri protocol.URI, text string) {
 	m.uriToFile[normalized] = f
 }
 
-// Close stops tracking a buf.yaml file and clears any diagnostics it published.
+// Close stops tracking a buf.yaml file and clears any diagnostics it published,
+// including any out-of-sync diagnostics on the companion buf.lock.
 func (m *bufYAMLManager) Close(ctx context.Context, uri protocol.URI) {
 	normalized := normalizeURI(uri)
 	m.mu.Lock()
 	delete(m.uriToFile, normalized)
+	delete(m.outOfSync, normalized)
 	m.mu.Unlock()
 	m.publishDiagnostics(ctx, normalized, nil)
+	bufLockURI := companionBufLockURI(uri)
+	m.lsp.bufLockManager.publishDiagnostics(ctx, bufLockURI, nil)
 }
 
 // GetCodeLenses returns code lenses for the given buf.yaml URI.
@@ -231,12 +246,110 @@ func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.U
 	return nil
 }
 
-// publishDiagnostics clears existing diagnostics when passed nil.
+// CheckOutOfSync publishes a Warning diagnostic on line 0 of buf.yaml and its
+// companion buf.lock when any declared dep is absent from the lock file.
+func (m *bufYAMLManager) CheckOutOfSync(ctx context.Context, uri protocol.URI) {
+	normalized := normalizeURI(uri)
+	bufLockURI := companionBufLockURI(uri)
+
+	dirPath := filepath.Dir(uri.Filename())
+	workspaceDepManager, err := m.lsp.controller.GetWorkspaceDepManager(ctx, dirPath)
+	if err != nil {
+		// Can't read workspace config; don't emit spurious diagnostics.
+		return
+	}
+
+	configuredRefs, err := workspaceDepManager.ConfiguredDepModuleRefs(ctx)
+	if err != nil || len(configuredRefs) == 0 {
+		m.applyOutOfSync(ctx, normalized, bufLockURI, false)
+		return
+	}
+
+	existingKeys, err := workspaceDepManager.ExistingBufLockFileDepModuleKeys(ctx)
+	if err != nil {
+		// Treat an unreadable buf.lock as out of sync.
+		m.applyOutOfSync(ctx, normalized, bufLockURI, true)
+		return
+	}
+
+	existingByFullName := make(map[string]struct{}, len(existingKeys))
+	for _, key := range existingKeys {
+		existingByFullName[key.FullName().String()] = struct{}{}
+	}
+
+	outOfSync := false
+	for _, ref := range configuredRefs {
+		if _, ok := existingByFullName[ref.FullName().String()]; !ok {
+			outOfSync = true
+			break
+		}
+	}
+	m.applyOutOfSync(ctx, normalized, bufLockURI, outOfSync)
+}
+
+// IsOutOfSync reports whether the buf.yaml at uri (normalized) currently has
+// an active out-of-sync diagnostic.
+func (m *bufYAMLManager) IsOutOfSync(uri protocol.URI) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.outOfSync[normalizeURI(uri)]
+}
+
+// applyOutOfSync updates the recorded out-of-sync state and publishes or clears
+// diagnostics on both buf.yaml and buf.lock, but only when the state changes.
+func (m *bufYAMLManager) applyOutOfSync(ctx context.Context, bufYAMLURI, bufLockURI protocol.URI, isOutOfSync bool) {
+	m.mu.Lock()
+	wasOutOfSync := m.outOfSync[bufYAMLURI]
+	if isOutOfSync {
+		m.outOfSync[bufYAMLURI] = true
+	} else {
+		delete(m.outOfSync, bufYAMLURI)
+	}
+	changed := wasOutOfSync != isOutOfSync
+	m.mu.Unlock()
+
+	if !changed {
+		return
+	}
+	if isOutOfSync {
+		diag := outOfSyncDiagnostic()
+		m.publishDiagnostics(ctx, bufYAMLURI, []protocol.Diagnostic{diag})
+		m.lsp.bufLockManager.publishDiagnostics(ctx, bufLockURI, []protocol.Diagnostic{diag})
+	} else {
+		m.publishDiagnostics(ctx, bufYAMLURI, nil)
+		m.lsp.bufLockManager.publishDiagnostics(ctx, bufLockURI, nil)
+	}
+}
+
+// outOfSyncDiagnostic returns a Warning diagnostic for the out-of-sync state,
+// anchored at the top of the file.
+func outOfSyncDiagnostic() protocol.Diagnostic {
+	return protocol.Diagnostic{
+		Range:    protocol.Range{},
+		Severity: protocol.DiagnosticSeverityWarning,
+		Source:   serverName,
+		Message:  outOfSyncMessage,
+	}
+}
+
+// companionBufLockURI returns the URI for the buf.lock that lives in the same
+// directory as the given buf.yaml URI.
+func companionBufLockURI(bufYAMLURI protocol.URI) protocol.URI {
+	bufLockPath := filepath.Join(filepath.Dir(bufYAMLURI.Filename()), bufconfig.DefaultBufLockFileName)
+	return FilePathToURI(bufLockPath)
+}
+
 func (m *bufYAMLManager) publishDiagnostics(ctx context.Context, uri protocol.URI, diagnostics []protocol.Diagnostic) {
+	publishDiagnosticsForURI(ctx, m.lsp, uri, diagnostics)
+}
+
+// publishDiagnosticsForURI sends diagnostics for uri via the LSP client.
+// Passing nil clears existing diagnostics.
+func publishDiagnosticsForURI(ctx context.Context, l *lsp, uri protocol.URI, diagnostics []protocol.Diagnostic) {
 	if diagnostics == nil {
 		diagnostics = []protocol.Diagnostic{}
 	}
-	_ = m.lsp.client.PublishDiagnostics(ctx, &protocol.PublishDiagnosticsParams{
+	_ = l.client.PublishDiagnostics(ctx, &protocol.PublishDiagnosticsParams{
 		URI:         uri,
 		Diagnostics: diagnostics,
 	})

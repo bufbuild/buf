@@ -94,7 +94,7 @@ func Serve(
 	lsp.bufYAMLManager = newBufYAMLManager(lsp)
 	lsp.bufGenYAMLManager = newBufGenYAMLManager()
 	lsp.bufPolicyYAMLManager = newBufPolicyYAMLManager()
-	lsp.bufLockManager = newBufLockManager()
+	lsp.bufLockManager = newBufLockManager(lsp)
 	off := protocol.TraceOff
 	lsp.traceValue.Store(&off)
 

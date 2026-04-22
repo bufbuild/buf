@@ -887,6 +887,186 @@ func TestBufYAMLHover_OtherFixtures(t *testing.T) {
 	}
 }
 
+// TestBufYAMLOutOfSync verifies that opening a buf.yaml whose declared deps are
+// not all pinned in the companion buf.lock produces a Warning diagnostic at line 0.
+func TestBufYAMLOutOfSync(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		fixture string // path to buf.yaml
+	}{
+		{
+			// buf.yaml has two deps but buf.lock is absent → out of sync.
+			name:    "no_lock",
+			fixture: "testdata/buf_yaml/deps_no_lock/buf.yaml",
+		},
+		{
+			// buf.yaml has two deps; buf.lock only pins one → out of sync.
+			name:    "partial_lock",
+			fixture: "testdata/buf_yaml/deps_out_of_sync/buf.yaml",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			absPath, err := filepath.Abs(tc.fixture)
+			require.NoError(t, err)
+
+			synctest.Test(t, func(t *testing.T) {
+				_, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, nil)
+
+				diags := capture.wait(t, bufYAMLURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+					return len(p.Diagnostics) > 0
+				})
+				require.NotNil(t, diags)
+				require.Len(t, diags.Diagnostics, 1)
+				d := diags.Diagnostics[0]
+				assert.Equal(t, protocol.DiagnosticSeverityWarning, d.Severity)
+				assert.Equal(t, "buf-lsp", d.Source)
+				assert.Contains(t, d.Message, "buf dep update")
+				assert.Equal(t, uint32(0), d.Range.Start.Line, "out-of-sync diagnostic must be on line 0")
+				assert.Equal(t, uint32(0), d.Range.End.Line, "out-of-sync diagnostic must end on line 0")
+			})
+		})
+	}
+}
+
+// TestBufLockOutOfSync verifies that opening a buf.lock that is out of sync with
+// its companion buf.yaml also receives a Warning diagnostic at line 0.
+func TestBufLockOutOfSync(t *testing.T) {
+	t.Parallel()
+
+	absYAMLPath, err := filepath.Abs("testdata/buf_yaml/deps_out_of_sync/buf.yaml")
+	require.NoError(t, err)
+	absLockPath, err := filepath.Abs("testdata/buf_yaml/deps_out_of_sync/buf.lock")
+	require.NoError(t, err)
+
+	synctest.Test(t, func(t *testing.T) {
+		clientJSONConn, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absYAMLPath, nil)
+		ctx := t.Context()
+
+		// Wait for the out-of-sync diagnostic on buf.yaml first.
+		_ = capture.wait(t, bufYAMLURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+			return len(p.Diagnostics) > 0
+		})
+
+		// Now open buf.lock in the same session.
+		bufLockURI := buflsp.FilePathToURI(absLockPath)
+		lockContent, err := os.ReadFile(absLockPath)
+		require.NoError(t, err)
+		err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidOpen, &protocol.DidOpenTextDocumentParams{
+			TextDocument: protocol.TextDocumentItem{
+				URI:        bufLockURI,
+				LanguageID: "yaml",
+				Version:    1,
+				Text:       string(lockContent),
+			},
+		})
+		require.NoError(t, err)
+
+		// buf.lock should also receive the warning diagnostic.
+		diags := capture.wait(t, bufLockURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+			return len(p.Diagnostics) > 0
+		})
+		require.NotNil(t, diags)
+		require.Len(t, diags.Diagnostics, 1)
+		d := diags.Diagnostics[0]
+		assert.Equal(t, protocol.DiagnosticSeverityWarning, d.Severity)
+		assert.Equal(t, "buf-lsp", d.Source)
+		assert.Equal(t, uint32(0), d.Range.Start.Line, "out-of-sync diagnostic must be on line 0 of buf.lock")
+	})
+}
+
+// TestBufYAMLOutOfSync_CodeAction verifies that a QuickFix code action for running
+// buf dep update is offered at line 0 of an out-of-sync buf.yaml, and that no such
+// action is offered for an in-sync file.
+func TestBufYAMLOutOfSync_CodeAction(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		fixture    string
+		wantAction bool
+	}{
+		{
+			name:       "out_of_sync_offers_action",
+			fixture:    "testdata/buf_yaml/deps_out_of_sync/buf.yaml",
+			wantAction: true,
+		},
+		{
+			name:       "in_sync_no_action",
+			fixture:    "testdata/buf_yaml/with_deps/buf.yaml",
+			wantAction: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			absPath, err := filepath.Abs(tc.fixture)
+			require.NoError(t, err)
+
+			synctest.Test(t, func(t *testing.T) {
+				clientJSONConn, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, nil)
+				ctx := t.Context()
+
+				if tc.wantAction {
+					// Wait for the out-of-sync diagnostic to be published before
+					// requesting code actions, ensuring the state is recorded.
+					_ = capture.wait(t, bufYAMLURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+						return len(p.Diagnostics) > 0
+					})
+				} else {
+					// For in-sync files no diagnostic is ever published, but we still
+					// need the async CheckOutOfSync goroutine to complete before we
+					// assert the absence of a code action.  A synchronous code-lens call
+					// ensures the server has processed all prior notifications.
+					var lenses []protocol.CodeLens
+					_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentCodeLens, &protocol.CodeLensParams{
+						TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
+					}, &lenses)
+					require.NoError(t, err)
+				}
+
+				var actions []protocol.CodeAction
+				_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentCodeAction, &protocol.CodeActionParams{
+					TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
+					Range:        protocol.Range{}, // line 0
+					Context:      protocol.CodeActionContext{},
+				}, &actions)
+				require.NoError(t, err)
+
+				depUpdateActions := filterDepUpdateActions(actions)
+				if tc.wantAction {
+					require.NotEmpty(t, depUpdateActions, "expected a 'Run buf dep update' code action")
+					a := depUpdateActions[0]
+					assert.Equal(t, protocol.QuickFix, a.Kind)
+					assert.True(t, a.IsPreferred)
+					require.NotNil(t, a.Command)
+					assert.Equal(t, "buf.dep.updateAll", a.Command.Command)
+				} else {
+					assert.Empty(t, depUpdateActions, "expected no 'Run buf dep update' code action when in sync")
+				}
+			})
+		})
+	}
+}
+
+// filterDepUpdateActions returns the subset of actions whose command is buf.dep.updateAll.
+func filterDepUpdateActions(actions []protocol.CodeAction) []protocol.CodeAction {
+	var result []protocol.CodeAction
+	for _, a := range actions {
+		if a.Command != nil && a.Command.Command == "buf.dep.updateAll" {
+			result = append(result, a)
+		}
+	}
+	return result
+}
+
 // mustParseUUID parses a UUID string for use in test data, failing the test on error.
 func mustParseUUID(t *testing.T, s string) uuid.UUID {
 	t.Helper()

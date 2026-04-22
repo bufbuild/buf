@@ -15,6 +15,7 @@
 package buflsp
 
 import (
+	"context"
 	"path/filepath"
 	"sync"
 
@@ -31,12 +32,14 @@ func isBufLockURI(uri protocol.URI) bool {
 
 // bufLockManager tracks open buf.lock files in the LSP session.
 type bufLockManager struct {
+	lsp       *lsp
 	mu        sync.Mutex
 	uriToFile map[protocol.URI]*bufLockFile
 }
 
-func newBufLockManager() *bufLockManager {
+func newBufLockManager(lsp *lsp) *bufLockManager {
 	return &bufLockManager{
+		lsp:       lsp,
 		uriToFile: make(map[protocol.URI]*bufLockFile),
 	}
 }
@@ -60,11 +63,17 @@ func (m *bufLockManager) Track(uri protocol.URI, text string) {
 	m.uriToFile[normalized] = f
 }
 
-// Close stops tracking a buf.lock file.
-func (m *bufLockManager) Close(uri protocol.URI) {
+// Close stops tracking a buf.lock file and clears any diagnostics it published.
+func (m *bufLockManager) Close(ctx context.Context, uri protocol.URI) {
+	normalized := normalizeURI(uri)
 	m.mu.Lock()
-	delete(m.uriToFile, normalizeURI(uri))
+	delete(m.uriToFile, normalized)
 	m.mu.Unlock()
+	m.publishDiagnostics(ctx, normalized, nil)
+}
+
+func (m *bufLockManager) publishDiagnostics(ctx context.Context, uri protocol.URI, diagnostics []protocol.Diagnostic) {
+	publishDiagnosticsForURI(ctx, m.lsp, uri, diagnostics)
 }
 
 // GetHover returns hover documentation for the buf.lock field at the given
