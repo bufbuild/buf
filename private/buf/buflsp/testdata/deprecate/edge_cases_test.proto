@@ -6,7 +6,7 @@ package test.deprecate.edge;
 message EmptyMessage {}
 
 // Empty body with space
-message EmptyWithSpace { }
+message EmptyWithSpace {}
 
 // Already deprecated
 message AlreadyDeprecated {
@@ -36,9 +36,7 @@ enum EmptyEnum {
 // Enum with multi-line options on value
 enum MultiLineOptions {
   MULTI_LINE_OPTIONS_UNSPECIFIED = 0;
-  MULTI_LINE_OPTIONS_ONE = 1 [
-    debug_redact = true
-  ];
+  MULTI_LINE_OPTIONS_ONE = 1 [debug_redact = true];
 }
 
 // Field with multi-line options

@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package test.deprecate;
+
+message MyMessage {
+  string name = 1;
+  int32 id = 2;
+}
+
+enum MyEnum {
+  option deprecated = true;
+  MY_ENUM_UNSPECIFIED = 0;
+  MY_ENUM_ONE = 1;
+}
+
+service MyService {
+  rpc GetMessage(MyMessage) returns (MyMessage);
+}

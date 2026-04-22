@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package test.deprecate.nested;
+
+option deprecated = true;
+message Outer {
+  option deprecated = true;
+
+  string outer_field = 1;
+
+  message Inner {
+    option deprecated = true;
+
+    string inner_field = 1;
+    enum NestedEnum {
+      option deprecated = true;
+      NESTED_ENUM_UNSPECIFIED = 0;
+    }
+  }
+  enum OuterEnum {
+    option deprecated = true;
+    OUTER_ENUM_UNSPECIFIED = 0;
+  }
+}

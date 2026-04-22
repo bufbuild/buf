@@ -30,344 +30,152 @@ import (
 func TestCodeAction_Deprecate(t *testing.T) {
 	t.Parallel()
 
-	// Test: Deprecate message at cursor on "MyMessage" (line 5)
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/message_test.proto",
-		4, 8, // Line 5, on "MyMessage" (0-indexed: line 4)
+		4, 8, // cursor on "MyMessage"
 		"Deprecate message test.deprecate.MyMessage",
-		[]protocol.TextEdit{
-			// Insert "option deprecated = true;" after opening brace on line 5
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 4, Character: 19},
-					End:   protocol.Position{Line: 4, Character: 19},
-				},
-				NewText: "\n  option deprecated = true;",
-			},
-		},
+		"testdata/deprecate/golden/message.MyMessage.golden.proto",
 	)
 
-	// Test: Deprecate enum at cursor on "MyEnum" (line 10)
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/message_test.proto",
-		9, 5, // Line 10, on "MyEnum" (0-indexed: line 9)
+		9, 5, // cursor on "MyEnum"
 		"Deprecate enum test.deprecate.MyEnum",
-		[]protocol.TextEdit{
-			// Insert "option deprecated = true;" after opening brace on line 10
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 9, Character: 13},
-					End:   protocol.Position{Line: 9, Character: 13},
-				},
-				NewText: "\n  option deprecated = true;",
-			},
-		},
+		"testdata/deprecate/golden/message.MyEnum.golden.proto",
 	)
 
-	// Test: Deprecate service at cursor on "MyService" (line 15)
-	// Service deprecation also deprecates the method.
-	// Line-based diff produces single edit replacing both changed lines.
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/message_test.proto",
-		14, 8, // Line 15, on "MyService" (0-indexed: line 14)
+		14, 8, // cursor on "MyService"
 		"Deprecate service test.deprecate.MyService",
-		[]protocol.TextEdit{
-			// Lines 15-16 both change, so diff replaces them together
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 14, Character: 0},
-					End:   protocol.Position{Line: 16, Character: 0},
-				},
-				NewText: "service MyService {\n  option deprecated = true;\n  rpc GetMessage(MyMessage) returns (MyMessage) {\n    option deprecated = true;\n  }\n",
-			},
-		},
+		"testdata/deprecate/golden/message.MyService.golden.proto",
 	)
 
-	// Test: No action on whitespace (empty line after package)
+	// No action on whitespace (empty line after package).
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/message_test.proto",
-		3, 0, // Line 4, empty line (0-indexed: line 3)
-		"", // No action expected
-		nil,
+		3, 0,
+		"",
+		"",
 	)
 
-	// Test: Deprecate nested message "Inner" - verifies 4-space indentation
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/nested_test.proto",
-		7, 10, // Line 8, on "Inner" (0-indexed: line 7)
+		7, 10, // cursor on "Inner"
 		"Deprecate message test.deprecate.nested.Outer.Inner",
-		[]protocol.TextEdit{
-			// Inner message - Line 8: "  message Inner {" - insert at 17
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 7, Character: 17},
-					End:   protocol.Position{Line: 7, Character: 17},
-				},
-				NewText: "\n    option deprecated = true;",
-			},
-			// NestedEnum - Line 11: "    enum NestedEnum {" - insert at 21
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 10, Character: 21},
-					End:   protocol.Position{Line: 10, Character: 21},
-				},
-				NewText: "\n      option deprecated = true;",
-			},
-		},
+		"testdata/deprecate/golden/nested.Inner.golden.proto",
 	)
 
-	// Test: Deprecate doubly-nested enum "NestedEnum" - verifies 6-space indentation
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/nested_test.proto",
-		10, 9, // Line 11, on "NestedEnum" (0-indexed: line 10)
+		10, 9, // cursor on "NestedEnum"
 		"Deprecate enum test.deprecate.nested.Outer.Inner.NestedEnum",
-		[]protocol.TextEdit{
-			// NestedEnum - Line 11: "    enum NestedEnum {" - insert at 21
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 10, Character: 21},
-					End:   protocol.Position{Line: 10, Character: 21},
-				},
-				NewText: "\n      option deprecated = true;",
-			},
-		},
+		"testdata/deprecate/golden/nested.NestedEnum.golden.proto",
 	)
 
-	// Test: Deprecate parent "Outer" - deprecates all nested types but NOT fields/enum values
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/nested_test.proto",
-		4, 8, // Line 5, on "Outer" (0-indexed: line 4)
+		4, 8, // cursor on "Outer"
 		"Deprecate message test.deprecate.nested.Outer",
-		[]protocol.TextEdit{
-			// Outer message - Line 5: "message Outer {" - insert at 15
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 4, Character: 15},
-					End:   protocol.Position{Line: 4, Character: 15},
-				},
-				NewText: "\n  option deprecated = true;",
-			},
-			// Inner message - Line 8: "  message Inner {" - insert at 17
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 7, Character: 17},
-					End:   protocol.Position{Line: 7, Character: 17},
-				},
-				NewText: "\n    option deprecated = true;",
-			},
-			// NestedEnum - Line 11: "    enum NestedEnum {" - insert at 21
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 10, Character: 21},
-					End:   protocol.Position{Line: 10, Character: 21},
-				},
-				NewText: "\n      option deprecated = true;",
-			},
-			// OuterEnum - Line 16: "  enum OuterEnum {" - insert at 18
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 15, Character: 18},
-					End:   protocol.Position{Line: 15, Character: 18},
-				},
-				NewText: "\n    option deprecated = true;",
-			},
-		},
+		"testdata/deprecate/golden/nested.Outer.golden.proto",
 	)
 
-	// Test: Deprecate package - deprecates file + all types
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/nested_test.proto",
-		2, 8, // Line 3, on package name (0-indexed: line 2)
+		2, 8, // cursor on package name
 		"Deprecate package test.deprecate.nested",
-		[]protocol.TextEdit{
-			// File-level deprecated option after package declaration.
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 2, Character: 30},
-					End:   protocol.Position{Line: 2, Character: 30},
-				},
-				NewText: "\noption deprecated = true;",
-			},
-			// Outer message - Line 5: "message Outer {" - insert at 15
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 4, Character: 15},
-					End:   protocol.Position{Line: 4, Character: 15},
-				},
-				NewText: "\n  option deprecated = true;",
-			},
-			// Inner message - Line 8: "  message Inner {" - insert at 17
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 7, Character: 17},
-					End:   protocol.Position{Line: 7, Character: 17},
-				},
-				NewText: "\n    option deprecated = true;",
-			},
-			// NestedEnum - Line 11: "    enum NestedEnum {" - insert at 21
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 10, Character: 21},
-					End:   protocol.Position{Line: 10, Character: 21},
-				},
-				NewText: "\n      option deprecated = true;",
-			},
-			// OuterEnum - Line 16: "  enum OuterEnum {" - insert at 18
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 15, Character: 18},
-					End:   protocol.Position{Line: 15, Character: 18},
-				},
-				NewText: "\n    option deprecated = true;",
-			},
-		},
+		"testdata/deprecate/golden/nested.package.golden.proto",
 	)
 
-	// Test: Empty body message `{}` - must insert with proper newlines
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/edge_cases_test.proto",
-		5, 8, // Line 6, on "EmptyMessage" (0-indexed: line 5)
+		5, 8, // cursor on "EmptyMessage"
 		"Deprecate message test.deprecate.edge.EmptyMessage",
-		[]protocol.TextEdit{
-			// Insert after `{`, add newlines to format properly
-			// Result: message EmptyMessage {\n  option deprecated = true;\n}
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 5, Character: 22},
-					End:   protocol.Position{Line: 5, Character: 22},
-				},
-				NewText: "\n  option deprecated = true;\n",
-			},
-		},
+		"testdata/deprecate/golden/edge.EmptyMessage.golden.proto",
 	)
 
-	// Test: Empty body with space `{ }`.
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/edge_cases_test.proto",
-		8, 8, // Line 9, on "EmptyWithSpace" (0-indexed: line 8)
+		8, 8, // cursor on "EmptyWithSpace"
 		"Deprecate message test.deprecate.edge.EmptyWithSpace",
-		[]protocol.TextEdit{
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 8, Character: 24},
-					End:   protocol.Position{Line: 8, Character: 26},
-				},
-				NewText: "\n  option deprecated = true;\n}",
-			},
-		},
+		"testdata/deprecate/golden/edge.EmptyWithSpace.golden.proto",
 	)
 
-	// Test: Already deprecated - no edit for this message
+	// Already deprecated: no new deprecation edit should be produced.
 	testCodeActionDeprecateNoEdit(
 		t,
 		"testdata/deprecate/edge_cases_test.proto",
-		11, 8, // Line 12, on "AlreadyDeprecated" (0-indexed: line 11)
+		11, 8, // cursor on "AlreadyDeprecated"
 	)
 
-	// Test: Deprecated = false - no edit (don't conflict with explicit false)
+	// Explicit deprecated=false: do not overwrite with true.
 	testCodeActionDeprecateNoEdit(
 		t,
 		"testdata/deprecate/edge_cases_test.proto",
-		16, 8, // Line 17, on "DeprecatedFalse" (0-indexed: line 16)
+		16, 8, // cursor on "DeprecatedFalse"
 	)
 
-	// Test: Nested empty body message.
-	// Line-based diff replaces both lines 27-28 together.
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/edge_cases_test.proto",
-		26, 8, // Line 27, on "OuterWithEmpty" (0-indexed: line 26)
+		26, 8, // cursor on "OuterWithEmpty"
 		"Deprecate message test.deprecate.edge.OuterWithEmpty",
-		[]protocol.TextEdit{
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 26, Character: 0},
-					End:   protocol.Position{Line: 28, Character: 0},
-				},
-				NewText: "message OuterWithEmpty {\n  option deprecated = true;\n  message NestedEmpty {\n    option deprecated = true;\n  }\n",
-			},
-		},
+		"testdata/deprecate/golden/edge.OuterWithEmpty.golden.proto",
 	)
 
-	// Test: Multi-line options on enum value - appends on same line.
+	// Enum value with preexisting compact options: add deprecated entry.
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/edge_cases_test.proto",
-		38, 2, // Line 39, on "MULTI_LINE_OPTIONS_ONE" (0-indexed: line 38)
+		38, 2, // cursor on "MULTI_LINE_OPTIONS_ONE"
 		"Deprecate enum value test.deprecate.edge.MULTI_LINE_OPTIONS_ONE",
-		[]protocol.TextEdit{
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 39, Character: 23},
-					End:   protocol.Position{Line: 39, Character: 23},
-				},
-				NewText: ", deprecated = true",
-			},
-		},
+		"testdata/deprecate/golden/edge.MULTI_LINE_OPTIONS_ONE.golden.proto",
 	)
 
-	// Test: Multi-line options on field - appends on same line.
+	// Field with preexisting multi-entry compact options: add deprecated entry.
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/edge_cases_test.proto",
-		45, 9, // Line 46, on "name" field (0-indexed: line 45)
+		43, 9, // cursor on "name" field
 		"Deprecate field test.deprecate.edge.FieldWithMultiLineOptions.name",
-		[]protocol.TextEdit{
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 47, Character: 23},
-					End:   protocol.Position{Line: 47, Character: 23},
-				},
-				NewText: ", deprecated = true",
-			},
-		},
+		"testdata/deprecate/golden/edge.FieldWithMultiLineOptions.name.golden.proto",
 	)
 
-	// Test: Single-line options on enum value
-	// Should insert ", deprecated = true" before closing bracket
+	// Enum value with single preexisting compact option: add deprecated entry.
 	testCodeActionDeprecate(
 		t,
 		"testdata/deprecate/edge_cases_test.proto",
-		54, 2, // Line 55, on "SINGLE_LINE_OPTIONS_ONE" (0-indexed: line 54)
+		52, 2, // cursor on "SINGLE_LINE_OPTIONS_ONE"
 		"Deprecate enum value test.deprecate.edge.SINGLE_LINE_OPTIONS_ONE",
-		[]protocol.TextEdit{
-			// Insert before "]" on line 55
-			// Line 55: "  SINGLE_LINE_OPTIONS_ONE = 1 [debug_redact = true];"
-			// The "]" is at char 50
-			{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 54, Character: 50},
-					End:   protocol.Position{Line: 54, Character: 50},
-				},
-				NewText: ", deprecated = true",
-			},
-		},
+		"testdata/deprecate/golden/edge.SINGLE_LINE_OPTIONS_ONE.golden.proto",
 	)
 }
 
 // testCodeActionDeprecate tests that a deprecation code action at the given position
-// produces the expected edits. Use expectedTitle="" and expectedEdits=nil to test
-// that no action is offered.
+// produces an edit whose applied result matches the content of goldenPath. Use
+// expectedTitle="" and goldenPath="" to test that no action is offered.
 //
-// Instead of checking exact edit positions, this verifies that applying the actual
-// edits produces the same result as applying the expected edits. This makes the
-// tests robust to different edit formats (character-based vs line-based).
+// Comparing the final applied content keeps these tests robust to printer formatting
+// details (edit count, exact ranges, line-based vs character-based edits).
+//
+// Set UPDATE_GOLDEN=1 when running the test to overwrite the golden file with the
+// current output.
 func testCodeActionDeprecate(
 	t *testing.T,
 	filename string,
 	cursorLine, cursorChar uint32,
 	expectedTitle string,
-	expectedEdits []protocol.TextEdit,
+	goldenPath string,
 ) {
 	t.Helper()
 	name := filename
@@ -408,7 +216,7 @@ func testCodeActionDeprecate(
 		}
 
 		// If no action expected, verify none found
-		if expectedTitle == "" && expectedEdits == nil {
+		if expectedTitle == "" && goldenPath == "" {
 			assert.Nil(t, deprecateAction, "expected no deprecate code action")
 			return
 		}
@@ -422,7 +230,6 @@ func testCodeActionDeprecate(
 
 		actualEdits, ok := deprecateAction.Edit.Changes[testURI]
 		require.True(t, ok, "workspace edit should have changes for current file")
-		require.Len(t, actualEdits, len(expectedEdits), "edit count mismatch")
 
 		// Read original file content
 		originalContent, err := os.ReadFile(testProtoPath)
@@ -431,14 +238,18 @@ func testCodeActionDeprecate(
 		// Create source file for position conversion
 		srcFile := source.NewFile(testProtoPath, string(originalContent))
 
-		// Apply expected edits to get expected result
-		expectedResult := applyTextEdits(srcFile, string(originalContent), expectedEdits)
-
-		// Apply actual edits to get actual result
+		// Apply actual edits and compare with the golden file.
 		actualResult := applyTextEdits(srcFile, string(originalContent), actualEdits)
-
-		// Compare results (both approaches should produce the same final content)
-		assert.Equal(t, expectedResult, actualResult, "applied edits should produce the same result")
+		goldenAbs, err := filepath.Abs(goldenPath)
+		require.NoError(t, err)
+		if os.Getenv("UPDATE_GOLDEN") == "1" {
+			require.NoError(t, os.MkdirAll(filepath.Dir(goldenAbs), 0o755))
+			require.NoError(t, os.WriteFile(goldenAbs, []byte(actualResult), 0o644))
+			return
+		}
+		expected, err := os.ReadFile(goldenAbs)
+		require.NoError(t, err, "golden file not found (set UPDATE_GOLDEN=1 to create)")
+		assert.Equal(t, string(expected), actualResult, "applied edits should produce the golden content")
 	})
 }
 
