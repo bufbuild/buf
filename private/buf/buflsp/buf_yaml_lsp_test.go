@@ -887,6 +887,69 @@ func TestBufYAMLHover_OtherFixtures(t *testing.T) {
 	}
 }
 
+// TestBufYAMLIgnorePathDiagnostics verifies that warnings are emitted for lint.ignore
+// and breaking.ignore paths that do not match any file in the workspace.
+func TestBufYAMLIgnorePathDiagnostics(t *testing.T) {
+	t.Parallel()
+
+	absPath, err := filepath.Abs("testdata/buf_yaml/ignore_paths/buf.yaml")
+	require.NoError(t, err)
+
+	synctest.Test(t, func(t *testing.T) {
+		_, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, nil)
+
+		// Wait for diagnostics with at least 3 warnings (one per nonexistent path).
+		diags := capture.wait(t, bufYAMLURI, 10*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+			warnings := 0
+			for _, d := range p.Diagnostics {
+				if d.Severity == protocol.DiagnosticSeverityWarning {
+					warnings++
+				}
+			}
+			return warnings >= 3
+		})
+		require.NotNil(t, diags, "expected ignore path diagnostics to be published")
+
+		// Index diagnostics by start position for easy lookup.
+		type pos struct{ line, char uint32 }
+		byPos := make(map[pos]protocol.Diagnostic)
+		for _, d := range diags.Diagnostics {
+			byPos[pos{d.Range.Start.Line, d.Range.Start.Character}] = d
+		}
+
+		// The buf.yaml fixture (0-indexed lines):
+		//  7:     - valid.proto          ← matches actual file; no diagnostic
+		//  8:     - subdir               ← dir containing sub.proto; no diagnostic
+		//  9:     - nonexistent.proto    ← no such file; warning expected
+		// 10:     - nonexistent_dir/     ← no such dir; warning expected
+		// 15:     - valid.proto          ← matches actual file; no diagnostic
+		// 16:     - missing.proto        ← no such file; warning expected
+
+		assertNoDiag := func(line, char uint32, label string) {
+			t.Helper()
+			_, exists := byPos[pos{line, char}]
+			assert.False(t, exists, "%s should not have a diagnostic", label)
+		}
+		assertWarning := func(line, char uint32, wantMsg, label string) {
+			t.Helper()
+			d, ok := byPos[pos{line, char}]
+			if !assert.True(t, ok, "expected warning for %s", label) {
+				return
+			}
+			assert.Equal(t, protocol.DiagnosticSeverityWarning, d.Severity, "%s severity", label)
+			assert.Equal(t, "buf-lsp", d.Source, "%s source", label)
+			assert.Contains(t, d.Message, wantMsg, "%s message", label)
+		}
+
+		assertNoDiag(7, 6, "lint.ignore valid.proto")
+		assertNoDiag(8, 6, "lint.ignore subdir (directory prefix match)")
+		assertWarning(9, 6, "nonexistent.proto", "lint.ignore nonexistent.proto")
+		assertWarning(10, 6, "nonexistent_dir/", "lint.ignore nonexistent_dir/")
+		assertNoDiag(15, 6, "breaking.ignore valid.proto")
+		assertWarning(16, 6, "missing.proto", "breaking.ignore missing.proto")
+	})
+}
+
 // mustParseUUID parses a UUID string for use in test data, failing the test on error.
 func mustParseUUID(t *testing.T, s string) uuid.UUID {
 	t.Helper()

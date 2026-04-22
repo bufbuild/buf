@@ -1,0 +1,17 @@
+version: v2
+modules:
+  - path: .
+lint:
+  use:
+    - STANDARD
+  ignore:
+    - valid.proto
+    - subdir
+    - nonexistent.proto
+    - nonexistent_dir/
+breaking:
+  use:
+    - FILE
+  ignore:
+    - valid.proto
+    - missing.proto

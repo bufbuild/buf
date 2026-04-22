@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Fix duplicated extension tags across imports from compiler.
+- Add LSP warnings for `lint.ignore` and `breaking.ignore` paths in `buf.yaml` that do not match any file in the workspace.
 
 ## [v1.68.3] - 2026-04-20
 
