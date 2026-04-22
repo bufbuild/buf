@@ -887,6 +887,117 @@ func TestBufYAMLHover_OtherFixtures(t *testing.T) {
 	}
 }
 
+// TestBufYAMLUnusedDeps verifies that warning diagnostics with DiagnosticTagUnnecessary are
+// automatically published for deps declared in buf.yaml but not imported by any .proto file.
+// The check fires asynchronously when the file is opened.
+func TestBufYAMLUnusedDeps(t *testing.T) {
+	t.Parallel()
+
+	absPath, err := filepath.Abs("testdata/buf_yaml/unused_dep/buf.yaml")
+	require.NoError(t, err)
+
+	synctest.Test(t, func(t *testing.T) {
+		_, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, nil)
+
+		// Wait for the unused dep warning to arrive (auto-triggered on DidOpen).
+		diags := capture.wait(t, bufYAMLURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+			for _, d := range p.Diagnostics {
+				if d.Severity == protocol.DiagnosticSeverityWarning {
+					return true
+				}
+			}
+			return false
+		})
+		require.NotNil(t, diags)
+
+		var found *protocol.Diagnostic
+		for i := range diags.Diagnostics {
+			if diags.Diagnostics[i].Severity == protocol.DiagnosticSeverityWarning {
+				found = &diags.Diagnostics[i]
+				break
+			}
+		}
+		require.NotNil(t, found, "expected a warning diagnostic for the unused dep")
+		assert.Equal(t, protocol.DiagnosticSeverityWarning, found.Severity)
+		assert.Equal(t, "buf-lsp", found.Source)
+		assert.Contains(t, found.Message, "buf.build/bufbuild/protovalidate")
+		assert.Contains(t, found.Message, "unused")
+		assert.Contains(t, found.Tags, protocol.DiagnosticTagUnnecessary)
+		// Dep is on line 2 (0-indexed) in buf.yaml.
+		assert.Equal(t, uint32(2), found.Range.Start.Line)
+	})
+}
+
+// TestBufYAMLUnusedDepCodeAction verifies that a QuickFix code action is offered for an
+// unused-dep diagnostic and that it produces a TextEdit deleting the dep line.
+func TestBufYAMLUnusedDepCodeAction(t *testing.T) {
+	t.Parallel()
+
+	absPath, err := filepath.Abs("testdata/buf_yaml/unused_dep/buf.yaml")
+	require.NoError(t, err)
+
+	synctest.Test(t, func(t *testing.T) {
+		clientJSONConn, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, nil)
+		ctx := t.Context()
+
+		// Wait for the unused dep warning to arrive.
+		diags := capture.wait(t, bufYAMLURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+			for _, d := range p.Diagnostics {
+				if d.Severity == protocol.DiagnosticSeverityWarning {
+					return true
+				}
+			}
+			return false
+		})
+		require.NotNil(t, diags)
+
+		var diagRange protocol.Range
+		for _, d := range diags.Diagnostics {
+			if d.Severity == protocol.DiagnosticSeverityWarning {
+				diagRange = d.Range
+				break
+			}
+		}
+
+		var codeActions []protocol.CodeAction
+		_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentCodeAction, protocol.CodeActionParams{
+			TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
+			Range:        diagRange,
+			Context:      protocol.CodeActionContext{Only: []protocol.CodeActionKind{protocol.QuickFix}},
+		}, &codeActions)
+		require.NoError(t, err)
+		require.Len(t, codeActions, 1)
+
+		action := codeActions[0]
+		assert.Equal(t, protocol.QuickFix, action.Kind)
+		assert.True(t, action.IsPreferred)
+		assert.Contains(t, action.Title, "buf.build/bufbuild/protovalidate")
+
+		require.NotNil(t, action.Edit)
+
+		// buf.yaml edit: delete the dep line (line 2).
+		yamlEdits := action.Edit.Changes[bufYAMLURI]
+		require.Len(t, yamlEdits, 1)
+		assert.Equal(t, uint32(2), yamlEdits[0].Range.Start.Line)
+		assert.Equal(t, uint32(0), yamlEdits[0].Range.Start.Character)
+		assert.Equal(t, uint32(3), yamlEdits[0].Range.End.Line)
+		assert.Equal(t, uint32(0), yamlEdits[0].Range.End.Character)
+		assert.Equal(t, "", yamlEdits[0].NewText)
+
+		// buf.lock edit: delete the protovalidate entry (lines 3–5, range end 6).
+		lockAbsPath, err := filepath.Abs("testdata/buf_yaml/unused_dep/buf.lock")
+		require.NoError(t, err)
+		lockURI := buflsp.FilePathToURI(lockAbsPath)
+		lockEdits := action.Edit.Changes[lockURI]
+		require.Len(t, lockEdits, 1)
+		assert.Equal(t, uint32(3), lockEdits[0].Range.Start.Line)
+		assert.Equal(t, uint32(0), lockEdits[0].Range.Start.Character)
+		assert.Equal(t, uint32(6), lockEdits[0].Range.End.Line)
+		assert.Equal(t, uint32(0), lockEdits[0].Range.End.Character)
+		assert.Equal(t, "", lockEdits[0].NewText)
+	})
+}
+
 // mustParseUUID parses a UUID string for use in test data, failing the test on error.
 func mustParseUUID(t *testing.T, s string) uuid.UUID {
 	t.Helper()

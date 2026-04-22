@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add LSP warning diagnostics for unused `buf.yaml` dependencies with a QuickFix code action to remove them.
 
 ## [v1.68.2] - 2026-04-17
 

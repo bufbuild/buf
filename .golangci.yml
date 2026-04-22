@@ -205,6 +205,11 @@ linters:
         text: "G115:"
       - linters:
           - gosec
+        # G118: cancel is stored in bufYAMLFile.cancelUnusedDep and called in Track/Close.
+        path: private/buf/buflsp/buf_yaml.go
+        text: "G118:"
+      - linters:
+          - gosec
         # G115 checks for use of truncating conversions.
         path: private/buf/buflsp/buf_yaml_hover.go
         text: "G115:"

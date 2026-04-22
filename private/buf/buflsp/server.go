@@ -580,11 +580,20 @@ func (s *server) DocumentHighlight(ctx context.Context, params *protocol.Documen
 
 // CodeAction is called when the client requests code actions for a given range.
 func (s *server) CodeAction(ctx context.Context, params *protocol.CodeActionParams) ([]protocol.CodeAction, error) {
+	codeActionSet := xslices.ToStructMap(params.Context.Only)
+
+	if isBufYAMLURI(params.TextDocument.URI) {
+		var actions []protocol.CodeAction
+		if _, ok := codeActionSet[protocol.QuickFix]; len(codeActionSet) == 0 || ok {
+			actions = append(actions, s.bufYAMLManager.GetCodeActions(params.TextDocument.URI, params)...)
+		}
+		return actions, nil
+	}
+
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {
 		return nil, nil
 	}
-	codeActionSet := xslices.ToStructMap(params.Context.Only)
 
 	var actions []protocol.CodeAction
 	if _, ok := codeActionSet[protocol.SourceOrganizeImports]; len(codeActionSet) == 0 || ok {

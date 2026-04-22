@@ -1,0 +1,3 @@
+syntax = "proto3";
+package test.v1;
+// No imports: protovalidate is declared as a dep but is unused.

@@ -1,0 +1,6 @@
+syntax = "proto3";
+package test.v1;
+// Import from protovalidate to prevent checkUnusedDeps from succeeding in unit
+// tests: NopModuleDataProvider cannot provide remote module file lists, causing
+// the import to fail gracefully and checkUnusedDeps to return early.
+import "buf/validate/validate.proto";

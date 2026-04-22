@@ -20,9 +20,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
+	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -61,9 +64,12 @@ func newBufYAMLManager(lsp *lsp) *bufYAMLManager {
 
 // bufYAMLFile holds the parsed state of an open buf.yaml file.
 type bufYAMLFile struct {
-	depsKeyLine uint32 // 0-indexed line of the "deps:" key
-	deps        []bufYAMLDep
-	docNode     *yaml.Node // parsed YAML document node, nil if parse failed
+	depsKeyLine          uint32 // 0-indexed line of the "deps:" key
+	deps                 []bufYAMLDep
+	docNode              *yaml.Node // parsed YAML document node, nil if parse failed
+	updateDiagnostics    []protocol.Diagnostic
+	unusedDepDiagnostics []protocol.Diagnostic
+	cancelUnusedDep      context.CancelFunc // cancels the in-flight checkUnusedDeps goroutine
 }
 
 // bufYAMLDep is a single entry in the deps sequence with its source position.
@@ -84,15 +90,27 @@ func (m *bufYAMLManager) Track(uri protocol.URI, text string) {
 	normalized := normalizeURI(uri)
 	f := &bufYAMLFile{}
 	f.depsKeyLine, f.deps, f.docNode, _ = parseBufYAMLDeps([]byte(text))
+
+	ctx, cancel := context.WithCancel(m.lsp.connCtx)
+	f.cancelUnusedDep = cancel
+
 	m.mu.Lock()
-	defer m.mu.Unlock()
+	if old, ok := m.uriToFile[normalized]; ok && old.cancelUnusedDep != nil {
+		old.cancelUnusedDep()
+	}
 	m.uriToFile[normalized] = f
+	m.mu.Unlock()
+
+	go m.checkUnusedDeps(ctx, normalized)
 }
 
 // Close stops tracking a buf.yaml file and clears any diagnostics it published.
 func (m *bufYAMLManager) Close(ctx context.Context, uri protocol.URI) {
 	normalized := normalizeURI(uri)
 	m.mu.Lock()
+	if f, ok := m.uriToFile[normalized]; ok && f.cancelUnusedDep != nil {
+		f.cancelUnusedDep()
+	}
 	delete(m.uriToFile, normalized)
 	m.mu.Unlock()
 	m.publishDiagnostics(ctx, normalized, nil)
@@ -166,7 +184,12 @@ func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.U
 		return fmt.Errorf("getting configured dep module refs: %w", err)
 	}
 	if len(configuredRefs) == 0 {
-		m.publishDiagnostics(ctx, normalized, nil)
+		m.mu.Lock()
+		if f, ok = m.uriToFile[normalized]; ok {
+			f.updateDiagnostics = nil
+		}
+		m.mu.Unlock()
+		m.publishAllDiagnostics(ctx, normalized)
 		return nil
 	}
 
@@ -227,7 +250,12 @@ func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.U
 			),
 		})
 	}
-	m.publishDiagnostics(ctx, normalized, diagnostics)
+	m.mu.Lock()
+	if f, ok = m.uriToFile[normalized]; ok {
+		f.updateDiagnostics = diagnostics
+	}
+	m.mu.Unlock()
+	m.publishAllDiagnostics(ctx, normalized)
 	return nil
 }
 
@@ -240,6 +268,170 @@ func (m *bufYAMLManager) publishDiagnostics(ctx context.Context, uri protocol.UR
 		URI:         uri,
 		Diagnostics: diagnostics,
 	})
+}
+
+func (m *bufYAMLManager) publishAllDiagnostics(ctx context.Context, uri protocol.URI) {
+	m.mu.Lock()
+	f, ok := m.uriToFile[uri]
+	var all []protocol.Diagnostic
+	if ok {
+		all = append(all, f.updateDiagnostics...)
+		all = append(all, f.unusedDepDiagnostics...)
+	}
+	m.mu.Unlock()
+	m.publishDiagnostics(ctx, uri, all)
+}
+
+func (m *bufYAMLManager) checkUnusedDeps(ctx context.Context, uri protocol.URI) {
+	m.mu.Lock()
+	f, ok := m.uriToFile[uri]
+	m.mu.Unlock()
+	if !ok || len(f.deps) == 0 {
+		return
+	}
+
+	dirPath := filepath.Dir(uri.Filename())
+	workspace, err := m.lsp.controller.GetWorkspace(ctx, dirPath)
+	if err != nil {
+		return
+	}
+
+	malformedDeps, err := bufworkspace.MalformedDepsForWorkspace(workspace)
+	if err != nil {
+		return
+	}
+
+	unusedFullNames := make(map[string]struct{}, len(malformedDeps))
+	for _, d := range malformedDeps {
+		if d.Type() == bufworkspace.MalformedDepTypeUnused {
+			unusedFullNames[d.ModuleRef().FullName().String()] = struct{}{}
+		}
+	}
+
+	var diags []protocol.Diagnostic
+	for _, dep := range f.deps {
+		ref, err := bufparse.ParseRef(dep.ref)
+		if err != nil {
+			continue
+		}
+		if _, unused := unusedFullNames[ref.FullName().String()]; !unused {
+			continue
+		}
+		diags = append(diags, protocol.Diagnostic{
+			Range:    dep.depRange,
+			Severity: protocol.DiagnosticSeverityWarning,
+			Source:   serverName,
+			Message:  fmt.Sprintf("%s is declared as a dependency but is unused", ref.FullName()),
+			Tags:     []protocol.DiagnosticTag{protocol.DiagnosticTagUnnecessary},
+		})
+	}
+
+	m.mu.Lock()
+	if f, ok = m.uriToFile[uri]; ok {
+		f.unusedDepDiagnostics = diags
+	}
+	m.mu.Unlock()
+	m.publishAllDiagnostics(ctx, uri)
+}
+
+// GetCodeActions returns QuickFix code actions for unused-dep diagnostics overlapping params.Range.
+func (m *bufYAMLManager) GetCodeActions(uri protocol.URI, params *protocol.CodeActionParams) []protocol.CodeAction {
+	normalized := normalizeURI(uri)
+	m.mu.Lock()
+	f, ok := m.uriToFile[normalized]
+	var unusedDiags []protocol.Diagnostic
+	var deps []bufYAMLDep
+	if ok {
+		unusedDiags = f.unusedDepDiagnostics
+		deps = f.deps
+	}
+	m.mu.Unlock()
+	if !ok {
+		return nil
+	}
+
+	// Read buf.lock adjacent to buf.yaml (best-effort; absent lock is fine).
+	lockFilePath := filepath.Join(filepath.Dir(uri.Filename()), bufconfig.DefaultBufLockFileName)
+	lockURI := FilePathToURI(lockFilePath)
+	var lockDepRanges map[string]protocol.Range
+	if content, err := os.ReadFile(lockFilePath); err == nil {
+		lockDepRanges = parseBufLockDepRanges(content)
+	}
+
+	var actions []protocol.CodeAction
+	for _, diag := range unusedDiags {
+		if !rangesOverlap(diag.Range, params.Range) {
+			continue
+		}
+		for _, dep := range deps {
+			if dep.depRange != diag.Range {
+				continue
+			}
+			line := dep.depRange.Start.Line
+			changes := map[protocol.DocumentURI][]protocol.TextEdit{
+				uri: {{
+					Range: protocol.Range{
+						Start: protocol.Position{Line: line, Character: 0},
+						End:   protocol.Position{Line: line + 1, Character: 0},
+					},
+					NewText: "",
+				}},
+			}
+			if ref, err := bufparse.ParseRef(dep.ref); err == nil {
+				if lockRange, ok := lockDepRanges[ref.FullName().String()]; ok {
+					changes[lockURI] = []protocol.TextEdit{{Range: lockRange, NewText: ""}}
+				}
+			}
+			actions = append(actions, protocol.CodeAction{
+				Title:       fmt.Sprintf("Remove unused dependency %s", dep.ref),
+				Kind:        protocol.QuickFix,
+				IsPreferred: true,
+				Diagnostics: []protocol.Diagnostic{diag},
+				Edit:        &protocol.WorkspaceEdit{Changes: changes},
+			})
+		}
+	}
+	return actions
+}
+
+// parseBufLockDepRanges returns a map from module full name to the line range
+// spanning its entry in buf.lock. The range runs from the `  - name:` line up to
+// (but not including) the start of the next entry, or the end of the non-empty
+// content for the last entry.
+func parseBufLockDepRanges(content []byte) map[string]protocol.Range {
+	lines := strings.Split(string(content), "\n")
+	result := make(map[string]protocol.Range)
+
+	type pending struct {
+		name      string
+		startLine uint32
+	}
+	var cur *pending
+
+	for i, line := range lines {
+		name, ok := strings.CutPrefix(line, "  - name: ")
+		if !ok {
+			continue
+		}
+		if cur != nil {
+			result[cur.name] = protocol.Range{
+				Start: protocol.Position{Line: cur.startLine},
+				End:   protocol.Position{Line: uint32(i)},
+			}
+		}
+		cur = &pending{name: name, startLine: uint32(i)}
+	}
+	if cur != nil {
+		end := uint32(len(lines))
+		for end > cur.startLine+1 && lines[end-1] == "" {
+			end--
+		}
+		result[cur.name] = protocol.Range{
+			Start: protocol.Position{Line: cur.startLine},
+			End:   protocol.Position{Line: end},
+		}
+	}
+	return result
 }
 
 // updateDeps resolves all configured deps in buf.yaml to their latest commits
