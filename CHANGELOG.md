@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Add LSP Warning diagnostics on line 0 of `buf.yaml` and `buf.lock` when declared deps are not all pinned in the lock file, with a QuickFix code action to run `buf dep update`.
+- Add LSP diagnostics in `buf.yaml` and `buf.lock` when a declared dep has no entry in `buf.lock` (for example, after adding a dep to `buf.yaml` without running `buf dep update`). The diagnostic lists each affected dep and includes a QuickFix code action to run `buf dep update`.
 
 ## [v1.68.3] - 2026-04-20
 

@@ -632,7 +632,8 @@ func (s *server) getDepSyncCodeActions(params *protocol.CodeActionParams) []prot
 		bufYAMLURI = s.companionBufYAMLURI(params.TextDocument.URI)
 	}
 
-	if !s.bufYAMLManager.IsOutOfSync(bufYAMLURI) {
+	missingDepNames := s.bufYAMLManager.MissingDepNames(bufYAMLURI)
+	if len(missingDepNames) == 0 {
 		return nil
 	}
 
@@ -646,7 +647,7 @@ func (s *server) getDepSyncCodeActions(params *protocol.CodeActionParams) []prot
 		Title:       outOfSyncCodeActionTitle,
 		Kind:        protocol.QuickFix,
 		IsPreferred: true,
-		Diagnostics: []protocol.Diagnostic{outOfSyncDiagnostic()},
+		Diagnostics: []protocol.Diagnostic{outOfSyncDiagnostic(missingDepNames)},
 		Command: &protocol.Command{
 			Title:     outOfSyncCodeActionTitle,
 			Command:   commandUpdateAllDeps,

@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -44,9 +45,6 @@ const (
 	// Ref: https://buf.build/docs/configuration/v2/buf-yaml/#deps
 	bufYAMLDepsKey = "deps"
 
-	// outOfSyncMessage is the diagnostic message shown when buf.yaml deps are not
-	// all pinned in buf.lock.
-	outOfSyncMessage = "buf.yaml and buf.lock are out of sync; run buf dep update"
 	// outOfSyncCodeActionTitle is the code action title for fixing out-of-sync state.
 	outOfSyncCodeActionTitle = "Run buf dep update"
 )
@@ -56,17 +54,17 @@ type bufYAMLManager struct {
 	lsp       *lsp
 	mu        sync.Mutex
 	uriToFile map[protocol.URI]*bufYAMLFile
-	// outOfSync records normalized buf.yaml URIs whose declared deps are not all
-	// pinned in the companion buf.lock. Used to offer the "Run buf dep update"
-	// code action.
-	outOfSync map[protocol.URI]bool
+	// missingDeps maps normalized buf.yaml URIs to the dep names that appear in
+	// buf.yaml but have no entry in the companion buf.lock. A nil or absent entry
+	// means the files are in sync. Used to offer the "Run buf dep update" code action.
+	missingDeps map[protocol.URI][]string
 }
 
 func newBufYAMLManager(lsp *lsp) *bufYAMLManager {
 	return &bufYAMLManager{
-		lsp:       lsp,
-		uriToFile: make(map[protocol.URI]*bufYAMLFile),
-		outOfSync: make(map[protocol.URI]bool),
+		lsp:         lsp,
+		uriToFile:   make(map[protocol.URI]*bufYAMLFile),
+		missingDeps: make(map[protocol.URI][]string),
 	}
 }
 
@@ -106,7 +104,7 @@ func (m *bufYAMLManager) Close(ctx context.Context, uri protocol.URI) {
 	normalized := normalizeURI(uri)
 	m.mu.Lock()
 	delete(m.uriToFile, normalized)
-	delete(m.outOfSync, normalized)
+	delete(m.missingDeps, normalized)
 	m.mu.Unlock()
 	m.publishDiagnostics(ctx, normalized, nil)
 	bufLockURI := companionBufLockURI(uri)
@@ -261,14 +259,18 @@ func (m *bufYAMLManager) CheckOutOfSync(ctx context.Context, uri protocol.URI) {
 
 	configuredRefs, err := workspaceDepManager.ConfiguredDepModuleRefs(ctx)
 	if err != nil || len(configuredRefs) == 0 {
-		m.applyOutOfSync(ctx, normalized, bufLockURI, false)
+		m.applyOutOfSync(ctx, normalized, bufLockURI, nil)
 		return
 	}
 
 	existingKeys, err := workspaceDepManager.ExistingBufLockFileDepModuleKeys(ctx)
 	if err != nil {
-		// Treat an unreadable buf.lock as out of sync.
-		m.applyOutOfSync(ctx, normalized, bufLockURI, true)
+		// Treat an unreadable buf.lock as all deps missing.
+		missing := make([]string, len(configuredRefs))
+		for i, ref := range configuredRefs {
+			missing[i] = ref.String()
+		}
+		m.applyOutOfSync(ctx, normalized, bufLockURI, missing)
 		return
 	}
 
@@ -277,42 +279,48 @@ func (m *bufYAMLManager) CheckOutOfSync(ctx context.Context, uri protocol.URI) {
 		existingByFullName[key.FullName().String()] = struct{}{}
 	}
 
-	outOfSync := false
+	var missing []string
 	for _, ref := range configuredRefs {
 		if _, ok := existingByFullName[ref.FullName().String()]; !ok {
-			outOfSync = true
-			break
+			missing = append(missing, ref.String())
 		}
 	}
-	m.applyOutOfSync(ctx, normalized, bufLockURI, outOfSync)
+	m.applyOutOfSync(ctx, normalized, bufLockURI, missing)
 }
 
-// IsOutOfSync reports whether the buf.yaml at uri (normalized) currently has
-// an active out-of-sync diagnostic.
+// IsOutOfSync reports whether the buf.yaml at uri currently has missing deps.
 func (m *bufYAMLManager) IsOutOfSync(uri protocol.URI) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return m.outOfSync[normalizeURI(uri)]
+	return len(m.missingDeps[normalizeURI(uri)]) > 0
 }
 
-// applyOutOfSync updates the recorded out-of-sync state and publishes or clears
-// diagnostics on both buf.yaml and buf.lock, but only when the state changes.
-func (m *bufYAMLManager) applyOutOfSync(ctx context.Context, bufYAMLURI, bufLockURI protocol.URI, isOutOfSync bool) {
+// MissingDepNames returns the dep names that appear in buf.yaml but have no
+// entry in buf.lock, or nil if the files are in sync.
+func (m *bufYAMLManager) MissingDepNames(uri protocol.URI) []string {
 	m.mu.Lock()
-	wasOutOfSync := m.outOfSync[bufYAMLURI]
-	if isOutOfSync {
-		m.outOfSync[bufYAMLURI] = true
+	defer m.mu.Unlock()
+	return m.missingDeps[normalizeURI(uri)]
+}
+
+// applyOutOfSync updates the recorded missing-deps state and publishes or clears
+// diagnostics on both buf.yaml and buf.lock, only when the state changes.
+func (m *bufYAMLManager) applyOutOfSync(ctx context.Context, bufYAMLURI, bufLockURI protocol.URI, missingDepNames []string) {
+	m.mu.Lock()
+	prev := m.missingDeps[bufYAMLURI]
+	if len(missingDepNames) > 0 {
+		m.missingDeps[bufYAMLURI] = missingDepNames
 	} else {
-		delete(m.outOfSync, bufYAMLURI)
+		delete(m.missingDeps, bufYAMLURI)
 	}
-	changed := wasOutOfSync != isOutOfSync
+	changed := strings.Join(prev, "\n") != strings.Join(missingDepNames, "\n")
 	m.mu.Unlock()
 
 	if !changed {
 		return
 	}
-	if isOutOfSync {
-		diag := outOfSyncDiagnostic()
+	if len(missingDepNames) > 0 {
+		diag := outOfSyncDiagnostic(missingDepNames)
 		m.publishDiagnostics(ctx, bufYAMLURI, []protocol.Diagnostic{diag})
 		m.lsp.bufLockManager.publishDiagnostics(ctx, bufLockURI, []protocol.Diagnostic{diag})
 	} else {
@@ -321,14 +329,20 @@ func (m *bufYAMLManager) applyOutOfSync(ctx context.Context, bufYAMLURI, bufLock
 	}
 }
 
-// outOfSyncDiagnostic returns a Warning diagnostic for the out-of-sync state,
-// anchored at the top of the file.
-func outOfSyncDiagnostic() protocol.Diagnostic {
+// outOfSyncDiagnostic returns a Warning diagnostic listing the deps that appear
+// in buf.yaml but have no entry in buf.lock, anchored at the top of the file.
+func outOfSyncDiagnostic(missingDepNames []string) protocol.Diagnostic {
+	var msg strings.Builder
+	msg.WriteString("buf.yaml and buf.lock are out of sync; run buf dep update\n\nNot pinned in buf.lock:")
+	for _, name := range missingDepNames {
+		msg.WriteString("\n- ")
+		msg.WriteString(name)
+	}
 	return protocol.Diagnostic{
 		Range:    protocol.Range{},
 		Severity: protocol.DiagnosticSeverityWarning,
 		Source:   serverName,
-		Message:  outOfSyncMessage,
+		Message:  msg.String(),
 	}
 }
 
