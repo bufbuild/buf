@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.68.4] - 2026-04-22
 
 - Fix duplicated extension tags across imports from compiler.
@@ -1538,6 +1542,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.68.4...HEAD
 [v1.68.4]: https://github.com/bufbuild/buf/compare/v1.68.3...v1.68.4
 [v1.68.3]: https://github.com/bufbuild/buf/compare/v1.68.2...v1.68.3
 [v1.68.2]: https://github.com/bufbuild/buf/compare/v1.68.1...v1.68.2
