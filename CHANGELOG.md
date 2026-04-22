@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix duplicated extension tags across imports from compiler.
 
 ## [v1.68.3] - 2026-04-20
 
