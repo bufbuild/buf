@@ -43,6 +43,15 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
+// compileFDPOptions are the fdp options used for all image compilation: always
+// include source code info (for E_BufSourceCodeInfoExtension) and generate
+// extra option locations (for lint and breaking change detection).
+var compileFDPOptions = func() fdp.Options {
+	var opts fdp.Options
+	opts.Apply(fdp.IncludeSourceCodeInfo(true), fdp.GenerateExtraOptionLocations(true))
+	return opts
+}()
+
 func buildImage(
 	ctx context.Context,
 	logger *slog.Logger,
@@ -101,14 +110,18 @@ func compileImage(
 
 	exec := incremental.New(
 		incremental.WithParallelism(int64(parallelism)),
+		// Warnings are filtered out below and never surfaced to the user from this path,
+		// so suppress them before compilation to avoid the cost of generating them.
+		incremental.WithReportOptions(report.Options{SuppressWarnings: true}),
 	)
 	results, diagnostics, err := incremental.Run(
 		ctx,
 		exec,
-		queries.Link{
+		queries.FDS{
 			Opener:    moduleFileResolver,
 			Session:   session,
 			Workspace: source.NewWorkspace(paths...),
+			Options:   compileFDPOptions,
 		},
 	)
 	if err != nil {
@@ -116,14 +129,21 @@ func compileImage(
 	}
 
 	var fileAnnotations []bufanalysis.FileAnnotation
+	var rawErrors []error
 	for _, diagnostic := range diagnostics.Diagnostics {
-		primary := diagnostic.Primary()
-		if primary.IsZero() || diagnostic.Level() > report.Error {
-			// We only surface [report.Error] level or more sever diagnostics as build errors.
-			// Warnings will still be rendered in the diagnostics report if errors are found,
-			// but if there are no errors, then the warnings are not surfaced to the user.
-			//
+		if diagnostic.Level() > report.Error {
+			// We only surface [report.Error] level or more severe diagnostics as build errors.
 			// In the future, we should handle warnings and other checks in a unified way.
+			continue
+		}
+		primary := diagnostic.Primary()
+		if primary.IsZero() {
+			// Diagnostics without a source span (e.g. file-open errors such as
+			// DuplicateProtoPathError) cannot be represented as FileAnnotations.
+			// Surface them as raw errors so callers see the full message.
+			if diagnostic.File() != "" {
+				rawErrors = append(rawErrors, errors.New(diagnostic.Message()))
+			}
 			continue
 		}
 		start := primary.Location(primary.Start, length.Bytes)
@@ -154,6 +174,9 @@ func compileImage(
 			),
 		)
 	}
+	if len(rawErrors) > 0 {
+		return nil, errors.Join(rawErrors...)
+	}
 	if len(fileAnnotations) > 0 {
 		return nil, bufanalysis.NewFileAnnotationSet(fileAnnotations...)
 	}
@@ -166,9 +189,7 @@ func compileImage(
 	if results[0].Fatal != nil {
 		return nil, results[0].Fatal
 	}
-	irFiles := results[0].Value
-
-	fds, resolver, err := irFilesToFileDescriptorSet(irFiles)
+	fds, resolver, err := resolverForFDS(results[0].Value)
 	if err != nil {
 		return nil, err
 	}
@@ -221,14 +242,16 @@ func BuildImageFromOpener(
 	if opts.noParallelism {
 		parallelism = 1
 	}
+
 	exec := incremental.New(incremental.WithParallelism(int64(parallelism)))
 	results, diagnostics, err := incremental.Run(
 		ctx,
 		exec,
-		queries.Link{
+		queries.FDS{
 			Opener:    opener,
 			Session:   session,
 			Workspace: source.NewWorkspace(paths...),
+			Options:   compileFDPOptions,
 		},
 	)
 	// incremental.Run can return a nil report on a fatal internal error. Normalize
@@ -245,9 +268,7 @@ func BuildImageFromOpener(
 	if results[0].Fatal != nil {
 		return nil, diagnostics, results[0].Fatal
 	}
-	irFiles := results[0].Value
-
-	fds, resolver, err := irFilesToFileDescriptorSet(irFiles)
+	fds, resolver, err := resolverForFDS(results[0].Value)
 	if err != nil {
 		return nil, diagnostics, err
 	}
@@ -258,23 +279,21 @@ func BuildImageFromOpener(
 	return image, diagnostics, nil
 }
 
-// irFilesToFileDescriptorSet serializes linked [ir.File]s to a
-// [descriptorpb.FileDescriptorSet] and builds a [protoencoding.Resolver] with
+// resolverForFDS normalizes the given [*descriptorpb.FileDescriptorSet] by
+// marshaling and re-parsing it, then builds a [protoencoding.Resolver] with
 // Buf's custom descriptor extensions recognised, ready for [fileDescriptorSetToImage].
-func irFilesToFileDescriptorSet(irFiles []*ir.File) (*descriptorpb.FileDescriptorSet, protoencoding.Resolver, error) {
-	descriptorSetBytes, err := fdp.DescriptorSetBytes(
-		irFiles,
-		// Always include source code info to capture [descriptorv1.E_BufSourceCodeInfoExtension].
-		// Source code info may still be stripped from the final Image later.
-		fdp.IncludeSourceCodeInfo(true),
-		// Needed for lint and breaking change detection annotations.
-		fdp.GenerateExtraOptionLocations(true),
-	)
+//
+// The marshal/unmarshal round-trip is necessary because [fdp.DescriptorProto]
+// stores option values as unknown bytes via SetUnknown. Re-parsing converts those
+// bytes to their properly-typed proto fields (e.g. EnumOptions.allow_alias), which
+// is required for correct resolver building by protodesc.NewFiles.
+func resolverForFDS(fds *descriptorpb.FileDescriptorSet) (*descriptorpb.FileDescriptorSet, protoencoding.Resolver, error) {
+	descriptorSetBytes, err := protoencoding.NewWireMarshaler().Marshal(fds)
 	if err != nil {
 		return nil, nil, err
 	}
-	fds := new(descriptorpb.FileDescriptorSet)
-	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(descriptorSetBytes, fds); err != nil {
+	normalizedFDS := new(descriptorpb.FileDescriptorSet)
+	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(descriptorSetBytes, normalizedFDS); err != nil {
 		return nil, nil, err
 	}
 	// Include Buf's descriptor proto alongside the compiled files so that
@@ -289,21 +308,21 @@ func irFilesToFileDescriptorSet(irFiles []*ir.File) (*descriptorpb.FileDescripto
 	// containing message is resolved (non-placeholder). Adding the buf descriptor
 	// proto alongside the vendored descriptor.proto causes this validation to fail.
 	var resolverFiles []*descriptorpb.FileDescriptorProto
-	if !slices.ContainsFunc(fds.File, func(file *descriptorpb.FileDescriptorProto) bool {
+	if !slices.ContainsFunc(normalizedFDS.File, func(file *descriptorpb.FileDescriptorProto) bool {
 		return file.GetName() == "google/protobuf/descriptor.proto"
 	}) {
 		resolverFiles = []*descriptorpb.FileDescriptorProto{
 			protodesc.ToFileDescriptorProto(descriptorv1.File_buf_descriptor_v1_descriptor_proto),
 		}
 	}
-	resolverFiles = append(resolverFiles, fds.File...)
+	resolverFiles = append(resolverFiles, normalizedFDS.File...)
 	resolver := protoencoding.NewLazyResolver(resolverFiles...)
-	for _, fileDescriptor := range fds.File {
+	for _, fileDescriptor := range normalizedFDS.File {
 		if err := protoencoding.ReparseExtensions(resolver, fileDescriptor.ProtoReflect()); err != nil {
 			return nil, nil, err
 		}
 	}
-	return fds, resolver, nil
+	return normalizedFDS, resolver, nil
 }
 
 // fileDescriptorSetToImage is a helper function that converts a [descriptorpb.FileDescriptorSet]
