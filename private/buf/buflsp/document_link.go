@@ -83,11 +83,12 @@ func (s *server) documentLink(file *file) []protocol.DocumentLink {
 }
 
 // bsrRefDocURL builds a BSR page URL from a parsed reference.
-// When ref.Ref() is non-empty, the URL points to the versioned /docs/<ref> page.
+// When ref.Ref() is non-empty and the registry is the default BSR host, the
+// URL points to the versioned /docs/<ref> page.
 func bsrRefDocURL(ref bufparse.Ref) string {
 	fn := ref.FullName()
-	url := "https://" + fn.Registry() + "/" + fn.Owner() + "/" + fn.Name()
-	if ref.Ref() != "" {
+	url := "https://" + fn.String()
+	if ref.Ref() != "" && fn.Registry() == bufconnect.DefaultRemote {
 		url += "/docs/" + ref.Ref()
 	}
 	return url
@@ -108,15 +109,11 @@ func bsrURL(module bufmodule.Module, pathOrPackage string, anchor string, tabTyp
 	}
 
 	registry := fullName.Registry()
-	owner := fullName.Owner()
-	name := fullName.Name()
-
-	// Default to buf.build if no remote or if it's the default remote
 	if registry == "" {
 		registry = bufconnect.DefaultRemote
 	}
 
-	url := "https://" + registry + "/" + owner + "/" + name + "/" + tabType + "/main:" + pathOrPackage
+	url := "https://" + registry + "/" + fullName.Owner() + "/" + fullName.Name() + "/" + tabType + "/main:" + pathOrPackage
 	if anchor != "" {
 		url += "#" + anchor
 	}

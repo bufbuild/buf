@@ -28,8 +28,12 @@ import (
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xio"
+	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buflsp"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/protocompile/experimental/incremental"
 	"github.com/spf13/pflag"
 	"go.lsp.dev/jsonrpc2"
@@ -152,6 +156,11 @@ func run(
 		return err
 	}
 
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
+	if err != nil {
+		return err
+	}
+
 	conn, err := buflsp.Serve(
 		ctx,
 		bufcli.Version,
@@ -163,12 +172,36 @@ func run(
 		incremental.New(),
 		moduleKeyProvider,
 		graphProvider,
+		&lspCuratedPluginProvider{clientConfig: clientConfig},
 	)
 	if err != nil {
 		return err
 	}
 	<-conn.Done()
 	return conn.Err()
+}
+
+// lspCuratedPluginProvider implements the curatedPluginVersionProvider interface
+// required by buflsp.Serve using the BSR alpha plugin curation API.
+type lspCuratedPluginProvider struct {
+	clientConfig *connectclient.Config
+}
+
+func (p *lspCuratedPluginProvider) GetLatestVersion(ctx context.Context, registry, owner, plugin string) (string, error) {
+	client := connectclient.Make(p.clientConfig, registry, registryv1alpha1connect.NewPluginCurationServiceClient)
+	resp, err := client.GetLatestCuratedPlugin(ctx, connect.NewRequest(
+		registryv1alpha1.GetLatestCuratedPluginRequest_builder{
+			Owner: owner,
+			Name:  plugin,
+		}.Build(),
+	))
+	if err != nil {
+		return "", err
+	}
+	if !resp.Msg.HasPlugin() {
+		return "", nil
+	}
+	return resp.Msg.GetPlugin().GetVersion(), nil
 }
 
 // dial opens a connection to the LSP client.

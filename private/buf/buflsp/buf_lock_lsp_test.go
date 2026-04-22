@@ -80,7 +80,7 @@ func TestBufLockDocumentLinks(t *testing.T) {
 			absPath, err := filepath.Abs(tc.fixture)
 			require.NoError(t, err)
 
-			clientJSONConn, bufLockURI, _ := setupLSPServerForBufYAML(t, absPath, nil)
+			clientJSONConn, bufLockURI, _ := setupLSPServerForBufYAML(t, absPath, nil, nil)
 			ctx := t.Context()
 
 			var links []protocol.DocumentLink
@@ -105,7 +105,7 @@ func TestBufLockHoverMalformedYAML(t *testing.T) {
 	absPath, err := filepath.Abs("testdata/buf_lock/invalid/buf.lock")
 	require.NoError(t, err)
 
-	clientJSONConn, bufLockURI, _ := setupLSPServerForBufYAML(t, absPath, nil)
+	clientJSONConn, bufLockURI, _ := setupLSPServerForBufYAML(t, absPath, nil, nil)
 	ctx := t.Context()
 
 	var hover *protocol.Hover
@@ -182,7 +182,7 @@ func TestBufLockHover(t *testing.T) {
 	absPath, err := filepath.Abs(fixture)
 	require.NoError(t, err)
 
-	clientJSONConn, bufLockURI, _ := setupLSPServerForBufYAML(t, absPath, nil)
+	clientJSONConn, bufLockURI, _ := setupLSPServerForBufYAML(t, absPath, nil, nil)
 	ctx := t.Context()
 
 	for _, tc := range tests {

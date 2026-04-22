@@ -15,6 +15,7 @@
 package buflsp_test
 
 import (
+	"context"
 	"net"
 	"net/http"
 	"os"
@@ -47,13 +48,23 @@ import (
 	"go.lsp.dev/uri"
 )
 
-// setupLSPServerForBufYAML creates an LSP server initialized for buf.yaml testing.
-// It opens the buf.yaml file at bufYAMLPath via didOpen and returns the client
-// connection, the buf.yaml URI, and a diagnostics capture for async notifications.
+// nopCuratedPluginVersionProvider is a no-op implementation that always reports
+// plugins as up to date.
+type nopCuratedPluginVersionProvider struct{}
+
+func (nopCuratedPluginVersionProvider) GetLatestVersion(_ context.Context, _, _, _ string) (string, error) {
+	return "", nil
+}
+
+// setupLSPServerForBufYAML creates an LSP server initialized for YAML file testing.
+// It opens the file at path via didOpen and returns the client connection, the file
+// URI, and a diagnostics capture for async notifications.
+// Pass nil for mkp or cvp to use the respective no-op provider.
 func setupLSPServerForBufYAML(
 	t *testing.T,
 	bufYAMLPath string,
 	mkp bufmodule.ModuleKeyProvider,
+	cvp buflsp.CuratedPluginVersionProvider,
 ) (jsonrpc2.Conn, protocol.URI, *diagnosticsCapture) {
 	t.Helper()
 
@@ -113,6 +124,10 @@ func setupLSPServerForBufYAML(
 	if mkp != nil {
 		moduleKeyProvider = mkp
 	}
+	curatedPluginVersionProvider := buflsp.CuratedPluginVersionProvider(nopCuratedPluginVersionProvider{})
+	if cvp != nil {
+		curatedPluginVersionProvider = cvp
+	}
 
 	conn, err := buflsp.Serve(
 		ctx,
@@ -125,6 +140,7 @@ func setupLSPServerForBufYAML(
 		queryExecutor,
 		moduleKeyProvider,
 		bufmodule.NopGraphProvider,
+		curatedPluginVersionProvider,
 	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
@@ -210,7 +226,7 @@ func TestBufYAMLCodeLens(t *testing.T) {
 			absPath, err := filepath.Abs(tc.fixture)
 			require.NoError(t, err)
 
-			clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil)
+			clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil, nil)
 			ctx := t.Context()
 
 			var lenses []protocol.CodeLens
@@ -332,7 +348,7 @@ func TestBufYAMLCheckUpdates(t *testing.T) {
 			require.NoError(t, err)
 
 			synctest.Test(t, func(t *testing.T) {
-				clientJSONConn, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, mkp)
+				clientJSONConn, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, mkp, nil)
 				ctx := t.Context()
 
 				var result any
@@ -366,7 +382,7 @@ func TestBufYAMLDiagnostics_ClearedOnClose(t *testing.T) {
 	require.NoError(t, err)
 
 	synctest.Test(t, func(t *testing.T) {
-		clientJSONConn, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, mkp)
+		clientJSONConn, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, mkp, nil)
 		ctx := t.Context()
 
 		// Trigger a check to produce diagnostics.
@@ -415,7 +431,7 @@ func TestBufYAMLCheckUpdates_FileChange(t *testing.T) {
 	require.NoError(t, err)
 
 	synctest.Test(t, func(t *testing.T) {
-		clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, mkp)
+		clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, mkp, nil)
 		ctx := t.Context()
 
 		// Update the buf.yaml in-memory to have no deps.
@@ -505,7 +521,7 @@ func TestBufYAMLDocumentLinks(t *testing.T) {
 			absPath, err := filepath.Abs(tc.fixture)
 			require.NoError(t, err)
 
-			clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil)
+			clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil, nil)
 			ctx := t.Context()
 
 			var links []protocol.DocumentLink
@@ -809,7 +825,7 @@ func TestBufYAMLHover(t *testing.T) {
 	absPath, err := filepath.Abs(fixture)
 	require.NoError(t, err)
 
-	clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil)
+	clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil, nil)
 	ctx := t.Context()
 
 	for _, tc := range tests {
@@ -872,7 +888,7 @@ func TestBufYAMLHover_OtherFixtures(t *testing.T) {
 			absPath, err := filepath.Abs(tc.fixture)
 			require.NoError(t, err)
 
-			clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil)
+			clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil, nil)
 			ctx := t.Context()
 
 			var hover *protocol.Hover

@@ -127,6 +127,7 @@ func setupLSPServerWithDiagnostics(
 		queryExecutor,
 		nopModuleKeyProvider{},
 		bufmodule.NopGraphProvider,
+		nopCuratedPluginVersionProvider{},
 	)
 	require.NoError(t, err)
 	t.Cleanup(func() {

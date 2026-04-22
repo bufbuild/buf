@@ -15,13 +15,32 @@
 package buflsp_test
 
 import (
+	"context"
 	"path/filepath"
+	"slices"
 	"testing"
+	"testing/synctest"
+	"time"
 
+	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
 )
+
+// staticCuratedPluginVersionProvider is a test-only curatedPluginVersionProvider
+// that returns a fixed latest version for each plugin.
+type staticCuratedPluginVersionProvider struct {
+	latestByPlugin map[string]string
+}
+
+func (p *staticCuratedPluginVersionProvider) GetLatestVersion(_ context.Context, _, owner, plugin string) (string, error) {
+	v, ok := p.latestByPlugin[owner+"/"+plugin]
+	if !ok {
+		return "", nil
+	}
+	return v, nil
+}
 
 // TestBufGenYAMLDocumentLinks verifies that document links are returned for
 // remote plugin and input module BSR references in buf.gen.yaml files.
@@ -90,7 +109,7 @@ func TestBufGenYAMLDocumentLinks(t *testing.T) {
 			absPath, err := filepath.Abs(tc.fixture)
 			require.NoError(t, err)
 
-			clientJSONConn, bufGenYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil)
+			clientJSONConn, bufGenYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil, nil)
 			ctx := t.Context()
 
 			var links []protocol.DocumentLink
@@ -115,7 +134,7 @@ func TestBufGenYAMLHoverMalformedYAML(t *testing.T) {
 	absPath, err := filepath.Abs("testdata/buf_gen_yaml/invalid/buf.gen.yaml")
 	require.NoError(t, err)
 
-	clientJSONConn, bufGenYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil)
+	clientJSONConn, bufGenYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil, nil)
 	ctx := t.Context()
 
 	var hover *protocol.Hover
@@ -137,7 +156,7 @@ func TestBufGenYAMLHoverDidChange(t *testing.T) {
 	absPath, err := filepath.Abs("testdata/buf_gen_yaml/hover/buf.gen.yaml")
 	require.NoError(t, err)
 
-	clientJSONConn, bufGenYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil)
+	clientJSONConn, bufGenYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil, nil)
 	ctx := t.Context()
 
 	// Replace the entire file with minimal content (version key on line 0).
@@ -436,7 +455,7 @@ func TestBufGenYAMLHover(t *testing.T) {
 	absPath, err := filepath.Abs(fixture)
 	require.NoError(t, err)
 
-	clientJSONConn, bufGenYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil)
+	clientJSONConn, bufGenYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil, nil)
 	ctx := t.Context()
 
 	for _, tc := range tests {
@@ -464,4 +483,214 @@ func TestBufGenYAMLHover(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestBufGenYAMLCodeLens verifies the code lenses returned for buf.gen.yaml files.
+//
+// "Run buf generate" is always returned at line 0.
+// "Check for plugin updates" is only returned when there are remote plugins with
+// explicit version pins, and is positioned at the plugins: key line.
+func TestBufGenYAMLCodeLens(t *testing.T) {
+	t.Parallel()
+
+	// Fixture layout for document_link (0-indexed lines):
+	//  0: version: v2
+	//  1: plugins:
+	//  2:   - remote: buf.build/protocolbuffers/go
+	//  3:     out: gen/go
+	//  4:   - remote: buf.build/bufbuild/es:v2.2.2    ← versioned
+	//  5:     out: gen/es
+	//  6:   - local: protoc-gen-custom
+	//  7:     out: gen/custom
+	//  8: inputs:
+	//  9:   - module: buf.build/acme/petapis
+	// 10:   - directory: proto
+
+	tests := []struct {
+		name              string
+		fixture           string
+		wantCount         int
+		wantTitles        []string
+		wantRunLensLine   uint32
+		wantCheckLensLine uint32 // only checked when "Check for plugin updates" is in wantTitles
+	}{
+		{
+			name:            "no_plugins",
+			fixture:         "testdata/buf_gen_yaml/invalid/buf.gen.yaml",
+			wantCount:       1,
+			wantTitles:      []string{"Run buf generate"},
+			wantRunLensLine: 0,
+		},
+		{
+			name:              "with_versioned_remote_plugin",
+			fixture:           "testdata/buf_gen_yaml/document_link/buf.gen.yaml",
+			wantCount:         2,
+			wantTitles:        []string{"Run buf generate", "Check for plugin updates"},
+			wantRunLensLine:   0,
+			wantCheckLensLine: 1, // plugins: key is on line 1
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			absPath, err := filepath.Abs(tc.fixture)
+			require.NoError(t, err)
+
+			clientJSONConn, bufGenYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil, nil)
+			ctx := t.Context()
+
+			var lenses []protocol.CodeLens
+			_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentCodeLens, &protocol.CodeLensParams{
+				TextDocument: protocol.TextDocumentIdentifier{URI: bufGenYAMLURI},
+			}, &lenses)
+			require.NoError(t, err)
+			require.Len(t, lenses, tc.wantCount)
+
+			for i, l := range lenses {
+				require.NotNil(t, l.Command, "lens %d has no command", i)
+			}
+			titles := make([]string, len(lenses))
+			for i, l := range lenses {
+				titles[i] = l.Command.Title
+			}
+			for _, wantTitle := range tc.wantTitles {
+				assert.Contains(t, titles, wantTitle)
+			}
+
+			// "Run buf generate" is always at line 0.
+			for _, l := range lenses {
+				if l.Command.Title == "Run buf generate" {
+					assert.Equal(t, tc.wantRunLensLine, l.Range.Start.Line,
+						"Run buf generate lens should be at line 0")
+				}
+			}
+
+			// "Check for plugin updates" is at the plugins: key line when present.
+			wantCheckLens := slices.Contains(tc.wantTitles, "Check for plugin updates")
+			if wantCheckLens {
+				for _, l := range lenses {
+					if l.Command.Title == "Check for plugin updates" {
+						assert.Equal(t, tc.wantCheckLensLine, l.Range.Start.Line,
+							"Check for plugin updates lens should be at the plugins: key line")
+					}
+				}
+			}
+		})
+	}
+}
+
+// TestBufGenYAMLCheckPluginUpdates verifies that the buf.generate.checkPluginUpdates
+// command publishes informational diagnostics for outdated remote plugins and none
+// for up-to-date ones.
+func TestBufGenYAMLCheckPluginUpdates(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		latestVersion string // what the mock BSR returns as the latest version
+		waitPred      func(*protocol.PublishDiagnosticsParams) bool
+		check         func(*testing.T, *protocol.PublishDiagnosticsParams)
+	}{
+		{
+			name:          "up_to_date",
+			latestVersion: "v2.10.0", // same as pinned in testdata
+			waitPred:      func(_ *protocol.PublishDiagnosticsParams) bool { return true },
+			check: func(t *testing.T, diags *protocol.PublishDiagnosticsParams) {
+				assert.Empty(t, diags.Diagnostics, "expected no diagnostics when plugin is up to date")
+			},
+		},
+		{
+			name:          "outdated",
+			latestVersion: "v2.10.3", // newer than pinned v2.10.0
+			waitPred:      func(p *protocol.PublishDiagnosticsParams) bool { return len(p.Diagnostics) > 0 },
+			check: func(t *testing.T, diags *protocol.PublishDiagnosticsParams) {
+				require.Len(t, diags.Diagnostics, 1)
+				d := diags.Diagnostics[0]
+				assert.Equal(t, protocol.DiagnosticSeverityInformation, d.Severity)
+				assert.Equal(t, "buf-lsp", d.Source)
+				assert.Contains(t, d.Message, "buf.build/bufbuild/es")
+				assert.Contains(t, d.Message, "v2.10.3")
+				// Diagnostic should be on the remote plugin value line (line 2, 0-indexed).
+				assert.Equal(t, uint32(2), d.Range.Start.Line)
+			},
+		},
+	}
+
+	absPath, err := filepath.Abs("testdata/buf_gen_yaml/with_versioned_plugins/buf.gen.yaml")
+	require.NoError(t, err)
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			cvp := &staticCuratedPluginVersionProvider{
+				latestByPlugin: map[string]string{"bufbuild/es": tc.latestVersion},
+			}
+
+			synctest.Test(t, func(t *testing.T) {
+				clientJSONConn, bufGenYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, nil, cvp)
+				ctx := t.Context()
+
+				var result any
+				_, err = clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
+					Command:   buflsp.CommandCheckPluginUpdates,
+					Arguments: []any{string(bufGenYAMLURI)},
+				}, &result)
+				require.NoError(t, err)
+
+				diags := capture.wait(t, bufGenYAMLURI, 5*time.Second, tc.waitPred)
+				require.NotNil(t, diags)
+				tc.check(t, diags)
+			})
+		})
+	}
+}
+
+// TestBufGenYAMLDiagnostics_ClearedOnClose verifies that diagnostics for a
+// buf.gen.yaml file are cleared (empty publish) when the file is closed.
+func TestBufGenYAMLDiagnostics_ClearedOnClose(t *testing.T) {
+	t.Parallel()
+
+	// Make the plugin appear outdated so we get a diagnostic to clear.
+	cvp := &staticCuratedPluginVersionProvider{
+		latestByPlugin: map[string]string{"bufbuild/es": "v2.10.3"},
+	}
+
+	absPath, err := filepath.Abs("testdata/buf_gen_yaml/with_versioned_plugins/buf.gen.yaml")
+	require.NoError(t, err)
+
+	synctest.Test(t, func(t *testing.T) {
+		clientJSONConn, bufGenYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, nil, cvp)
+		ctx := t.Context()
+
+		// Trigger a check to produce diagnostics.
+		var result any
+		_, err = clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
+			Command:   buflsp.CommandCheckPluginUpdates,
+			Arguments: []any{string(bufGenYAMLURI)},
+		}, &result)
+		require.NoError(t, err)
+
+		// Wait for the non-empty diagnostic.
+		diags := capture.wait(t, bufGenYAMLURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+			return len(p.Diagnostics) > 0
+		})
+		require.NotNil(t, diags)
+		require.NotEmpty(t, diags.Diagnostics, "expected diagnostics before close")
+
+		// Close the file.
+		err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidClose, &protocol.DidCloseTextDocumentParams{
+			TextDocument: protocol.TextDocumentIdentifier{URI: bufGenYAMLURI},
+		})
+		require.NoError(t, err)
+
+		// Diagnostics should now be cleared.
+		cleared := capture.wait(t, bufGenYAMLURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+			return len(p.Diagnostics) == 0
+		})
+		require.NotNil(t, cleared)
+		assert.Empty(t, cleared.Diagnostics, "expected diagnostics to be cleared after close")
+	})
 }
