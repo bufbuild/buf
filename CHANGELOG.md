@@ -3,7 +3,6 @@
 ## [Unreleased]
 
 - Fix duplicated extension tags across imports from compiler.
-- Use parallelized and cached `FileDescriptorProto` generation queries (`FDS`/`FDP`) from protocompile during image builds, and suppress compiler warnings before compilation in the standard build path.
 
 ## [v1.68.3] - 2026-04-20
 
