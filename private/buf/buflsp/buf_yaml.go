@@ -20,12 +20,16 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 	"sync"
+	"time"
 
+	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.lsp.dev/protocol"
 	"gopkg.in/yaml.v3"
@@ -43,27 +47,47 @@ const (
 	//
 	// Ref: https://buf.build/docs/configuration/v2/buf-yaml/#deps
 	bufYAMLDepsKey = "deps"
+	// bufYAMLCheckTimeout is the deadline for background buf.yaml validation goroutines.
+	bufYAMLCheckTimeout = 30 * time.Second
 )
+
+// bufYAMLIgnorePath is a single entry from a lint.ignore or breaking.ignore sequence
+// in buf.yaml, together with its source position for diagnostic reporting.
+type bufYAMLIgnorePath struct {
+	path      string         // raw value as written in buf.yaml
+	pathRange protocol.Range // position of the value node
+}
 
 // bufYAMLManager tracks open buf.yaml files in the LSP session.
 type bufYAMLManager struct {
-	lsp       *lsp
-	mu        sync.Mutex
-	uriToFile map[protocol.URI]*bufYAMLFile
+	lsp *lsp
+
+	// mu guards uriToFile and uriToCancel.
+	mu          sync.Mutex
+	uriToFile   map[protocol.URI]*bufYAMLFile
+	uriToCancel map[protocol.URI]context.CancelFunc // cancel funcs for in-flight CheckIgnorePaths goroutines
 }
 
 func newBufYAMLManager(lsp *lsp) *bufYAMLManager {
 	return &bufYAMLManager{
-		lsp:       lsp,
-		uriToFile: make(map[protocol.URI]*bufYAMLFile),
+		lsp:         lsp,
+		uriToFile:   make(map[protocol.URI]*bufYAMLFile),
+		uriToCancel: make(map[protocol.URI]context.CancelFunc),
 	}
 }
 
 // bufYAMLFile holds the parsed state of an open buf.yaml file.
 type bufYAMLFile struct {
-	depsKeyLine uint32 // 0-indexed line of the "deps:" key
-	deps        []bufYAMLDep
-	docNode     *yaml.Node // parsed YAML document node, nil if parse failed
+	depsKeyLine         uint32 // 0-indexed line of the "deps:" key
+	deps                []bufYAMLDep
+	docNode             *yaml.Node          // parsed YAML document node, nil if parse failed
+	lintIgnorePaths     []bufYAMLIgnorePath // entries from lint.ignore
+	breakingIgnorePaths []bufYAMLIgnorePath // entries from breaking.ignore
+
+	// Diagnostics from different sources, merged when publishing.
+	// Both fields are guarded by bufYAMLManager.mu.
+	depDiagnostics    []protocol.Diagnostic
+	ignoreDiagnostics []protocol.Diagnostic
 }
 
 // bufYAMLDep is a single entry in the deps sequence with its source position.
@@ -84,8 +108,15 @@ func (m *bufYAMLManager) Track(uri protocol.URI, text string) {
 	normalized := normalizeURI(uri)
 	f := &bufYAMLFile{}
 	f.depsKeyLine, f.deps, f.docNode, _ = parseBufYAMLDeps([]byte(text))
+	if f.docNode != nil {
+		f.lintIgnorePaths, f.breakingIgnorePaths = parseBufYAMLIgnorePathsFromDoc(f.docNode)
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if cancel, ok := m.uriToCancel[normalized]; ok {
+		cancel()
+		delete(m.uriToCancel, normalized)
+	}
 	m.uriToFile[normalized] = f
 }
 
@@ -93,6 +124,10 @@ func (m *bufYAMLManager) Track(uri protocol.URI, text string) {
 func (m *bufYAMLManager) Close(ctx context.Context, uri protocol.URI) {
 	normalized := normalizeURI(uri)
 	m.mu.Lock()
+	if cancel, ok := m.uriToCancel[normalized]; ok {
+		cancel()
+		delete(m.uriToCancel, normalized)
+	}
 	delete(m.uriToFile, normalized)
 	m.mu.Unlock()
 	m.publishDiagnostics(ctx, normalized, nil)
@@ -201,7 +236,7 @@ func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.U
 
 	// Emit an informational diagnostic for every dep whose latest commit differs
 	// from the currently pinned commit.
-	var diagnostics []protocol.Diagnostic
+	var depDiagnostics []protocol.Diagnostic
 	for _, latestKey := range latestKeys {
 		fullName := latestKey.FullName().String()
 		currentKey, pinned := currentByFullName[fullName]
@@ -216,7 +251,7 @@ func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.U
 		if !ok {
 			continue
 		}
-		diagnostics = append(diagnostics, protocol.Diagnostic{
+		depDiagnostics = append(depDiagnostics, protocol.Diagnostic{
 			Range:    depRange,
 			Severity: protocol.DiagnosticSeverityInformation,
 			Source:   serverName,
@@ -227,8 +262,129 @@ func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.U
 			),
 		})
 	}
-	m.publishDiagnostics(ctx, normalized, diagnostics)
+	m.mu.Lock()
+	if f, ok := m.uriToFile[normalized]; ok {
+		f.depDiagnostics = depDiagnostics
+	}
+	m.mu.Unlock()
+	m.publishAllDiagnostics(ctx, normalized)
 	return nil
+}
+
+// CheckIgnorePaths asynchronously validates lint.ignore and breaking.ignore paths
+// in the given buf.yaml against the actual files in the workspace. It publishes
+// a warning diagnostic for each path that does not match any file.
+func (m *bufYAMLManager) CheckIgnorePaths(uri protocol.URI) {
+	normalized := normalizeURI(uri)
+	m.mu.Lock()
+	f, ok := m.uriToFile[normalized]
+	if !ok || (len(f.lintIgnorePaths) == 0 && len(f.breakingIgnorePaths) == 0) {
+		m.mu.Unlock()
+		return
+	}
+	if cancel, ok := m.uriToCancel[normalized]; ok {
+		cancel()
+	}
+	lintIgnorePaths := f.lintIgnorePaths
+	breakingIgnorePaths := f.breakingIgnorePaths
+	ctx, cancel := context.WithTimeout(m.lsp.connCtx, bufYAMLCheckTimeout)
+	m.uriToCancel[normalized] = cancel
+	m.mu.Unlock()
+	go func() {
+		defer cancel()
+		if err := m.runIgnorePathChecks(ctx, normalized, lintIgnorePaths, breakingIgnorePaths); err != nil {
+			m.lsp.logger.WarnContext(ctx, "buf.yaml: ignore path check failed",
+				slog.String("uri", string(normalized)),
+				xslog.ErrorAttr(err),
+			)
+		}
+	}()
+}
+
+// runIgnorePathChecks is the synchronous body of CheckIgnorePaths.
+func (m *bufYAMLManager) runIgnorePathChecks(ctx context.Context, uri protocol.URI, lintIgnorePaths, breakingIgnorePaths []bufYAMLIgnorePath) error {
+	dirPath := filepath.Dir(uri.Filename())
+	bufWorkspace, err := m.lsp.controller.GetWorkspace(ctx, dirPath)
+	if err != nil {
+		return fmt.Errorf("getting workspace: %w", err)
+	}
+
+	// Collect workspace-relative paths of all proto files in target modules.
+	workspaceFileSet := make(map[string]struct{})
+	for _, module := range bufWorkspace.Modules() {
+		if !module.IsTarget() {
+			continue
+		}
+		if err := module.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
+			if fileInfo.FileType() != bufmodule.FileTypeProto {
+				return nil
+			}
+			localPath := fileInfo.LocalPath()
+			if localPath == "" {
+				return nil
+			}
+			normalizedRelPath, err := normalpath.Rel(dirPath, localPath)
+			if err != nil {
+				return err
+			}
+			workspaceFileSet[normalizedRelPath] = struct{}{}
+			return nil
+		}); err != nil {
+			return fmt.Errorf("walking module files: %w", err)
+		}
+	}
+
+	var ignoreDiagnostics []protocol.Diagnostic
+	checkIgnorePaths := func(ignorePaths []bufYAMLIgnorePath) {
+		for _, ignorePath := range ignorePaths {
+			normalizedPath, err := normalpath.NormalizeAndValidate(ignorePath.path)
+			if err != nil {
+				// Invalid path syntax — already an error in buf lint; skip.
+				continue
+			}
+			matched := false
+			for workspaceFilePath := range workspaceFileSet {
+				if normalpath.EqualsOrContainsPath(normalizedPath, workspaceFilePath, normalpath.Relative) {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				ignoreDiagnostics = append(ignoreDiagnostics, protocol.Diagnostic{
+					Range:    ignorePath.pathRange,
+					Severity: protocol.DiagnosticSeverityWarning,
+					Source:   serverName,
+					Message:  fmt.Sprintf("%q does not match any file in the workspace", ignorePath.path),
+				})
+			}
+		}
+	}
+	checkIgnorePaths(lintIgnorePaths)
+	checkIgnorePaths(breakingIgnorePaths)
+
+	m.mu.Lock()
+	if f, ok := m.uriToFile[uri]; ok {
+		f.ignoreDiagnostics = ignoreDiagnostics
+	}
+	m.mu.Unlock()
+	m.publishAllDiagnostics(ctx, uri)
+	return nil
+}
+
+// publishAllDiagnostics merges dep and ignore diagnostics and publishes them.
+func (m *bufYAMLManager) publishAllDiagnostics(ctx context.Context, uri protocol.URI) {
+	m.mu.Lock()
+	f, ok := m.uriToFile[uri]
+	if !ok {
+		m.mu.Unlock()
+		m.publishDiagnostics(ctx, uri, nil)
+		return
+	}
+	all := make([]protocol.Diagnostic, 0, len(f.depDiagnostics)+len(f.ignoreDiagnostics))
+	all = append(all, f.depDiagnostics...)
+	all = append(all, f.ignoreDiagnostics...)
+	m.mu.Unlock()
+	m.publishDiagnostics(ctx, uri, all)
 }
 
 // publishDiagnostics clears existing diagnostics when passed nil.
@@ -240,6 +396,59 @@ func (m *bufYAMLManager) publishDiagnostics(ctx context.Context, uri protocol.UR
 		URI:         uri,
 		Diagnostics: diagnostics,
 	})
+}
+
+// parseBufYAMLIgnorePathsFromDoc extracts lint.ignore and breaking.ignore paths
+// with their YAML source positions from a parsed buf.yaml document node.
+func parseBufYAMLIgnorePathsFromDoc(docNode *yaml.Node) (lintIgnorePaths, breakingIgnorePaths []bufYAMLIgnorePath) {
+	if docNode.Kind != yaml.DocumentNode || len(docNode.Content) == 0 {
+		return nil, nil
+	}
+	mapping := docNode.Content[0]
+	if mapping.Kind != yaml.MappingNode {
+		return nil, nil
+	}
+	for i := 0; i+1 < len(mapping.Content); i += 2 {
+		key := mapping.Content[i]
+		val := mapping.Content[i+1]
+		switch key.Value {
+		case "lint":
+			lintIgnorePaths = parseSectionIgnorePaths(val)
+		case "breaking":
+			breakingIgnorePaths = parseSectionIgnorePaths(val)
+		}
+	}
+	return lintIgnorePaths, breakingIgnorePaths
+}
+
+// parseSectionIgnorePaths extracts ignore paths from a lint or breaking section mapping node.
+func parseSectionIgnorePaths(sectionNode *yaml.Node) []bufYAMLIgnorePath {
+	if sectionNode == nil || sectionNode.Kind != yaml.MappingNode {
+		return nil
+	}
+	for i := 0; i+1 < len(sectionNode.Content); i += 2 {
+		key := sectionNode.Content[i]
+		if key.Value != "ignore" {
+			continue
+		}
+		// YAML forbids duplicate keys; stop at the first ignore: key, matching buf's own behavior.
+		seq := sectionNode.Content[i+1]
+		if seq.Kind != yaml.SequenceNode {
+			return nil
+		}
+		ignorePaths := make([]bufYAMLIgnorePath, 0, len(seq.Content))
+		for _, item := range seq.Content {
+			if item.Kind != yaml.ScalarNode {
+				continue
+			}
+			ignorePaths = append(ignorePaths, bufYAMLIgnorePath{
+				path:      item.Value,
+				pathRange: yamlNodeRange(item),
+			})
+		}
+		return ignorePaths
+	}
+	return nil
 }
 
 // updateDeps resolves all configured deps in buf.yaml to their latest commits
