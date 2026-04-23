@@ -18,9 +18,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 // TestBufPolicyYAMLDocumentLinks verifies that document links are returned for
@@ -66,7 +66,7 @@ func TestBufPolicyYAMLDocumentLinks(t *testing.T) {
 						Start: protocol.Position{Line: 1, Character: 6},
 						End:   protocol.Position{Line: 1, Character: 30},
 					},
-					Target: "https://buf.build/acme/my-policy",
+					Target: func() *protocol.URI { u := protocol.URI("https://buf.build/acme/my-policy"); return &u }(),
 				},
 				{
 					// plugins[0].plugin: buf.build/acme/my-lint-plugin
@@ -74,7 +74,7 @@ func TestBufPolicyYAMLDocumentLinks(t *testing.T) {
 						Start: protocol.Position{Line: 9, Character: 12},
 						End:   protocol.Position{Line: 9, Character: 41},
 					},
-					Target: "https://buf.build/acme/my-lint-plugin",
+					Target: func() *protocol.URI { u := protocol.URI("https://buf.build/acme/my-lint-plugin"); return &u }(),
 				},
 				// plugins[1].plugin: local-linter-binary is skipped (not a BSR ref).
 			},
@@ -92,7 +92,7 @@ func TestBufPolicyYAMLDocumentLinks(t *testing.T) {
 			ctx := t.Context()
 
 			var links []protocol.DocumentLink
-			_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentLink, &protocol.DocumentLinkParams{
+			err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentLink, &protocol.DocumentLinkParams{
 				TextDocument: protocol.TextDocumentIdentifier{URI: bufPolicyYAMLURI},
 			}, &links)
 			require.NoError(t, err)
@@ -117,7 +117,7 @@ func TestBufPolicyYAMLHoverMalformedYAML(t *testing.T) {
 	ctx := t.Context()
 
 	var hover *protocol.Hover
-	_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
+	err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
 		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 			TextDocument: protocol.TextDocumentIdentifier{URI: bufPolicyYAMLURI},
 			Position:     protocol.Position{Line: 0, Character: 0},
@@ -306,7 +306,7 @@ func TestBufPolicyYAMLHover(t *testing.T) {
 			t.Parallel()
 
 			var hover *protocol.Hover
-			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
+			err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{URI: bufPolicyYAMLURI},
 					Position:     protocol.Position{Line: tc.line, Character: tc.character},

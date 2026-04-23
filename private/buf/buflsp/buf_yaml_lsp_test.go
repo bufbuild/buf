@@ -15,6 +15,7 @@
 package buflsp_test
 
 import (
+	"encoding/json"
 	"net"
 	"net/http"
 	"os"
@@ -35,6 +36,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
+	"github.com/bufbuild/buf/private/pkg/jsonrpc2"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/wasm"
@@ -42,9 +45,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/jsonrpc2"
-	"go.lsp.dev/protocol"
-	"go.lsp.dev/uri"
 )
 
 // setupLSPServerForBufYAML creates an LSP server initialized for buf.yaml testing.
@@ -54,7 +54,7 @@ func setupLSPServerForBufYAML(
 	t *testing.T,
 	bufYAMLPath string,
 	mkp bufmodule.ModuleKeyProvider,
-) (jsonrpc2.Conn, protocol.URI, *diagnosticsCapture) {
+) (*jsonrpc2.Conn, protocol.URI, *diagnosticsCapture) {
 	t.Helper()
 
 	ctx := t.Context()
@@ -121,7 +121,7 @@ func setupLSPServerForBufYAML(
 		appextContainer,
 		controller,
 		wasmRuntime,
-		jsonrpc2.NewStream(serverConn),
+		serverConn,
 		queryExecutor,
 		moduleKeyProvider,
 		bufmodule.NopGraphProvider,
@@ -133,9 +133,7 @@ func setupLSPServerForBufYAML(
 
 	capture := newDiagnosticsCapture()
 
-	clientStream := jsonrpc2.NewStream(clientConn)
-	clientJSONConn := jsonrpc2.NewConn(clientStream)
-	clientJSONConn.Go(ctx, jsonrpc2.AsyncHandler(capture.handle))
+	clientJSONConn := jsonrpc2.NewConn(ctx, clientConn, jsonrpc2.HandlerFunc(capture.handle))
 	t.Cleanup(func() {
 		require.NoError(t, clientJSONConn.Close())
 	})
@@ -144,10 +142,12 @@ func setupLSPServerForBufYAML(
 	bufYAMLURI := buflsp.FilePathToURI(bufYAMLPath)
 
 	var initResult protocol.InitializeResult
-	_, err = clientJSONConn.Call(ctx, protocol.MethodInitialize, &protocol.InitializeParams{
-		RootURI: uri.New(workspaceDir),
-		Capabilities: protocol.ClientCapabilities{
-			TextDocument: &protocol.TextDocumentClientCapabilities{},
+	err = clientJSONConn.Call(ctx, protocol.MethodInitialize, &protocol.InitializeParams{
+		XInitializeParams: protocol.XInitializeParams{
+			RootURI: protocol.URIFromPath(workspaceDir),
+			Capabilities: protocol.ClientCapabilities{
+				TextDocument: protocol.TextDocumentClientCapabilities{},
+			},
 		},
 	}, &initResult)
 	require.NoError(t, err)
@@ -214,7 +214,7 @@ func TestBufYAMLCodeLens(t *testing.T) {
 			ctx := t.Context()
 
 			var lenses []protocol.CodeLens
-			_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentCodeLens, &protocol.CodeLensParams{
+			err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentCodeLens, &protocol.CodeLensParams{
 				TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
 			}, &lenses)
 			require.NoError(t, err)
@@ -278,7 +278,7 @@ func TestBufYAMLCheckUpdates(t *testing.T) {
 			check: func(t *testing.T, diags *protocol.PublishDiagnosticsParams) {
 				require.Len(t, diags.Diagnostics, 1, "expected exactly 1 diagnostic for the outdated dep")
 				d := diags.Diagnostics[0]
-				assert.Equal(t, protocol.DiagnosticSeverityInformation, d.Severity)
+				assert.Equal(t, protocol.SeverityInformation, d.Severity)
 				assert.Equal(t, "buf-lsp", d.Source)
 				assert.Contains(t, d.Message, "buf.build/bufbuild/protovalidate")
 				assert.Contains(t, d.Message, "00000000000000000000000000000011")
@@ -297,7 +297,7 @@ func TestBufYAMLCheckUpdates(t *testing.T) {
 			check: func(t *testing.T, diags *protocol.PublishDiagnosticsParams) {
 				assert.Len(t, diags.Diagnostics, 2, "expected 2 diagnostics when both deps are outdated")
 				for _, d := range diags.Diagnostics {
-					assert.Equal(t, protocol.DiagnosticSeverityInformation, d.Severity)
+					assert.Equal(t, protocol.SeverityInformation, d.Severity)
 					assert.Equal(t, "buf-lsp", d.Source)
 					assert.Contains(t, d.Message, "can be updated to")
 				}
@@ -336,9 +336,10 @@ func TestBufYAMLCheckUpdates(t *testing.T) {
 				ctx := t.Context()
 
 				var result any
-				_, err = clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
+				uriArg, _ := json.Marshal(string(bufYAMLURI))
+				err = clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
 					Command:   "buf.dep.checkUpdates",
-					Arguments: []any{string(bufYAMLURI)},
+					Arguments: []json.RawMessage{uriArg},
 				}, &result)
 				require.NoError(t, err)
 
@@ -371,9 +372,10 @@ func TestBufYAMLDiagnostics_ClearedOnClose(t *testing.T) {
 
 		// Trigger a check to produce diagnostics.
 		var result any
-		_, err = clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
+		uriArg, _ := json.Marshal(string(bufYAMLURI))
+		err = clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
 			Command:   "buf.dep.checkUpdates",
-			Arguments: []any{string(bufYAMLURI)},
+			Arguments: []json.RawMessage{uriArg},
 		}, &result)
 		require.NoError(t, err)
 
@@ -425,14 +427,14 @@ func TestBufYAMLCheckUpdates_FileChange(t *testing.T) {
 				Version:                2,
 			},
 			ContentChanges: []protocol.TextDocumentContentChangeEvent{
-				{Text: "version: v2\n"},
+				{Value: protocol.TextDocumentContentChangeWholeDocument{Text: "version: v2\n"}},
 			},
 		})
 		require.NoError(t, err)
 
 		// After the change, code lenses should reflect no deps.
 		var lenses []protocol.CodeLens
-		_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentCodeLens, &protocol.CodeLensParams{
+		err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentCodeLens, &protocol.CodeLensParams{
 			TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
 		}, &lenses)
 		require.NoError(t, err)
@@ -471,14 +473,14 @@ func TestBufYAMLDocumentLinks(t *testing.T) {
 						Start: protocol.Position{Line: 2, Character: 4},
 						End:   protocol.Position{Line: 2, Character: 36},
 					},
-					Target: "https://buf.build/bufbuild/protovalidate",
+					Target: func() *protocol.URI { u := protocol.URI("https://buf.build/bufbuild/protovalidate"); return &u }(),
 				},
 				{
 					Range: protocol.Range{
 						Start: protocol.Position{Line: 3, Character: 4},
 						End:   protocol.Position{Line: 3, Character: 35},
 					},
-					Target: "https://buf.build/googleapis/googleapis",
+					Target: func() *protocol.URI { u := protocol.URI("https://buf.build/googleapis/googleapis"); return &u }(),
 				},
 			},
 		},
@@ -492,7 +494,10 @@ func TestBufYAMLDocumentLinks(t *testing.T) {
 						Start: protocol.Position{Line: 2, Character: 4},
 						End:   protocol.Position{Line: 2, Character: 43},
 					},
-					Target: "https://buf.build/bufbuild/protovalidate/docs/v1.1.1",
+					Target: func() *protocol.URI {
+						u := protocol.URI("https://buf.build/bufbuild/protovalidate/docs/v1.1.1")
+						return &u
+					}(),
 				},
 			},
 		},
@@ -509,7 +514,7 @@ func TestBufYAMLDocumentLinks(t *testing.T) {
 			ctx := t.Context()
 
 			var links []protocol.DocumentLink
-			_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentLink, &protocol.DocumentLinkParams{
+			err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentLink, &protocol.DocumentLinkParams{
 				TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
 			}, &links)
 			require.NoError(t, err)
@@ -817,7 +822,7 @@ func TestBufYAMLHover(t *testing.T) {
 			t.Parallel()
 
 			var hover *protocol.Hover
-			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
+			err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
 					Position:     protocol.Position{Line: tc.line, Character: tc.character},
@@ -876,7 +881,7 @@ func TestBufYAMLHover_OtherFixtures(t *testing.T) {
 			ctx := t.Context()
 
 			var hover *protocol.Hover
-			_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
+			err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
 					Position:     protocol.Position{Line: tc.line, Character: tc.character},

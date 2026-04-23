@@ -18,9 +18,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 // TestBufGenYAMLDocumentLinks verifies that document links are returned for
@@ -61,7 +61,7 @@ func TestBufGenYAMLDocumentLinks(t *testing.T) {
 						Start: protocol.Position{Line: 2, Character: 12},
 						End:   protocol.Position{Line: 2, Character: 40},
 					},
-					Target: "https://buf.build/protocolbuffers/go",
+					Target: func() *protocol.URI { u := protocol.URI("https://buf.build/protocolbuffers/go"); return &u }(),
 				},
 				{
 					// plugins[1].remote: buf.build/bufbuild/es:v2.2.2
@@ -69,7 +69,7 @@ func TestBufGenYAMLDocumentLinks(t *testing.T) {
 						Start: protocol.Position{Line: 4, Character: 12},
 						End:   protocol.Position{Line: 4, Character: 40},
 					},
-					Target: "https://buf.build/bufbuild/es/docs/v2.2.2",
+					Target: func() *protocol.URI { u := protocol.URI("https://buf.build/bufbuild/es/docs/v2.2.2"); return &u }(),
 				},
 				{
 					// inputs[0].module: buf.build/acme/petapis
@@ -77,7 +77,7 @@ func TestBufGenYAMLDocumentLinks(t *testing.T) {
 						Start: protocol.Position{Line: 9, Character: 12},
 						End:   protocol.Position{Line: 9, Character: 34},
 					},
-					Target: "https://buf.build/acme/petapis",
+					Target: func() *protocol.URI { u := protocol.URI("https://buf.build/acme/petapis"); return &u }(),
 				},
 			},
 		},
@@ -94,7 +94,7 @@ func TestBufGenYAMLDocumentLinks(t *testing.T) {
 			ctx := t.Context()
 
 			var links []protocol.DocumentLink
-			_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentLink, &protocol.DocumentLinkParams{
+			err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentLink, &protocol.DocumentLinkParams{
 				TextDocument: protocol.TextDocumentIdentifier{URI: bufGenYAMLURI},
 			}, &links)
 			require.NoError(t, err)
@@ -119,7 +119,7 @@ func TestBufGenYAMLHoverMalformedYAML(t *testing.T) {
 	ctx := t.Context()
 
 	var hover *protocol.Hover
-	_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
+	err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
 		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 			TextDocument: protocol.TextDocumentIdentifier{URI: bufGenYAMLURI},
 			Position:     protocol.Position{Line: 0, Character: 0},
@@ -147,14 +147,14 @@ func TestBufGenYAMLHoverDidChange(t *testing.T) {
 			Version:                2,
 		},
 		ContentChanges: []protocol.TextDocumentContentChangeEvent{
-			{Text: "version: v2\n"},
+			{Value: protocol.TextDocumentContentChangeWholeDocument{Text: "version: v2\n"}},
 		},
 	})
 	require.NoError(t, err)
 
 	// Hover on version should still work after the update.
 	var hover *protocol.Hover
-	_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
+	err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
 		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 			TextDocument: protocol.TextDocumentIdentifier{URI: bufGenYAMLURI},
 			Position:     protocol.Position{Line: 0, Character: 0},
@@ -444,7 +444,7 @@ func TestBufGenYAMLHover(t *testing.T) {
 			t.Parallel()
 
 			var hover *protocol.Hover
-			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
+			err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{URI: bufGenYAMLURI},
 					Position:     protocol.Position{Line: tc.line, Character: tc.character},

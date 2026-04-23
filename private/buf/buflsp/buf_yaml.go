@@ -27,8 +27,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"gopkg.in/yaml.v3"
 )
 

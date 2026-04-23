@@ -17,9 +17,9 @@ package buflsp
 import (
 	"testing"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 func TestParseBufYAMLDeps(t *testing.T) {

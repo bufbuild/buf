@@ -18,9 +18,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.lsp.dev/protocol"
 )
 
 // TestBufLockDocumentLinks verifies that document links are returned for
@@ -59,7 +59,7 @@ func TestBufLockDocumentLinks(t *testing.T) {
 						Start: protocol.Position{Line: 3, Character: 10},
 						End:   protocol.Position{Line: 3, Character: 42},
 					},
-					Target: "https://buf.build/bufbuild/protovalidate",
+					Target: func() *protocol.URI { u := protocol.URI("https://buf.build/bufbuild/protovalidate"); return &u }(),
 				},
 				{
 					// deps[1].name: buf.build/googleapis/googleapis
@@ -67,7 +67,7 @@ func TestBufLockDocumentLinks(t *testing.T) {
 						Start: protocol.Position{Line: 6, Character: 10},
 						End:   protocol.Position{Line: 6, Character: 41},
 					},
-					Target: "https://buf.build/googleapis/googleapis",
+					Target: func() *protocol.URI { u := protocol.URI("https://buf.build/googleapis/googleapis"); return &u }(),
 				},
 			},
 		},
@@ -84,7 +84,7 @@ func TestBufLockDocumentLinks(t *testing.T) {
 			ctx := t.Context()
 
 			var links []protocol.DocumentLink
-			_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentLink, &protocol.DocumentLinkParams{
+			err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentDocumentLink, &protocol.DocumentLinkParams{
 				TextDocument: protocol.TextDocumentIdentifier{URI: bufLockURI},
 			}, &links)
 			require.NoError(t, err)
@@ -109,7 +109,7 @@ func TestBufLockHoverMalformedYAML(t *testing.T) {
 	ctx := t.Context()
 
 	var hover *protocol.Hover
-	_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
+	err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
 		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 			TextDocument: protocol.TextDocumentIdentifier{URI: bufLockURI},
 			Position:     protocol.Position{Line: 0, Character: 0},
@@ -190,7 +190,7 @@ func TestBufLockHover(t *testing.T) {
 			t.Parallel()
 
 			var hover *protocol.Hover
-			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
+			err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, &protocol.HoverParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{URI: bufLockURI},
 					Position:     protocol.Position{Line: tc.line, Character: tc.character},
