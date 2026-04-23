@@ -100,10 +100,16 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 				// paths, and target files that resolve to a specific image file are always a leaf,
 				// thus, we would always include it if it's specified.
 				// We have an ImageFile, therefore the fileOrDirPath was a file path
-				// add to the nonImportImageFiles if does not already exist
-				if _, ok := nonImportPaths[fileOrDirPath]; !ok {
-					nonImportPaths[fileOrDirPath] = struct{}{}
-					nonImportImageFiles = append(nonImportImageFiles, imageFile)
+				// add to the nonImportImageFiles if does not already exist.
+				// Skip files that are already imports in the source image: a path
+				// filter cannot promote an import (e.g. a cross-module dependency)
+				// to a target. Transitive imports of actual targets are still pulled
+				// in by addFileWithImports via FileDescriptorProto.GetDependency().
+				if !imageFile.IsImport() {
+					if _, ok := nonImportPaths[fileOrDirPath]; !ok {
+						nonImportPaths[fileOrDirPath] = struct{}{}
+						nonImportImageFiles = append(nonImportImageFiles, imageFile)
+					}
 				}
 			} else {
 				// we do not have an image file, so even though this path ends
@@ -171,10 +177,17 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 			for key := range fileMatchingPathMap {
 				matchingPotentialDirPathMap[key] = struct{}{}
 			}
-			// then, add the file to non-imports if it is not added
-			if _, ok := nonImportPaths[imageFilePath]; !ok {
-				nonImportPaths[imageFilePath] = struct{}{}
-				nonImportImageFiles = append(nonImportImageFiles, imageFile)
+			// then, add the file to non-imports if it is not added.
+			// Skip files that are already imports in the source image: a path
+			// filter cannot promote an import (e.g. a cross-module dependency
+			// that happens to share a prefix with a target) to a target.
+			// Transitive imports of actual targets are still pulled in by
+			// addFileWithImports via FileDescriptorProto.GetDependency().
+			if !imageFile.IsImport() {
+				if _, ok := nonImportPaths[imageFilePath]; !ok {
+					nonImportPaths[imageFilePath] = struct{}{}
+					nonImportImageFiles = append(nonImportImageFiles, imageFile)
+				}
 			}
 		}
 	}
