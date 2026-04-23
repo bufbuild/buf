@@ -19,6 +19,7 @@ package buflsp
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"sync"
@@ -27,7 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"go.lsp.dev/protocol"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"gopkg.in/yaml.v3"
 )
 
@@ -116,13 +117,14 @@ func (m *bufYAMLManager) GetCodeLenses(uri protocol.URI) []protocol.CodeLens {
 		Start: protocol.Position{Line: keyLine, Character: 0},
 		End:   protocol.Position{Line: keyLine, Character: 0},
 	}
+	uriArg, _ := json.Marshal(string(uri))
 	return []protocol.CodeLens{
 		{
 			Range: keyRange,
 			Command: &protocol.Command{
 				Title:     "Update all dependencies",
 				Command:   commandUpdateAllDeps,
-				Arguments: []any{string(uri)},
+				Arguments: []json.RawMessage{uriArg},
 			},
 		},
 		{
@@ -130,7 +132,7 @@ func (m *bufYAMLManager) GetCodeLenses(uri protocol.URI) []protocol.CodeLens {
 			Command: &protocol.Command{
 				Title:     "Check for updates",
 				Command:   commandCheckUpdates,
-				Arguments: []any{string(uri)},
+				Arguments: []json.RawMessage{uriArg},
 			},
 		},
 	}
@@ -218,7 +220,7 @@ func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.U
 		}
 		diagnostics = append(diagnostics, protocol.Diagnostic{
 			Range:    depRange,
-			Severity: protocol.DiagnosticSeverityInformation,
+			Severity: protocol.SeverityInformation,
 			Source:   serverName,
 			Message: fmt.Sprintf(
 				"%s can be updated to %s",
@@ -329,9 +331,10 @@ func (m *bufYAMLManager) GetDocumentLinks(uri protocol.URI) []protocol.DocumentL
 		if err != nil {
 			continue
 		}
+		targetURI := protocol.DocumentURI(bsrRefDocURL(ref))
 		links = append(links, protocol.DocumentLink{
 			Range:  dep.depRange,
-			Target: protocol.DocumentURI(bsrRefDocURL(ref)),
+			Target: &targetURI,
 		})
 	}
 	return links

@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	"go.lsp.dev/protocol"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"gopkg.in/yaml.v3"
 )
 
@@ -391,7 +391,7 @@ func makeBufYAMLHover(displayName string, doc bufYAMLDoc, nodeRange protocol.Ran
 			Kind:  protocol.Markdown,
 			Value: body,
 		},
-		Range: &nodeRange,
+		Range: nodeRange,
 	}
 }
 

@@ -15,7 +15,7 @@
 package buflsp
 
 import (
-	"go.lsp.dev/protocol"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"gopkg.in/yaml.v3"
 )
 

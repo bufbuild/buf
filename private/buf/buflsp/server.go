@@ -16,6 +16,7 @@ package buflsp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -255,34 +256,33 @@ func (s *server) DidChange(
 	ctx context.Context,
 	params *protocol.DidChangeTextDocumentParams,
 ) error {
-	if isBufYAMLURI(params.TextDocument.URI) {
-		s.bufYAMLManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
-		return nil
-	}
-	if isBufGenYAMLURI(params.TextDocument.URI) {
-		s.bufGenYAMLManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
-		return nil
-	}
-	if isBufPolicyYAMLURI(params.TextDocument.URI) {
-		s.bufPolicyYAMLManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
-		return nil
-	}
-	if isBufLockURI(params.TextDocument.URI) {
-		s.bufLockManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
-		return nil
-	}
-	file := s.fileManager.Get(params.TextDocument.URI)
-	if file == nil {
-		// Update for a file we don't know about? Seems bad!
-		return fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
-	}
-
 	var text string
 	switch v := params.ContentChanges[0].Value.(type) {
 	case protocol.TextDocumentContentChangeWholeDocument:
 		text = v.Text
 	case protocol.TextDocumentContentChangePartial:
 		text = v.Text
+	}
+	if isBufYAMLURI(params.TextDocument.URI) {
+		s.bufYAMLManager.Track(params.TextDocument.URI, text)
+		return nil
+	}
+	if isBufGenYAMLURI(params.TextDocument.URI) {
+		s.bufGenYAMLManager.Track(params.TextDocument.URI, text)
+		return nil
+	}
+	if isBufPolicyYAMLURI(params.TextDocument.URI) {
+		s.bufPolicyYAMLManager.Track(params.TextDocument.URI, text)
+		return nil
+	}
+	if isBufLockURI(params.TextDocument.URI) {
+		s.bufLockManager.Track(params.TextDocument.URI, text)
+		return nil
+	}
+	file := s.fileManager.Get(params.TextDocument.URI)
+	if file == nil {
+		// Update for a file we don't know about? Seems bad!
+		return fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
 	}
 	file.Update(ctx, params.TextDocument.Version, text)
 	return nil
@@ -634,9 +634,9 @@ func (s *server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCom
 	if len(params.Arguments) < 1 {
 		return nil, fmt.Errorf("%s: expected at least 1 argument (buf.yaml URI), got %d", params.Command, len(params.Arguments))
 	}
-	uriStr, ok := params.Arguments[0].(string)
-	if !ok {
-		return nil, fmt.Errorf("%s: argument 0 must be a string URI, got %T", params.Command, params.Arguments[0])
+	var uriStr string
+	if err := json.Unmarshal(params.Arguments[0], &uriStr); err != nil {
+		return nil, fmt.Errorf("%s: argument 0 must be a string URI: %w", params.Command, err)
 	}
 	uri := protocol.URI(uriStr)
 	switch params.Command {

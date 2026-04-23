@@ -487,7 +487,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 			if editions {
 				iters = append(iters, keywordToCompletionItem(
 					visibilityModifierKeywords(),
-					protocol.CompletionItemKindKeyword,
+					protocol.KeywordCompletion,
 					tokenSpan,
 					offset,
 				))
@@ -496,7 +496,7 @@ func completionItemsForDef(ctx context.Context, file *file, declPath []ast.DeclA
 			// After export/local inside a message, only nested type declarations are valid.
 			iters = append(iters, keywordToCompletionItem(
 				messageLevelTypeDeclarationKeywords(),
-				protocol.CompletionItemKindKeyword,
+				protocol.KeywordCompletion,
 				tokenSpan,
 				offset,
 			))

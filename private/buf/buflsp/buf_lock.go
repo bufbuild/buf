@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
-	"go.lsp.dev/protocol"
+	protocol "github.com/bufbuild/buf/private/pkg/lspprotocol"
 	"gopkg.in/yaml.v3"
 )
 
@@ -95,9 +95,10 @@ func (m *bufLockManager) GetDocumentLinks(uri protocol.URI) []protocol.DocumentL
 		if err != nil {
 			continue
 		}
+		targetURI := protocol.DocumentURI(bsrRefDocURL(ref))
 		links = append(links, protocol.DocumentLink{
 			Range:  dep.refRange,
-			Target: protocol.DocumentURI(bsrRefDocURL(ref)),
+			Target: &targetURI,
 		})
 	}
 	return links
