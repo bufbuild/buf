@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Unbound WASM check plugin memory limits.
 
 ## [v1.68.4] - 2026-04-22
 
