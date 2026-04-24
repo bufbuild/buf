@@ -21,6 +21,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/buf/bufwkt/bufwktstore"
@@ -216,7 +217,15 @@ func NewWasmRuntime(ctx context.Context, container appext.Container) (wasm.Runti
 		return nil, err
 	}
 	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CacheWasmRuntimeRelDirPath)
-	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(fullCacheDirPath))
+	runtimeOptions := []wasm.RuntimeOption{wasm.WithLocalCacheDir(fullCacheDirPath)}
+	if v := os.Getenv("BUF_WASM_MAX_MEMORY_BYTES"); v != "" {
+		n, err := strconv.ParseUint(v, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid BUF_WASM_MAX_MEMORY_BYTES value %q: %w", v, err)
+		}
+		runtimeOptions = append(runtimeOptions, wasm.WithMaxMemoryBytes(uint32(n)))
+	}
+	wasmRuntime, err := wasm.NewRuntime(ctx, runtimeOptions...)
 	if err != nil {
 		return nil, err
 	}
