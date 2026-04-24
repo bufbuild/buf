@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Increase WASM memory limits to 1GiB.
+- Increase check plugin WASM memory limits to 1GiB.
 
 ## [v1.68.4] - 2026-04-22
 
