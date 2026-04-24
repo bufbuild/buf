@@ -24,6 +24,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestLogFormatColorEnablesColor(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	var sb strings.Builder
+	logger, err := NewLogger(&sb, appext.LogLevelInfo, appext.LogFormatColor)
+	require.NoError(t, err)
+	logger.Info("hello")
+	assert.Contains(t, sb.String(), "\x1b[")
+}
+
+func TestLogFormatColorRespectsNoColor(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	var sb strings.Builder
+	logger, err := NewLogger(&sb, appext.LogLevelInfo, appext.LogFormatColor)
+	require.NoError(t, err)
+	logger.Info("hello")
+	assert.NotContains(t, sb.String(), "\x1b[")
+}
+
 func TestNoStack(t *testing.T) {
 	t.Parallel()
 	var sb strings.Builder

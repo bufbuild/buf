@@ -68,8 +68,8 @@ func getHandler(writer io.Writer, logLevel appext.LogLevel, logFormat appext.Log
 		return newConsoleHandler(writer, level, withConsoleColor(false)), nil
 	case appext.LogFormatColor:
 		// Use a custom console handler that formats log messages in a human-readable format.
-		// Color is enabled automatically if the writer is a TTY.
-		return newConsoleHandler(writer, level), nil
+		// Color is explicitly enabled since the user requested it (NO_COLOR still takes precedence).
+		return newConsoleHandler(writer, level, withConsoleColor(true)), nil
 	default:
 		return nil, fmt.Errorf("invalid logFormat: %v", logFormat)
 	}

@@ -4,6 +4,10 @@
 
 - No changes yet.
 
+## [v1.68.4] - 2026-04-22
+
+- Fix duplicated extension tags across imports from compiler.
+
 ## [v1.68.3] - 2026-04-20
 
 - Fix `buf format` error handling for edition 2024.
@@ -1538,7 +1542,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.68.3...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.68.4...HEAD
+[v1.68.4]: https://github.com/bufbuild/buf/compare/v1.68.3...v1.68.4
 [v1.68.3]: https://github.com/bufbuild/buf/compare/v1.68.2...v1.68.3
 [v1.68.2]: https://github.com/bufbuild/buf/compare/v1.68.1...v1.68.2
 [v1.68.1]: https://github.com/bufbuild/buf/compare/v1.68.0...v1.68.1
