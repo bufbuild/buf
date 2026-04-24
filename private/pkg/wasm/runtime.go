@@ -26,7 +26,7 @@ import (
 
 const (
 	// defaultMaxMemoryBytes is the maximum memory size in bytes.
-	defaultMaxMemoryBytes = 1 << 29 // 512 MiB
+	defaultMaxMemoryBytes = 1 << 30 // 1 GiB
 	// wasmPageSize is the page size in bytes.
 	wasmPageSize = 1 << 16 // 64 KiB
 )
