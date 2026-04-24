@@ -216,11 +216,7 @@ func NewWasmRuntime(ctx context.Context, container appext.Container) (wasm.Runti
 		return nil, err
 	}
 	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CacheWasmRuntimeRelDirPath)
-	wasmRuntime, err := wasm.NewRuntime(
-		ctx,
-		wasm.WithLocalCacheDir(fullCacheDirPath),
-		wasm.WithMaxMemoryBytes(1<<32-1), // Max for unbounded size locally.
-	)
+	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(fullCacheDirPath))
 	if err != nil {
 		return nil, err
 	}
