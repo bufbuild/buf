@@ -116,6 +116,7 @@ import (
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/sdk/sdkinfo"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/sdk/version"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/whoami"
+	"github.com/bufbuild/buf/cmd/buf/internal/command/scaffold"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/source/sourceedit/sourceeditdeprecate"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/stats"
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -407,6 +408,7 @@ func newRootCommand(name string) *appcmd.Command {
 				SubCommands: []*appcmd.Command{
 					lspserve.NewCommand("lsp", builder, deprecatedMessage("buf lsp serve", "buf beta lsp"), true, true),
 					price.NewCommand("price", builder),
+					scaffold.NewCommand("scaffold", builder),
 					bufpluginv1beta1.NewCommand("buf-plugin-v1beta1", builder),
 					bufpluginv1.NewCommand("buf-plugin-v1", builder),
 					bufpluginv2.NewCommand("buf-plugin-v2", builder),
