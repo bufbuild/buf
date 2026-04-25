@@ -638,6 +638,45 @@ func handleBreakingFieldSameJavaUTF8Validation(
 	return nil
 }
 
+// HandleBreakingFieldSameGoStripEnumPrefix is a check function.
+var HandleBreakingFieldSameGoStripEnumPrefix = bufcheckserverutil.NewBreakingEnumPairRuleHandler(handleBreakingFieldSameGoStripEnumPrefix)
+
+func handleBreakingFieldSameGoStripEnumPrefix(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	enum bufprotosource.Enum,
+	previousEnum bufprotosource.Enum,
+) error {
+	previousDescriptor, err := previousEnum.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := enum.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	previousPrefix, err := enumGoStripEnumPrefix(previousDescriptor)
+	if err != nil {
+		return err
+	}
+	prefix, err := enumGoStripEnumPrefix(descriptor)
+	if err != nil {
+		return err
+	}
+	if previousPrefix != prefix {
+		responseWriter.AddProtosourceAnnotationf(
+			enumGoStripEnumPrefixLocation(enum),
+			enumGoStripEnumPrefixLocation(previousEnum),
+			enum.File().Path(),
+			`%s changed Go strip enum prefix from %q to %q.`,
+			enum.Name(),
+			previousPrefix,
+			prefix,
+		)
+	}
+	return nil
+}
+
 // HandleBreakingFieldSameJSType is a check function.
 var HandleBreakingFieldSameJSType = bufcheckserverutil.NewBreakingFieldPairRuleHandler(handleBreakingFieldSameJSType)
 
