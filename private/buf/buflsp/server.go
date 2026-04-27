@@ -33,7 +33,8 @@ import (
 )
 
 const (
-	serverName = "buf-lsp"
+	serverName     = "buf-lsp"
+	lintSourceName = "buf lint"
 
 	maxSymbolResults = 1000
 )
@@ -377,6 +378,33 @@ func (s *server) DidClose(
 	}
 	if file := s.fileManager.Get(params.TextDocument.URI); file != nil {
 		file.Close(ctx)
+	}
+	return nil
+}
+
+// DidDeleteFiles is called when files are deleted on disk (e.g. via the OS or
+// IDE file explorer). For each deleted file we close the corresponding tracked
+// resource so stale diagnostics are cleared from the client.
+func (s *server) DidDeleteFiles(
+	ctx context.Context,
+	params *protocol.DeleteFilesParams,
+) error {
+	for _, deleted := range params.Files {
+		uri := protocol.URI(deleted.URI)
+		switch {
+		case isBufYAMLURI(uri):
+			s.bufYAMLManager.Close(ctx, uri)
+		case isBufGenYAMLURI(uri):
+			s.bufGenYAMLManager.Close(uri)
+		case isBufPolicyYAMLURI(uri):
+			s.bufPolicyYAMLManager.Close(uri)
+		case isBufLockURI(uri):
+			s.bufLockManager.Close(uri)
+		default:
+			if file := s.fileManager.Get(uri); file != nil {
+				file.Close(ctx)
+			}
+		}
 	}
 	return nil
 }

@@ -511,6 +511,71 @@ func TestDiagnosticsNoTransitiveLeak(t *testing.T) {
 	})
 }
 
+// TestDiagnosticsClearedOnClose verifies that stale diagnostics are cleared from the
+// client when a file is closed, reproducing the scenario from
+// https://github.com/bufbuild/vscode-buf/issues/626 where lint errors on a deleted file
+// continued to show in the editor's Problems panel after the file was removed.
+func TestDiagnosticsClearedOnClose(t *testing.T) {
+	t.Parallel()
+
+	synctest.Test(t, func(t *testing.T) {
+		// Use an existing testdata file with a known lint violation (IMPORT_USED)
+		// so the workspace is fully configured and RunChecks produces diagnostics.
+		protoPath, err := filepath.Abs("testdata/diagnostics/unused_import.proto")
+		require.NoError(t, err)
+
+		clientJSONConn, testURI, capture := setupLSPServerWithDiagnostics(t, protoPath)
+
+		ctx := t.Context()
+
+		initial := capture.wait(t, testURI, 10*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+			return len(p.Diagnostics) > 0
+		})
+		require.NotEmpty(t, initial.Diagnostics, "expected lint diagnostics before close")
+
+		err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidClose, &protocol.DidCloseTextDocumentParams{
+			TextDocument: protocol.TextDocumentIdentifier{URI: testURI},
+		})
+		require.NoError(t, err)
+
+		cleared := capture.wait(t, testURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+			return len(p.Diagnostics) == 0
+		})
+		assert.Empty(t, cleared.Diagnostics, "stale diagnostics should be cleared after file close")
+	})
+}
+
+// TestDiagnosticsClearedOnDelete verifies that stale diagnostics are cleared when
+// the server receives a workspace/didDeleteFiles notification for a tracked file,
+// covering the case where the editor does not send textDocument/didClose first.
+func TestDiagnosticsClearedOnDelete(t *testing.T) {
+	t.Parallel()
+
+	synctest.Test(t, func(t *testing.T) {
+		protoPath, err := filepath.Abs("testdata/diagnostics/unused_import.proto")
+		require.NoError(t, err)
+
+		clientJSONConn, testURI, capture := setupLSPServerWithDiagnostics(t, protoPath)
+
+		ctx := t.Context()
+
+		initial := capture.wait(t, testURI, 10*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+			return len(p.Diagnostics) > 0
+		})
+		require.NotEmpty(t, initial.Diagnostics, "expected lint diagnostics before delete")
+
+		err = clientJSONConn.Notify(ctx, protocol.MethodDidDeleteFiles, &protocol.DeleteFilesParams{
+			Files: []protocol.FileDelete{{URI: string(testURI)}},
+		})
+		require.NoError(t, err)
+
+		cleared := capture.wait(t, testURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+			return len(p.Diagnostics) == 0
+		})
+		assert.Empty(t, cleared.Diagnostics, "stale diagnostics should be cleared after file delete")
+	})
+}
+
 // diagnosticsCapture captures publishDiagnostics notifications from the LSP server.
 type diagnosticsCapture struct {
 	mu          sync.Mutex

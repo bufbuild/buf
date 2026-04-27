@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Increase check plugin WASM memory limits to 1GiB.
+- Fix LSP stale diagnostics persisting in the Problems panel after a file is closed or deleted.
 
 ## [v1.68.4] - 2026-04-22
 
