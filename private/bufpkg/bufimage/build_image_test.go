@@ -82,14 +82,11 @@ func TestGoogleapis(t *testing.T) {
 		nil,
 	)
 	assert.NoError(t, err)
+	// google/protobuf/descriptor.proto and google/protobuf/api.proto are imports
+	// in this image, not source files; a path filter cannot promote them to targets.
 	assert.Equal(
 		t,
 		[]string{
-			"google/protobuf/any.proto",
-			"google/protobuf/api.proto",
-			"google/protobuf/descriptor.proto",
-			"google/protobuf/source_context.proto",
-			"google/protobuf/type.proto",
 			"google/type/date.proto",
 		},
 		testGetImageFilePaths(imageWithSpecificNames),
@@ -105,14 +102,11 @@ func TestGoogleapis(t *testing.T) {
 		nil,
 	)
 	assert.NoError(t, err)
+	// Only the google/type source files become targets; google/protobuf/wrappers.proto
+	// is pulled in as a transitive import.
 	assert.Equal(
 		t,
 		[]string{
-			"google/protobuf/any.proto",
-			"google/protobuf/api.proto",
-			"google/protobuf/descriptor.proto",
-			"google/protobuf/source_context.proto",
-			"google/protobuf/type.proto",
 			"google/protobuf/wrappers.proto",
 			"google/type/calendar_period.proto",
 			"google/type/color.proto",
@@ -132,8 +126,6 @@ func TestGoogleapis(t *testing.T) {
 	assert.Equal(
 		t,
 		[]string{
-			"google/protobuf/api.proto",
-			"google/protobuf/descriptor.proto",
 			"google/type/calendar_period.proto",
 			"google/type/color.proto",
 			"google/type/date.proto",
