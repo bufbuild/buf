@@ -456,3 +456,28 @@ func testImageWithExcludedFilePaths(t *testing.T, image bufimage.Image, excludeP
 		}
 	}
 }
+
+// BenchmarkBuildImage builds an image from the googleapis corpus (1574 proto
+// files), matching TestGoogleapis. Exercises the proto-source read path that
+// allocates an io.Copy fallback buffer per file.
+func BenchmarkBuildImage(b *testing.B) {
+	googleapisDirPath := buftesting.GetGoogleapisDirPath(b, buftestingDirPath)
+	moduleSet, err := bufmoduletesting.NewModuleSetForDirPath(googleapisDirPath)
+	if err != nil {
+		b.Fatal(err)
+	}
+	logger := slogtestext.NewLogger(b)
+	b.ResetTimer()
+	b.ReportAllocs()
+	for b.Loop() {
+		if _, err := bufimage.BuildImage(
+			b.Context(),
+			logger,
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+			bufimage.WithExcludeSourceCodeInfo(),
+			bufimage.WithNoParallelism(),
+		); err != nil {
+			b.Fatal(err)
+		}
+	}
+}

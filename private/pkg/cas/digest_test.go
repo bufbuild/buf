@@ -20,13 +20,23 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 	"testing/iotest"
 
+	"github.com/bufbuild/buf/private/buf/buftesting"
 	"github.com/bufbuild/buf/private/pkg/cas"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+var buftestingDirPath = filepath.Join(
+	"..",
+	"..",
+	"buf",
+	"buftesting",
 )
 
 func TestNewDigestForContent(t *testing.T) {
@@ -104,5 +114,25 @@ func testParseDigestError(t *testing.T, digestString string, expectParseError bo
 		assert.Equal(t, digestString, parseError.Input())
 	} else {
 		assert.False(t, isParseError)
+	}
+}
+
+// BenchmarkBucketToDigest exercises the per-file shake256 digest path that
+// drives module digest computation (`buf push`, `buf dep update`, lockfile
+// verification). The corpus is googleapis (1574 proto files), matching
+// TestGoogleapis in private/bufpkg/bufimage.
+func BenchmarkBucketToDigest(b *testing.B) {
+	googleapisDirPath := buftesting.GetGoogleapisDirPath(b, buftestingDirPath)
+	provider := storageos.NewProvider()
+	bucket, err := provider.NewReadWriteBucket(googleapisDirPath)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	b.ReportAllocs()
+	for b.Loop() {
+		if _, err := cas.BucketToDigest(b.Context(), bucket, cas.DigestTypeShake256); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
