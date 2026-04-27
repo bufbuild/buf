@@ -7,8 +7,8 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/bufbuild/buf/releases 20260223 checked 20260223
-BUF_VERSION ?= v1.66.1
+# https://github.com/bufbuild/buf/releases 20260422 checked 20260422
+BUF_VERSION ?= v1.68.4
 # Settable
 #
 # If set, this path will be installed every time someone depends on $(BUF)
@@ -20,7 +20,7 @@ BUF_GO_INSTALL_PATH ?=
 ifneq ($(BUF_GO_INSTALL_PATH),)
 .PHONY: __goinstallbuf
 __goinstallbuf:
-	go install $(BUF_GO_INSTALL_PATH)
+	go install $(GO_INSTALL_EXTRA_FLAGS) $(BUF_GO_INSTALL_PATH)
 
 BUF := __goinstallbuf
 

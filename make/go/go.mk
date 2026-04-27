@@ -44,6 +44,12 @@ DISALLOW_NOLINT ?=
 BUFPRIVATEUSAGE_PKGS ?=
 # Settable
 BANDEPS_CONFIG ?=
+# Settable
+GO_BUILD_EXTRA_FLAGS ?=
+# Settable
+GO_INSTALL_EXTRA_FLAGS ?= $(GO_BUILD_EXTRA_FLAGS)
+# Settable
+GO_TEST_EXTRA_FLAGS ?= $(GO_BUILD_EXTRA_FLAGS)
 
 # Runtime
 GOPKGS ?= $(GO_ALL_REPO_PKGS)
@@ -56,9 +62,9 @@ COVER_HTML := $(TMP)/cover.html
 COVER_TXT := $(TMP)/cover.txt
 
 ifdef GONOTESTCACHE
-GO_TEST_FLAGS := -count=1
+GO_TEST_FLAGS := -count=1 $(GO_TEST_EXTRA_FLAGS)
 else
-GO_TEST_FLAGS :=
+GO_TEST_FLAGS := $(GO_TEST_EXTRA_FLAGS)
 endif
 
 
@@ -198,7 +204,7 @@ prebuild::
 
 .PHONY: build
 build: prebuild ## Run go build.
-	go build ./...
+	go build $(GO_BUILD_EXTRA_FLAGS) ./...
 
 .PHONY: pretest
 pretest::
@@ -244,7 +250,7 @@ install:: ## Install all go binaries.
 define gobinfunc
 .PHONY: install$(notdir $(1))
 install$(notdir $(1)):
-	go install ./$(1)
+	go install $(GO_INSTALL_EXTRA_FLAGS) ./$(1)
 
 install:: install$(notdir $(1))
 
@@ -264,7 +270,7 @@ installtest::
 define gotestbinfunc
 .PHONY: installtest$(notdir $(1))
 installtest$(notdir $(1)):
-	go install ./$(1)
+	go install $(GO_INSTALL_EXTRA_FLAGS) ./$(1)
 
 installtest:: installtest$(notdir $(1))
 endef
@@ -278,7 +284,7 @@ installtestwasm::
 define gotestwasmfunc
 .PHONY: installtestwasm$(notdir $(1))
 installtestwasm$(notdir $(1)):
-	GOOS=wasip1 GOARCH=wasm go build -o $(GOBIN)/$(notdir $(1)).wasm ./$(1)
+	GOOS=wasip1 GOARCH=wasm go build $(GO_BUILD_EXTRA_FLAGS) -o $(GOBIN)/$(notdir $(1)).wasm ./$(1)
 
 installtestwasm:: installtestwasm$(notdir $(1))
 endef

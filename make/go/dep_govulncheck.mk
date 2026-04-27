@@ -14,8 +14,8 @@ GOVULNCHECK_GOTOOLCHAIN_VERSION := $(shell go env GOVERSION | sed 's/^go//')
 GOVULNCHECK_GO_VERSION := $(shell echo $(GOVULNCHECK_GOTOOLCHAIN_VERSION) | cut -d'.' -f1-2)
 
 # Settable
-# https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck 20250106 checked 20250212
-GOVULNCHECK_VERSION ?= v1.1.4
+# https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck 20260410 checked 20260422
+GOVULNCHECK_VERSION ?= v1.2.0
 
 GOVULNCHECK := $(CACHE_BIN)/govulncheck
 

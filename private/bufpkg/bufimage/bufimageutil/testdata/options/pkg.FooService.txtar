@@ -190,7 +190,10 @@ message FileOptions {
   optional string java_package = 1;
   optional string java_outer_classname = 8;
   optional OptimizeMode optimize_for = 9 [default = SPEED];
-  optional bool java_multiple_files = 10 [default = false];
+  optional bool java_multiple_files = 10 [
+    default = false,
+    feature_support = { edition_introduced: EDITION_PROTO2, edition_removed: EDITION_2024 }
+  ];
   optional string go_package = 11;
   optional bool cc_generic_services = 16 [default = false];
   optional bool java_generic_services = 17 [default = false];
