@@ -20,30 +20,9 @@ import (
 	"fmt"
 	"io"
 	"slices"
-	"sync"
 )
 
-const (
-	shake256Length = 64
-	// copyBufSize matches io.Copy's default buffer size.
-	copyBufSize = 32 * 1024
-)
-
-// Pools shakePool and copyBufPool are used to reduce allocations from many
-// small files.
-var (
-	shakePool = sync.Pool{
-		New: func() any {
-			return sha3.NewSHAKE256()
-		},
-	}
-	copyBufPool = sync.Pool{
-		New: func() any {
-			b := make([]byte, copyBufSize)
-			return &b
-		},
-	}
-)
+const shake256Length = 64
 
 // Digest is a shake256 digest.
 type Digest interface {
@@ -59,12 +38,12 @@ func NewDigest(value []byte) (Digest, error) {
 
 // NewDigestForContent returns a new Digest for the content read from the Reader.
 func NewDigestForContent(reader io.Reader) (Digest, error) {
-	shakeHash, _ := shakePool.Get().(*sha3.SHAKE)
-	shakeHash.Reset()
-	defer shakePool.Put(shakeHash)
-	bufPtr, _ := copyBufPool.Get().(*[]byte)
-	defer copyBufPool.Put(bufPtr)
-	if _, err := io.CopyBuffer(shakeHash, reader, *bufPtr); err != nil {
+	shakeHash := sha3.NewSHAKE256()
+	// Use a small fixed buffer instead of io.Copy's 32 KiB default. Proto
+	// files are typically small (median a few KiB), so 1 KiB reads most files
+	// in a few iterations while keeping per-call allocation minimal.
+	buf := make([]byte, 1024)
+	if _, err := io.CopyBuffer(shakeHash, reader, buf); err != nil {
 		return nil, err
 	}
 	value := make([]byte, shake256Length)

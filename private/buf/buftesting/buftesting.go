@@ -99,12 +99,12 @@ func RunActualProtoc(
 }
 
 // GetGoogleapisDirPath gets the path to a clone of googleapis.
-func GetGoogleapisDirPath(t *testing.T, buftestingDirPath string) string {
+func GetGoogleapisDirPath(tb testing.TB, buftestingDirPath string) string {
 	googleapisDirPath := filepath.Join(buftestingDirPath, testGoogleapisDirPath)
 	require.NoError(
-		t,
+		tb,
 		testArchiveReader.GetArchive(
-			t.Context(),
+			tb.Context(),
 			googleapisDirPath,
 			"googleapis",
 			"googleapis",

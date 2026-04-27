@@ -182,8 +182,12 @@ func (m *moduleFileResolver) addPath(
 // readObjectCloserToSourceFile is a helper function that takes a given [storage.ReadObjectCloser]
 // and returns the corresponding [*source.File].
 func readObjectCloserToSourceFile(readObjectCloser storage.ReadObjectCloser) (*source.File, error) {
-	var buf strings.Builder
-	if _, err := io.Copy(&buf, readObjectCloser); err != nil {
+	var sb strings.Builder
+	// Use a small fixed buffer instead of io.Copy's 32 KiB default. Proto
+	// files are typically small (median a few KiB), so 1 KiB reads most files
+	// in a few iterations while keeping per-call allocation minimal.
+	buf := make([]byte, 1024)
+	if _, err := io.CopyBuffer(&sb, readObjectCloser, buf); err != nil {
 		return nil, err
 	}
 	path := readObjectCloser.LocalPath()
@@ -191,5 +195,5 @@ func readObjectCloserToSourceFile(readObjectCloser storage.ReadObjectCloser) (*s
 		// Fallback to using Path() -- in-mem buckets, for example, will not have a LocalPath
 		path = readObjectCloser.Path()
 	}
-	return source.NewFile(path, buf.String()), nil
+	return source.NewFile(path, sb.String()), nil
 }
