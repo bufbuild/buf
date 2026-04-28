@@ -5,11 +5,12 @@
 - Increase check plugin WASM memory limits to 1GiB.
 - Fix LSP stale diagnostics persisting after a file is closed or deleted.
 - Fix handling of unprefixed newlines in block comments.
+- Add LSP code lenses for `buf.gen.yaml` files: "Run buf generate" and "Check for plugin updates".
+- Add LSP warnings for `lint.ignore` and `breaking.ignore` paths in `buf.yaml` that do not match any file in the workspace.
 
 ## [v1.68.4] - 2026-04-22
 
 - Fix duplicated extension tags across imports from compiler.
-- Add LSP warnings for `lint.ignore` and `breaking.ignore` paths in `buf.yaml` that do not match any file in the workspace.
 
 ## [v1.68.3] - 2026-04-20
 
@@ -21,7 +22,6 @@
 - Fix LSP incorrectly reporting "edition '2024' not yet fully supported" errors.
 - Fix CEL compilation error messages in `buf lint` to use the structured error API instead of parsing cel-go's text output.
 - Add `--debug-address` flag to `buf lsp serve` to provide debug and profile support.
-- Add LSP code lenses for `buf.gen.yaml` files: "Run buf generate" and "Check for plugin updates".
 
 ## [v1.68.1] - 2026-04-14
 
