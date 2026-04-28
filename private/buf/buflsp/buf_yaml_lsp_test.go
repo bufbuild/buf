@@ -912,7 +912,7 @@ func TestBufYAMLIgnorePathDiagnostics(t *testing.T) {
 	require.NoError(t, err)
 
 	synctest.Test(t, func(t *testing.T) {
-		_, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, nil)
+		_, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, nil, nil)
 
 		// Wait for diagnostics with at least 3 warnings (one per nonexistent path).
 		diags := capture.wait(t, bufYAMLURI, 10*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
