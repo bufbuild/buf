@@ -4,6 +4,7 @@
 
 - Increase check plugin WASM memory limits to 1GiB.
 - Fix LSP stale diagnostics persisting after a file is closed or deleted.
+- Fix handling of unprefixed newlines in block comments.
 
 ## [v1.68.4] - 2026-04-22
 
