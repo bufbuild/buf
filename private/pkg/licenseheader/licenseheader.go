@@ -89,6 +89,8 @@ All rights reserved.`,
 		".h":     "//",
 		".py":    "#",
 		".pyi":   "#",
+		".yaml":  "#",
+		".yml":   "#",
 	}
 )
 

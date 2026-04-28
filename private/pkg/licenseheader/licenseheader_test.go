@@ -39,6 +39,19 @@ const (
 	testProprietaryGoHeader = `// Copyright 2020-2021 Foo Bar, Inc.
 //
 // All rights reserved.`
+	testApacheYAMLHeader = `# Copyright 2020-2021 Foo Bar, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.`
 )
 
 func TestBasic(t *testing.T) {
@@ -113,6 +126,83 @@ package foo`),
 
 // foo
 package foo`,
+		string(modifiedData),
+	)
+}
+
+func TestYAML(t *testing.T) {
+	t.Parallel()
+
+	const yamlBody = `- name: Kind
+  type: byte`
+
+	modifiedData, err := Modify(
+		LicenseTypeApache,
+		testCopyrightHolder,
+		testYearRange,
+		"foo/bar.yaml",
+		[]byte(yamlBody),
+	)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		testApacheYAMLHeader+"\n\n"+yamlBody,
+		string(modifiedData),
+	)
+	require.Contains(
+		t,
+		string(modifiedData),
+		"http://www.apache.org/licenses/LICENSE-2.0",
+		"URL must not be clobbered when stamping a YAML license header",
+	)
+
+	// Repair an existing YAML header where // in the URL was clobbered to #.
+	clobberedData := `# Copyright 2020-2024 Foo Bar, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+` + yamlBody
+	modifiedData, err = Modify(
+		LicenseTypeApache,
+		testCopyrightHolder,
+		testYearRange,
+		"foo/bar.yaml",
+		[]byte(clobberedData),
+	)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		testApacheYAMLHeader+"\n\n"+yamlBody,
+		string(modifiedData),
+	)
+	require.NotContains(
+		t,
+		string(modifiedData),
+		"http:#www.apache.org",
+		"clobbered URL must be repaired",
+	)
+
+	modifiedData, err = Modify(
+		LicenseTypeApache,
+		testCopyrightHolder,
+		testYearRange,
+		"foo/bar.yml",
+		[]byte(yamlBody),
+	)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		testApacheYAMLHeader+"\n\n"+yamlBody,
 		string(modifiedData),
 	)
 }
