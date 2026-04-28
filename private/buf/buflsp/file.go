@@ -101,15 +101,17 @@ func (f *file) Reset(ctx context.Context) {
 	// Evict the query key if there is a query cached on the file. We cache the [queries.File]
 	// query since this allows the executor to evict all dependent queries, e.g. AST and IR.
 	f.lsp.queryExecutor.Evict(f.queryFileKeys()...)
+	f.clearEditorState(ctx)
 	// Clear the file as nothing should use it after reset. This asserts that.
 	*f = file{}
 }
 
-// Close marks a file as closed.
-//
-// This will not necessarily evict the file, since there may be more than one user
-// for this file.
+// Close marks a file as closed by the editor. It clears the editor state
+// (cancels in-flight checks and publishes empty diagnostics) then decrements
+// the ref count. The file is only evicted when the ref count reaches zero,
+// since the workspace may hold additional references.
 func (f *file) Close(ctx context.Context) {
+	f.clearEditorState(ctx)
 	f.Manager().Close(ctx, f.uri)
 }
 
@@ -1080,6 +1082,26 @@ func (f *file) CancelChecks(ctx context.Context) {
 	}
 }
 
+// clearEditorState cancels in-flight checks, publishes empty diagnostics to clear
+// the client's Problems panel (only when diagnostics are non-empty, to avoid a
+// no-op network write), and marks the file as no longer open in the editor by
+// setting version=-1. Called while the LSP lock is held, before the editor ref
+// is decremented.
+//
+// The publish must happen before version is set to -1 because PublishDiagnostics
+// checks IsOpenInEditor (which returns f.version != -1) and returns early if false.
+func (f *file) clearEditorState(ctx context.Context) {
+	if !f.IsOpenInEditor() {
+		return
+	}
+	f.CancelChecks(ctx)
+	if len(f.diagnostics) > 0 {
+		f.diagnostics = nil
+		f.PublishDiagnostics(ctx)
+	}
+	f.version = -1
+}
+
 // RunChecks triggers the run of checks for this file. Diagnostics are published asynchronously.
 func (f *file) RunChecks(ctx context.Context) {
 	if f.IsWKT() || !f.IsOpenInEditor() {
@@ -1174,7 +1196,7 @@ func (f *file) RunChecks(ctx context.Context) {
 			// TODO: prefer diagnostics from the old compiler to the new compiler to remove duplicates from both.
 			f.diagnostics = diagnostics
 		}
-		f.appendAnnotations("buf lint", annotations)
+		f.appendAnnotations(lintSourceName, annotations)
 		f.PublishDiagnostics(ctx)
 	}()
 }

@@ -33,7 +33,8 @@ import (
 )
 
 const (
-	serverName = "buf-lsp"
+	serverName     = "buf-lsp"
+	lintSourceName = "buf lint"
 
 	maxSymbolResults = 1000
 )
@@ -228,6 +229,7 @@ func (s *server) DidOpen(
 ) error {
 	if isBufYAMLURI(params.TextDocument.URI) {
 		s.bufYAMLManager.Track(params.TextDocument.URI, params.TextDocument.Text)
+		s.bufYAMLManager.CheckIgnorePaths(params.TextDocument.URI)
 		return nil
 	}
 	if isBufGenYAMLURI(params.TextDocument.URI) {
@@ -256,6 +258,7 @@ func (s *server) DidChange(
 ) error {
 	if isBufYAMLURI(params.TextDocument.URI) {
 		s.bufYAMLManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
+		s.bufYAMLManager.CheckIgnorePaths(params.TextDocument.URI)
 		return nil
 	}
 	if isBufGenYAMLURI(params.TextDocument.URI) {
@@ -318,32 +321,13 @@ func (s *server) Formatting(
 		// Format for a file we don't know about? Seems bad!
 		return nil, fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
 	}
-	var errorsWithPos []reporter.ErrorWithPos
-	var warningErrorsWithPos []reporter.ErrorWithPos
-	handler := reporter.NewHandler(reporter.NewReporter(
-		func(errorWithPos reporter.ErrorWithPos) error {
-			errorsWithPos = append(errorsWithPos, errorWithPos)
-			return nil
-		},
-		func(errorWithPos reporter.ErrorWithPos) {
-			warningErrorsWithPos = append(warningErrorsWithPos, errorWithPos)
-		},
-	))
-	parsed, err := parser.Parse(file.uri.Filename(), strings.NewReader(file.file.Text()), handler)
-	if err == nil {
-		_, _ = parser.ResultFromAST(parsed, true, handler)
-	}
-	if len(errorsWithPos) > 0 {
-		return nil, fmt.Errorf("cannot format file %q, %v error(s) found", file.uri.Filename(), len(errorsWithPos))
-	}
-	// Currently we have no way to honor any of the parameters.
-	_ = params
-	if parsed == nil {
-		return nil, nil
+	parsed, err := parser.Parse(file.uri.Filename(), strings.NewReader(file.file.Text()), reporter.NewHandler(nil))
+	if err != nil {
+		return nil, fmt.Errorf("cannot format file: %w", err)
 	}
 	var out strings.Builder
 	if err := bufformat.FormatFileNode(&out, parsed); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("format failed: %w", err)
 	}
 	newText := out.String()
 	if newText == file.file.Text() {
@@ -396,6 +380,33 @@ func (s *server) DidClose(
 	}
 	if file := s.fileManager.Get(params.TextDocument.URI); file != nil {
 		file.Close(ctx)
+	}
+	return nil
+}
+
+// DidDeleteFiles is called when files are deleted on disk (e.g. via the OS or
+// IDE file explorer). For each deleted file we close the corresponding tracked
+// resource so stale diagnostics are cleared from the client.
+func (s *server) DidDeleteFiles(
+	ctx context.Context,
+	params *protocol.DeleteFilesParams,
+) error {
+	for _, deleted := range params.Files {
+		uri := protocol.URI(deleted.URI)
+		switch {
+		case isBufYAMLURI(uri):
+			s.bufYAMLManager.Close(ctx, uri)
+		case isBufGenYAMLURI(uri):
+			s.bufGenYAMLManager.Close(ctx, uri)
+		case isBufPolicyYAMLURI(uri):
+			s.bufPolicyYAMLManager.Close(uri)
+		case isBufLockURI(uri):
+			s.bufLockManager.Close(uri)
+		default:
+			if file := s.fileManager.Get(uri); file != nil {
+				file.Close(ctx)
+			}
+		}
 	}
 	return nil
 }

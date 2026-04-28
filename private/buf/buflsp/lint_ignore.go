@@ -46,7 +46,7 @@ func (s *server) getLintIgnoreCodeActions(
 	// Filter diagnostics to find lint errors that overlap with the requested range
 	for _, diagnostic := range file.diagnostics {
 		// Only handle lint diagnostics (not IR diagnostics)
-		if diagnostic.Source != "buf lint" {
+		if diagnostic.Source != lintSourceName {
 			continue
 		}
 
