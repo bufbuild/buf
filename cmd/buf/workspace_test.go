@@ -1269,9 +1269,9 @@ func TestWorkspaceDuplicateFailSpecificModule(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		1,
+		100,
 		``,
-		`Failure: foo.proto is contained in multiple modules:
+		`foo.proto:1:1:foo.proto is contained in multiple modules:
   path: "other/proto"
   path: "proto"`,
 		"build",
@@ -1280,9 +1280,9 @@ func TestWorkspaceDuplicateFailSpecificModule(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		1,
+		100,
 		``,
-		`Failure: v1/foo.proto is contained in multiple modules:
+		`v1/foo.proto:1:1:v1/foo.proto is contained in multiple modules:
   path: "other/proto", includes: "other/proto/v1", excludes: "other/proto/v1/inner"
   path: "proto", includes: ["proto/v1", "proto/v2"], excludes: ["proto/v1/inner", "proto/v2/inner"]`,
 

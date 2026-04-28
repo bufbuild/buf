@@ -129,7 +129,6 @@ func compileImage(
 	}
 
 	var fileAnnotations []bufanalysis.FileAnnotation
-	var rawErrors []error
 	for _, diagnostic := range diagnostics.Diagnostics {
 		if diagnostic.Level() > report.Error {
 			// We only surface [report.Error] level or more severe diagnostics as build errors.
@@ -138,12 +137,30 @@ func compileImage(
 		}
 		primary := diagnostic.Primary()
 		if primary.IsZero() {
-			// Diagnostics without a source span (e.g. file-open errors such as
-			// DuplicateProtoPathError) cannot be represented as FileAnnotations.
-			// Surface them as raw errors so callers see the full message.
-			if diagnostic.File() != "" {
-				rawErrors = append(rawErrors, errors.New(diagnostic.Message()))
+			// Diagnostics without a source span are still included as FileAnnotations
+			// with no position information, matching the behavior of the old compiler.
+			var fi bufanalysis.FileInfo
+			if f := diagnostic.File(); f != "" {
+				path := moduleFileResolver.PathForLocalPath(f)
+				if path == "" {
+					path = f
+				}
+				fi = &fileInfo{
+					path:         path,
+					externalPath: moduleFileResolver.ExternalPath(path),
+				}
 			}
+			fileAnnotations = append(fileAnnotations, bufanalysis.NewFileAnnotation(
+				fi,
+				0,
+				0,
+				0,
+				0,
+				"COMPILE",
+				diagnostic.Message(),
+				"", // pluginName
+				"", // policyName
+			))
 			continue
 		}
 		start := primary.Location(primary.Start, length.Bytes)
@@ -173,9 +190,6 @@ func compileImage(
 				"", // policyName
 			),
 		)
-	}
-	if len(rawErrors) > 0 {
-		return nil, errors.Join(rawErrors...)
 	}
 	if len(fileAnnotations) > 0 {
 		return nil, bufanalysis.NewFileAnnotationSet(fileAnnotations...)
