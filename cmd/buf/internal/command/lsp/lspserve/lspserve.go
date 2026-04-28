@@ -181,8 +181,6 @@ func run(
 	return conn.Err()
 }
 
-// lspCuratedPluginProvider implements the curatedPluginVersionProvider interface
-// required by buflsp.Serve using the BSR alpha plugin curation API.
 type lspCuratedPluginProvider struct {
 	clientConfig *connectclient.Config
 }

@@ -381,10 +381,10 @@ func TestBsrRefDocURL(t *testing.T) {
 			wantURL: "https://buf.build/bufbuild/es/docs/v2.2.2",
 		},
 		{
-			name: "non_default_registry_with_ref",
-			// A private BSR host: /docs/ path is not valid, so no suffix.
+			// /docs/<ref> is valid on any BSR host, not just buf.build.
+			name:    "non_default_registry_with_ref",
 			refStr:  "private.example.com/acme/mod:v1.0.0",
-			wantURL: "https://private.example.com/acme/mod",
+			wantURL: "https://private.example.com/acme/mod/docs/v1.0.0",
 		},
 		{
 			name:    "non_default_registry_no_ref",
