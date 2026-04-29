@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.69.0] - 2026-04-29
 
 - Increase check plugin WASM memory limits to 1GiB.
 - Fix LSP stale diagnostics persisting after a file is closed or deleted.
@@ -1546,7 +1546,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.68.4...HEAD
+[v1.69.0]: https://github.com/bufbuild/buf/compare/v1.68.4...v1.69.0
 [v1.68.4]: https://github.com/bufbuild/buf/compare/v1.68.3...v1.68.4
 [v1.68.3]: https://github.com/bufbuild/buf/compare/v1.68.2...v1.68.3
 [v1.68.2]: https://github.com/bufbuild/buf/compare/v1.68.1...v1.68.2
