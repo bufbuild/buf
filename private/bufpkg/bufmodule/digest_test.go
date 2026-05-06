@@ -23,6 +23,7 @@ import (
 )
 
 func TestNopProvidersToCalculateDigest(t *testing.T) {
+	t.Parallel()
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(
 		t.Context(),
 		slogtestext.NewLogger(t),
