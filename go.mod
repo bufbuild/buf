@@ -28,7 +28,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jdx/go-netrc v1.0.0
 	github.com/jhump/protoreflect/v2 v2.0.0-beta.2
-	github.com/klauspost/compress v1.18.5
+	github.com/klauspost/compress v1.18.6
 	github.com/klauspost/pgzip v1.2.6
 	github.com/mattn/go-colorable v0.1.14
 	github.com/moby/moby/api v1.54.2
@@ -42,7 +42,7 @@ require (
 	go.lsp.dev/jsonrpc2 v0.10.0
 	go.lsp.dev/protocol v0.12.0
 	go.lsp.dev/uri v0.3.0
-	go.uber.org/zap v1.27.1
+	go.uber.org/zap v1.28.0
 	golang.org/x/mod v0.35.0
 	golang.org/x/sync v0.20.0
 	golang.org/x/term v0.42.0
@@ -66,7 +66,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/cli v29.4.1+incompatible // indirect
+	github.com/docker/cli v29.4.2+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.6 // indirect
 	github.com/docker/go-connections v0.7.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
