@@ -6,8 +6,16 @@ buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-202604152011
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260415201107-50325440f8f2.1/go.mod h1:tvtbpgaVXZX4g6Pn+AnzFycuRK3MOz5HJfEGeEllXYM=
 buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.2-20260126144947-819582968857.1 h1:AmiHsTjryKvBEZuu5ZDUJ2Lcmt140xrhe8o7LpRIKlU=
 buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.2-20260126144947-819582968857.1/go.mod h1:SHAkhrdmtdlz37Xz1LRrr3DsDVNjZafuZ8OM6U0jH1I=
+buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.2-20260506163219-db694e5a7651.1 h1:uDa0SLhL6a+XKP6DwwSznyqgryDGhLPViNXnY+Wlw5I=
+buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.2-20260506163219-db694e5a7651.1/go.mod h1:fpxvM6nAm/+puXL1gf7tQAP4f/K2JLkfFKaJ/BBRKHU=
+buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.2-20260506191125-db9f7abb69a0.1 h1:W+CnLcV+Xyo1+/9jK5DTafJdy0k+xg6qbycnZkzpIzc=
+buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.2-20260506191125-db9f7abb69a0.1/go.mod h1:b+VhoLtaw29B9V8nnwIaVFAOLAvhFVcXUjbCWxZNEjM=
 buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260126144947-819582968857.1 h1:Yreby6Ypa58wdQUEm9Fnc5g8n/jP487Dq3aK5yBYwfk=
 buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260126144947-819582968857.1/go.mod h1:1JJi9jvOqRxSMa+JxiZSm57doB+db/1WYCIa2lHfc40=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260506163219-db694e5a7651.1 h1:f8IZUGhlXGc6wVSAei1LxD443aNhlvwalTh82PP200o=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260506163219-db694e5a7651.1/go.mod h1:1JJi9jvOqRxSMa+JxiZSm57doB+db/1WYCIa2lHfc40=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260506191125-db9f7abb69a0.1 h1:4T3A0dv9PA3lk/h3ord3MjLPph7TjUy+hlo38UgGxbA=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260506191125-db9f7abb69a0.1/go.mod h1:1JJi9jvOqRxSMa+JxiZSm57doB+db/1WYCIa2lHfc40=
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.11-20241007202033-cf42259fcbfc.1 h1:iGPvEJltOXUMANWf0zajcRcbiOXLD90ZwPUFvbcuv6Q=
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.11-20241007202033-cf42259fcbfc.1/go.mod h1:nWVKKRA29zdt4uvkjka3i/y4mkrswyWwiu0TbdX0zts=
 buf.build/go/app v0.2.1-0.20260407195847-833f8f978cda h1:eysSyjrJtkxU1A/9+Kv+1Mwq9K6BYBw+STIOVsZ256Y=
