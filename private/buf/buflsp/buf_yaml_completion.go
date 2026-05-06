@@ -540,8 +540,7 @@ func makeCompletionKeyItems(keys []string, primaryDocs, fallbackDocs map[string]
 	return items
 }
 
-// bufYAMLDocMarkup returns a MarkupContent for the given doc, matching the format
-// used by hover responses: summary followed by a [Documentation](url) link.
+// bufYAMLDocMarkup returns a MarkupContent for the given doc.
 func bufYAMLDocMarkup(doc bufYAMLDoc) protocol.MarkupContent {
 	value := doc.summary
 	if doc.url != "" {
