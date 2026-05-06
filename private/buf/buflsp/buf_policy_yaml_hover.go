@@ -23,39 +23,39 @@ const bufPolicyYAMLDocsURL = "https://buf.build/docs/configuration/v2/buf-policy
 
 // bufPolicyYAMLTopLevelDocs maps top-level buf.policy.yaml keys to their documentation.
 var bufPolicyYAMLTopLevelDocs = map[string]bufYAMLDoc{
-	"version":  {summary: "Defines the configuration format version. Must be `v2`.", url: bufPolicyYAMLDocsURL + "#version"},
-	"name":     {summary: "A Buf Schema Registry path (e.g. `buf.build/acme/my-policy`) that uniquely identifies this policy. Setting a name associates the file with a BSR repository for publishing commits and label history.", url: bufPolicyYAMLDocsURL + "#name"},
-	"lint":     {summary: "Configures lint rules for this policy. These settings are applied to workspaces that reference this policy. If unspecified, the `STANDARD` rule category is used.", url: bufPolicyYAMLDocsURL + "#lint"},
-	"breaking": {summary: "Configures breaking change detection rules for this policy. These settings are applied to workspaces that reference this policy. If unspecified, the `FILE` rule category is used.", url: bufPolicyYAMLDocsURL + "#breaking"},
-	"plugins":  {summary: "Lists custom lint and breaking change plugins that provide additional rules for this policy. Each entry specifies a local binary, a path, or a remote BSR plugin.", url: bufPolicyYAMLDocsURL + "#plugins"},
+	"version":  {summary: "Defines the configuration format version. Must be `v2`.", valueType: "string", url: bufPolicyYAMLDocsURL + "#version"},
+	"name":     {summary: "A Buf Schema Registry path (e.g. `buf.build/acme/my-policy`) that uniquely identifies this policy. Setting a name associates the file with a BSR repository for publishing commits and label history.", valueType: "string", url: bufPolicyYAMLDocsURL + "#name"},
+	"lint":     {summary: "Configures lint rules for this policy. These settings are applied to workspaces that reference this policy. If unspecified, the `STANDARD` rule category is used.", valueType: "object", url: bufPolicyYAMLDocsURL + "#lint"},
+	"breaking": {summary: "Configures breaking change detection rules for this policy. These settings are applied to workspaces that reference this policy. If unspecified, the `FILE` rule category is used.", valueType: "object", url: bufPolicyYAMLDocsURL + "#breaking"},
+	"plugins":  {summary: "Lists custom lint and breaking change plugins that provide additional rules for this policy. Each entry specifies a local binary, a path, or a remote BSR plugin.", valueType: "[]object", url: bufPolicyYAMLDocsURL + "#plugins"},
 }
 
 // bufPolicyYAMLLintDocs maps lint sub-keys supported in buf.policy.yaml.
 // This is a subset of bufYAMLLintDocs (no ignore, ignore_only, or disallow_comment_ignores).
 var bufPolicyYAMLLintDocs = map[string]bufYAMLDoc{
-	"use":                             {summary: "Lists lint rule categories and/or specific rule IDs to enable. Category names (e.g. `MINIMAL`, `BASIC`, `STANDARD`) select a predefined set of rules.", url: bufYAMLLintRulesURL},
-	"except":                          {summary: "Removes specific rules or categories from the active lint rule set. Rules listed here are excluded even if they are part of a category in `use`.", url: bufPolicyYAMLDocsURL + "#lint"},
-	"enum_zero_value_suffix":          {summary: "Sets the required suffix for zero-value enum entries, enforced by the `ENUM_ZERO_VALUE_SUFFIX` rule. Defaults to `_UNSPECIFIED`.", url: bufPolicyYAMLDocsURL + "#lint"},
-	"service_suffix":                  {summary: "Sets the required suffix for service names, enforced by the `SERVICE_SUFFIX` rule. Defaults to `Service`.", url: bufPolicyYAMLDocsURL + "#lint"},
-	"rpc_allow_same_request_response": {summary: "When `true`, permits using the same message type for both the request and response of an RPC. Defaults to `false`.", url: bufPolicyYAMLDocsURL + "#lint"},
-	"rpc_allow_google_protobuf_empty_requests":  {summary: "When `true`, allows RPC methods to use `google.protobuf.Empty` as the request type. Defaults to `false`.", url: bufPolicyYAMLDocsURL + "#lint"},
-	"rpc_allow_google_protobuf_empty_responses": {summary: "When `true`, allows RPC methods to use `google.protobuf.Empty` as the response type. Defaults to `false`.", url: bufPolicyYAMLDocsURL + "#lint"},
-	"disable_builtin":                           {summary: "When `true`, disables all built-in lint rules. Use this when relying entirely on custom plugin-provided rules. Defaults to `false`.", url: bufPolicyYAMLDocsURL + "#lint"},
+	"use":                             {summary: "Lists lint rule categories and/or specific rule IDs to enable. Category names (e.g. `MINIMAL`, `BASIC`, `STANDARD`) select a predefined set of rules.", valueType: "[]string", url: bufYAMLLintRulesURL},
+	"except":                          {summary: "Removes specific rules or categories from the active lint rule set. Rules listed here are excluded even if they are part of a category in `use`.", valueType: "[]string", url: bufPolicyYAMLDocsURL + "#lint"},
+	"enum_zero_value_suffix":          {summary: "Sets the required suffix for zero-value enum entries, enforced by the `ENUM_ZERO_VALUE_SUFFIX` rule. Defaults to `_UNSPECIFIED`.", valueType: "string", url: bufPolicyYAMLDocsURL + "#lint"},
+	"service_suffix":                  {summary: "Sets the required suffix for service names, enforced by the `SERVICE_SUFFIX` rule. Defaults to `Service`.", valueType: "string", url: bufPolicyYAMLDocsURL + "#lint"},
+	"rpc_allow_same_request_response": {summary: "When `true`, permits using the same message type for both the request and response of an RPC. Defaults to `false`.", valueType: "bool", url: bufPolicyYAMLDocsURL + "#lint"},
+	"rpc_allow_google_protobuf_empty_requests":  {summary: "When `true`, allows RPC methods to use `google.protobuf.Empty` as the request type. Defaults to `false`.", valueType: "bool", url: bufPolicyYAMLDocsURL + "#lint"},
+	"rpc_allow_google_protobuf_empty_responses": {summary: "When `true`, allows RPC methods to use `google.protobuf.Empty` as the response type. Defaults to `false`.", valueType: "bool", url: bufPolicyYAMLDocsURL + "#lint"},
+	"disable_builtin":                           {summary: "When `true`, disables all built-in lint rules. Use this when relying entirely on custom plugin-provided rules. Defaults to `false`.", valueType: "bool", url: bufPolicyYAMLDocsURL + "#lint"},
 }
 
 // bufPolicyYAMLBreakingDocs maps breaking sub-keys supported in buf.policy.yaml.
 // This is a subset of bufYAMLBreakingDocs (no ignore or ignore_only).
 var bufPolicyYAMLBreakingDocs = map[string]bufYAMLDoc{
-	"use":                      {summary: "Lists breaking change rule categories and/or specific rule IDs to enable. Category names (`FILE`, `PACKAGE`, `WIRE_JSON`, `WIRE`) select a predefined set of rules.", url: bufYAMLBreakingRulesURL},
-	"except":                   {summary: "Removes specific rules or categories from the active breaking change rule set. Using `except` is generally discouraged.", url: bufPolicyYAMLDocsURL + "#breaking"},
-	"ignore_unstable_packages": {summary: "When `true`, ignores packages matching unstable version patterns such as `v1alpha1`, `v1beta1`, or `v1test`. Defaults to `false`.", url: bufPolicyYAMLDocsURL + "#breaking"},
-	"disable_builtin":          {summary: "When `true`, disables all built-in breaking change rules. Use this when relying entirely on custom plugin-provided rules. Defaults to `false`.", url: bufPolicyYAMLDocsURL + "#breaking"},
+	"use":                      {summary: "Lists breaking change rule categories and/or specific rule IDs to enable. Category names (`FILE`, `PACKAGE`, `WIRE_JSON`, `WIRE`) select a predefined set of rules.", valueType: "[]string", url: bufYAMLBreakingRulesURL},
+	"except":                   {summary: "Removes specific rules or categories from the active breaking change rule set. Using `except` is generally discouraged.", valueType: "[]string", url: bufPolicyYAMLDocsURL + "#breaking"},
+	"ignore_unstable_packages": {summary: "When `true`, ignores packages matching unstable version patterns such as `v1alpha1`, `v1beta1`, or `v1test`. Defaults to `false`.", valueType: "bool", url: bufPolicyYAMLDocsURL + "#breaking"},
+	"disable_builtin":          {summary: "When `true`, disables all built-in breaking change rules. Use this when relying entirely on custom plugin-provided rules. Defaults to `false`.", valueType: "bool", url: bufPolicyYAMLDocsURL + "#breaking"},
 }
 
 // bufPolicyYAMLPluginDocs maps plugin entry sub-keys for buf.policy.yaml.
 var bufPolicyYAMLPluginDocs = map[string]bufYAMLDoc{
-	"plugin":  {summary: "Plugin location: a binary name on `$PATH`, a local file path, or a remote BSR plugin reference (e.g. `buf.build/acme/my-plugin`).", url: bufPolicyYAMLDocsURL + "#plugins"},
-	"options": {summary: "Key-value pairs passed to the plugin to customize its behavior.", url: bufPolicyYAMLDocsURL + "#plugins"},
+	"plugin":  {summary: "Plugin location: a binary name on `$PATH`, a local file path, or a remote BSR plugin reference (e.g. `buf.build/acme/my-plugin`).", valueType: "string", url: bufPolicyYAMLDocsURL + "#plugins"},
+	"options": {summary: "Key-value pairs passed to the plugin to customize its behavior.", valueType: "object", url: bufPolicyYAMLDocsURL + "#plugins"},
 }
 
 // bufPolicyYAMLHover searches the parsed buf.policy.yaml document for hover

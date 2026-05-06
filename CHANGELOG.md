@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add LSP completion for `buf.gen.yaml`, `buf.yaml`, and `buf.policy.yaml` files.
 
 ## [v1.69.0] - 2026-04-29
 

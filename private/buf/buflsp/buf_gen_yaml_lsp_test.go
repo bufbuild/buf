@@ -42,6 +42,107 @@ func (p *staticCuratedPluginVersionProvider) GetLatestVersion(_ context.Context,
 	return v, nil
 }
 
+// TestBufGenYAMLCompletion verifies that completion items are returned for buf.gen.yaml
+// files at various cursor positions, and that already-present keys are excluded.
+func TestBufGenYAMLCompletion(t *testing.T) {
+	t.Parallel()
+
+	fixture := "testdata/buf_gen_yaml/completion/buf.gen.yaml"
+
+	// The fixture layout (0-indexed lines):
+	//  0: version: v2
+	//  1: clean: false
+	//  2: managed:
+	//  3:   enabled: true
+	//  4: plugins:
+	//  5:   - remote: buf.build/protocolbuffers/go
+	//  6:     out: gen/go
+	//  7: inputs:
+	//  8:   - directory: proto
+
+	tests := []struct {
+		name         string
+		line         uint32
+		character    uint32
+		wantContains []string
+		wantAbsent   []string
+	}{
+		{
+			// Cursor after "version: " — value position for the version key.
+			name: "version_value",
+			line: 0, character: 9,
+			wantContains: []string{"v2", "v1", "v1beta1"},
+		},
+		{
+			// Cursor after "clean: " — value position for the clean key.
+			name: "clean_value",
+			line: 1, character: 7,
+			wantContains: []string{"true", "false"},
+		},
+		{
+			// Cursor at indent 2 on "  enabled: true" — key position inside managed.
+			// "enabled" already exists so it must be absent.
+			name: "managed_keys_no_enabled",
+			line: 3, character: 2,
+			wantContains: []string{"disable", "override"},
+			wantAbsent:   []string{"enabled"},
+		},
+		{
+			// Cursor at indent 4 on "    out: gen/go" — key position inside a plugins item.
+			// "remote" and "out" already exist so they must be absent.
+			// "local" and "protoc_builtin" are mutually exclusive with "remote" and must
+			// also be absent.
+			name: "plugin_keys_no_remote_out",
+			line: 6, character: 4,
+			wantContains: []string{"opt", "revision", "include_imports"},
+			wantAbsent:   []string{"remote", "out", "local", "protoc_builtin"},
+		},
+		{
+			// Cursor at "  - directory: proto" char 4 — key position inside an inputs item.
+			// "directory" and all other source type keys must be absent (mutually exclusive).
+			name: "input_keys_no_source_types",
+			line: 8, character: 4,
+			wantContains: []string{"types", "paths", "exclude_paths"},
+			wantAbsent:   []string{"directory", "module", "git_repo", "proto_file"},
+		},
+	}
+
+	absPath, err := filepath.Abs(fixture)
+	require.NoError(t, err)
+
+	clientJSONConn, bufGenYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil, nil)
+	ctx := t.Context()
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			var list *protocol.CompletionList
+			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{URI: bufGenYAMLURI},
+					Position:     protocol.Position{Line: tc.line, Character: tc.character},
+				},
+			}, &list)
+			require.NoError(t, err)
+
+			require.NotNil(t, list, "expected completions at (%d, %d)", tc.line, tc.character)
+			labels := make([]string, len(list.Items))
+			for i, item := range list.Items {
+				labels[i] = item.Label
+			}
+			for _, want := range tc.wantContains {
+				assert.Contains(t, labels, want,
+					"completions at (%d, %d) should contain %q", tc.line, tc.character, want)
+			}
+			for _, absent := range tc.wantAbsent {
+				assert.NotContains(t, labels, absent,
+					"completions at (%d, %d) should not contain %q", tc.line, tc.character, absent)
+			}
+		})
+	}
+}
+
 // TestBufGenYAMLDocumentLinks verifies that document links are returned for
 // remote plugin and input module BSR references in buf.gen.yaml files.
 func TestBufGenYAMLDocumentLinks(t *testing.T) {
@@ -292,31 +393,31 @@ func TestBufGenYAMLHover(t *testing.T) {
 		{
 			name: "managed_disable_file_option_key",
 			line: 5, character: 6,
-			expectedContains: []string{"file_option", "File-level Protobuf option", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#file_option"},
+			expectedContains: []string{"file_option", "File-level Protobuf option", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#disable"},
 		},
 		{
 			name: "managed_disable_module_key",
 			line: 6, character: 6,
-			expectedContains: []string{"module", "BSR module", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#module"},
+			expectedContains: []string{"module", "BSR module", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#disable"},
 		},
 
 		// ── managed.override rule keys ──────────────────────────────────────────
 		{
 			name: "managed_override_file_option_key",
 			line: 8, character: 6,
-			expectedContains: []string{"file_option", "File-level Protobuf option", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#file_option"},
+			expectedContains: []string{"file_option", "File-level Protobuf option", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#disable"},
 		},
 		{
 			name: "managed_override_value_key",
 			line: 9, character: 6,
-			expectedContains: []string{"value", "value to set for the option", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#value"},
+			expectedContains: []string{"value", "value to set for the option", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#override"},
 		},
 
 		// ── plugin entry keys ───────────────────────────────────────────────────
 		{
 			name: "plugin_remote_key",
 			line: 11, character: 4,
-			expectedContains: []string{"remote", "Remote BSR plugin", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#remote"},
+			expectedContains: []string{"remote", "Remote BSR plugin", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#plugins"},
 		},
 		{
 			name: "plugin_out_key",
@@ -341,12 +442,12 @@ func TestBufGenYAMLHover(t *testing.T) {
 		{
 			name: "plugin_revision_key",
 			line: 16, character: 4,
-			expectedContains: []string{"revision", "revision", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#revision"},
+			expectedContains: []string{"revision", "revision", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#plugins"},
 		},
 		{
 			name: "plugin_local_key",
 			line: 17, character: 4,
-			expectedContains: []string{"local", "local plugin binary", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#local"},
+			expectedContains: []string{"local", "local plugin binary", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#plugins"},
 		},
 		{
 			name: "plugin_strategy_key",
@@ -356,17 +457,17 @@ func TestBufGenYAMLHover(t *testing.T) {
 		{
 			name: "plugin_exclude_types_key",
 			line: 20, character: 4,
-			expectedContains: []string{"exclude_types", "Exclude", "type names", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#exclude_types"},
+			expectedContains: []string{"exclude_types", "Exclude", "type names", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#exclude-types"},
 		},
 		{
 			name: "plugin_protoc_builtin_key",
 			line: 22, character: 4,
-			expectedContains: []string{"protoc_builtin", "protoc", "generator name", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#protoc_builtin"},
+			expectedContains: []string{"protoc_builtin", "protoc", "generator name", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#plugins"},
 		},
 		{
 			name: "plugin_protoc_path_key",
 			line: 23, character: 4,
-			expectedContains: []string{"protoc_path", "protoc", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#protoc_path"},
+			expectedContains: []string{"protoc_path", "protoc", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#plugins"},
 		},
 
 		// ── input entry keys ────────────────────────────────────────────────────
@@ -383,12 +484,12 @@ func TestBufGenYAMLHover(t *testing.T) {
 		{
 			name: "input_paths_key",
 			line: 28, character: 4,
-			expectedContains: []string{"paths", "relative paths", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#paths"},
+			expectedContains: []string{"paths", "relative paths", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#inputs"},
 		},
 		{
 			name: "input_exclude_paths_key",
 			line: 30, character: 4,
-			expectedContains: []string{"exclude_paths", "Exclude", "relative paths", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#exclude_paths"},
+			expectedContains: []string{"exclude_paths", "Exclude", "relative paths", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#inputs"},
 		},
 		{
 			name: "input_module_key",
@@ -398,7 +499,7 @@ func TestBufGenYAMLHover(t *testing.T) {
 		{
 			name: "input_exclude_types_key",
 			line: 33, character: 4,
-			expectedContains: []string{"exclude_types", "Exclude", "type names", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#exclude_types"},
+			expectedContains: []string{"exclude_types", "Exclude", "type names", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#exclude-types"},
 		},
 		{
 			name: "input_proto_file_key",
@@ -408,7 +509,7 @@ func TestBufGenYAMLHover(t *testing.T) {
 		{
 			name: "input_include_package_files_key",
 			line: 36, character: 4,
-			expectedContains: []string{"include_package_files", "same package", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#include_package_files"},
+			expectedContains: []string{"include_package_files", "same package", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#proto_file"},
 		},
 		{
 			name: "input_git_repo_key",
@@ -418,7 +519,7 @@ func TestBufGenYAMLHover(t *testing.T) {
 		{
 			name: "input_branch_key",
 			line: 38, character: 4,
-			expectedContains: []string{"branch", "Git branch", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#branch"},
+			expectedContains: []string{"branch", "Git branch", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#git_repo"},
 		},
 		{
 			name: "input_subdir_key",
@@ -428,7 +529,7 @@ func TestBufGenYAMLHover(t *testing.T) {
 		{
 			name: "input_depth_key",
 			line: 40, character: 4,
-			expectedContains: []string{"depth", "clone depth", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#depth"},
+			expectedContains: []string{"depth", "clone depth", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#git_repo"},
 		},
 
 		// ── Positions that should return no hover ────────────────────────────────

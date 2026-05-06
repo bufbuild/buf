@@ -58,6 +58,7 @@ func newBufGenYAMLManager(lsp *lsp) *bufGenYAMLManager {
 
 // bufGenYAMLFile holds the parsed state of an open buf.gen.yaml file.
 type bufGenYAMLFile struct {
+	text                string     // raw file content, used for completion
 	docNode             *yaml.Node // parsed YAML document node, nil if parse failed
 	refs                []bsrRef   // plugins[*].remote and inputs[*].module BSR references
 	versionedPluginRefs []bsrRef   // plugins[*].remote with an explicit version (for update checks)
@@ -70,6 +71,7 @@ func (m *bufGenYAMLManager) Track(uri protocol.URI, text string) {
 	docNode := parseYAMLDoc(text)
 	allRefs, versionedPluginRefs, pluginsKeyLine := parseBufGenYAMLRefs(docNode)
 	f := &bufGenYAMLFile{
+		text:                text,
 		docNode:             docNode,
 		refs:                allRefs,
 		versionedPluginRefs: versionedPluginRefs,
@@ -87,6 +89,18 @@ func (m *bufGenYAMLManager) Close(ctx context.Context, uri protocol.URI) {
 	delete(m.uriToFile, normalized)
 	m.mu.Unlock()
 	publishDiagnostics(ctx, m.lsp.client, normalized, nil)
+}
+
+// GetCompletion returns completion items for the buf.gen.yaml field or value at
+// the given cursor position, or nil if no completions apply.
+func (m *bufGenYAMLManager) GetCompletion(uri protocol.URI, pos protocol.Position) []protocol.CompletionItem {
+	m.mu.Lock()
+	f, ok := m.uriToFile[normalizeURI(uri)]
+	m.mu.Unlock()
+	if !ok {
+		return nil
+	}
+	return getBufGenYAMLCompletionItems(f.docNode, f.text, pos)
 }
 
 // GetHover returns hover documentation for the buf.gen.yaml field at the given

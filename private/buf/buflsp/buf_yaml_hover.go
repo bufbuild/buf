@@ -32,52 +32,57 @@ const (
 type bufYAMLDoc struct {
 	// summary is the markdown body text describing the field or rule.
 	summary string
+	// valueType is the YAML type shown in the completion Detail field
+	// (e.g. "bool", "string", "[]string", "object", "[]object", "integer").
+	// Empty for entries where no useful type annotation applies (e.g. rule IDs).
+	valueType string
 	// url is the documentation page URL, shown as a [Documentation](url) link.
 	url string
 }
 
 // bufYAMLTopLevelDocs maps top-level buf.yaml keys to their documentation.
 var bufYAMLTopLevelDocs = map[string]bufYAMLDoc{
-	"version":  {summary: "Defines the configuration format version. Must be `v2`, `v1` or `v1beta1`.", url: bufYAMLDocsURL + "#version"},
-	"modules":  {summary: "Defines the Protobuf modules in the workspace. Each entry specifies a directory of Protobuf files with optional per-module lint and breaking settings.", url: bufYAMLDocsURL + "#modules"},
-	"deps":     {summary: "Declares module dependencies hosted on the Buf Schema Registry. Dependencies can pin a specific commit or label using the format `buf.build/owner/module:reference`. Pinned versions are stored in [`buf.lock`](https://buf.build/docs/configuration/v2/buf-lock/).", url: bufYAMLDocsURL + "#deps"},
-	"lint":     {summary: "Configures lint rules applied to all modules in the workspace. Module-specific lint settings override these defaults entirely. If unspecified, the `STANDARD` rule category is used.", url: bufYAMLDocsURL + "#lint"},
-	"breaking": {summary: "Configures breaking change detection rules applied to all modules in the workspace. Module-specific breaking settings override these defaults entirely. If unspecified, the `FILE` rule category is used.", url: bufYAMLDocsURL + "#breaking"},
-	"plugins":  {summary: "Specifies custom Buf plugins that provide additional lint or breaking change rules. Each entry references a plugin binary on `$PATH`, a local path, or a remote BSR plugin.", url: bufYAMLDocsURL + "#plugins"},
-	"policies": {summary: "Lists policies that apply shared lint and breaking change rule sets to the workspace. Policies can be local files or remote BSR policies.", url: bufYAMLDocsURL + "#policies"},
+	"version":  {summary: "Defines the configuration format version. Must be `v2`, `v1` or `v1beta1`.", valueType: "string", url: bufYAMLDocsURL + "#version"},
+	"name":     {summary: "A Buf Schema Registry path (e.g. `buf.build/acme/petapis`) that identifies the default module in the workspace. Setting a name associates the workspace with a BSR repository for publishing commits.", valueType: "string", url: bufYAMLDocsURL + "#name"},
+	"modules":  {summary: "Defines the Protobuf modules in the workspace. Each entry specifies a directory of Protobuf files with optional per-module lint and breaking settings.", valueType: "[]object", url: bufYAMLDocsURL + "#modules"},
+	"deps":     {summary: "Declares module dependencies hosted on the Buf Schema Registry. Dependencies can pin a specific commit or label using the format `buf.build/owner/module:reference`. Pinned versions are stored in [`buf.lock`](https://buf.build/docs/configuration/v2/buf-lock/).", valueType: "[]string", url: bufYAMLDocsURL + "#deps"},
+	"lint":     {summary: "Configures lint rules applied to all modules in the workspace. Module-specific lint settings override these defaults entirely. If unspecified, the `STANDARD` rule category is used.", valueType: "object", url: bufYAMLDocsURL + "#lint"},
+	"breaking": {summary: "Configures breaking change detection rules applied to all modules in the workspace. Module-specific breaking settings override these defaults entirely. If unspecified, the `FILE` rule category is used.", valueType: "object", url: bufYAMLDocsURL + "#breaking"},
+	"plugins":  {summary: "Specifies custom Buf plugins that provide additional lint or breaking change rules. Each entry references a plugin binary on `$PATH`, a local path, or a remote BSR plugin.", valueType: "[]object", url: bufYAMLDocsURL + "#plugins"},
+	"policies": {summary: "Lists policies that apply shared lint and breaking change rule sets to the workspace. Policies can be local files or remote BSR policies.", valueType: "[]object", url: bufYAMLDocsURL + "#policies"},
 }
 
 // bufYAMLModuleDocs maps module-entry sub-keys to their documentation.
 var bufYAMLModuleDocs = map[string]bufYAMLDoc{
-	"path":     {summary: "Directory containing Protobuf files, relative to the workspace root. All `.proto` files in the directory and its subdirectories are included unless further restricted by `includes` or `excludes`.", url: bufYAMLDocsURL + "#path"},
-	"name":     {summary: "A Buf Schema Registry path (e.g. `buf.build/acme/petapis`) that uniquely identifies this module. Setting a name associates the directory with a BSR repository for publishing commits and generated artifacts.", url: bufYAMLDocsURL + "#name"},
-	"includes": {summary: "Subdirectories to include when discovering Protobuf files. When set, only files within the listed directories are processed. When omitted, all subdirectories are included.", url: bufYAMLDocsURL + "#includes"},
-	"excludes": {summary: "Subdirectories to exclude from Protobuf file discovery. When used together with `includes`, each excluded directory must be within an included one.", url: bufYAMLDocsURL + "#excludes"},
+	"path":     {summary: "Directory containing Protobuf files, relative to the workspace root. All `.proto` files in the directory and its subdirectories are included unless further restricted by `includes` or `excludes`.", valueType: "string", url: bufYAMLDocsURL + "#path"},
+	"name":     {summary: "A Buf Schema Registry path (e.g. `buf.build/acme/petapis`) that uniquely identifies this module. Setting a name associates the directory with a BSR repository for publishing commits and generated artifacts.", valueType: "string", url: bufYAMLDocsURL + "#name"},
+	"includes": {summary: "Subdirectories to include when discovering Protobuf files. When set, only files within the listed directories are processed. When omitted, all subdirectories are included.", valueType: "[]string", url: bufYAMLDocsURL + "#includes"},
+	"excludes": {summary: "Subdirectories to exclude from Protobuf file discovery. When used together with `includes`, each excluded directory must be within an included one.", valueType: "[]string", url: bufYAMLDocsURL + "#excludes"},
 }
 
 // bufYAMLLintDocs maps lint sub-keys to their documentation.
 var bufYAMLLintDocs = map[string]bufYAMLDoc{
-	"use":                             {summary: "Lists lint rule categories and/or specific rule IDs to enable. Category names (e.g. `MINIMAL`, `BASIC`, `STANDARD`) select a predefined set of rules.", url: bufYAMLLintRulesURL},
-	"except":                          {summary: "Removes specific rules or categories from the active lint rule set. Rules listed here are excluded even if they are part of a category in `use`. Prefer `ignore_only` to suppress rules for specific files.", url: bufYAMLDocsURL + "#lint"},
-	"ignore":                          {summary: "Files and directories excluded from all lint rules. Paths are relative to `buf.yaml`. All files within a listed directory are also excluded.", url: bufYAMLDocsURL + "#lint"},
-	"ignore_only":                     {summary: "Excludes specific files or directories from particular lint rules or categories. Maps each rule ID or category name to a list of file/directory paths (relative to `buf.yaml`) where that rule is suppressed.", url: bufYAMLDocsURL + "#lint"},
-	"disallow_comment_ignores":        {summary: "When `true`, disables `// buf:lint:ignore RULE_ID` comment directives in `.proto` files. Defaults to `false`, which permits per-location rule suppression using comments.", url: bufYAMLDocsURL + "#lint"},
-	"enum_zero_value_suffix":          {summary: "Sets the required suffix for zero-value enum entries, enforced by the `ENUM_ZERO_VALUE_SUFFIX` rule. Defaults to `_UNSPECIFIED`. For example, setting this to `_NONE` allows `FOO_NONE = 0`.", url: bufYAMLDocsURL + "#lint"},
-	"rpc_allow_same_request_response": {summary: "When `true`, permits using the same message type for both the request and response of an RPC. Defaults to `false`. Buf discourages this pattern because it prevents independent evolution of request and response types.", url: bufYAMLDocsURL + "#lint"},
-	"rpc_allow_google_protobuf_empty_requests":  {summary: "When `true`, allows RPC methods to use `google.protobuf.Empty` as the request type. Defaults to `false`. Prefer a dedicated request message to allow adding fields without breaking changes.", url: bufYAMLDocsURL + "#lint"},
-	"rpc_allow_google_protobuf_empty_responses": {summary: "When `true`, allows RPC methods to use `google.protobuf.Empty` as the response type. Defaults to `false`. Prefer a dedicated response message to allow adding fields without breaking changes.", url: bufYAMLDocsURL + "#lint"},
-	"service_suffix":  {summary: "Sets the required suffix for service names, enforced by the `SERVICE_SUFFIX` rule. Defaults to `Service`. For example, setting this to `API` allows service names like `FooAPI`.", url: bufYAMLDocsURL + "#lint"},
-	"disable_builtin": {summary: "When `true`, disables all built-in lint rules. Use this when relying entirely on custom plugin-provided rules. Defaults to `false`.", url: bufYAMLDocsURL + "#lint"},
+	"use":                             {summary: "Lists lint rule categories and/or specific rule IDs to enable. Category names (e.g. `MINIMAL`, `BASIC`, `STANDARD`) select a predefined set of rules.", valueType: "[]string", url: bufYAMLLintRulesURL},
+	"except":                          {summary: "Removes specific rules or categories from the active lint rule set. Rules listed here are excluded even if they are part of a category in `use`. Prefer `ignore_only` to suppress rules for specific files.", valueType: "[]string", url: bufYAMLDocsURL + "#lint"},
+	"ignore":                          {summary: "Files and directories excluded from all lint rules. Paths are relative to `buf.yaml`. All files within a listed directory are also excluded.", valueType: "[]string", url: bufYAMLDocsURL + "#lint"},
+	"ignore_only":                     {summary: "Excludes specific files or directories from particular lint rules or categories. Maps each rule ID or category name to a list of file/directory paths (relative to `buf.yaml`) where that rule is suppressed.", valueType: "object", url: bufYAMLDocsURL + "#lint"},
+	"disallow_comment_ignores":        {summary: "When `true`, disables `// buf:lint:ignore RULE_ID` comment directives in `.proto` files. Defaults to `false`, which permits per-location rule suppression using comments.", valueType: "bool", url: bufYAMLDocsURL + "#lint"},
+	"enum_zero_value_suffix":          {summary: "Sets the required suffix for zero-value enum entries, enforced by the `ENUM_ZERO_VALUE_SUFFIX` rule. Defaults to `_UNSPECIFIED`. For example, setting this to `_NONE` allows `FOO_NONE = 0`.", valueType: "string", url: bufYAMLDocsURL + "#lint"},
+	"rpc_allow_same_request_response": {summary: "When `true`, permits using the same message type for both the request and response of an RPC. Defaults to `false`. Buf discourages this pattern because it prevents independent evolution of request and response types.", valueType: "bool", url: bufYAMLDocsURL + "#lint"},
+	"rpc_allow_google_protobuf_empty_requests":  {summary: "When `true`, allows RPC methods to use `google.protobuf.Empty` as the request type. Defaults to `false`. Prefer a dedicated request message to allow adding fields without breaking changes.", valueType: "bool", url: bufYAMLDocsURL + "#lint"},
+	"rpc_allow_google_protobuf_empty_responses": {summary: "When `true`, allows RPC methods to use `google.protobuf.Empty` as the response type. Defaults to `false`. Prefer a dedicated response message to allow adding fields without breaking changes.", valueType: "bool", url: bufYAMLDocsURL + "#lint"},
+	"service_suffix":  {summary: "Sets the required suffix for service names, enforced by the `SERVICE_SUFFIX` rule. Defaults to `Service`. For example, setting this to `API` allows service names like `FooAPI`.", valueType: "string", url: bufYAMLDocsURL + "#lint"},
+	"disable_builtin": {summary: "When `true`, disables all built-in lint rules. Use this when relying entirely on custom plugin-provided rules. Defaults to `false`.", valueType: "bool", url: bufYAMLDocsURL + "#lint"},
 }
 
 // bufYAMLBreakingDocs maps breaking sub-keys to their documentation.
 var bufYAMLBreakingDocs = map[string]bufYAMLDoc{
-	"use":                      {summary: "Lists breaking change rule categories and/or specific rule IDs to enable. Category names (`FILE`, `PACKAGE`, `WIRE_JSON`, `WIRE`) select a predefined set of rules.", url: bufYAMLBreakingRulesURL},
-	"except":                   {summary: "Removes specific rules or categories from the active breaking change rule set. Using `except` is generally discouraged.", url: bufYAMLDocsURL + "#breaking"},
-	"ignore":                   {summary: "Files and directories excluded from all breaking change rules. Paths are relative to `buf.yaml`. Useful for alpha or unstable packages that are expected to change.", url: bufYAMLDocsURL + "#breaking"},
-	"ignore_only":              {summary: "Excludes specific files or directories from particular breaking change rules or categories. Maps each rule ID or category name to a list of file/directory paths (relative to `buf.yaml`) where that rule is suppressed.", url: bufYAMLDocsURL + "#breaking"},
-	"ignore_unstable_packages": {summary: "When `true`, ignores packages matching unstable version patterns such as `v1alpha1`, `v1beta1`, or `v1test`. Defaults to `false`.", url: bufYAMLDocsURL + "#breaking"},
-	"disable_builtin":          {summary: "When `true`, disables all built-in breaking change rules. Use this when relying entirely on custom plugin-provided rules. Defaults to `false`.", url: bufYAMLDocsURL + "#breaking"},
+	"use":                      {summary: "Lists breaking change rule categories and/or specific rule IDs to enable. Category names (`FILE`, `PACKAGE`, `WIRE_JSON`, `WIRE`) select a predefined set of rules.", valueType: "[]string", url: bufYAMLBreakingRulesURL},
+	"except":                   {summary: "Removes specific rules or categories from the active breaking change rule set. Using `except` is generally discouraged.", valueType: "[]string", url: bufYAMLDocsURL + "#breaking"},
+	"ignore":                   {summary: "Files and directories excluded from all breaking change rules. Paths are relative to `buf.yaml`. Useful for alpha or unstable packages that are expected to change.", valueType: "[]string", url: bufYAMLDocsURL + "#breaking"},
+	"ignore_only":              {summary: "Excludes specific files or directories from particular breaking change rules or categories. Maps each rule ID or category name to a list of file/directory paths (relative to `buf.yaml`) where that rule is suppressed.", valueType: "object", url: bufYAMLDocsURL + "#breaking"},
+	"ignore_unstable_packages": {summary: "When `true`, ignores packages matching unstable version patterns such as `v1alpha1`, `v1beta1`, or `v1test`. Defaults to `false`.", valueType: "bool", url: bufYAMLDocsURL + "#breaking"},
+	"disable_builtin":          {summary: "When `true`, disables all built-in breaking change rules. Use this when relying entirely on custom plugin-provided rules. Defaults to `false`.", valueType: "bool", url: bufYAMLDocsURL + "#breaking"},
 }
 
 // bufYAMLLintRuleDocs maps lint rule IDs and category names to their documentation.

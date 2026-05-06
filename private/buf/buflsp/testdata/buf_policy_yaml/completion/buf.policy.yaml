@@ -1,0 +1,12 @@
+version: v2
+name: buf.build/acme/my-policy
+lint:
+  use:
+    - STANDARD
+  except:
+    - IMPORT_USED
+breaking:
+  use:
+    - FILE
+plugins:
+  - plugin: buf.build/acme/my-plugin
