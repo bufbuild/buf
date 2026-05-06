@@ -326,6 +326,8 @@ func getB5DigestForBucketAndDepModuleKeys(
 // and then digested themselves as content.
 //
 // Note that the name of the Module and any of its dependencies has no effect on the Digest.
+//
+// Note that the order of the depDigests does not matter - they are sorted within this function.
 func getB5DigestForBucketAndDepDigests(
 	ctx context.Context,
 	bucketWithStorageMatcherApplied storage.ReadBucket,

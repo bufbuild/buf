@@ -212,6 +212,9 @@ func (a *graphProvider) getV1Beta1ProtoGraphForModuleKeys(
 	}
 	if !legacyFederationAllowed && digestType == bufmodule.DigestTypeB5 {
 		// Legacy federation is not allowed, and we are using b5. Call the v1 API.
+		//
+		// Note the v1 API can still return federated Modules as of the addition of the
+		// Registry type to the v1 Graph.
 		graph, err := a.getV1ProtoGraphForRegistryAndModuleKeys(ctx, primaryRegistry, moduleKeys)
 		if err != nil {
 			return nil, err
