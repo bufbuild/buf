@@ -16,14 +16,42 @@ package buflsp
 
 import (
 	"maps"
+	"slices"
+	"strings"
 
+	"github.com/bufbuild/protocompile/experimental/ir"
 	"go.lsp.dev/protocol"
 	"gopkg.in/yaml.v3"
 )
 
+// bufGenYAMLPathValueKeys maps buf.gen.yaml value keys whose values are
+// filesystem paths to whether only directory entries should be offered.
+// out and directory are always directories.
+var bufGenYAMLPathValueKeys = map[string]bool{
+	"out":       true,
+	"directory": true,
+}
+
+// bufGenYAMLPathSequenceSections maps buf.gen.yaml section names whose
+// sequence items are filesystem paths to whether only directory entries
+// should be offered. paths and exclude_paths accept files or directories.
+var bufGenYAMLPathSequenceSections = map[string]bool{
+	"paths":         false,
+	"exclude_paths": false,
+}
+
+// bufGenYAMLTypeSequenceSections is the set of buf.gen.yaml section names
+// whose sequence items are fully-qualified proto type names.
+var bufGenYAMLTypeSequenceSections = map[string]bool{
+	"types": true, "exclude_types": true,
+}
+
 // getBufGenYAMLCompletionItems returns completion items for a buf.gen.yaml file
-// at the given cursor position.
-func getBufGenYAMLCompletionItems(docNode *yaml.Node, text string, pos protocol.Position) []protocol.CompletionItem {
+// at the given cursor position. dirPath is the directory containing the
+// buf.gen.yaml file, used to resolve filesystem path completions; pass "" to
+// disable path completions (e.g. in tests). ws is the leased workspace for
+// proto type name completions; pass nil to disable type completions.
+func getBufGenYAMLCompletionItems(docNode *yaml.Node, text string, pos protocol.Position, dirPath string, ws *workspace) []protocol.CompletionItem {
 	lines, prefix, ok := bufYAMLParseCursor(text, pos)
 	if !ok {
 		return nil
@@ -32,6 +60,9 @@ func getBufGenYAMLCompletionItems(docNode *yaml.Node, text string, pos protocol.
 	tokenStart := bufYAMLTokenStart(prefix)
 	editRange := bufYAMLEditRange(pos, tokenStart, lines[cursorLine])
 	if valueKey := bufYAMLValueKey(prefix); valueKey != "" {
+		if dirsOnly, ok := bufGenYAMLPathValueKeys[valueKey]; ok {
+			return bufYAMLPathItems(dirPath, prefix[tokenStart:], editRange, dirsOnly)
+		}
 		return bufGenYAMLValueItems(valueKey, editRange)
 	}
 	if tokenStart < len(prefix) && prefix[tokenStart] == '-' {
@@ -43,6 +74,12 @@ func getBufGenYAMLCompletionItems(docNode *yaml.Node, text string, pos protocol.
 		if bareKey := bufYAMLBareParentKey(lines, cursorLine); bufGenYAMLBareParentMappingKeys[bareKey] {
 			return bufYAMLPrependIndent(bufGenYAMLKeyItems(bareKey, editRange, nil))
 		}
+	}
+	if dirsOnly, ok := bufGenYAMLPathSequenceSections[section]; ok {
+		return bufYAMLPathItems(dirPath, prefix[tokenStart:], editRange, dirsOnly)
+	}
+	if bufGenYAMLTypeSequenceSections[section] {
+		return bufGenYAMLTypeItems(ws, prefix[tokenStart:], editRange)
 	}
 	existingKeys := bufYAMLASTExistingKeys(docNode, section, parentSection, cursorLine)
 	if existingKeys == nil {
@@ -250,4 +287,57 @@ var bufGenYAMLManagedKeys = []string{"enabled", "disable", "override"}
 // bufGenYAMLManagedRuleKeys lists keys valid within managed.disable[] and managed.override[] items.
 var bufGenYAMLManagedRuleKeys = []string{
 	"file_option", "field_option", "module", "path", "field", "value",
+}
+
+// bufGenYAMLTypeItems returns completion items for fully-qualified proto type names
+// (messages, enums, services) from the workspace. partialName is the text already
+// typed; items whose name does not have partialName as a prefix are excluded.
+// Returns nil when ws is nil or no symbols are indexed.
+//
+// Iterates each file's IR directly (rather than referenceableSymbols, which only
+// holds messages and enums) so services are included.
+func bufGenYAMLTypeItems(ws *workspace, partialName string, editRange protocol.Range) []protocol.CompletionItem {
+	if ws == nil {
+		return nil
+	}
+	seen := make(map[string]struct{})
+	var items []protocol.CompletionItem
+	for _, wsFile := range ws.PathToFile() {
+		if wsFile.ir == nil {
+			continue
+		}
+		symbols := wsFile.ir.Symbols()
+		for i := range symbols.Len() {
+			sym := symbols.At(i)
+			switch sym.Kind() {
+			case ir.SymbolKindMessage:
+				if sym.AsType().IsMapEntry() {
+					continue
+				}
+			case ir.SymbolKindEnum, ir.SymbolKindService:
+			default:
+				continue
+			}
+			name := string(sym.FullName())
+			if partialName != "" && !strings.HasPrefix(name, partialName) {
+				continue
+			}
+			if _, ok := seen[name]; ok {
+				continue
+			}
+			seen[name] = struct{}{}
+			items = append(items, protocol.CompletionItem{
+				Label: name,
+				Kind:  protocol.CompletionItemKindValue,
+				TextEdit: &protocol.TextEdit{
+					Range:   editRange,
+					NewText: name,
+				},
+			})
+		}
+	}
+	slices.SortFunc(items, func(a, b protocol.CompletionItem) int {
+		return strings.Compare(a.Label, b.Label)
+	})
+	return items
 }

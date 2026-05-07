@@ -15,6 +15,9 @@
 package buflsp
 
 import (
+	"os"
+	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -23,8 +26,10 @@ import (
 )
 
 // getBufYAMLCompletionItems returns completion items for a buf.yaml file at
-// the given cursor position.
-func getBufYAMLCompletionItems(docNode *yaml.Node, text string, pos protocol.Position) []protocol.CompletionItem {
+// the given cursor position. dirPath is the directory containing the buf.yaml
+// file, used to resolve filesystem path completions; pass "" to disable path
+// completions (e.g. in tests).
+func getBufYAMLCompletionItems(docNode *yaml.Node, text string, pos protocol.Position, dirPath string) []protocol.CompletionItem {
 	lines, prefix, ok := bufYAMLParseCursor(text, pos)
 	if !ok {
 		return nil
@@ -33,6 +38,9 @@ func getBufYAMLCompletionItems(docNode *yaml.Node, text string, pos protocol.Pos
 	tokenStart := bufYAMLTokenStart(prefix)
 	editRange := bufYAMLEditRange(pos, tokenStart, lines[cursorLine])
 	if valueKey := bufYAMLValueKey(prefix); valueKey != "" {
+		if dirsOnly, ok := bufYAMLPathValueKeys[valueKey]; ok {
+			return bufYAMLPathItems(dirPath, prefix[tokenStart:], editRange, dirsOnly)
+		}
 		return bufYAMLValueItems(valueKey, editRange)
 	}
 	if tokenStart < len(prefix) && prefix[tokenStart] == '-' {
@@ -48,6 +56,15 @@ func getBufYAMLCompletionItems(docNode *yaml.Node, text string, pos protocol.Pos
 	if section == "use" || section == "except" {
 		return bufYAMLSequenceItems(parentSection, editRange)
 	}
+	if dirsOnly, ok := bufYAMLPathSequenceSections[section]; ok {
+		return bufYAMLPathItems(dirPath, prefix[tokenStart:], editRange, dirsOnly)
+	}
+	// ignore_only maps each rule ID to a list of file/directory paths.
+	// When the cursor is inside such a list, section is the rule ID itself
+	// (e.g., "STANDARD", "FILE_NO_DELETE"), and the immediate parent is "ignore_only".
+	if parentSection == "ignore_only" {
+		return bufYAMLPathItems(dirPath, prefix[tokenStart:], editRange, false)
+	}
 	existingKeys := bufYAMLASTExistingKeys(docNode, section, parentSection, cursorLine)
 	if existingKeys == nil {
 		existingKeys = bufYAMLExistingKeys(lines, cursorLine, currentIndent)
@@ -56,6 +73,69 @@ func getBufYAMLCompletionItems(docNode *yaml.Node, text string, pos protocol.Pos
 		return bufYAMLIgnoreOnlyKeyItems(parentSection, editRange, existingKeys)
 	}
 	return bufYAMLKeyItems(section, editRange, existingKeys)
+}
+
+// bufYAMLPathValueKeys maps buf.yaml value keys whose values are filesystem
+// paths to whether only directory entries should be offered.
+var bufYAMLPathValueKeys = map[string]bool{
+	"path": true,
+}
+
+// bufYAMLPathSequenceSections maps buf.yaml section names whose sequence items
+// are filesystem paths to whether only directory entries should be offered.
+// includes/excludes target subdirectories of a module; ignore accepts files
+// or directories.
+var bufYAMLPathSequenceSections = map[string]bool{
+	"ignore":   false,
+	"includes": true,
+	"excludes": true,
+}
+
+// bufYAMLPathItems returns completion items for filesystem paths relative to
+// dirPath. partialPath is the text the user has typed so far (may be empty).
+// When dirsOnly is true, file entries are excluded.
+// Returns nil when dirPath is empty or the search directory cannot be read.
+func bufYAMLPathItems(dirPath, partialPath string, editRange protocol.Range, dirsOnly bool) []protocol.CompletionItem {
+	if dirPath == "" {
+		return nil
+	}
+	dir, base := path.Split(partialPath)
+	searchDir := filepath.Join(dirPath, filepath.FromSlash(dir))
+	entries, err := os.ReadDir(searchDir)
+	if err != nil {
+		return nil
+	}
+	var items []protocol.CompletionItem
+	for _, entry := range entries {
+		name := entry.Name()
+		if strings.HasPrefix(name, ".") {
+			continue
+		}
+		if base != "" && !strings.HasPrefix(name, base) {
+			continue
+		}
+		var text string
+		var kind protocol.CompletionItemKind
+		if entry.IsDir() {
+			text = dir + name + "/"
+			kind = protocol.CompletionItemKindFolder
+		} else {
+			if dirsOnly {
+				continue
+			}
+			text = dir + name
+			kind = protocol.CompletionItemKindFile
+		}
+		items = append(items, protocol.CompletionItem{
+			Label: text,
+			Kind:  kind,
+			TextEdit: &protocol.TextEdit{
+				Range:   editRange,
+				NewText: text,
+			},
+		})
+	}
+	return items
 }
 
 // bufYAMLTokenStart returns the byte index in prefix where the current token begins.
@@ -202,14 +282,20 @@ func bufYAMLSequenceItems(parentSection string, editRange protocol.Range) []prot
 	}
 }
 
-// bufYAMLIgnoreOnlyKeyItems returns completion items for lint/breaking rule IDs
-// used as mapping keys under lint.ignore_only or breaking.ignore_only.
+// bufYAMLIgnoreOnlyKeyItems returns completion items for rule IDs used as
+// mapping keys under ignore_only blocks. policies[*].ignore_only can suppress
+// either lint or breaking rules, so both sets are offered there.
 func bufYAMLIgnoreOnlyKeyItems(parentSection string, editRange protocol.Range, existingKeys map[string]bool) []protocol.CompletionItem {
 	switch parentSection {
 	case "lint":
 		return makeCompletionKeyItems(bufYAMLLintRuleValues, bufYAMLLintRuleDocs, nil, editRange, existingKeys)
 	case "breaking":
 		return makeCompletionKeyItems(bufYAMLBreakingRuleValues, bufYAMLBreakingRuleDocs, nil, editRange, existingKeys)
+	case "policies":
+		// Lint and breaking rule names are disjoint, so the primary/fallback
+		// lookup in makeCompletionKeyItems unambiguously routes each rule to
+		// the right docs.
+		return makeCompletionKeyItems(bufYAMLAllRuleValues, bufYAMLLintRuleDocs, bufYAMLBreakingRuleDocs, editRange, existingKeys)
 	default:
 		return nil
 	}
@@ -299,6 +385,14 @@ var bufYAMLPolicyItemDocs = map[string]bufYAMLDoc{
 var bufYAMLLintRuleValues = bufYAMLSortedDocKeys(bufYAMLLintRuleDocs)
 
 var bufYAMLBreakingRuleValues = bufYAMLSortedDocKeys(bufYAMLBreakingRuleDocs)
+
+// bufYAMLAllRuleValues is the union of lint and breaking rule values, used for
+// policies[*].ignore_only completions where either kind of rule can be suppressed.
+var bufYAMLAllRuleValues = func() []string {
+	all := slices.Concat(bufYAMLLintRuleValues, bufYAMLBreakingRuleValues)
+	slices.Sort(all)
+	return all
+}()
 
 func bufYAMLSortedDocKeys(docs map[string]bufYAMLDoc) []string {
 	keys := make([]string, 0, len(docs))
