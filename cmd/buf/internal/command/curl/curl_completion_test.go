@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -53,30 +54,30 @@ func newTestDescriptorResolver(t *testing.T) protodesc.Resolver {
 	t.Helper()
 	// Build one file per service so their proto packages match their names.
 	fooFDP := &descriptorpb.FileDescriptorProto{
-		Name:       new("acme/foo/v1/foo.proto"),
-		Syntax:     new("proto3"),
-		Package:    new("acme.foo.v1"),
+		Name:       proto.String("acme/foo/v1/foo.proto"),
+		Syntax:     proto.String("proto3"),
+		Package:    proto.String("acme.foo.v1"),
 		Dependency: []string{"google/protobuf/empty.proto"},
 		Service: []*descriptorpb.ServiceDescriptorProto{
 			{
-				Name: new("FooService"),
+				Name: proto.String("FooService"),
 				Method: []*descriptorpb.MethodDescriptorProto{
-					{Name: new("GetFoo"), InputType: new(".google.protobuf.Empty"), OutputType: new(".google.protobuf.Empty")},
-					{Name: new("ListFoos"), InputType: new(".google.protobuf.Empty"), OutputType: new(".google.protobuf.Empty")},
+					{Name: proto.String("GetFoo"), InputType: proto.String(".google.protobuf.Empty"), OutputType: proto.String(".google.protobuf.Empty")},
+					{Name: proto.String("ListFoos"), InputType: proto.String(".google.protobuf.Empty"), OutputType: proto.String(".google.protobuf.Empty")},
 				},
 			},
 		},
 	}
 	barFDP := &descriptorpb.FileDescriptorProto{
-		Name:       new("acme/bar/v1/bar.proto"),
-		Syntax:     new("proto3"),
-		Package:    new("acme.bar.v1"),
+		Name:       proto.String("acme/bar/v1/bar.proto"),
+		Syntax:     proto.String("proto3"),
+		Package:    proto.String("acme.bar.v1"),
 		Dependency: []string{"google/protobuf/empty.proto"},
 		Service: []*descriptorpb.ServiceDescriptorProto{
 			{
-				Name: new("BarService"),
+				Name: proto.String("BarService"),
 				Method: []*descriptorpb.MethodDescriptorProto{
-					{Name: new("CreateBar"), InputType: new(".google.protobuf.Empty"), OutputType: new(".google.protobuf.Empty")},
+					{Name: proto.String("CreateBar"), InputType: proto.String(".google.protobuf.Empty"), OutputType: proto.String(".google.protobuf.Empty")},
 				},
 			},
 		},

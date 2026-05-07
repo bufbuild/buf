@@ -28,6 +28,7 @@ import (
 	reflectionv1 "github.com/bufbuild/buf/private/gen/proto/go/grpc/reflection/v1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/verbose"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -156,7 +157,7 @@ func (r *reflectionResolver) ListServices() ([]protoreflect.FullName, error) {
 
 	r.printer.Printf("* Using server reflection to list services\n")
 	resp, err := r.sendLocked(reflectionv1.ServerReflectionRequest_builder{
-		ListServices: new(""),
+		ListServices: proto.String(""),
 	}.Build())
 	if err != nil {
 		return nil, err
@@ -300,7 +301,7 @@ func (r *reflectionResolver) FindExtensionByNumber(message protoreflect.FullName
 func (r *reflectionResolver) fileContainingSymbolLocked(name protoreflect.FullName) ([]*descriptorpb.FileDescriptorProto, error) {
 	r.printer.Printf("* Using server reflection to resolve %q\n", name)
 	resp, err := r.sendLocked(reflectionv1.ServerReflectionRequest_builder{
-		FileContainingSymbol: new(string(name)),
+		FileContainingSymbol: proto.String(string(name)),
 	}.Build())
 	if err != nil {
 		return nil, err
@@ -325,7 +326,7 @@ func (r *reflectionResolver) fileContainingExtensionLocked(message protoreflect.
 func (r *reflectionResolver) fileByNameLocked(name string) ([]*descriptorpb.FileDescriptorProto, error) {
 	r.printer.Printf("* Using server reflection to download file %q\n", name)
 	resp, err := r.sendLocked(reflectionv1.ServerReflectionRequest_builder{
-		FileByFilename: new(name),
+		FileByFilename: proto.String(name),
 	}.Build())
 	if err != nil {
 		return nil, err

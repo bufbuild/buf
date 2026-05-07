@@ -52,10 +52,10 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 				return nil, err
 			}
 			if reference.Remote() != pluginIdentity.Remote() {
-				return nil, fmt.Errorf("plugin dependency %v must use same remote as plugin %q", dependency, pluginIdentity.Remote())
+				return nil, fmt.Errorf("plugin dependency %q must use same remote as plugin %q", dependency, pluginIdentity.Remote())
 			}
 			if _, ok := existingDeps[reference.IdentityString()]; ok {
-				return nil, fmt.Errorf("plugin dependency %v was specified more than once", dependency)
+				return nil, fmt.Errorf("plugin dependency %q was specified more than once", dependency)
 			}
 			existingDeps[reference.IdentityString()] = struct{}{}
 			dependencies = append(dependencies, reference)

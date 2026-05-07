@@ -945,10 +945,14 @@ func GetInputConfigForRef(ref Ref, value string) (bufconfig.InputConfig, error) 
 			options["branch"],
 			options["tag"],
 			options["ref"],
-			new(t.Depth()),
+			toPointer(t.Depth()),
 			t.RecurseSubmodules(),
 		)
 	default:
 		return nil, fmt.Errorf("unexpected Ref of type %T", ref)
 	}
+}
+
+func toPointer[T any](value T) *T {
+	return &value
 }

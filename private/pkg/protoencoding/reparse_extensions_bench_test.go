@@ -120,7 +120,7 @@ func buildSyntheticInput(b *testing.B) (*descriptorpb.FileDescriptorProto, Resol
 	newFieldOpts := func() *descriptorpb.FieldOptions {
 		fieldOpts := &descriptorpb.FieldOptions{}
 		fieldRules := &validate.FieldRules{
-			Required: new(true),
+			Required: proto.Bool(true),
 			Type: &validate.FieldRules_Int32{
 				Int32: &validate.Int32Rules{
 					GreaterThan: &validate.Int32Rules_Gt{Gt: 0},
@@ -142,29 +142,29 @@ func buildSyntheticInput(b *testing.B) (*descriptorpb.FileDescriptorProto, Resol
 		fields := make([]*descriptorpb.FieldDescriptorProto, fieldsPerMessage)
 		for f := range fields {
 			fields[f] = &descriptorpb.FieldDescriptorProto{
-				Name:     new(fmt.Sprintf("field_%d", f)),
-				Number:   new(int32(f + 1)),
+				Name:     proto.String(fmt.Sprintf("field_%d", f)),
+				Number:   proto.Int32(int32(f + 1)),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_INT32.Enum(),
-				JsonName: new(fmt.Sprintf("field_%d", f)),
+				JsonName: proto.String(fmt.Sprintf("field_%d", f)),
 				Options:  newFieldOpts(),
 			}
 		}
 		messages[m] = &descriptorpb.DescriptorProto{
-			Name:  new(fmt.Sprintf("Msg%d", m)),
+			Name:  proto.String(fmt.Sprintf("Msg%d", m)),
 			Field: fields,
 		}
 	}
 	testFile := &descriptorpb.FileDescriptorProto{
-		Name:        new("test.proto"),
-		Syntax:      new("proto3"),
-		Package:     new("blah.blah"),
+		Name:        proto.String("test.proto"),
+		Syntax:      proto.String("proto3"),
+		Package:     proto.String("blah.blah"),
 		Dependency:  []string{"buf/validate/validate.proto", "google/protobuf/descriptor.proto"},
 		MessageType: messages,
 		Extension: []*descriptorpb.FieldDescriptorProto{
 			{
-				Extendee: new(".google.protobuf.FieldOptions"),
-				Name:     new("baz"),
+				Extendee: proto.String(".google.protobuf.FieldOptions"),
+				Name:     proto.String("baz"),
 				Number:   proto.Int32(customOptionNum),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_FLOAT.Enum(),

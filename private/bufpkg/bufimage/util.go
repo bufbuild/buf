@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/protoplugin/protopluginutil"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/encoding/protowire"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -328,9 +329,9 @@ func fileDescriptorProtoToProtoImageFile(
 	if moduleFullName != nil {
 		protoModuleInfo = imagev1.ModuleInfo_builder{
 			Name: imagev1.ModuleName_builder{
-				Remote:     new(moduleFullName.Registry()),
-				Owner:      new(moduleFullName.Owner()),
-				Repository: new(moduleFullName.Name()),
+				Remote:     proto.String(moduleFullName.Registry()),
+				Owner:      proto.String(moduleFullName.Owner()),
+				Repository: proto.String(moduleFullName.Name()),
 			}.Build(),
 		}.Build()
 		if moduleProtoCommitID != "" {
@@ -356,9 +357,9 @@ func fileDescriptorProtoToProtoImageFile(
 		Edition:          fileDescriptorProto.Edition,
 		BufExtension: imagev1.ImageFileExtension_builder{
 			// we might actually want to differentiate between unset and false
-			IsImport: new(isImport),
+			IsImport: proto.Bool(isImport),
 			// we might actually want to differentiate between unset and false
-			IsSyntaxUnspecified: new(isSyntaxUnspecified),
+			IsSyntaxUnspecified: proto.Bool(isSyntaxUnspecified),
 			UnusedDependency:    unusedDependencyIndexes,
 			ModuleInfo:          protoModuleInfo,
 		}.Build(),
@@ -427,7 +428,7 @@ func imageToCodeGeneratorRequest(
 		CompilerVersion: compilerVersion,
 	}
 	if parameter != "" {
-		request.Parameter = new(parameter)
+		request.Parameter = proto.String(parameter)
 	}
 	for i, imageFile := range imageFiles {
 		fileDescriptorProto := imageFile.FileDescriptorProto()

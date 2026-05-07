@@ -44,7 +44,7 @@ func TestReparseExtensions(t *testing.T) {
 	// The file will include one custom option with a known/generated type.
 	fieldOpts := &descriptorpb.FieldOptions{}
 	fieldRules := &validate.FieldRules{
-		Required: new(true),
+		Required: proto.Bool(true),
 		Type: &validate.FieldRules_Int32{
 			Int32: &validate.Int32Rules{
 				GreaterThan: &validate.Int32Rules_Gt{
@@ -63,20 +63,20 @@ func TestReparseExtensions(t *testing.T) {
 	fieldOpts.ProtoReflect().SetUnknown(unknownOption)
 
 	testFile := &descriptorpb.FileDescriptorProto{
-		Name:       new("test.proto"),
-		Syntax:     new("proto3"),
-		Package:    new("blah.blah"),
+		Name:       proto.String("test.proto"),
+		Syntax:     proto.String("proto3"),
+		Package:    proto.String("blah.blah"),
 		Dependency: []string{"buf/validate/validate.proto", "google/protobuf/descriptor.proto"},
 		MessageType: []*descriptorpb.DescriptorProto{
 			{
-				Name: new("Foo"),
+				Name: proto.String("Foo"),
 				Field: []*descriptorpb.FieldDescriptorProto{
 					{
-						Name:     new("bar"),
+						Name:     proto.String("bar"),
 						Number:   proto.Int32(1),
 						Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 						Type:     descriptorpb.FieldDescriptorProto_TYPE_INT32.Enum(),
-						JsonName: new("bar"),
+						JsonName: proto.String("bar"),
 						Options:  fieldOpts,
 					},
 				},
@@ -84,8 +84,8 @@ func TestReparseExtensions(t *testing.T) {
 		},
 		Extension: []*descriptorpb.FieldDescriptorProto{
 			{
-				Extendee: new(".google.protobuf.FieldOptions"),
-				Name:     new("baz"),
+				Extendee: proto.String(".google.protobuf.FieldOptions"),
+				Name:     proto.String("baz"),
 				Number:   proto.Int32(customOptionNum),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_FLOAT.Enum(),

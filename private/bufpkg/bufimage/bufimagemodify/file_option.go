@@ -18,6 +18,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -91,7 +92,7 @@ func modifyJavaOuterClass(
 			return options.GetJavaOuterClassname()
 		},
 		func(options *descriptorpb.FileOptions, value string) {
-			options.JavaOuterClassname = new(value)
+			options.JavaOuterClassname = proto.String(value)
 		},
 		func(options *descriptorpb.FileOptions) bool {
 			return options != nil && options.JavaOuterClassname != nil
@@ -126,7 +127,7 @@ func modifyJavaPackage(
 			return options.GetJavaPackage()
 		},
 		func(options *descriptorpb.FileOptions, value string) {
-			options.JavaPackage = new(value)
+			options.JavaPackage = proto.String(value)
 		},
 		func(options *descriptorpb.FileOptions) bool {
 			return options != nil && options.JavaPackage != nil
@@ -166,7 +167,7 @@ func modifyGoPackage(
 			return options.GetGoPackage()
 		},
 		func(options *descriptorpb.FileOptions, value string) {
-			options.GoPackage = new(value)
+			options.GoPackage = proto.String(value)
 		},
 		func(options *descriptorpb.FileOptions) bool {
 			return options != nil && options.GoPackage != nil
@@ -203,7 +204,7 @@ func modifyObjcClassPrefix(
 			return options.GetObjcClassPrefix()
 		},
 		func(options *descriptorpb.FileOptions, value string) {
-			options.ObjcClassPrefix = new(value)
+			options.ObjcClassPrefix = proto.String(value)
 		},
 		func(options *descriptorpb.FileOptions) bool {
 			return options != nil && options.ObjcClassPrefix != nil
@@ -240,7 +241,7 @@ func modifyCsharpNamespace(
 			return options.GetCsharpNamespace()
 		},
 		func(options *descriptorpb.FileOptions, value string) {
-			options.CsharpNamespace = new(value)
+			options.CsharpNamespace = proto.String(value)
 		},
 		func(options *descriptorpb.FileOptions) bool {
 			return options != nil && options.CsharpNamespace != nil
@@ -277,7 +278,7 @@ func modifyPhpNamespace(
 			return options.GetPhpNamespace()
 		},
 		func(options *descriptorpb.FileOptions, value string) {
-			options.PhpNamespace = new(value)
+			options.PhpNamespace = proto.String(value)
 		},
 		func(options *descriptorpb.FileOptions) bool {
 			return options != nil && options.PhpNamespace != nil
@@ -314,7 +315,7 @@ func modifyPhpMetadataNamespace(
 			return options.GetPhpMetadataNamespace()
 		},
 		func(options *descriptorpb.FileOptions, value string) {
-			options.PhpMetadataNamespace = new(value)
+			options.PhpMetadataNamespace = proto.String(value)
 		},
 		func(options *descriptorpb.FileOptions) bool {
 			return options != nil && options.PhpMetadataNamespace != nil
@@ -351,7 +352,7 @@ func modifyRubyPackage(
 			return options.GetRubyPackage()
 		},
 		func(options *descriptorpb.FileOptions, value string) {
-			options.RubyPackage = new(value)
+			options.RubyPackage = proto.String(value)
 		},
 		func(options *descriptorpb.FileOptions) bool {
 			return options != nil && options.RubyPackage != nil
@@ -388,7 +389,7 @@ func modifySwiftPrefix(
 			return options.GetSwiftPrefix()
 		},
 		func(options *descriptorpb.FileOptions, value string) {
-			options.SwiftPrefix = new(value)
+			options.SwiftPrefix = proto.String(value)
 		},
 		func(options *descriptorpb.FileOptions) bool {
 			return options != nil && options.SwiftPrefix != nil
@@ -418,7 +419,7 @@ func modifyCcEnableArenas(
 			return options.GetCcEnableArenas()
 		},
 		func(options *descriptorpb.FileOptions, value bool) {
-			options.CcEnableArenas = new(value)
+			options.CcEnableArenas = proto.Bool(value)
 		},
 		func(options *descriptorpb.FileOptions) bool {
 			return options != nil && options.CcEnableArenas != nil
@@ -448,7 +449,7 @@ func modifyJavaMultipleFiles(
 			return options.GetJavaMultipleFiles()
 		},
 		func(options *descriptorpb.FileOptions, value bool) {
-			options.JavaMultipleFiles = new(value)
+			options.JavaMultipleFiles = proto.Bool(value)
 		},
 		func(options *descriptorpb.FileOptions) bool {
 			return options != nil && options.JavaMultipleFiles != nil
@@ -478,7 +479,7 @@ func modifyJavaStringCheckUtf8(
 			return options.GetJavaStringCheckUtf8()
 		},
 		func(options *descriptorpb.FileOptions, value bool) {
-			options.JavaStringCheckUtf8 = new(value)
+			options.JavaStringCheckUtf8 = proto.Bool(value)
 		},
 		func(options *descriptorpb.FileOptions) bool {
 			return options != nil && options.JavaStringCheckUtf8 != nil

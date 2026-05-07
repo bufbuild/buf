@@ -631,7 +631,7 @@ func (c *client) getPlugins(ctx context.Context, pluginConfigs []bufconfig.Plugi
 				Index: index,
 			})
 		default:
-			return nil, fmt.Errorf("unknown PluginConfig type %v", pluginConfig.Type())
+			return nil, fmt.Errorf("unknown PluginConfig type %q", pluginConfig.Type())
 		}
 	}
 	// Load the remote plugin data for each plugin ref.

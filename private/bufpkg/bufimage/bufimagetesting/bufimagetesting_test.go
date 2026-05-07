@@ -493,7 +493,7 @@ func TestBasic(t *testing.T) {
 			testProtoImageFileToFileDescriptorProto(protoImageFileBB),
 			testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
 		},
-		Parameter: new("foo"),
+		Parameter: proto.String("foo"),
 		FileToGenerate: []string{
 			"a/a.proto",
 			"a/b.proto",
@@ -538,7 +538,7 @@ func TestBasic(t *testing.T) {
 			testProtoImageFileToFileDescriptorProto(protoImageFileBB),
 			testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
 		},
-		Parameter: new("foo"),
+		Parameter: proto.String("foo"),
 		FileToGenerate: []string{
 			"a/a.proto",
 			"import.proto",
@@ -590,7 +590,7 @@ func TestBasic(t *testing.T) {
 			testProtoImageFileToFileDescriptorProto(protoImageFileBB),
 			testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
 		},
-		Parameter: new("foo"),
+		Parameter: proto.String("foo"),
 		FileToGenerate: []string{
 			"a/a.proto",
 			"import.proto",
@@ -660,7 +660,7 @@ func TestBasic(t *testing.T) {
 				testProtoImageFileToFileDescriptorProto(protoImageFileWellKnownTypeImport),
 				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
 			},
-			Parameter: new("foo"),
+			Parameter: proto.String("foo"),
 			FileToGenerate: []string{
 				"a/a.proto",
 				"a/b.proto",
@@ -679,7 +679,7 @@ func TestBasic(t *testing.T) {
 				testProtoImageFileToFileDescriptorProto(protoImageFileBA),
 				testProtoImageFileToFileDescriptorProto(protoImageFileBB),
 			},
-			Parameter: new("foo"),
+			Parameter: proto.String("foo"),
 			FileToGenerate: []string{
 				"b/a.proto",
 				"b/b.proto",
@@ -694,7 +694,7 @@ func TestBasic(t *testing.T) {
 				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
 				testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
 			},
-			Parameter: new("foo"),
+			Parameter: proto.String("foo"),
 			FileToGenerate: []string{
 				"d/d.proto/d.proto",
 			},
@@ -718,7 +718,7 @@ func TestBasic(t *testing.T) {
 				testProtoImageFileToFileDescriptorProto(protoImageFileWellKnownTypeImport),
 				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
 			},
-			Parameter: new("foo"),
+			Parameter: proto.String("foo"),
 			FileToGenerate: []string{
 				"a/a.proto",
 				"import.proto",
@@ -739,7 +739,7 @@ func TestBasic(t *testing.T) {
 				testProtoImageFileToFileDescriptorProto(protoImageFileBA),
 				testProtoImageFileToFileDescriptorProto(protoImageFileBB),
 			},
-			Parameter: new("foo"),
+			Parameter: proto.String("foo"),
 			FileToGenerate: []string{
 				"b/a.proto",
 				"b/b.proto",
@@ -754,7 +754,7 @@ func TestBasic(t *testing.T) {
 				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
 				testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
 			},
-			Parameter: new("foo"),
+			Parameter: proto.String("foo"),
 			FileToGenerate: []string{
 				"d/d.proto/d.proto",
 			},

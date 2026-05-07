@@ -31,91 +31,91 @@ func TestCloneImage(t *testing.T) {
 	protoImage := imagev1.Image_builder{
 		File: []*imagev1.ImageFile{
 			imagev1.ImageFile_builder{
-				Syntax:     new("proto3"),
-				Name:       new("a.proto"),
+				Syntax:     proto.String("proto3"),
+				Name:       proto.String("a.proto"),
 				Dependency: []string{"b.proto", "c.proto"},
-				Package:    new("abc.def"),
+				Package:    proto.String("abc.def"),
 				MessageType: []*descriptorpb.DescriptorProto{
 					{
-						Name: new("Msg"),
+						Name: proto.String("Msg"),
 						Field: []*descriptorpb.FieldDescriptorProto{
 							{
-								Name:     new("id"),
+								Name:     proto.String("id"),
 								Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 								Number:   proto.Int32(1),
 								Type:     descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
-								JsonName: new("id"),
+								JsonName: proto.String("id"),
 							},
 							{
-								Name:     new("en"),
+								Name:     proto.String("en"),
 								Label:    descriptorpb.FieldDescriptorProto_LABEL_REPEATED.Enum(),
 								Number:   proto.Int32(2),
 								Type:     descriptorpb.FieldDescriptorProto_TYPE_ENUM.Enum(),
-								TypeName: new(".abc.def.Enum"),
-								JsonName: new("en"),
+								TypeName: proto.String(".abc.def.Enum"),
+								JsonName: proto.String("en"),
 							},
 						},
 					},
 				},
 				BufExtension: imagev1.ImageFileExtension_builder{
-					IsImport:            new(false),
-					IsSyntaxUnspecified: new(false),
+					IsImport:            proto.Bool(false),
+					IsSyntaxUnspecified: proto.Bool(false),
 					UnusedDependency:    []int32{1},
 					ModuleInfo: imagev1.ModuleInfo_builder{
 						Name: imagev1.ModuleName_builder{
-							Remote:     new("buf.build"),
-							Owner:      new("foo"),
-							Repository: new("bar"),
+							Remote:     proto.String("buf.build"),
+							Owner:      proto.String("foo"),
+							Repository: proto.String("bar"),
 						}.Build(),
-						Commit: new("9876543210fedcba9876543210fedcba"),
+						Commit: proto.String("9876543210fedcba9876543210fedcba"),
 					}.Build(),
 				}.Build(),
 			}.Build(),
 			imagev1.ImageFile_builder{
-				Syntax:  new("proto3"),
-				Name:    new("b.proto"),
-				Package: new("abc.def"),
+				Syntax:  proto.String("proto3"),
+				Name:    proto.String("b.proto"),
+				Package: proto.String("abc.def"),
 				EnumType: []*descriptorpb.EnumDescriptorProto{
 					{
-						Name: new("Enum"),
+						Name: proto.String("Enum"),
 						Value: []*descriptorpb.EnumValueDescriptorProto{
 							{
-								Name:   new("ZERO"),
+								Name:   proto.String("ZERO"),
 								Number: proto.Int32(0),
 							},
 							{
-								Name:   new("ONE"),
+								Name:   proto.String("ONE"),
 								Number: proto.Int32(1),
 							},
 						},
 					},
 				},
 				BufExtension: imagev1.ImageFileExtension_builder{
-					IsImport:            new(true),
-					IsSyntaxUnspecified: new(false),
+					IsImport:            proto.Bool(true),
+					IsSyntaxUnspecified: proto.Bool(false),
 					ModuleInfo: imagev1.ModuleInfo_builder{
 						Name: imagev1.ModuleName_builder{
-							Remote:     new("buf.build"),
-							Owner:      new("foo"),
-							Repository: new("baz"),
+							Remote:     proto.String("buf.build"),
+							Owner:      proto.String("foo"),
+							Repository: proto.String("baz"),
 						}.Build(),
-						Commit: new("0123456789abcdef0123456789abcdef"),
+						Commit: proto.String("0123456789abcdef0123456789abcdef"),
 					}.Build(),
 				}.Build(),
 			}.Build(),
 			imagev1.ImageFile_builder{
-				Syntax: new("proto2"),
-				Name:   new("c.proto"),
+				Syntax: proto.String("proto2"),
+				Name:   proto.String("c.proto"),
 				BufExtension: imagev1.ImageFileExtension_builder{
-					IsImport:            new(true),
-					IsSyntaxUnspecified: new(true),
+					IsImport:            proto.Bool(true),
+					IsSyntaxUnspecified: proto.Bool(true),
 					ModuleInfo: imagev1.ModuleInfo_builder{
 						Name: imagev1.ModuleName_builder{
-							Remote:     new("buf.build"),
-							Owner:      new("foo"),
-							Repository: new("baz"),
+							Remote:     proto.String("buf.build"),
+							Owner:      proto.String("foo"),
+							Repository: proto.String("baz"),
 						}.Build(),
-						Commit: new("0123456789abcdef0123456789abcdef"),
+						Commit: proto.String("0123456789abcdef0123456789abcdef"),
 					}.Build(),
 				}.Build(),
 			}.Build(),

@@ -20,6 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -33,42 +34,42 @@ func TestOptionExtensionLocation(t *testing.T) {
 		{
 			Path:            []int32{1, 2, 3, 4, 5, 1099, 100, 101, 102},
 			Span:            []int32{99, 100, 101},
-			LeadingComments: new("inside custom option 1099 (100)"),
+			LeadingComments: proto.String("inside custom option 1099 (100)"),
 		},
 		{
 			Path:            []int32{1, 2, 3, 4, 5, 1099, 100, 102, 103},
 			Span:            []int32{99, 100, 102},
-			LeadingComments: new("inside custom option 1099 (100 again)"),
+			LeadingComments: proto.String("inside custom option 1099 (100 again)"),
 		},
 		{
 			Path:            []int32{1, 2, 3, 4, 5, 1099, 200},
 			Span:            []int32{99, 200, 201},
-			LeadingComments: new("inside custom option 1099 (200)"),
+			LeadingComments: proto.String("inside custom option 1099 (200)"),
 		},
 		{
 			Path:            []int32{1, 2, 3, 4, 5, 1089},
 			Span:            []int32{89, 1, 2},
-			LeadingComments: new("custom option 1089"),
+			LeadingComments: proto.String("custom option 1089"),
 		},
 		{
 			Path:            []int32{1, 2, 3, 4, 5, 1079},
 			Span:            []int32{79, 1, 2},
-			LeadingComments: new("custom option 1079"),
+			LeadingComments: proto.String("custom option 1079"),
 		},
 		{
 			Path:            []int32{1, 2, 3, 4, 5, 1079},
 			Span:            []int32{79, 11, 12},
-			LeadingComments: new("custom option 1079 (again)"),
+			LeadingComments: proto.String("custom option 1079 (again)"),
 		},
 		{
 			Path:            []int32{1, 2, 3, 4, 5},
 			Span:            []int32{5, 1, 2},
-			LeadingComments: new("options"),
+			LeadingComments: proto.String("options"),
 		},
 	}
 	locationStore := newLocationStore(
 		&descriptorpb.FileDescriptorProto{
-			Name: new("foo.proto"),
+			Name: proto.String("foo.proto"),
 			SourceCodeInfo: &descriptorpb.SourceCodeInfo{
 				Location: locations,
 			},
@@ -141,16 +142,16 @@ func checkLocation(t *testing.T, loc Location, sourceCodeInfoLoc *descriptorpb.S
 func makeCustomOption(t *testing.T, tag int32) protoreflect.ExtensionType {
 	t.Helper()
 	fileDescriptorProto := &descriptorpb.FileDescriptorProto{
-		Name:       new("test.proto"),
-		Syntax:     new("proto2"),
+		Name:       proto.String("test.proto"),
+		Syntax:     proto.String("proto2"),
 		Dependency: []string{"google/protobuf/descriptor.proto"},
 		Extension: []*descriptorpb.FieldDescriptorProto{
 			{
-				Name:     new("test"),
-				Number:   new(tag),
+				Name:     proto.String("test"),
+				Number:   proto.Int32(tag),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
-				Extendee: new(".google.protobuf.MessageOptions"),
+				Extendee: proto.String(".google.protobuf.MessageOptions"),
 			},
 		},
 	}

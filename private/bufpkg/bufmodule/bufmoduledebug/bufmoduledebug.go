@@ -90,7 +90,7 @@ func printModule(ctx context.Context, printer indent.Printer, module bufmodule.M
 	printer.P("deps:")
 	printer.In()
 	for _, moduleDep := range moduleDeps {
-		printer.Pf("name: %s", moduleDep.OpaqueID())
+		printer.Pf("name:", moduleDep.OpaqueID())
 		printer.Pf("direct: %v", moduleDep.IsDirect())
 	}
 	printer.Out()
