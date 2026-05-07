@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"github.com/bufbuild/protoplugin"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -34,8 +33,8 @@ func handle(
 ) error {
 	responseWriter.AddCodeGeneratorResponseFiles(
 		&pluginpb.CodeGeneratorResponse_File{
-			Name: proto.String("test.txt"),
-			Content: proto.String(`
+			Name: new("test.txt"),
+			Content: new(`
 		// The following line represents an insertion point named 'example'.
 		// We include a few indentation to verify the whitespace is preserved
 		// in the inserted content.

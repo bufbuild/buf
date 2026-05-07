@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -28,7 +27,7 @@ import (
 func TestJSONStable(t *testing.T) {
 	t.Parallel()
 
-	fileDescriptorProto := &descriptorpb.FileDescriptorProto{Name: proto.String("a.proto")}
+	fileDescriptorProto := &descriptorpb.FileDescriptorProto{Name: new("a.proto")}
 	data, err := NewJSONMarshaler(nil, JSONMarshalerWithIndent()).Marshal(fileDescriptorProto)
 	require.NoError(t, err)
 	require.Equal(
@@ -41,7 +40,7 @@ func TestJSONStable(t *testing.T) {
 func TestTxtpbStable(t *testing.T) {
 	t.Parallel()
 
-	fileDescriptorProto := &descriptorpb.FileDescriptorProto{Name: proto.String("a.proto")}
+	fileDescriptorProto := &descriptorpb.FileDescriptorProto{Name: new("a.proto")}
 	data, err := NewTxtpbMarshaler(nil).Marshal(fileDescriptorProto)
 	require.NoError(t, err)
 	require.Equal(

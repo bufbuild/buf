@@ -536,52 +536,52 @@ func newExternalInputConfigV2FromInputConfig(
 	externalInputConfigV2 := externalInputConfigV2{}
 	switch inputConfig.Type() {
 	case InputConfigTypeGitRepo:
-		externalInputConfigV2.GitRepo = toPointer(inputConfig.Location())
+		externalInputConfigV2.GitRepo = new(inputConfig.Location())
 	case InputConfigTypeDirectory:
-		externalInputConfigV2.Directory = toPointer(inputConfig.Location())
+		externalInputConfigV2.Directory = new(inputConfig.Location())
 	case InputConfigTypeModule:
-		externalInputConfigV2.Module = toPointer(inputConfig.Location())
+		externalInputConfigV2.Module = new(inputConfig.Location())
 	case InputConfigTypeProtoFile:
-		externalInputConfigV2.ProtoFile = toPointer(inputConfig.Location())
+		externalInputConfigV2.ProtoFile = new(inputConfig.Location())
 	case InputConfigTypeZipArchive:
-		externalInputConfigV2.ZipArchive = toPointer(inputConfig.Location())
+		externalInputConfigV2.ZipArchive = new(inputConfig.Location())
 	case InputConfigTypeTarball:
-		externalInputConfigV2.Tarball = toPointer(inputConfig.Location())
+		externalInputConfigV2.Tarball = new(inputConfig.Location())
 	case InputConfigTypeBinaryImage:
-		externalInputConfigV2.BinaryImage = toPointer(inputConfig.Location())
+		externalInputConfigV2.BinaryImage = new(inputConfig.Location())
 	case InputConfigTypeJSONImage:
-		externalInputConfigV2.JSONImage = toPointer(inputConfig.Location())
+		externalInputConfigV2.JSONImage = new(inputConfig.Location())
 	case InputConfigTypeTextImage:
-		externalInputConfigV2.TextImage = toPointer(inputConfig.Location())
+		externalInputConfigV2.TextImage = new(inputConfig.Location())
 	case InputConfigTypeYAMLImage:
-		externalInputConfigV2.YAMLImage = toPointer(inputConfig.Location())
+		externalInputConfigV2.YAMLImage = new(inputConfig.Location())
 	default:
 		return externalInputConfigV2, syserror.Newf("unknown input config type: %v", inputConfig.Type())
 	}
 	if inputConfig.Branch() != "" {
-		externalInputConfigV2.Branch = toPointer(inputConfig.Branch())
+		externalInputConfigV2.Branch = new(inputConfig.Branch())
 	}
 	if inputConfig.Ref() != "" {
-		externalInputConfigV2.Ref = toPointer(inputConfig.Ref())
+		externalInputConfigV2.Ref = new(inputConfig.Ref())
 	}
 	if inputConfig.CommitOrTag() != "" {
-		externalInputConfigV2.Commit = toPointer(inputConfig.CommitOrTag())
+		externalInputConfigV2.Commit = new(inputConfig.CommitOrTag())
 	}
 	externalInputConfigV2.Depth = inputConfig.Depth()
 	if inputConfig.RecurseSubmodules() {
-		externalInputConfigV2.RecurseSubmodules = toPointer(inputConfig.RecurseSubmodules())
+		externalInputConfigV2.RecurseSubmodules = new(inputConfig.RecurseSubmodules())
 	}
 	if inputConfig.Compression() != "" {
-		externalInputConfigV2.Compression = toPointer(inputConfig.Compression())
+		externalInputConfigV2.Compression = new(inputConfig.Compression())
 	}
 	if inputConfig.StripComponents() != 0 {
-		externalInputConfigV2.StripComponents = toPointer(inputConfig.StripComponents())
+		externalInputConfigV2.StripComponents = new(inputConfig.StripComponents())
 	}
 	if inputConfig.SubDir() != "" {
-		externalInputConfigV2.Subdir = toPointer(inputConfig.SubDir())
+		externalInputConfigV2.Subdir = new(inputConfig.SubDir())
 	}
 	if inputConfig.IncludePackageFiles() {
-		externalInputConfigV2.IncludePackageFiles = toPointer(inputConfig.IncludePackageFiles())
+		externalInputConfigV2.IncludePackageFiles = new(inputConfig.IncludePackageFiles())
 	}
 	externalInputConfigV2.TargetPaths = inputConfig.TargetPaths()
 	externalInputConfigV2.ExcludePaths = inputConfig.ExcludePaths()
