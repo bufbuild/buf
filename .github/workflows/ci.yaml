@@ -13,6 +13,9 @@ concurrency:
   cancel-in-progress: true
 env:
   MAKEFLAGS: "-j 2"
+  # actions/setup-go@v6 sets GOTOOLCHAIN=local; override so go.mod's `go` directive
+  # can bootstrap a newer toolchain via the module proxy when the runner image lags.
+  GOTOOLCHAIN: auto
 jobs:
   lint:
     runs-on: ubuntu-latest
