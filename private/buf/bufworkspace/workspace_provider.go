@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"slices"
 
 	"buf.build/go/standard/xlog/xslog"
 	"buf.build/go/standard/xslices"
@@ -323,6 +324,8 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	v1WorkspaceTargeting *v1Targeting,
 ) (*workspace, error) {
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, w.logger, w.moduleDataProvider, w.commitProvider)
+	var hadBufLock bool
+	lockModuleFullNames := make(map[string]struct{})
 	for _, moduleBucketAndTargeting := range v1WorkspaceTargeting.moduleBucketsAndTargeting {
 		mappedModuleBucket := moduleBucketAndTargeting.bucket
 		moduleTargeting := moduleBucketAndTargeting.moduleTargeting
@@ -356,6 +359,7 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 			default:
 				return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 			}
+			hadBufLock = true
 			for _, depModuleKey := range bufLockFile.DepModuleKeys() {
 				// DepModuleKeys from a BufLockFile is expected to have all transitive dependencies,
 				// and we can rely on this property.
@@ -363,6 +367,7 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 					depModuleKey,
 					false,
 				)
+				lockModuleFullNames[depModuleKey.FullName().String()] = struct{}{}
 			}
 		}
 		v1BufYAMLObjectData, err := bufconfig.GetBufYAMLV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, moduleTargeting.moduleDirPath)
@@ -385,6 +390,9 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 			// This should not happen since moduleBucketAndTargeting is derived from the module
 			// configs, however, we return this error as a safety check
 			return nil, fmt.Errorf("no module config found for module at: %q", moduleTargeting.moduleDirPath)
+		}
+		if moduleFullName := moduleConfig.FullName(); moduleFullName != nil {
+			lockModuleFullNames[moduleFullName.String()] = struct{}{}
 		}
 		moduleSetBuilder.AddLocalModule(
 			mappedModuleBucket,
@@ -409,6 +417,11 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 				),
 			),
 		)
+	}
+	if hadBufLock {
+		if missingFromLock := depsInYAMLMissingFromLock(v1WorkspaceTargeting.allConfiguredDepModuleRefs, lockModuleFullNames); len(missingFromLock) > 0 {
+			return nil, fmt.Errorf("%s declared in buf.yaml deps but not present in buf.lock; run \"buf dep update\" to update the lock file", xstrings.SliceToHumanStringQuoted(missingFromLock))
+		}
 	}
 	moduleSet, err := moduleSetBuilder.Build()
 	if err != nil {
@@ -438,6 +451,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 		remotePolicyKeys             []bufpolicy.PolicyKey
 		policyNameToRemotePluginKeys map[string][]bufplugin.PluginKey
 	)
+	lockModuleFullNames := make(map[string]struct{})
 	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
 		ctx,
 		bucket,
@@ -465,6 +479,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 				depModuleKey,
 				false,
 			)
+			lockModuleFullNames[depModuleKey.FullName().String()] = struct{}{}
 		}
 		remotePluginKeys = bufLockFile.RemotePluginKeys()
 		remotePolicyKeys = bufLockFile.RemotePolicyKeys()
@@ -502,6 +517,9 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 			return nil, fmt.Errorf("multiple module configs found with the same description: %s", moduleDescription)
 		}
 		seenModuleDescriptions[moduleDescription] = struct{}{}
+		if moduleFullName := moduleConfig.FullName(); moduleFullName != nil {
+			lockModuleFullNames[moduleFullName.String()] = struct{}{}
+		}
 		moduleSetBuilder.AddLocalModule(
 			mappedModuleBucket,
 			moduleBucketAndTargeting.bucketID,
@@ -517,6 +535,11 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 			),
 			bufmodule.LocalModuleWithDescription(moduleDescription),
 		)
+	}
+	if bufLockFile != nil {
+		if missingFromLock := depsInYAMLMissingFromLock(v2Targeting.bufYAMLFile.ConfiguredDepModuleRefs(), lockModuleFullNames); len(missingFromLock) > 0 {
+			return nil, fmt.Errorf("%s declared in buf.yaml deps but not present in buf.lock; run \"buf dep update\" to update the lock file", xstrings.SliceToHumanStringQuoted(missingFromLock))
+		}
 	}
 	moduleSet, err := moduleSetBuilder.Build()
 	if err != nil {
@@ -576,6 +599,19 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 		configuredDepModuleRefs,
 		isV2,
 	), nil
+}
+
+// depsInYAMLMissingFromLock returns the sorted list of module full name strings
+// that appear in configuredDepModuleRefs but are absent from lockModuleFullNames.
+func depsInYAMLMissingFromLock(configuredDepModuleRefs []bufparse.Ref, lockModuleFullNames map[string]struct{}) []string {
+	var missing []string
+	for _, ref := range configuredDepModuleRefs {
+		if _, ok := lockModuleFullNames[ref.FullName().String()]; !ok {
+			missing = append(missing, ref.FullName().String())
+		}
+	}
+	slices.Sort(missing)
+	return missing
 }
 
 // This formats a module name based on its module config entry in the v2 buf.yaml:

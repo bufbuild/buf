@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package acme.bond.v2;
+
+import "acme/extension/v1/extension.proto";
+
+message Bond {
+  option (acme.extension.v1.experimental) = true;
+
+  string name = 1;
+}
