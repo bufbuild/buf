@@ -23,6 +23,129 @@ import (
 	"go.lsp.dev/protocol"
 )
 
+// TestBufPolicyYAMLCompletion verifies that completion items are returned for
+// buf.policy.yaml files at various cursor positions. It also checks that keys
+// restricted by the policy schema (no ignore/ignore_only in lint or breaking,
+// no v1/v1beta1 for version) are never offered.
+func TestBufPolicyYAMLCompletion(t *testing.T) {
+	t.Parallel()
+
+	fixture := "testdata/buf_policy_yaml/completion/buf.policy.yaml"
+
+	// The fixture layout (0-indexed lines):
+	//  0: version: v2
+	//  1: name: buf.build/acme/my-policy
+	//  2: lint:
+	//  3:   use:
+	//  4:     - STANDARD
+	//  5:   except:
+	//  6:     - IMPORT_USED
+	//  7: breaking:
+	//  8:   use:
+	//  9:     - FILE
+	// 10: plugins:
+	// 11:   - plugin: buf.build/acme/my-plugin
+
+	tests := []struct {
+		name          string
+		line          uint32
+		character     uint32
+		wantContains  []string
+		wantAbsent    []string
+		wantNilResult bool
+	}{
+		{
+			// buf.policy.yaml only supports version v2.
+			name: "version_value",
+			line: 0, character: 9,
+			wantContains: []string{"v2"},
+			wantAbsent:   []string{"v1", "v1beta1"},
+		},
+		{
+			// Cursor at "    - STANDARD" char 6 — sequence value position inside lint.use.
+			name: "lint_use_sequence",
+			line: 4, character: 6,
+			wantContains: []string{"MINIMAL", "BASIC", "STANDARD", "COMMENTS"},
+		},
+		{
+			// Cursor at indent 2 on "  except:" — key position inside lint.
+			// "use" and "except" exist; ignore/ignore_only/disallow_comment_ignores
+			// are not valid in buf.policy.yaml lint at all.
+			name: "lint_keys_no_use_except",
+			line: 5, character: 2,
+			wantContains: []string{"enum_zero_value_suffix", "service_suffix", "disable_builtin"},
+			wantAbsent:   []string{"use", "except", "ignore", "ignore_only", "disallow_comment_ignores"},
+		},
+		{
+			// Cursor at indent 2 on "  use:" (breaking) — key position inside breaking.
+			// "use" already exists; ignore/ignore_only are not valid in policy breaking.
+			name: "breaking_keys_no_use",
+			line: 8, character: 2,
+			wantContains: []string{"except", "ignore_unstable_packages", "disable_builtin"},
+			wantAbsent:   []string{"use", "ignore", "ignore_only"},
+		},
+		{
+			// Cursor at "    - FILE" char 6 — sequence value position inside breaking.use.
+			name: "breaking_use_sequence",
+			line: 9, character: 6,
+			wantContains: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"},
+		},
+		{
+			// Cursor at "  - plugin: ..." char 4 — key position inside a plugins item.
+			// "plugin" already exists so it must be absent.
+			name: "plugin_item_no_plugin",
+			line: 11, character: 4,
+			wantContains: []string{"options"},
+			wantAbsent:   []string{"plugin"},
+		},
+		{
+			// All five top-level keys are present — no completions.
+			name: "all_top_level_present",
+			line: 7, character: 0,
+			wantNilResult: true,
+		},
+	}
+
+	absPath, err := filepath.Abs(fixture)
+	require.NoError(t, err)
+
+	clientJSONConn, bufPolicyYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil, nil)
+	ctx := t.Context()
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			var list *protocol.CompletionList
+			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{URI: bufPolicyYAMLURI},
+					Position:     protocol.Position{Line: tc.line, Character: tc.character},
+				},
+			}, &list)
+			require.NoError(t, err)
+
+			if tc.wantNilResult {
+				assert.Nil(t, list, "expected no completions at (%d, %d)", tc.line, tc.character)
+				return
+			}
+			require.NotNil(t, list, "expected completions at (%d, %d)", tc.line, tc.character)
+			labels := make([]string, len(list.Items))
+			for i, item := range list.Items {
+				labels[i] = item.Label
+			}
+			for _, want := range tc.wantContains {
+				assert.Contains(t, labels, want,
+					"completions at (%d, %d) should contain %q", tc.line, tc.character, want)
+			}
+			for _, absent := range tc.wantAbsent {
+				assert.NotContains(t, labels, absent,
+					"completions at (%d, %d) should not contain %q", tc.line, tc.character, absent)
+			}
+		})
+	}
+}
+
 // TestBufPolicyYAMLDocumentLinks verifies that document links are returned for
 // BSR references in buf.policy.yaml files: the top-level name field and any
 // plugins[*].plugin values that are BSR references.

@@ -44,6 +44,7 @@ func newBufPolicyYAMLManager() *bufPolicyYAMLManager {
 
 // bufPolicyYAMLFile holds the parsed state of an open buf.policy.yaml file.
 type bufPolicyYAMLFile struct {
+	text    string     // raw file content, used for completion
 	docNode *yaml.Node // parsed YAML document node, nil if parse failed
 	refs    []bsrRef   // name: and plugins[*].plugin BSR references, in document order
 }
@@ -53,6 +54,7 @@ func (m *bufPolicyYAMLManager) Track(uri protocol.URI, text string) {
 	normalized := normalizeURI(uri)
 	docNode := parseYAMLDoc(text)
 	f := &bufPolicyYAMLFile{
+		text:    text,
 		docNode: docNode,
 		refs:    parseBufPolicyYAMLRefs(docNode),
 	}
@@ -66,6 +68,18 @@ func (m *bufPolicyYAMLManager) Close(uri protocol.URI) {
 	m.mu.Lock()
 	delete(m.uriToFile, normalizeURI(uri))
 	m.mu.Unlock()
+}
+
+// GetCompletion returns completion items for the buf.policy.yaml field or value
+// at the given cursor position, or nil if no completions apply.
+func (m *bufPolicyYAMLManager) GetCompletion(uri protocol.URI, pos protocol.Position) []protocol.CompletionItem {
+	m.mu.Lock()
+	f, ok := m.uriToFile[normalizeURI(uri)]
+	m.mu.Unlock()
+	if !ok {
+		return nil
+	}
+	return getBufPolicyYAMLCompletionItems(f.docNode, f.text, pos)
 }
 
 // GetHover returns hover documentation for the buf.policy.yaml field at the

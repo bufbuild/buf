@@ -966,6 +966,145 @@ func TestBufYAMLIgnorePathDiagnostics(t *testing.T) {
 	})
 }
 
+// TestBufYAMLCompletion verifies that completion items are returned for buf.yaml files
+// at various cursor positions, and that already-present keys are excluded from suggestions.
+func TestBufYAMLCompletion(t *testing.T) {
+	t.Parallel()
+
+	fixture := "testdata/buf_yaml/completion/buf.yaml"
+
+	// The fixture layout (0-indexed lines):
+	//  0: version: v2
+	//  1: name: buf.build/acme/petapis
+	//  2: modules:
+	//  3:   - path: .
+	//  4:     lint:
+	//  5:       use:
+	//  6:         - STANDARD
+	//  7: breaking:
+	//  8:   use:
+	//  9:     - FILE
+	// 10: lint:
+	// 11:   use:
+	// 12:     - STANDARD
+	// 13:   except:
+	// 14:     - COMMENTS
+	// 15:   ignore_only:
+	// 16:     STANDARD:
+	// 17:       - proto/vendor
+	// 18: plugins:
+	// 19:   - plugin: buf.build/acme/my-plugin
+	// 20: policies:
+	// 21:   - policy: buf.build/acme/my-policy
+
+	tests := []struct {
+		name          string
+		line          uint32
+		character     uint32
+		wantContains  []string
+		wantAbsent    []string
+		wantNilResult bool
+	}{
+		{
+			// Cursor after "version: " — value position for the version key.
+			name: "version_value",
+			line: 0, character: 9,
+			wantContains: []string{"v2", "v1", "v1beta1"},
+		},
+		{
+			// Cursor at indent 6 on "      use:" — key position inside the modules item's
+			// lint block. "use" already exists so it must be absent.
+			name: "module_lint_keys_no_use",
+			line: 5, character: 6,
+			wantContains: []string{"except", "ignore", "ignore_only", "enum_zero_value_suffix"},
+			wantAbsent:   []string{"use"},
+		},
+		{
+			// Cursor at "    - FILE" char 6 — sequence value position inside breaking.use.
+			name: "breaking_use_sequence",
+			line: 9, character: 6,
+			wantContains: []string{"FILE", "PACKAGE", "WIRE_JSON", "WIRE"},
+		},
+		{
+			// Cursor at "    - COMMENTS" char 6 — sequence value position inside lint.except.
+			name: "lint_except_sequence",
+			line: 14, character: 6,
+			wantContains: []string{"STANDARD", "FIELD_LOWER_SNAKE_CASE", "MINIMAL", "BASIC"},
+		},
+		{
+			// Cursor at "    STANDARD:" char 4 — key position inside lint.ignore_only.
+			// "STANDARD" already exists so it must be absent.
+			name: "lint_ignore_only_no_standard",
+			line: 16, character: 4,
+			wantContains: []string{"BASIC", "MINIMAL", "COMMENTS"},
+			wantAbsent:   []string{"STANDARD"},
+		},
+		{
+			// Cursor at "  - plugin: ..." char 4 — key position inside a plugins item.
+			// "plugin" already exists so it must be absent.
+			name: "plugins_item_no_plugin",
+			line: 19, character: 4,
+			wantContains: []string{"options"},
+			wantAbsent:   []string{"plugin"},
+		},
+		{
+			// Cursor at "  - policy: ..." char 4 — key position inside a policies item.
+			// "policy" already exists so it must be absent.
+			name: "policies_item_no_policy",
+			line: 21, character: 4,
+			wantContains: []string{"ignore", "ignore_only"},
+			wantAbsent:   []string{"policy"},
+		},
+		{
+			// Cursor at char 0 on "breaking:" — top-level key position.
+			// All top-level keys except "deps" are already present.
+			name: "top_level_missing_deps",
+			line: 7, character: 0,
+			wantContains: []string{"deps"},
+			wantAbsent:   []string{"version", "name", "modules", "breaking", "lint", "plugins", "policies"},
+		},
+	}
+
+	absPath, err := filepath.Abs(fixture)
+	require.NoError(t, err)
+
+	clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil, nil)
+	ctx := t.Context()
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			var list *protocol.CompletionList
+			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
+					Position:     protocol.Position{Line: tc.line, Character: tc.character},
+				},
+			}, &list)
+			require.NoError(t, err)
+
+			if tc.wantNilResult {
+				assert.Nil(t, list, "expected no completions at (%d, %d)", tc.line, tc.character)
+				return
+			}
+			require.NotNil(t, list, "expected completions at (%d, %d)", tc.line, tc.character)
+			labels := make([]string, len(list.Items))
+			for i, item := range list.Items {
+				labels[i] = item.Label
+			}
+			for _, want := range tc.wantContains {
+				assert.Contains(t, labels, want,
+					"completions at (%d, %d) should contain %q", tc.line, tc.character, want)
+			}
+			for _, absent := range tc.wantAbsent {
+				assert.NotContains(t, labels, absent,
+					"completions at (%d, %d) should not contain %q", tc.line, tc.character, absent)
+			}
+		})
+	}
+}
+
 // mustParseUUID parses a UUID string for use in test data, failing the test on error.
 func mustParseUUID(t *testing.T, s string) uuid.UUID {
 	t.Helper()

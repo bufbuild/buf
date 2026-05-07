@@ -1,0 +1,9 @@
+version: v2
+clean: false
+managed:
+  enabled: true
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: gen/go
+inputs:
+  - directory: proto

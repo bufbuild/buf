@@ -23,76 +23,76 @@ const bufGenYAMLDocsURL = "https://buf.build/docs/configuration/v2/buf-gen-yaml/
 
 // bufGenYAMLTopLevelDocs maps top-level buf.gen.yaml keys to their documentation.
 var bufGenYAMLTopLevelDocs = map[string]bufYAMLDoc{
-	"version": {summary: "Defines the configuration format version. Must be `v2`, `v1` or `v1beta1`.", url: bufGenYAMLDocsURL + "#version"},
-	"clean":   {summary: "When `true`, removes all output directories, zip files, and jar files specified in `plugins[].out` before running generation. Defaults to `false`.", url: bufGenYAMLDocsURL + "#clean"},
-	"managed": {summary: "Configures managed mode, which automatically sets Protobuf file and field options to sensible defaults for each target language.", url: bufGenYAMLDocsURL + "#managed"},
-	"plugins": {summary: "Defines the code generation plugins to run. At least one plugin must be specified. Each entry must specify exactly one of `remote`, `local`, or `protoc_builtin`.", url: bufGenYAMLDocsURL + "#plugins"},
-	"inputs":  {summary: "Specifies the Protobuf sources to generate code from. Each entry defines one input and optional type/path filters. If omitted, `buf generate` uses the current directory.", url: bufGenYAMLDocsURL + "#inputs"},
+	"version": {summary: "Defines the configuration format version. Must be `v2`, `v1` or `v1beta1`.", valueType: "string", url: bufGenYAMLDocsURL + "#version"},
+	"clean":   {summary: "When `true`, removes all output directories, zip files, and jar files specified in `plugins[].out` before running generation. Defaults to `false`.", valueType: "bool", url: bufGenYAMLDocsURL + "#clean"},
+	"managed": {summary: "Configures managed mode, which automatically sets Protobuf file and field options to sensible defaults for each target language.", valueType: "object", url: bufGenYAMLDocsURL + "#managed"},
+	"plugins": {summary: "Defines the code generation plugins to run. At least one plugin must be specified. Each entry must specify exactly one of `remote`, `local`, or `protoc_builtin`.", valueType: "[]object", url: bufGenYAMLDocsURL + "#plugins"},
+	"inputs":  {summary: "Specifies the Protobuf sources to generate code from. Each entry defines one input and optional type/path filters. If omitted, `buf generate` uses the current directory.", valueType: "[]object", url: bufGenYAMLDocsURL + "#inputs"},
 }
 
 // bufGenYAMLPluginDocs maps plugin entry sub-keys to their documentation.
 var bufGenYAMLPluginDocs = map[string]bufYAMLDoc{
-	"remote":          {summary: "Remote BSR plugin reference in the format `buf.build/<owner>/<plugin>` or `buf.build/<owner>/<plugin>:<version>`. Mutually exclusive with `local` and `protoc_builtin`.", url: bufGenYAMLDocsURL + "#remote"},
-	"local":           {summary: "Path to a local plugin binary, or a list of `[binary, arg, ...]` for a plugin with fixed arguments. Mutually exclusive with `remote` and `protoc_builtin`.", url: bufGenYAMLDocsURL + "#local"},
-	"protoc_builtin":  {summary: "Built-in `protoc` generator name without the `protoc-gen-` prefix (e.g. `java`, `python`, `cpp`). Mutually exclusive with `remote` and `local`.", url: bufGenYAMLDocsURL + "#protoc_builtin"},
-	"protoc_path":     {summary: "Path to the `protoc` binary, or a list of `[path, arg, ...]`. Only valid with `protoc_builtin`.", url: bufGenYAMLDocsURL + "#protoc_path"},
-	"out":             {summary: "Output directory for generated files. The directory is created if it does not exist.", url: bufGenYAMLDocsURL + "#out"},
-	"opt":             {summary: "Plugin options passed as `--<plugin>_opt` flags. Can be a single string or a list of strings.", url: bufGenYAMLDocsURL + "#opt"},
-	"revision":        {summary: "Plugin revision number. Only valid with `remote`.", url: bufGenYAMLDocsURL + "#revision"},
-	"include_imports": {summary: "When `true`, generates code for all files imported by the input, excluding Well-Known Types. Defaults to `false`.", url: bufGenYAMLDocsURL + "#include_imports"},
-	"include_wkt":     {summary: "When `true`, also generates code for Well-Known Types. Requires `include_imports: true`. Defaults to `false`.", url: bufGenYAMLDocsURL + "#include_wkt"},
-	"strategy":        {summary: "Plugin invocation strategy: `directory` (invoke once per directory, default for most plugins) or `all` (invoke once with all files). Only valid with `local` and `protoc_builtin`.", url: bufGenYAMLDocsURL + "#strategy"},
-	"types":           {summary: "Generate code only for the listed fully-qualified type names (messages, enums, services). An empty list means all types.", url: bufGenYAMLDocsURL + "#types"},
-	"exclude_types":   {summary: "Exclude the listed fully-qualified type names from code generation.", url: bufGenYAMLDocsURL + "#exclude_types"},
+	"remote":          {summary: "Remote BSR plugin reference in the format `buf.build/<owner>/<plugin>` or `buf.build/<owner>/<plugin>:<version>`. Mutually exclusive with `local` and `protoc_builtin`.", valueType: "string", url: bufGenYAMLDocsURL + "#plugins"},
+	"local":           {summary: "Path to a local plugin binary, or a list of `[binary, arg, ...]` for a plugin with fixed arguments. Mutually exclusive with `remote` and `protoc_builtin`.", valueType: "string", url: bufGenYAMLDocsURL + "#plugins"},
+	"protoc_builtin":  {summary: "Built-in `protoc` generator name without the `protoc-gen-` prefix (e.g. `java`, `python`, `cpp`). Mutually exclusive with `remote` and `local`.", valueType: "string", url: bufGenYAMLDocsURL + "#plugins"},
+	"protoc_path":     {summary: "Path to the `protoc` binary, or a list of `[path, arg, ...]`. Only valid with `protoc_builtin`.", valueType: "string", url: bufGenYAMLDocsURL + "#plugins"},
+	"out":             {summary: "Output directory for generated files. The directory is created if it does not exist.", valueType: "string", url: bufGenYAMLDocsURL + "#out"},
+	"opt":             {summary: "Plugin options passed as `--<plugin>_opt` flags. Can be a single string or a list of strings.", valueType: "string", url: bufGenYAMLDocsURL + "#opt"},
+	"revision":        {summary: "Plugin revision number. Only valid with `remote`.", valueType: "integer", url: bufGenYAMLDocsURL + "#plugins"},
+	"include_imports": {summary: "When `true`, generates code for all files imported by the input, excluding Well-Known Types. Defaults to `false`.", valueType: "bool", url: bufGenYAMLDocsURL + "#include_imports"},
+	"include_wkt":     {summary: "When `true`, also generates code for Well-Known Types. Requires `include_imports: true`. Defaults to `false`.", valueType: "bool", url: bufGenYAMLDocsURL + "#include_wkt"},
+	"strategy":        {summary: "Plugin invocation strategy: `directory` (invoke once per directory, default for most plugins) or `all` (invoke once with all files). Only valid with `local` and `protoc_builtin`.", valueType: "string", url: bufGenYAMLDocsURL + "#strategy"},
+	"types":           {summary: "Generate code only for the listed fully-qualified type names (messages, enums, services). An empty list means all types.", valueType: "[]string", url: bufGenYAMLDocsURL + "#types"},
+	"exclude_types":   {summary: "Exclude the listed fully-qualified type names from code generation.", valueType: "[]string", url: bufGenYAMLDocsURL + "#exclude-types"},
 }
 
 // bufGenYAMLManagedDocs maps managed-mode sub-keys to their documentation.
 var bufGenYAMLManagedDocs = map[string]bufYAMLDoc{
-	"enabled":  {summary: "Enables managed mode globally. Must be `true` for other `managed` settings to take effect. Defaults to `false`.", url: bufGenYAMLDocsURL + "#enabled"},
-	"disable":  {summary: "Rules that exclude specific file or field options from managed mode handling. Each entry may target a `file_option` or `field_option`, optionally restricted to a `module`, `path`, or `field`.", url: bufGenYAMLDocsURL + "#disable"},
-	"override": {summary: "Rules that set specific file or field option values, overriding managed mode defaults. Each entry must specify exactly one of `file_option` or `field_option`, plus a `value`.", url: bufGenYAMLDocsURL + "#override"},
+	"enabled":  {summary: "Enables managed mode globally. Must be `true` for other `managed` settings to take effect. Defaults to `false`.", valueType: "bool", url: bufGenYAMLDocsURL + "#enabled"},
+	"disable":  {summary: "Rules that exclude specific file or field options from managed mode handling. Each entry may target a `file_option` or `field_option`, optionally restricted to a `module`, `path`, or `field`.", valueType: "[]object", url: bufGenYAMLDocsURL + "#disable"},
+	"override": {summary: "Rules that set specific file or field option values, overriding managed mode defaults. Each entry must specify exactly one of `file_option` or `field_option`, plus a `value`.", valueType: "[]object", url: bufGenYAMLDocsURL + "#override"},
 }
 
 // bufGenYAMLManagedRuleDocs maps keys shared by managed.disable and managed.override entries.
 var bufGenYAMLManagedRuleDocs = map[string]bufYAMLDoc{
-	"file_option":  {summary: "File-level Protobuf option to target (e.g. `java_package`, `go_package_prefix`, `csharp_namespace`). Mutually exclusive with `field_option`.", url: bufGenYAMLDocsURL + "#file_option"},
-	"field_option": {summary: "Field-level Protobuf option to target (e.g. `jstype`). Mutually exclusive with `file_option`.", url: bufGenYAMLDocsURL + "#field_option"},
-	"module":       {summary: "Restrict this rule to a specific BSR module (e.g. `buf.build/acme/petapis`).", url: bufGenYAMLDocsURL + "#module"},
-	"path":         {summary: "Restrict this rule to a specific `.proto` file path, relative to the module root.", url: bufGenYAMLDocsURL + "#path"},
-	"field":        {summary: "Restrict this rule to a specific fully-qualified field name (e.g. `acme.v1.Foo.bar`). Only valid with `field_option`.", url: bufGenYAMLDocsURL + "#field"},
-	"value":        {summary: "The value to set for the option. Type depends on the option: string, boolean, or enum value name (e.g. `SPEED` for `optimize_for`). Only valid in `override` rules.", url: bufGenYAMLDocsURL + "#value"},
+	"file_option":  {summary: "File-level Protobuf option to target (e.g. `java_package`, `go_package_prefix`, `csharp_namespace`). Mutually exclusive with `field_option`.", valueType: "string", url: bufGenYAMLDocsURL + "#disable"},
+	"field_option": {summary: "Field-level Protobuf option to target (e.g. `jstype`). Mutually exclusive with `file_option`.", valueType: "string", url: bufGenYAMLDocsURL + "#disable"},
+	"module":       {summary: "Restrict this rule to a specific BSR module (e.g. `buf.build/acme/petapis`).", valueType: "string", url: bufGenYAMLDocsURL + "#disable"},
+	"path":         {summary: "Restrict this rule to a specific `.proto` file path, relative to the module root.", valueType: "string", url: bufGenYAMLDocsURL + "#disable"},
+	"field":        {summary: "Restrict this rule to a specific fully-qualified field name (e.g. `acme.v1.Foo.bar`). Only valid with `field_option`.", valueType: "string", url: bufGenYAMLDocsURL + "#disable"},
+	"value":        {summary: "The value to set for the option. Type depends on the option: string, boolean, or enum value name (e.g. `SPEED` for `optimize_for`). Only valid in `override` rules.", valueType: "string", url: bufGenYAMLDocsURL + "#override"},
 }
 
 // bufGenYAMLInputDocs maps input entry keys to their documentation.
 // This covers both the input type keys and the common filtering/option keys.
 var bufGenYAMLInputDocs = map[string]bufYAMLDoc{
 	// Input type keys — exactly one must be set per input entry.
-	"directory":    {summary: "Local directory path containing `.proto` files.", url: bufGenYAMLDocsURL + "#directory"},
-	"module":       {summary: "Remote BSR module reference (e.g. `buf.build/acme/petapis` or `buf.build/acme/petapis:v1.0.0`).", url: bufGenYAMLDocsURL + "#module"},
-	"proto_file":   {summary: "Path to a single `.proto` file.", url: bufGenYAMLDocsURL + "#proto_file"},
-	"git_repo":     {summary: "Git repository URL or local path. Use `branch`, `tag`, `commit`, or `ref` to select a specific revision.", url: bufGenYAMLDocsURL + "#git_repo"},
-	"tarball":      {summary: "Path or URL to a `.tar`, `.tar.gz`, or similar archive.", url: bufGenYAMLDocsURL + "#tarball"},
-	"zip_archive":  {summary: "Path or URL to a `.zip` archive.", url: bufGenYAMLDocsURL + "#zip_archive"},
-	"binary_image": {summary: "Path to a Buf binary image file (a protobuf-encoded `FileDescriptorSet`).", url: bufGenYAMLDocsURL + "#binary_image"},
-	"json_image":   {summary: "Path to a Buf image file in JSON format.", url: bufGenYAMLDocsURL + "#json_image"},
-	"text_image":   {summary: "Path to a Buf image file in protobuf text format.", url: bufGenYAMLDocsURL + "#text_image"},
-	"yaml_image":   {summary: "Path to a Buf image file in YAML format.", url: bufGenYAMLDocsURL + "#yaml_image"},
+	"directory":    {summary: "Local directory path containing `.proto` files.", valueType: "string", url: bufGenYAMLDocsURL + "#directory"},
+	"module":       {summary: "Remote BSR module reference (e.g. `buf.build/acme/petapis` or `buf.build/acme/petapis:v1.0.0`).", valueType: "string", url: bufGenYAMLDocsURL + "#module"},
+	"proto_file":   {summary: "Path to a single `.proto` file.", valueType: "string", url: bufGenYAMLDocsURL + "#proto_file"},
+	"git_repo":     {summary: "Git repository URL or local path. Use `branch`, `tag`, `commit`, or `ref` to select a specific revision.", valueType: "string", url: bufGenYAMLDocsURL + "#git_repo"},
+	"tarball":      {summary: "Path or URL to a `.tar`, `.tar.gz`, or similar archive.", valueType: "string", url: bufGenYAMLDocsURL + "#tarball"},
+	"zip_archive":  {summary: "Path or URL to a `.zip` archive.", valueType: "string", url: bufGenYAMLDocsURL + "#zip_archive"},
+	"binary_image": {summary: "Path to a Buf binary image file (a protobuf-encoded `FileDescriptorSet`).", valueType: "string", url: bufGenYAMLDocsURL + "#inputs"},
+	"json_image":   {summary: "Path to a Buf image file in JSON format.", valueType: "string", url: bufGenYAMLDocsURL + "#inputs"},
+	"text_image":   {summary: "Path to a Buf image file in protobuf text format.", valueType: "string", url: bufGenYAMLDocsURL + "#inputs"},
+	"yaml_image":   {summary: "Path to a Buf image file in YAML format.", valueType: "string", url: bufGenYAMLDocsURL + "#inputs"},
 	// Common input options.
-	"types":         {summary: "Include only the listed fully-qualified type names (messages, enums, services) in code generation.", url: bufGenYAMLDocsURL + "#types"},
-	"exclude_types": {summary: "Exclude the listed fully-qualified type names from code generation.", url: bufGenYAMLDocsURL + "#exclude_types"},
-	"paths":         {summary: "Include only `.proto` files at the listed relative paths.", url: bufGenYAMLDocsURL + "#paths"},
-	"exclude_paths": {summary: "Exclude `.proto` files at the listed relative paths.", url: bufGenYAMLDocsURL + "#exclude_paths"},
+	"types":         {summary: "Include only the listed fully-qualified type names (messages, enums, services) in code generation.", valueType: "[]string", url: bufGenYAMLDocsURL + "#types"},
+	"exclude_types": {summary: "Exclude the listed fully-qualified type names from code generation.", valueType: "[]string", url: bufGenYAMLDocsURL + "#exclude-types"},
+	"paths":         {summary: "Include only `.proto` files at the listed relative paths.", valueType: "[]string", url: bufGenYAMLDocsURL + "#inputs"},
+	"exclude_paths": {summary: "Exclude `.proto` files at the listed relative paths.", valueType: "[]string", url: bufGenYAMLDocsURL + "#inputs"},
 	// Input-specific options.
-	"include_package_files": {summary: "When `true`, includes all `.proto` files in the same package as the specified file. Only valid with `proto_file`.", url: bufGenYAMLDocsURL + "#include_package_files"},
-	"branch":                {summary: "Git branch to check out. Only valid with `git_repo`.", url: bufGenYAMLDocsURL + "#branch"},
-	"tag":                   {summary: "Git tag to check out. Only valid with `git_repo`. Mutually exclusive with `commit`.", url: bufGenYAMLDocsURL + "#tag"},
-	"commit":                {summary: "Full Git commit hash to check out. Only valid with `git_repo`. Mutually exclusive with `tag`.", url: bufGenYAMLDocsURL + "#commit"},
-	"ref":                   {summary: "Git ref to check out. Only valid with `git_repo`.", url: bufGenYAMLDocsURL + "#ref"},
-	"depth":                 {summary: "Shallow clone depth for the Git repository. Only valid with `git_repo`.", url: bufGenYAMLDocsURL + "#depth"},
-	"recurse_submodules":    {summary: "When `true`, recursively clones submodules. Only valid with `git_repo`.", url: bufGenYAMLDocsURL + "#recurse_submodules"},
-	"subdir":                {summary: "Subdirectory within the source to use as the root for `.proto` file discovery. Valid with `git_repo`, `tarball`, and `zip_archive`.", url: bufGenYAMLDocsURL + "#subdir"},
-	"strip_components":      {summary: "Number of leading directory path components to strip from archive entries. Valid with `tarball` and `zip_archive`.", url: bufGenYAMLDocsURL + "#strip_components"},
-	"compression":           {summary: "Compression format of the archive (e.g. `gzip`, `bzip2`). Valid with `tarball`, `binary_image`, `json_image`, `text_image`, and `yaml_image`.", url: bufGenYAMLDocsURL + "#compression"},
+	"include_package_files": {summary: "When `true`, includes all `.proto` files in the same package as the specified file. Only valid with `proto_file`.", valueType: "bool", url: bufGenYAMLDocsURL + "#proto_file"},
+	"branch":                {summary: "Git branch to check out. Only valid with `git_repo`.", valueType: "string", url: bufGenYAMLDocsURL + "#git_repo"},
+	"tag":                   {summary: "Git tag to check out. Only valid with `git_repo`. Mutually exclusive with `commit`.", valueType: "string", url: bufGenYAMLDocsURL + "#git_repo"},
+	"commit":                {summary: "Full Git commit hash to check out. Only valid with `git_repo`. Mutually exclusive with `tag`.", valueType: "string", url: bufGenYAMLDocsURL + "#git_repo"},
+	"ref":                   {summary: "Git ref to check out. Only valid with `git_repo`.", valueType: "string", url: bufGenYAMLDocsURL + "#git_repo"},
+	"depth":                 {summary: "Shallow clone depth for the Git repository. Only valid with `git_repo`.", valueType: "integer", url: bufGenYAMLDocsURL + "#git_repo"},
+	"recurse_submodules":    {summary: "When `true`, recursively clones submodules. Only valid with `git_repo`.", valueType: "bool", url: bufGenYAMLDocsURL + "#git_repo"},
+	"subdir":                {summary: "Subdirectory within the source to use as the root for `.proto` file discovery. Valid with `git_repo`, `tarball`, and `zip_archive`.", valueType: "string", url: bufGenYAMLDocsURL + "#subdir"},
+	"strip_components":      {summary: "Number of leading directory path components to strip from archive entries. Valid with `tarball` and `zip_archive`.", valueType: "integer", url: bufGenYAMLDocsURL + "#strip_components"},
+	"compression":           {summary: "Compression format of the archive (e.g. `gzip`, `bzip2`). Valid with `tarball`, `binary_image`, `json_image`, `text_image`, and `yaml_image`.", valueType: "string", url: bufGenYAMLDocsURL + "#compression"},
 }
 
 // bufGenYAMLHover searches the parsed buf.gen.yaml document for hover

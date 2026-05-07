@@ -1,0 +1,22 @@
+version: v2
+name: buf.build/acme/petapis
+modules:
+  - path: .
+    lint:
+      use:
+        - STANDARD
+breaking:
+  use:
+    - FILE
+lint:
+  use:
+    - STANDARD
+  except:
+    - COMMENTS
+  ignore_only:
+    STANDARD:
+      - proto/vendor
+plugins:
+  - plugin: buf.build/acme/my-plugin
+policies:
+  - policy: buf.build/acme/my-policy

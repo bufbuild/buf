@@ -524,6 +524,30 @@ func (s *server) Completion(
 	ctx context.Context,
 	params *protocol.CompletionParams,
 ) (*protocol.CompletionList, error) {
+	// buf.gen.yaml, buf.yaml, and buf.policy.yaml completion is text-based and
+	// does not require a file manager entry.
+	if isBufGenYAMLURI(params.TextDocument.URI) {
+		items := s.bufGenYAMLManager.GetCompletion(params.TextDocument.URI, params.Position)
+		if len(items) == 0 {
+			return nil, nil
+		}
+		return &protocol.CompletionList{Items: items}, nil
+	}
+	if isBufYAMLURI(params.TextDocument.URI) {
+		items := s.bufYAMLManager.GetCompletion(params.TextDocument.URI, params.Position)
+		if len(items) == 0 {
+			return nil, nil
+		}
+		return &protocol.CompletionList{Items: items}, nil
+	}
+	if isBufPolicyYAMLURI(params.TextDocument.URI) {
+		items := s.bufPolicyYAMLManager.GetCompletion(params.TextDocument.URI, params.Position)
+		if len(items) == 0 {
+			return nil, nil
+		}
+		return &protocol.CompletionList{Items: items}, nil
+	}
+
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {
 		return nil, nil

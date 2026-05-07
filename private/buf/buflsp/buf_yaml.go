@@ -78,6 +78,7 @@ func newBufYAMLManager(lsp *lsp) *bufYAMLManager {
 
 // bufYAMLFile holds the parsed state of an open buf.yaml file.
 type bufYAMLFile struct {
+	text                string // raw file content, used for completion
 	depsKeyLine         uint32 // 0-indexed line of the "deps:" key
 	deps                []bufYAMLDep
 	docNode             *yaml.Node          // parsed YAML document node, nil if parse failed
@@ -106,7 +107,7 @@ func isBufYAMLURI(uri protocol.URI) bool {
 // Track opens or refreshes a buf.yaml file.
 func (m *bufYAMLManager) Track(uri protocol.URI, text string) {
 	normalized := normalizeURI(uri)
-	f := &bufYAMLFile{}
+	f := &bufYAMLFile{text: text}
 	f.depsKeyLine, f.deps, f.docNode, _ = parseBufYAMLDeps([]byte(text))
 	if f.docNode != nil {
 		f.lintIgnorePaths, f.breakingIgnorePaths = parseBufYAMLIgnorePathsFromDoc(f.docNode)
@@ -545,6 +546,18 @@ func (m *bufYAMLManager) GetDocumentLinks(uri protocol.URI) []protocol.DocumentL
 		})
 	}
 	return links
+}
+
+// GetCompletion returns completion items for the buf.yaml field or value at
+// the given cursor position, or nil if no completions apply.
+func (m *bufYAMLManager) GetCompletion(uri protocol.URI, pos protocol.Position) []protocol.CompletionItem {
+	m.mu.Lock()
+	f, ok := m.uriToFile[normalizeURI(uri)]
+	m.mu.Unlock()
+	if !ok {
+		return nil
+	}
+	return getBufYAMLCompletionItems(f.docNode, f.text, pos)
 }
 
 // GetHover returns hover documentation for the buf.yaml field or rule at the
