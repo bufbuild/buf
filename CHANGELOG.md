@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Add LSP completion for `buf.gen.yaml`, `buf.yaml`, and `buf.policy.yaml` files.
+- Fix LSP `textDocument/documentSymbol` marking every symbol as deprecated.
 
 ## [v1.69.0] - 2026-04-29
 
