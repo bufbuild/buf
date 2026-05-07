@@ -329,18 +329,21 @@ func (m *bufYAMLManager) applyOutOfSync(ctx context.Context, bufYAMLURI, bufLock
 	}
 }
 
-// outOfSyncDiagnostic returns a Warning diagnostic listing the deps that appear
+// outOfSyncDiagnostic returns an Error diagnostic listing the deps that appear
 // in buf.yaml but have no entry in buf.lock, anchored at the top of the file.
+//
+// The severity matches the CLI, which fails workspace construction in this
+// state.
 func outOfSyncDiagnostic(missingDepNames []string) protocol.Diagnostic {
 	var msg strings.Builder
-	msg.WriteString("buf.yaml and buf.lock are out of sync; run buf dep update\n\nNot pinned in buf.lock:")
+	msg.WriteString(`declared in buf.yaml deps but not present in buf.lock; run "buf dep update" to update the lock file:`)
 	for _, name := range missingDepNames {
 		msg.WriteString("\n- ")
 		msg.WriteString(name)
 	}
 	return protocol.Diagnostic{
 		Range:    protocol.Range{},
-		Severity: protocol.DiagnosticSeverityWarning,
+		Severity: protocol.DiagnosticSeverityError,
 		Source:   serverName,
 		Message:  msg.String(),
 	}

@@ -924,7 +924,7 @@ func TestBufYAMLOutOfSync(t *testing.T) {
 				require.NotNil(t, diags)
 				require.Len(t, diags.Diagnostics, 1)
 				d := diags.Diagnostics[0]
-				assert.Equal(t, protocol.DiagnosticSeverityWarning, d.Severity)
+				assert.Equal(t, protocol.DiagnosticSeverityError, d.Severity)
 				assert.Equal(t, "buf-lsp", d.Source)
 				assert.Contains(t, d.Message, "buf dep update")
 				assert.Equal(t, uint32(0), d.Range.Start.Line, "out-of-sync diagnostic must be on line 0")
@@ -967,14 +967,14 @@ func TestBufLockOutOfSync(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		// buf.lock should also receive the warning diagnostic.
+		// buf.lock should also receive the diagnostic.
 		diags := capture.wait(t, bufLockURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
 			return len(p.Diagnostics) > 0
 		})
 		require.NotNil(t, diags)
 		require.Len(t, diags.Diagnostics, 1)
 		d := diags.Diagnostics[0]
-		assert.Equal(t, protocol.DiagnosticSeverityWarning, d.Severity)
+		assert.Equal(t, protocol.DiagnosticSeverityError, d.Severity)
 		assert.Equal(t, "buf-lsp", d.Source)
 		assert.Equal(t, uint32(0), d.Range.Start.Line, "out-of-sync diagnostic must be on line 0 of buf.lock")
 	})
