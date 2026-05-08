@@ -13,9 +13,6 @@ concurrency:
   cancel-in-progress: true
 env:
   MAKEFLAGS: "-j 2"
-  # actions/setup-go@v6 sets GOTOOLCHAIN=local; override so go.mod's `go` directive
-  # can bootstrap a newer toolchain via the module proxy when the runner image lags.
-  GOTOOLCHAIN: auto
 jobs:
   test-previous:
     strategy:
@@ -44,3 +41,8 @@ jobs:
             ${{ runner.os }}-${{ matrix.go-version }}-buf-
       - name: make-test
         run: make test
+        env:
+          # actions/setup-go@v6 exports GOTOOLCHAIN=local via $GITHUB_ENV; override at the
+          # step level so go.mod's `go` directive can bootstrap a newer toolchain via the
+          # module proxy when the runner image lags behind.
+          GOTOOLCHAIN: auto
