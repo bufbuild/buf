@@ -44,3 +44,8 @@ message LegacyDocument {
   option deprecated = true;
   string id = 1;
 }
+
+message ExplicitlyNotDeprecated {
+  option deprecated = false;
+  string id = 1;
+}

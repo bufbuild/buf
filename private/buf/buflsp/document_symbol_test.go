@@ -72,6 +72,8 @@ func TestDocumentSymbol(t *testing.T) {
 				{name: "symbols.v1.CreateDocumentResponse.document", kind: protocol.SymbolKindField, line: 39},  // Document document
 				{name: "symbols.v1.LegacyDocument", kind: protocol.SymbolKindClass, line: 42, deprecated: true}, // message LegacyDocument (deprecated)
 				{name: "symbols.v1.LegacyDocument.id", kind: protocol.SymbolKindField, line: 44},                // string id
+				{name: "symbols.v1.ExplicitlyNotDeprecated", kind: protocol.SymbolKindClass, line: 47},          // message ExplicitlyNotDeprecated (option deprecated = false)
+				{name: "symbols.v1.ExplicitlyNotDeprecated.id", kind: protocol.SymbolKindField, line: 49},       // string id
 			},
 		},
 	}
@@ -100,6 +102,15 @@ func TestDocumentSymbol(t *testing.T) {
 				assert.Equal(t, testURI, found.Location.URI, "symbol %s has wrong URI", expectedSymbol.name)
 				assert.Equal(t, expectedSymbol.line, found.Location.Range.Start.Line, "symbol %s has wrong line number", expectedSymbol.name)
 				assert.Equal(t, expectedSymbol.deprecated, found.Deprecated, "symbol %s has wrong deprecated status", expectedSymbol.name)
+				// Tags must only carry SymbolTagDeprecated for symbols that are
+				// actually deprecated. Clients prefer Tags over the legacy
+				// Deprecated field, so an unconditional tag would render every
+				// symbol with a strikethrough.
+				var expectedTags []protocol.SymbolTag
+				if expectedSymbol.deprecated {
+					expectedTags = []protocol.SymbolTag{protocol.SymbolTagDeprecated}
+				}
+				assert.Equal(t, expectedTags, found.Tags, "symbol %s has wrong tags", expectedSymbol.name)
 			}
 		})
 	}
