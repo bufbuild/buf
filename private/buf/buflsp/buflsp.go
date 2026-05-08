@@ -19,6 +19,7 @@ package buflsp
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -97,13 +98,14 @@ func Serve(
 		moduleKeyProvider:            moduleKeyProvider,
 		graphProvider:                graphProvider,
 		curatedPluginVersionProvider: curatedPluginVersionProvider,
+		versionCache:                 newVersionCache(logger),
 	}
 	lsp.fileManager = newFileManager(lsp)
 	lsp.workspaceManager = newWorkspaceManager(lsp)
 	lsp.bufYAMLManager = newBufYAMLManager(lsp)
 	lsp.bufGenYAMLManager = newBufGenYAMLManager(lsp)
-	lsp.bufPolicyYAMLManager = newBufPolicyYAMLManager()
-	lsp.bufLockManager = newBufLockManager()
+	lsp.bufPolicyYAMLManager = newBufPolicyYAMLManager(lsp)
+	lsp.bufLockManager = newBufLockManager(lsp)
 	off := protocol.TraceOff
 	lsp.traceValue.Store(&off)
 
@@ -153,6 +155,9 @@ type lsp struct {
 	graphProvider bufmodule.GraphProvider
 	// curatedPluginVersionProvider checks for the latest version of curated plugins (BSR).
 	curatedPluginVersionProvider CuratedPluginVersionProvider
+	// versionCache caches "latest" lookups for BSR modules and plugins for the
+	// lifetime of this LSP session. Used by inlay hint paths.
+	versionCache *versionCache
 
 	lock sync.Mutex
 
@@ -204,11 +209,26 @@ func (l *lsp) newHandler() (jsonrpc2.Handler, error) {
 		replier := l.wrapReplier(reply, req)
 
 		var err error
-		if req.Method() != protocol.MethodInitialize && l.initParams.Load() == nil {
-			// Verify that the server has been initialized if this isn't the initialization
-			// request.
-			err = replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize))
-		} else {
+		switch req.Method() {
+		case protocol.MethodInitialize:
+			// Intercept Initialize so we can extend the standard ServerCapabilities
+			// with fields the protocol library predates (e.g. inlayHintProvider).
+			l.lock.Lock()
+			err = handleInterceptedRequest(ctx, replier, req, server.handleInitialize)
+			l.lock.Unlock()
+		case methodTextDocumentInlayHint:
+			if l.initParams.Load() == nil {
+				err = replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize))
+				break
+			}
+			l.lock.Lock()
+			err = handleInterceptedRequest(ctx, replier, req, server.InlayHint)
+			l.lock.Unlock()
+		default:
+			if l.initParams.Load() == nil {
+				err = replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize))
+				break
+			}
 			l.lock.Lock()
 			err = actual(ctx, replier, req)
 			l.lock.Unlock()
@@ -223,4 +243,23 @@ func (l *lsp) newHandler() (jsonrpc2.Handler, error) {
 		}
 		return nil
 	})), nil
+}
+
+// handleInterceptedRequest decodes JSON-RPC params of type Params, calls
+// handler, and replies with the typed result. Used for LSP methods that the
+// underlying protocol library does not dispatch (e.g. textDocument/inlayHint).
+func handleInterceptedRequest[Params, Result any](
+	ctx context.Context,
+	reply jsonrpc2.Replier,
+	req jsonrpc2.Request,
+	handler func(context.Context, *Params) (Result, error),
+) error {
+	var params Params
+	if rawParams := req.Params(); len(rawParams) > 0 {
+		if err := json.Unmarshal(rawParams, &params); err != nil {
+			return reply(ctx, nil, fmt.Errorf("decoding %s params: %w", req.Method(), err))
+		}
+	}
+	result, err := handler(ctx, &params)
+	return reply(ctx, result, err)
 }

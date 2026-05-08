@@ -33,10 +33,6 @@ import (
 // CommandRunGenerate is the LSP workspace command to run buf generate for a buf.gen.yaml file.
 const CommandRunGenerate = "buf.generate.run"
 
-// CommandCheckPluginUpdates is the LSP workspace command to check for newer versions of remote
-// plugins in a buf.gen.yaml file and publish informational diagnostics for any that are outdated.
-const CommandCheckPluginUpdates = "buf.generate.checkPluginUpdates"
-
 // isBufGenYAMLURI reports whether uri refers to a buf.gen.yaml file.
 func isBufGenYAMLURI(uri protocol.URI) bool {
 	return filepath.Base(uri.Filename()) == bufconfig.DefaultBufGenYAMLFileName
@@ -146,12 +142,12 @@ func (m *bufGenYAMLManager) GetDocumentLinks(uri protocol.URI) []protocol.Docume
 // GetCodeLenses returns code lenses for the given buf.gen.yaml URI.
 func (m *bufGenYAMLManager) GetCodeLenses(uri protocol.URI) []protocol.CodeLens {
 	m.mu.Lock()
-	f, ok := m.uriToFile[normalizeURI(uri)]
+	_, ok := m.uriToFile[normalizeURI(uri)]
 	m.mu.Unlock()
 	if !ok {
 		return nil
 	}
-	lenses := []protocol.CodeLens{
+	return []protocol.CodeLens{
 		{
 			Range: protocol.Range{},
 			Command: &protocol.Command{
@@ -161,21 +157,6 @@ func (m *bufGenYAMLManager) GetCodeLenses(uri protocol.URI) []protocol.CodeLens 
 			},
 		},
 	}
-	if len(f.versionedPluginRefs) > 0 {
-		pluginsRange := protocol.Range{
-			Start: protocol.Position{Line: f.pluginsKeyLine},
-			End:   protocol.Position{Line: f.pluginsKeyLine},
-		}
-		lenses = append(lenses, protocol.CodeLens{
-			Range: pluginsRange,
-			Command: &protocol.Command{
-				Title:     "Check for plugin updates",
-				Command:   CommandCheckPluginUpdates,
-				Arguments: []any{string(uri)},
-			},
-		})
-	}
-	return lenses
 }
 
 // ExecuteRunGenerate runs buf generate in the directory containing the given
@@ -205,48 +186,25 @@ func (m *bufGenYAMLManager) ExecuteRunGenerate(ctx context.Context, uri protocol
 	return nil
 }
 
-// ExecuteCheckPluginUpdates queries the BSR for the latest version of each
-// versioned remote plugin in the buf.gen.yaml file and publishes an
-// informational diagnostic on any plugin line where a newer version is
-// available. It does not modify any files.
-func (m *bufGenYAMLManager) ExecuteCheckPluginUpdates(ctx context.Context, uri protocol.URI) error {
-	normalized := normalizeURI(uri)
+// InlayHints returns inlay hints for the given buf.gen.yaml URI, rendering the
+// latest version as virtual text next to each versioned plugin entry whose
+// pinned version is behind the latest published on the BSR.
+//
+// Cache misses trigger a background fetch; once the cache populates, the
+// server sends workspace/inlayHint/refresh and the client re-requests.
+// Provider errors are logged at debug level and otherwise ignored.
+func (m *bufGenYAMLManager) InlayHints(_ context.Context, uri protocol.URI) []inlayHint {
 	m.mu.Lock()
-	f, ok := m.uriToFile[normalized]
+	f, ok := m.uriToFile[normalizeURI(uri)]
 	m.mu.Unlock()
 	if !ok || len(f.versionedPluginRefs) == 0 {
-		publishDiagnostics(ctx, m.lsp.client, normalized, nil)
 		return nil
 	}
-
-	var diagnostics []protocol.Diagnostic
-	for _, entry := range f.versionedPluginRefs {
-		identity, pinnedVersion, err := bufremotepluginref.ParsePluginIdentityOptionalVersion(entry.ref)
-		if err != nil || pinnedVersion == "" {
-			continue
-		}
-		latestVersion, err := m.lsp.curatedPluginVersionProvider.GetLatestVersion(
-			ctx, identity.Remote(), identity.Owner(), identity.Plugin(),
-		)
-		if err != nil {
-			return fmt.Errorf("resolving latest version for %s: %w", identity.IdentityString(), err)
-		}
-		if latestVersion == "" || latestVersion == pinnedVersion {
-			continue
-		}
-		diagnostics = append(diagnostics, protocol.Diagnostic{
-			Range:    entry.refRange,
-			Severity: protocol.DiagnosticSeverityInformation,
-			Source:   serverName,
-			Message: fmt.Sprintf(
-				"%s can be updated (latest: %s)",
-				identity.IdentityString(),
-				latestVersion,
-			),
-		})
+	hints, missing := pluginInlayHintsForRefs(f.versionedPluginRefs, m.lsp.versionCache)
+	if len(missing) > 0 {
+		go fetchPluginVersionsAndRefresh(m.lsp, missing)
 	}
-	publishDiagnostics(ctx, m.lsp.client, normalized, diagnostics)
-	return nil
+	return hints
 }
 
 // parseBufGenYAMLRefs walks the parsed buf.gen.yaml document and collects BSR

@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -31,7 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/bufbuild/buf/private/buf/bufwkt/bufwktstore"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -40,7 +38,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/bufbuild/protocompile/experimental/incremental"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/jsonrpc2"
@@ -208,8 +205,8 @@ func TestBufYAMLCodeLens(t *testing.T) {
 		{
 			name:            "with_deps",
 			fixture:         "testdata/buf_yaml/with_deps/buf.yaml",
-			wantCount:       2,
-			wantTitles:      []string{"Update all dependencies", "Check for updates"},
+			wantCount:       1,
+			wantTitles:      []string{"Update all dependencies"},
 			wantDepsKeyLine: 1,
 		},
 		{
@@ -254,184 +251,17 @@ func TestBufYAMLCodeLens(t *testing.T) {
 	}
 }
 
-// TestBufYAMLCheckUpdates verifies that buf.dep.checkUpdates publishes the correct
-// diagnostics for various combinations of pinned and latest commits.
-func TestBufYAMLCheckUpdates(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name    string
-		fixture string
-		// latestCommits maps module full name to the UUID string the mock BSR returns.
-		latestCommits map[string]string
-		// waitPred is the predicate passed to capture.wait; it gates which
-		// publishDiagnostics notification is inspected.
-		waitPred func(*protocol.PublishDiagnosticsParams) bool
-		// check asserts the expected state of the received diagnostics.
-		check func(*testing.T, *protocol.PublishDiagnosticsParams)
-	}{
-		{
-			name:    "all_up_to_date",
-			fixture: "testdata/buf_yaml/with_deps/buf.yaml",
-			latestCommits: map[string]string{
-				"buf.build/bufbuild/protovalidate": "00000000-0000-0000-0000-000000000001",
-				"buf.build/googleapis/googleapis":  "00000000-0000-0000-0000-000000000002",
-			},
-			waitPred: func(_ *protocol.PublishDiagnosticsParams) bool { return true },
-			check: func(t *testing.T, diags *protocol.PublishDiagnosticsParams) {
-				assert.Empty(t, diags.Diagnostics, "expected no diagnostics when all deps are up to date")
-			},
-		},
-		{
-			name:    "some_outdated",
-			fixture: "testdata/buf_yaml/with_deps/buf.yaml",
-			latestCommits: map[string]string{
-				// protovalidate has a newer commit (11); googleapis is up to date (02).
-				"buf.build/bufbuild/protovalidate": "00000000-0000-0000-0000-000000000011",
-				"buf.build/googleapis/googleapis":  "00000000-0000-0000-0000-000000000002",
-			},
-			waitPred: func(p *protocol.PublishDiagnosticsParams) bool { return len(p.Diagnostics) > 0 },
-			check: func(t *testing.T, diags *protocol.PublishDiagnosticsParams) {
-				require.Len(t, diags.Diagnostics, 1, "expected exactly 1 diagnostic for the outdated dep")
-				d := diags.Diagnostics[0]
-				assert.Equal(t, protocol.DiagnosticSeverityInformation, d.Severity)
-				assert.Equal(t, "buf-lsp", d.Source)
-				assert.Contains(t, d.Message, "buf.build/bufbuild/protovalidate")
-				assert.Contains(t, d.Message, "00000000000000000000000000000011")
-				// Diagnostic should be on the protovalidate dep line (line 2, 0-indexed).
-				assert.Equal(t, uint32(2), d.Range.Start.Line)
-			},
-		},
-		{
-			name:    "all_outdated",
-			fixture: "testdata/buf_yaml/with_deps/buf.yaml",
-			latestCommits: map[string]string{
-				"buf.build/bufbuild/protovalidate": "00000000-0000-0000-0000-000000000011",
-				"buf.build/googleapis/googleapis":  "00000000-0000-0000-0000-000000000022",
-			},
-			waitPred: func(p *protocol.PublishDiagnosticsParams) bool { return len(p.Diagnostics) >= 2 },
-			check: func(t *testing.T, diags *protocol.PublishDiagnosticsParams) {
-				assert.Len(t, diags.Diagnostics, 2, "expected 2 diagnostics when both deps are outdated")
-				for _, d := range diags.Diagnostics {
-					assert.Equal(t, protocol.DiagnosticSeverityInformation, d.Severity)
-					assert.Equal(t, "buf-lsp", d.Source)
-					assert.Contains(t, d.Message, "can be updated to")
-				}
-			},
-		},
-		{
-			name:    "no_buf_lock",
-			fixture: "testdata/buf_yaml/deps_no_lock/buf.yaml",
-			latestCommits: map[string]string{
-				"buf.build/bufbuild/protovalidate": "00000000-0000-0000-0000-000000000011",
-				"buf.build/googleapis/googleapis":  "00000000-0000-0000-0000-000000000022",
-			},
-			waitPred: func(_ *protocol.PublishDiagnosticsParams) bool { return true },
-			check: func(t *testing.T, diags *protocol.PublishDiagnosticsParams) {
-				assert.Empty(t, diags.Diagnostics, "expected no diagnostics when deps have no buf.lock pins")
-			},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			var keys []bufmodule.ModuleKey
-			for mod, uuidStr := range tc.latestCommits {
-				keys = append(keys, mustNewModuleKey(t, mod, uuidStr))
-			}
-			mkp, err := bufmodule.NewStaticModuleKeyProvider(keys)
-			require.NoError(t, err)
-
-			absPath, err := filepath.Abs(tc.fixture)
-			require.NoError(t, err)
-
-			synctest.Test(t, func(t *testing.T) {
-				clientJSONConn, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, mkp, nil)
-				ctx := t.Context()
-
-				var result any
-				_, err = clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
-					Command:   "buf.dep.checkUpdates",
-					Arguments: []any{string(bufYAMLURI)},
-				}, &result)
-				require.NoError(t, err)
-
-				diags := capture.wait(t, bufYAMLURI, 5*time.Second, tc.waitPred)
-				require.NotNil(t, diags)
-				tc.check(t, diags)
-			})
-		})
-	}
-}
-
-// TestBufYAMLDiagnostics_ClearedOnClose verifies that diagnostics for a buf.yaml
-// file are cleared (empty publish) when the file is closed.
-func TestBufYAMLDiagnostics_ClearedOnClose(t *testing.T) {
-	t.Parallel()
-
-	// Both deps outdated so we get diagnostics after the check.
-	mkp, err := bufmodule.NewStaticModuleKeyProvider([]bufmodule.ModuleKey{
-		mustNewModuleKey(t, "buf.build/bufbuild/protovalidate", "00000000-0000-0000-0000-000000000011"),
-		mustNewModuleKey(t, "buf.build/googleapis/googleapis", "00000000-0000-0000-0000-000000000022"),
-	})
-	require.NoError(t, err)
-
-	absPath, err := filepath.Abs("testdata/buf_yaml/with_deps/buf.yaml")
-	require.NoError(t, err)
-
-	synctest.Test(t, func(t *testing.T) {
-		clientJSONConn, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, mkp, nil)
-		ctx := t.Context()
-
-		// Trigger a check to produce diagnostics.
-		var result any
-		_, err = clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
-			Command:   "buf.dep.checkUpdates",
-			Arguments: []any{string(bufYAMLURI)},
-		}, &result)
-		require.NoError(t, err)
-
-		// Wait for the non-empty diagnostics.
-		diags := capture.wait(t, bufYAMLURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
-			return len(p.Diagnostics) > 0
-		})
-		require.NotNil(t, diags)
-		require.NotEmpty(t, diags.Diagnostics, "expected diagnostics before close")
-
-		// Close the file.
-		err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidClose, &protocol.DidCloseTextDocumentParams{
-			TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
-		})
-		require.NoError(t, err)
-
-		// Diagnostics should now be cleared.
-		cleared := capture.wait(t, bufYAMLURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
-			return len(p.Diagnostics) == 0
-		})
-		require.NotNil(t, cleared)
-		assert.Empty(t, cleared.Diagnostics, "expected diagnostics to be cleared after close")
-	})
-}
-
-// TestBufYAMLCheckUpdates_FileChange verifies that deps are re-read correctly
+// TestBufYAMLCodeLens_FileChange verifies that deps are re-read correctly
 // after a didChange notification and a subsequent codeLens request reflects the
 // new content.
-func TestBufYAMLCheckUpdates_FileChange(t *testing.T) {
+func TestBufYAMLCodeLens_FileChange(t *testing.T) {
 	t.Parallel()
-
-	mkp, err := bufmodule.NewStaticModuleKeyProvider([]bufmodule.ModuleKey{
-		mustNewModuleKey(t, "buf.build/bufbuild/protovalidate", "00000000-0000-0000-0000-000000000011"),
-		mustNewModuleKey(t, "buf.build/googleapis/googleapis", "00000000-0000-0000-0000-000000000002"),
-	})
-	require.NoError(t, err)
 
 	absPath, err := filepath.Abs("testdata/buf_yaml/with_deps/buf.yaml")
 	require.NoError(t, err)
 
 	synctest.Test(t, func(t *testing.T) {
-		clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, mkp, nil)
+		clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, nil, nil)
 		ctx := t.Context()
 
 		// Update the buf.yaml in-memory to have no deps.
@@ -1103,27 +933,4 @@ func TestBufYAMLCompletion(t *testing.T) {
 			}
 		})
 	}
-}
-
-// mustParseUUID parses a UUID string for use in test data, failing the test on error.
-func mustParseUUID(t *testing.T, s string) uuid.UUID {
-	t.Helper()
-	id, err := uuid.Parse(s)
-	require.NoError(t, err)
-	return id
-}
-
-// mustNewModuleKey constructs a ModuleKey with the given full name and commit ID for use
-// in test data. A synthetic b5 digest of all-zeros is used; the digest is not validated
-// during test execution but must have the correct type to satisfy the staticModuleKeyProvider.
-func mustNewModuleKey(t *testing.T, fullNameStr, commitIDStr string) bufmodule.ModuleKey {
-	t.Helper()
-	fullName, err := bufparse.ParseFullName(fullNameStr)
-	require.NoError(t, err)
-	commitID := mustParseUUID(t, commitIDStr)
-	key, err := bufmodule.NewModuleKey(fullName, commitID, func() (bufmodule.Digest, error) {
-		return bufmodule.ParseDigest("b5:" + strings.Repeat("0", 128))
-	})
-	require.NoError(t, err)
-	return key
 }

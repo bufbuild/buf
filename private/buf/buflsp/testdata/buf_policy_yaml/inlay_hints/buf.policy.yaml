@@ -1,0 +1,5 @@
+version: v2
+name: buf.build/acme/my-policy
+plugins:
+  - plugin: buf.build/acme/my-lint-plugin:v1.2.0
+  - plugin: local-linter-binary

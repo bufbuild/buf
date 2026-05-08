@@ -60,7 +60,7 @@ type server struct {
 }
 
 // newServer creates a protocol.Server implementation out of an lsp.
-func newServer(lsp *lsp) (protocol.Server, error) {
+func newServer(lsp *lsp) (*server, error) {
 	httpsURLRegex, err := xurls.StrictMatchingScheme("https://")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create HTTPS URL regex: %w", err)
@@ -169,11 +169,53 @@ func (s *server) Initialize(
 			DocumentLinkProvider:    &protocol.DocumentLinkOptions{},
 			CodeLensProvider:        &protocol.CodeLensOptions{},
 			ExecuteCommandProvider: &protocol.ExecuteCommandOptions{
-				Commands: []string{commandUpdateAllDeps, commandCheckUpdates, CommandRunGenerate, CommandCheckPluginUpdates},
+				Commands: []string{commandUpdateAllDeps, CommandRunGenerate},
 			},
 		},
 		ServerInfo: info,
 	}, nil
+}
+
+// handleInitialize calls Initialize and wraps the result in extendedInitializeResult,
+// adding capabilities (like inlayHintProvider) that the protocol library predates.
+// This is invoked from the JSON-RPC handler chain in place of dispatching to
+// Initialize via protocol.ServerHandler.
+func (s *server) handleInitialize(ctx context.Context, params *protocol.InitializeParams) (*extendedInitializeResult, error) {
+	base, err := s.Initialize(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	return &extendedInitializeResult{
+		Capabilities: extendedServerCapabilities{
+			ServerCapabilities: base.Capabilities,
+			InlayHintProvider:  &inlayHintOptions{},
+		},
+		ServerInfo: base.ServerInfo,
+	}, nil
+}
+
+// InlayHint returns inlay hints for the document at the requested range. It
+// dispatches to the appropriate manager by URI type. Returns nil for files
+// the server does not produce hints for.
+//
+// Hints render as virtual text alongside dep/plugin versions when a newer
+// version is available on the BSR. The first call for any uncached entry
+// returns nothing for that entry but kicks off an async fetch; once the
+// fetch completes, the server sends workspace/inlayHint/refresh so the
+// client re-requests with populated cache data.
+func (s *server) InlayHint(ctx context.Context, params *inlayHintParams) ([]inlayHint, error) {
+	uri := params.TextDocument.URI
+	switch {
+	case isBufYAMLURI(uri):
+		return s.bufYAMLManager.InlayHints(ctx, uri), nil
+	case isBufLockURI(uri):
+		return s.bufLockManager.InlayHints(ctx, uri), nil
+	case isBufGenYAMLURI(uri):
+		return s.bufGenYAMLManager.InlayHints(ctx, uri), nil
+	case isBufPolicyYAMLURI(uri):
+		return s.bufPolicyYAMLManager.InlayHints(ctx, uri), nil
+	}
+	return nil, nil
 }
 
 // Initialized is sent by the client after it receives the Initialize response and has
@@ -674,11 +716,7 @@ func (s *server) CodeLens(ctx context.Context, params *protocol.CodeLensParams) 
 //
 // Supported commands:
 //   - buf.dep.updateAll: update all dependencies in the buf.yaml at the given URI.
-//   - buf.dep.checkUpdates: check for newer versions of dependencies and publish
-//     informational diagnostics for any that are outdated.
 //   - buf.generate.run: run buf generate for the buf.gen.yaml at the given URI.
-//   - buf.generate.checkPluginUpdates: check for newer versions of remote plugins
-//     in the buf.gen.yaml and publish informational diagnostics for outdated ones.
 func (s *server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (any, error) {
 	if len(params.Arguments) < 1 {
 		return nil, fmt.Errorf("%s: expected at least 1 argument (file URI), got %d", params.Command, len(params.Arguments))
@@ -694,18 +732,8 @@ func (s *server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCom
 			return nil, fmt.Errorf("%s: %w", params.Command, err)
 		}
 		return nil, nil
-	case commandCheckUpdates:
-		if err := s.bufYAMLManager.ExecuteCheckUpdates(ctx, uri); err != nil {
-			return nil, fmt.Errorf("%s: %w", params.Command, err)
-		}
-		return nil, nil
 	case CommandRunGenerate:
 		if err := s.bufGenYAMLManager.ExecuteRunGenerate(ctx, uri); err != nil {
-			return nil, fmt.Errorf("%s: %w", params.Command, err)
-		}
-		return nil, nil
-	case CommandCheckPluginUpdates:
-		if err := s.bufGenYAMLManager.ExecuteCheckPluginUpdates(ctx, uri); err != nil {
 			return nil, fmt.Errorf("%s: %w", params.Command, err)
 		}
 		return nil, nil

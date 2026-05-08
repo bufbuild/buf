@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 - Add LSP completion for `buf.gen.yaml`, `buf.yaml`, and `buf.policy.yaml` files.
+- Add LSP inlay hints showing the latest version available on the BSR next to behind deps and plugins in `buf.yaml`, `buf.lock`, `buf.gen.yaml`, and `buf.policy.yaml`. Hints are cached per LSP session and degrade silently when the BSR is unreachable.
+- Remove the `buf.dep.checkUpdates` and `buf.generate.checkPluginUpdates` LSP commands and their associated "Check for updates" / "Check for plugin updates" code lenses; the same drift information is now shown automatically as inlay hints.
 
 ## [v1.69.0] - 2026-04-29
 

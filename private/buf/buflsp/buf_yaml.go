@@ -39,10 +39,6 @@ const (
 	// commandUpdateAllDeps is the LSP workspace command to update all dependencies
 	// in the buf.yaml file to their latest versions.
 	commandUpdateAllDeps = "buf.dep.updateAll"
-	// commandCheckUpdates is the LSP workspace command to check whether newer
-	// versions of dependencies are available and publish informational diagnostics
-	// for any that are outdated. It does not modify any files.
-	commandCheckUpdates = "buf.dep.checkUpdates"
 	// "deps" is the deps: key in buf.yaml.
 	//
 	// Ref: https://buf.build/docs/configuration/v2/buf-yaml/#deps
@@ -85,9 +81,8 @@ type bufYAMLFile struct {
 	lintIgnorePaths     []bufYAMLIgnorePath // entries from lint.ignore
 	breakingIgnorePaths []bufYAMLIgnorePath // entries from breaking.ignore
 
-	// Diagnostics from different sources, merged when publishing.
-	// Both fields are guarded by bufYAMLManager.mu.
-	depDiagnostics    []protocol.Diagnostic
+	// ignoreDiagnostics holds diagnostics from ignore-path validation. Guarded
+	// by bufYAMLManager.mu.
 	ignoreDiagnostics []protocol.Diagnostic
 }
 
@@ -137,9 +132,8 @@ func (m *bufYAMLManager) Close(ctx context.Context, uri protocol.URI) {
 // GetCodeLenses returns code lenses for the given buf.yaml URI.
 // Returns nil if no deps are declared.
 //
-// Two whole-file lenses are shown at the deps: key line:
+// One whole-file lens is shown at the deps: key line:
 //   - "Update all dependencies" triggers buf.dep.updateAll
-//   - "Check for updates" triggers buf.dep.checkUpdates
 func (m *bufYAMLManager) GetCodeLenses(uri protocol.URI) []protocol.CodeLens {
 	m.mu.Lock()
 	f, ok := m.uriToFile[normalizeURI(uri)]
@@ -161,14 +155,6 @@ func (m *bufYAMLManager) GetCodeLenses(uri protocol.URI) []protocol.CodeLens {
 				Arguments: []any{string(uri)},
 			},
 		},
-		{
-			Range: keyRange,
-			Command: &protocol.Command{
-				Title:     "Check for updates",
-				Command:   commandCheckUpdates,
-				Arguments: []any{string(uri)},
-			},
-		},
 	}
 }
 
@@ -179,97 +165,77 @@ func (m *bufYAMLManager) ExecuteUpdateAll(ctx context.Context, uri protocol.URI)
 	return updateDeps(ctx, m.lsp, dirPath)
 }
 
-// ExecuteCheckUpdates queries the BSR for the latest commit of each configured
-// dependency and publishes an informational diagnostic on any dep line where a
-// newer version is available. It does not modify any files.
-func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.URI) error {
+// InlayHints returns inlay hints for the given buf.yaml URI, rendering the
+// latest commit available on the BSR as virtual text next to each dep whose
+// pinned commit (from the companion buf.lock) is behind. Deps that are absent
+// from buf.lock get no hint here — that case is already surfaced by the
+// out-of-sync diagnostic.
+//
+// Cache misses kick off a background fetch; once the cache populates the
+// server sends workspace/inlayHint/refresh and the client re-requests.
+// Provider errors are logged at debug level and otherwise ignored.
+func (m *bufYAMLManager) InlayHints(ctx context.Context, uri protocol.URI) []inlayHint {
 	normalized := normalizeURI(uri)
 	m.mu.Lock()
 	f, ok := m.uriToFile[normalized]
 	m.mu.Unlock()
-	if !ok {
+	if !ok || len(f.deps) == 0 {
+		return nil
+	}
+
+	depRangeByFullName := make(map[string]protocol.Range, len(f.deps))
+	for _, dep := range f.deps {
+		ref, err := bufparse.ParseRef(dep.ref)
+		if err != nil {
+			continue
+		}
+		depRangeByFullName[ref.FullName().String()] = dep.depRange
+	}
+	if len(depRangeByFullName) == 0 {
 		return nil
 	}
 
 	dirPath := filepath.Dir(uri.Filename())
 	workspaceDepManager, err := m.lsp.controller.GetWorkspaceDepManager(ctx, dirPath)
 	if err != nil {
-		return fmt.Errorf("getting workspace dep manager: %w", err)
+		return nil
 	}
-
-	configuredRefs, err := workspaceDepManager.ConfiguredDepModuleRefs(ctx)
+	pinnedKeys, err := workspaceDepManager.ExistingBufLockFileDepModuleKeys(ctx)
 	if err != nil {
-		return fmt.Errorf("getting configured dep module refs: %w", err)
-	}
-	if len(configuredRefs) == 0 {
-		publishDiagnostics(ctx, m.lsp.client, normalized, nil)
 		return nil
 	}
 
-	// Build a map from full name → current pinned commit (from buf.lock).
-	currentKeys, err := workspaceDepManager.ExistingBufLockFileDepModuleKeys(ctx)
-	if err != nil {
-		return fmt.Errorf("getting existing buf.lock deps: %w", err)
-	}
-	currentByFullName, err := bufparse.FullNameStringToUniqueValue(currentKeys)
-	if err != nil {
-		return fmt.Errorf("duplicate module keys in buf.lock: %w", err)
-	}
-
-	// Build a map from full name → YAML position for each dep entry.
-	depPosByFullName := make(map[string]protocol.Range, len(f.deps))
-	for _, dep := range f.deps {
-		ref, err := bufparse.ParseRef(dep.ref)
-		if err != nil {
-			continue
-		}
-		depPosByFullName[ref.FullName().String()] = dep.depRange
-	}
-
-	latestKeys, err := m.lsp.moduleKeyProvider.GetModuleKeysForModuleRefs(
-		ctx,
-		configuredRefs,
-		workspaceDepManager.BufLockFileDigestType(),
+	var (
+		hints       []inlayHint
+		refsToFetch []bufparse.Ref
 	)
-	if err != nil {
-		return fmt.Errorf("resolving latest module versions: %w", err)
-	}
-
-	// Emit an informational diagnostic for every dep whose latest commit differs
-	// from the currently pinned commit.
-	var depDiagnostics []protocol.Diagnostic
-	for _, latestKey := range latestKeys {
-		fullName := latestKey.FullName().String()
-		currentKey, pinned := currentByFullName[fullName]
-		if !pinned {
-			// Not yet pinned in buf.lock; skip.
-			continue
-		}
-		if latestKey.CommitID() == currentKey.CommitID() {
-			continue
-		}
-		depRange, ok := depPosByFullName[fullName]
+	for _, key := range pinnedKeys {
+		fullName := key.FullName().String()
+		depRange, ok := depRangeByFullName[fullName]
 		if !ok {
 			continue
 		}
-		depDiagnostics = append(depDiagnostics, protocol.Diagnostic{
-			Range:    depRange,
-			Severity: protocol.DiagnosticSeverityInformation,
-			Source:   serverName,
-			Message: fmt.Sprintf(
-				"%s can be updated to %s",
-				fullName,
-				uuidutil.ToDashless(latestKey.CommitID()),
-			),
+		latest, cached := m.lsp.versionCache.GetModuleCommit(fullName)
+		if !cached {
+			ref, err := bufparse.ParseRef(fullName)
+			if err == nil {
+				refsToFetch = append(refsToFetch, ref)
+			}
+			continue
+		}
+		if latest == key.CommitID() {
+			continue
+		}
+		hints = append(hints, inlayHint{
+			Position:    depRange.End,
+			Label:       fmt.Sprintf(" → %s", uuidutil.ToDashless(latest)),
+			PaddingLeft: true,
 		})
 	}
-	m.mu.Lock()
-	if f, ok := m.uriToFile[normalized]; ok {
-		f.depDiagnostics = depDiagnostics
+	if len(refsToFetch) > 0 {
+		go fetchModuleCommitsAndRefresh(m.lsp, refsToFetch, workspaceDepManager.BufLockFileDigestType())
 	}
-	m.mu.Unlock()
-	m.publishAllDiagnostics(ctx, normalized)
-	return nil
+	return hints
 }
 
 // CheckIgnorePaths asynchronously validates lint.ignore and breaking.ignore paths
@@ -372,20 +338,16 @@ func (m *bufYAMLManager) runIgnorePathChecks(ctx context.Context, uri protocol.U
 	return nil
 }
 
-// publishAllDiagnostics merges dep and ignore diagnostics and publishes them.
+// publishAllDiagnostics publishes ignore-path diagnostics for uri.
 func (m *bufYAMLManager) publishAllDiagnostics(ctx context.Context, uri protocol.URI) {
 	m.mu.Lock()
 	f, ok := m.uriToFile[uri]
-	if !ok {
-		m.mu.Unlock()
-		publishDiagnostics(ctx, m.lsp.client, uri, nil)
-		return
+	var diagnostics []protocol.Diagnostic
+	if ok {
+		diagnostics = f.ignoreDiagnostics
 	}
-	all := make([]protocol.Diagnostic, 0, len(f.depDiagnostics)+len(f.ignoreDiagnostics))
-	all = append(all, f.depDiagnostics...)
-	all = append(all, f.ignoreDiagnostics...)
 	m.mu.Unlock()
-	publishDiagnostics(ctx, m.lsp.client, uri, all)
+	publishDiagnostics(ctx, m.lsp.client, uri, diagnostics)
 }
 
 // publishDiagnostics publishes diagnostics to the client, clearing any

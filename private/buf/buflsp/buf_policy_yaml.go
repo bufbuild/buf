@@ -15,12 +15,14 @@
 package buflsp
 
 import (
+	"context"
 	"path/filepath"
 	"strings"
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy/bufpolicyconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	"go.lsp.dev/protocol"
 	"gopkg.in/yaml.v3"
 )
@@ -32,31 +34,36 @@ func isBufPolicyYAMLURI(uri protocol.URI) bool {
 
 // bufPolicyYAMLManager tracks open buf.policy.yaml files in the LSP session.
 type bufPolicyYAMLManager struct {
+	lsp       *lsp
 	mu        sync.Mutex
 	uriToFile map[protocol.URI]*bufPolicyYAMLFile
 }
 
-func newBufPolicyYAMLManager() *bufPolicyYAMLManager {
+func newBufPolicyYAMLManager(lsp *lsp) *bufPolicyYAMLManager {
 	return &bufPolicyYAMLManager{
+		lsp:       lsp,
 		uriToFile: make(map[protocol.URI]*bufPolicyYAMLFile),
 	}
 }
 
 // bufPolicyYAMLFile holds the parsed state of an open buf.policy.yaml file.
 type bufPolicyYAMLFile struct {
-	text    string     // raw file content, used for completion
-	docNode *yaml.Node // parsed YAML document node, nil if parse failed
-	refs    []bsrRef   // name: and plugins[*].plugin BSR references, in document order
+	text                string     // raw file content, used for completion
+	docNode             *yaml.Node // parsed YAML document node, nil if parse failed
+	refs                []bsrRef   // name: and plugins[*].plugin BSR references, in document order
+	versionedPluginRefs []bsrRef   // plugins[*].plugin entries with an explicit version
 }
 
 // Track opens or refreshes a buf.policy.yaml file.
 func (m *bufPolicyYAMLManager) Track(uri protocol.URI, text string) {
 	normalized := normalizeURI(uri)
 	docNode := parseYAMLDoc(text)
+	refs, versionedPluginRefs := parseBufPolicyYAMLRefs(docNode)
 	f := &bufPolicyYAMLFile{
-		text:    text,
-		docNode: docNode,
-		refs:    parseBufPolicyYAMLRefs(docNode),
+		text:                text,
+		docNode:             docNode,
+		refs:                refs,
+		versionedPluginRefs: versionedPluginRefs,
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -122,25 +129,43 @@ func (m *bufPolicyYAMLManager) GetDocumentLinks(uri protocol.URI) []protocol.Doc
 	return links
 }
 
+// InlayHints returns inlay hints for the given buf.policy.yaml URI, rendering
+// the latest version as virtual text next to each versioned plugin entry whose
+// pinned version is behind the latest published on the BSR.
+func (m *bufPolicyYAMLManager) InlayHints(_ context.Context, uri protocol.URI) []inlayHint {
+	m.mu.Lock()
+	f, ok := m.uriToFile[normalizeURI(uri)]
+	m.mu.Unlock()
+	if !ok || len(f.versionedPluginRefs) == 0 {
+		return nil
+	}
+	hints, missing := pluginInlayHintsForRefs(f.versionedPluginRefs, m.lsp.versionCache)
+	if len(missing) > 0 {
+		go fetchPluginVersionsAndRefresh(m.lsp, missing)
+	}
+	return hints
+}
+
 // parseBufPolicyYAMLRefs walks the parsed buf.policy.yaml document and
 // collects BSR references in document order: the top-level name value followed
 // by any plugins[*].plugin values that look like BSR references
-// (registry/owner/name format).
+// (registry/owner/name format). versionedPluginRefs is the subset of
+// plugins[*].plugin entries that include an explicit version, used by inlay
+// hints to compare against the latest BSR version.
 //
 // Local plugin names (no slashes) and absolute paths are not linked. Values
 // where the registry component does not contain a dot (e.g. "./bin/tool"
 // parses as registry ".") are skipped.
 //
-// Returns nil if doc is nil or not a valid YAML document.
-func parseBufPolicyYAMLRefs(doc *yaml.Node) []bsrRef {
+// Returns nil for both slices if doc is nil or not a valid YAML document.
+func parseBufPolicyYAMLRefs(doc *yaml.Node) (refs []bsrRef, versionedPluginRefs []bsrRef) {
 	if doc == nil || doc.Kind != yaml.DocumentNode || len(doc.Content) == 0 {
-		return nil
+		return nil, nil
 	}
 	mapping := doc.Content[0]
 	if mapping.Kind != yaml.MappingNode {
-		return nil
+		return nil, nil
 	}
-	var refs []bsrRef
 	for i := 0; i+1 < len(mapping.Content); i += 2 {
 		keyNode := mapping.Content[i]
 		valNode := mapping.Content[i+1]
@@ -170,12 +195,16 @@ func parseBufPolicyYAMLRefs(doc *yaml.Node) []bsrRef {
 					if !looksLikeBSRRef(v.Value) {
 						continue
 					}
-					refs = append(refs, bsrRef{ref: v.Value, refRange: yamlNodeRange(v)})
+					entry := bsrRef{ref: v.Value, refRange: yamlNodeRange(v)}
+					refs = append(refs, entry)
+					if _, version, err := bufremotepluginref.ParsePluginIdentityOptionalVersion(v.Value); err == nil && version != "" {
+						versionedPluginRefs = append(versionedPluginRefs, entry)
+					}
 				}
 			}
 		}
 	}
-	return refs
+	return refs, versionedPluginRefs
 }
 
 // looksLikeBSRRef reports whether s could be a BSR reference by checking

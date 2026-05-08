@@ -577,15 +577,19 @@ func TestDiagnosticsClearedOnDelete(t *testing.T) {
 	})
 }
 
-// diagnosticsCapture captures publishDiagnostics notifications from the LSP server.
+// diagnosticsCapture captures server-to-client notifications used in tests.
+// Tracks publishDiagnostics by URI plus method-level counters for any other
+// notification kind we want to assert on (e.g. workspace/inlayHint/refresh).
 type diagnosticsCapture struct {
-	mu          sync.Mutex
-	diagnostics map[protocol.URI]*protocol.PublishDiagnosticsParams
+	mu             sync.Mutex
+	diagnostics    map[protocol.URI]*protocol.PublishDiagnosticsParams
+	methodCounters map[string]int
 }
 
 func newDiagnosticsCapture() *diagnosticsCapture {
 	return &diagnosticsCapture{
-		diagnostics: make(map[protocol.URI]*protocol.PublishDiagnosticsParams),
+		diagnostics:    make(map[protocol.URI]*protocol.PublishDiagnosticsParams),
+		methodCounters: make(map[string]int),
 	}
 }
 
@@ -598,7 +602,19 @@ func (dc *diagnosticsCapture) handle(_ context.Context, reply jsonrpc2.Replier, 
 			dc.mu.Unlock()
 		}
 	}
+	dc.mu.Lock()
+	dc.methodCounters[req.Method()]++
+	dc.mu.Unlock()
 	return reply(context.Background(), nil, nil)
+}
+
+// methodCount returns how many times a notification with the given method has
+// been observed. Useful for asserting that a specific notification (e.g.
+// workspace/inlayHint/refresh) did or did not fire.
+func (dc *diagnosticsCapture) methodCount(method string) int {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+	return dc.methodCounters[method]
 }
 
 // wait polls for diagnostics matching the predicate.
