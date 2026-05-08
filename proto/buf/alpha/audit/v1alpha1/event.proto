@@ -40,7 +40,7 @@ message Actor {
 
 // ResourceType is the type of the resource that was affected by the audited event.
 //
-// [#next-free-field: 23]
+// [#next-free-field: 24]
 enum ResourceType {
   RESOURCE_TYPE_UNSPECIFIED = 0;
   RESOURCE_TYPE_USER = 1;
@@ -65,6 +65,7 @@ enum ResourceType {
   RESOURCE_TYPE_DEVICE_AUTHORIZATION_GRANT = 14;
   RESOURCE_TYPE_PLUGIN_LABEL = 16;
   RESOURCE_TYPE_SDK_PLUGIN_CONSTRAINT = 21;
+  RESOURCE_TYPE_AUTHORIZATION_REQUEST = 23;
 }
 
 // Resource is the affected resource by the audited event.
@@ -79,7 +80,7 @@ message Resource {
 
 // EventType is the type of audited event.
 //
-// [#next-free-field: 84]
+// [#next-free-field: 86]
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
   EVENT_TYPE_ORGANIZATION_CREATED = 1;
@@ -165,6 +166,8 @@ enum EventType {
   EVENT_TYPE_POLICY_ENFORCEMENT_DELETED = 75;
   EVENT_TYPE_POLICY_ENFORCEMENT_POLICY_CHANGED = 76;
   EVENT_TYPE_POLICY_ENFORCEMENT_TARGETS_CHANGED = 77;
+  EVENT_TYPE_AUTHORIZATION_REQUEST_APPROVED = 84;
+  EVENT_TYPE_AUTHORIZATION_REQUEST_DENIED = 85;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -181,7 +184,7 @@ message EventMetadata {
 // it happened, who did it, which resource was affected, and more contextual information on the
 // event.
 //
-// [#next-free-field: 90]
+// [#next-free-field: 92]
 message Event {
   // Unique id of the audited event.
   string event_id = 1;
@@ -280,6 +283,8 @@ message Event {
     PayloadPolicyEnforcementDeleted policy_enforcement_deleted = 81;
     PayloadPolicyEnforcementPolicyChanged policy_enforcement_policy_changed = 82;
     PayloadPolicyEnforcementTargetsChanged policy_enforcement_targets_changed = 83;
+    PayloadAuthorizationRequestApproved authorization_request_approved = 90;
+    PayloadAuthorizationRequestDenied authorization_request_denied = 91;
   }
 }
 
@@ -881,6 +886,14 @@ message PayloadDeviceAuthorizationGrantApproved {
 }
 message PayloadDeviceAuthorizationGrantDenied {
   // client_id is the id of the registered oauth2 client of the grant.
+  string client_id = 1;
+}
+message PayloadAuthorizationRequestApproved {
+  // client_id is the id of the registered oauth2 client of the request.
+  string client_id = 1;
+}
+message PayloadAuthorizationRequestDenied {
+  // client_id is the id of the registered oauth2 client of the request.
   string client_id = 1;
 }
 
