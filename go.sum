@@ -4,10 +4,10 @@ buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go v1.36.11-2025010916
 buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go v1.36.11-20250109164928-1da0de137947.1/go.mod h1:8PRKXhgNes29Tjrnv8KdZzg3I1QceOkzibW1QK7EXv0=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260415201107-50325440f8f2.1 h1:s6hzCXtND/ICdGPTMGk7C+/BFlr2Jg5GyH0NKf4XGXg=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260415201107-50325440f8f2.1/go.mod h1:tvtbpgaVXZX4g6Pn+AnzFycuRK3MOz5HJfEGeEllXYM=
-buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.2-20260506191125-db9f7abb69a0.1 h1:W+CnLcV+Xyo1+/9jK5DTafJdy0k+xg6qbycnZkzpIzc=
-buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.2-20260506191125-db9f7abb69a0.1/go.mod h1:b+VhoLtaw29B9V8nnwIaVFAOLAvhFVcXUjbCWxZNEjM=
-buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260506191125-db9f7abb69a0.1 h1:4T3A0dv9PA3lk/h3ord3MjLPph7TjUy+hlo38UgGxbA=
-buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260506191125-db9f7abb69a0.1/go.mod h1:1JJi9jvOqRxSMa+JxiZSm57doB+db/1WYCIa2lHfc40=
+buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.2-20260507063250-43b0c5a6cd08.1 h1:DcwtSdaY9CwXwPSOneDxJ/B0OCAgNPQQaQxAr/pTHvc=
+buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.2-20260507063250-43b0c5a6cd08.1/go.mod h1:WjOwVG7wzFSwEkjCjHVRWEOdGYyON/TQYPabl7N2VGI=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260507063250-43b0c5a6cd08.1 h1:QK2GkcPxqh2oG5mTMAHejculun8nxto+p7mlgh8fPTM=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.11-20260507063250-43b0c5a6cd08.1/go.mod h1:1JJi9jvOqRxSMa+JxiZSm57doB+db/1WYCIa2lHfc40=
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.11-20241007202033-cf42259fcbfc.1 h1:iGPvEJltOXUMANWf0zajcRcbiOXLD90ZwPUFvbcuv6Q=
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.11-20241007202033-cf42259fcbfc.1/go.mod h1:nWVKKRA29zdt4uvkjka3i/y4mkrswyWwiu0TbdX0zts=
 buf.build/go/app v0.2.1-0.20260407195847-833f8f978cda h1:eysSyjrJtkxU1A/9+Kv+1Mwq9K6BYBw+STIOVsZ256Y=
