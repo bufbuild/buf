@@ -2414,8 +2414,30 @@ func (f *formatter) writeComment(comment string) {
 		}
 	} else {
 		f.Indent(nil)
+		// Normalize comment spacing: ensure single-line comments have a space after //
+		if strings.HasPrefix(comment, "//") {
+			comment = normalizeCommentSpacing(comment)
+		}
 		f.WriteString(strings.TrimSpace(comment))
 	}
+}
+
+// normalizeCommentSpacing ensures that single-line comments have a space
+// after the // delimiter. Comments like //TODO: or //no-space are transformed
+// to // TODO: and // no-space respectively.
+func normalizeCommentSpacing(comment string) string {
+	lines := strings.Split(comment, "\n")
+	for i, line := range lines {
+		if strings.HasPrefix(line, "//") {
+			after := strings.TrimPrefix(line, "//")
+			// If the content after // is non-empty and doesn't start with a space,
+			// add a single space.
+			if len(after) > 0 && after[0] != ' ' && after[0] != '\t' {
+				lines[i] = "// " + after
+			}
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 func isCommentPrefix(ch byte) bool {

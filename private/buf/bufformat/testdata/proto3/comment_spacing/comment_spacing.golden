@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package test.v1;
+
+// no space (should become "// no space")
+// one space (already correct)
+//  multiple spaces (should remain as-is per issue expectation)
+// TODO: should become "// TODO:"
+// FIXME: another common marker
+//     indented content (should remain as-is)
+
+message TestMessage {
+  // field comment without space
+  // field comment with one space
+  string name = 1;
+}
