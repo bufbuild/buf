@@ -233,7 +233,7 @@ func (s *server) DidOpen(
 		return nil
 	}
 	if isBufGenYAMLURI(params.TextDocument.URI) {
-		s.bufGenYAMLManager.Track(params.TextDocument.URI, params.TextDocument.Text)
+		s.bufGenYAMLManager.Track(ctx, params.TextDocument.URI, params.TextDocument.Text)
 		return nil
 	}
 	if isBufPolicyYAMLURI(params.TextDocument.URI) {
@@ -262,7 +262,7 @@ func (s *server) DidChange(
 		return nil
 	}
 	if isBufGenYAMLURI(params.TextDocument.URI) {
-		s.bufGenYAMLManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
+		s.bufGenYAMLManager.Track(ctx, params.TextDocument.URI, params.ContentChanges[0].Text)
 		return nil
 	}
 	if isBufPolicyYAMLURI(params.TextDocument.URI) {

@@ -1,0 +1,10 @@
+version: v2
+plugins:
+  - remote: buf.build/foo/bar
+    out: gen
+    types:
+      - acme.
+inputs:
+  - directory: proto
+    exclude_types:
+      - acme.
