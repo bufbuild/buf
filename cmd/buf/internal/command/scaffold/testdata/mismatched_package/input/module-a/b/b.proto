@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package b;
+
+import "wrong/pkg/a.proto";
+
+message B {
+  something.else.A a = 1;
+}
