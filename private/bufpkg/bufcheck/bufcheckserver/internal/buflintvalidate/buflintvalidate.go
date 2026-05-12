@@ -38,6 +38,7 @@ func CheckMessage(
 	if messageRules == nil {
 		return nil
 	}
+	checkOneofRulesForMessage(addAnnotationFunc, messageRules, messageDescriptor, message)
 	return checkCELForMessage(
 		addAnnotationFunc,
 		messageRules,
