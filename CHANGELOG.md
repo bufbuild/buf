@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Add LSP completion for `buf.gen.yaml`, `buf.yaml`, and `buf.policy.yaml` files.
+- Add error for when a dependency is added to `buf.yaml` and is missing from `buf.lock`.
 
 ## [v1.69.0] - 2026-04-29
 
