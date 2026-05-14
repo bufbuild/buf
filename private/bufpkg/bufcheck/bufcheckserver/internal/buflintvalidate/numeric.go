@@ -98,7 +98,7 @@ func checkFloatNaNRules[
 					adder.getFieldRuleName(ruleFieldNumber, fieldNumber),
 				)
 			}
-		case "in":
+		case "in", "not_in":
 			list := value.List()
 			for i := range list.Len() {
 				v, ok := list.Get(i).Interface().(T)
@@ -107,28 +107,16 @@ func checkFloatNaNRules[
 					return false
 				}
 				if math.IsNaN(float64(v)) {
+					effect := "can never match"
+					if field.Name() == "not_in" {
+						effect = "has no effect"
+					}
 					adder.addForPathf(
 						[]int32{ruleFieldNumber, fieldNumber, int32(i)},
-						"Field %q has NaN in %s. Comparisons with NaN are always false, so this entry can never match.",
+						"Field %q has NaN in %s. Comparisons with NaN are always false, so this entry %s.",
 						adder.fieldName(),
 						adder.getFieldRuleName(ruleFieldNumber, fieldNumber),
-					)
-				}
-			}
-		case "not_in":
-			list := value.List()
-			for i := range list.Len() {
-				v, ok := list.Get(i).Interface().(T)
-				if !ok {
-					err = fmt.Errorf("unable to cast value to type %T", v)
-					return false
-				}
-				if math.IsNaN(float64(v)) {
-					adder.addForPathf(
-						[]int32{ruleFieldNumber, fieldNumber, int32(i)},
-						"Field %q has NaN in %s. Comparisons with NaN are always false, so this entry has no effect.",
-						adder.fieldName(),
-						adder.getFieldRuleName(ruleFieldNumber, fieldNumber),
+						effect,
 					)
 				}
 			}
