@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/gen/proto/go/google/protobuf"
+	gofeaturespb "google.golang.org/protobuf/types/gofeaturespb"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -39,4 +40,13 @@ func TestResolveJavaFeatures(t *testing.T) {
 	require.NoError(t, err)
 	// This will use the default value for proto2
 	require.Equal(t, protobuf.JavaFeatures_DEFAULT.Number(), val.Enum())
+}
+
+func TestResolveGoFeatures(t *testing.T) {
+	t.Parallel()
+	field := (*descriptorpb.FileDescriptorProto)(nil).ProtoReflect().Descriptor().Fields().ByName("package")
+	val, err := ResolveGoFeature(field, "api_level", protoreflect.EnumKind)
+	require.NoError(t, err)
+	// This will use the default value for proto2
+	require.Equal(t, gofeaturespb.GoFeatures_API_LEVEL_UNSPECIFIED.Number(), val.Enum())
 }

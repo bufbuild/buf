@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"google.golang.org/protobuf/types/descriptorpb"
+	gofeaturespb "google.golang.org/protobuf/types/gofeaturespb"
 )
 
 // FileOption is a file option.
@@ -67,6 +68,8 @@ const (
 	FileOptionRubyPackageSuffix
 	// FileOptionSwiftPrefix is the file option swift_prefix.
 	FileOptionSwiftPrefix
+	// FileOptionGoApiLevel is the Go API level feature (pb.go).api_level.
+	FileOptionGoApiLevel
 )
 
 // String implements fmt.Stringer.
@@ -120,6 +123,7 @@ var (
 		FileOptionRubyPackage:                "ruby_package",
 		FileOptionRubyPackageSuffix:          "ruby_package_suffix",
 		FileOptionSwiftPrefix:                "swift_prefix",
+		FileOptionGoApiLevel:                 "features.(pb.go).api_level",
 	}
 	stringToFileOption = map[string]FileOption{
 		"java_package":                  FileOptionJavaPackage,
@@ -141,6 +145,7 @@ var (
 		"ruby_package":                  FileOptionRubyPackage,
 		"ruby_package_suffix":           FileOptionRubyPackageSuffix,
 		"swift_prefix":                  FileOptionSwiftPrefix,
+		"features.(pb.go).api_level":    FileOptionGoApiLevel,
 	}
 	fileOptionToParseOverrideValueFunc = map[FileOption]func(any) (any, error){
 		FileOptionJavaPackage:                parseOverrideValue[string],
@@ -162,6 +167,7 @@ var (
 		FileOptionRubyPackage:                parseOverrideValue[string],
 		FileOptionRubyPackageSuffix:          parseOverrideValue[string],
 		FileOptionSwiftPrefix:                parseOverrideValue[string],
+		FileOptionGoApiLevel:                 parseOverrideValueGoApiLevel,
 	}
 	fieldOptionToString = map[FieldOption]string{
 		FieldOptionJSType: "jstype",
@@ -230,6 +236,18 @@ func parseOverrideValueJSType(override any) (any, error) {
 	return descriptorpb.FieldOptions_JSType(jsTypeEnum), nil
 }
 
+func parseOverrideValueGoApiLevel(override any) (any, error) {
+	apiLevelName, ok := override.(string)
+	if !ok {
+		return nil, errors.New("must be one of API_LEVEL_UNSPECIFIED, API_OPEN, API_HYBRID, or API_OPAQUE")
+	}
+	apiLevelEnum, ok := gofeaturespb.GoFeatures_APILevel_value[apiLevelName]
+	if !ok {
+		return nil, errors.New("must be one of API_LEVEL_UNSPECIFIED, API_OPEN, API_HYBRID, or API_OPAQUE")
+	}
+	return gofeaturespb.GoFeatures_APILevel(apiLevelEnum), nil
+}
+
 // If the file or field option override value is one of the supported enum types,
 // then we want to write out the string representation of the enum value, not
 // the corresponding int32.
@@ -270,6 +288,10 @@ func getOverrideValue(fileOptionName string, fieldOptionName string, value any) 
 		case FileOptionOptimizeFor:
 			if optimizeModeValue, ok := value.(descriptorpb.FileOptions_OptimizeMode); ok {
 				return optimizeModeValue.String(), nil
+			}
+		case FileOptionGoApiLevel:
+			if apiLevelValue, ok := value.(gofeaturespb.GoFeatures_APILevel); ok {
+				return apiLevelValue.String(), nil
 			}
 		}
 	}

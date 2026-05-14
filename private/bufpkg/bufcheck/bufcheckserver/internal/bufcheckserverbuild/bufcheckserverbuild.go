@@ -141,6 +141,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingFieldSameJavaUTF8Validation,
 	}
+	// BreakingFieldSameGoStripEnumPrefixRuleSpecBuilder is a rule spec builder.
+	BreakingFieldSameGoStripEnumPrefixRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "FIELD_SAME_GO_STRIP_ENUM_PREFIX",
+		Purpose: "Checks that enums have the same Go strip enum prefix, based on (pb.go).strip_enum_prefix feature.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingFieldSameGoStripEnumPrefix,
+	}
 	// BreakingFieldSameDefaultRuleSpecBuilder is a rule spec builder.
 	BreakingFieldSameDefaultRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "FIELD_SAME_DEFAULT",
