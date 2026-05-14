@@ -36,6 +36,7 @@ import (
 	"github.com/bufbuild/buf/cmd/buf/internal/command/beta/price"
 	betaplugindelete "github.com/bufbuild/buf/cmd/buf/internal/command/beta/registry/plugin/plugindelete"
 	betapluginpush "github.com/bufbuild/buf/cmd/buf/internal/command/beta/registry/plugin/pluginpush"
+	"github.com/bufbuild/buf/cmd/buf/internal/command/beta/registry/registrycargo"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/beta/registry/webhook/webhookcreate"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/beta/registry/webhook/webhookdelete"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/beta/registry/webhook/webhooklist"
@@ -415,6 +416,7 @@ func newRootCommand(name string) *appcmd.Command {
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry",
 						SubCommands: []*appcmd.Command{
+							registrycargo.NewCommand("cargo", builder),
 							{
 								Use:   "webhook",
 								Short: "Manage webhooks for a repository on the Buf Schema Registry",
