@@ -309,7 +309,7 @@ func newGetDigestFuncForPluginAndDigestType(plugin *plugin, digestType DigestTyp
 		if err != nil {
 			return nil, err
 		}
-		casDigest, err := cas.NewDigestForContent(bytes.NewReader(data))
+		casDigest, err := cas.NewDigestForContent(cas.DigestTypeShake256, bytes.NewReader(data))
 		if err != nil {
 			return nil, err
 		}

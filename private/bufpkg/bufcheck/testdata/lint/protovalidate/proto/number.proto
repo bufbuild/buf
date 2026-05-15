@@ -328,3 +328,40 @@ message IntTest {
   google.protobuf.UInt64Value valid_wkt_uint64_no_constraint_example = 106 [(buf.validate.field).uint64.example = 1];
   google.protobuf.UInt64Value invalid_wkt_uint64_no_constraint_example = 107 [(buf.validate.field).int64.example = 1];
 }
+
+message FloatNaNTest {
+  // the next line should be annotated
+  float const_nan = 1 [(buf.validate.field).float.const = nan];
+  // the next line should be annotated
+  float lt_nan = 2 [(buf.validate.field).float.lt = nan];
+  // the next line should be annotated
+  float lte_nan = 3 [(buf.validate.field).float.lte = nan];
+  // the next line should be annotated
+  float gt_nan = 4 [(buf.validate.field).float.gt = nan];
+  // the next line should be annotated
+  float gte_nan = 5 [(buf.validate.field).float.gte = nan];
+  float in_nan = 6 [
+    (buf.validate.field).float.in = 1.0,
+    // the next line should be annotated
+    (buf.validate.field).float.in = nan
+  ];
+  // the next line should be annotated
+  float not_in_nan = 7 [(buf.validate.field).float.not_in = nan];
+  // the next line should be annotated
+  double double_const_nan = 8 [(buf.validate.field).double.const = nan];
+  // the next line should be annotated
+  double double_lt_nan = 9 [(buf.validate.field).double.lt = nan];
+  double double_in_nan = 10 [
+    (buf.validate.field).double.in = 1.0,
+    // the next line should be annotated
+    (buf.validate.field).double.in = nan
+  ];
+  // the next line should be annotated
+  repeated double repeated_lt_nan = 11 [(buf.validate.field).repeated.items.double.lt = nan];
+  // the next line should be annotated
+  map<int32, float> map_value_lt_nan = 12 [(buf.validate.field).map.values.float.lt = nan];
+  // valid: bound is normal, example unrelated to NaN check
+  float ok_finite = 13 [(buf.validate.field).float.lt = 1.0];
+  // valid: not_in with non-NaN
+  float ok_not_in = 14 [(buf.validate.field).float.not_in = 1.0];
+}

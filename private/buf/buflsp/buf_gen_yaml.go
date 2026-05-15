@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -63,31 +64,65 @@ type bufGenYAMLFile struct {
 	refs                []bsrRef   // plugins[*].remote and inputs[*].module BSR references
 	versionedPluginRefs []bsrRef   // plugins[*].remote with an explicit version (for update checks)
 	pluginsKeyLine      uint32     // 0-indexed line of the "plugins:" key
+	workspace           *workspace // leased workspace for type completions, may be nil
 }
 
 // Track opens or refreshes a buf.gen.yaml file.
-func (m *bufGenYAMLManager) Track(uri protocol.URI, text string) {
+//
+// The workspace is leased on first Track and reused on subsequent Tracks for
+// the same URI; LeaseWorkspace's Refresh is too expensive to run per keystroke,
+// and proto file changes already refresh the workspace via their own Update path.
+func (m *bufGenYAMLManager) Track(ctx context.Context, uri protocol.URI, text string) {
 	normalized := normalizeURI(uri)
 	docNode := parseYAMLDoc(text)
 	allRefs, versionedPluginRefs, pluginsKeyLine := parseBufGenYAMLRefs(docNode)
+
+	m.mu.Lock()
+	existing := m.uriToFile[normalized]
+	m.mu.Unlock()
+
+	var ws *workspace
+	if existing != nil && existing.workspace != nil {
+		ws = existing.workspace
+	} else {
+		// LeaseWorkspace passes the URI to controller.GetWorkspace, which infers
+		// the input format from the path. A .yaml file isn't a valid input format,
+		// so use the parent directory URI instead.
+		workspaceURI := FilePathToURI(filepath.Dir(uri.Filename()))
+		var err error
+		ws, err = m.lsp.workspaceManager.LeaseWorkspace(ctx, workspaceURI)
+		if err != nil {
+			m.lsp.logger.DebugContext(ctx, "buf.gen.yaml: could not lease workspace",
+				slog.String("uri", string(uri)),
+				slog.String("error", err.Error()),
+			)
+			ws = nil
+		}
+	}
+
 	f := &bufGenYAMLFile{
 		text:                text,
 		docNode:             docNode,
 		refs:                allRefs,
 		versionedPluginRefs: versionedPluginRefs,
 		pluginsKeyLine:      pluginsKeyLine,
+		workspace:           ws,
 	}
 	m.mu.Lock()
-	defer m.mu.Unlock()
 	m.uriToFile[normalized] = f
+	m.mu.Unlock()
 }
 
 // Close stops tracking a buf.gen.yaml file and clears any diagnostics it published.
 func (m *bufGenYAMLManager) Close(ctx context.Context, uri protocol.URI) {
 	normalized := normalizeURI(uri)
 	m.mu.Lock()
+	old := m.uriToFile[normalized]
 	delete(m.uriToFile, normalized)
 	m.mu.Unlock()
+	if old != nil && old.workspace != nil {
+		old.workspace.Release()
+	}
 	publishDiagnostics(ctx, m.lsp.client, normalized, nil)
 }
 
@@ -100,7 +135,7 @@ func (m *bufGenYAMLManager) GetCompletion(uri protocol.URI, pos protocol.Positio
 	if !ok {
 		return nil
 	}
-	return getBufGenYAMLCompletionItems(f.docNode, f.text, pos)
+	return getBufGenYAMLCompletionItems(f.docNode, f.text, pos, filepath.Dir(uri.Filename()), f.workspace)
 }
 
 // GetHover returns hover documentation for the buf.gen.yaml field at the given

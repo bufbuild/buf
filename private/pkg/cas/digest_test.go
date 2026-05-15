@@ -41,31 +41,46 @@ var buftestingDirPath = filepath.Join(
 
 func TestNewDigestForContent(t *testing.T) {
 	t.Parallel()
-	digest, err := cas.NewDigestForContent(bytes.NewBuffer(nil))
+	digest, err := cas.NewDigestForContent(cas.DigestTypeShake256, bytes.NewBuffer(nil))
 	require.NoError(t, err)
 	assert.Equal(t, cas.DigestTypeShake256, digest.Type())
 	assert.NotEmpty(t, digest.Value())
+	assert.Contains(t, digest.String(), ":")
 
-	digest, err = cas.NewDigestForContent(strings.NewReader("some content"))
+	digest, err = cas.NewDigestForContent(cas.DigestTypeShake256, strings.NewReader("some content"))
 	require.NoError(t, err)
 	assert.Equal(t, cas.DigestTypeShake256, digest.Type())
 	assert.NotEmpty(t, digest.Value())
+	assert.Contains(t, digest.String(), ":")
 
-	digest, err = cas.NewDigestForContent(bytes.NewBuffer(nil), cas.DigestWithDigestType(cas.DigestTypeSha256))
+	digest, err = cas.NewDigestForContent(cas.DigestTypeSha256, bytes.NewBuffer(nil))
 	require.NoError(t, err)
 	assert.Equal(t, cas.DigestTypeSha256, digest.Type())
 	assert.NotEmpty(t, digest.Value())
+	assert.NotContains(t, digest.String(), ":")
 
-	digest, err = cas.NewDigestForContent(strings.NewReader("some content"), cas.DigestWithDigestType(cas.DigestTypeSha256))
+	digest, err = cas.NewDigestForContent(cas.DigestTypeSha256, strings.NewReader("some content"))
 	require.NoError(t, err)
 	assert.Equal(t, cas.DigestTypeSha256, digest.Type())
 	assert.NotEmpty(t, digest.Value())
+	assert.NotContains(t, digest.String(), ":")
 
 	// failing digesting content
 	expectedErr := errors.New("testing error")
-	digest, err = cas.NewDigestForContent(iotest.ErrReader(expectedErr))
+	digest, err = cas.NewDigestForContent(cas.DigestTypeShake256, iotest.ErrReader(expectedErr))
 	assert.ErrorIs(t, err, expectedErr)
 	assert.Nil(t, digest)
+}
+
+func TestParseDigest(t *testing.T) {
+	t.Parallel()
+	for _, digestType := range cas.AllDigestTypes {
+		digest, err := cas.NewDigestForContent(digestType, strings.NewReader("some content"))
+		require.NoError(t, err)
+		parsedDigest, err := cas.ParseDigest(digest.String())
+		require.NoError(t, err)
+		assert.True(t, cas.DigestEqual(digest, parsedDigest))
+	}
 }
 
 func TestParseDigestError(t *testing.T) {
@@ -76,25 +91,28 @@ func TestParseDigestError(t *testing.T) {
 	testParseDigestError(t, "shake256:_", true)
 	testParseDigestError(t, "sha256 foo", true)
 	testParseDigestError(t, "sha256:_", true)
-	validDigest, err := cas.NewDigestForContent(bytes.NewBuffer(nil))
+	validDigest, err := cas.NewDigestForContent(cas.DigestTypeShake256, bytes.NewBuffer(nil))
 	require.NoError(t, err)
 	validDigestHex := hex.EncodeToString(validDigest.Value())
 	testParseDigestError(t, fmt.Sprintf("%s:%s", validDigest.Type(), validDigestHex[:10]), true)
 	testParseDigestError(t, fmt.Sprintf("md5:%s", validDigestHex), true)
+	validSHA256Digest, err := cas.NewDigestForContent(cas.DigestTypeSha256, bytes.NewBuffer(nil))
+	require.NoError(t, err)
+	testParseDigestError(t, fmt.Sprintf("sha256:%s", validSHA256Digest.String()), true)
 }
 
 func TestDigestEqual(t *testing.T) {
 	t.Parallel()
 	fileContent := "one line\nanother line\nyet another one\n"
-	d1, err := cas.NewDigestForContent(strings.NewReader(fileContent))
+	d1, err := cas.NewDigestForContent(cas.DigestTypeShake256, strings.NewReader(fileContent))
 	require.NoError(t, err)
-	d2, err := cas.NewDigestForContent(strings.NewReader(fileContent))
+	d2, err := cas.NewDigestForContent(cas.DigestTypeShake256, strings.NewReader(fileContent))
 	require.NoError(t, err)
-	d3, err := cas.NewDigestForContent(strings.NewReader(fileContent + "foo"))
+	d3, err := cas.NewDigestForContent(cas.DigestTypeShake256, strings.NewReader(fileContent+"foo"))
 	require.NoError(t, err)
-	d4, err := cas.NewDigestForContent(strings.NewReader(fileContent), cas.DigestWithDigestType(cas.DigestTypeSha256))
+	d4, err := cas.NewDigestForContent(cas.DigestTypeSha256, strings.NewReader(fileContent))
 	require.NoError(t, err)
-	d5, err := cas.NewDigestForContent(strings.NewReader(fileContent), cas.DigestWithDigestType(cas.DigestTypeSha256))
+	d5, err := cas.NewDigestForContent(cas.DigestTypeSha256, strings.NewReader(fileContent))
 	require.NoError(t, err)
 	assert.True(t, cas.DigestEqual(d1, d2))
 	assert.True(t, cas.DigestEqual(d4, d5))

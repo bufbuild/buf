@@ -15,6 +15,8 @@
 package buflsp
 
 import (
+	"os"
+	"path/filepath"
 	"slices"
 	"testing"
 
@@ -216,6 +218,15 @@ func TestGetBufYAMLCompletionItems(t *testing.T) {
 			wantLabels: []string{"STANDARD", "FIELD_LOWER_SNAKE_CASE"},
 			wantKind:   protocol.CompletionItemKindField,
 		},
+		{
+			// policies[*].ignore_only is parented by "policies", and the rules a
+			// policy can ignore include both lint and breaking rule IDs.
+			name:       "policy_ignore_only_keys",
+			text:       "policies:\n  - policy: buf.build/foo/bar\n    ignore_only:\n      \n",
+			pos:        protocol.Position{Line: 3, Character: 6},
+			wantLabels: []string{"STANDARD", "FIELD_LOWER_SNAKE_CASE", "FILE", "FIELD_NO_DELETE"},
+			wantKind:   protocol.CompletionItemKindField,
+		},
 
 		// ── Sequence after existing items ─────────────────────────────────
 		{
@@ -294,9 +305,9 @@ func TestGetBufYAMLCompletionItems(t *testing.T) {
 			wantKind:         protocol.CompletionItemKindField,
 		},
 
-		// ── policies[].ignore sequence (no completions — file paths) ───────
+		// ── policies[].ignore sequence (no completions when dirPath is empty) ──
 		{
-			name:          "policy_ignore_no_completions",
+			name:          "policy_ignore_no_completions_empty_dir",
 			text:          "policies:\n  - policy: buf.build/foo/bar\n    ignore:\n      - \n",
 			pos:           protocol.Position{Line: 3, Character: 8},
 			wantNilResult: true,
@@ -422,7 +433,7 @@ func TestGetBufYAMLCompletionItems(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			items := getBufYAMLCompletionItems(parseYAMLDoc(testCase.text), testCase.text, testCase.pos)
+			items := getBufYAMLCompletionItems(parseYAMLDoc(testCase.text), testCase.text, testCase.pos, "")
 
 			if testCase.wantNilResult {
 				assert.Nil(t, items)
@@ -452,7 +463,7 @@ func TestGetBufYAMLCompletionItemsTextEdit(t *testing.T) {
 
 	t.Run("key_textEdit_includes_colon_space", func(t *testing.T) {
 		t.Parallel()
-		items := getBufYAMLCompletionItems(parseYAMLDoc("lint:\n  \n"), "lint:\n  \n", protocol.Position{Line: 1, Character: 2})
+		items := getBufYAMLCompletionItems(parseYAMLDoc("lint:\n  \n"), "lint:\n  \n", protocol.Position{Line: 1, Character: 2}, "")
 		require.NotNil(t, items)
 		for _, item := range items {
 			require.NotNil(t, item.TextEdit, "item %q has no TextEdit", item.Label)
@@ -469,6 +480,7 @@ func TestGetBufYAMLCompletionItemsTextEdit(t *testing.T) {
 			parseYAMLDoc(text),
 			text,
 			protocol.Position{Line: 2, Character: 10},
+			"",
 		)
 		require.NotNil(t, items)
 		for _, item := range items {
@@ -487,6 +499,7 @@ func TestGetBufYAMLCompletionItemsTextEdit(t *testing.T) {
 			parseYAMLDoc(text),
 			text,
 			protocol.Position{Line: 2, Character: 4},
+			"",
 		)
 		require.NotNil(t, items)
 		for _, item := range items {
@@ -500,7 +513,7 @@ func TestGetBufYAMLCompletionItemsTextEdit(t *testing.T) {
 		t.Parallel()
 		// After bare "breaking:", completion items should have "  " indent in NewText.
 		text := "breaking:\n"
-		items := getBufYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 1, Character: 0})
+		items := getBufYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 1, Character: 0}, "")
 		require.NotNil(t, items)
 		for _, item := range items {
 			require.NotNil(t, item.TextEdit, "item %q has no TextEdit", item.Label)
@@ -518,6 +531,7 @@ func TestGetBufYAMLCompletionItemsTextEdit(t *testing.T) {
 			parseYAMLDoc(text),
 			text,
 			protocol.Position{Line: 1, Character: 7},
+			"",
 		)
 		require.NotNil(t, items)
 		for _, item := range items {
@@ -535,12 +549,121 @@ func TestGetBufYAMLCompletionItemsTextEdit(t *testing.T) {
 		// still recognize "  - path: ." as having "path" at effective indent 4
 		// and filter it from the suggestions.
 		text := "modules:\n  - path: .\n    \n"
-		items := getBufYAMLCompletionItems(nil, text, protocol.Position{Line: 2, Character: 4})
+		items := getBufYAMLCompletionItems(nil, text, protocol.Position{Line: 2, Character: 4}, "")
 		require.NotNil(t, items)
 		labels := completionLabels(items)
 		assert.False(t, slices.Contains(labels, "path"),
 			"text fallback should filter already-present inline seq key %q", "path")
 		assert.True(t, slices.Contains(labels, "lint"),
 			"text fallback should still offer sibling keys like %q", "lint")
+	})
+}
+
+func TestGetBufYAMLCompletionItemsPathCompletions(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(tmpDir, "proto", "api"), 0o755))
+	require.NoError(t, os.MkdirAll(filepath.Join(tmpDir, "vendor"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "README.md"), []byte("hello"), 0o600))
+
+	t.Run("lint_ignore_empty_partial", func(t *testing.T) {
+		t.Parallel()
+		text := "lint:\n  ignore:\n    - \n"
+		items := getBufYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 2, Character: 6}, tmpDir)
+		require.NotNil(t, items)
+		labels := completionLabels(items)
+		assert.True(t, slices.Contains(labels, "proto/"), "expected label %q", "proto/")
+		assert.True(t, slices.Contains(labels, "vendor/"), "expected label %q", "vendor/")
+		assert.True(t, slices.Contains(labels, "README.md"), "expected label %q", "README.md")
+	})
+
+	t.Run("lint_ignore_partial", func(t *testing.T) {
+		t.Parallel()
+		text := "lint:\n  ignore:\n    - pr\n"
+		items := getBufYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 2, Character: 8}, tmpDir)
+		require.NotNil(t, items)
+		labels := completionLabels(items)
+		assert.True(t, slices.Contains(labels, "proto/"), "expected label %q", "proto/")
+		assert.False(t, slices.Contains(labels, "vendor/"), "unexpected label %q", "vendor/")
+	})
+
+	t.Run("modules_path_value_dirs_only", func(t *testing.T) {
+		t.Parallel()
+		text := "modules:\n  - path: \n"
+		items := getBufYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 1, Character: 10}, tmpDir)
+		require.NotNil(t, items)
+		labels := completionLabels(items)
+		assert.True(t, slices.Contains(labels, "proto/"), "expected label %q", "proto/")
+		assert.True(t, slices.Contains(labels, "vendor/"), "expected label %q", "vendor/")
+		assert.False(t, slices.Contains(labels, "README.md"), "path is a directory key — files should be excluded")
+	})
+
+	t.Run("lint_ignore_subdir", func(t *testing.T) {
+		t.Parallel()
+		text := "lint:\n  ignore:\n    - proto/\n"
+		items := getBufYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 2, Character: 12}, tmpDir)
+		require.NotNil(t, items)
+		labels := completionLabels(items)
+		assert.True(t, slices.Contains(labels, "proto/api/"), "expected label %q", "proto/api/")
+	})
+
+	t.Run("dirpath_empty_returns_nil", func(t *testing.T) {
+		t.Parallel()
+		text := "lint:\n  ignore:\n    - \n"
+		items := getBufYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 2, Character: 6}, "")
+		assert.Nil(t, items)
+	})
+
+	t.Run("folder_kind_and_file_kind", func(t *testing.T) {
+		t.Parallel()
+		text := "lint:\n  ignore:\n    - \n"
+		items := getBufYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 2, Character: 6}, tmpDir)
+		require.NotNil(t, items)
+		kindByLabel := make(map[string]protocol.CompletionItemKind)
+		for _, item := range items {
+			kindByLabel[item.Label] = item.Kind
+		}
+		assert.Equal(t, protocol.CompletionItemKindFolder, kindByLabel["proto/"],
+			"directory entries should have Folder kind")
+		assert.Equal(t, protocol.CompletionItemKindFile, kindByLabel["README.md"],
+			"file entries should have File kind")
+	})
+
+	t.Run("lint_ignore_only_path", func(t *testing.T) {
+		t.Parallel()
+		text := "lint:\n  ignore_only:\n    STANDARD:\n      - \n"
+		items := getBufYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 3, Character: 8}, tmpDir)
+		require.NotNil(t, items)
+		labels := completionLabels(items)
+		assert.True(t, slices.Contains(labels, "proto/"), "expected label %q", "proto/")
+		assert.True(t, slices.Contains(labels, "README.md"), "expected label %q", "README.md")
+	})
+
+	t.Run("breaking_ignore_only_path", func(t *testing.T) {
+		t.Parallel()
+		text := "breaking:\n  ignore_only:\n    FILE:\n      - \n"
+		items := getBufYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 3, Character: 8}, tmpDir)
+		require.NotNil(t, items)
+		labels := completionLabels(items)
+		assert.True(t, slices.Contains(labels, "proto/"), "expected label %q", "proto/")
+	})
+
+	t.Run("module_lint_ignore_only_path", func(t *testing.T) {
+		t.Parallel()
+		text := "modules:\n  - path: .\n    lint:\n      ignore_only:\n        STANDARD:\n          - \n"
+		items := getBufYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 5, Character: 12}, tmpDir)
+		require.NotNil(t, items)
+		labels := completionLabels(items)
+		assert.True(t, slices.Contains(labels, "proto/"), "expected label %q", "proto/")
+	})
+
+	t.Run("policy_ignore_only_path", func(t *testing.T) {
+		t.Parallel()
+		text := "policies:\n  - policy: buf.build/foo/bar\n    ignore_only:\n      STANDARD:\n        - \n"
+		items := getBufYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 4, Character: 10}, tmpDir)
+		require.NotNil(t, items)
+		labels := completionLabels(items)
+		assert.True(t, slices.Contains(labels, "proto/"), "expected label %q", "proto/")
 	})
 }

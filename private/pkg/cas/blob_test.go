@@ -25,9 +25,10 @@ import (
 func TestNewBlobForContent(t *testing.T) {
 	t.Parallel()
 	content := "some file content"
-	digest, err := NewDigestForContent(strings.NewReader(content))
+	digest, err := NewDigestForContent(DigestTypeShake256, strings.NewReader(content))
 	require.NoError(t, err)
 	blob, err := NewBlobForContent(
+		DigestTypeShake256,
 		strings.NewReader(content),
 		BlobWithKnownDigest(digest),
 	)
@@ -36,9 +37,10 @@ func TestNewBlobForContent(t *testing.T) {
 	assert.Equal(t, []byte(content), blob.Content())
 
 	differentContent := "some different file content"
-	differentDigest, err := NewDigestForContent(strings.NewReader(differentContent))
+	differentDigest, err := NewDigestForContent(DigestTypeShake256, strings.NewReader(differentContent))
 	require.NoError(t, err)
 	_, err = NewBlobForContent(
+		DigestTypeShake256,
 		strings.NewReader(content),
 		BlobWithKnownDigest(differentDigest),
 	)
