@@ -127,7 +127,7 @@ func (p *policyDataStore) getPolicyDataForPolicyKey(
 			return nil, err
 		}
 		// Validate the digest, before parsing the config.
-		casDigest, err := cas.NewDigestForContent(bytes.NewReader(data))
+		casDigest, err := cas.NewDigestForContent(cas.DigestTypeShake256, bytes.NewReader(data))
 		if err != nil {
 			return nil, err
 		}

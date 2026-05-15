@@ -74,7 +74,7 @@ func NewFileSet(manifest Manifest, blobSet BlobSet) (FileSet, error) {
 }
 
 // NewFileSetForBucket returns a new FileSet for the given ReadBucket.
-func NewFileSetForBucket(ctx context.Context, bucket storage.ReadBucket) (FileSet, error) {
+func NewFileSetForBucket(ctx context.Context, bucket storage.ReadBucket, digestType DigestType) (FileSet, error) {
 	var fileNodes []FileNode
 	var blobs []Blob
 	if err := storage.WalkReadObjects(
@@ -82,7 +82,7 @@ func NewFileSetForBucket(ctx context.Context, bucket storage.ReadBucket) (FileSe
 		bucket,
 		"",
 		func(readObject storage.ReadObject) error {
-			blob, err := NewBlobForContent(readObject)
+			blob, err := NewBlobForContent(digestType, readObject)
 			if err != nil {
 				return fmt.Errorf("error creating Blob for file %q: %w", readObject.Path(), err)
 			}

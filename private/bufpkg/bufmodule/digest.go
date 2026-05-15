@@ -165,7 +165,7 @@ func ParseDigest(s string) (Digest, error) {
 	}
 	switch digestType {
 	case DigestTypeB4, DigestTypeB5:
-		casDigest, err := cas.NewDigest(value)
+		casDigest, err := cas.NewDigest(cas.DigestTypeShake256, value)
 		if err != nil {
 			return nil, err
 		}
@@ -240,7 +240,7 @@ func getB4Digest(
 		storage.FilterReadBucket(bucketWithStorageMatcherApplied, getStorageMatcher(ctx, bucketWithStorageMatcherApplied)),
 		"",
 		func(readObject storage.ReadObject) error {
-			digest, err := cas.NewDigestForContent(readObject)
+			digest, err := cas.NewDigestForContent(cas.DigestTypeShake256, readObject)
 			if err != nil {
 				return err
 			}
@@ -262,7 +262,7 @@ func getB4Digest(
 			// We may not have object data for one of these files, this is valid.
 			continue
 		}
-		digest, err := cas.NewDigestForContent(bytes.NewReader(objectData.Data()))
+		digest, err := cas.NewDigestForContent(cas.DigestTypeShake256, bytes.NewReader(objectData.Data()))
 		if err != nil {
 			return nil, err
 		}
@@ -361,7 +361,7 @@ func getB5DigestForBucketAndDepDigests(
 	// Now, place the file digest first, then the sorted dependency digests afterwards.
 	digestStrings := append([]string{filesDigest.String()}, depDigestStrings...)
 	// Join these strings together with newlines, and make a new shake256 digest.
-	digestOfDigests, err := cas.NewDigestForContent(strings.NewReader(strings.Join(digestStrings, "\n")))
+	digestOfDigests, err := cas.NewDigestForContent(cas.DigestTypeShake256, strings.NewReader(strings.Join(digestStrings, "\n")))
 	if err != nil {
 		return nil, err
 	}

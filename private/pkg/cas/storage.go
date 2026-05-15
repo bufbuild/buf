@@ -30,7 +30,7 @@ func BucketToDigest(ctx context.Context, bucket storage.ReadBucket, digestType D
 		bucket,
 		"",
 		func(readObject storage.ReadObject) error {
-			digest, err := NewDigestForContent(readObject, DigestWithDigestType(digestType))
+			digest, err := NewDigestForContent(digestType, readObject)
 			if err != nil {
 				return err
 			}
