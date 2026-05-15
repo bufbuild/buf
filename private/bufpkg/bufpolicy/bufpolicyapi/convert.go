@@ -40,7 +40,7 @@ func V1Beta1ProtoToDigest(protoDigest *policyv1beta1.Digest) (bufpolicy.Digest, 
 	if err != nil {
 		return nil, err
 	}
-	casDigest, err := cas.NewDigest(protoDigest.Value)
+	casDigest, err := cas.NewDigest(cas.DigestTypeShake256, protoDigest.Value)
 	if err != nil {
 		return nil, err
 	}

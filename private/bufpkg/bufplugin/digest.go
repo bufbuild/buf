@@ -152,7 +152,7 @@ func ParseDigest(s string) (Digest, error) {
 	}
 	switch digestType {
 	case DigestTypeP1:
-		casDigest, err := cas.NewDigest(value)
+		casDigest, err := cas.NewDigest(cas.DigestTypeShake256, value)
 		if err != nil {
 			return nil, err
 		}

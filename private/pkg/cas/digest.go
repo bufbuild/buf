@@ -30,10 +30,11 @@ import (
 
 const (
 	// DigestTypeShake256 represents the shake256 digest type.
-	//
-	// This is both the default and the only currently-known value for DigestType.
 	DigestTypeShake256 DigestType = iota + 1
 	// DigestTypeSha256 represents the sha256 digest type.
+	//
+	// SHA-256 Digest string values are bare hex so that SHA-256 manifests use the
+	// same digest spelling as standard checksum files.
 	DigestTypeSha256
 
 	sha256DigestLength = 32
@@ -86,7 +87,7 @@ func ParseDigestType(s string) (DigestType, error) {
 //
 // It consists of a DigestType and a digest value.
 type Digest interface {
-	// String() prints typeString:hexValue.
+	// String prints typeString:hexValue for typed digests, or bare hex for SHA-256.
 	fmt.Stringer
 
 	// Type returns the type of digest.
@@ -102,29 +103,12 @@ type Digest interface {
 	isDigest()
 }
 
-// NewDigest returns a new Digest for the value.
-func NewDigest(value []byte, options ...DigestOption) (Digest, error) {
-	digestOptions := newDigestOptions()
-	for _, option := range options {
-		option(digestOptions)
+// NewDigest returns a new Digest for the already-computed digest value.
+func NewDigest(digestType DigestType, value []byte) (Digest, error) {
+	if err := validateDigestParameters(digestType, value); err != nil {
+		return nil, err
 	}
-	if digestOptions.digestType == 0 {
-		digestOptions.digestType = DigestTypeShake256
-	}
-	switch digestOptions.digestType {
-	case DigestTypeShake256:
-		shake256Digest, err := shake256.NewDigest(value)
-		if err != nil {
-			return nil, err
-		}
-		return newDigest(DigestTypeShake256, shake256Digest.Value()), nil
-	case DigestTypeSha256:
-		sha256Digest := sha256.Sum256(value)
-		return newDigest(DigestTypeSha256, sha256Digest[:]), nil
-	default:
-		// This is a system error.
-		return nil, syserror.Newf("unknown DigestType: %v", digestOptions.digestType)
-	}
+	return newDigest(digestType, bytes.Clone(value)), nil
 }
 
 // NewDigestForContent creates a new Digest based on the given content read from the Reader.
@@ -132,15 +116,8 @@ func NewDigest(value []byte, options ...DigestOption) (Digest, error) {
 // A valid Digest is returned, even in the case of empty content.
 //
 // The Reader is read until io.EOF.
-func NewDigestForContent(reader io.Reader, options ...DigestOption) (Digest, error) {
-	digestOptions := newDigestOptions()
-	for _, option := range options {
-		option(digestOptions)
-	}
-	if digestOptions.digestType == 0 {
-		digestOptions.digestType = DigestTypeShake256
-	}
-	switch digestOptions.digestType {
+func NewDigestForContent(digestType DigestType, reader io.Reader) (Digest, error) {
+	switch digestType {
 	case DigestTypeShake256:
 		shake256Digest, err := shake256.NewDigestForContent(reader)
 		if err != nil {
@@ -155,26 +132,15 @@ func NewDigestForContent(reader io.Reader, options ...DigestOption) (Digest, err
 		return newDigest(DigestTypeSha256, hash.Sum(nil)[:]), nil
 	default:
 		// This is a system error.
-		return nil, syserror.Newf("unknown DigestType: %v", digestOptions.digestType)
-	}
-}
-
-// DigestOption is an option for a new Digest.
-type DigestOption func(*digestOptions)
-
-// DigestWithDigestType returns a new DigestOption that specifies the DigestType to be used.
-//
-// The default is DigestTypeShake256.
-func DigestWithDigestType(digestType DigestType) DigestOption {
-	return func(digestOptions *digestOptions) {
-		digestOptions.digestType = digestType
+		return nil, syserror.Newf("unknown DigestType: %v", digestType)
 	}
 }
 
 // ParseDigest parses a Digest from its string representation.
 //
-// A Digest string is of the form typeString:hexValue.
-// The string is expected to be non-empty, If not, an error is returned.
+// A SHA-256 Digest string is of the form hexValue. All other Digest strings are
+// of the form typeString:hexValue. The string is expected to be non-empty. If
+// not, an error is returned.
 //
 // This reverses Digest.String().
 //
@@ -186,11 +152,22 @@ func ParseDigest(s string) (Digest, error) {
 	}
 	digestTypeString, hexValue, ok := strings.Cut(s, ":")
 	if !ok {
-		return nil, newParseError(
-			"digest",
-			s,
-			errors.New(`must in the form "digest_type:digest_hex_value"`),
-		)
+		value, err := hex.DecodeString(s)
+		if err != nil {
+			return nil, newParseError(
+				"digest",
+				s,
+				errors.New(`could not parse hex: must be in the form "digest_hex_value" or "digest_type:digest_hex_value"`),
+			)
+		}
+		if err := validateDigestParameters(DigestTypeSha256, value); err != nil {
+			return nil, newParseError(
+				"digest",
+				s,
+				err,
+			)
+		}
+		return newDigest(DigestTypeSha256, value), nil
 	}
 	digestType, err := ParseDigestType(digestTypeString)
 	if err != nil {
@@ -198,6 +175,13 @@ func ParseDigest(s string) (Digest, error) {
 			"digest",
 			s,
 			err,
+		)
+	}
+	if digestType == DigestTypeSha256 {
+		return nil, newParseError(
+			"digest",
+			s,
+			errors.New(`sha256 digests must be in the form "digest_hex_value"`),
 		)
 	}
 	value, err := hex.DecodeString(hexValue)
@@ -241,17 +225,13 @@ func DigestEqual(a Digest, b Digest) bool {
 type digest struct {
 	digestType DigestType
 	value      []byte
-	// Cache as we call String pretty often.
-	// We could do this lazily but not worth it.
-	stringValue string
 }
 
 // validation should occur outside of this function.
 func newDigest(digestType DigestType, value []byte) *digest {
 	return &digest{
-		digestType:  digestType,
-		value:       value,
-		stringValue: digestType.String() + ":" + hex.EncodeToString(value),
+		digestType: digestType,
+		value:      value,
 	}
 }
 
@@ -264,18 +244,14 @@ func (d *digest) Value() []byte {
 }
 
 func (d *digest) String() string {
-	return d.stringValue
+	valueString := hex.EncodeToString(d.value)
+	if d.digestType == DigestTypeSha256 {
+		return valueString
+	}
+	return d.digestType.String() + ":" + valueString
 }
 
 func (*digest) isDigest() {}
-
-type digestOptions struct {
-	digestType DigestType
-}
-
-func newDigestOptions() *digestOptions {
-	return &digestOptions{}
-}
 
 func validateDigestParameters(digestType DigestType, value []byte) error {
 	switch digestType {

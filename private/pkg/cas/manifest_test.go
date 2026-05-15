@@ -33,7 +33,7 @@ func TestManifest(t *testing.T) {
 			var digests []Digest
 			var fileNodes []FileNode
 			for i := range 10 {
-				digest, err := NewDigestForContent(strings.NewReader(fmt.Sprintf("content%d", i)), DigestWithDigestType(digestType))
+				digest, err := NewDigestForContent(digestType, strings.NewReader(fmt.Sprintf("content%d", i)))
 				require.NoError(t, err)
 				digests = append(digests, digest)
 				fileNode, err := NewFileNode(fmt.Sprintf("%d", i), digest)

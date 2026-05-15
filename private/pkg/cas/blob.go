@@ -26,7 +26,7 @@ type Blob interface {
 	//
 	// Always non-nil.
 	//
-	// NewDigestForContent(bytes.NewReader(blob.Content())) should always match this value.
+	// NewDigestForContent(blob.Digest().Type(), bytes.NewReader(blob.Content())) should always match this value.
 	Digest() Digest
 	// Content returns the content of the Blob.
 	//
@@ -41,14 +41,14 @@ type Blob interface {
 // NewBlobForContent returns a new Blob for the content as read from the Reader.
 //
 // The reader is read until io.EOF.
-func NewBlobForContent(reader io.Reader, options ...BlobOption) (Blob, error) {
+func NewBlobForContent(digestType DigestType, reader io.Reader, options ...BlobOption) (Blob, error) {
 	blobOptions := newBlobOptions()
 	for _, option := range options {
 		option(blobOptions)
 	}
 	buffer := bytes.NewBuffer(nil)
 	teeReader := io.TeeReader(reader, buffer)
-	digest, err := NewDigestForContent(teeReader, DigestWithDigestType(blobOptions.digestType))
+	digest, err := NewDigestForContent(digestType, teeReader)
 	if err != nil {
 		return nil, err
 	}
@@ -67,15 +67,6 @@ type BlobOption func(*blobOptions)
 func BlobWithKnownDigest(knownDigest Digest) BlobOption {
 	return func(blobOptions *blobOptions) {
 		blobOptions.knownDigest = knownDigest
-	}
-}
-
-// BlobWithDigestType returns a new BlobOption sets the DigestType to be used.
-//
-// The default is DigestTypeShake256.
-func BlobWithDigestType(digestType DigestType) BlobOption {
-	return func(blobOptions *blobOptions) {
-		blobOptions.digestType = digestType
 	}
 }
 
@@ -105,7 +96,6 @@ func (*blob) isBlob() {}
 
 type blobOptions struct {
 	knownDigest Digest
-	digestType  DigestType
 }
 
 func newBlobOptions() *blobOptions {

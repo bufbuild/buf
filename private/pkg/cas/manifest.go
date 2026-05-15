@@ -35,6 +35,10 @@ type Manifest interface {
 	//	shake256:3b353aa5aacd11015e8577f16e2c4e7a242ce773d8e3a16806795bb94f76e601b0db9bf42d5e1907fda63303e1fa1c65f1c175ecc025a3ef29c3456ad237ad84  buf.md
 	//	shake256:7c88a20cf931702d042a4ddee3fde5de84814544411f1c62dbf435b1b81a12a8866a070baabcf8b5a0d31675af361ccb2d93ddada4cdcc11bab7ea3d8d7c4667  buf.yaml
 	//	shake256:9db25155eafd19b36882cff129daac575baa67ee44d1cb1fd3894342b28c72b83eb21aa595b806e9cb5344759bc8308200c5af98e4329aa83014dde99afa903a  pet/v1/pet.proto
+	//
+	// A SHA-256 encoded manifest uses bare checksum-style digest values:
+	//
+	//	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  buf.yaml
 	fmt.Stringer
 
 	// FileNodes returns the set of FileNodes that make up the Manifest.
@@ -114,15 +118,15 @@ func ParseManifest(s string) (Manifest, error) {
 // ManifestToBlob converts the string representation of the given Manifest into a Blob.
 //
 // The Manifest is assumed to be non-nil.
-func ManifestToBlob(manifest Manifest) (Blob, error) {
-	return NewBlobForContent(strings.NewReader(manifest.String()))
+func ManifestToBlob(manifest Manifest, digestType DigestType) (Blob, error) {
+	return NewBlobForContent(digestType, strings.NewReader(manifest.String()))
 }
 
 // ManifestToDigest converts the string representation of the given Manifest into a Digest.
 //
 // The Manifest is assumed to be non-nil.
 func ManifestToDigest(manifest Manifest, digestType DigestType) (Digest, error) {
-	return NewDigestForContent(strings.NewReader(manifest.String()), DigestWithDigestType(digestType))
+	return NewDigestForContent(digestType, strings.NewReader(manifest.String()))
 }
 
 // BlobToManifest converts the given Blob representing the string representation of a Manifest into a Manifest.
