@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Add LSP completion for `buf.gen.yaml`, `buf.yaml`, and `buf.policy.yaml` files.
+- Fix LSP `textDocument/documentSymbol` marking every symbol as deprecated.
 - Add error for when a dependency is added to `buf.yaml` and is missing from `buf.lock`.
 - Update the `PROTOVALIDATE` lint rule support checking `NaN` in `const`, `in`, `not_in`,
   `gt`, `gte`, `lt` and `lte` rules for `float` and `double` fields.

@@ -377,9 +377,10 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 	default:
 		kind = protocol.SymbolKindVariable
 	}
-	var isDeprecated bool
-	if _, ok := s.ir.Deprecated().AsBool(); ok {
-		isDeprecated = true
+	isDeprecated, _ := s.ir.Deprecated().AsBool()
+	var tags []protocol.SymbolTag
+	if isDeprecated {
+		tags = []protocol.SymbolTag{protocol.SymbolTagDeprecated}
 	}
 	return protocol.SymbolInformation{
 		Name:          string(name),
@@ -387,9 +388,7 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 		Location:      location,
 		ContainerName: containerName,
 		Deprecated:    isDeprecated,
-		Tags: []protocol.SymbolTag{
-			protocol.SymbolTagDeprecated,
-		},
+		Tags:          tags,
 	}
 }
 
