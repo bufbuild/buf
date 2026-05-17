@@ -9,7 +9,7 @@
 [![Homebrew](https://img.shields.io/homebrew/v/buf)](https://github.com/bufbuild/homebrew-buf)
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)][badges_slack]
 
-Buf is the default toolchain for [Protobuf][protobuf]. It replaces day-to-day `protoc` use with a fast compiler, module-aware workspaces, formatting, linting, breaking-change detection, code generation, dependency management, API calls, and a client for the [Buf Schema Registry][bsr].
+Buf is the modern toolchain for [Protobuf][protobuf]. It replaces day-to-day `protoc` use with a fast compiler, module-aware workspaces, formatting, linting, breaking-change detection, code generation, dependency management, API calls, and a client for the [Buf Schema Registry][bsr].
 
 If you are still driving Protobuf with shell scripts around `protoc -I ...`, Buf is the upgrade you want: the same schema language, the same generated-code plugin model, fewer moving parts, and a direct path from local `.proto` files to governed, versioned APIs.
 
@@ -158,21 +158,6 @@ Buf CLI releases do not make breaking changes within a major version. Since `buf
 
 This policy does not apply to commands behind the `buf beta` gate. Expect breaking changes for beta commands until they are promoted.
 
-## Builds
-
-Release artifacts are available for these operating systems and CPU architectures:
-
-|  | Linux | macOS | Windows | OpenBSD | FreeBSD |
-| --- | --- | --- | --- | --- | --- |
-| x86, 64-bit | Yes | Yes | Yes | Yes | Yes |
-| ARM, 64-bit | Yes | Yes | Yes | Yes | Yes |
-| ARMv7, 32-bit | Yes | No | No | No | No |
-| RISC-V, 64-bit | Yes | No | No | No | No |
-| ppc64le | Yes | No | No | No | No |
-| s390x | Yes | No | No | No | No |
-
-See [releases] for downloads.
-
 ## Documentation
 
 - [Buf CLI][cli]
@@ -223,7 +208,6 @@ For bugs, feature requests, and technical questions, open an issue in this repos
 [protobuf]: https://protobuf.dev
 [protobuf_es]: https://github.com/bufbuild/protobuf-es
 [protovalidate]: https://protovalidate.com
-[releases]: https://buf.build/docs/cli/installation/#github
 [remote_plugins]: https://buf.build/docs/bsr/remote-plugins/
 [schema_checks]: https://buf.build/docs/bsr/checks/
 [source builds]: https://buf.build/docs/cli/installation/#source
