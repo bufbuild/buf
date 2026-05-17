@@ -9,160 +9,225 @@
 [![Homebrew](https://img.shields.io/homebrew/v/buf)](https://github.com/bufbuild/homebrew-buf)
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)][badges_slack]
 
-<a name="features"></a>
-The [`buf`][buf] CLI is the best tool for working with [Protocol Buffers][protobuf]. It provides:
+Buf is the default toolchain for [Protobuf][protobuf]. It replaces day-to-day `protoc` use with a fast compiler, module-aware workspaces, formatting, linting, breaking-change detection, code generation, dependency management, API calls, and a client for the [Buf Schema Registry][bsr].
 
-- A [linter][lint_usage] that enforces good API design choices and structure.
-- A [breaking change detector][breaking_tutorial] that enforces compatibility at the source code or wire level.
-- A [generator][generate_usage] that invokes your plugins based on [configuration files][templates].
-- A [formatter][format_usage] that formats your Protobuf files in accordance with industry standards.
-- Integration with the [Buf Schema Registry][bsr], including full dependency management.
+If you are still driving Protobuf with shell scripts around `protoc -I ...`, Buf is the upgrade you want: the same schema language, the same generated-code plugin model, fewer moving parts, and a direct path from local `.proto` files to governed, versioned APIs.
 
-## Installation
+## Start
 
-### Homebrew
-
-You can install `buf` using [Homebrew][brew] (macOS or Linux):
+Install `buf` with [Homebrew][brew]:
 
 ```sh
 brew install bufbuild/buf/buf
 ```
 
-This installs:
-
-- The `buf`, [`protoc-gen-buf-breaking`][breaking], and [`protoc-gen-buf-lint`][lint] binaries
-- Shell completion scripts for [Bash], [Fish], [Powershell], and [zsh]
-
-### Other methods
-
-For other installation methods, see our [official documentation][install], which covers:
-
-- Installing `buf` via [npm]
-- Installing `buf` on [Windows]
-- Using `buf` as a [Docker image][docker]
-- Installing as a [binary], from a [tarball], and from [source] through [GitHub Releases][releases]
-- [Verifying] releases using a [minisign] public key
-
-
-## Usage
-
-Buf's help interface provides summaries for commands and flags:
+Initialize a workspace and run the checks you should expect every Protobuf repository to pass:
 
 ```sh
-buf --help
+buf config init
+buf build
+buf format -w
+buf lint
+buf breaking --against '.git#branch=main'
 ```
 
-For more comprehensive usage information, consult Buf's [documentation][docs], especially these guides:
+Generate code from a checked-in `buf.gen.yaml` instead of a hand-maintained shell command:
 
-* [`buf breaking`][breaking_tutorial]
-* [`buf build`][build_usage]
-* [`buf generate`][generate_usage]
-* [`buf lint`][lint_usage]
-* [`buf format`][format_usage]
-* [`buf registry`][bsr_quickstart] (for using the [BSR])
+```sh
+buf generate
+```
 
-## CLI breaking change policy
+For a guided walkthrough from an empty workspace to a working Connect service, run the [Buf CLI quickstart][cli_quickstart].
 
-We will never make breaking changes within a given major version of the CLI. After `buf` reached v1.0, you can expect no breaking changes until v2.0. But as we have no plans to ever release a v2.0, we will likely never break the `buf` CLI.
+## Why Buf wins
 
-> This breaking change policy does _not_ apply to commands behind the `buf beta` gate, and you should expect breaking changes to commands like `buf beta registry`. The policy does go into effect, however, when those commands or flags are elevated out of beta.
+<a name="features"></a>
 
-## Our goals for Protobuf
+| Protobuf work | With `protoc` and scripts | With Buf |
+| --- | --- | --- |
+| Finding files | Maintain `-I` paths and hope import order does not change behavior. | Declare modules once in `buf.yaml`; Buf discovers files and rejects ambiguous imports. |
+| Compiling | Manage a local `protoc` install and parse changing stderr output. | Use Buf's internal compiler, tested against `protoc` descriptor output and built for deterministic parallel compilation. |
+| Style | Rely on review comments or separate tooling. | Run `buf lint` locally, in editors, in CI, and on the BSR with 40+ built-in rules plus custom plugins. |
+| Compatibility | Find breakage after generated code fails, clients fail, or serialized data becomes unreadable. | Run `buf breaking` against Git, a BSR module, a tarball, a zip file, or a Buf image before merge. |
+| Code generation | Keep plugin binaries installed on every machine and encode behavior in long commands. | Put plugins, outputs, options, inputs, and managed-mode settings in `buf.gen.yaml`; use local or remote plugins. |
+| Dependencies | Copy `.proto` files between repositories or vendor them by hand. | Declare BSR module dependencies in `buf.yaml` and pin them in `buf.lock`. |
+| API consumers | Send people your schemas and generation instructions. | Publish to the BSR and let consumers install generated SDKs with `go get`, `npm install`, Maven, Gradle, `pip install`, NuGet, Cargo, SwiftPM, CMake, or an archive. |
+| Governance | Reimplement checks in every repository and hope every team keeps them enabled. | Enforce breaking-change, uniqueness, and custom policies at the BSR layer. |
 
-[Buf]'s goal is to replace the current paradigm of API development, centered around REST/JSON, with a **schema-driven** paradigm. Defining APIs using an [IDL] provides numerous benefits over REST/JSON, and [Protobuf] is by far the most stable and widely adopted IDL in the industry. We've chosen to build on this widely trusted foundation rather than creating a new IDL from scratch.
+Core CLI features work without a BSR account. Signing in to the registry adds distribution, remote plugins, generated SDKs, hosted docs, dependency resolution for private modules, and server-side checks when you need them.
 
-But despite its technical merits, actually _using_ Protobuf has long been more challenging than it needs to be. The Buf CLI and the [BSR](#the-buf-schema-registry) are the cornerstones of our effort to change that for good and to make Protobuf reliable and easy to use for service owners and clients alike—in other words, to create a **modern Protobuf ecosystem**.
+## Core workflow
 
-While we intend to incrementally improve on the `buf` CLI and the [BSR](#the-buf-schema-registry), we're confident that the basic groundwork for such an ecosystem is _already_ in place.
+Buf treats a directory tree of `.proto` files as a module, and a project as a workspace. A small `buf.yaml` is enough to make build, lint, breaking-change detection, generation, dependency resolution, and publishing agree on the same input.
 
-## The Buf Schema Registry
+```yaml
+version: v2
+modules:
+  - path: proto
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE
+```
 
-The [Buf Schema Registry][bsr] (BSR) is a SaaS platform for managing your Protobuf APIs. It provides a centralized registry and a single source of truth for all of your Protobuf assets, including not just your `.proto` files but also [remote plugins][bsr_plugins]. Although the BSR provides an intuitive browser UI, `buf` enables you to perform most BSR-related tasks from the command line, such as [pushing] Protobuf sources to the registry and managing [users] and [repositories]. 
+From there, the useful commands are deliberately boring:
 
-> The BSR is not required to use `buf`. We've made the core [features] of the `buf` CLI available to _all_ Protobuf users.
+```sh
+buf build
+buf format -w
+buf lint
+buf breaking --against '.git#branch=main'
+buf generate
+buf push
+```
 
-## More advanced CLI features
+`buf build` compiles the workspace. `buf lint` catches API-shape problems while the author is still editing. `buf breaking` compares the current schema against a previous version and flags source, JSON, or wire-format incompatibilities. `buf generate` runs `protoc` plugins from a checked-in template. `buf push` publishes named modules to the BSR.
 
-While `buf`'s [core features][features] should cover most use cases, we've included some more advanced features to cover edge cases:
+## Code generation
 
-* **Automatic file discovery**. Buf walks your file tree and builds your `.proto` files in accordance with your supplied [build configuration][build_config], which means that you no longer need to manually specify `--proto_paths`. You can still, however, specify `.proto` files manually through CLI flags in cases where file discovery needs to be disabled.
-* **Fine-grained rule configuration** for [linting][lint_rules] and [breaking changes][breaking_rules]. While we do have recommended defaults, you can always select the exact set of rules that your use case requires, with [40 lint rules][lint_rules] and [53 breaking change rules][breaking_rules] available.
-* **Configurable error formats** for CLI output. `buf` outputs information in `file:line:column:message` form by default for each lint error and breaking change it encounters, but you can also select JSON, MSVS, JUnit, and Github Actions output.
-* **Editor integration** driven by `buf`'s granular error output. We currently provide linting integrations for both [Vim and Visual Studio Code][ide] and [JetBrains IDEs][jetbrains] like IntelliJ and GoLand, but we plan to support other editors such as Emacs in the future.
-* **Universal Input targeting**. Buf enables you to perform actions like linting and breaking change detection not just against local `.proto` files but also against a broad range of other [Inputs], such as tarballs and ZIP files, remote Git repositories, and pre-built [image][images] files.
-* **Speed**. Buf's internal Protobuf [compiler] compiles your Protobuf sources using all available cores without compromising deterministic output, which is considerably faster than `protoc`. This allows for near-instantaneous feedback, which is of special importance for features like [editor integration][ide].
+`buf generate` is compatible with the normal `protoc` plugin model, but it moves generation into versioned configuration. This example generates Go Protobuf types and ConnectRPC handlers from `proto/` using remote plugins hosted on the BSR:
 
-## Next steps
+```yaml
+version: v2
+clean: true
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/acme/weather/gen/go
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: gen/go
+    opt: paths=source_relative
+  - remote: buf.build/connectrpc/gosimple
+    out: gen/go
+    opt:
+      - paths=source_relative
+      - simple
+inputs:
+  - directory: proto
+```
 
-Once you've installed `buf`, we recommend completing the [CLI tutorial][cli-tutorial], which provides a broad but hands-on overview of the core functionality of the CLI. The tour takes about 10 minutes to complete.
+Remote plugins remove the need to install and maintain generator binaries on every developer machine or CI runner. Managed mode lets API producers keep language-specific file options out of `.proto` files while consumers still get correct generated package names for their target language.
 
-After completing the tour, check out the remainder of the [docs] for your specific areas of interest.
+Local plugins work too. If a plugin speaks the standard Protobuf plugin protocol, Buf can run it.
+
+## Breaking changes
+
+Protobuf compatibility is not one thing. Renaming a field can break generated source code while preserving the binary wire format; changing a field from `int32` to `string` breaks every existing serialized message. `buf breaking` makes that distinction explicit with rule categories for `FILE`, `PACKAGE`, `WIRE_JSON`, and `WIRE` compatibility.
+
+```sh
+buf breaking --against '.git#branch=main'
+```
+
+`--against` accepts a Git branch, a BSR module, a tarball, a zip file, a local directory, or a prebuilt Buf image. That matters in real repositories: the same command works on a laptop, in CI, and in release automation.
+
+## Buf Schema Registry
+
+<a name="the-buf-schema-registry"></a>
+
+[Buf Schema Registry][bsr] is a Protobuf-aware registry. It stores modules, verifies they compile, renders documentation, resolves dependencies, hosts remote plugins, produces generated SDKs, and can enforce schema checks before a breaking change reaches consumers.
+
+```sh
+buf push
+```
+
+Pushing a module to the BSR gives your organization a source of truth for Protobuf APIs. Consumers can depend on the schema as a BSR module, install generated SDKs from their normal package manager, or use the BSR docs to inspect services, messages, fields, enums, references, and historical commits.
+
+## Related projects
+
+Buf is most useful when schemas drive more than code generation. [ConnectRPC][connectrpc] uses Protobuf schemas to build simple HTTP APIs that support Connect, gRPC, and gRPC-Web without separate service definitions. [Protobuf-ES][protobuf_es] gives JavaScript and TypeScript users a modern Protobuf runtime and generator. [Protovalidate][protovalidate] puts validation rules in the schema and runs them consistently across languages.
+
+One contract should drive the whole workflow: compile, lint, compatibility checks, generated clients and servers, validation, API calls, package publishing, and governed changes.
+
+## Installation
+
+Homebrew installs the `buf`, [`protoc-gen-buf-breaking`][breaking_plugin], and [`protoc-gen-buf-lint`][lint_plugin] binaries, plus shell completion scripts for [Bash], [Fish], [PowerShell], and [zsh].
+
+```sh
+brew install bufbuild/buf/buf
+```
+
+Other supported installation methods include [npm], [Windows], [Docker], [binary downloads], [tarballs], [source builds], and [minisign verification][verifying]. See the [installation docs][install] for the full list.
+
+## CLI stability
+
+Buf CLI releases do not make breaking changes within a major version. Since `buf` reached v1.0, you can expect no breaking changes until v2.0. We have no plans to release v2.0.
+
+This policy does not apply to commands behind the `buf beta` gate. Expect breaking changes for beta commands until they are promoted.
 
 ## Builds
 
-The following is a breakdown of the binaries by CPU architecture and operating system available through our [releases]:
+Release artifacts are available for these operating systems and CPU architectures:
 
-|  | Linux | MacOS | Windows | OpenBSD | FreeBSD |
+|  | Linux | macOS | Windows | OpenBSD | FreeBSD |
 | --- | --- | --- | --- | --- | --- |
-| x86 (64-bit) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| ARM (64-bit) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| ARMv7 (32-bit) | ✅ | ❌ | ❌ | ❌ | ❌ |
-| RISC-V (64-bit) | ✅ | ❌ | ❌ | ❌ | ❌ |
-| ppc64le | ✅ | ❌ | ❌ | ❌ | ❌ |
-| s390x | ✅ | ❌ | ❌ | ❌ | ❌ |
+| x86, 64-bit | Yes | Yes | Yes | Yes | Yes |
+| ARM, 64-bit | Yes | Yes | Yes | Yes | Yes |
+| ARMv7, 32-bit | Yes | No | No | No | No |
+| RISC-V, 64-bit | Yes | No | No | No | No |
+| ppc64le | Yes | No | No | No | No |
+| s390x | Yes | No | No | No | No |
+
+See [releases] for downloads.
+
+## Documentation
+
+- [Buf CLI][cli]
+- [CLI quickstart][cli_quickstart]
+- [Modules and workspaces][modules_workspaces]
+- [Code generation][generate]
+- [Linting][lint]
+- [Breaking-change detection][breaking]
+- [Formatting][format]
+- [Calling APIs with `buf curl`][curl]
+- [Buf Schema Registry][bsr]
+- [Generated SDKs][generated_sdks]
+- [Remote plugins][remote_plugins]
+- [Schema checks][schema_checks]
+- [Migrating from `protoc`][migrate_from_protoc]
 
 ## Community
 
-For help and discussion around Protobuf, best practices, and more, join us on [Slack][badges_slack].
+For help and discussion around Protobuf, best practices, and Buf, join us on [Slack][badges_slack].
 
-For updates on the Buf CLI, [follow this repo on GitHub][repo].
-
-For feature requests, bugs, or technical questions, email us at [dev@buf.build][email_dev]. For general inquiries or inclusion in our upcoming feature betas, email us at [info@buf.build][email_info].
+For bugs, feature requests, and technical questions, open an issue in this repository or email [dev@buf.build][email_dev]. For general inquiries, email [info@buf.build][email_info].
 
 [badges_slack]: https://buf.build/links/slack
 [bash]: https://www.gnu.org/software/bash
-[binary]: https://buf.build/docs/cli/installation/#source
-[breaking]: https://buf.build/docs/breaking/overview/
-[breaking_rules]: https://buf.build/docs/breaking/rules/
-[breaking_tutorial]: https://buf.build/docs/breaking/tutorial/
+[binary downloads]: https://buf.build/docs/cli/installation/#github
+[breaking]: https://buf.build/docs/breaking/
+[breaking_plugin]: https://buf.build/docs/breaking/
 [brew]: https://brew.sh
 [bsr]: https://buf.build/docs/bsr/
-[bsr_plugins]: https://buf.build/plugins
-[bsr_quickstart]: https://buf.build/docs/bsr/quickstart/
-[buf]: https://buf.build
-[build_config]: https://buf.build/docs/build/usage/#key-concepts
-[build_usage]: https://buf.build/docs/build/usage
-[cli-tutorial]: https://buf.build/docs/cli/quickstart/
-[compiler]: https://buf.build/docs/reference/internal-compiler/
+[cli]: https://buf.build/docs/cli/
+[cli_quickstart]: https://buf.build/docs/cli/quickstart/
+[connectrpc]: https://connectrpc.com
+[curl]: https://buf.build/docs/curl/
 [docker]: https://buf.build/docs/cli/installation/#docker
-[docs]: https://buf.build/docs
 [email_dev]: mailto:dev@buf.build
 [email_info]: mailto:info@buf.build
-[features]: #features
 [fish]: https://fishshell.com
-[format_usage]: https://buf.build/docs/format/style/
-[generate_usage]: https://buf.build/docs/generate/tutorial/
-[ide]: https://buf.build/docs/cli/editor-integration/
-[idl]: https://en.wikipedia.org/wiki/Interface_description_language
-[images]: https://buf.build/docs/reference/images/
-[inputs]: https://buf.build/docs/reference/inputs/
+[format]: https://buf.build/docs/format/
+[generate]: https://buf.build/docs/generate/
+[generated_sdks]: https://buf.build/docs/bsr/generated-sdks/
 [install]: https://buf.build/docs/cli/installation/
-[jetbrains]: https://buf.build/docs/cli/editor-integration/#jetbrains-ides
-[lint]: https://buf.build/docs/lint/overview/
-[lint_rules]: https://buf.build/docs/lint/rules/
-[lint_usage]: https://buf.build/docs/lint/tutorial/
+[lint]: https://buf.build/docs/lint/
+[lint_plugin]: https://buf.build/docs/lint/
+[migrate_from_protoc]: https://buf.build/docs/migration-guides/migrate-from-protoc/
+[modules_workspaces]: https://buf.build/docs/cli/modules-workspaces/
 [npm]: https://buf.build/docs/cli/installation/#npm
-[minisign]: https://github.com/jedisct1/minisign
-[powershell]: https://docs.microsoft.com/en-us/powershell
+[powershell]: https://learn.microsoft.com/en-us/powershell/
 [protobuf]: https://protobuf.dev
-[pushing]: https://buf.build/docs/bsr/module/publish/
+[protobuf_es]: https://github.com/bufbuild/protobuf-es
+[protovalidate]: https://protovalidate.com
 [releases]: https://buf.build/docs/cli/installation/#github
-[repo]: https://github.com/bufbuild/buf/
-[repositories]: https://buf.build/docs/concepts/repositories/
-[source]: https://buf.build/docs/cli/installation/#source
-[tarball]: https://buf.build/docs/cli/installation/#github
-[templates]: https://buf.build/docs/configuration/v2/buf-gen-yaml/
-[users]: https://buf.build/docs/admin/manage-members/
+[remote_plugins]: https://buf.build/docs/bsr/remote-plugins/
+[schema_checks]: https://buf.build/docs/bsr/checks/
+[source builds]: https://buf.build/docs/cli/installation/#source
+[tarballs]: https://buf.build/docs/cli/installation/#github
 [verifying]: https://buf.build/docs/cli/installation/#github
 [windows]: https://buf.build/docs/cli/installation/#windows
 [zsh]: https://zsh.org
