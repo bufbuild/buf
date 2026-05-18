@@ -43,6 +43,7 @@ type gitRef struct {
 	recurseSubmodules bool
 	subDirPath        string
 	filter            string
+	gitMergeBase      string
 }
 
 func newGitRef(
@@ -53,6 +54,7 @@ func newGitRef(
 	recurseSubmodules bool,
 	subDirPath string,
 	filter string,
+	gitMergeBase string,
 ) (*gitRef, error) {
 	gitScheme, path, err := getGitSchemeAndPath(format, path)
 	if err != nil {
@@ -77,6 +79,7 @@ func newGitRef(
 		depth,
 		subDirPath,
 		filter,
+		gitMergeBase,
 	), nil
 }
 
@@ -89,6 +92,7 @@ func newDirectGitRef(
 	depth uint32,
 	subDirPath string,
 	filter string,
+	gitMergeBase string,
 ) *gitRef {
 	return &gitRef{
 		format:            format,
@@ -99,6 +103,7 @@ func newDirectGitRef(
 		recurseSubmodules: recurseSubmodules,
 		subDirPath:        subDirPath,
 		filter:            filter,
+		gitMergeBase:      gitMergeBase,
 	}
 }
 
@@ -132,6 +137,10 @@ func (r *gitRef) SubDirPath() string {
 
 func (r *gitRef) Filter() string {
 	return r.filter
+}
+
+func (r *gitRef) GitMergeBase() string {
+	return r.gitMergeBase
 }
 
 func (*gitRef) ref()       {}
