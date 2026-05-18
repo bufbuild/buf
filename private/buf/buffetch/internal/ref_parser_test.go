@@ -15,9 +15,12 @@
 package internal
 
 import (
+	"context"
 	"testing"
 
+	"github.com/bufbuild/buf/private/pkg/slogtestext"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetRawPathAndOptionsError(t *testing.T) {
@@ -83,5 +86,40 @@ func testGetRawPathAndOptionsError(
 		t.Parallel()
 		_, _, err := getRawPathAndOptions(value)
 		assert.EqualError(t, err, expectedErr.Error())
+	})
+}
+
+func TestRefParserGitMergeBaseValidation(t *testing.T) {
+	t.Parallel()
+	parser := newRefParser(slogtestext.NewLogger(t), WithGitFormat("git"))
+	ctx := context.Background()
+
+	t.Run("valid_merge_base", func(t *testing.T) {
+		t.Parallel()
+		parsedRef, err := parser.getParsedRef(ctx, "path/to/repo#format=git,merge_base=main", nil)
+		require.NoError(t, err)
+		gitRef, ok := parsedRef.(GitRef)
+		require.True(t, ok, "expected GitRef")
+		assert.Equal(t, "main", gitRef.GitMergeBase())
+		assert.Equal(t, uint32(50), gitRef.Depth())
+		assert.Nil(t, gitRef.GitName())
+	})
+
+	t.Run("merge_base_with_branch", func(t *testing.T) {
+		t.Parallel()
+		_, err := parser.getParsedRef(ctx, "path/to/repo#format=git,merge_base=main,branch=feature", nil)
+		assert.EqualError(t, err, NewCannotSpecifyMergeBaseWithOtherGitOptionsError().Error())
+	})
+
+	t.Run("merge_base_with_ref", func(t *testing.T) {
+		t.Parallel()
+		_, err := parser.getParsedRef(ctx, "path/to/repo#format=git,merge_base=main,ref=abc123", nil)
+		assert.EqualError(t, err, NewCannotSpecifyMergeBaseWithOtherGitOptionsError().Error())
+	})
+
+	t.Run("merge_base_with_commit", func(t *testing.T) {
+		t.Parallel()
+		_, err := parser.getParsedRef(ctx, "path/to/repo#format=git,merge_base=main,commit=abc123", nil)
+		assert.EqualError(t, err, NewCannotSpecifyMergeBaseWithOtherGitOptionsError().Error())
 	})
 }
