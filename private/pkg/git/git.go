@@ -312,6 +312,31 @@ func GetCurrentHEADGitCommit(
 	return strings.TrimSpace(stdout.String()), nil
 }
 
+// GetMergeBase returns the best common ancestor commit between HEAD and the
+// given ref in the git repository that contains dir, equivalent to running
+// "git merge-base HEAD <ref>". Returns the full commit hash with no trailing whitespace.
+func GetMergeBase(
+	ctx context.Context,
+	envContainer app.EnvContainer,
+	dir string,
+	ref string,
+) (string, error) {
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	if err := xexec.Run(
+		ctx,
+		gitCommand,
+		xexec.WithArgs("merge-base", "HEAD", ref),
+		xexec.WithStdout(stdout),
+		xexec.WithStderr(stderr),
+		xexec.WithDir(dir),
+		xexec.WithEnv(app.Environ(envContainer)),
+	); err != nil {
+		return "", fmt.Errorf("failed to compute merge-base between HEAD and %s: %w: %s", ref, err, stderr.String())
+	}
+	return strings.TrimSpace(stdout.String()), nil
+}
+
 // GetRefsForGitCommitAndRemote returns all refs pointing to a given commit based on the
 // given remote for the given directory. Querying the remote for refs information requires
 // passing the environment for permissions.
