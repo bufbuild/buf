@@ -363,6 +363,30 @@ func (r *reader) getGitBucket(
 	if err != nil {
 		return nil, nil, err
 	}
+	gitName := gitRef.GitName()
+	if mergeBaseRef := gitRef.GitMergeBase(); mergeBaseRef != "" {
+		if gitRef.GitScheme() != GitSchemeLocal {
+			return nil, nil, NewMergeBaseOnlyForLocalGitError()
+		}
+		// gitRef.Path() is the normalized path to the git repository (e.g. ".git").
+		// We need the directory containing it to run "git merge-base".
+		localPath := normalpath.Unnormalize(gitRef.Path())
+		absPath, err := filepath.Abs(localPath)
+		if err != nil {
+			return nil, nil, fmt.Errorf("could not resolve local git path: %w", err)
+		}
+		// Use the parent directory if the path is a .git directory,
+		// otherwise use the path directly (worktree or bare repo).
+		gitDir := absPath
+		if filepath.Base(absPath) == ".git" {
+			gitDir = filepath.Dir(absPath)
+		}
+		mergeBaseCommit, err := git.GetMergeBase(ctx, container, gitDir, mergeBaseRef)
+		if err != nil {
+			return nil, nil, err
+		}
+		gitName = git.NewRefName(mergeBaseCommit)
+	}
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	if err := r.gitCloner.CloneToBucket(
 		ctx,
@@ -371,7 +395,7 @@ func (r *reader) getGitBucket(
 		gitRef.Depth(),
 		readWriteBucket,
 		git.CloneToBucketOptions{
-			Name:              gitRef.GitName(),
+			Name:              gitName,
 			RecurseSubmodules: gitRef.RecurseSubmodules(),
 			SubDir:            gitRef.SubDirPath(),
 			Filter:            gitRef.Filter(),
