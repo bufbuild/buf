@@ -209,6 +209,10 @@ type GitRef interface {
 	SubDirPath() string
 	// Filter spec to use, see the --filter option in git rev-list.
 	Filter() string
+	// GitMergeBase returns the ref to compute the merge-base with (via "git merge-base HEAD <ref>").
+	// Returns empty string if not set.
+	// Only supported for local git references.
+	GitMergeBase() string
 	gitRef()
 }
 
@@ -357,6 +361,7 @@ func NewDirectParsedGitRef(
 	depth uint32,
 	subDirPath string,
 	filter string,
+	gitMergeBase string,
 ) ParsedGitRef {
 	return newDirectGitRef(
 		format,
@@ -367,6 +372,7 @@ func NewDirectParsedGitRef(
 		depth,
 		subDirPath,
 		filter,
+		gitMergeBase,
 	)
 }
 
@@ -565,6 +571,13 @@ type RawRef struct {
 	// Only set for git formats.
 	// The filter spec to use, see the --filter option in git rev-list.
 	GitFilter string
+	// Only set for git formats.
+	// Specifies a branch or ref to compute the git merge-base with, relative to HEAD.
+	// When set, buf will run "git merge-base HEAD <GitMergeBase>" and use the resulting
+	// commit as the checkout target.
+	// Cannot be specified with GitBranch, GitCommitOrTag, or GitRef.
+	// Only supported for local git references.
+	GitMergeBase string
 	// Only set for archive formats.
 	ArchiveStripComponents uint32
 	// Only set for proto file ref format.
