@@ -48,6 +48,16 @@ func NewCannotSpecifyCommitOrTagWithRefError() error {
 	return errors.New(`cannot specify "commit" or "tag" with "ref"`)
 }
 
+// NewCannotSpecifyMergeBaseWithOtherGitOptionsError is a fetch error.
+func NewCannotSpecifyMergeBaseWithOtherGitOptionsError() error {
+	return errors.New(`"merge_base" cannot be specified with "branch", "commit", "tag", or "ref"`)
+}
+
+// NewMergeBaseOnlyForLocalGitError is a fetch error.
+func NewMergeBaseOnlyForLocalGitError() error {
+	return errors.New(`"merge_base" is only supported for local git references (e.g. ".git#merge_base=main")`)
+}
+
 // NewDepthParseError is a fetch error.
 func NewDepthParseError(s string) error {
 	return fmt.Errorf(`could not parse "depth" value %q`, s)
