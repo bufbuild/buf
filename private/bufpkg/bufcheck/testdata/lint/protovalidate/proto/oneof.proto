@@ -26,3 +26,50 @@ message OneofTest {
   optional string f5 = 5 [(buf.validate.field).required = true];
   optional google.protobuf.Duration f6 = 6 [(buf.validate.field).required = true];
 }
+
+// MessageOneofRuleValid exercises the buf.validate.message.oneof rule for the
+// success case: the rule references real fields with no duplicates and no
+// overlap between entries.
+message MessageOneofRuleValid {
+  option (buf.validate.message).oneof = {fields: ["a", "b"]};
+  option (buf.validate.message).oneof = {
+    fields: ["c", "d"],
+    required: true
+  };
+  string a = 1;
+  string b = 2;
+  string c = 3;
+  string d = 4;
+}
+
+// MessageOneofRuleUnknownField references a field that is not defined in
+// the message.
+message MessageOneofRuleUnknownField {
+  option (buf.validate.message).oneof = {fields: ["a", "does_not_exist"]};
+  string a = 1;
+  string b = 2;
+}
+
+// MessageOneofRuleEmpty has an entry with no field names.
+message MessageOneofRuleEmpty {
+  option (buf.validate.message).oneof = {fields: []};
+  string a = 1;
+  string b = 2;
+}
+
+// MessageOneofRuleDuplicateField has the same field name twice in one entry.
+message MessageOneofRuleDuplicateField {
+  option (buf.validate.message).oneof = {fields: ["a", "b", "a"]};
+  string a = 1;
+  string b = 2;
+}
+
+// MessageOneofRuleFieldInMultipleEntries has the same field in two
+// different entries.
+message MessageOneofRuleFieldInMultipleEntries {
+  option (buf.validate.message).oneof = {fields: ["a", "b"]};
+  option (buf.validate.message).oneof = {fields: ["b", "c"]};
+  string a = 1;
+  string b = 2;
+  string c = 3;
+}
