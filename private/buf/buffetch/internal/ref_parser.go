@@ -142,6 +142,8 @@ func (a *refParser) getRawRef(
 			rawRef.GitCommitOrTag = value
 		case "ref":
 			rawRef.GitRef = value
+		case "merge_base":
+			rawRef.GitMergeBase = value
 		case "filter":
 			rawRef.GitFilter = value
 		case "depth":
@@ -191,8 +193,8 @@ func (a *refParser) getRawRef(
 	if rawRef.Format == "git" && rawRef.GitDepth == 0 {
 		// Default to 1
 		rawRef.GitDepth = 1
-		if rawRef.GitRef != "" {
-			// Default to 50 when using ref
+		if rawRef.GitRef != "" || rawRef.GitMergeBase != "" {
+			// Default to 50 when using ref or merge_base
 			rawRef.GitDepth = 50
 		}
 	}
@@ -347,8 +349,11 @@ func (a *refParser) validateRawRef(
 		if rawRef.GitRef != "" && rawRef.GitCommitOrTag != "" {
 			return NewCannotSpecifyCommitOrTagWithRefError()
 		}
+		if rawRef.GitMergeBase != "" && (rawRef.GitBranch != "" || rawRef.GitCommitOrTag != "" || rawRef.GitRef != "") {
+			return NewCannotSpecifyMergeBaseWithOtherGitOptionsError()
+		}
 	} else {
-		if rawRef.GitBranch != "" || rawRef.GitCommitOrTag != "" || rawRef.GitRef != "" || rawRef.GitRecurseSubmodules || rawRef.GitDepth > 0 {
+		if rawRef.GitBranch != "" || rawRef.GitCommitOrTag != "" || rawRef.GitRef != "" || rawRef.GitMergeBase != "" || rawRef.GitRecurseSubmodules || rawRef.GitDepth > 0 {
 			return NewOptionsInvalidForFormatError(rawRef.Format, displayName, "git options set")
 		}
 	}
@@ -522,6 +527,7 @@ func getGitRef(
 		rawRef.GitRecurseSubmodules,
 		rawRef.SubDirPath,
 		rawRef.GitFilter,
+		rawRef.GitMergeBase,
 	)
 }
 

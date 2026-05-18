@@ -225,7 +225,7 @@ func NewGitRef(
 	subDirPath string,
 	filter string,
 ) (GitRef, error) {
-	return newGitRef("", path, gitName, depth, recurseSubmodules, subDirPath, filter)
+	return newGitRef("", path, gitName, depth, recurseSubmodules, subDirPath, filter, "")
 }
 
 // ModuleRef is a module reference.
