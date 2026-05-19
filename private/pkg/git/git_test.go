@@ -370,6 +370,21 @@ func TestGitCloner(t *testing.T) {
 		assert.Equal(t, "// commit 2", string(content))
 	})
 
+	t.Run("env_override=GIT_WORK_TREE", func(t *testing.T) {
+		t.Parallel()
+		readBucket := readBucketForName(ctx, t, workDir, readBucketForNameOptions{
+			envOverrides: map[string]string{
+				// Simulates running inside a git worktree where GIT_WORK_TREE
+				// points at the worktree's working directory.
+				"GIT_WORK_TREE": workDir,
+			},
+		})
+
+		content, err := storage.ReadPath(ctx, readBucket, "a.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 2", string(content))
+	})
+
 	t.Run("env_override=GIT_DIR,GIT_INDEX_FILE", func(t *testing.T) {
 		t.Parallel()
 		tempDir := t.TempDir()
