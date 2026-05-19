@@ -235,7 +235,7 @@ func TestCELHover(t *testing.T) {
 			name:     "function: duration",
 			line:     175,
 			char:     17,
-			expected: "`duration`\n\nconvert a value to a google.protobuf.Duration\n\n**Overloads**:\n- `duration(google.protobuf.Duration) -> google.protobuf.Duration`\n- `duration(int) -> google.protobuf.Duration`\n- `duration(string) -> google.protobuf.Duration`\n\n[CEL by Example](https://celbyexample.com/type-conversions/#time-conversions)",
+			expected: "`duration`\n\nconvert a value to a google.protobuf.Duration\n\n**Overloads**:\n- `duration(google.protobuf.Duration) -> google.protobuf.Duration`\n- `duration(string) -> google.protobuf.Duration`\n\n[CEL by Example](https://celbyexample.com/type-conversions/#time-conversions)",
 		},
 		{
 			name:     "function: type",
