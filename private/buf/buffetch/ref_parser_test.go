@@ -257,7 +257,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"path/to/dir.git",
 	)
@@ -272,7 +272,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			40,
 			"",
 			"",
-  "",
+			"",
 		),
 		"path/to/dir.git#depth=40",
 	)
@@ -287,7 +287,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"path/to/dir.git#branch=main",
 	)
@@ -302,7 +302,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"file:///path/to/dir.git#branch=main",
 	)
@@ -317,7 +317,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"path/to/dir.git#tag=v1.0.0",
 	)
@@ -332,7 +332,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"http://hello.com/path/to/dir.git#branch=main",
 	)
@@ -347,7 +347,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"https://hello.com/path/to/dir.git#branch=main",
 	)
@@ -362,7 +362,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"ssh://user@hello.com:path/to/dir.git#branch=main",
 	)
@@ -377,7 +377,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			50,
 			"",
 			"",
-  "",
+			"",
 		),
 		"ssh://user@hello.com:path/to/dir.git#ref=refs/remotes/origin/HEAD",
 	)
@@ -392,7 +392,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			50,
 			"",
 			"",
-  "",
+			"",
 		),
 		"ssh://user@hello.com:path/to/dir.git#ref=refs/remotes/origin/HEAD,branch=main",
 	)
@@ -407,7 +407,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			10,
 			"",
 			"",
-  "",
+			"",
 		),
 		"ssh://user@hello.com:path/to/dir.git#ref=refs/remotes/origin/HEAD,depth=10",
 	)
@@ -422,7 +422,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			10,
 			"",
 			"",
-  "",
+			"",
 		),
 		"ssh://user@hello.com:path/to/dir.git#ref=refs/remotes/origin/HEAD,branch=main,depth=10",
 	)
@@ -437,7 +437,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"foo/bar",
 			"",
-  "",
+			"",
 		),
 		"path/to/dir.git#subdir=foo/bar",
 	)
@@ -452,7 +452,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"path/to/dir.git#subdir=.",
 	)
@@ -467,7 +467,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"path/to/dir.git#subdir=foo/..",
 	)
@@ -482,7 +482,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"git://user@hello.com:path/to/dir.git#branch=main",
 	)
@@ -497,7 +497,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"git://path/to/dir.git#branch=main",
 	)
@@ -512,7 +512,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"subdir",
 			"tree:0",
-  "",
+			"",
 		),
 		"git://path/to/dir.git#branch=main,filter=tree:0,subdir=subdir",
 	)
@@ -860,7 +860,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"/path/to/dir#branch=main,format=git",
 	)
@@ -875,7 +875,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"/path/to/dir#format=git,branch=main/foo",
 	)
@@ -890,7 +890,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"path/to/dir#tag=main/foo,format=git",
 	)
@@ -905,7 +905,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"path/to/dir#format=git,tag=main/foo",
 	)
@@ -920,7 +920,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"path/to/dir#format=git,tag=main/foo,recurse_submodules=true",
 	)
@@ -935,7 +935,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 			"",
 			"",
-  "",
+			"",
 		),
 		"path/to/dir#format=git,tag=main/foo,recurse_submodules=false",
 	)
@@ -950,7 +950,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			50,
 			"",
 			"",
-  "",
+			"",
 		),
 		"path/to/dir#format=git,ref=refs/remotes/origin/HEAD",
 	)
@@ -965,7 +965,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			10,
 			"",
 			"",
-  "",
+			"",
 		),
 		"path/to/dir#format=git,ref=refs/remotes/origin/HEAD,depth=10",
 	)
