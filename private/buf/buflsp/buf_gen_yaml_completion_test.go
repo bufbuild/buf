@@ -15,6 +15,8 @@
 package buflsp
 
 import (
+	"os"
+	"path/filepath"
 	"slices"
 	"testing"
 
@@ -325,7 +327,7 @@ func TestGetBufGenYAMLCompletionItems(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			items := getBufGenYAMLCompletionItems(parseYAMLDoc(testCase.text), testCase.text, testCase.pos)
+			items := getBufGenYAMLCompletionItems(parseYAMLDoc(testCase.text), testCase.text, testCase.pos, "", nil)
 
 			if testCase.wantNilResult {
 				assert.Nil(t, items)
@@ -358,7 +360,7 @@ func TestGetBufGenYAMLCompletionItemsTextEdit(t *testing.T) {
 	t.Run("key_textEdit_includes_colon_space", func(t *testing.T) {
 		t.Parallel()
 		text := "plugins:\n  - \n"
-		items := getBufGenYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 1, Character: 4})
+		items := getBufGenYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 1, Character: 4}, "", nil)
 		require.NotNil(t, items)
 		for _, item := range items {
 			require.NotNil(t, item.TextEdit, "item %q has no TextEdit", item.Label)
@@ -371,7 +373,7 @@ func TestGetBufGenYAMLCompletionItemsTextEdit(t *testing.T) {
 		t.Parallel()
 		// "version: v" — cursor at character 10, token "v" starts at character 9.
 		text := "version: v\n"
-		items := getBufGenYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 0, Character: 10})
+		items := getBufGenYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 0, Character: 10}, "", nil)
 		require.NotNil(t, items)
 		for _, item := range items {
 			require.NotNil(t, item.TextEdit, "item %q has no TextEdit", item.Label)
@@ -380,5 +382,109 @@ func TestGetBufGenYAMLCompletionItemsTextEdit(t *testing.T) {
 			assert.Equal(t, uint32(10), item.TextEdit.Range.End.Character,
 				"item %q TextEdit range should end at cursor (col 10)", item.Label)
 		}
+	})
+}
+
+func TestGetBufGenYAMLCompletionItemsPathCompletions(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(tmpDir, "gen", "go"), 0o755))
+	require.NoError(t, os.MkdirAll(filepath.Join(tmpDir, "proto"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "buf.yaml"), []byte("version: v2\n"), 0o600))
+
+	t.Run("out_value_empty_partial_dirs_only", func(t *testing.T) {
+		t.Parallel()
+		text := "plugins:\n  - remote: buf.build/foo/bar\n    out: \n"
+		items := getBufGenYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 2, Character: 9}, tmpDir, nil)
+		require.NotNil(t, items)
+		labels := completionLabels(items)
+		assert.True(t, slices.Contains(labels, "gen/"), "expected label %q", "gen/")
+		assert.True(t, slices.Contains(labels, "proto/"), "expected label %q", "proto/")
+		assert.False(t, slices.Contains(labels, "buf.yaml"), "out is a directory key — files should be excluded")
+	})
+
+	t.Run("out_value_partial", func(t *testing.T) {
+		t.Parallel()
+		text := "plugins:\n  - remote: buf.build/foo/bar\n    out: ge\n"
+		items := getBufGenYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 2, Character: 11}, tmpDir, nil)
+		require.NotNil(t, items)
+		labels := completionLabels(items)
+		assert.True(t, slices.Contains(labels, "gen/"), "expected label %q", "gen/")
+		assert.False(t, slices.Contains(labels, "proto/"), "unexpected label %q", "proto/")
+	})
+
+	t.Run("directory_value", func(t *testing.T) {
+		t.Parallel()
+		// "  - directory: " — cursor at character 15, after the space following ":".
+		text := "inputs:\n  - directory: \n"
+		items := getBufGenYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 1, Character: 15}, tmpDir, nil)
+		require.NotNil(t, items)
+		labels := completionLabels(items)
+		assert.True(t, slices.Contains(labels, "proto/"), "expected label %q", "proto/")
+	})
+
+	t.Run("paths_sequence", func(t *testing.T) {
+		t.Parallel()
+		text := "inputs:\n  - directory: proto\n    paths:\n      - \n"
+		items := getBufGenYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 3, Character: 8}, tmpDir, nil)
+		require.NotNil(t, items)
+		labels := completionLabels(items)
+		assert.True(t, slices.Contains(labels, "proto/"), "expected label %q", "proto/")
+	})
+
+	t.Run("exclude_paths_sequence", func(t *testing.T) {
+		t.Parallel()
+		text := "inputs:\n  - directory: proto\n    exclude_paths:\n      - \n"
+		items := getBufGenYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 3, Character: 8}, tmpDir, nil)
+		require.NotNil(t, items)
+		labels := completionLabels(items)
+		assert.True(t, slices.Contains(labels, "proto/"), "expected label %q", "proto/")
+	})
+
+	t.Run("out_subdir", func(t *testing.T) {
+		t.Parallel()
+		text := "plugins:\n  - remote: buf.build/foo/bar\n    out: gen/\n"
+		items := getBufGenYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 2, Character: 14}, tmpDir, nil)
+		require.NotNil(t, items)
+		labels := completionLabels(items)
+		assert.True(t, slices.Contains(labels, "gen/go/"), "expected label %q", "gen/go/")
+	})
+
+	t.Run("dirpath_empty_returns_nil", func(t *testing.T) {
+		t.Parallel()
+		text := "plugins:\n  - remote: buf.build/foo/bar\n    out: \n"
+		items := getBufGenYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 2, Character: 9}, "", nil)
+		assert.Nil(t, items)
+	})
+}
+
+func TestGetBufGenYAMLCompletionItemsTypeCompletions(t *testing.T) {
+	t.Parallel()
+
+	t.Run("nil_workspace_returns_nil", func(t *testing.T) {
+		t.Parallel()
+		text := "plugins:\n  - remote: buf.build/protocolbuffers/go\n    out: gen\n    types:\n      - \n"
+		items := getBufGenYAMLCompletionItems(
+			parseYAMLDoc(text),
+			text,
+			protocol.Position{Line: 4, Character: 6},
+			"",
+			nil,
+		)
+		assert.Nil(t, items)
+	})
+
+	t.Run("nil_workspace_returns_nil_exclude_types", func(t *testing.T) {
+		t.Parallel()
+		text := "inputs:\n  - directory: proto\n    exclude_types:\n      - \n"
+		items := getBufGenYAMLCompletionItems(
+			parseYAMLDoc(text),
+			text,
+			protocol.Position{Line: 3, Character: 6},
+			"",
+			nil,
+		)
+		assert.Nil(t, items)
 	})
 }

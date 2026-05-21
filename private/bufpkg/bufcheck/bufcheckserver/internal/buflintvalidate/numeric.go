@@ -16,6 +16,7 @@ package buflintvalidate
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -24,8 +25,8 @@ import (
 )
 
 var fieldNumberToCheckNumberRulesFunc = map[int32]func(*adder, int32, protoreflect.Message) error{
-	floatRulesFieldNumber:    checkNumberRules[float32],
-	doubleRulesFieldNumber:   checkNumberRules[float64],
+	floatRulesFieldNumber:    checkFloatNumberRules[float32],
+	doubleRulesFieldNumber:   checkFloatNumberRules[float64],
 	int32RulesFieldNumber:    checkNumberRules[int32],
 	int64RulesFieldNumber:    checkNumberRules[int64],
 	uInt32RulesFieldNumber:   checkNumberRules[uint32],
@@ -53,6 +54,76 @@ func checkNumberRules[
 		compareNumber[T],
 		func(t *T) any { return *t },
 	)
+}
+
+// checkFloatNumberRules runs checkNumberRules and also flags NaN values in
+// rule fields where NaN makes the rule unsatisfiable or a no-op. Any NaN
+// comparison evaluates to false, so const/lt/lte/gt/gte/in cannot be
+// satisfied and not_in entries containing NaN have no effect.
+func checkFloatNumberRules[
+	T float32 | float64,
+](
+	adder *adder,
+	numberRuleFieldNumber int32,
+	ruleMessage protoreflect.Message,
+) error {
+	if err := checkNumberRules[T](adder, numberRuleFieldNumber, ruleMessage); err != nil {
+		return err
+	}
+	return checkFloatNaNRules[T](adder, numberRuleFieldNumber, ruleMessage)
+}
+
+func checkFloatNaNRules[
+	T float32 | float64,
+](
+	adder *adder,
+	ruleFieldNumber int32,
+	ruleMessage protoreflect.Message,
+) error {
+	var err error
+	ruleMessage.Range(func(field protoreflect.FieldDescriptor, value protoreflect.Value) bool {
+		fieldNumber := int32(field.Number())
+		switch string(field.Name()) {
+		case "const", "lt", "lte", "gt", "gte":
+			v, ok := value.Interface().(T)
+			if !ok {
+				err = fmt.Errorf("unable to cast value to type %T", v)
+				return false
+			}
+			if math.IsNaN(float64(v)) {
+				adder.addForPathf(
+					[]int32{ruleFieldNumber, fieldNumber},
+					"Field %q has %s set to NaN. Comparisons with NaN are always false, so this rule can never be satisfied.",
+					adder.fieldName(),
+					adder.getFieldRuleName(ruleFieldNumber, fieldNumber),
+				)
+			}
+		case "in", "not_in":
+			list := value.List()
+			for i := range list.Len() {
+				v, ok := list.Get(i).Interface().(T)
+				if !ok {
+					err = fmt.Errorf("unable to cast value to type %T", v)
+					return false
+				}
+				if math.IsNaN(float64(v)) {
+					effect := "can never match"
+					if field.Name() == "not_in" {
+						effect = "has no effect"
+					}
+					adder.addForPathf(
+						[]int32{ruleFieldNumber, fieldNumber, int32(i)},
+						"Field %q has NaN in %s. Comparisons with NaN are always false, so this entry %s.",
+						adder.fieldName(),
+						adder.getFieldRuleName(ruleFieldNumber, fieldNumber),
+						effect,
+					)
+				}
+			}
+		}
+		return true
+	})
+	return err
 }
 
 func checkNumericRules[

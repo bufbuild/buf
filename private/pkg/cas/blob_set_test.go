@@ -53,7 +53,7 @@ func testNewBlobs(t *testing.T, size int, digestType DigestType) []Blob {
 	var blobs []Blob
 	for i := range size {
 		content := fmt.Sprintf("some file content %d", i)
-		blob, err := NewBlobForContent(strings.NewReader(content), BlobWithDigestType(digestType))
+		blob, err := NewBlobForContent(digestType, strings.NewReader(content))
 		require.NoError(t, err)
 		blobs = append(blobs, blob)
 	}

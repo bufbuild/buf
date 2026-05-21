@@ -81,6 +81,7 @@ func newPluginData(
 			return err
 		}
 		casDigest, err := cas.NewDigestForContent(
+			cas.DigestTypeShake256,
 			bytes.NewReader(pluginData),
 		)
 		if err != nil {

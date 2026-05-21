@@ -247,6 +247,84 @@ func TestUnusedDep(t *testing.T) {
 	require.Equal(t, MalformedDepTypeUnused, malformedDeps[1].Type())
 }
 
+func TestDepMissingFromLock(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+
+	workspaceProvider := testNewWorkspaceProvider(
+		t,
+		bufmoduletesting.ModuleData{
+			Name:    "buf.testing/acme/date",
+			DirPath: "testdata/basic/bsr/buf.testing/acme/date",
+		},
+		bufmoduletesting.ModuleData{
+			Name:    "buf.testing/acme/extension",
+			DirPath: "testdata/basic/bsr/buf.testing/acme/extension",
+		},
+	)
+
+	storageosProvider := storageos.NewProvider()
+	bucket, err := storageosProvider.NewReadWriteBucket("testdata/basic/workspace_dep_missing_from_lock")
+	require.NoError(t, err)
+	bucketTargeting, err := buftarget.NewBucketTargeting(
+		ctx,
+		slogtestext.NewLogger(t),
+		bucket,
+		".",
+		nil,
+		nil,
+		buftarget.TerminateAtControllingWorkspace,
+	)
+	require.NoError(t, err)
+
+	_, err = workspaceProvider.GetWorkspaceForBucket(
+		ctx,
+		bucket,
+		bucketTargeting,
+	)
+	require.ErrorContains(t, err, `"buf.testing/acme/extension" declared in buf.yaml deps but not present in buf.lock`)
+	require.ErrorContains(t, err, `buf dep update`)
+}
+
+func TestDepMissingFromLockUsed(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+
+	workspaceProvider := testNewWorkspaceProvider(
+		t,
+		bufmoduletesting.ModuleData{
+			Name:    "buf.testing/acme/date",
+			DirPath: "testdata/basic/bsr/buf.testing/acme/date",
+		},
+		bufmoduletesting.ModuleData{
+			Name:    "buf.testing/acme/extension",
+			DirPath: "testdata/basic/bsr/buf.testing/acme/extension",
+		},
+	)
+
+	storageosProvider := storageos.NewProvider()
+	bucket, err := storageosProvider.NewReadWriteBucket("testdata/basic/workspace_dep_missing_from_lock_used")
+	require.NoError(t, err)
+	bucketTargeting, err := buftarget.NewBucketTargeting(
+		ctx,
+		slogtestext.NewLogger(t),
+		bucket,
+		".",
+		nil,
+		nil,
+		buftarget.TerminateAtControllingWorkspace,
+	)
+	require.NoError(t, err)
+
+	_, err = workspaceProvider.GetWorkspaceForBucket(
+		ctx,
+		bucket,
+		bucketTargeting,
+	)
+	require.ErrorContains(t, err, `"buf.testing/acme/extension" declared in buf.yaml deps but not present in buf.lock`)
+	require.ErrorContains(t, err, `buf dep update`)
+}
+
 func TestDuplicatePath(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()

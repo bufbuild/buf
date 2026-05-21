@@ -341,6 +341,64 @@ func TestGitCloner(t *testing.T) {
 		_, err = readBucket.Stat(ctx, "nonexistent")
 		assert.ErrorIs(t, err, fs.ErrNotExist)
 	})
+
+	t.Run("env_override=GIT_DIR", func(t *testing.T) {
+		t.Parallel()
+		readBucket := readBucketForName(ctx, t, workDir, readBucketForNameOptions{
+			envOverrides: map[string]string{
+				"GIT_DIR": filepath.Join(t.TempDir(), "nonexistent"),
+			},
+		})
+
+		content, err := storage.ReadPath(ctx, readBucket, "a.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 2", string(content))
+	})
+
+	t.Run("env_override=GIT_INDEX_FILE", func(t *testing.T) {
+		t.Parallel()
+		readBucket := readBucketForName(ctx, t, workDir, readBucketForNameOptions{
+			envOverrides: map[string]string{
+				// Parent dir intentionally absent so git cannot create the index file
+				// here; without the override, the clone would fail to write the index.
+				"GIT_INDEX_FILE": filepath.Join(t.TempDir(), "nonexistent-parent", "index"),
+			},
+		})
+
+		content, err := storage.ReadPath(ctx, readBucket, "a.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 2", string(content))
+	})
+
+	t.Run("env_override=GIT_WORK_TREE", func(t *testing.T) {
+		t.Parallel()
+		readBucket := readBucketForName(ctx, t, workDir, readBucketForNameOptions{
+			envOverrides: map[string]string{
+				// Simulates running inside a git worktree where GIT_WORK_TREE
+				// points at the worktree's working directory.
+				"GIT_WORK_TREE": workDir,
+			},
+		})
+
+		content, err := storage.ReadPath(ctx, readBucket, "a.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 2", string(content))
+	})
+
+	t.Run("env_override=GIT_DIR,GIT_INDEX_FILE", func(t *testing.T) {
+		t.Parallel()
+		tempDir := t.TempDir()
+		readBucket := readBucketForName(ctx, t, workDir, readBucketForNameOptions{
+			envOverrides: map[string]string{
+				"GIT_DIR":        filepath.Join(tempDir, "nonexistent-dir"),
+				"GIT_INDEX_FILE": filepath.Join(tempDir, "nonexistent-parent", "index"),
+			},
+		})
+
+		content, err := storage.ReadPath(ctx, readBucket, "a.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 2", string(content))
+	})
 }
 
 type readBucketForNameOptions struct {
@@ -349,6 +407,7 @@ type readBucketForNameOptions struct {
 	recurseSubmodules bool
 	subDir            string
 	filter            string
+	envOverrides      map[string]string
 }
 
 func readBucketForName(ctx context.Context, t *testing.T, path string, options readBucketForNameOptions) storage.ReadBucket {
@@ -357,6 +416,9 @@ func readBucketForName(ctx context.Context, t *testing.T, path string, options r
 	cloner := NewCloner(slogtestext.NewLogger(t), storageosProvider, ClonerOptions{})
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
+	if len(options.envOverrides) > 0 {
+		envContainer = app.NewEnvContainerWithOverrides(envContainer, options.envOverrides)
+	}
 
 	depth := options.depth
 	if depth == 0 {

@@ -557,7 +557,7 @@ func (m *bufYAMLManager) GetCompletion(uri protocol.URI, pos protocol.Position) 
 	if !ok {
 		return nil
 	}
-	return getBufYAMLCompletionItems(f.docNode, f.text, pos)
+	return getBufYAMLCompletionItems(f.docNode, f.text, pos, filepath.Dir(uri.Filename()))
 }
 
 // GetHover returns hover documentation for the buf.yaml field or rule at the

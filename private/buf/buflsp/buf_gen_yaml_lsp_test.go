@@ -16,6 +16,7 @@ package buflsp_test
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"slices"
 	"testing"
@@ -794,4 +795,122 @@ func TestBufGenYAMLDiagnostics_ClearedOnClose(t *testing.T) {
 		require.NotNil(t, cleared)
 		assert.Empty(t, cleared.Diagnostics, "expected diagnostics to be cleared after close")
 	})
+}
+
+// TestBufGenYAMLTypeCompletions exercises the workspace lease wired up in
+// bufGenYAMLManager.Track and the symbol enumeration in bufGenYAMLTypeItems.
+// Opening buf.gen.yaml leases the workspace; opening the proto file alongside
+// triggers IR compilation so referenceableSymbols is populated. Completion at
+// the types/exclude_types cursor should then surface fully-qualified type
+// names from the workspace.
+func TestBufGenYAMLTypeCompletions(t *testing.T) {
+	t.Parallel()
+
+	bufGenPath, err := filepath.Abs("testdata/buf_gen_yaml/types_completion/buf.gen.yaml")
+	require.NoError(t, err)
+	protoPath := filepath.Join(filepath.Dir(bufGenPath), "proto", "acme", "test", "v1", "example.proto")
+
+	clientJSONConn, bufGenURI, _ := setupLSPServerForBufYAML(t, bufGenPath, nil, nil)
+	ctx := t.Context()
+
+	protoContent, err := os.ReadFile(protoPath)
+	require.NoError(t, err)
+	err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidOpen, &protocol.DidOpenTextDocumentParams{
+		TextDocument: protocol.TextDocumentItem{
+			URI:        buflsp.FilePathToURI(protoPath),
+			LanguageID: "protobuf",
+			Version:    1,
+			Text:       string(protoContent),
+		},
+	})
+	require.NoError(t, err)
+
+	tests := []struct {
+		name      string
+		line      uint32
+		character uint32
+	}{
+		// "      - acme." — cursor at character 13, right after the partial.
+		{"plugins_types", 5, 13},
+		{"inputs_exclude_types", 9, 13},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			var list *protocol.CompletionList
+			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{URI: bufGenURI},
+					Position:     protocol.Position{Line: tc.line, Character: tc.character},
+				},
+			}, &list)
+			require.NoError(t, err)
+
+			require.NotNil(t, list, "expected completions at (%d, %d)", tc.line, tc.character)
+			labels := make([]string, len(list.Items))
+			for i, item := range list.Items {
+				labels[i] = item.Label
+			}
+			assert.Contains(t, labels, "acme.test.v1.Foo", "expected message type")
+			assert.Contains(t, labels, "acme.test.v1.Status", "expected enum type")
+			assert.Contains(t, labels, "acme.test.v1.ExampleService", "expected service type")
+			assert.Contains(t, labels, "acme.test.v1.GreetRequest")
+			assert.Contains(t, labels, "acme.test.v1.GreetResponse")
+		})
+	}
+}
+
+// TestBufGenYAMLTypeCompletions_WorkspaceReuseOnDidChange verifies that the
+// workspace lease is reused across DidChange events: type completions still
+// work after the buf.gen.yaml is edited.
+func TestBufGenYAMLTypeCompletions_WorkspaceReuseOnDidChange(t *testing.T) {
+	t.Parallel()
+
+	bufGenPath, err := filepath.Abs("testdata/buf_gen_yaml/types_completion/buf.gen.yaml")
+	require.NoError(t, err)
+	protoPath := filepath.Join(filepath.Dir(bufGenPath), "proto", "acme", "test", "v1", "example.proto")
+
+	clientJSONConn, bufGenURI, _ := setupLSPServerForBufYAML(t, bufGenPath, nil, nil)
+	ctx := t.Context()
+
+	protoContent, err := os.ReadFile(protoPath)
+	require.NoError(t, err)
+	err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidOpen, &protocol.DidOpenTextDocumentParams{
+		TextDocument: protocol.TextDocumentItem{
+			URI:        buflsp.FilePathToURI(protoPath),
+			LanguageID: "protobuf",
+			Version:    1,
+			Text:       string(protoContent),
+		},
+	})
+	require.NoError(t, err)
+
+	bufGenContent, err := os.ReadFile(bufGenPath)
+	require.NoError(t, err)
+	err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidChange, &protocol.DidChangeTextDocumentParams{
+		TextDocument: protocol.VersionedTextDocumentIdentifier{
+			TextDocumentIdentifier: protocol.TextDocumentIdentifier{URI: bufGenURI},
+			Version:                2,
+		},
+		ContentChanges: []protocol.TextDocumentContentChangeEvent{{Text: string(bufGenContent)}},
+	})
+	require.NoError(t, err)
+
+	var list *protocol.CompletionList
+	_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
+		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+			TextDocument: protocol.TextDocumentIdentifier{URI: bufGenURI},
+			Position:     protocol.Position{Line: 5, Character: 13},
+		},
+	}, &list)
+	require.NoError(t, err)
+	require.NotNil(t, list)
+
+	labels := make([]string, len(list.Items))
+	for i, item := range list.Items {
+		labels[i] = item.Label
+	}
+	assert.Contains(t, labels, "acme.test.v1.Foo")
 }

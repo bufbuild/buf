@@ -152,7 +152,7 @@ func ParseDigest(s string) (Digest, error) {
 	}
 	switch digestType {
 	case DigestTypeO1:
-		casDigest, err := cas.NewDigest(value)
+		casDigest, err := cas.NewDigest(cas.DigestTypeShake256, value)
 		if err != nil {
 			return nil, err
 		}
@@ -219,7 +219,7 @@ func getO1Digest(policyConfig PolicyConfig) (Digest, error) {
 	if err != nil {
 		return nil, err
 	}
-	casDigest, err := cas.NewDigestForContent(bytes.NewReader(policyDataJSON))
+	casDigest, err := cas.NewDigestForContent(cas.DigestTypeShake256, bytes.NewReader(policyDataJSON))
 	if err != nil {
 		return nil, err
 	}

@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package acme.test.v1;
+
+message Foo {
+  string name = 1;
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_OK = 1;
+}
+
+message GreetRequest {
+  string name = 1;
+}
+
+message GreetResponse {
+  string greeting = 1;
+}
+
+service ExampleService {
+  rpc Greet(GreetRequest) returns (GreetResponse);
+}

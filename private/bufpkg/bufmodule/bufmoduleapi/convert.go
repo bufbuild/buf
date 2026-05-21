@@ -71,7 +71,7 @@ func V1ProtoToDigest(protoDigest *modulev1.Digest) (bufmodule.Digest, error) {
 	if err != nil {
 		return nil, err
 	}
-	casDigest, err := cas.NewDigest(protoDigest.Value)
+	casDigest, err := cas.NewDigest(cas.DigestTypeShake256, protoDigest.Value)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func V1Beta1ProtoToDigest(protoDigest *modulev1beta1.Digest) (bufmodule.Digest, 
 	if err != nil {
 		return nil, err
 	}
-	casDigest, err := cas.NewDigest(protoDigest.Value)
+	casDigest, err := cas.NewDigest(cas.DigestTypeShake256, protoDigest.Value)
 	if err != nil {
 		return nil, err
 	}
