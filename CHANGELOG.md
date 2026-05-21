@@ -7,6 +7,8 @@
 - Add error for when a dependency is added to `buf.yaml` and is missing from `buf.lock`.
 - Update the `PROTOVALIDATE` lint rule support checking `NaN` in `const`, `in`, `not_in`,
   `gt`, `gte`, `lt` and `lte` rules for `float` and `double` fields.
+- Update the `PROTOVALIDATE` lint rule support to check `(buf.validate.message).oneof` rules
+  and make sure they are well-formed and valid.
 
 ## [v1.69.0] - 2026-04-29
 
