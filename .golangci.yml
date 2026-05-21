@@ -506,6 +506,12 @@ linters:
         # not from user input, so path traversal is not a realistic risk here.
         path: private/pkg/licenseheader/cmd/license-header/main.go
         text: "G703:"
+      - linters:
+          - gosec
+        # This checks the cel constraints from an Image, and converts loop indices to int32
+        # to set the source path for the location, this operation should be safe.
+        path: private/bufpkg/bufcheck/bufcheckserver/internal/buflintvalidate/message.go
+        text: "G115:"
 
 issues:
   max-same-issues: 0
