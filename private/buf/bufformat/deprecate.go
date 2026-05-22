@@ -330,24 +330,17 @@ func addCompactDeprecated(file *ast.File, def ast.DeclDef) {
 func newDeprecatedOptionDecl(file *ast.File) ast.DeclDef {
 	stream := file.Stream()
 	nodes := file.Nodes()
-	optionType := ast.TypePath{
-		Path: nodes.NewPath(
-			nodes.NewPathComponent(token.Zero, stream.NewIdent(keyword.Option.String())),
-		),
-	}.AsAny()
-	namePath := nodes.NewPath(
-		nodes.NewPathComponent(token.Zero, stream.NewIdent("deprecated")),
-	)
-	value := ast.ExprPath{
-		Path: nodes.NewPath(
-			nodes.NewPathComponent(token.Zero, stream.NewIdent(keyword.True.String())),
-		),
-	}.AsAny()
 	return nodes.NewDeclDef(ast.DeclDefArgs{
-		Type:      optionType,
-		Name:      namePath,
-		Equals:    stream.NewPunct(keyword.Assign.String()),
-		Value:     value,
+		Keyword: stream.NewIdent(keyword.Option.String()),
+		Name: nodes.NewPath(
+			nodes.NewPathComponent(token.Zero, stream.NewIdent("deprecated")),
+		),
+		Equals: stream.NewPunct(keyword.Assign.String()),
+		Value: ast.ExprPath{
+			Path: nodes.NewPath(
+				nodes.NewPathComponent(token.Zero, stream.NewIdent(keyword.True.String())),
+			),
+		}.AsAny(),
 		Semicolon: stream.NewPunct(keyword.Semi.String()),
 	})
 }
