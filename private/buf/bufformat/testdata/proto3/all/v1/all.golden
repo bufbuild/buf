@@ -8,18 +8,18 @@ syntax = "proto3"; // syntax-level-inline comment
 
 package all.v1; // package-level-inline comment
 
+// between-package-and-import comment
+
 import "custom.proto";
 // between-imports comment
 import "google/protobuf/duration.proto"; // import-inline comment  2
-// between-package-and-import comment
-
 // import comment
 import "google/protobuf/timestamp.proto"; // import-inline comment
 
-// option comment 3
-option go_package = "foopb"; // option-inline comment 3
 // between-imports-and-options comment
 
+// option comment 3
+option go_package = "foopb"; // option-inline comment 3
 // option comment
 option java_multiple_files = true; // option-inline comment
 // option comment 4

@@ -4335,12 +4335,23 @@ func TestFormatInvalidIncludePackageFiles(t *testing.T) {
 func TestFormatInvalidInputDoesNotCreateDirectory(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
+	// The experimental parser emits multiple location-tagged diagnostics
+	// for a single syntax error and they get rendered through
+	// bufanalysis.FileAnnotationSet, which sorts and deduplicates them.
+	expectedStderr := strings.Join(
+		[]string{
+			filepath.FromSlash("Failure: testdata/format/invalid/invalid.proto:4:12:unexpected `.` in identifier"),
+			filepath.FromSlash("testdata/format/invalid/invalid.proto:4:13:unexpected tokens after `.`"),
+			filepath.FromSlash("testdata/format/invalid/invalid.proto:4:16:unexpected `{...}` after qualified name"),
+		},
+		"\n",
+	)
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
 		"",
-		filepath.FromSlash(`Failure: testdata/format/invalid/invalid.proto:4:12: syntax error: unexpected '.', expecting '{'`),
+		expectedStderr,
 		"format",
 		filepath.Join("testdata", "format", "invalid"),
 		"-o",
@@ -4353,7 +4364,7 @@ func TestFormatInvalidInputDoesNotCreateDirectory(t *testing.T) {
 		nil,
 		1,
 		"",
-		filepath.FromSlash(`Failure: testdata/format/invalid/invalid.proto:4:12: syntax error: unexpected '.', expecting '{'`),
+		expectedStderr,
 		"format",
 		filepath.Join("testdata", "format", "invalid"),
 		"-o",
