@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -35,6 +36,21 @@ type cloner struct {
 	logger            *slog.Logger
 	storageosProvider storageos.Provider
 	options           ClonerOptions
+}
+
+// gitConfigNoAutoMaintenanceArgs prevents background Git tasks from racing with
+// storage.Copy over files in the cloned .git directory.
+var gitConfigNoAutoMaintenanceArgs = []string{
+	"-c",
+	"maintenance.auto=false",
+	"-c",
+	"maintenance.autoDetach=false",
+	"-c",
+	"gc.auto=0",
+	"-c",
+	"gc.autoDetach=false",
+	"-c",
+	"fetch.writeCommitGraph=false",
 }
 
 func newCloner(
@@ -118,15 +134,15 @@ func (c *cloner) CloneToBucket(
 		return newGitCommandError(err, buffer)
 	}
 
-	var gitConfigAuthArgs []string
+	gitConfigArgs := slices.Clone(gitConfigNoAutoMaintenanceArgs)
 	if strings.HasPrefix(url, "https://") {
-		// These extraArgs MUST be first, as the -c flag potentially produced
-		// is only a flag on the parent git command, not on git fetch.
+		// These extraArgs MUST be before the sub-command, as the -c flag potentially
+		// produced is only a flag on the parent git command, not on git fetch.
 		extraArgs, err := c.getArgsForHTTPSCommand(envContainer)
 		if err != nil {
 			return err
 		}
-		gitConfigAuthArgs = append(gitConfigAuthArgs, extraArgs...)
+		gitConfigArgs = append(gitConfigArgs, extraArgs...)
 	}
 
 	if strings.HasPrefix(url, "ssh://") {
@@ -138,7 +154,7 @@ func (c *cloner) CloneToBucket(
 
 	// Build the args for the fetch command.
 	fetchArgs := []string{}
-	fetchArgs = append(fetchArgs, gitConfigAuthArgs...)
+	fetchArgs = append(fetchArgs, gitConfigArgs...)
 	fetchArgs = append(
 		fetchArgs,
 		"fetch",
@@ -191,7 +207,7 @@ func (c *cloner) CloneToBucket(
 		if err := xexec.Run(
 			ctx,
 			"git",
-			xexec.WithArgs(append(gitConfigAuthArgs, "sparse-checkout", "set", options.SubDir)...),
+			xexec.WithArgs(append(gitConfigArgs, "sparse-checkout", "set", options.SubDir)...),
 			xexec.WithEnv(app.Environ(envContainer)),
 			xexec.WithStderr(buffer),
 			xexec.WithDir(baseDir.Path()),
@@ -206,7 +222,7 @@ func (c *cloner) CloneToBucket(
 	if err := xexec.Run(
 		ctx,
 		"git",
-		xexec.WithArgs(append(gitConfigAuthArgs, "checkout", "--force", "FETCH_HEAD")...),
+		xexec.WithArgs(append(gitConfigArgs, "checkout", "--force", "FETCH_HEAD")...),
 		xexec.WithEnv(app.Environ(envContainer)),
 		xexec.WithStderr(buffer),
 		xexec.WithDir(baseDir.Path()),
@@ -220,7 +236,7 @@ func (c *cloner) CloneToBucket(
 		if err := xexec.Run(
 			ctx,
 			"git",
-			xexec.WithArgs(append(gitConfigAuthArgs, "checkout", "--force", checkoutRef)...),
+			xexec.WithArgs(append(gitConfigArgs, "checkout", "--force", checkoutRef)...),
 			xexec.WithEnv(app.Environ(envContainer)),
 			xexec.WithStderr(buffer),
 			xexec.WithDir(baseDir.Path()),
@@ -235,7 +251,7 @@ func (c *cloner) CloneToBucket(
 			ctx,
 			"git",
 			xexec.WithArgs(append(
-				gitConfigAuthArgs,
+				gitConfigArgs,
 				"submodule",
 				"update",
 				"--init",
