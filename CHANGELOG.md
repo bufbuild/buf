@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.70.0] - 2026-05-25
 
 - Add LSP completion for `buf.gen.yaml`, `buf.yaml`, and `buf.policy.yaml` files.
@@ -1556,6 +1560,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.70.0...HEAD
 [v1.70.0]: https://github.com/bufbuild/buf/compare/v1.69.0...v1.70.0
 [v1.69.0]: https://github.com/bufbuild/buf/compare/v1.68.4...v1.69.0
 [v1.68.4]: https://github.com/bufbuild/buf/compare/v1.68.3...v1.68.4
