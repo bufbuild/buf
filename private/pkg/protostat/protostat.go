@@ -18,9 +18,11 @@ import (
 	"context"
 	"io"
 
-	"github.com/bufbuild/protocompile/ast"
-	"github.com/bufbuild/protocompile/parser"
-	"github.com/bufbuild/protocompile/reporter"
+	"github.com/bufbuild/protocompile/experimental/ast"
+	"github.com/bufbuild/protocompile/experimental/parser"
+	"github.com/bufbuild/protocompile/experimental/report"
+	"github.com/bufbuild/protocompile/experimental/seq"
+	"github.com/bufbuild/protocompile/experimental/source"
 )
 
 // Stats represents some statistics about one or more Protobuf files.
@@ -55,33 +57,28 @@ type FileWalker interface {
 // See the packages protostatos and protostatstorage for helpers for the
 // os and storage packages.
 func GetStats(ctx context.Context, fileWalker FileWalker) (*Stats, error) {
-	handler := reporter.NewHandler(
-		reporter.NewReporter(
-			func(reporter.ErrorWithPos) error {
-				// never aborts
-				return nil
-			},
-			nil,
-		),
-	)
 	statsBuilder := newStatsBuilder()
 	if err := fileWalker.Walk(
 		ctx,
 		func(file io.Reader) error {
-			// This can return an error and non-nil AST.
-			// We do not need the filePath because we do not report errors.
-			astRoot, err := parser.Parse("", file, handler)
-			if astRoot == nil {
-				// No AST implies an I/O error trying to read the
-				// file contents. No stats to collect.
+			data, err := io.ReadAll(file)
+			if err != nil {
 				return err
 			}
-			if err != nil {
-				// There was a syntax error, but we still have a partial
-				// AST we can examine.
-				statsBuilder.FilesWithSyntaxErrors++
+			r := &report.Report{Options: report.Options{SuppressWarnings: true}}
+			astFile, _ := parser.Parse("", source.NewFile("", string(data)), r)
+			if astFile == nil {
+				// Parse only returns a nil file in pathological cases; bail
+				// without recording stats, matching the legacy I/O-error path.
+				return nil
 			}
-			examineFile(statsBuilder, astRoot)
+			for _, d := range r.Diagnostics {
+				if d.Level() <= report.Error {
+					statsBuilder.FilesWithSyntaxErrors++
+					break
+				}
+			}
+			examineFile(statsBuilder, astFile)
 			return nil
 		},
 	); err != nil {
@@ -118,132 +115,154 @@ func MergeStats(statsSlice ...*Stats) *Stats {
 type statsBuilder struct {
 	*Stats
 
-	packages map[ast.Identifier]struct{}
+	packages map[string]struct{}
 }
 
 func newStatsBuilder() *statsBuilder {
 	return &statsBuilder{
 		Stats:    &Stats{},
-		packages: make(map[ast.Identifier]struct{}),
+		packages: make(map[string]struct{}),
 	}
 }
 
-func examineFile(statsBuilder *statsBuilder, fileNode *ast.FileNode) {
+func examineFile(statsBuilder *statsBuilder, file *ast.File) {
 	statsBuilder.Files++
-	for _, decl := range fileNode.Decls {
-		switch decl := decl.(type) {
-		case *ast.PackageNode:
-			statsBuilder.packages[decl.Name.AsIdentifier()] = struct{}{}
-		case *ast.MessageNode:
-			examineMessage(statsBuilder, &decl.MessageBody, decl)
-		case *ast.EnumNode:
-			examineEnum(statsBuilder, decl)
-		case *ast.ExtendNode:
-			examineExtend(statsBuilder, decl)
-		case *ast.ServiceNode:
+	for decl := range seq.Values(file.Decls()) {
+		if pkg := decl.AsPackage(); !pkg.IsZero() {
+			statsBuilder.packages[pkg.Path().Canonicalized()] = struct{}{}
+			continue
+		}
+		def := decl.AsDef()
+		if def.IsZero() {
+			continue
+		}
+		switch def.Classify() {
+		case ast.DefKindMessage:
+			examineMessage(statsBuilder, def.AsMessage().Body, def)
+		case ast.DefKindEnum:
+			examineEnum(statsBuilder, def.AsEnum().Body, def)
+		case ast.DefKindExtend:
+			examineExtend(statsBuilder, def.AsExtend().Body)
+		case ast.DefKindService:
 			statsBuilder.Services++
-			for _, decl := range decl.Decls {
-				rpcNode, ok := decl.(*ast.RPCNode)
-				if ok {
-					statsBuilder.RPCs++
-					statsBuilder.Types++
-					if isDeprecated(rpcNode) {
-						statsBuilder.DeprecatedRPCs++
-					}
+			for innerDecl := range seq.Values(def.AsService().Body.Decls()) {
+				innerDef := innerDecl.AsDef()
+				if innerDef.IsZero() || innerDef.Classify() != ast.DefKindMethod {
+					continue
+				}
+				statsBuilder.RPCs++
+				statsBuilder.Types++
+				if isDeprecated(innerDef) {
+					statsBuilder.DeprecatedRPCs++
 				}
 			}
 		}
 	}
 }
 
-// examineMessage examines a message body and updates stats.
-// The node parameter is used to check for deprecated options, and can be a MessageNode or GroupNode.
-func examineMessage(statsBuilder *statsBuilder, messageBody *ast.MessageBody, node ast.NodeWithOptions) {
+// examineMessage examines a message or group body and updates stats. The def is the
+// owning ast.DeclDef (message or group), used for the deprecation check.
+func examineMessage(statsBuilder *statsBuilder, body ast.DeclBody, def ast.DeclDef) {
 	statsBuilder.Messages++
 	statsBuilder.Types++
-	if node != nil && isDeprecated(node) {
+	if isDeprecated(def) {
 		statsBuilder.DeprecatedMessages++
 	}
-	for _, decl := range messageBody.Decls {
-		switch decl := decl.(type) {
-		case *ast.FieldNode, *ast.MapFieldNode:
+	for decl := range seq.Values(body.Decls()) {
+		innerDef := decl.AsDef()
+		if innerDef.IsZero() {
+			continue
+		}
+		switch innerDef.Classify() {
+		case ast.DefKindField:
 			statsBuilder.Fields++
-		case *ast.GroupNode:
+		case ast.DefKindGroup:
 			statsBuilder.Fields++
-			examineMessage(statsBuilder, &decl.MessageBody, decl)
-		case *ast.OneofNode:
-			for _, ooDecl := range decl.Decls {
-				switch ooDecl := ooDecl.(type) {
-				case *ast.FieldNode:
+			examineMessage(statsBuilder, innerDef.AsGroup().Body, innerDef)
+		case ast.DefKindOneof:
+			for ooDecl := range seq.Values(innerDef.AsOneof().Body.Decls()) {
+				ooDef := ooDecl.AsDef()
+				if ooDef.IsZero() {
+					continue
+				}
+				switch ooDef.Classify() {
+				case ast.DefKindField:
 					statsBuilder.Fields++
-				case *ast.GroupNode:
+				case ast.DefKindGroup:
 					statsBuilder.Fields++
-					examineMessage(statsBuilder, &ooDecl.MessageBody, ooDecl)
+					examineMessage(statsBuilder, ooDef.AsGroup().Body, ooDef)
 				}
 			}
-		case *ast.MessageNode:
-			examineMessage(statsBuilder, &decl.MessageBody, decl)
-		case *ast.EnumNode:
-			examineEnum(statsBuilder, decl)
-		case *ast.ExtendNode:
-			examineExtend(statsBuilder, decl)
+		case ast.DefKindMessage:
+			examineMessage(statsBuilder, innerDef.AsMessage().Body, innerDef)
+		case ast.DefKindEnum:
+			examineEnum(statsBuilder, innerDef.AsEnum().Body, innerDef)
+		case ast.DefKindExtend:
+			examineExtend(statsBuilder, innerDef.AsExtend().Body)
 		}
 	}
 }
 
-func examineEnum(statsBuilder *statsBuilder, enumNode *ast.EnumNode) {
+func examineEnum(statsBuilder *statsBuilder, body ast.DeclBody, def ast.DeclDef) {
 	statsBuilder.Enums++
 	statsBuilder.Types++
-	if isDeprecated(enumNode) {
+	if isDeprecated(def) {
 		statsBuilder.DeprecatedEnums++
 	}
-	for _, decl := range enumNode.Decls {
-		_, ok := decl.(*ast.EnumValueNode)
-		if ok {
+	for decl := range seq.Values(body.Decls()) {
+		innerDef := decl.AsDef()
+		if !innerDef.IsZero() && innerDef.Classify() == ast.DefKindEnumValue {
 			statsBuilder.EnumValues++
 		}
 	}
 }
 
-func examineExtend(statsBuilder *statsBuilder, extendNode *ast.ExtendNode) {
-	for _, decl := range extendNode.Decls {
-		switch decl := decl.(type) {
-		case *ast.FieldNode:
+func examineExtend(statsBuilder *statsBuilder, body ast.DeclBody) {
+	for decl := range seq.Values(body.Decls()) {
+		innerDef := decl.AsDef()
+		if innerDef.IsZero() {
+			continue
+		}
+		switch innerDef.Classify() {
+		case ast.DefKindField:
 			statsBuilder.Extensions++
-		case *ast.GroupNode:
+		case ast.DefKindGroup:
 			statsBuilder.Extensions++
-			examineMessage(statsBuilder, &decl.MessageBody, decl)
+			examineMessage(statsBuilder, innerDef.AsGroup().Body, innerDef)
 		}
 	}
 }
 
-func isDeprecated(node ast.NodeWithOptions) bool {
-	// GroupNode's Options can be nil.
-	if groupNode, ok := node.(*ast.GroupNode); ok && groupNode.Options == nil {
+// isDeprecated reports whether def is marked `deprecated = true`, either via
+// a compact option or a body-level `option deprecated = true;`.
+func isDeprecated(def ast.DeclDef) bool {
+	for entry := range seq.Values(def.Options().Entries()) {
+		if entry.Path.IsIdents("deprecated") && exprIsTrue(entry.Value) {
+			return true
+		}
+	}
+	body := def.Body()
+	if body.IsZero() {
 		return false
 	}
-	deprecated := false
-	node.RangeOptions(func(opt *ast.OptionNode) bool {
-		// Check if this is the "deprecated" option (simple name, not extension)
-		if opt.Name == nil || len(opt.Name.Parts) != 1 {
-			return true // continue
+	for decl := range seq.Values(body.Decls()) {
+		inner := decl.AsDef()
+		if inner.IsZero() || inner.Classify() != ast.DefKindOption {
+			continue
 		}
-		part := opt.Name.Parts[0]
-		if part.IsExtension() {
-			return true // continue
+		opt := inner.AsOption()
+		if opt.Path.IsIdents("deprecated") && exprIsTrue(opt.Value) {
+			return true
 		}
-		if part.Value() != "deprecated" {
-			return true // continue
-		}
-		// Check if the value is true
-		val := opt.Val.Value()
-		switch v := val.(type) {
-		case bool:
-			deprecated = v
-		case ast.Identifier:
-			deprecated = string(v) == "true"
-		}
-		return false // stop iterating once we find deprecated option
-	})
-	return deprecated
+	}
+	return false
+}
+
+// exprIsTrue reports whether expr is the identifier `true`.
+func exprIsTrue(expr ast.ExprAny) bool {
+	path := expr.AsPath()
+	if path.IsZero() {
+		return false
+	}
+	return path.Path.IsIdents("true")
 }
