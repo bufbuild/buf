@@ -15,11 +15,19 @@
 package protosourcepath
 
 import (
+	"os"
 	"testing"
 
-	"github.com/bufbuild/protocompile"
+	"github.com/bufbuild/buf/private/buf/buftesting"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/protocompile/experimental/fdp"
+	"github.com/bufbuild/protocompile/experimental/incremental"
+	"github.com/bufbuild/protocompile/experimental/incremental/queries"
+	"github.com/bufbuild/protocompile/experimental/ir"
+	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 func TestGetAssociatedSourcePathsProto2(t *testing.T) {
@@ -376,14 +384,28 @@ func testGetAssociatedSourcePaths(
 	sourcePathToExpectedAssociatedPaths map[string][]protoreflect.SourcePath,
 	excludeChildAssociatedPaths bool,
 ) {
-	compiler := protocompile.Compiler{
-		Resolver:       &protocompile.SourceResolver{},
-		SourceInfoMode: protocompile.SourceInfoStandard,
-	}
-	files, err := compiler.Compile(t.Context(), testFilePath)
+	var fdpOptions fdp.Options
+	fdpOptions.Apply(fdp.IncludeSourceCodeInfo(true))
+	results, _, err := incremental.Run(t.Context(), incremental.New(), queries.FDS{
+		Opener:    &source.Openers{&source.FS{FS: os.DirFS(".")}, buftesting.WKTOpener()},
+		Session:   new(ir.Session),
+		Workspace: source.NewWorkspace(testFilePath),
+		Options:   fdpOptions,
+	})
 	require.NoError(t, err)
-	require.Len(t, files, 1, "expect only one test file")
-	sourceLocations := files[0].SourceLocations()
+	require.Len(t, results, 1)
+	require.NoError(t, results[0].Fatal)
+	// fdp stores option values as unknown bytes; a wire round-trip
+	// materializes them as typed fields. Mirrors build_image.go.
+	fdsBytes, err := protoencoding.NewWireMarshaler().Marshal(results[0].Value)
+	require.NoError(t, err)
+	fds := new(descriptorpb.FileDescriptorSet)
+	require.NoError(t, protoencoding.NewWireUnmarshaler(nil).Unmarshal(fdsBytes, fds))
+	resolver, err := protoencoding.NewResolver(fds.File...)
+	require.NoError(t, err)
+	fd, err := resolver.FindFileByPath(testFilePath)
+	require.NoError(t, err)
+	sourceLocations := fd.SourceLocations()
 	// SourceLocations are indexed starting from 1
 	for i := 1; i < sourceLocations.Len(); i++ {
 		sourceLocation := sourceLocations.Get(i)

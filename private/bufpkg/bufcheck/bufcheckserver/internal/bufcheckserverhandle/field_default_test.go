@@ -18,9 +18,15 @@ import (
 	"math"
 	"testing"
 
-	"github.com/bufbuild/protocompile"
+	"github.com/bufbuild/buf/private/buf/buftesting"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/protocompile/experimental/incremental"
+	"github.com/bufbuild/protocompile/experimental/incremental/queries"
+	"github.com/bufbuild/protocompile/experimental/ir"
+	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 func TestDefaultsEqual(t *testing.T) {
@@ -111,16 +117,27 @@ func TestGetDefault(t *testing.T) {
 			V1 = 1;
 			V123 = 123;
 		}`
-	compiler := &protocompile.Compiler{
-		Resolver: &protocompile.SourceResolver{
-			Accessor: protocompile.SourceAccessorFromMap(map[string]string{
-				"test.proto": testFile,
-			}),
-		},
-	}
-	results, err := compiler.Compile(t.Context(), "test.proto")
+	opener := source.NewMap(nil)
+	opener.Add("test.proto", testFile)
+	results, _, err := incremental.Run(t.Context(), incremental.New(), queries.FDS{
+		Opener:    &source.Openers{opener, buftesting.WKTOpener()},
+		Session:   new(ir.Session),
+		Workspace: source.NewWorkspace("test.proto"),
+	})
 	require.NoError(t, err)
-	msg := results[0].Messages().ByName("A")
+	require.Len(t, results, 1)
+	require.NoError(t, results[0].Fatal)
+	// fdp stores option values as unknown bytes; a wire round-trip
+	// materializes them as typed fields. Mirrors build_image.go.
+	fdsBytes, err := protoencoding.NewWireMarshaler().Marshal(results[0].Value)
+	require.NoError(t, err)
+	fds := new(descriptorpb.FileDescriptorSet)
+	require.NoError(t, protoencoding.NewWireUnmarshaler(nil).Unmarshal(fdsBytes, fds))
+	resolver, err := protoencoding.NewResolver(fds.File...)
+	require.NoError(t, err)
+	fd, err := resolver.FindFileByPath("test.proto")
+	require.NoError(t, err)
+	msg := fd.Messages().ByName("A")
 
 	assert.Equal(t,
 		fieldDefault{

@@ -18,22 +18,38 @@ import (
 	"os"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/buftesting"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/protocompile"
+	"github.com/bufbuild/protocompile/experimental/incremental"
+	"github.com/bufbuild/protocompile/experimental/incremental/queries"
+	"github.com/bufbuild/protocompile/experimental/ir"
+	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 func TestCountUnrecognized(t *testing.T) {
 	t.Parallel()
-	descriptors, err := (&protocompile.Compiler{
-		Resolver: &protocompile.SourceResolver{
-			ImportPaths: []string{"./testdata"},
-		},
-	}).Compile(t.Context(), "test.proto")
+	results, _, err := incremental.Run(t.Context(), incremental.New(), queries.FDS{
+		Opener:    &source.Openers{&source.FS{FS: os.DirFS("./testdata")}, buftesting.WKTOpener()},
+		Session:   new(ir.Session),
+		Workspace: source.NewWorkspace("test.proto"),
+	})
 	require.NoError(t, err)
-	msgType, err := descriptors.AsResolver().FindMessageByName("foo.bar.Message")
+	require.Len(t, results, 1)
+	require.NoError(t, results[0].Fatal)
+	// fdp stores option values (e.g. MessageOptions.map_entry) as unknown bytes;
+	// a wire round-trip materializes them as typed fields so the resolver
+	// recognizes map fields as maps. Mirrors build_image.go's resolverForFDS.
+	fdsBytes, err := protoencoding.NewWireMarshaler().Marshal(results[0].Value)
+	require.NoError(t, err)
+	fds := new(descriptorpb.FileDescriptorSet)
+	require.NoError(t, protoencoding.NewWireUnmarshaler(nil).Unmarshal(fdsBytes, fds))
+	resolver, err := protoencoding.NewResolver(fds.File...)
+	require.NoError(t, err)
+	msgType, err := resolver.FindMessageByName("foo.bar.Message")
 	require.NoError(t, err)
 	msg := msgType.New()
 	msgData, err := os.ReadFile("./testdata/testdata.txt")
