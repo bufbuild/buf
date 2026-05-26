@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Port new formatter and fix bugs for in-line block comment spacing.
 
 ## [v1.70.0] - 2026-05-25
 

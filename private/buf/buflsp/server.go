@@ -25,8 +25,9 @@ import (
 	celpv "buf.build/go/protovalidate/cel"
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/buf/bufformat"
-	"github.com/bufbuild/protocompile/parser"
-	"github.com/bufbuild/protocompile/reporter"
+	"github.com/bufbuild/protocompile/experimental/parser"
+	"github.com/bufbuild/protocompile/experimental/report"
+	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/google/cel-go/cel"
 	"go.lsp.dev/protocol"
 	"mvdan.cc/xurls/v2"
@@ -321,12 +322,19 @@ func (s *server) Formatting(
 		// Format for a file we don't know about? Seems bad!
 		return nil, fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
 	}
-	parsed, err := parser.Parse(file.uri.Filename(), strings.NewReader(file.file.Text()), reporter.NewHandler(nil))
-	if err != nil {
-		return nil, fmt.Errorf("cannot format file: %w", err)
+	// We only use the diagnostic count to decide whether to fail, so suppress
+	// warnings at the source rather than generating them just to ignore.
+	r := &report.Report{Options: report.Options{SuppressWarnings: true}}
+	parsed, ok := parser.Parse(
+		file.uri.Filename(),
+		source.NewFile(file.uri.Filename(), file.file.Text()),
+		r,
+	)
+	if !ok {
+		return nil, fmt.Errorf("cannot format file: %d parse error(s)", len(r.Diagnostics))
 	}
 	var out strings.Builder
-	if err := bufformat.FormatFileNode(&out, parsed); err != nil {
+	if err := bufformat.FormatFile(&out, parsed); err != nil {
 		return nil, fmt.Errorf("format failed: %w", err)
 	}
 	newText := out.String()

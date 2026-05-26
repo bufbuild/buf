@@ -21,13 +21,18 @@ import (
 	"io"
 	"sync/atomic"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/bufbuild/protocompile/ast"
-	"github.com/bufbuild/protocompile/parser"
-	"github.com/bufbuild/protocompile/reporter"
+	"github.com/bufbuild/protocompile/experimental/ast"
+	"github.com/bufbuild/protocompile/experimental/ast/printer"
+	"github.com/bufbuild/protocompile/experimental/parser"
+	"github.com/bufbuild/protocompile/experimental/report"
+	"github.com/bufbuild/protocompile/experimental/seq"
+	"github.com/bufbuild/protocompile/experimental/source"
+	"github.com/bufbuild/protocompile/experimental/source/length"
 )
 
 // FormatOption is an option for formatting.
@@ -67,6 +72,10 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket, opts ...Format
 	for _, opt := range opts {
 		opt(options)
 	}
+	var matcher *fullNameMatcher
+	if len(options.deprecatePrefixes) > 0 {
+		matcher = newFullNameMatcher(options.deprecatePrefixes...)
+	}
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	paths, err := storage.AllPaths(ctx, storage.FilterReadBucket(bucket, storage.MatchPathExt(".proto")), "")
 	if err != nil {
@@ -84,9 +93,16 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket, opts ...Format
 			defer func() {
 				retErr = errors.Join(retErr, readObjectCloser.Close())
 			}()
-			fileNode, err := parser.Parse(readObjectCloser.ExternalPath(), readObjectCloser, reporter.NewHandler(nil))
+			data, err := io.ReadAll(readObjectCloser)
 			if err != nil {
 				return err
+			}
+			file, err := parseFile(readObjectCloser, data)
+			if err != nil {
+				return err
+			}
+			if matcher != nil && applyDeprecations(file, matcher) {
+				deprecationMatched.Store(true)
 			}
 			writeObjectCloser, err := readWriteBucket.Put(ctx, path)
 			if err != nil {
@@ -95,12 +111,8 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket, opts ...Format
 			defer func() {
 				retErr = errors.Join(retErr, writeObjectCloser.Close())
 			}()
-			matched, err := formatFileNodeWithMatch(writeObjectCloser, fileNode, options)
-			if err != nil {
+			if err := FormatFile(writeObjectCloser, file); err != nil {
 				return err
-			}
-			if matched {
-				deprecationMatched.Store(true)
 			}
 			return writeObjectCloser.SetExternalPath(readObjectCloser.ExternalPath())
 		}
@@ -109,51 +121,82 @@ func FormatBucket(ctx context.Context, bucket storage.ReadBucket, opts ...Format
 		return nil, err
 	}
 	// If deprecation was requested but nothing matched, return an error.
-	if len(options.deprecatePrefixes) > 0 && !deprecationMatched.Load() {
+	if matcher != nil && !deprecationMatched.Load() {
 		return nil, fmt.Errorf("no types matched the specified deprecation prefixes")
 	}
 	return readWriteBucket, nil
 }
 
-// FormatFileNode formats the given file node and writes the result to dest.
-func FormatFileNode(dest io.Writer, fileNode *ast.FileNode) error {
-	return formatFileNode(dest, fileNode, &formatOptions{})
-}
-
-// formatFileNode formats the given file node with options and writes the result to dest.
-func formatFileNode(dest io.Writer, fileNode *ast.FileNode, options *formatOptions) error {
-	_, err := formatFileNodeWithMatch(dest, fileNode, options)
+// FormatFile formats the given file and writes the result to dest.
+func FormatFile(dest io.Writer, file *ast.File) error {
+	out, err := printer.PrintFile(printer.Options{
+		Format:     true,
+		Formatting: printer.Legacy(),
+	}, file)
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(dest, out)
 	return err
 }
 
-// formatFileNodeWithMatch formats the given file node and returns whether any deprecation prefix matched.
-func formatFileNodeWithMatch(dest io.Writer, fileNode *ast.FileNode, options *formatOptions) (bool, error) {
-	// Construct the file descriptor to ensure the AST is valid. The
-	// reporter swallows the known edition 2024 unsupported error (the
-	// parser handles it but ResultFromAST does not yet) and propagates
-	// all other errors. The error is identified by its span matching
-	// the edition value node.
-	errReporter := reporter.NewReporter(
-		func(err reporter.ErrorWithPos) error {
-			if fileNode.Edition == nil || fileNode.Edition.Edition.AsString() != "2024" {
-				return err
-			}
-			editionValueSpan := fileNode.NodeInfo(fileNode.Edition.Edition)
-			if err.Start() == editionValueSpan.Start() && err.End() == editionValueSpan.End() {
-				return nil
-			}
-			return err
-		},
-		nil,
-	)
-	if _, err := parser.ResultFromAST(fileNode, true, reporter.NewHandler(errReporter)); err != nil {
-		if !errors.Is(err, reporter.ErrInvalidSource) {
-			return false, err
+// parseFile parses a .proto source file using the experimental parser.
+//
+// The parser may emit error-level diagnostics that are recoverable for
+// formatting — e.g. edition 2024 import-ordering rule violations that
+// canonicalization fixes anyway. We only fail when the parser produced
+// no file at all, or when any top-level declaration is marked corrupt
+// (signalling a syntactic failure that the formatter cannot recover
+// from). This mirrors the legacy formatter's behavior of swallowing
+// edition-2024-related errors while still failing on broken syntax.
+func parseFile(fileInfo bufanalysis.FileInfo, data []byte) (*ast.File, error) {
+	// Suppress non-error diagnostics at the source. We only ever surface
+	// error-level diagnostics from this path.
+	r := &report.Report{Options: report.Options{SuppressWarnings: true}}
+	path := fileInfo.ExternalPath()
+	file, _ := parser.Parse(path, source.NewFile(path, string(data)), r)
+	if file == nil {
+		return nil, fmt.Errorf("%s: parse failed", path)
+	}
+	for decl := range seq.Values(file.Decls()) {
+		if def := decl.AsDef(); !def.IsZero() && def.IsCorrupt() {
+			return nil, parseDiagnosticsAnnotationSet(fileInfo, r)
 		}
 	}
-	formatter := newFormatter(dest, fileNode, options)
-	if err := formatter.Run(); err != nil {
-		return false, err
+	return file, nil
+}
+
+// parseDiagnosticsAnnotationSet converts the error-level diagnostics into a
+// file annotation set for rendering.
+func parseDiagnosticsAnnotationSet(fileInfo bufanalysis.FileInfo, r *report.Report) error {
+	var annotations []bufanalysis.FileAnnotation
+	for _, diagnostic := range r.Diagnostics {
+		primary := diagnostic.Primary()
+		if primary.IsZero() {
+			// Spanless diagnostics (e.g. companions to fatal file-open
+			// errors) have no location to render and would be displayed
+			// as "<input>:1:1:..."; skip them. Matches build_image.go.
+			continue
+		}
+		start := primary.Location(primary.Start, length.Bytes)
+		end := primary.Location(primary.End, length.Bytes)
+		annotations = append(
+			annotations,
+			bufanalysis.NewFileAnnotation(
+				fileInfo,
+				start.Line,
+				start.Column,
+				end.Line,
+				end.Column,
+				"COMPILE",
+				diagnostic.Message(),
+				"", // pluginName
+				"", // policyName
+			),
+		)
 	}
-	return formatter.deprecationMatched, nil
+	if len(annotations) == 0 {
+		return fmt.Errorf("%s: parse failed", fileInfo.ExternalPath())
+	}
+	return bufanalysis.NewFileAnnotationSet(annotations...)
 }
