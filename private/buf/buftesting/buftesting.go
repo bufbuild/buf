@@ -16,6 +16,7 @@ package buftesting
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -25,10 +26,12 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufprotoc"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/github/githubtesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -155,4 +158,34 @@ func GetProtocFilePathsErr(ctx context.Context, dirPath string, limit int) ([]st
 		realFilePaths = realFilePaths[:limit]
 	}
 	return realFilePaths, nil
+}
+
+// WKTOpener returns a [source.Opener] backed by [datawkt.ReadBucket]. Tests that
+// compile proto files referencing the well-known types — including the implicit
+// descriptor.proto dependency requested by the experimental compiler — can chain
+// this opener via [source.Openers] to provide WKT fallback resolution from the
+// same in-process bucket production code uses.
+func WKTOpener() source.Opener {
+	return datawktOpener{}
+}
+
+type datawktOpener struct{}
+
+// Open implements [source.Opener].
+//
+// Returns errors wrapping [fs.ErrNotExist] for unknown paths, which
+// [source.Openers] uses to fall through to the next opener.
+func (datawktOpener) Open(path string) (_ *source.File, retErr error) {
+	readObjectCloser, err := datawkt.ReadBucket.Get(context.Background(), path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		retErr = errors.Join(retErr, readObjectCloser.Close())
+	}()
+	data, err := io.ReadAll(readObjectCloser)
+	if err != nil {
+		return nil, err
+	}
+	return source.NewFile(path, string(data)), nil
 }
