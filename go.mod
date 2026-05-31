@@ -30,7 +30,7 @@ require (
 	github.com/jhump/protoreflect/v2 v2.0.0-beta.2
 	github.com/klauspost/compress v1.18.6
 	github.com/klauspost/pgzip v1.2.6
-	github.com/mattn/go-colorable v0.1.14
+	github.com/mattn/go-colorable v0.1.15
 	github.com/moby/moby/api v1.54.2
 	github.com/moby/moby/client v0.4.1
 	github.com/quic-go/quic-go v0.59.1
