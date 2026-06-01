@@ -15,6 +15,8 @@
 package storage
 
 import (
+	"slices"
+
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
@@ -120,8 +122,7 @@ func (c chainMapper) mapFunc(
 ) (string, bool) {
 	fullPathOrPrefix := pathOrPrefix
 	var matches bool
-	for i := len(c.mappers) - 1; i >= 0; i-- {
-		mapper := c.mappers[i]
+	for _, mapper := range slices.Backward(c.mappers) {
 		fullPathOrPrefix, matches = f(mapper, fullPathOrPrefix)
 		if !matches {
 			return "", false
