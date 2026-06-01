@@ -48,9 +48,8 @@ LICENSE_HEADER_YEAR_RANGE := 2020-2026
 LICENSE_HEADER_IGNORES := \
 	\/testdata \
 	enterprise \
-	^[^/]*\.yaml$$ \
-	^[^/]*\.yml$$ \
-	\.github\/
+	\.yaml$$ \
+	\.yml$$
 BANDEPS_CONFIG := etc/bandeps/bandeps.yaml
 BUFPRIVATEUSAGE_PKGS := ./private/...
 PROTOVALIDATE_VERSION := v1.1.0
