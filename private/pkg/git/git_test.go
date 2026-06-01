@@ -16,6 +16,7 @@ package git
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -24,6 +25,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -68,6 +70,51 @@ func TestGitCloner(t *testing.T) {
 		content, err = storage.ReadPath(ctx, readBucket, "submodule/sub.proto")
 		require.NoError(t, err)
 		assert.Equal(t, "// submodule", string(content))
+	})
+
+	t.Run("auto_maintenance_disabled", func(t *testing.T) {
+		t.Parallel()
+
+		tracePath := filepath.Join(t.TempDir(), "git-trace.json")
+		readBucketForName(ctx, t, workDir, readBucketForNameOptions{
+			recurseSubmodules: true,
+			envOverrides: map[string]string{
+				"GIT_TRACE2_EVENT": tracePath,
+			},
+		})
+
+		traceData, err := os.ReadFile(tracePath)
+		require.NoError(t, err)
+
+		var gitArgvs [][]string
+		for line := range strings.SplitSeq(string(traceData), "\n") {
+			if line == "" {
+				continue
+			}
+			var event struct {
+				Event string   `json:"event"`
+				Argv  []string `json:"argv"`
+			}
+			require.NoError(t, json.Unmarshal([]byte(line), &event))
+			if event.Event == "start" && len(event.Argv) > 0 {
+				gitArgvs = append(gitArgvs, event.Argv)
+			}
+		}
+
+		for _, subcommand := range []string{"fetch", "checkout", "submodule"} {
+			var found bool
+			for _, argv := range gitArgvs {
+				subcommandIndex := slices.Index(argv, subcommand)
+				if subcommandIndex < 0 {
+					continue
+				}
+				require.GreaterOrEqual(t, subcommandIndex, len(gitConfigNoAutoMaintenanceArgs))
+				assert.Equal(t, gitConfigNoAutoMaintenanceArgs, argv[subcommandIndex-len(gitConfigNoAutoMaintenanceArgs):subcommandIndex])
+				found = true
+				break
+			}
+			require.Truef(t, found, "missing git %q invocation", subcommand)
+		}
 	})
 
 	t.Run("main", func(t *testing.T) {
