@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Port new formatter and fix bugs for in-line block comment spacing.
+- Fix handling for an empty rpc input/output.
 
 ## [v1.70.0] - 2026-05-25
 
