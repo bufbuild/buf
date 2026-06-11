@@ -142,6 +142,17 @@ func TestNesting(t *testing.T) {
 		t.Parallel()
 		runDiffTest(t, "testdata/nesting", "message.txtar", WithIncludeTypes("pkg.Foo"))
 	})
+	t.Run("recursive_message", func(t *testing.T) {
+		t.Parallel()
+		// "pkg.Foo.**" additionally pulls in the otherwise-unreferenced nested
+		// types pkg.Foo.NestedButNotUsed and pkg.Foo.NestedFoo.NestedNestedFoo.
+		runDiffTest(t, "testdata/nesting", "message.recursive.txtar", WithIncludeTypes("pkg.Foo.**"))
+	})
+	t.Run("recursive_message_with_exclude", func(t *testing.T) {
+		t.Parallel()
+		// An explicitly excluded nested type is skipped by the recursive glob.
+		runDiffTest(t, "testdata/nesting", "message.recursive-exclude.txtar", WithIncludeTypes("pkg.Foo.**"), WithExcludeTypes("pkg.Foo.NestedButNotUsed"))
+	})
 	t.Run("recursenested", func(t *testing.T) {
 		t.Parallel()
 		runDiffTest(t, "testdata/nesting", "recursenested.txtar", WithIncludeTypes("pkg.Foo.NestedFoo.NestedNestedFoo"))
@@ -321,6 +332,31 @@ func TestPackages(t *testing.T) {
 	runDiffTest(t, "testdata/packages", "foo.txtar", WithIncludeTypes("foo"))
 	runDiffTest(t, "testdata/packages", "foo.bar.txtar", WithIncludeTypes("foo.bar"))
 	runDiffTest(t, "testdata/packages", "foo.bar.baz.txtar", WithIncludeTypes("foo.bar.baz"))
+	// "foo.**" includes package foo and all of its sub-packages (foo.bar and
+	// foo.bar.baz), in contrast to "foo" which includes only package foo.
+	runDiffTest(t, "testdata/packages", "foo.recursive.txtar", WithIncludeTypes("foo.**"))
+	// Excluding a package without the glob is not recursive: excluding "foo.bar"
+	// drops only foo.bar's own types, leaving its sub-package foo.bar.baz (and
+	// package foo) intact.
+	runDiffTest(t, "testdata/packages", "foo.bar.exclude.txtar", WithExcludeTypes("foo.bar"))
+	// "foo.bar.**" is recursive, so it additionally drops foo.bar.baz.
+	runDiffTest(t, "testdata/packages", "foo.bar.recursive-exclude.txtar", WithExcludeTypes("foo.bar.**"))
+	// Excluding "foo.bar.**" drops foo.bar and foo.bar.baz; the excluded
+	// sub-packages are skipped by the "foo.**" include rather than treated as an
+	// error, leaving only package foo.
+	runDiffTest(t, "testdata/packages", "foo.recursive-exclude.txtar", WithIncludeTypes("foo.**"), WithExcludeTypes("foo.bar.**"))
+
+	// Including a recursive glob while excluding the same top-level package
+	// cancel out, so this is an error just as including and excluding the same
+	// package directly would be.
+	t.Run("recursive_include_excludes_self", func(t *testing.T) {
+		t.Parallel()
+		ctx := t.Context()
+		_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/packages", bufimage.WithExcludeSourceCodeInfo())
+		require.NoError(t, err)
+		_, err = FilterImage(image, WithIncludeTypes("foo.bar.**"), WithExcludeTypes("foo.bar"))
+		require.ErrorContains(t, err, "inclusion of excluded package \"foo.bar\"")
+	})
 }
 
 func TestAny(t *testing.T) {

@@ -35,18 +35,19 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 		return nil, err
 	}
 	closure := newTransitiveClosure()
-	// All excludes are added first, then includes walk included all non excluded types.
-	// TODO: consider supporting a glob syntax of some kind, to do more advanced pattern
-	//   matching, such as ability to get a package AND all of its sub-packages.
+	// All excludes are added first, then includes walk all non-excluded types.
+	// A trailing ".**" is a recursive glob: it matches the named element and
+	// every symbol nested beneath it (e.g. a package and all its sub-packages,
+	// or a message and all its nested types).
 	for excludeType := range options.excludeTypes {
-		excludeType := protoreflect.FullName(excludeType)
-		if err := closure.excludeType(excludeType, imageIndex, options); err != nil {
+		excludeType, recursive := strings.CutSuffix(excludeType, ".**")
+		if err := closure.excludeType(protoreflect.FullName(excludeType), recursive, imageIndex, options); err != nil {
 			return nil, err
 		}
 	}
 	for includeType := range options.includeTypes {
-		includeType := protoreflect.FullName(includeType)
-		if err := closure.includeType(includeType, imageIndex, options); err != nil {
+		includeType, recursive := strings.CutSuffix(includeType, ".**")
+		if err := closure.includeType(protoreflect.FullName(includeType), recursive, imageIndex, options); err != nil {
 			return nil, err
 		}
 	}
