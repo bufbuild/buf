@@ -28,6 +28,25 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+// isValidFilterTypeName reports whether name (a filter type name with any
+// trailing ".**" recursive glob already removed) is acceptable. The empty
+// string is allowed and denotes the root (no-package) namespace; any other
+// value must be a valid fully-qualified name. This rejects malformed inputs
+// such as "foo.**.bar", where ".**" appears anywhere but the end.
+func isValidFilterTypeName(name string) bool {
+	return name == "" || protoreflect.FullName(name).IsValid()
+}
+
+// invalidFilterTypeError builds the error for a malformed filter type name,
+// where kind is "include" or "exclude". When the name contains an asterisk, the
+// message also clarifies that the only supported wildcard is a trailing ".**".
+func invalidFilterTypeError(kind, typeName string) error {
+	if strings.Contains(typeName, "*") {
+		return fmt.Errorf("invalid %s type %q: the only supported wildcard is %q and it must come at the end", kind, typeName, ".**")
+	}
+	return fmt.Errorf("invalid %s type %q", kind, typeName)
+}
+
 // filterImage filters the Image for the given options.
 func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Image, error) {
 	imageIndex, err := newImageIndexForImage(image, options)
@@ -40,14 +59,20 @@ func filterImage(image bufimage.Image, options *imageFilterOptions) (bufimage.Im
 	// every symbol nested beneath it (e.g. a package and all its sub-packages,
 	// or a message and all its nested types).
 	for excludeType := range options.excludeTypes {
-		excludeType, recursive := strings.CutSuffix(excludeType, ".**")
-		if err := closure.excludeType(protoreflect.FullName(excludeType), recursive, imageIndex, options); err != nil {
+		typeName, recursive := strings.CutSuffix(excludeType, ".**")
+		if !isValidFilterTypeName(typeName) {
+			return nil, invalidFilterTypeError("exclude", excludeType)
+		}
+		if err := closure.excludeType(protoreflect.FullName(typeName), recursive, imageIndex, options); err != nil {
 			return nil, err
 		}
 	}
 	for includeType := range options.includeTypes {
-		includeType, recursive := strings.CutSuffix(includeType, ".**")
-		if err := closure.includeType(protoreflect.FullName(includeType), recursive, imageIndex, options); err != nil {
+		typeName, recursive := strings.CutSuffix(includeType, ".**")
+		if !isValidFilterTypeName(typeName) {
+			return nil, invalidFilterTypeError("include", includeType)
+		}
+		if err := closure.includeType(protoreflect.FullName(typeName), recursive, imageIndex, options); err != nil {
 			return nil, err
 		}
 	}

@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package acme.order.v1;
+
+message Order {
+  string id = 1;
+}
