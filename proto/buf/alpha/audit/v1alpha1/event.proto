@@ -80,7 +80,7 @@ message Resource {
 
 // EventType is the type of audited event.
 //
-// [#next-free-field: 86]
+// [#next-free-field: 87]
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
   EVENT_TYPE_ORGANIZATION_CREATED = 1;
@@ -134,6 +134,7 @@ enum EventType {
   EVENT_TYPE_USER_LOGGED_IN = 18;
   EVENT_TYPE_USER_LOGGED_OUT = 19;
   EVENT_TYPE_TOKEN_CREATED = 23;
+  EVENT_TYPE_TOKEN_UPDATED = 86;
   EVENT_TYPE_TOKEN_DELETED = 24;
   EVENT_TYPE_USER_REACTIVATED = 25;
   EVENT_TYPE_SCIM_TOKEN_CREATED = 26;
@@ -184,7 +185,7 @@ message EventMetadata {
 // it happened, who did it, which resource was affected, and more contextual information on the
 // event.
 //
-// [#next-free-field: 92]
+// [#next-free-field: 93]
 message Event {
   // Unique id of the audited event.
   string event_id = 1;
@@ -249,6 +250,7 @@ message Event {
     PayloadOrganizationIDPGroupUpdated idp_group_updated = 65;
     PayloadOrganizationIDPGroupRemoved idp_group_removed = 28;
     PayloadTokenCreated token_created = 29;
+    PayloadTokenUpdated token_updated = 92;
     PayloadTokenDeleted token_deleted = 30;
     PayloadUserReactivated user_reactivated = 31;
     PayloadSCIMTokenCreated scim_token_created = 32;
@@ -750,6 +752,17 @@ message PayloadTokenCreated {
   string owner_id = 1;
   // token_expiry_time is the expiry time of the token.
   google.protobuf.Timestamp token_expiry_time = 2;
+}
+
+message PayloadTokenUpdated {
+  // owner_id is the id of the owner of the token.
+  string owner_id = 1;
+  // name_updated is whether the update changed the token's name. The resource
+  // name on the event is the token's name after the update.
+  bool name_updated = 2;
+  // scoped_permissions_updated is whether the update replaced the token's
+  // scoped permissions.
+  bool scoped_permissions_updated = 3;
 }
 
 message PayloadTokenDeleted {
