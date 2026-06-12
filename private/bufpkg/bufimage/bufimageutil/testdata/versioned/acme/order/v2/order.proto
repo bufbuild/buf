@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package acme.order.v2;
+
+message Order {
+  string id = 1;
+  string customer_id = 2;
+}

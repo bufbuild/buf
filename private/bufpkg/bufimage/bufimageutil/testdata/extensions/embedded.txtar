@@ -1,0 +1,6 @@
+-- b.proto --
+syntax = "proto2";
+package other;
+message Embedded {
+  optional string foo = 1;
+}

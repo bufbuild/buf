@@ -132,7 +132,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Types,
 		typeFlagName,
 		nil,
-		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types",
+		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. A type name may end with \".**\" to recursively include the named element and everything nested beneath it, such as a package and all of its sub-packages",
 	)
 }
 

@@ -131,8 +131,8 @@ func TestTypes(t *testing.T) {
 		_, image, err := getImage(t.Context(), slogtestext.NewLogger(t), "testdata/options", bufimage.WithExcludeSourceCodeInfo())
 		require.NoError(t, err)
 		_, err = FilterImage(image, WithIncludeTypes("pkg.extension"), WithExcludeTypes("pkg.Foo"))
-		require.Error(t, err)
-		assert.ErrorContains(t, err, "cannot include extension field \"pkg.extension\" as the extendee type \"pkg.Foo\" is excluded")
+		require.ErrorIs(t, err, ErrImageFilterTypeExcluded)
+		assert.ErrorContains(t, err, "cannot include extension field \"pkg.extension\" as its extendee type \"pkg.Foo\" is")
 	})
 }
 
@@ -141,6 +141,17 @@ func TestNesting(t *testing.T) {
 	t.Run("message", func(t *testing.T) {
 		t.Parallel()
 		runDiffTest(t, "testdata/nesting", "message.txtar", WithIncludeTypes("pkg.Foo"))
+	})
+	t.Run("recursive_message", func(t *testing.T) {
+		t.Parallel()
+		// "pkg.Foo.**" additionally pulls in the otherwise-unreferenced nested
+		// types pkg.Foo.NestedButNotUsed and pkg.Foo.NestedFoo.NestedNestedFoo.
+		runDiffTest(t, "testdata/nesting", "message.recursive.txtar", WithIncludeTypes("pkg.Foo.**"))
+	})
+	t.Run("recursive_message_with_exclude", func(t *testing.T) {
+		t.Parallel()
+		// An explicitly excluded nested type is skipped by the recursive glob.
+		runDiffTest(t, "testdata/nesting", "message.recursive-exclude.txtar", WithIncludeTypes("pkg.Foo.**"), WithExcludeTypes("pkg.Foo.NestedButNotUsed"))
 	})
 	t.Run("recursenested", func(t *testing.T) {
 		t.Parallel()
@@ -183,9 +194,11 @@ func TestNesting(t *testing.T) {
 		_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/nesting", bufimage.WithExcludeSourceCodeInfo())
 		require.NoError(t, err)
 		_, err = FilterImage(image, WithIncludeTypes("pkg.Foo.NestedFoo"), WithExcludeTypes("pkg.Foo"))
-		require.ErrorContains(t, err, "inclusion of excluded type \"pkg.Foo.NestedFoo\"")
+		require.ErrorIs(t, err, ErrImageFilterTypeExcluded)
+		require.ErrorContains(t, err, "inclusion of type \"pkg.Foo.NestedFoo\"")
 		_, err = FilterImage(image, WithIncludeTypes("pkg.Foo.NestedButNotUsed"), WithExcludeTypes("pkg.Foo"))
-		require.ErrorContains(t, err, "inclusion of excluded type \"pkg.Foo.NestedButNotUsed\"")
+		require.ErrorIs(t, err, ErrImageFilterTypeExcluded)
+		require.ErrorContains(t, err, "inclusion of type \"pkg.Foo.NestedButNotUsed\"")
 	})
 }
 
@@ -313,6 +326,11 @@ func TestExtensions(t *testing.T) {
 	t.Parallel()
 	runDiffTest(t, "testdata/extensions", "extensions.txtar", WithIncludeTypes("pkg.Foo"))
 	runDiffTest(t, "testdata/extensions", "extensions-excluded.txtar", WithExcludeKnownExtensions(), WithIncludeTypes("pkg.Foo"))
+	// Including a message does not pull in extensions declared inside it, but the
+	// recursive glob does: "other.Embedded.**" additionally includes the nested
+	// extension other.Embedded.from_other_file (and thus its extendee pkg.Foo).
+	runDiffTest(t, "testdata/extensions", "embedded.txtar", WithExcludeKnownExtensions(), WithIncludeTypes("other.Embedded"))
+	runDiffTest(t, "testdata/extensions", "embedded.recursive.txtar", WithExcludeKnownExtensions(), WithIncludeTypes("other.Embedded.**"))
 }
 
 func TestPackages(t *testing.T) {
@@ -321,6 +339,76 @@ func TestPackages(t *testing.T) {
 	runDiffTest(t, "testdata/packages", "foo.txtar", WithIncludeTypes("foo"))
 	runDiffTest(t, "testdata/packages", "foo.bar.txtar", WithIncludeTypes("foo.bar"))
 	runDiffTest(t, "testdata/packages", "foo.bar.baz.txtar", WithIncludeTypes("foo.bar.baz"))
+	// "foo.**" includes package foo and all of its sub-packages (foo.bar and
+	// foo.bar.baz), in contrast to "foo" which includes only package foo.
+	runDiffTest(t, "testdata/packages", "foo.recursive.txtar", WithIncludeTypes("foo.**"))
+	// Excluding a package without the glob is not recursive: excluding "foo.bar"
+	// drops only foo.bar's own types, leaving its sub-package foo.bar.baz (and
+	// package foo) intact.
+	runDiffTest(t, "testdata/packages", "foo.bar.exclude.txtar", WithExcludeTypes("foo.bar"))
+	// "foo.bar.**" is recursive, so it additionally drops foo.bar.baz.
+	runDiffTest(t, "testdata/packages", "foo.bar.recursive-exclude.txtar", WithExcludeTypes("foo.bar.**"))
+	// Excluding "foo.bar.**" drops foo.bar and foo.bar.baz; the excluded
+	// sub-packages are skipped by the "foo.**" include rather than treated as an
+	// error, leaving only package foo.
+	runDiffTest(t, "testdata/packages", "foo.recursive-exclude.txtar", WithIncludeTypes("foo.**"), WithExcludeTypes("foo.bar.**"))
+
+	// When a recursive include and an exclude leave nothing behind, the filters
+	// contradict each other and FilterImage reports ErrImageFilterTypeExcluded.
+	// foo.bar.baz has no sub-packages, so including "foo.bar.baz.**" while
+	// excluding "foo.bar.baz" cancels out entirely.
+	t.Run("recursive_include_excludes_self", func(t *testing.T) {
+		t.Parallel()
+		ctx := t.Context()
+		_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/packages", bufimage.WithExcludeSourceCodeInfo())
+		require.NoError(t, err)
+		_, err = FilterImage(image, WithIncludeTypes("foo.bar.baz.**"), WithExcludeTypes("foo.bar.baz"))
+		require.ErrorIs(t, err, ErrImageFilterTypeExcluded)
+		require.ErrorContains(t, err, "inclusion of type \"foo.bar.baz\"")
+	})
+
+	// Reject malformed globs: ".**" is only meaningful as a trailing suffix.
+	t.Run("invalid_glob", func(t *testing.T) {
+		t.Parallel()
+		ctx := t.Context()
+		_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/packages", bufimage.WithExcludeSourceCodeInfo())
+		require.NoError(t, err)
+		_, err = FilterImage(image, WithIncludeTypes("foo.**.bar"))
+		require.ErrorContains(t, err, "invalid include type \"foo.**.bar\": the only supported wildcard is \".**\" and it must come at the end")
+		_, err = FilterImage(image, WithExcludeTypes("foo.*"))
+		require.ErrorContains(t, err, "invalid exclude type \"foo.*\": the only supported wildcard is \".**\" and it must come at the end")
+	})
+}
+
+// TestVersionedPackages covers the common shape where the glob target is a
+// version-prefix namespace (acme.order) that declares no types of its own; all
+// types live in sub-packages (acme.order.v1, acme.order.v2).
+func TestVersionedPackages(t *testing.T) {
+	t.Parallel()
+	// "acme.order.**" includes both versioned sub-packages.
+	runDiffTest(t, "testdata/versioned", "acme.order.recursive.txtar", WithIncludeTypes("acme.order.**"))
+
+	t.Run("no_types_directly", func(t *testing.T) {
+		t.Parallel()
+		ctx := t.Context()
+		_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/versioned", bufimage.WithExcludeSourceCodeInfo())
+		require.NoError(t, err)
+		// "acme.order" itself has no types, so a non-recursive include is an error
+		// that points at the recursive glob.
+		_, err = FilterImage(image, WithIncludeTypes("acme.order"))
+		require.ErrorContains(t, err, "package contains no types directly; did you mean \"acme.order.**\"?")
+	})
+
+	t.Run("recursive_include_all_excluded", func(t *testing.T) {
+		t.Parallel()
+		ctx := t.Context()
+		_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/versioned", bufimage.WithExcludeSourceCodeInfo())
+		require.NoError(t, err)
+		// Excluding every sub-package leaves the recursive include empty.
+		_, err = FilterImage(image, WithIncludeTypes("acme.order.**"), WithExcludeTypes("acme.order.v1", "acme.order.v2"))
+		require.ErrorIs(t, err, ErrImageFilterTypeExcluded)
+		require.ErrorContains(t, err, "inclusion of type \"acme.order\"")
+	})
 }
 
 func TestAny(t *testing.T) {
