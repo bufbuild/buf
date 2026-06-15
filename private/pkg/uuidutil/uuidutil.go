@@ -62,7 +62,7 @@ func Validate(s string) error {
 		return err
 	}
 	if id == uuid.Nil {
-		return fmt.Errorf("must not be nil: %s", id)
+		return fmt.Errorf("must not be nil: %s", s)
 	}
 	return nil
 }
@@ -74,7 +74,7 @@ func ValidateDashless(dashless string) error {
 		return err
 	}
 	if id == uuid.Nil {
-		return fmt.Errorf("must not be nil: %s", id)
+		return fmt.Errorf("must not be nil: %s", dashless)
 	}
 	return nil
 }
