@@ -55,16 +55,28 @@ func FromDashless(dashless string) (uuid.UUID, error) {
 	return FromString(dashless[0:8] + "-" + dashless[8:12] + "-" + dashless[12:16] + "-" + dashless[16:20] + "-" + dashless[20:])
 }
 
-// Validate determines if the given UUID string is valid.
+// Validate determines if the given UUID string is valid and not [uuid.Nil].
 func Validate(s string) error {
-	_, err := FromString(s)
-	return err
+	id, err := FromString(s)
+	if err != nil {
+		return err
+	}
+	if id == uuid.Nil {
+		return fmt.Errorf("must not be nil: %s", s)
+	}
+	return nil
 }
 
-// ValidateDashless validates the dashless uuid is valid.
+// ValidateDashless validates the dashless uuid is valid and not [uuid.Nil].
 func ValidateDashless(dashless string) error {
-	_, err := FromDashless(dashless)
-	return err
+	id, err := FromDashless(dashless)
+	if err != nil {
+		return err
+	}
+	if id == uuid.Nil {
+		return fmt.Errorf("must not be nil: %s", dashless)
+	}
+	return nil
 }
 
 // FromStringSlice returns a slice of uuids from the string slice.

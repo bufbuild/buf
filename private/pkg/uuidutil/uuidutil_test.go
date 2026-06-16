@@ -17,6 +17,7 @@ package uuidutil
 import (
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -64,6 +65,18 @@ func TestValidateDashlessFailsWithUUID(t *testing.T) {
 	require.NoError(t, err)
 	err = ValidateDashless(id.String())
 	require.Error(t, err)
+}
+
+func TestValidateFailsWithNil(t *testing.T) {
+	t.Parallel()
+	err := Validate(uuid.Nil.String())
+	require.ErrorContains(t, err, "must not be nil")
+}
+
+func TestValidateDashlessFailsWithNil(t *testing.T) {
+	t.Parallel()
+	err := ValidateDashless(ToDashless(uuid.Nil))
+	require.ErrorContains(t, err, "must not be nil")
 }
 
 func TestFromStringSliceFailsWithDashless(t *testing.T) {
