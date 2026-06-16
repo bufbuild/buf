@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.71.1] - 2026-06-16
 
 - Port new formatter and fix bugs for in-line block comment spacing.
 - Fix handling for an empty rpc input/output.
@@ -1561,7 +1561,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.70.0...HEAD
+[v1.71.1]: https://github.com/bufbuild/buf/compare/v1.70.0...v1.71.1
 [v1.70.0]: https://github.com/bufbuild/buf/compare/v1.69.0...v1.70.0
 [v1.69.0]: https://github.com/bufbuild/buf/compare/v1.68.4...v1.69.0
 [v1.68.4]: https://github.com/bufbuild/buf/compare/v1.68.3...v1.68.4
