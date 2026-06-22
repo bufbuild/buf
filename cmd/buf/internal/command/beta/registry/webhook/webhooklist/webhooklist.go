@@ -16,7 +16,6 @@ package webhooklist
 
 import (
 	"context"
-	"encoding/json"
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
@@ -26,6 +25,7 @@ import (
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/spf13/pflag"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -117,7 +117,7 @@ func run(
 		_, _ = container.Stdout().Write([]byte("[]"))
 		return nil
 	}
-	webhooksJSON, err := json.MarshalIndent(resp.Msg.GetWebhooks(), "", "\t")
+	webhooksJSON, err := protojson.MarshalOptions{Multiline: true, Indent: "\t"}.Marshal(resp.Msg)
 	if err != nil {
 		return err
 	}
