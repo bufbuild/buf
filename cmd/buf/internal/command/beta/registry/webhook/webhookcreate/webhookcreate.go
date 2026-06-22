@@ -25,8 +25,8 @@ import (
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/spf13/pflag"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -135,7 +135,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	webhookJSON, err := protojson.MarshalOptions{Multiline: true, Indent: "\t"}.Marshal(resp.Msg)
+	webhookJSON, err := protoencoding.NewJSONMarshaler(nil, protoencoding.JSONMarshalerWithIndent()).Marshal(resp.Msg)
 	if err != nil {
 		return err
 	}
