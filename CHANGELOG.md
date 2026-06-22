@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix `buf beta registry webhook create` and `buf beta registry webhook list` to emit proto JSON output.
 
 ## [v1.71.0] - 2026-06-16
 
