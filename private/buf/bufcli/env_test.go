@@ -25,10 +25,13 @@ import (
 
 func TestDefaultHTTPAuthenticatorUsesUsernameAndPassword(t *testing.T) {
 	t.Parallel()
+	// Point the home dir at an empty dir so the netrc authenticator finds no
+	// machine and falls through to the env authenticator under test. HOME is
+	// used on unix and USERPROFILE on windows.
+	emptyDir := t.TempDir()
 	envContainer := app.NewEnvContainer(map[string]string{
-		// Point HOME at an empty dir so the netrc authenticator finds no
-		// machine and falls through to the env authenticator under test.
-		"HOME":                   t.TempDir(),
+		"HOME":                   emptyDir,
+		"USERPROFILE":            emptyDir,
 		inputHTTPSUsernameEnvKey: "username",
 		inputHTTPSPasswordEnvKey: "password",
 	})
