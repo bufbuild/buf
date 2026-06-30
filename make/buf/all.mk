@@ -2,7 +2,11 @@ GO_ALL_REPO_PKGS := ./cmd/... ./private/...
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/bufbuild/protocompile@main \
 	buf.build/go/standard@main \
-	buf.build/go/app@main
+	buf.build/go/app@main \
+	go.lsp.dev/jsonrpc2@v0.10.0 \
+	go.lsp.dev/protocol@v0.12.0 \
+	go.lsp.dev/uri@v0.3.0
+# go.lsp.dev v1.0.0+ requires go 1.26.
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
