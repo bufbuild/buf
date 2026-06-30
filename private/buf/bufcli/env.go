@@ -56,7 +56,7 @@ var (
 		httpauth.NewNetrcAuthenticator(),
 		// must keep this for legacy purposes
 		httpauth.NewEnvAuthenticator(
-			inputHTTPSPasswordEnvKey,
+			inputHTTPSUsernameEnvKey,
 			inputHTTPSPasswordEnvKey,
 		),
 	)
