@@ -40,7 +40,7 @@ message Actor {
 
 // ResourceType is the type of the resource that was affected by the audited event.
 //
-// [#next-free-field: 24]
+// [#next-free-field: 25]
 enum ResourceType {
   RESOURCE_TYPE_UNSPECIFIED = 0;
   RESOURCE_TYPE_USER = 1;
@@ -66,6 +66,7 @@ enum ResourceType {
   RESOURCE_TYPE_PLUGIN_LABEL = 16;
   RESOURCE_TYPE_SDK_PLUGIN_CONSTRAINT = 21;
   RESOURCE_TYPE_AUTHORIZATION_REQUEST = 23;
+  RESOURCE_TYPE_RECOMMENDED_SDK = 24;
 }
 
 // Resource is the affected resource by the audited event.
@@ -80,7 +81,7 @@ message Resource {
 
 // EventType is the type of audited event.
 //
-// [#next-free-field: 86]
+// [#next-free-field: 88]
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
   EVENT_TYPE_ORGANIZATION_CREATED = 1;
@@ -168,6 +169,8 @@ enum EventType {
   EVENT_TYPE_POLICY_ENFORCEMENT_TARGETS_CHANGED = 77;
   EVENT_TYPE_AUTHORIZATION_REQUEST_APPROVED = 84;
   EVENT_TYPE_AUTHORIZATION_REQUEST_DENIED = 85;
+  EVENT_TYPE_RECOMMENDED_SDK_ADDED = 86;
+  EVENT_TYPE_RECOMMENDED_SDK_REMOVED = 87;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -184,7 +187,7 @@ message EventMetadata {
 // it happened, who did it, which resource was affected, and more contextual information on the
 // event.
 //
-// [#next-free-field: 92]
+// [#next-free-field: 94]
 message Event {
   // Unique id of the audited event.
   string event_id = 1;
@@ -285,6 +288,8 @@ message Event {
     PayloadPolicyEnforcementTargetsChanged policy_enforcement_targets_changed = 83;
     PayloadAuthorizationRequestApproved authorization_request_approved = 90;
     PayloadAuthorizationRequestDenied authorization_request_denied = 91;
+    PayloadRecommendedSDKAdded recommended_sdk_added = 92;
+    PayloadRecommendedSDKRemoved recommended_sdk_removed = 93;
   }
 }
 
@@ -1162,3 +1167,41 @@ message PayloadOrganizationResourceVisibilityControlChanged {
 message PayloadOrganizationUniquenessPolicyEnabled {}
 
 message PayloadOrganizationUniquenessPolicyDisabled {}
+
+message PayloadRecommendedSDKAdded {
+  // repository_owner_id is the id of the owner of the repository of the recommended SDK.
+  string repository_owner_id = 1;
+  // repository_owner_name is the name of the owner of the repository of the recommended SDK.
+  string repository_owner_name = 2;
+  // repository_id is the id of the repository of the recommended SDK.
+  string repository_id = 3;
+  // repository_name is the name of the repository of the recommended SDK.
+  string repository_name = 4;
+  // plugin_owner_id is the id of the owner of the plugin of the recommended SDK.
+  string plugin_owner_id = 5;
+  // plugin_owner_name is the name of the owner of the plugin of the recommended SDK.
+  string plugin_owner_name = 6;
+  // plugin_id is the id of the plugin of the recommended SDK.
+  string plugin_id = 7;
+  // plugin_name is the name of the plugin of the recommended SDK.
+  string plugin_name = 8;
+}
+
+message PayloadRecommendedSDKRemoved {
+  // repository_owner_id is the id of the owner of the repository of the recommended SDK.
+  string repository_owner_id = 1;
+  // repository_owner_name is the name of the owner of the repository of the recommended SDK.
+  string repository_owner_name = 2;
+  // repository_id is the id of the repository of the recommended SDK.
+  string repository_id = 3;
+  // repository_name is the name of the repository of the recommended SDK.
+  string repository_name = 4;
+  // plugin_owner_id is the id of the owner of the plugin of the recommended SDK.
+  string plugin_owner_id = 5;
+  // plugin_owner_name is the name of the owner of the plugin of the recommended SDK.
+  string plugin_owner_name = 6;
+  // plugin_id is the id of the plugin of the recommended SDK.
+  string plugin_id = 7;
+  // plugin_name is the name of the plugin of the recommended SDK.
+  string plugin_name = 8;
+}
