@@ -4,6 +4,8 @@
 
 - Fix `buf beta registry webhook create` and `buf beta registry webhook list` to emit proto JSON output.
 - Fix HTTPS Basic authentication for remote inputs to use `BUF_INPUT_HTTPS_USERNAME` for the username.
+- Fix `IMPORT_USED` lint rule silently reporting no unused imports when
+  `google/protobuf/descriptor.proto` is in the transitive dependency graph.
 
 ## [v1.71.0] - 2026-06-16
 
