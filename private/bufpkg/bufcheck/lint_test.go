@@ -192,7 +192,7 @@ func TestRunImportUsedDescriptor(t *testing.T) {
 	testLint(
 		t,
 		"import_used_descriptor",
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 10, 1, 10, 42, "IMPORT_USED"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 6, 1, 6, 42, "IMPORT_USED"),
 	)
 }
 
