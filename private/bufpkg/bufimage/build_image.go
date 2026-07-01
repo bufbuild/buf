@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"slices"
 
 	descriptorv1 "buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go/buf/descriptor/v1"
 	"buf.build/go/standard/xlog/xslog"
@@ -51,6 +50,12 @@ var compileFDPOptions = func() fdp.Options {
 	opts.Apply(fdp.IncludeSourceCodeInfo(true), fdp.GenerateExtraOptionLocations(true))
 	return opts
 }()
+
+// bufDescriptorResolver resolves Buf's descriptor extensions, notably
+// [descriptorv1.E_BufSourceCodeInfoExtension] carrying unused-import info.
+var bufDescriptorResolver = protoencoding.NewLazyResolver(
+	protodesc.ToFileDescriptorProto(descriptorv1.File_buf_descriptor_v1_descriptor_proto),
+)
 
 func buildImage(
 	ctx context.Context,
@@ -292,27 +297,13 @@ func resolverForFDS(fds *descriptorpb.FileDescriptorSet) (*descriptorpb.FileDesc
 	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(descriptorSetBytes, normalizedFDS); err != nil {
 		return nil, nil, err
 	}
-	// Include Buf's descriptor proto alongside the compiled files so that
-	// ReparseExtensions can recognise [descriptorv1.E_BufSourceCodeInfoExtension]
-	// and convert unknown fields to typed extensions.
-	//
-	// We only prepend the buf descriptor proto when the compiled files do not already
-	// contain google/protobuf/descriptor.proto. When a vendored descriptor.proto is
-	// present in the compiled output, its FileDescriptorSet definition lacks extension
-	// ranges for the buf extension (field 536000000). protodesc.NewFiles validates
-	// that extension field numbers fall within declared extension ranges when the
-	// containing message is resolved (non-placeholder). Adding the buf descriptor
-	// proto alongside the vendored descriptor.proto causes this validation to fail.
-	var resolverFiles []*descriptorpb.FileDescriptorProto
-	if !slices.ContainsFunc(normalizedFDS.File, func(file *descriptorpb.FileDescriptorProto) bool {
-		return file.GetName() == "google/protobuf/descriptor.proto"
-	}) {
-		resolverFiles = []*descriptorpb.FileDescriptorProto{
-			protodesc.ToFileDescriptorProto(descriptorv1.File_buf_descriptor_v1_descriptor_proto),
-		}
-	}
-	resolverFiles = append(resolverFiles, normalizedFDS.File...)
-	resolver := protoencoding.NewLazyResolver(resolverFiles...)
+	// The file graph is built only from the compiled files, so it matches the
+	// input exactly (including any vendored google/protobuf/descriptor.proto).
+	// Buf's descriptor extensions are supplied by a fallback resolver consulted
+	// only when the file graph cannot resolve a descriptor, so ReparseExtensions
+	// can recognise them without altering the graph.
+	fileResolver := protoencoding.NewLazyResolver(normalizedFDS.File...)
+	resolver := protoencoding.CombineResolvers(fileResolver, bufDescriptorResolver)
 	for _, fileDescriptor := range normalizedFDS.File {
 		if err := protoencoding.ReparseExtensions(resolver, fileDescriptor.ProtoReflect()); err != nil {
 			return nil, nil, err

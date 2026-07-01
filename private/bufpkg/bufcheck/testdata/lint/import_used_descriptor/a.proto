@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package a;
+
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/timestamp.proto";
+
+extend google.protobuf.FileOptions {
+  string a_file_option = 50000;
+}
+
+message A {
+  string name = 1;
+}

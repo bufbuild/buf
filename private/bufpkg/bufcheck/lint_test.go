@@ -184,6 +184,18 @@ func TestRunImportUsed(t *testing.T) {
 	)
 }
 
+func TestRunImportUsedDescriptor(t *testing.T) {
+	t.Parallel()
+	// A used import of google/protobuf/descriptor.proto places it in the
+	// transitive dependency graph. Its presence must not suppress detection of
+	// other unused imports.
+	testLint(
+		t,
+		"import_used_descriptor",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 6, 1, 6, 42, "IMPORT_USED"),
+	)
+}
+
 func TestRunImportUsedLeadingDot(t *testing.T) {
 	t.Parallel()
 	// Leading-dot fully-qualified type references (e.g. .shared.location.v1.USAddress)
