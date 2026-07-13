@@ -144,24 +144,32 @@ func (w *responseWriter) Close(ctx context.Context) error {
 			return err
 		}
 	}
-	// Collect the set of generated paths per directory output before
-	// clearing state, so the delete phase knows which files to keep.
-	var dirOutputPaths map[string]map[string]struct{}
+	// Collect the set of generated files across all directory outputs before
+	// clearing state, so the delete phase knows which files to keep. Paths are
+	// stored as OS-native absolute paths of the physical destination on disk.
+	//
+	// Using physical destinations (rather than per-directory relative paths)
+	// correctly retains files that one plugin writes into another plugin's
+	// output directory. For example, given a plugin with out=gen that writes
+	// "child/extra.ts" and another plugin with out=gen/child, the file lands at
+	// gen/child/extra.ts; it must be retained by the gen/child clean pass even
+	// though that plugin did not write it.
+	var writtenPaths map[string]struct{}
+	var outDirPaths []string
 	if w.deleteOuts {
-		dirOutputPaths = make(map[string]map[string]struct{}, len(w.readWriteBuckets))
+		writtenPaths = make(map[string]struct{})
 		for outPath, readWriteBucket := range w.readWriteBuckets {
 			if isArchivePath(outPath) {
 				continue
 			}
+			outDirPaths = append(outDirPaths, outPath)
 			paths, err := storage.AllPaths(ctx, readWriteBucket, "")
 			if err != nil {
 				return err
 			}
-			pathSet := make(map[string]struct{}, len(paths))
 			for _, path := range paths {
-				pathSet[path] = struct{}{}
+				writtenPaths[filepath.Join(outPath, filepath.FromSlash(path))] = struct{}{}
 			}
-			dirOutputPaths[outPath] = pathSet
 		}
 	}
 	// Re-initialize the cached values to be safe.
@@ -171,9 +179,8 @@ func (w *responseWriter) Close(ctx context.Context) error {
 		return nil
 	}
 	// Delete stale files and remove empty directories.
-	for outDirPath, retainPaths := range dirOutputPaths {
-		nestedOutDirs := nestedOutputDirs(outDirPath, dirOutputPaths)
-		if err := w.deleteStaleFilesAndEmptyDirs(ctx, outDirPath, retainPaths, nestedOutDirs); err != nil {
+	for _, outDirPath := range outDirPaths {
+		if err := w.deleteStaleFilesAndEmptyDirs(ctx, outDirPath, writtenPaths); err != nil {
 			return err
 		}
 	}
@@ -384,15 +391,15 @@ func (w *responseWriter) copySkipUnchanged(
 	return thread.Parallelize(ctx, jobs)
 }
 
-// deleteStaleFilesAndEmptyDirs deletes files present in outDirPath that are
-// not in retainPaths, then removes any directories that are now empty.
-// Files under nestedOutDirs are skipped because they are managed by a
-// nested output directory's own clean pass.
+// deleteStaleFilesAndEmptyDirs deletes files present in outDirPath whose
+// physical destination is not in writtenPaths, then removes any directories
+// that are now empty. writtenPaths holds the OS-native absolute paths of every
+// file written across all output directories, so files written into outDirPath
+// by another plugin's output are retained.
 func (w *responseWriter) deleteStaleFilesAndEmptyDirs(
 	ctx context.Context,
 	outDirPath string,
-	retainPaths map[string]struct{},
-	nestedOutDirs map[string]struct{},
+	writtenPaths map[string]struct{},
 ) error {
 	osReadWriteBucket, err := w.storageosProvider.NewReadWriteBucket(
 		outDirPath,
@@ -411,10 +418,7 @@ func (w *responseWriter) deleteStaleFilesAndEmptyDirs(
 	}
 	var deleteJobs []func(context.Context) error
 	for _, existingPath := range existingPaths {
-		if _, ok := retainPaths[existingPath]; ok {
-			continue
-		}
-		if normalpath.MapHasEqualOrContainingPath(nestedOutDirs, existingPath, normalpath.Relative) {
+		if _, ok := writtenPaths[filepath.Join(outDirPath, filepath.FromSlash(existingPath))]; ok {
 			continue
 		}
 		deleteJobs = append(deleteJobs, func(ctx context.Context) error {
@@ -429,27 +433,6 @@ func (w *responseWriter) deleteStaleFilesAndEmptyDirs(
 		return err
 	}
 	return removeEmptyDirs(outDirPath)
-}
-
-// nestedOutputDirs returns the set of relative directory paths for output
-// directories in dirOutputPaths that are nested under parentDir. Both
-// parentDir and the map keys are OS-native absolute paths; the returned
-// paths are normalized (forward slashes) for use with storage bucket paths.
-func nestedOutputDirs(parentDir string, dirOutputPaths map[string]map[string]struct{}) map[string]struct{} {
-	normalizedParent := normalpath.Normalize(parentDir)
-	nestedDirs := make(map[string]struct{})
-	for outDir := range dirOutputPaths {
-		normalizedOutDir := normalpath.Normalize(outDir)
-		if !normalpath.ContainsPath(normalizedParent, normalizedOutDir, normalpath.Absolute) {
-			continue
-		}
-		rel, err := normalpath.Rel(normalizedParent, normalizedOutDir)
-		if err != nil {
-			continue
-		}
-		nestedDirs[rel] = struct{}{}
-	}
-	return nestedDirs
 }
 
 // removeEmptyDirs recursively removes all empty directories under rootDir.

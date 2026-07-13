@@ -400,6 +400,47 @@ func TestResponseWriterSmartCleanNestedPluginOutDirsStaleInParent(t *testing.T) 
 	require.ErrorIs(t, err, os.ErrNotExist)
 }
 
+func TestResponseWriterSmartCleanPluginWritesIntoNestedPluginOutDir(t *testing.T) {
+	t.Parallel()
+	outDir := t.TempDir()
+	// Regression test: one plugin outputs to outDir/child, and another plugin
+	// outputs to outDir but writes a file into the child/ subdirectory. The
+	// file written by the parent plugin lands inside the nested plugin's output
+	// directory and must not be deleted by the nested plugin's clean pass.
+	writer := NewResponseWriter(
+		slogtestext.NewLogger(t),
+		storageos.NewProvider(),
+		ResponseWriterWithCreateOutDirIfNotExists(),
+		ResponseWriterWithDeleteOuts(),
+	)
+	// Plugin 1 writes to the nested outDir/child directory.
+	require.NoError(t, writer.AddResponse(
+		t.Context(),
+		&pluginpb.CodeGeneratorResponse{File: []*pluginpb.CodeGeneratorResponse_File{
+			newResponseFile("test_pb.ts", "export const Test = {};\n"),
+		}},
+		filepath.Join(outDir, "child"),
+	))
+	// Plugin 2 writes to outDir but its file resolves into the child/ subdir.
+	require.NoError(t, writer.AddResponse(
+		t.Context(),
+		&pluginpb.CodeGeneratorResponse{File: []*pluginpb.CodeGeneratorResponse_File{
+			newResponseFile("child/extra.ts", "export const extra = true;\n"),
+		}},
+		outDir,
+	))
+	require.NoError(t, writer.Close(t.Context()))
+
+	// Plugin 1's output must be preserved.
+	data, err := os.ReadFile(filepath.Join(outDir, "child", "test_pb.ts"))
+	require.NoError(t, err)
+	require.Equal(t, "export const Test = {};\n", string(data))
+	// Plugin 2's file written into the nested dir must be preserved.
+	data, err = os.ReadFile(filepath.Join(outDir, "child", "extra.ts"))
+	require.NoError(t, err)
+	require.Equal(t, "export const extra = true;\n", string(data))
+}
+
 func runResponseWriter(t *testing.T, outPath string, deleteOuts bool, files ...*pluginpb.CodeGeneratorResponse_File) {
 	t.Helper()
 	opts := []ResponseWriterOption{
