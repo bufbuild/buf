@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.72.0] - 2026-07-17
 
 - Fix `buf beta registry webhook create` and `buf beta registry webhook list` to emit proto JSON output.
 - Fix HTTPS Basic authentication for remote inputs to use `BUF_INPUT_HTTPS_USERNAME` for the username.
@@ -1568,7 +1568,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.71.0...HEAD
+[v1.72.0]: https://github.com/bufbuild/buf/compare/v1.71.0...v1.72.0
 [v1.71.0]: https://github.com/bufbuild/buf/compare/v1.70.0...v1.71.0
 [v1.70.0]: https://github.com/bufbuild/buf/compare/v1.69.0...v1.70.0
 [v1.69.0]: https://github.com/bufbuild/buf/compare/v1.68.4...v1.69.0
