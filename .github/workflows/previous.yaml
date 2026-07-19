@@ -23,7 +23,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v7
       - name: setup-go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go-version }}
           check-latest: true
@@ -42,7 +42,7 @@ jobs:
       - name: make-test
         run: make test
         env:
-          # actions/setup-go@v6 exports GOTOOLCHAIN=local via $GITHUB_ENV; override at the
+          # actions/setup-go@v7 exports GOTOOLCHAIN=local via $GITHUB_ENV; override at the
           # step level so go.mod's `go` directive can bootstrap a newer toolchain via the
           # module proxy when the runner image lags behind.
           GOTOOLCHAIN: auto
