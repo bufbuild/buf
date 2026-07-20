@@ -193,52 +193,6 @@ func (x SearchModuleElementType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-type SearchModuleContentFilter int32
-
-const (
-	SearchModuleContentFilter_SEARCH_MODULE_CONTENT_FILTER_UNSPECIFIED SearchModuleContentFilter = 0
-	// SEARCH_MODULE_CONTENT_FILTER_ELEMENT is the filter for elements, e.g. messages, services, and methods.
-	SearchModuleContentFilter_SEARCH_MODULE_CONTENT_FILTER_ELEMENT SearchModuleContentFilter = 1
-	// SEARCH_MODULE_CONTENT_FILTER_FILE is the filter for files.
-	SearchModuleContentFilter_SEARCH_MODULE_CONTENT_FILTER_FILE SearchModuleContentFilter = 2
-)
-
-// Enum value maps for SearchModuleContentFilter.
-var (
-	SearchModuleContentFilter_name = map[int32]string{
-		0: "SEARCH_MODULE_CONTENT_FILTER_UNSPECIFIED",
-		1: "SEARCH_MODULE_CONTENT_FILTER_ELEMENT",
-		2: "SEARCH_MODULE_CONTENT_FILTER_FILE",
-	}
-	SearchModuleContentFilter_value = map[string]int32{
-		"SEARCH_MODULE_CONTENT_FILTER_UNSPECIFIED": 0,
-		"SEARCH_MODULE_CONTENT_FILTER_ELEMENT":     1,
-		"SEARCH_MODULE_CONTENT_FILTER_FILE":        2,
-	}
-)
-
-func (x SearchModuleContentFilter) Enum() *SearchModuleContentFilter {
-	p := new(SearchModuleContentFilter)
-	*p = x
-	return p
-}
-
-func (x SearchModuleContentFilter) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (SearchModuleContentFilter) Descriptor() protoreflect.EnumDescriptor {
-	return file_buf_alpha_registry_v1alpha1_search_proto_enumTypes[3].Descriptor()
-}
-
-func (SearchModuleContentFilter) Type() protoreflect.EnumType {
-	return &file_buf_alpha_registry_v1alpha1_search_proto_enumTypes[3]
-}
-
-func (x SearchModuleContentFilter) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
 type RepositorySearchResult struct {
 	state                              protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Id                      string                 `protobuf:"bytes,1,opt,name=id,proto3"`
@@ -1520,666 +1474,6 @@ func (*searchResult_ModuleElement) isSearchResult_Item() {}
 
 func (*searchResult_ModuleFile) isSearchResult_Item() {}
 
-type ElementSearchResult struct {
-	state                         protoimpl.MessageState         `protogen:"opaque.v1"`
-	xxx_hidden_RepositoryId       string                         `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3"`
-	xxx_hidden_RepositoryOwner    string                         `protobuf:"bytes,2,opt,name=repository_owner,json=repositoryOwner,proto3"`
-	xxx_hidden_RepositoryName     string                         `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3"`
-	xxx_hidden_ProtoFilePath      string                         `protobuf:"bytes,4,opt,name=proto_file_path,json=protoFilePath,proto3"`
-	xxx_hidden_FullyQualifiedName string                         `protobuf:"bytes,5,opt,name=fully_qualified_name,json=fullyQualifiedName,proto3"`
-	xxx_hidden_Document           isElementSearchResult_Document `protobuf_oneof:"document"`
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
-}
-
-func (x *ElementSearchResult) Reset() {
-	*x = ElementSearchResult{}
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ElementSearchResult) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ElementSearchResult) ProtoMessage() {}
-
-func (x *ElementSearchResult) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *ElementSearchResult) GetRepositoryId() string {
-	if x != nil {
-		return x.xxx_hidden_RepositoryId
-	}
-	return ""
-}
-
-func (x *ElementSearchResult) GetRepositoryOwner() string {
-	if x != nil {
-		return x.xxx_hidden_RepositoryOwner
-	}
-	return ""
-}
-
-func (x *ElementSearchResult) GetRepositoryName() string {
-	if x != nil {
-		return x.xxx_hidden_RepositoryName
-	}
-	return ""
-}
-
-func (x *ElementSearchResult) GetProtoFilePath() string {
-	if x != nil {
-		return x.xxx_hidden_ProtoFilePath
-	}
-	return ""
-}
-
-func (x *ElementSearchResult) GetFullyQualifiedName() string {
-	if x != nil {
-		return x.xxx_hidden_FullyQualifiedName
-	}
-	return ""
-}
-
-func (x *ElementSearchResult) GetService() *Service {
-	if x != nil {
-		if x, ok := x.xxx_hidden_Document.(*elementSearchResult_Service); ok {
-			return x.Service
-		}
-	}
-	return nil
-}
-
-func (x *ElementSearchResult) GetMethod() *Method {
-	if x != nil {
-		if x, ok := x.xxx_hidden_Document.(*elementSearchResult_Method); ok {
-			return x.Method
-		}
-	}
-	return nil
-}
-
-func (x *ElementSearchResult) GetEnum() *Enum {
-	if x != nil {
-		if x, ok := x.xxx_hidden_Document.(*elementSearchResult_Enum); ok {
-			return x.Enum
-		}
-	}
-	return nil
-}
-
-func (x *ElementSearchResult) GetMessage() *Message {
-	if x != nil {
-		if x, ok := x.xxx_hidden_Document.(*elementSearchResult_Message); ok {
-			return x.Message
-		}
-	}
-	return nil
-}
-
-func (x *ElementSearchResult) GetFileExtension() *FileExtension {
-	if x != nil {
-		if x, ok := x.xxx_hidden_Document.(*elementSearchResult_FileExtension); ok {
-			return x.FileExtension
-		}
-	}
-	return nil
-}
-
-func (x *ElementSearchResult) SetRepositoryId(v string) {
-	x.xxx_hidden_RepositoryId = v
-}
-
-func (x *ElementSearchResult) SetRepositoryOwner(v string) {
-	x.xxx_hidden_RepositoryOwner = v
-}
-
-func (x *ElementSearchResult) SetRepositoryName(v string) {
-	x.xxx_hidden_RepositoryName = v
-}
-
-func (x *ElementSearchResult) SetProtoFilePath(v string) {
-	x.xxx_hidden_ProtoFilePath = v
-}
-
-func (x *ElementSearchResult) SetFullyQualifiedName(v string) {
-	x.xxx_hidden_FullyQualifiedName = v
-}
-
-func (x *ElementSearchResult) SetService(v *Service) {
-	if v == nil {
-		x.xxx_hidden_Document = nil
-		return
-	}
-	x.xxx_hidden_Document = &elementSearchResult_Service{v}
-}
-
-func (x *ElementSearchResult) SetMethod(v *Method) {
-	if v == nil {
-		x.xxx_hidden_Document = nil
-		return
-	}
-	x.xxx_hidden_Document = &elementSearchResult_Method{v}
-}
-
-func (x *ElementSearchResult) SetEnum(v *Enum) {
-	if v == nil {
-		x.xxx_hidden_Document = nil
-		return
-	}
-	x.xxx_hidden_Document = &elementSearchResult_Enum{v}
-}
-
-func (x *ElementSearchResult) SetMessage(v *Message) {
-	if v == nil {
-		x.xxx_hidden_Document = nil
-		return
-	}
-	x.xxx_hidden_Document = &elementSearchResult_Message{v}
-}
-
-func (x *ElementSearchResult) SetFileExtension(v *FileExtension) {
-	if v == nil {
-		x.xxx_hidden_Document = nil
-		return
-	}
-	x.xxx_hidden_Document = &elementSearchResult_FileExtension{v}
-}
-
-func (x *ElementSearchResult) HasDocument() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_Document != nil
-}
-
-func (x *ElementSearchResult) HasService() bool {
-	if x == nil {
-		return false
-	}
-	_, ok := x.xxx_hidden_Document.(*elementSearchResult_Service)
-	return ok
-}
-
-func (x *ElementSearchResult) HasMethod() bool {
-	if x == nil {
-		return false
-	}
-	_, ok := x.xxx_hidden_Document.(*elementSearchResult_Method)
-	return ok
-}
-
-func (x *ElementSearchResult) HasEnum() bool {
-	if x == nil {
-		return false
-	}
-	_, ok := x.xxx_hidden_Document.(*elementSearchResult_Enum)
-	return ok
-}
-
-func (x *ElementSearchResult) HasMessage() bool {
-	if x == nil {
-		return false
-	}
-	_, ok := x.xxx_hidden_Document.(*elementSearchResult_Message)
-	return ok
-}
-
-func (x *ElementSearchResult) HasFileExtension() bool {
-	if x == nil {
-		return false
-	}
-	_, ok := x.xxx_hidden_Document.(*elementSearchResult_FileExtension)
-	return ok
-}
-
-func (x *ElementSearchResult) ClearDocument() {
-	x.xxx_hidden_Document = nil
-}
-
-func (x *ElementSearchResult) ClearService() {
-	if _, ok := x.xxx_hidden_Document.(*elementSearchResult_Service); ok {
-		x.xxx_hidden_Document = nil
-	}
-}
-
-func (x *ElementSearchResult) ClearMethod() {
-	if _, ok := x.xxx_hidden_Document.(*elementSearchResult_Method); ok {
-		x.xxx_hidden_Document = nil
-	}
-}
-
-func (x *ElementSearchResult) ClearEnum() {
-	if _, ok := x.xxx_hidden_Document.(*elementSearchResult_Enum); ok {
-		x.xxx_hidden_Document = nil
-	}
-}
-
-func (x *ElementSearchResult) ClearMessage() {
-	if _, ok := x.xxx_hidden_Document.(*elementSearchResult_Message); ok {
-		x.xxx_hidden_Document = nil
-	}
-}
-
-func (x *ElementSearchResult) ClearFileExtension() {
-	if _, ok := x.xxx_hidden_Document.(*elementSearchResult_FileExtension); ok {
-		x.xxx_hidden_Document = nil
-	}
-}
-
-const ElementSearchResult_Document_not_set_case case_ElementSearchResult_Document = 0
-const ElementSearchResult_Service_case case_ElementSearchResult_Document = 6
-const ElementSearchResult_Method_case case_ElementSearchResult_Document = 7
-const ElementSearchResult_Enum_case case_ElementSearchResult_Document = 8
-const ElementSearchResult_Message_case case_ElementSearchResult_Document = 9
-const ElementSearchResult_FileExtension_case case_ElementSearchResult_Document = 10
-
-func (x *ElementSearchResult) WhichDocument() case_ElementSearchResult_Document {
-	if x == nil {
-		return ElementSearchResult_Document_not_set_case
-	}
-	switch x.xxx_hidden_Document.(type) {
-	case *elementSearchResult_Service:
-		return ElementSearchResult_Service_case
-	case *elementSearchResult_Method:
-		return ElementSearchResult_Method_case
-	case *elementSearchResult_Enum:
-		return ElementSearchResult_Enum_case
-	case *elementSearchResult_Message:
-		return ElementSearchResult_Message_case
-	case *elementSearchResult_FileExtension:
-		return ElementSearchResult_FileExtension_case
-	default:
-		return ElementSearchResult_Document_not_set_case
-	}
-}
-
-type ElementSearchResult_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	RepositoryId       string
-	RepositoryOwner    string
-	RepositoryName     string
-	ProtoFilePath      string
-	FullyQualifiedName string
-	// Fields of oneof xxx_hidden_Document:
-	Service       *Service
-	Method        *Method
-	Enum          *Enum
-	Message       *Message
-	FileExtension *FileExtension
-	// -- end of xxx_hidden_Document
-}
-
-func (b0 ElementSearchResult_builder) Build() *ElementSearchResult {
-	m0 := &ElementSearchResult{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_RepositoryId = b.RepositoryId
-	x.xxx_hidden_RepositoryOwner = b.RepositoryOwner
-	x.xxx_hidden_RepositoryName = b.RepositoryName
-	x.xxx_hidden_ProtoFilePath = b.ProtoFilePath
-	x.xxx_hidden_FullyQualifiedName = b.FullyQualifiedName
-	if b.Service != nil {
-		x.xxx_hidden_Document = &elementSearchResult_Service{b.Service}
-	}
-	if b.Method != nil {
-		x.xxx_hidden_Document = &elementSearchResult_Method{b.Method}
-	}
-	if b.Enum != nil {
-		x.xxx_hidden_Document = &elementSearchResult_Enum{b.Enum}
-	}
-	if b.Message != nil {
-		x.xxx_hidden_Document = &elementSearchResult_Message{b.Message}
-	}
-	if b.FileExtension != nil {
-		x.xxx_hidden_Document = &elementSearchResult_FileExtension{b.FileExtension}
-	}
-	return m0
-}
-
-type case_ElementSearchResult_Document protoreflect.FieldNumber
-
-func (x case_ElementSearchResult_Document) String() string {
-	md := file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[8].Descriptor()
-	if x == 0 {
-		return "not set"
-	}
-	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
-}
-
-type isElementSearchResult_Document interface {
-	isElementSearchResult_Document()
-}
-
-type elementSearchResult_Service struct {
-	Service *Service `protobuf:"bytes,6,opt,name=service,proto3,oneof"`
-}
-
-type elementSearchResult_Method struct {
-	Method *Method `protobuf:"bytes,7,opt,name=method,proto3,oneof"`
-}
-
-type elementSearchResult_Enum struct {
-	Enum *Enum `protobuf:"bytes,8,opt,name=enum,proto3,oneof"`
-}
-
-type elementSearchResult_Message struct {
-	Message *Message `protobuf:"bytes,9,opt,name=message,proto3,oneof"`
-}
-
-type elementSearchResult_FileExtension struct {
-	FileExtension *FileExtension `protobuf:"bytes,10,opt,name=file_extension,json=fileExtension,proto3,oneof"`
-}
-
-func (*elementSearchResult_Service) isElementSearchResult_Document() {}
-
-func (*elementSearchResult_Method) isElementSearchResult_Document() {}
-
-func (*elementSearchResult_Enum) isElementSearchResult_Document() {}
-
-func (*elementSearchResult_Message) isElementSearchResult_Document() {}
-
-func (*elementSearchResult_FileExtension) isElementSearchResult_Document() {}
-
-type FileSearchResult struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RepositoryId    string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3"`
-	xxx_hidden_RepositoryOwner string                 `protobuf:"bytes,2,opt,name=repository_owner,json=repositoryOwner,proto3"`
-	xxx_hidden_RepositoryName  string                 `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3"`
-	xxx_hidden_ProtoFilePath   string                 `protobuf:"bytes,4,opt,name=proto_file_path,json=protoFilePath,proto3"`
-	xxx_hidden_Content         []byte                 `protobuf:"bytes,5,opt,name=content,proto3"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
-}
-
-func (x *FileSearchResult) Reset() {
-	*x = FileSearchResult{}
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *FileSearchResult) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*FileSearchResult) ProtoMessage() {}
-
-func (x *FileSearchResult) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *FileSearchResult) GetRepositoryId() string {
-	if x != nil {
-		return x.xxx_hidden_RepositoryId
-	}
-	return ""
-}
-
-func (x *FileSearchResult) GetRepositoryOwner() string {
-	if x != nil {
-		return x.xxx_hidden_RepositoryOwner
-	}
-	return ""
-}
-
-func (x *FileSearchResult) GetRepositoryName() string {
-	if x != nil {
-		return x.xxx_hidden_RepositoryName
-	}
-	return ""
-}
-
-func (x *FileSearchResult) GetProtoFilePath() string {
-	if x != nil {
-		return x.xxx_hidden_ProtoFilePath
-	}
-	return ""
-}
-
-func (x *FileSearchResult) GetContent() []byte {
-	if x != nil {
-		return x.xxx_hidden_Content
-	}
-	return nil
-}
-
-func (x *FileSearchResult) SetRepositoryId(v string) {
-	x.xxx_hidden_RepositoryId = v
-}
-
-func (x *FileSearchResult) SetRepositoryOwner(v string) {
-	x.xxx_hidden_RepositoryOwner = v
-}
-
-func (x *FileSearchResult) SetRepositoryName(v string) {
-	x.xxx_hidden_RepositoryName = v
-}
-
-func (x *FileSearchResult) SetProtoFilePath(v string) {
-	x.xxx_hidden_ProtoFilePath = v
-}
-
-func (x *FileSearchResult) SetContent(v []byte) {
-	if v == nil {
-		v = []byte{}
-	}
-	x.xxx_hidden_Content = v
-}
-
-type FileSearchResult_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	RepositoryId    string
-	RepositoryOwner string
-	RepositoryName  string
-	ProtoFilePath   string
-	Content         []byte
-}
-
-func (b0 FileSearchResult_builder) Build() *FileSearchResult {
-	m0 := &FileSearchResult{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_RepositoryId = b.RepositoryId
-	x.xxx_hidden_RepositoryOwner = b.RepositoryOwner
-	x.xxx_hidden_RepositoryName = b.RepositoryName
-	x.xxx_hidden_ProtoFilePath = b.ProtoFilePath
-	x.xxx_hidden_Content = b.Content
-	return m0
-}
-
-type SearchModuleContentResult struct {
-	state           protoimpl.MessageState           `protogen:"opaque.v1"`
-	xxx_hidden_Item isSearchModuleContentResult_Item `protobuf_oneof:"item"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
-}
-
-func (x *SearchModuleContentResult) Reset() {
-	*x = SearchModuleContentResult{}
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SearchModuleContentResult) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SearchModuleContentResult) ProtoMessage() {}
-
-func (x *SearchModuleContentResult) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *SearchModuleContentResult) GetElement() *ElementSearchResult {
-	if x != nil {
-		if x, ok := x.xxx_hidden_Item.(*searchModuleContentResult_Element); ok {
-			return x.Element
-		}
-	}
-	return nil
-}
-
-func (x *SearchModuleContentResult) GetFile() *FileSearchResult {
-	if x != nil {
-		if x, ok := x.xxx_hidden_Item.(*searchModuleContentResult_File); ok {
-			return x.File
-		}
-	}
-	return nil
-}
-
-func (x *SearchModuleContentResult) SetElement(v *ElementSearchResult) {
-	if v == nil {
-		x.xxx_hidden_Item = nil
-		return
-	}
-	x.xxx_hidden_Item = &searchModuleContentResult_Element{v}
-}
-
-func (x *SearchModuleContentResult) SetFile(v *FileSearchResult) {
-	if v == nil {
-		x.xxx_hidden_Item = nil
-		return
-	}
-	x.xxx_hidden_Item = &searchModuleContentResult_File{v}
-}
-
-func (x *SearchModuleContentResult) HasItem() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_Item != nil
-}
-
-func (x *SearchModuleContentResult) HasElement() bool {
-	if x == nil {
-		return false
-	}
-	_, ok := x.xxx_hidden_Item.(*searchModuleContentResult_Element)
-	return ok
-}
-
-func (x *SearchModuleContentResult) HasFile() bool {
-	if x == nil {
-		return false
-	}
-	_, ok := x.xxx_hidden_Item.(*searchModuleContentResult_File)
-	return ok
-}
-
-func (x *SearchModuleContentResult) ClearItem() {
-	x.xxx_hidden_Item = nil
-}
-
-func (x *SearchModuleContentResult) ClearElement() {
-	if _, ok := x.xxx_hidden_Item.(*searchModuleContentResult_Element); ok {
-		x.xxx_hidden_Item = nil
-	}
-}
-
-func (x *SearchModuleContentResult) ClearFile() {
-	if _, ok := x.xxx_hidden_Item.(*searchModuleContentResult_File); ok {
-		x.xxx_hidden_Item = nil
-	}
-}
-
-const SearchModuleContentResult_Item_not_set_case case_SearchModuleContentResult_Item = 0
-const SearchModuleContentResult_Element_case case_SearchModuleContentResult_Item = 1
-const SearchModuleContentResult_File_case case_SearchModuleContentResult_Item = 2
-
-func (x *SearchModuleContentResult) WhichItem() case_SearchModuleContentResult_Item {
-	if x == nil {
-		return SearchModuleContentResult_Item_not_set_case
-	}
-	switch x.xxx_hidden_Item.(type) {
-	case *searchModuleContentResult_Element:
-		return SearchModuleContentResult_Element_case
-	case *searchModuleContentResult_File:
-		return SearchModuleContentResult_File_case
-	default:
-		return SearchModuleContentResult_Item_not_set_case
-	}
-}
-
-type SearchModuleContentResult_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	// Fields of oneof xxx_hidden_Item:
-	Element *ElementSearchResult
-	File    *FileSearchResult
-	// -- end of xxx_hidden_Item
-}
-
-func (b0 SearchModuleContentResult_builder) Build() *SearchModuleContentResult {
-	m0 := &SearchModuleContentResult{}
-	b, x := &b0, m0
-	_, _ = b, x
-	if b.Element != nil {
-		x.xxx_hidden_Item = &searchModuleContentResult_Element{b.Element}
-	}
-	if b.File != nil {
-		x.xxx_hidden_Item = &searchModuleContentResult_File{b.File}
-	}
-	return m0
-}
-
-type case_SearchModuleContentResult_Item protoreflect.FieldNumber
-
-func (x case_SearchModuleContentResult_Item) String() string {
-	md := file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[10].Descriptor()
-	if x == 0 {
-		return "not set"
-	}
-	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
-}
-
-type isSearchModuleContentResult_Item interface {
-	isSearchModuleContentResult_Item()
-}
-
-type searchModuleContentResult_Element struct {
-	Element *ElementSearchResult `protobuf:"bytes,1,opt,name=element,proto3,oneof"`
-}
-
-type searchModuleContentResult_File struct {
-	File *FileSearchResult `protobuf:"bytes,2,opt,name=file,proto3,oneof"`
-}
-
-func (*searchModuleContentResult_Element) isSearchModuleContentResult_Item() {}
-
-func (*searchModuleContentResult_File) isSearchModuleContentResult_Item() {}
-
 type SearchRequest struct {
 	state                protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Query     string                 `protobuf:"bytes,1,opt,name=query,proto3"`
@@ -2192,7 +1486,7 @@ type SearchRequest struct {
 
 func (x *SearchRequest) Reset() {
 	*x = SearchRequest{}
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[11]
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2204,7 +1498,7 @@ func (x *SearchRequest) String() string {
 func (*SearchRequest) ProtoMessage() {}
 
 func (x *SearchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[11]
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2294,7 +1588,7 @@ type SearchResponse struct {
 
 func (x *SearchResponse) Reset() {
 	*x = SearchResponse{}
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[12]
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2306,7 +1600,7 @@ func (x *SearchResponse) String() string {
 func (*SearchResponse) ProtoMessage() {}
 
 func (x *SearchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[12]
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2373,7 +1667,7 @@ type SearchTagRequest struct {
 
 func (x *SearchTagRequest) Reset() {
 	*x = SearchTagRequest{}
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[13]
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2385,7 +1679,7 @@ func (x *SearchTagRequest) String() string {
 func (*SearchTagRequest) ProtoMessage() {}
 
 func (x *SearchTagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[13]
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2515,7 +1809,7 @@ type SearchTagResponse struct {
 
 func (x *SearchTagResponse) Reset() {
 	*x = SearchTagResponse{}
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[14]
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2527,7 +1821,7 @@ func (x *SearchTagResponse) String() string {
 func (*SearchTagResponse) ProtoMessage() {}
 
 func (x *SearchTagResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[14]
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2594,7 +1888,7 @@ type SearchDraftRequest struct {
 
 func (x *SearchDraftRequest) Reset() {
 	*x = SearchDraftRequest{}
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[15]
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2606,7 +1900,7 @@ func (x *SearchDraftRequest) String() string {
 func (*SearchDraftRequest) ProtoMessage() {}
 
 func (x *SearchDraftRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[15]
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2736,7 +2030,7 @@ type SearchDraftResponse struct {
 
 func (x *SearchDraftResponse) Reset() {
 	*x = SearchDraftResponse{}
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[16]
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2748,7 +2042,7 @@ func (x *SearchDraftResponse) String() string {
 func (*SearchDraftResponse) ProtoMessage() {}
 
 func (x *SearchDraftResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[16]
+	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2800,220 +2094,11 @@ func (b0 SearchDraftResponse_builder) Build() *SearchDraftResponse {
 	return m0
 }
 
-type SearchModuleContentRequest struct {
-	state                         protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Query              string                      `protobuf:"bytes,1,opt,name=query,proto3"`
-	xxx_hidden_PageSize           uint32                      `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3"`
-	xxx_hidden_PageToken          uint32                      `protobuf:"varint,3,opt,name=page_token,json=pageToken,proto3"`
-	xxx_hidden_Filters            []SearchModuleContentFilter `protobuf:"varint,4,rep,packed,name=filters,proto3,enum=buf.alpha.registry.v1alpha1.SearchModuleContentFilter"`
-	xxx_hidden_RepositoryFullName string                      `protobuf:"bytes,5,opt,name=repository_full_name,json=repositoryFullName,proto3"`
-	xxx_hidden_RepositoryOwner    string                      `protobuf:"bytes,6,opt,name=repository_owner,json=repositoryOwner,proto3"`
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
-}
-
-func (x *SearchModuleContentRequest) Reset() {
-	*x = SearchModuleContentRequest{}
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[17]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SearchModuleContentRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SearchModuleContentRequest) ProtoMessage() {}
-
-func (x *SearchModuleContentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[17]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *SearchModuleContentRequest) GetQuery() string {
-	if x != nil {
-		return x.xxx_hidden_Query
-	}
-	return ""
-}
-
-func (x *SearchModuleContentRequest) GetPageSize() uint32 {
-	if x != nil {
-		return x.xxx_hidden_PageSize
-	}
-	return 0
-}
-
-func (x *SearchModuleContentRequest) GetPageToken() uint32 {
-	if x != nil {
-		return x.xxx_hidden_PageToken
-	}
-	return 0
-}
-
-func (x *SearchModuleContentRequest) GetFilters() []SearchModuleContentFilter {
-	if x != nil {
-		return x.xxx_hidden_Filters
-	}
-	return nil
-}
-
-func (x *SearchModuleContentRequest) GetRepositoryFullName() string {
-	if x != nil {
-		return x.xxx_hidden_RepositoryFullName
-	}
-	return ""
-}
-
-func (x *SearchModuleContentRequest) GetRepositoryOwner() string {
-	if x != nil {
-		return x.xxx_hidden_RepositoryOwner
-	}
-	return ""
-}
-
-func (x *SearchModuleContentRequest) SetQuery(v string) {
-	x.xxx_hidden_Query = v
-}
-
-func (x *SearchModuleContentRequest) SetPageSize(v uint32) {
-	x.xxx_hidden_PageSize = v
-}
-
-func (x *SearchModuleContentRequest) SetPageToken(v uint32) {
-	x.xxx_hidden_PageToken = v
-}
-
-func (x *SearchModuleContentRequest) SetFilters(v []SearchModuleContentFilter) {
-	x.xxx_hidden_Filters = v
-}
-
-func (x *SearchModuleContentRequest) SetRepositoryFullName(v string) {
-	x.xxx_hidden_RepositoryFullName = v
-}
-
-func (x *SearchModuleContentRequest) SetRepositoryOwner(v string) {
-	x.xxx_hidden_RepositoryOwner = v
-}
-
-type SearchModuleContentRequest_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	// The search string.
-	Query    string
-	PageSize uint32
-	// The first page is returned if this is 0.
-	PageToken uint32
-	// Empty list means show all. Supplying one or more enums will
-	// limit the search to only the requested resources.
-	// Supplying all possible enums is equivalent to empty list of filters.
-	Filters []SearchModuleContentFilter
-	// Optional, if provided the search results will be limited to the provided repository.
-	RepositoryFullName string
-	// Optional, if provided the search results will be limited to the provided owner,
-	// ignored if repository_full_name is provided.
-	RepositoryOwner string
-}
-
-func (b0 SearchModuleContentRequest_builder) Build() *SearchModuleContentRequest {
-	m0 := &SearchModuleContentRequest{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_Query = b.Query
-	x.xxx_hidden_PageSize = b.PageSize
-	x.xxx_hidden_PageToken = b.PageToken
-	x.xxx_hidden_Filters = b.Filters
-	x.xxx_hidden_RepositoryFullName = b.RepositoryFullName
-	x.xxx_hidden_RepositoryOwner = b.RepositoryOwner
-	return m0
-}
-
-type SearchModuleContentResponse struct {
-	state                    protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_SearchResults *[]*SearchModuleContentResult `protobuf:"bytes,1,rep,name=search_results,json=searchResults,proto3"`
-	xxx_hidden_NextPageToken uint32                        `protobuf:"varint,2,opt,name=next_page_token,json=nextPageToken,proto3"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
-}
-
-func (x *SearchModuleContentResponse) Reset() {
-	*x = SearchModuleContentResponse{}
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[18]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SearchModuleContentResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SearchModuleContentResponse) ProtoMessage() {}
-
-func (x *SearchModuleContentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[18]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *SearchModuleContentResponse) GetSearchResults() []*SearchModuleContentResult {
-	if x != nil {
-		if x.xxx_hidden_SearchResults != nil {
-			return *x.xxx_hidden_SearchResults
-		}
-	}
-	return nil
-}
-
-func (x *SearchModuleContentResponse) GetNextPageToken() uint32 {
-	if x != nil {
-		return x.xxx_hidden_NextPageToken
-	}
-	return 0
-}
-
-func (x *SearchModuleContentResponse) SetSearchResults(v []*SearchModuleContentResult) {
-	x.xxx_hidden_SearchResults = &v
-}
-
-func (x *SearchModuleContentResponse) SetNextPageToken(v uint32) {
-	x.xxx_hidden_NextPageToken = v
-}
-
-type SearchModuleContentResponse_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	SearchResults []*SearchModuleContentResult
-	// There are no more pages if this is 0.
-	NextPageToken uint32
-}
-
-func (b0 SearchModuleContentResponse_builder) Build() *SearchModuleContentResponse {
-	m0 := &SearchModuleContentResponse{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_SearchResults = &b.SearchResults
-	x.xxx_hidden_NextPageToken = b.NextPageToken
-	return m0
-}
-
 var File_buf_alpha_registry_v1alpha1_search_proto protoreflect.FileDescriptor
 
 const file_buf_alpha_registry_v1alpha1_search_proto_rawDesc = "" +
 	"\n" +
-	"(buf/alpha/registry/v1alpha1/search.proto\x12\x1bbuf.alpha.registry.v1alpha1\x1a%buf/alpha/registry/v1alpha1/doc.proto\x1a1buf/alpha/registry/v1alpha1/plugin_curation.proto\x1a,buf/alpha/registry/v1alpha1/repository.proto\x1a3buf/alpha/registry/v1alpha1/repository_commit.proto\x1a0buf/alpha/registry/v1alpha1/repository_tag.proto\x1a5buf/alpha/registry/v1alpha1/verification_status.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb9\x03\n" +
+	"(buf/alpha/registry/v1alpha1/search.proto\x12\x1bbuf.alpha.registry.v1alpha1\x1a1buf/alpha/registry/v1alpha1/plugin_curation.proto\x1a,buf/alpha/registry/v1alpha1/repository.proto\x1a3buf/alpha/registry/v1alpha1/repository_commit.proto\x1a0buf/alpha/registry/v1alpha1/repository_tag.proto\x1a5buf/alpha/registry/v1alpha1/verification_status.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb9\x03\n" +
 	"\x16RepositorySearchResult\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -3079,31 +2164,7 @@ const file_buf_alpha_registry_v1alpha1_search_proto_rawDesc = "" +
 	"\x0emodule_element\x18\b \x01(\v26.buf.alpha.registry.v1alpha1.ModuleElementSearchResultH\x00R\rmoduleElement\x12V\n" +
 	"\vmodule_file\x18\t \x01(\v23.buf.alpha.registry.v1alpha1.ModuleFileSearchResultH\x00R\n" +
 	"moduleFileB\x06\n" +
-	"\x04itemJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x06pluginR\btemplate\"\xc5\x04\n" +
-	"\x13ElementSearchResult\x12#\n" +
-	"\rrepository_id\x18\x01 \x01(\tR\frepositoryId\x12)\n" +
-	"\x10repository_owner\x18\x02 \x01(\tR\x0frepositoryOwner\x12'\n" +
-	"\x0frepository_name\x18\x03 \x01(\tR\x0erepositoryName\x12&\n" +
-	"\x0fproto_file_path\x18\x04 \x01(\tR\rprotoFilePath\x120\n" +
-	"\x14fully_qualified_name\x18\x05 \x01(\tR\x12fullyQualifiedName\x12@\n" +
-	"\aservice\x18\x06 \x01(\v2$.buf.alpha.registry.v1alpha1.ServiceH\x00R\aservice\x12=\n" +
-	"\x06method\x18\a \x01(\v2#.buf.alpha.registry.v1alpha1.MethodH\x00R\x06method\x127\n" +
-	"\x04enum\x18\b \x01(\v2!.buf.alpha.registry.v1alpha1.EnumH\x00R\x04enum\x12@\n" +
-	"\amessage\x18\t \x01(\v2$.buf.alpha.registry.v1alpha1.MessageH\x00R\amessage\x12S\n" +
-	"\x0efile_extension\x18\n" +
-	" \x01(\v2*.buf.alpha.registry.v1alpha1.FileExtensionH\x00R\rfileExtensionB\n" +
-	"\n" +
-	"\bdocument\"\xcd\x01\n" +
-	"\x10FileSearchResult\x12#\n" +
-	"\rrepository_id\x18\x01 \x01(\tR\frepositoryId\x12)\n" +
-	"\x10repository_owner\x18\x02 \x01(\tR\x0frepositoryOwner\x12'\n" +
-	"\x0frepository_name\x18\x03 \x01(\tR\x0erepositoryName\x12&\n" +
-	"\x0fproto_file_path\x18\x04 \x01(\tR\rprotoFilePath\x12\x18\n" +
-	"\acontent\x18\x05 \x01(\fR\acontent\"\xb6\x01\n" +
-	"\x19SearchModuleContentResult\x12L\n" +
-	"\aelement\x18\x01 \x01(\v20.buf.alpha.registry.v1alpha1.ElementSearchResultH\x00R\aelement\x12C\n" +
-	"\x04file\x18\x02 \x01(\v2-.buf.alpha.registry.v1alpha1.FileSearchResultH\x00R\x04fileB\x06\n" +
-	"\x04item\"\xa6\x01\n" +
+	"\x04itemJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x06pluginR\btemplate\"\xa6\x01\n" +
 	"\rSearchRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x1b\n" +
 	"\tpage_size\x18\x02 \x01(\rR\bpageSize\x12\x1d\n" +
@@ -3136,18 +2197,7 @@ const file_buf_alpha_registry_v1alpha1_search_proto_rawDesc = "" +
 	"\areverse\x18\a \x01(\bR\areverse\"\x9b\x01\n" +
 	"\x13SearchDraftResponse\x12\\\n" +
 	"\x12repository_commits\x18\x01 \x03(\v2-.buf.alpha.registry.v1alpha1.RepositoryCommitR\x11repositoryCommits\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x9d\x02\n" +
-	"\x1aSearchModuleContentRequest\x12\x14\n" +
-	"\x05query\x18\x01 \x01(\tR\x05query\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\rR\bpageSize\x12\x1d\n" +
-	"\n" +
-	"page_token\x18\x03 \x01(\rR\tpageToken\x12P\n" +
-	"\afilters\x18\x04 \x03(\x0e26.buf.alpha.registry.v1alpha1.SearchModuleContentFilterR\afilters\x120\n" +
-	"\x14repository_full_name\x18\x05 \x01(\tR\x12repositoryFullName\x12)\n" +
-	"\x10repository_owner\x18\x06 \x01(\tR\x0frepositoryOwner\"\xa4\x01\n" +
-	"\x1bSearchModuleContentResponse\x12]\n" +
-	"\x0esearch_results\x18\x01 \x03(\v26.buf.alpha.registry.v1alpha1.SearchModuleContentResultR\rsearchResults\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\rR\rnextPageToken*\xb8\x02\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken*\xb8\x02\n" +
 	"\fSearchFilter\x12\x1d\n" +
 	"\x19SEARCH_FILTER_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12SEARCH_FILTER_USER\x10\x01\x12\x1e\n" +
@@ -3167,102 +2217,75 @@ const file_buf_alpha_registry_v1alpha1_search_proto_rawDesc = "" +
 	"\"SEARCH_MODULE_ELEMENT_TYPE_SERVICE\x10\x01\x12%\n" +
 	"!SEARCH_MODULE_ELEMENT_TYPE_METHOD\x10\x02\x12&\n" +
 	"\"SEARCH_MODULE_ELEMENT_TYPE_MESSAGE\x10\x03\x12#\n" +
-	"\x1fSEARCH_MODULE_ELEMENT_TYPE_ENUM\x10\x04*\x9a\x01\n" +
-	"\x19SearchModuleContentFilter\x12,\n" +
-	"(SEARCH_MODULE_CONTENT_FILTER_UNSPECIFIED\x10\x00\x12(\n" +
-	"$SEARCH_MODULE_CONTENT_FILTER_ELEMENT\x10\x01\x12%\n" +
-	"!SEARCH_MODULE_CONTENT_FILTER_FILE\x10\x022\xef\x03\n" +
+	"\x1fSEARCH_MODULE_ELEMENT_TYPE_ENUM\x10\x042\xdf\x02\n" +
 	"\rSearchService\x12f\n" +
 	"\x06Search\x12*.buf.alpha.registry.v1alpha1.SearchRequest\x1a+.buf.alpha.registry.v1alpha1.SearchResponse\"\x03\x90\x02\x01\x12o\n" +
 	"\tSearchTag\x12-.buf.alpha.registry.v1alpha1.SearchTagRequest\x1a..buf.alpha.registry.v1alpha1.SearchTagResponse\"\x03\x90\x02\x01\x12u\n" +
-	"\vSearchDraft\x12/.buf.alpha.registry.v1alpha1.SearchDraftRequest\x1a0.buf.alpha.registry.v1alpha1.SearchDraftResponse\"\x03\x90\x02\x01\x12\x8d\x01\n" +
-	"\x13SearchModuleContent\x127.buf.alpha.registry.v1alpha1.SearchModuleContentRequest\x1a8.buf.alpha.registry.v1alpha1.SearchModuleContentResponse\"\x03\x90\x02\x01B\x98\x02\n" +
+	"\vSearchDraft\x12/.buf.alpha.registry.v1alpha1.SearchDraftRequest\x1a0.buf.alpha.registry.v1alpha1.SearchDraftResponse\"\x03\x90\x02\x01B\x98\x02\n" +
 	"\x1fcom.buf.alpha.registry.v1alpha1B\vSearchProtoP\x01ZYgithub.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1;registryv1alpha1\xa2\x02\x03BAR\xaa\x02\x1bBuf.Alpha.Registry.V1alpha1\xca\x02\x1bBuf\\Alpha\\Registry\\V1alpha1\xe2\x02'Buf\\Alpha\\Registry\\V1alpha1\\GPBMetadata\xea\x02\x1eBuf::Alpha::Registry::V1alpha1b\x06proto3"
 
-var file_buf_alpha_registry_v1alpha1_search_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_buf_alpha_registry_v1alpha1_search_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_buf_alpha_registry_v1alpha1_search_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_buf_alpha_registry_v1alpha1_search_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_buf_alpha_registry_v1alpha1_search_proto_goTypes = []any{
-	(SearchFilter)(0),                   // 0: buf.alpha.registry.v1alpha1.SearchFilter
-	(OrderBy)(0),                        // 1: buf.alpha.registry.v1alpha1.OrderBy
-	(SearchModuleElementType)(0),        // 2: buf.alpha.registry.v1alpha1.SearchModuleElementType
-	(SearchModuleContentFilter)(0),      // 3: buf.alpha.registry.v1alpha1.SearchModuleContentFilter
-	(*RepositorySearchResult)(nil),      // 4: buf.alpha.registry.v1alpha1.RepositorySearchResult
-	(*OrganizationSearchResult)(nil),    // 5: buf.alpha.registry.v1alpha1.OrganizationSearchResult
-	(*UserSearchResult)(nil),            // 6: buf.alpha.registry.v1alpha1.UserSearchResult
-	(*TeamSearchResult)(nil),            // 7: buf.alpha.registry.v1alpha1.TeamSearchResult
-	(*CuratedPluginSearchResult)(nil),   // 8: buf.alpha.registry.v1alpha1.CuratedPluginSearchResult
-	(*ModuleElementSearchResult)(nil),   // 9: buf.alpha.registry.v1alpha1.ModuleElementSearchResult
-	(*ModuleFileSearchResult)(nil),      // 10: buf.alpha.registry.v1alpha1.ModuleFileSearchResult
-	(*SearchResult)(nil),                // 11: buf.alpha.registry.v1alpha1.SearchResult
-	(*ElementSearchResult)(nil),         // 12: buf.alpha.registry.v1alpha1.ElementSearchResult
-	(*FileSearchResult)(nil),            // 13: buf.alpha.registry.v1alpha1.FileSearchResult
-	(*SearchModuleContentResult)(nil),   // 14: buf.alpha.registry.v1alpha1.SearchModuleContentResult
-	(*SearchRequest)(nil),               // 15: buf.alpha.registry.v1alpha1.SearchRequest
-	(*SearchResponse)(nil),              // 16: buf.alpha.registry.v1alpha1.SearchResponse
-	(*SearchTagRequest)(nil),            // 17: buf.alpha.registry.v1alpha1.SearchTagRequest
-	(*SearchTagResponse)(nil),           // 18: buf.alpha.registry.v1alpha1.SearchTagResponse
-	(*SearchDraftRequest)(nil),          // 19: buf.alpha.registry.v1alpha1.SearchDraftRequest
-	(*SearchDraftResponse)(nil),         // 20: buf.alpha.registry.v1alpha1.SearchDraftResponse
-	(*SearchModuleContentRequest)(nil),  // 21: buf.alpha.registry.v1alpha1.SearchModuleContentRequest
-	(*SearchModuleContentResponse)(nil), // 22: buf.alpha.registry.v1alpha1.SearchModuleContentResponse
-	(Visibility)(0),                     // 23: buf.alpha.registry.v1alpha1.Visibility
-	(VerificationStatus)(0),             // 24: buf.alpha.registry.v1alpha1.VerificationStatus
-	(*timestamppb.Timestamp)(nil),       // 25: google.protobuf.Timestamp
-	(PluginRegistryType)(0),             // 26: buf.alpha.registry.v1alpha1.PluginRegistryType
-	(PluginLanguage)(0),                 // 27: buf.alpha.registry.v1alpha1.PluginLanguage
-	(*Service)(nil),                     // 28: buf.alpha.registry.v1alpha1.Service
-	(*Method)(nil),                      // 29: buf.alpha.registry.v1alpha1.Method
-	(*Enum)(nil),                        // 30: buf.alpha.registry.v1alpha1.Enum
-	(*Message)(nil),                     // 31: buf.alpha.registry.v1alpha1.Message
-	(*FileExtension)(nil),               // 32: buf.alpha.registry.v1alpha1.FileExtension
-	(*RepositoryTag)(nil),               // 33: buf.alpha.registry.v1alpha1.RepositoryTag
-	(*RepositoryCommit)(nil),            // 34: buf.alpha.registry.v1alpha1.RepositoryCommit
+	(SearchFilter)(0),                 // 0: buf.alpha.registry.v1alpha1.SearchFilter
+	(OrderBy)(0),                      // 1: buf.alpha.registry.v1alpha1.OrderBy
+	(SearchModuleElementType)(0),      // 2: buf.alpha.registry.v1alpha1.SearchModuleElementType
+	(*RepositorySearchResult)(nil),    // 3: buf.alpha.registry.v1alpha1.RepositorySearchResult
+	(*OrganizationSearchResult)(nil),  // 4: buf.alpha.registry.v1alpha1.OrganizationSearchResult
+	(*UserSearchResult)(nil),          // 5: buf.alpha.registry.v1alpha1.UserSearchResult
+	(*TeamSearchResult)(nil),          // 6: buf.alpha.registry.v1alpha1.TeamSearchResult
+	(*CuratedPluginSearchResult)(nil), // 7: buf.alpha.registry.v1alpha1.CuratedPluginSearchResult
+	(*ModuleElementSearchResult)(nil), // 8: buf.alpha.registry.v1alpha1.ModuleElementSearchResult
+	(*ModuleFileSearchResult)(nil),    // 9: buf.alpha.registry.v1alpha1.ModuleFileSearchResult
+	(*SearchResult)(nil),              // 10: buf.alpha.registry.v1alpha1.SearchResult
+	(*SearchRequest)(nil),             // 11: buf.alpha.registry.v1alpha1.SearchRequest
+	(*SearchResponse)(nil),            // 12: buf.alpha.registry.v1alpha1.SearchResponse
+	(*SearchTagRequest)(nil),          // 13: buf.alpha.registry.v1alpha1.SearchTagRequest
+	(*SearchTagResponse)(nil),         // 14: buf.alpha.registry.v1alpha1.SearchTagResponse
+	(*SearchDraftRequest)(nil),        // 15: buf.alpha.registry.v1alpha1.SearchDraftRequest
+	(*SearchDraftResponse)(nil),       // 16: buf.alpha.registry.v1alpha1.SearchDraftResponse
+	(Visibility)(0),                   // 17: buf.alpha.registry.v1alpha1.Visibility
+	(VerificationStatus)(0),           // 18: buf.alpha.registry.v1alpha1.VerificationStatus
+	(*timestamppb.Timestamp)(nil),     // 19: google.protobuf.Timestamp
+	(PluginRegistryType)(0),           // 20: buf.alpha.registry.v1alpha1.PluginRegistryType
+	(PluginLanguage)(0),               // 21: buf.alpha.registry.v1alpha1.PluginLanguage
+	(*RepositoryTag)(nil),             // 22: buf.alpha.registry.v1alpha1.RepositoryTag
+	(*RepositoryCommit)(nil),          // 23: buf.alpha.registry.v1alpha1.RepositoryCommit
 }
 var file_buf_alpha_registry_v1alpha1_search_proto_depIdxs = []int32{
-	23, // 0: buf.alpha.registry.v1alpha1.RepositorySearchResult.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	24, // 1: buf.alpha.registry.v1alpha1.RepositorySearchResult.owner_verification_status:type_name -> buf.alpha.registry.v1alpha1.VerificationStatus
-	25, // 2: buf.alpha.registry.v1alpha1.RepositorySearchResult.latest_commit_time:type_name -> google.protobuf.Timestamp
-	25, // 3: buf.alpha.registry.v1alpha1.OrganizationSearchResult.create_time:type_name -> google.protobuf.Timestamp
-	25, // 4: buf.alpha.registry.v1alpha1.UserSearchResult.create_time:type_name -> google.protobuf.Timestamp
-	26, // 5: buf.alpha.registry.v1alpha1.CuratedPluginSearchResult.registry_type:type_name -> buf.alpha.registry.v1alpha1.PluginRegistryType
-	27, // 6: buf.alpha.registry.v1alpha1.CuratedPluginSearchResult.output_languages:type_name -> buf.alpha.registry.v1alpha1.PluginLanguage
-	25, // 7: buf.alpha.registry.v1alpha1.CuratedPluginSearchResult.create_time:type_name -> google.protobuf.Timestamp
+	17, // 0: buf.alpha.registry.v1alpha1.RepositorySearchResult.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	18, // 1: buf.alpha.registry.v1alpha1.RepositorySearchResult.owner_verification_status:type_name -> buf.alpha.registry.v1alpha1.VerificationStatus
+	19, // 2: buf.alpha.registry.v1alpha1.RepositorySearchResult.latest_commit_time:type_name -> google.protobuf.Timestamp
+	19, // 3: buf.alpha.registry.v1alpha1.OrganizationSearchResult.create_time:type_name -> google.protobuf.Timestamp
+	19, // 4: buf.alpha.registry.v1alpha1.UserSearchResult.create_time:type_name -> google.protobuf.Timestamp
+	20, // 5: buf.alpha.registry.v1alpha1.CuratedPluginSearchResult.registry_type:type_name -> buf.alpha.registry.v1alpha1.PluginRegistryType
+	21, // 6: buf.alpha.registry.v1alpha1.CuratedPluginSearchResult.output_languages:type_name -> buf.alpha.registry.v1alpha1.PluginLanguage
+	19, // 7: buf.alpha.registry.v1alpha1.CuratedPluginSearchResult.create_time:type_name -> google.protobuf.Timestamp
 	2,  // 8: buf.alpha.registry.v1alpha1.ModuleElementSearchResult.search_module_element_type:type_name -> buf.alpha.registry.v1alpha1.SearchModuleElementType
-	4,  // 9: buf.alpha.registry.v1alpha1.SearchResult.repository:type_name -> buf.alpha.registry.v1alpha1.RepositorySearchResult
-	5,  // 10: buf.alpha.registry.v1alpha1.SearchResult.organization:type_name -> buf.alpha.registry.v1alpha1.OrganizationSearchResult
-	6,  // 11: buf.alpha.registry.v1alpha1.SearchResult.user:type_name -> buf.alpha.registry.v1alpha1.UserSearchResult
-	7,  // 12: buf.alpha.registry.v1alpha1.SearchResult.team:type_name -> buf.alpha.registry.v1alpha1.TeamSearchResult
-	8,  // 13: buf.alpha.registry.v1alpha1.SearchResult.curated_plugin:type_name -> buf.alpha.registry.v1alpha1.CuratedPluginSearchResult
-	9,  // 14: buf.alpha.registry.v1alpha1.SearchResult.module_element:type_name -> buf.alpha.registry.v1alpha1.ModuleElementSearchResult
-	10, // 15: buf.alpha.registry.v1alpha1.SearchResult.module_file:type_name -> buf.alpha.registry.v1alpha1.ModuleFileSearchResult
-	28, // 16: buf.alpha.registry.v1alpha1.ElementSearchResult.service:type_name -> buf.alpha.registry.v1alpha1.Service
-	29, // 17: buf.alpha.registry.v1alpha1.ElementSearchResult.method:type_name -> buf.alpha.registry.v1alpha1.Method
-	30, // 18: buf.alpha.registry.v1alpha1.ElementSearchResult.enum:type_name -> buf.alpha.registry.v1alpha1.Enum
-	31, // 19: buf.alpha.registry.v1alpha1.ElementSearchResult.message:type_name -> buf.alpha.registry.v1alpha1.Message
-	32, // 20: buf.alpha.registry.v1alpha1.ElementSearchResult.file_extension:type_name -> buf.alpha.registry.v1alpha1.FileExtension
-	12, // 21: buf.alpha.registry.v1alpha1.SearchModuleContentResult.element:type_name -> buf.alpha.registry.v1alpha1.ElementSearchResult
-	13, // 22: buf.alpha.registry.v1alpha1.SearchModuleContentResult.file:type_name -> buf.alpha.registry.v1alpha1.FileSearchResult
-	0,  // 23: buf.alpha.registry.v1alpha1.SearchRequest.filters:type_name -> buf.alpha.registry.v1alpha1.SearchFilter
-	11, // 24: buf.alpha.registry.v1alpha1.SearchResponse.search_results:type_name -> buf.alpha.registry.v1alpha1.SearchResult
-	1,  // 25: buf.alpha.registry.v1alpha1.SearchTagRequest.order_by:type_name -> buf.alpha.registry.v1alpha1.OrderBy
-	33, // 26: buf.alpha.registry.v1alpha1.SearchTagResponse.repository_tags:type_name -> buf.alpha.registry.v1alpha1.RepositoryTag
-	1,  // 27: buf.alpha.registry.v1alpha1.SearchDraftRequest.order_by:type_name -> buf.alpha.registry.v1alpha1.OrderBy
-	34, // 28: buf.alpha.registry.v1alpha1.SearchDraftResponse.repository_commits:type_name -> buf.alpha.registry.v1alpha1.RepositoryCommit
-	3,  // 29: buf.alpha.registry.v1alpha1.SearchModuleContentRequest.filters:type_name -> buf.alpha.registry.v1alpha1.SearchModuleContentFilter
-	14, // 30: buf.alpha.registry.v1alpha1.SearchModuleContentResponse.search_results:type_name -> buf.alpha.registry.v1alpha1.SearchModuleContentResult
-	15, // 31: buf.alpha.registry.v1alpha1.SearchService.Search:input_type -> buf.alpha.registry.v1alpha1.SearchRequest
-	17, // 32: buf.alpha.registry.v1alpha1.SearchService.SearchTag:input_type -> buf.alpha.registry.v1alpha1.SearchTagRequest
-	19, // 33: buf.alpha.registry.v1alpha1.SearchService.SearchDraft:input_type -> buf.alpha.registry.v1alpha1.SearchDraftRequest
-	21, // 34: buf.alpha.registry.v1alpha1.SearchService.SearchModuleContent:input_type -> buf.alpha.registry.v1alpha1.SearchModuleContentRequest
-	16, // 35: buf.alpha.registry.v1alpha1.SearchService.Search:output_type -> buf.alpha.registry.v1alpha1.SearchResponse
-	18, // 36: buf.alpha.registry.v1alpha1.SearchService.SearchTag:output_type -> buf.alpha.registry.v1alpha1.SearchTagResponse
-	20, // 37: buf.alpha.registry.v1alpha1.SearchService.SearchDraft:output_type -> buf.alpha.registry.v1alpha1.SearchDraftResponse
-	22, // 38: buf.alpha.registry.v1alpha1.SearchService.SearchModuleContent:output_type -> buf.alpha.registry.v1alpha1.SearchModuleContentResponse
-	35, // [35:39] is the sub-list for method output_type
-	31, // [31:35] is the sub-list for method input_type
-	31, // [31:31] is the sub-list for extension type_name
-	31, // [31:31] is the sub-list for extension extendee
-	0,  // [0:31] is the sub-list for field type_name
+	3,  // 9: buf.alpha.registry.v1alpha1.SearchResult.repository:type_name -> buf.alpha.registry.v1alpha1.RepositorySearchResult
+	4,  // 10: buf.alpha.registry.v1alpha1.SearchResult.organization:type_name -> buf.alpha.registry.v1alpha1.OrganizationSearchResult
+	5,  // 11: buf.alpha.registry.v1alpha1.SearchResult.user:type_name -> buf.alpha.registry.v1alpha1.UserSearchResult
+	6,  // 12: buf.alpha.registry.v1alpha1.SearchResult.team:type_name -> buf.alpha.registry.v1alpha1.TeamSearchResult
+	7,  // 13: buf.alpha.registry.v1alpha1.SearchResult.curated_plugin:type_name -> buf.alpha.registry.v1alpha1.CuratedPluginSearchResult
+	8,  // 14: buf.alpha.registry.v1alpha1.SearchResult.module_element:type_name -> buf.alpha.registry.v1alpha1.ModuleElementSearchResult
+	9,  // 15: buf.alpha.registry.v1alpha1.SearchResult.module_file:type_name -> buf.alpha.registry.v1alpha1.ModuleFileSearchResult
+	0,  // 16: buf.alpha.registry.v1alpha1.SearchRequest.filters:type_name -> buf.alpha.registry.v1alpha1.SearchFilter
+	10, // 17: buf.alpha.registry.v1alpha1.SearchResponse.search_results:type_name -> buf.alpha.registry.v1alpha1.SearchResult
+	1,  // 18: buf.alpha.registry.v1alpha1.SearchTagRequest.order_by:type_name -> buf.alpha.registry.v1alpha1.OrderBy
+	22, // 19: buf.alpha.registry.v1alpha1.SearchTagResponse.repository_tags:type_name -> buf.alpha.registry.v1alpha1.RepositoryTag
+	1,  // 20: buf.alpha.registry.v1alpha1.SearchDraftRequest.order_by:type_name -> buf.alpha.registry.v1alpha1.OrderBy
+	23, // 21: buf.alpha.registry.v1alpha1.SearchDraftResponse.repository_commits:type_name -> buf.alpha.registry.v1alpha1.RepositoryCommit
+	11, // 22: buf.alpha.registry.v1alpha1.SearchService.Search:input_type -> buf.alpha.registry.v1alpha1.SearchRequest
+	13, // 23: buf.alpha.registry.v1alpha1.SearchService.SearchTag:input_type -> buf.alpha.registry.v1alpha1.SearchTagRequest
+	15, // 24: buf.alpha.registry.v1alpha1.SearchService.SearchDraft:input_type -> buf.alpha.registry.v1alpha1.SearchDraftRequest
+	12, // 25: buf.alpha.registry.v1alpha1.SearchService.Search:output_type -> buf.alpha.registry.v1alpha1.SearchResponse
+	14, // 26: buf.alpha.registry.v1alpha1.SearchService.SearchTag:output_type -> buf.alpha.registry.v1alpha1.SearchTagResponse
+	16, // 27: buf.alpha.registry.v1alpha1.SearchService.SearchDraft:output_type -> buf.alpha.registry.v1alpha1.SearchDraftResponse
+	25, // [25:28] is the sub-list for method output_type
+	22, // [22:25] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_buf_alpha_registry_v1alpha1_search_proto_init() }
@@ -3270,7 +2293,6 @@ func file_buf_alpha_registry_v1alpha1_search_proto_init() {
 	if File_buf_alpha_registry_v1alpha1_search_proto != nil {
 		return
 	}
-	file_buf_alpha_registry_v1alpha1_doc_proto_init()
 	file_buf_alpha_registry_v1alpha1_plugin_curation_proto_init()
 	file_buf_alpha_registry_v1alpha1_repository_proto_init()
 	file_buf_alpha_registry_v1alpha1_repository_commit_proto_init()
@@ -3285,24 +2307,13 @@ func file_buf_alpha_registry_v1alpha1_search_proto_init() {
 		(*searchResult_ModuleElement)(nil),
 		(*searchResult_ModuleFile)(nil),
 	}
-	file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[8].OneofWrappers = []any{
-		(*elementSearchResult_Service)(nil),
-		(*elementSearchResult_Method)(nil),
-		(*elementSearchResult_Enum)(nil),
-		(*elementSearchResult_Message)(nil),
-		(*elementSearchResult_FileExtension)(nil),
-	}
-	file_buf_alpha_registry_v1alpha1_search_proto_msgTypes[10].OneofWrappers = []any{
-		(*searchModuleContentResult_Element)(nil),
-		(*searchModuleContentResult_File)(nil),
-	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_buf_alpha_registry_v1alpha1_search_proto_rawDesc), len(file_buf_alpha_registry_v1alpha1_search_proto_rawDesc)),
-			NumEnums:      4,
-			NumMessages:   19,
+			NumEnums:      3,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
