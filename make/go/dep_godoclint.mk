@@ -12,8 +12,8 @@ $(call _assert_var,BUF_VERSION)
 # Otherwise, the cached version may not support the latest language features.
 # This version is the go toolchain version (which may be more specific than the module
 # version) to ensure the build handles specific language features in newer toolchains.
-GODOCLINT_GOTOOLCHAIN_VERSION := $(shell go env GOVERSION | sed 's/^go//')
-GODOCLINT_GO_VERSION := $(shell echo $(GODOCLINT_GOTOOLCHAIN_VERSION) | cut -d'.' -f1-2)
+GODOCLINT_GOTOOLCHAIN_VERSION := $(patsubst go%,%,$(shell go env GOVERSION))
+GODOCLINT_GO_VERSION := $(call _major_minor,$(GODOCLINT_GOTOOLCHAIN_VERSION))
 
 # Settable
 #

@@ -10,7 +10,7 @@ $(call _assert_var,BUF_VERSION)
 
 # We want to ensure we rebuild bufstyle every time we require a new Go minor version.
 # Otherwise, the cached version may not support the latest language features.
-BUFSTYLE_GO_VERSION := $(shell go list -m -f '{{.GoVersion}}' | cut -d'.' -f1-2)
+BUFSTYLE_GO_VERSION := $(call _major_minor,$(shell go list -m -f '{{.GoVersion}}'))
 
 # Settable
 # https://github.com/bufbuild/bufstyle-go/releases

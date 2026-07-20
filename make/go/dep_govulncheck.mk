@@ -10,12 +10,12 @@ $(call _assert_var,CACHE_BIN)
 # Otherwise, the cached version may not support the latest language features.
 # This version is the go toolchain version (which may be more specific than the module
 # version) to ensure the build handles specific language features in newer toolchains.
-GOVULNCHECK_GOTOOLCHAIN_VERSION := $(shell go env GOVERSION | sed 's/^go//')
-GOVULNCHECK_GO_VERSION := $(shell echo $(GOVULNCHECK_GOTOOLCHAIN_VERSION) | cut -d'.' -f1-2)
+GOVULNCHECK_GOTOOLCHAIN_VERSION := $(patsubst go%,%,$(shell go env GOVERSION))
+GOVULNCHECK_GO_VERSION := $(call _major_minor,$(GOVULNCHECK_GOTOOLCHAIN_VERSION))
 
 # Settable
-# https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck 20260410 checked 20260422
-GOVULNCHECK_VERSION ?= v1.2.0
+# https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck 20260625 checked 20260625
+GOVULNCHECK_VERSION ?= v1.5.0
 
 GOVULNCHECK := $(CACHE_BIN)/govulncheck
 

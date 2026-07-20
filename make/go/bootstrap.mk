@@ -14,3 +14,7 @@ endef
 define _conditional_include
 	$(if $(filter $(1),$(MAKEFILE_LIST)),,$(eval include $(1)))
 endef
+# Extracts the major.minor (e.g. 1.26) from a dotted version string (e.g. 1.26.3).
+define _major_minor
+$(word 1,$(subst ., ,$(1))).$(word 2,$(subst ., ,$(1)))
+endef
