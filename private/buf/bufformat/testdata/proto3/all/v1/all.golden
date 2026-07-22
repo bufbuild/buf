@@ -92,6 +92,7 @@ message One {
     // oneof-field comment 2
     custom.Thing custom_field = 11; // oneof-option-field-inline comment 4
   }
+  // oneof-inline-comment
 
   int64 integer_field = 12 [
     (custom.repeated_field_option) = 1,
