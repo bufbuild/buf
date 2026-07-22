@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix `buf format` dropping comments next to commas or semicolons in message literals.
 
 ## [v1.72.0] - 2026-07-17
 
