@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package publicimports;
+
+// Both of these are public imports, and both of them reach leaf.proto, but
+// only public_leaf.proto reaches it publicly. Declaring the non-public path
+// first must not stop diamond.proto from re-exporting leaf.proto.
+import public "plain_leaf.proto";
+import public "public_leaf.proto";

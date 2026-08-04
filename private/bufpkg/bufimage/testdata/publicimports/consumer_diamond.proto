@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package publicimports;
+
+// This is the shape from https://github.com/bufbuild/buf/issues/4633. Leaf is
+// nameable here because diamond.proto re-exports leaf.proto, transitively via
+// public_leaf.proto.
+import "diamond.proto";
+
+message ConsumerDiamond {
+  Leaf leaf = 1;
+}

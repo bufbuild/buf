@@ -230,6 +230,17 @@ func TestCompareTrailingComments(t *testing.T) {
 	testCompare(t, "trailingcomments")
 }
 
+func TestComparePublicImports(t *testing.T) {
+	// https://github.com/bufbuild/buf/issues/4633
+	//
+	// A file is re-exported by its importer if it is reachable by following
+	// `import public` declarations only. Whether such a path exists must not
+	// depend on the order in which the importer declares its imports, nor on
+	// whether the importer also imports the file non-publicly.
+	t.Parallel()
+	testCompare(t, "publicimports")
+}
+
 func TestCustomOptionsError1(t *testing.T) {
 	t.Parallel()
 	testFileAnnotations(

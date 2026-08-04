@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package publicimports;
+
+// Leaf is nameable here because shadowed.proto re-exports leaf.proto, even
+// though shadowed.proto's own import of leaf.proto is not public.
+import "shadowed.proto";
+
+message ConsumerShadowed {
+  Leaf leaf = 1;
+}
