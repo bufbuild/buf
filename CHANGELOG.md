@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 - Fix `buf format` dropping comments next to commas or semicolons in message literals.
+- Fix compilation failing to resolve symbols re-exported through `import public` when the
+  re-exporting file also reaches those symbols through a non-public import.
 
 ## [v1.72.0] - 2026-07-17
 

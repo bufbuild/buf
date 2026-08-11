@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package publicimports;
+
+// leaf.proto is imported non-publicly here, but it is also re-exported by
+// public_leaf.proto, so shadowed.proto re-exports it too.
+import "leaf.proto";
+import public "public_leaf.proto";
+
+message Shadowed {
+  Leaf leaf = 1;
+}

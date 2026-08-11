@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package publicimports;
+
+import "leaf.proto";
+
+message PlainLeaf {
+  Leaf leaf = 1;
+}
