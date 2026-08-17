@@ -19,37 +19,39 @@
 package registryv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// JSONSchemaServiceName is the fully-qualified name of the JSONSchemaService service.
 	JSONSchemaServiceName = "buf.alpha.registry.v1alpha1.JSONSchemaService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// JSONSchemaServiceGetJSONSchemaProcedure is the fully-qualified name of the JSONSchemaService's
+	// JSONSchemaServiceGetJSONSchemaProcedure is the procedure name of the JSONSchemaService's
 	// GetJSONSchema RPC.
 	JSONSchemaServiceGetJSONSchemaProcedure = "/buf.alpha.registry.v1alpha1.JSONSchemaService/GetJSONSchema"
+)
+
+var (
+	jSONSchemaServiceGetJSONSchemaSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_jsonschema_proto.Services().ByName("JSONSchemaService").Methods().ByName("GetJSONSchema"),
+			Procedure:        JSONSchemaServiceGetJSONSchemaProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
 )
 
 // JSONSchemaServiceClient is a client for the buf.alpha.registry.v1alpha1.JSONSchemaService
@@ -57,39 +59,14 @@ const (
 type JSONSchemaServiceClient interface {
 	// GetJSONSchema allows users to get an (approximate) json schema for a
 	// protobuf type.
-	GetJSONSchema(context.Context, *connect.Request[v1alpha1.GetJSONSchemaRequest]) (*connect.Response[v1alpha1.GetJSONSchemaResponse], error)
+	GetJSONSchema(context.Context, *v1alpha1.GetJSONSchemaRequest) (*v1alpha1.GetJSONSchemaResponse, error)
 }
 
 // NewJSONSchemaServiceClient constructs a client for the
-// buf.alpha.registry.v1alpha1.JSONSchemaService service. By default, it uses the Connect protocol
-// with the binary Protobuf Codec, asks for gzipped responses, and sends uncompressed requests. To
-// use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or connect.WithGRPCWeb()
-// options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewJSONSchemaServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) JSONSchemaServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	jSONSchemaServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_jsonschema_proto.Services().ByName("JSONSchemaService").Methods()
-	return &jSONSchemaServiceClient{
-		getJSONSchema: connect.NewClient[v1alpha1.GetJSONSchemaRequest, v1alpha1.GetJSONSchemaResponse](
-			httpClient,
-			baseURL+JSONSchemaServiceGetJSONSchemaProcedure,
-			connect.WithSchema(jSONSchemaServiceMethods.ByName("GetJSONSchema")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// jSONSchemaServiceClient implements JSONSchemaServiceClient.
-type jSONSchemaServiceClient struct {
-	getJSONSchema *connect.Client[v1alpha1.GetJSONSchemaRequest, v1alpha1.GetJSONSchemaResponse]
-}
-
-// GetJSONSchema calls buf.alpha.registry.v1alpha1.JSONSchemaService.GetJSONSchema.
-func (c *jSONSchemaServiceClient) GetJSONSchema(ctx context.Context, req *connect.Request[v1alpha1.GetJSONSchemaRequest]) (*connect.Response[v1alpha1.GetJSONSchemaResponse], error) {
-	return c.getJSONSchema.CallUnary(ctx, req)
+// buf.alpha.registry.v1alpha1.JSONSchemaService service. Multiple service clients may share a
+// single connect.Client.
+func NewJSONSchemaServiceClient(client *connect.Client) JSONSchemaServiceClient {
+	return &jSONSchemaServiceClient{client: client}
 }
 
 // JSONSchemaServiceHandler is an implementation of the
@@ -97,36 +74,47 @@ func (c *jSONSchemaServiceClient) GetJSONSchema(ctx context.Context, req *connec
 type JSONSchemaServiceHandler interface {
 	// GetJSONSchema allows users to get an (approximate) json schema for a
 	// protobuf type.
-	GetJSONSchema(context.Context, *connect.Request[v1alpha1.GetJSONSchemaRequest]) (*connect.Response[v1alpha1.GetJSONSchemaResponse], error)
+	GetJSONSchema(context.Context, *v1alpha1.GetJSONSchemaRequest) (*v1alpha1.GetJSONSchemaResponse, error)
 }
 
-// NewJSONSchemaServiceHandler builds an HTTP handler from the service implementation. It returns
-// the path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewJSONSchemaServiceHandler(svc JSONSchemaServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	jSONSchemaServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_jsonschema_proto.Services().ByName("JSONSchemaService").Methods()
-	jSONSchemaServiceGetJSONSchemaHandler := connect.NewUnaryHandler(
-		JSONSchemaServiceGetJSONSchemaProcedure,
-		svc.GetJSONSchema,
-		connect.WithSchema(jSONSchemaServiceMethods.ByName("GetJSONSchema")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
+// RegisterJSONSchemaServiceHandler registers svc as the
+// buf.alpha.registry.v1alpha1.JSONSchemaService implementation on server.
+func RegisterJSONSchemaServiceHandler(server *connect.Server, svc JSONSchemaServiceHandler) {
+	adapter := jSONSchemaServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: jSONSchemaServiceGetJSONSchemaSpec(), Handler: adapter.getJSONSchema},
 	)
-	return "/buf.alpha.registry.v1alpha1.JSONSchemaService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case JSONSchemaServiceGetJSONSchemaProcedure:
-			jSONSchemaServiceGetJSONSchemaHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedJSONSchemaServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedJSONSchemaServiceHandler struct{}
 
-func (UnimplementedJSONSchemaServiceHandler) GetJSONSchema(context.Context, *connect.Request[v1alpha1.GetJSONSchemaRequest]) (*connect.Response[v1alpha1.GetJSONSchemaResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.JSONSchemaService.GetJSONSchema is not implemented"))
+func (UnimplementedJSONSchemaServiceHandler) GetJSONSchema(context.Context, *v1alpha1.GetJSONSchemaRequest) (*v1alpha1.GetJSONSchemaResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.JSONSchemaService.GetJSONSchema is not implemented")
+}
+
+type jSONSchemaServiceClient struct {
+	client *connect.Client
+}
+
+func (c *jSONSchemaServiceClient) GetJSONSchema(ctx context.Context, req *v1alpha1.GetJSONSchemaRequest) (*v1alpha1.GetJSONSchemaResponse, error) {
+	var res v1alpha1.GetJSONSchemaResponse
+	if err := c.client.CallUnary(ctx, jSONSchemaServiceGetJSONSchemaSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type jSONSchemaServiceHandler struct{ svc JSONSchemaServiceHandler }
+
+func (h jSONSchemaServiceHandler) getJSONSchema(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetJSONSchemaRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetJSONSchema(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

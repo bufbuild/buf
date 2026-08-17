@@ -21,7 +21,7 @@ import (
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -95,23 +95,22 @@ func run(
 	commitServiceClient := bufregistryapiplugin.NewClientProvider(clientConfig).V1Beta1CommitServiceClient(pluginRef.FullName().Registry())
 	resp, err := commitServiceClient.GetCommits(
 		ctx,
-		connect.NewRequest(
-			&pluginv1beta1.GetCommitsRequest{
-				ResourceRefs: []*pluginv1beta1.ResourceRef{
-					{
-						Value: &pluginv1beta1.ResourceRef_Name_{
-							Name: &pluginv1beta1.ResourceRef_Name{
-								Owner:  pluginRef.FullName().Owner(),
-								Plugin: pluginRef.FullName().Name(),
-								Child: &pluginv1beta1.ResourceRef_Name_Ref{
-									Ref: pluginRef.Ref(),
-								},
+
+		&pluginv1beta1.GetCommitsRequest{
+			ResourceRefs: []*pluginv1beta1.ResourceRef{
+				{
+					Value: &pluginv1beta1.ResourceRef_Name_{
+						Name: &pluginv1beta1.ResourceRef_Name{
+							Owner:  pluginRef.FullName().Owner(),
+							Plugin: pluginRef.FullName().Name(),
+							Child: &pluginv1beta1.ResourceRef_Name_Ref{
+								Ref: pluginRef.Ref(),
 							},
 						},
 					},
 				},
 			},
-		),
+		},
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -119,7 +118,7 @@ func run(
 		}
 		return err
 	}
-	commits := resp.Msg.Commits
+	commits := resp.Commits
 	if len(commits) != 1 {
 		return syserror.Newf("expect 1 commit from response, got %d", len(commits))
 	}

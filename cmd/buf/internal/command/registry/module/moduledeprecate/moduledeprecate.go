@@ -21,7 +21,7 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
@@ -66,20 +66,19 @@ func run(ctx context.Context, container appext.Container, flags *flags) error {
 	moduleServiceClient := moduleClientProvider.V1ModuleServiceClient(moduleFullName.Registry())
 	if _, err := moduleServiceClient.UpdateModules(
 		ctx,
-		&connect.Request[modulev1.UpdateModulesRequest]{
-			Msg: &modulev1.UpdateModulesRequest{
-				Values: []*modulev1.UpdateModulesRequest_Value{
-					{
-						ModuleRef: &modulev1.ModuleRef{
-							Value: &modulev1.ModuleRef_Name_{
-								Name: &modulev1.ModuleRef_Name{
-									Owner:  moduleFullName.Owner(),
-									Module: moduleFullName.Name(),
-								},
+
+		&modulev1.UpdateModulesRequest{
+			Values: []*modulev1.UpdateModulesRequest_Value{
+				{
+					ModuleRef: &modulev1.ModuleRef{
+						Value: &modulev1.ModuleRef_Name_{
+							Name: &modulev1.ModuleRef_Name{
+								Owner:  moduleFullName.Owner(),
+								Module: moduleFullName.Name(),
 							},
 						},
-						State: modulev1.ModuleState_MODULE_STATE_DEPRECATED.Enum(),
 					},
+					State: modulev1.ModuleState_MODULE_STATE_DEPRECATED.Enum(),
 				},
 			},
 		},

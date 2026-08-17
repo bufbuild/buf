@@ -21,7 +21,7 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
@@ -81,21 +81,20 @@ func run(
 	// ArchiveLabelsResponse is empty.
 	if _, err := labelServiceClient.ArchiveLabels(
 		ctx,
-		connect.NewRequest(
-			&modulev1.ArchiveLabelsRequest{
-				LabelRefs: []*modulev1.LabelRef{
-					{
-						Value: &modulev1.LabelRef_Name_{
-							Name: &modulev1.LabelRef_Name{
-								Owner:  moduleFullName.Owner(),
-								Module: moduleFullName.Name(),
-								Label:  labelName,
-							},
+
+		&modulev1.ArchiveLabelsRequest{
+			LabelRefs: []*modulev1.LabelRef{
+				{
+					Value: &modulev1.LabelRef_Name_{
+						Name: &modulev1.LabelRef_Name{
+							Owner:  moduleFullName.Owner(),
+							Module: moduleFullName.Name(),
+							Label:  labelName,
 						},
 					},
 				},
 			},
-		),
+		},
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewLabelNotFoundError(moduleRef)

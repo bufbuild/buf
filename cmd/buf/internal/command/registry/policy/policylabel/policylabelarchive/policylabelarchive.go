@@ -21,7 +21,7 @@ import (
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapipolicy"
@@ -81,21 +81,20 @@ func run(
 	// ArchiveLabelsResponse is empty.
 	if _, err := labelServiceClient.ArchiveLabels(
 		ctx,
-		connect.NewRequest(
-			&policyv1beta1.ArchiveLabelsRequest{
-				LabelRefs: []*policyv1beta1.LabelRef{
-					{
-						Value: &policyv1beta1.LabelRef_Name_{
-							Name: &policyv1beta1.LabelRef_Name{
-								Owner:  policyFullName.Owner(),
-								Policy: policyFullName.Name(),
-								Label:  labelName,
-							},
+
+		&policyv1beta1.ArchiveLabelsRequest{
+			LabelRefs: []*policyv1beta1.LabelRef{
+				{
+					Value: &policyv1beta1.LabelRef_Name_{
+						Name: &policyv1beta1.LabelRef_Name{
+							Owner:  policyFullName.Owner(),
+							Policy: policyFullName.Name(),
+							Label:  labelName,
 						},
 					},
 				},
 			},
-		),
+		},
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewLabelNotFoundError(policyRef)

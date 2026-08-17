@@ -19,109 +19,97 @@
 package auditv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/audit/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// AuditServiceName is the fully-qualified name of the AuditService service.
 	AuditServiceName = "buf.alpha.audit.v1alpha1.AuditService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// AuditServiceListAuditedEventsProcedure is the fully-qualified name of the AuditService's
+	// AuditServiceListAuditedEventsProcedure is the procedure name of the AuditService's
 	// ListAuditedEvents RPC.
 	AuditServiceListAuditedEventsProcedure = "/buf.alpha.audit.v1alpha1.AuditService/ListAuditedEvents"
+)
+
+var (
+	auditServiceListAuditedEventsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_audit_v1alpha1_service_proto.Services().ByName("AuditService").Methods().ByName("ListAuditedEvents"),
+			Procedure:        AuditServiceListAuditedEventsProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
 )
 
 // AuditServiceClient is a client for the buf.alpha.audit.v1alpha1.AuditService service.
 type AuditServiceClient interface {
 	// ListAuditedEvents lists audited events recorded in the BSR instance.
-	ListAuditedEvents(context.Context, *connect.Request[v1alpha1.ListAuditedEventsRequest]) (*connect.Response[v1alpha1.ListAuditedEventsResponse], error)
+	ListAuditedEvents(context.Context, *v1alpha1.ListAuditedEventsRequest) (*v1alpha1.ListAuditedEventsResponse, error)
 }
 
 // NewAuditServiceClient constructs a client for the buf.alpha.audit.v1alpha1.AuditService service.
-// By default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped
-// responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
-// connect.WithGRPC() or connect.WithGRPCWeb() options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewAuditServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) AuditServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	auditServiceMethods := v1alpha1.File_buf_alpha_audit_v1alpha1_service_proto.Services().ByName("AuditService").Methods()
-	return &auditServiceClient{
-		listAuditedEvents: connect.NewClient[v1alpha1.ListAuditedEventsRequest, v1alpha1.ListAuditedEventsResponse](
-			httpClient,
-			baseURL+AuditServiceListAuditedEventsProcedure,
-			connect.WithSchema(auditServiceMethods.ByName("ListAuditedEvents")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// auditServiceClient implements AuditServiceClient.
-type auditServiceClient struct {
-	listAuditedEvents *connect.Client[v1alpha1.ListAuditedEventsRequest, v1alpha1.ListAuditedEventsResponse]
-}
-
-// ListAuditedEvents calls buf.alpha.audit.v1alpha1.AuditService.ListAuditedEvents.
-func (c *auditServiceClient) ListAuditedEvents(ctx context.Context, req *connect.Request[v1alpha1.ListAuditedEventsRequest]) (*connect.Response[v1alpha1.ListAuditedEventsResponse], error) {
-	return c.listAuditedEvents.CallUnary(ctx, req)
+// Multiple service clients may share a single connect.Client.
+func NewAuditServiceClient(client *connect.Client) AuditServiceClient {
+	return &auditServiceClient{client: client}
 }
 
 // AuditServiceHandler is an implementation of the buf.alpha.audit.v1alpha1.AuditService service.
 type AuditServiceHandler interface {
 	// ListAuditedEvents lists audited events recorded in the BSR instance.
-	ListAuditedEvents(context.Context, *connect.Request[v1alpha1.ListAuditedEventsRequest]) (*connect.Response[v1alpha1.ListAuditedEventsResponse], error)
+	ListAuditedEvents(context.Context, *v1alpha1.ListAuditedEventsRequest) (*v1alpha1.ListAuditedEventsResponse, error)
 }
 
-// NewAuditServiceHandler builds an HTTP handler from the service implementation. It returns the
-// path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewAuditServiceHandler(svc AuditServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	auditServiceMethods := v1alpha1.File_buf_alpha_audit_v1alpha1_service_proto.Services().ByName("AuditService").Methods()
-	auditServiceListAuditedEventsHandler := connect.NewUnaryHandler(
-		AuditServiceListAuditedEventsProcedure,
-		svc.ListAuditedEvents,
-		connect.WithSchema(auditServiceMethods.ByName("ListAuditedEvents")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
+// RegisterAuditServiceHandler registers svc as the buf.alpha.audit.v1alpha1.AuditService
+// implementation on server.
+func RegisterAuditServiceHandler(server *connect.Server, svc AuditServiceHandler) {
+	adapter := auditServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: auditServiceListAuditedEventsSpec(), Handler: adapter.listAuditedEvents},
 	)
-	return "/buf.alpha.audit.v1alpha1.AuditService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case AuditServiceListAuditedEventsProcedure:
-			auditServiceListAuditedEventsHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedAuditServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedAuditServiceHandler struct{}
 
-func (UnimplementedAuditServiceHandler) ListAuditedEvents(context.Context, *connect.Request[v1alpha1.ListAuditedEventsRequest]) (*connect.Response[v1alpha1.ListAuditedEventsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.audit.v1alpha1.AuditService.ListAuditedEvents is not implemented"))
+func (UnimplementedAuditServiceHandler) ListAuditedEvents(context.Context, *v1alpha1.ListAuditedEventsRequest) (*v1alpha1.ListAuditedEventsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.audit.v1alpha1.AuditService.ListAuditedEvents is not implemented")
+}
+
+type auditServiceClient struct {
+	client *connect.Client
+}
+
+func (c *auditServiceClient) ListAuditedEvents(ctx context.Context, req *v1alpha1.ListAuditedEventsRequest) (*v1alpha1.ListAuditedEventsResponse, error) {
+	var res v1alpha1.ListAuditedEventsResponse
+	if err := c.client.CallUnary(ctx, auditServiceListAuditedEventsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type auditServiceHandler struct{ svc AuditServiceHandler }
+
+func (h auditServiceHandler) listAuditedEvents(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ListAuditedEventsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListAuditedEvents(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

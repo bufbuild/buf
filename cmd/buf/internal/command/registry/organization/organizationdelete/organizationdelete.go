@@ -21,7 +21,7 @@ import (
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -88,17 +88,16 @@ func run(
 	organizationServiceClient := ownerClientProvider.V1OrganizationServiceClient(moduleOwner.Registry())
 	if _, err := organizationServiceClient.DeleteOrganizations(
 		ctx,
-		connect.NewRequest(
-			&ownerv1.DeleteOrganizationsRequest{
-				OrganizationRefs: []*ownerv1.OrganizationRef{
-					{
-						Value: &ownerv1.OrganizationRef_Name{
-							Name: moduleOwner.Owner(),
-						},
+
+		&ownerv1.DeleteOrganizationsRequest{
+			OrganizationRefs: []*ownerv1.OrganizationRef{
+				{
+					Value: &ownerv1.OrganizationRef_Name{
+						Name: moduleOwner.Owner(),
 					},
 				},
 			},
-		),
+		},
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewOrganizationNotFoundError(container.Arg(0))

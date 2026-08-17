@@ -20,13 +20,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"runtime"
 	"sort"
 	"strings"
 	"sync/atomic"
 
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 )
 
@@ -58,7 +60,7 @@ func DefaultUserAgent(protocol string, bufVersion string) string {
 
 // NewVerboseHTTPClient creates a new HTTP client with the given transport and
 // printing verbose trace information to the given printer.
-func NewVerboseHTTPClient(transport http.RoundTripper, printer verbose.Printer) connect.HTTPClient {
+func NewVerboseHTTPClient(transport http.RoundTripper, printer verbose.Printer) connecthttp.HTTPClient {
 	return &verboseClient{transport: transport, printer: printer}
 }
 
@@ -68,8 +70,27 @@ func NewVerboseHTTPClient(transport http.RoundTripper, printer verbose.Printer) 
 // the request body, instead of using actual HTTP trailers. (For the gRPC
 // protocol, which uses actual HTTP trailers, the verbose HTTP client suffices
 // since it already prints information about the trailers.)
-func TraceTrailersInterceptor(printer verbose.Printer) connect.Interceptor {
-	return traceTrailersInterceptor{printer: printer}
+func TraceTrailersInterceptor(printer verbose.Printer) connect.ClientInterceptor {
+	return func(next connect.ClientFunc) connect.ClientFunc {
+		return func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
+			if spec.StreamType == connect.StreamTypeUnary {
+				return next(ctx, spec)
+			}
+			var reqNum int32
+			ctx = context.WithValue(ctx, reqNumAddrKey{}, &reqNum)
+			info, _ := connect.CallInfoForClientContext(ctx)
+			stream, err := next(ctx, spec)
+			if err != nil {
+				return nil, err
+			}
+			return &traceTrailersStream{
+				ClientStream: stream,
+				info:         info,
+				reqNum:       &reqNum,
+				printer:      printer,
+			}, nil
+		}
+	}
 }
 
 type verboseClient struct {
@@ -235,37 +256,26 @@ func (v *verboseReader) Close() error {
 	return err
 }
 
-type traceTrailersInterceptor struct {
-	printer verbose.Printer
-}
-
-func (t traceTrailersInterceptor) WrapUnary(unaryFunc connect.UnaryFunc) connect.UnaryFunc {
-	return unaryFunc
-}
-
-func (t traceTrailersInterceptor) WrapStreamingClient(clientFunc connect.StreamingClientFunc) connect.StreamingClientFunc {
-	return func(ctx context.Context, spec connect.Spec) connect.StreamingClientConn {
-		var reqNum int32
-		ctx = context.WithValue(ctx, reqNumAddrKey{}, &reqNum)
-		return &traceTrailersStream{StreamingClientConn: clientFunc(ctx, spec), reqNum: &reqNum, printer: t.printer}
-	}
-}
-
-func (t traceTrailersInterceptor) WrapStreamingHandler(handlerFunc connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
-	return handlerFunc
-}
-
 type traceTrailersStream struct {
-	connect.StreamingClientConn
+	connect.ClientStream
+	info    *connect.CallInfo
 	reqNum  *int32
 	printer verbose.Printer
 	done    atomic.Bool
 }
 
 func (s *traceTrailersStream) Receive(msg any) error {
-	err := s.StreamingClientConn.Receive(msg)
-	if err != nil && s.done.CompareAndSwap(false, true) {
-		traceTrailers(s.printer, s.ResponseTrailer(), true, *s.reqNum)
+	err := s.ClientStream.Receive(msg)
+	if err != nil && s.done.CompareAndSwap(false, true) && s.info != nil {
+		traceTrailers(s.printer, httpHeaderForConnectHeader(s.info.ResponseTrailer()), true, *s.reqNum)
 	}
 	return err
+}
+
+// httpHeaderForConnectHeader converts a connect header to an http.Header for
+// printing.
+func httpHeaderForConnectHeader(header *connect.Header) http.Header {
+	result := make(http.Header, header.Len())
+	maps.Insert(result, header.All())
+	return result
 }

@@ -19,143 +19,138 @@
 package registryv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// PushServiceName is the fully-qualified name of the PushService service.
 	PushServiceName = "buf.alpha.registry.v1alpha1.PushService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// PushServicePushProcedure is the fully-qualified name of the PushService's Push RPC.
+	// PushServicePushProcedure is the procedure name of the PushService's Push RPC.
 	PushServicePushProcedure = "/buf.alpha.registry.v1alpha1.PushService/Push"
-	// PushServicePushManifestAndBlobsProcedure is the fully-qualified name of the PushService's
+	// PushServicePushManifestAndBlobsProcedure is the procedure name of the PushService's
 	// PushManifestAndBlobs RPC.
 	PushServicePushManifestAndBlobsProcedure = "/buf.alpha.registry.v1alpha1.PushService/PushManifestAndBlobs"
+)
+
+var (
+	pushServicePushSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_push_proto.Services().ByName("PushService").Methods().ByName("Push"),
+			Procedure:        PushServicePushProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	pushServicePushManifestAndBlobsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_push_proto.Services().ByName("PushService").Methods().ByName("PushManifestAndBlobs"),
+			Procedure:        PushServicePushManifestAndBlobsProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
 )
 
 // PushServiceClient is a client for the buf.alpha.registry.v1alpha1.PushService service.
 type PushServiceClient interface {
 	// Push pushes.
 	// NOTE: Newer clients should use PushManifestAndBlobs.
-	Push(context.Context, *connect.Request[v1alpha1.PushRequest]) (*connect.Response[v1alpha1.PushResponse], error)
+	Push(context.Context, *v1alpha1.PushRequest) (*v1alpha1.PushResponse, error)
 	// PushManifestAndBlobs pushes a module by encoding it in a manifest and blobs format.
-	PushManifestAndBlobs(context.Context, *connect.Request[v1alpha1.PushManifestAndBlobsRequest]) (*connect.Response[v1alpha1.PushManifestAndBlobsResponse], error)
+	PushManifestAndBlobs(context.Context, *v1alpha1.PushManifestAndBlobsRequest) (*v1alpha1.PushManifestAndBlobsResponse, error)
 }
 
 // NewPushServiceClient constructs a client for the buf.alpha.registry.v1alpha1.PushService service.
-// By default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped
-// responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
-// connect.WithGRPC() or connect.WithGRPCWeb() options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewPushServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) PushServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	pushServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_push_proto.Services().ByName("PushService").Methods()
-	return &pushServiceClient{
-		push: connect.NewClient[v1alpha1.PushRequest, v1alpha1.PushResponse](
-			httpClient,
-			baseURL+PushServicePushProcedure,
-			connect.WithSchema(pushServiceMethods.ByName("Push")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		pushManifestAndBlobs: connect.NewClient[v1alpha1.PushManifestAndBlobsRequest, v1alpha1.PushManifestAndBlobsResponse](
-			httpClient,
-			baseURL+PushServicePushManifestAndBlobsProcedure,
-			connect.WithSchema(pushServiceMethods.ByName("PushManifestAndBlobs")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// pushServiceClient implements PushServiceClient.
-type pushServiceClient struct {
-	push                 *connect.Client[v1alpha1.PushRequest, v1alpha1.PushResponse]
-	pushManifestAndBlobs *connect.Client[v1alpha1.PushManifestAndBlobsRequest, v1alpha1.PushManifestAndBlobsResponse]
-}
-
-// Push calls buf.alpha.registry.v1alpha1.PushService.Push.
-func (c *pushServiceClient) Push(ctx context.Context, req *connect.Request[v1alpha1.PushRequest]) (*connect.Response[v1alpha1.PushResponse], error) {
-	return c.push.CallUnary(ctx, req)
-}
-
-// PushManifestAndBlobs calls buf.alpha.registry.v1alpha1.PushService.PushManifestAndBlobs.
-func (c *pushServiceClient) PushManifestAndBlobs(ctx context.Context, req *connect.Request[v1alpha1.PushManifestAndBlobsRequest]) (*connect.Response[v1alpha1.PushManifestAndBlobsResponse], error) {
-	return c.pushManifestAndBlobs.CallUnary(ctx, req)
+// Multiple service clients may share a single connect.Client.
+func NewPushServiceClient(client *connect.Client) PushServiceClient {
+	return &pushServiceClient{client: client}
 }
 
 // PushServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.PushService service.
 type PushServiceHandler interface {
 	// Push pushes.
 	// NOTE: Newer clients should use PushManifestAndBlobs.
-	Push(context.Context, *connect.Request[v1alpha1.PushRequest]) (*connect.Response[v1alpha1.PushResponse], error)
+	Push(context.Context, *v1alpha1.PushRequest) (*v1alpha1.PushResponse, error)
 	// PushManifestAndBlobs pushes a module by encoding it in a manifest and blobs format.
-	PushManifestAndBlobs(context.Context, *connect.Request[v1alpha1.PushManifestAndBlobsRequest]) (*connect.Response[v1alpha1.PushManifestAndBlobsResponse], error)
+	PushManifestAndBlobs(context.Context, *v1alpha1.PushManifestAndBlobsRequest) (*v1alpha1.PushManifestAndBlobsResponse, error)
 }
 
-// NewPushServiceHandler builds an HTTP handler from the service implementation. It returns the path
-// on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewPushServiceHandler(svc PushServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	pushServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_push_proto.Services().ByName("PushService").Methods()
-	pushServicePushHandler := connect.NewUnaryHandler(
-		PushServicePushProcedure,
-		svc.Push,
-		connect.WithSchema(pushServiceMethods.ByName("Push")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
+// RegisterPushServiceHandler registers svc as the buf.alpha.registry.v1alpha1.PushService
+// implementation on server.
+func RegisterPushServiceHandler(server *connect.Server, svc PushServiceHandler) {
+	adapter := pushServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: pushServicePushSpec(), Handler: adapter.push},
+		connect.Method{Spec: pushServicePushManifestAndBlobsSpec(), Handler: adapter.pushManifestAndBlobs},
 	)
-	pushServicePushManifestAndBlobsHandler := connect.NewUnaryHandler(
-		PushServicePushManifestAndBlobsProcedure,
-		svc.PushManifestAndBlobs,
-		connect.WithSchema(pushServiceMethods.ByName("PushManifestAndBlobs")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	return "/buf.alpha.registry.v1alpha1.PushService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case PushServicePushProcedure:
-			pushServicePushHandler.ServeHTTP(w, r)
-		case PushServicePushManifestAndBlobsProcedure:
-			pushServicePushManifestAndBlobsHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedPushServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedPushServiceHandler struct{}
 
-func (UnimplementedPushServiceHandler) Push(context.Context, *connect.Request[v1alpha1.PushRequest]) (*connect.Response[v1alpha1.PushResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PushService.Push is not implemented"))
+func (UnimplementedPushServiceHandler) Push(context.Context, *v1alpha1.PushRequest) (*v1alpha1.PushResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.PushService.Push is not implemented")
 }
 
-func (UnimplementedPushServiceHandler) PushManifestAndBlobs(context.Context, *connect.Request[v1alpha1.PushManifestAndBlobsRequest]) (*connect.Response[v1alpha1.PushManifestAndBlobsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PushService.PushManifestAndBlobs is not implemented"))
+func (UnimplementedPushServiceHandler) PushManifestAndBlobs(context.Context, *v1alpha1.PushManifestAndBlobsRequest) (*v1alpha1.PushManifestAndBlobsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.PushService.PushManifestAndBlobs is not implemented")
+}
+
+type pushServiceClient struct {
+	client *connect.Client
+}
+
+func (c *pushServiceClient) Push(ctx context.Context, req *v1alpha1.PushRequest) (*v1alpha1.PushResponse, error) {
+	var res v1alpha1.PushResponse
+	if err := c.client.CallUnary(ctx, pushServicePushSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *pushServiceClient) PushManifestAndBlobs(ctx context.Context, req *v1alpha1.PushManifestAndBlobsRequest) (*v1alpha1.PushManifestAndBlobsResponse, error) {
+	var res v1alpha1.PushManifestAndBlobsResponse
+	if err := c.client.CallUnary(ctx, pushServicePushManifestAndBlobsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type pushServiceHandler struct{ svc PushServiceHandler }
+
+func (h pushServiceHandler) push(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.PushRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.Push(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h pushServiceHandler) pushManifestAndBlobs(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.PushManifestAndBlobsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.PushManifestAndBlobs(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

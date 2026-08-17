@@ -21,7 +21,6 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
@@ -231,19 +230,18 @@ func (a *graphProvider) getV1Beta1ProtoGraphForModuleKeys(
 	}
 	response, err := a.moduleClientProvider.V1Beta1GraphServiceClient(primaryRegistry).GetGraph(
 		ctx,
-		connect.NewRequest(
-			&modulev1beta1.GetGraphRequest{
-				// TODO FUTURE: chunking
-				ResourceRefs: moduleKeysToV1Beta1ProtoGetGraphRequestResourceRefs(moduleKeys),
-				DigestType:   v1beta1ProtoDigestType,
-			},
-		),
+
+		&modulev1beta1.GetGraphRequest{
+			// TODO FUTURE: chunking
+			ResourceRefs: moduleKeysToV1Beta1ProtoGetGraphRequestResourceRefs(moduleKeys),
+			DigestType:   v1beta1ProtoDigestType,
+		},
 	)
 	if err != nil {
 		return nil, maybeNewNotFoundError(err)
 	}
 
-	return response.Msg.Graph, nil
+	return response.Graph, nil
 }
 
 func (a *graphProvider) getV1ProtoGraphForRegistryAndModuleKeys(
@@ -253,15 +251,14 @@ func (a *graphProvider) getV1ProtoGraphForRegistryAndModuleKeys(
 ) (*modulev1.Graph, error) {
 	response, err := a.moduleClientProvider.V1GraphServiceClient(registry).GetGraph(
 		ctx,
-		connect.NewRequest(
-			&modulev1.GetGraphRequest{
-				// TODO FUTURE: chunking
-				ResourceRefs: moduleKeysToV1ProtoResourceRefs(moduleKeys),
-			},
-		),
+
+		&modulev1.GetGraphRequest{
+			// TODO FUTURE: chunking
+			ResourceRefs: moduleKeysToV1ProtoResourceRefs(moduleKeys),
+		},
 	)
 	if err != nil {
 		return nil, maybeNewNotFoundError(err)
 	}
-	return response.Msg.Graph, nil
+	return response.Graph, nil
 }

@@ -23,7 +23,7 @@ import (
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapipolicy"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -204,13 +204,13 @@ func (u *uploader) uploadIndexedPoliciesForRegistry(
 
 	uploadResponse, err := u.policyClientProvider.V1Beta1UploadServiceClient(registry).Upload(
 		ctx,
-		connect.NewRequest(&policyv1beta1.UploadRequest{
+		&policyv1beta1.UploadRequest{
 			Contents: contents,
-		}))
+		})
 	if err != nil {
 		return nil, err
 	}
-	policyCommits := uploadResponse.Msg.Commits
+	policyCommits := uploadResponse.Commits
 	if len(policyCommits) != len(indexedPolicies) {
 		return nil, syserror.Newf("expected %d Commits, found %d", len(indexedPolicies), len(policyCommits))
 	}
@@ -261,21 +261,20 @@ func (u *uploader) createPolicyIfNotExist(
 	}
 	response, err := u.policyClientProvider.V1Beta1PolicyServiceClient(primaryRegistry).CreatePolicies(
 		ctx,
-		connect.NewRequest(
-			&policyv1beta1.CreatePoliciesRequest{
-				Values: []*policyv1beta1.CreatePoliciesRequest_Value{
-					{
-						OwnerRef: &ownerv1.OwnerRef{
-							Value: &ownerv1.OwnerRef_Name{
-								Name: policy.FullName().Owner(),
-							},
+
+		&policyv1beta1.CreatePoliciesRequest{
+			Values: []*policyv1beta1.CreatePoliciesRequest_Value{
+				{
+					OwnerRef: &ownerv1.OwnerRef{
+						Value: &ownerv1.OwnerRef_Name{
+							Name: policy.FullName().Owner(),
 						},
-						Name:       policy.FullName().Name(),
-						Visibility: v1Beta1ProtoCreatePolicyVisibility,
 					},
+					Name:       policy.FullName().Name(),
+					Visibility: v1Beta1ProtoCreatePolicyVisibility,
 				},
 			},
-		),
+		},
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {
@@ -291,11 +290,11 @@ func (u *uploader) createPolicyIfNotExist(
 		}
 		return nil, err
 	}
-	if len(response.Msg.Policies) != 1 {
-		return nil, syserror.Newf("expected 1 Policy, found %d", len(response.Msg.Policies))
+	if len(response.Policies) != 1 {
+		return nil, syserror.Newf("expected 1 Policy, found %d", len(response.Policies))
 	}
 	// Otherwise we return the policy we created.
-	return response.Msg.Policies[0], nil
+	return response.Policies[0], nil
 }
 
 func (u *uploader) validatePoliciesExist(
@@ -305,26 +304,25 @@ func (u *uploader) validatePoliciesExist(
 ) ([]*policyv1beta1.Policy, error) {
 	response, err := u.policyClientProvider.V1Beta1PolicyServiceClient(primaryRegistry).GetPolicies(
 		ctx,
-		connect.NewRequest(
-			&policyv1beta1.GetPoliciesRequest{
-				PolicyRefs: xslices.Map(
-					policies,
-					func(policy bufpolicy.Policy) *policyv1beta1.PolicyRef {
-						return &policyv1beta1.PolicyRef{
-							Value: &policyv1beta1.PolicyRef_Name_{
-								Name: &policyv1beta1.PolicyRef_Name{
-									Owner:  policy.FullName().Owner(),
-									Policy: policy.FullName().Name(),
-								},
+
+		&policyv1beta1.GetPoliciesRequest{
+			PolicyRefs: xslices.Map(
+				policies,
+				func(policy bufpolicy.Policy) *policyv1beta1.PolicyRef {
+					return &policyv1beta1.PolicyRef{
+						Value: &policyv1beta1.PolicyRef_Name_{
+							Name: &policyv1beta1.PolicyRef_Name{
+								Owner:  policy.FullName().Owner(),
+								Policy: policy.FullName().Name(),
 							},
-						}
-					},
-				),
-			},
-		),
+						},
+					}
+				},
+			),
+		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	return response.Msg.Policies, nil
+	return response.Policies, nil
 }

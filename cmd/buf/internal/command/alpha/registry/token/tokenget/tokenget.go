@@ -20,7 +20,7 @@ import (
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
@@ -105,9 +105,9 @@ func run(
 	service := connectclient.Make(clientConfig, registryHostname, registryv1alpha1connect.NewTokenServiceClient)
 	resp, err := service.GetToken(
 		ctx,
-		connect.NewRequest(registryv1alpha1.GetTokenRequest_builder{
+		registryv1alpha1.GetTokenRequest_builder{
 			TokenId: flags.TokenID,
-		}.Build()),
+		}.Build(),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -119,5 +119,5 @@ func run(
 	if err != nil {
 		return syserror.Wrap(err)
 	}
-	return printer.PrintTokens(ctx, resp.Msg.GetToken())
+	return printer.PrintTokens(ctx, resp.GetToken())
 }

@@ -25,7 +25,7 @@ import (
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -283,17 +283,16 @@ func (a *uploader) Upload(
 		// to use legacy federation.
 		response, err := a.moduleClientProvider.V1Beta1UploadServiceClient(primaryRegistry).Upload(
 			ctx,
-			connect.NewRequest(
-				&modulev1beta1.UploadRequest{
-					Contents: v1beta1ProtoUploadRequestContents,
-					DepRefs:  v1beta1ProtoUploadRequestDepRefs,
-				},
-			),
+
+			&modulev1beta1.UploadRequest{
+				Contents: v1beta1ProtoUploadRequestContents,
+				DepRefs:  v1beta1ProtoUploadRequestDepRefs,
+			},
 		)
 		if err != nil {
 			return nil, err
 		}
-		universalProtoCommits, err = xslices.MapError(response.Msg.Commits, newUniversalProtoCommitForV1Beta1)
+		universalProtoCommits, err = xslices.MapError(response.Commits, newUniversalProtoCommitForV1Beta1)
 		if err != nil {
 			return nil, err
 		}
@@ -314,17 +313,16 @@ func (a *uploader) Upload(
 		)
 		response, err := a.moduleClientProvider.V1UploadServiceClient(primaryRegistry).Upload(
 			ctx,
-			connect.NewRequest(
-				&modulev1.UploadRequest{
-					Contents:     v1ProtoUploadRequestContents,
-					DepCommitIds: protoDepCommitIds,
-				},
-			),
+
+			&modulev1.UploadRequest{
+				Contents:     v1ProtoUploadRequestContents,
+				DepCommitIds: protoDepCommitIds,
+			},
 		)
 		if err != nil {
 			return nil, err
 		}
-		universalProtoCommits, err = xslices.MapError(response.Msg.Commits, newUniversalProtoCommitForV1)
+		universalProtoCommits, err = xslices.MapError(response.Commits, newUniversalProtoCommitForV1)
 		if err != nil {
 			return nil, err
 		}
@@ -383,32 +381,31 @@ func (a *uploader) createContentModuleIfNotExist(
 			}
 			response, err := a.moduleClientProvider.V1ModuleServiceClient(primaryRegistry).CreateModules(
 				ctx,
-				connect.NewRequest(
-					&modulev1.CreateModulesRequest{
-						Values: []*modulev1.CreateModulesRequest_Value{
-							{
-								OwnerRef: &ownerv1.OwnerRef{
-									Value: &ownerv1.OwnerRef_Name{
-										Name: contentModule.FullName().Owner(),
-									},
+
+				&modulev1.CreateModulesRequest{
+					Values: []*modulev1.CreateModulesRequest_Value{
+						{
+							OwnerRef: &ownerv1.OwnerRef{
+								Value: &ownerv1.OwnerRef_Name{
+									Name: contentModule.FullName().Owner(),
 								},
-								Name:             contentModule.FullName().Name(),
-								Visibility:       v1ProtoCreateModuleVisibility,
-								DefaultLabelName: createDefaultLabel,
 							},
+							Name:             contentModule.FullName().Name(),
+							Visibility:       v1ProtoCreateModuleVisibility,
+							DefaultLabelName: createDefaultLabel,
 						},
 					},
-				),
+				},
 			)
 			if err != nil {
 				return nil, err
 			}
 			// Check that we only created a single module
-			if len(response.Msg.Modules) != 1 {
-				return nil, syserror.Newf("expected 1 Module, found %d", len(response.Msg.Modules))
+			if len(response.Modules) != 1 {
+				return nil, syserror.Newf("expected 1 Module, found %d", len(response.Modules))
 			}
 			// Return the created module.
-			return response.Msg.Modules[0], nil
+			return response.Modules[0], nil
 		}
 		return nil, err
 	}
@@ -425,28 +422,27 @@ func (a *uploader) validateContentModulesExist(
 ) ([]*modulev1.Module, error) {
 	response, err := a.moduleClientProvider.V1ModuleServiceClient(primaryRegistry).GetModules(
 		ctx,
-		connect.NewRequest(
-			&modulev1.GetModulesRequest{
-				ModuleRefs: xslices.Map(
-					contentModules,
-					func(module bufmodule.Module) *modulev1.ModuleRef {
-						return &modulev1.ModuleRef{
-							Value: &modulev1.ModuleRef_Name_{
-								Name: &modulev1.ModuleRef_Name{
-									Owner:  module.FullName().Owner(),
-									Module: module.FullName().Name(),
-								},
+
+		&modulev1.GetModulesRequest{
+			ModuleRefs: xslices.Map(
+				contentModules,
+				func(module bufmodule.Module) *modulev1.ModuleRef {
+					return &modulev1.ModuleRef{
+						Value: &modulev1.ModuleRef_Name_{
+							Name: &modulev1.ModuleRef_Name{
+								Owner:  module.FullName().Owner(),
+								Module: module.FullName().Name(),
 							},
-						}
-					},
-				),
-			},
-		),
+						},
+					}
+				},
+			),
+		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	return response.Msg.Modules, nil
+	return response.Modules, nil
 }
 
 func getV1Beta1ProtoUploadRequestContent(

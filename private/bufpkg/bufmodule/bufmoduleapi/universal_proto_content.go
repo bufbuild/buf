@@ -21,7 +21,6 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -104,27 +103,26 @@ func getV1ProtoContentsForRegistryAndResourceRefs(
 ) ([]*modulev1.DownloadResponse_Content, error) {
 	response, err := moduleClientProvider.V1DownloadServiceClient(registry).Download(
 		ctx,
-		connect.NewRequest(
-			&modulev1.DownloadRequest{
-				// TODO FUTURE: chunking
-				Values: xslices.Map(
-					v1ProtoResourceRefs,
-					func(v1ProtoResourceRef *modulev1.ResourceRef) *modulev1.DownloadRequest_Value {
-						return &modulev1.DownloadRequest_Value{
-							ResourceRef: v1ProtoResourceRef,
-						}
-					},
-				),
-			},
-		),
+
+		&modulev1.DownloadRequest{
+			// TODO FUTURE: chunking
+			Values: xslices.Map(
+				v1ProtoResourceRefs,
+				func(v1ProtoResourceRef *modulev1.ResourceRef) *modulev1.DownloadRequest_Value {
+					return &modulev1.DownloadRequest_Value{
+						ResourceRef: v1ProtoResourceRef,
+					}
+				},
+			),
+		},
 	)
 	if err != nil {
 		return nil, maybeNewNotFoundError(err)
 	}
-	if len(response.Msg.Contents) != len(v1ProtoResourceRefs) {
-		return nil, fmt.Errorf("expected %d Contents, got %d", len(v1ProtoResourceRefs), len(response.Msg.Contents))
+	if len(response.Contents) != len(v1ProtoResourceRefs) {
+		return nil, fmt.Errorf("expected %d Contents, got %d", len(v1ProtoResourceRefs), len(response.Contents))
 	}
-	return response.Msg.Contents, nil
+	return response.Contents, nil
 }
 
 func getV1Beta1ProtoContentsForRegistryAndResourceRefs(
@@ -140,26 +138,25 @@ func getV1Beta1ProtoContentsForRegistryAndResourceRefs(
 	}
 	response, err := moduleClientProvider.V1Beta1DownloadServiceClient(registry).Download(
 		ctx,
-		connect.NewRequest(
-			&modulev1beta1.DownloadRequest{
-				// TODO FUTURE: chunking
-				Values: xslices.Map(
-					v1beta1ProtoResourceRefs,
-					func(v1beta1ProtoResourceRef *modulev1beta1.ResourceRef) *modulev1beta1.DownloadRequest_Value {
-						return &modulev1beta1.DownloadRequest_Value{
-							ResourceRef: v1beta1ProtoResourceRef,
-						}
-					},
-				),
-				DigestType: v1beta1ProtoDigestType,
-			},
-		),
+
+		&modulev1beta1.DownloadRequest{
+			// TODO FUTURE: chunking
+			Values: xslices.Map(
+				v1beta1ProtoResourceRefs,
+				func(v1beta1ProtoResourceRef *modulev1beta1.ResourceRef) *modulev1beta1.DownloadRequest_Value {
+					return &modulev1beta1.DownloadRequest_Value{
+						ResourceRef: v1beta1ProtoResourceRef,
+					}
+				},
+			),
+			DigestType: v1beta1ProtoDigestType,
+		},
 	)
 	if err != nil {
 		return nil, maybeNewNotFoundError(err)
 	}
-	if len(response.Msg.Contents) != len(v1beta1ProtoResourceRefs) {
-		return nil, fmt.Errorf("expected %d Contents, got %d", len(v1beta1ProtoResourceRefs), len(response.Msg.Contents))
+	if len(response.Contents) != len(v1beta1ProtoResourceRefs) {
+		return nil, fmt.Errorf("expected %d Contents, got %d", len(v1beta1ProtoResourceRefs), len(response.Contents))
 	}
-	return response.Msg.Contents, nil
+	return response.Contents, nil
 }

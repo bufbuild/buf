@@ -1,0 +1,12 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: buf.build/gen/go/bufbuild/registry/protocolbuffers/go
+plugins:
+  - local: protoc-gen-connect-go
+    out: private/gen/proto/connect
+    opt: paths=source_relative
+inputs:
+  - module: buf.build/bufbuild/registry

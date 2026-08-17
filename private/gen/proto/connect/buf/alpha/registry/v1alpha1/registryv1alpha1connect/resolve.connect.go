@@ -19,20 +19,11 @@
 package registryv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// ResolveServiceName is the fully-qualified name of the ResolveService service.
@@ -41,47 +32,129 @@ const (
 	LocalResolveServiceName = "buf.alpha.registry.v1alpha1.LocalResolveService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// ResolveServiceGetModulePinsProcedure is the fully-qualified name of the ResolveService's
-	// GetModulePins RPC.
-	ResolveServiceGetModulePinsProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetModulePins"
-	// ResolveServiceGetSDKInfoProcedure is the fully-qualified name of the ResolveService's GetSDKInfo
+	// ResolveServiceGetModulePinsProcedure is the procedure name of the ResolveService's GetModulePins
 	// RPC.
+	ResolveServiceGetModulePinsProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetModulePins"
+	// ResolveServiceGetSDKInfoProcedure is the procedure name of the ResolveService's GetSDKInfo RPC.
 	ResolveServiceGetSDKInfoProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetSDKInfo"
-	// ResolveServiceGetGoVersionProcedure is the fully-qualified name of the ResolveService's
-	// GetGoVersion RPC.
+	// ResolveServiceGetGoVersionProcedure is the procedure name of the ResolveService's GetGoVersion
+	// RPC.
 	ResolveServiceGetGoVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetGoVersion"
-	// ResolveServiceGetSwiftVersionProcedure is the fully-qualified name of the ResolveService's
+	// ResolveServiceGetSwiftVersionProcedure is the procedure name of the ResolveService's
 	// GetSwiftVersion RPC.
 	ResolveServiceGetSwiftVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetSwiftVersion"
-	// ResolveServiceGetMavenVersionProcedure is the fully-qualified name of the ResolveService's
+	// ResolveServiceGetMavenVersionProcedure is the procedure name of the ResolveService's
 	// GetMavenVersion RPC.
 	ResolveServiceGetMavenVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetMavenVersion"
-	// ResolveServiceGetNPMVersionProcedure is the fully-qualified name of the ResolveService's
-	// GetNPMVersion RPC.
+	// ResolveServiceGetNPMVersionProcedure is the procedure name of the ResolveService's GetNPMVersion
+	// RPC.
 	ResolveServiceGetNPMVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetNPMVersion"
-	// ResolveServiceGetPythonVersionProcedure is the fully-qualified name of the ResolveService's
+	// ResolveServiceGetPythonVersionProcedure is the procedure name of the ResolveService's
 	// GetPythonVersion RPC.
 	ResolveServiceGetPythonVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetPythonVersion"
-	// ResolveServiceGetCargoVersionProcedure is the fully-qualified name of the ResolveService's
+	// ResolveServiceGetCargoVersionProcedure is the procedure name of the ResolveService's
 	// GetCargoVersion RPC.
 	ResolveServiceGetCargoVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetCargoVersion"
-	// ResolveServiceGetNugetVersionProcedure is the fully-qualified name of the ResolveService's
+	// ResolveServiceGetNugetVersionProcedure is the procedure name of the ResolveService's
 	// GetNugetVersion RPC.
 	ResolveServiceGetNugetVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetNugetVersion"
-	// ResolveServiceGetCmakeVersionProcedure is the fully-qualified name of the ResolveService's
+	// ResolveServiceGetCmakeVersionProcedure is the procedure name of the ResolveService's
 	// GetCmakeVersion RPC.
 	ResolveServiceGetCmakeVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetCmakeVersion"
-	// LocalResolveServiceGetLocalModulePinsProcedure is the fully-qualified name of the
-	// LocalResolveService's GetLocalModulePins RPC.
+	// LocalResolveServiceGetLocalModulePinsProcedure is the procedure name of the LocalResolveService's
+	// GetLocalModulePins RPC.
 	LocalResolveServiceGetLocalModulePinsProcedure = "/buf.alpha.registry.v1alpha1.LocalResolveService/GetLocalModulePins"
+)
+
+var (
+	resolveServiceGetModulePinsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("ResolveService").Methods().ByName("GetModulePins"),
+			Procedure:        ResolveServiceGetModulePinsProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	resolveServiceGetSDKInfoSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("ResolveService").Methods().ByName("GetSDKInfo"),
+			Procedure:        ResolveServiceGetSDKInfoProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	resolveServiceGetGoVersionSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("ResolveService").Methods().ByName("GetGoVersion"),
+			Procedure:        ResolveServiceGetGoVersionProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	resolveServiceGetSwiftVersionSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("ResolveService").Methods().ByName("GetSwiftVersion"),
+			Procedure:        ResolveServiceGetSwiftVersionProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	resolveServiceGetMavenVersionSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("ResolveService").Methods().ByName("GetMavenVersion"),
+			Procedure:        ResolveServiceGetMavenVersionProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	resolveServiceGetNPMVersionSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("ResolveService").Methods().ByName("GetNPMVersion"),
+			Procedure:        ResolveServiceGetNPMVersionProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	resolveServiceGetPythonVersionSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("ResolveService").Methods().ByName("GetPythonVersion"),
+			Procedure:        ResolveServiceGetPythonVersionProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	resolveServiceGetCargoVersionSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("ResolveService").Methods().ByName("GetCargoVersion"),
+			Procedure:        ResolveServiceGetCargoVersionProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	resolveServiceGetNugetVersionSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("ResolveService").Methods().ByName("GetNugetVersion"),
+			Procedure:        ResolveServiceGetNugetVersionProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	resolveServiceGetCmakeVersionSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("ResolveService").Methods().ByName("GetCmakeVersion"),
+			Procedure:        ResolveServiceGetCmakeVersionProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
 )
 
 // ResolveServiceClient is a client for the buf.alpha.registry.v1alpha1.ResolveService service.
@@ -93,7 +166,7 @@ type ResolveServiceClient interface {
 	// to make sure this function can do dependency resolution.
 	//
 	// This function also deals with tiebreaking what ModulePin wins for the same repository.
-	GetModulePins(context.Context, *connect.Request[v1alpha1.GetModulePinsRequest]) (*connect.Response[v1alpha1.GetModulePinsResponse], error)
+	GetModulePins(context.Context, *v1alpha1.GetModulePinsRequest) (*v1alpha1.GetModulePinsResponse, error)
 	// GetSDKInfo takes a module, plugin, and optionally SDK version, and returns the SDK
 	// info. The SDK info includes the module, module commit, module commit create time, plugin,
 	// plugin version, plugin revision, and the SDK version string
@@ -106,171 +179,29 @@ type ResolveServiceClient interface {
 	// This replaces the need for all subsequent RPCs, which requires the caller to resolve
 	// the registry type first. Instead, the registry type will be resolved based on the plugin
 	// information provided.
-	GetSDKInfo(context.Context, *connect.Request[v1alpha1.GetSDKInfoRequest]) (*connect.Response[v1alpha1.GetSDKInfoResponse], error)
+	GetSDKInfo(context.Context, *v1alpha1.GetSDKInfoRequest) (*v1alpha1.GetSDKInfoResponse, error)
 	// GetGoVersion resolves the given plugin and module references to a version.
-	GetGoVersion(context.Context, *connect.Request[v1alpha1.GetGoVersionRequest]) (*connect.Response[v1alpha1.GetGoVersionResponse], error)
+	GetGoVersion(context.Context, *v1alpha1.GetGoVersionRequest) (*v1alpha1.GetGoVersionResponse, error)
 	// GetSwiftVersion resolves the given plugin and module references to a version.
-	GetSwiftVersion(context.Context, *connect.Request[v1alpha1.GetSwiftVersionRequest]) (*connect.Response[v1alpha1.GetSwiftVersionResponse], error)
+	GetSwiftVersion(context.Context, *v1alpha1.GetSwiftVersionRequest) (*v1alpha1.GetSwiftVersionResponse, error)
 	// GetMavenVersion resolves the given plugin and module references to a version.
-	GetMavenVersion(context.Context, *connect.Request[v1alpha1.GetMavenVersionRequest]) (*connect.Response[v1alpha1.GetMavenVersionResponse], error)
+	GetMavenVersion(context.Context, *v1alpha1.GetMavenVersionRequest) (*v1alpha1.GetMavenVersionResponse, error)
 	// GetNPMVersion resolves the given plugin and module references to a version.
-	GetNPMVersion(context.Context, *connect.Request[v1alpha1.GetNPMVersionRequest]) (*connect.Response[v1alpha1.GetNPMVersionResponse], error)
+	GetNPMVersion(context.Context, *v1alpha1.GetNPMVersionRequest) (*v1alpha1.GetNPMVersionResponse, error)
 	// GetPythonVersion resolves the given plugin and module references to a version.
-	GetPythonVersion(context.Context, *connect.Request[v1alpha1.GetPythonVersionRequest]) (*connect.Response[v1alpha1.GetPythonVersionResponse], error)
+	GetPythonVersion(context.Context, *v1alpha1.GetPythonVersionRequest) (*v1alpha1.GetPythonVersionResponse, error)
 	// GetCargoVersion resolves the given plugin and module references to a version.
-	GetCargoVersion(context.Context, *connect.Request[v1alpha1.GetCargoVersionRequest]) (*connect.Response[v1alpha1.GetCargoVersionResponse], error)
+	GetCargoVersion(context.Context, *v1alpha1.GetCargoVersionRequest) (*v1alpha1.GetCargoVersionResponse, error)
 	// GetNugetVersion resolves the given plugin and module references to a version.
-	GetNugetVersion(context.Context, *connect.Request[v1alpha1.GetNugetVersionRequest]) (*connect.Response[v1alpha1.GetNugetVersionResponse], error)
+	GetNugetVersion(context.Context, *v1alpha1.GetNugetVersionRequest) (*v1alpha1.GetNugetVersionResponse, error)
 	// GetCmakeVersion resolves the given plugin and module references to a version.
-	GetCmakeVersion(context.Context, *connect.Request[v1alpha1.GetCmakeVersionRequest]) (*connect.Response[v1alpha1.GetCmakeVersionResponse], error)
+	GetCmakeVersion(context.Context, *v1alpha1.GetCmakeVersionRequest) (*v1alpha1.GetCmakeVersionResponse, error)
 }
 
 // NewResolveServiceClient constructs a client for the buf.alpha.registry.v1alpha1.ResolveService
-// service. By default, it uses the Connect protocol with the binary Protobuf Codec, asks for
-// gzipped responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply
-// the connect.WithGRPC() or connect.WithGRPCWeb() options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewResolveServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ResolveServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	resolveServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("ResolveService").Methods()
-	return &resolveServiceClient{
-		getModulePins: connect.NewClient[v1alpha1.GetModulePinsRequest, v1alpha1.GetModulePinsResponse](
-			httpClient,
-			baseURL+ResolveServiceGetModulePinsProcedure,
-			connect.WithSchema(resolveServiceMethods.ByName("GetModulePins")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getSDKInfo: connect.NewClient[v1alpha1.GetSDKInfoRequest, v1alpha1.GetSDKInfoResponse](
-			httpClient,
-			baseURL+ResolveServiceGetSDKInfoProcedure,
-			connect.WithSchema(resolveServiceMethods.ByName("GetSDKInfo")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getGoVersion: connect.NewClient[v1alpha1.GetGoVersionRequest, v1alpha1.GetGoVersionResponse](
-			httpClient,
-			baseURL+ResolveServiceGetGoVersionProcedure,
-			connect.WithSchema(resolveServiceMethods.ByName("GetGoVersion")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getSwiftVersion: connect.NewClient[v1alpha1.GetSwiftVersionRequest, v1alpha1.GetSwiftVersionResponse](
-			httpClient,
-			baseURL+ResolveServiceGetSwiftVersionProcedure,
-			connect.WithSchema(resolveServiceMethods.ByName("GetSwiftVersion")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getMavenVersion: connect.NewClient[v1alpha1.GetMavenVersionRequest, v1alpha1.GetMavenVersionResponse](
-			httpClient,
-			baseURL+ResolveServiceGetMavenVersionProcedure,
-			connect.WithSchema(resolveServiceMethods.ByName("GetMavenVersion")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getNPMVersion: connect.NewClient[v1alpha1.GetNPMVersionRequest, v1alpha1.GetNPMVersionResponse](
-			httpClient,
-			baseURL+ResolveServiceGetNPMVersionProcedure,
-			connect.WithSchema(resolveServiceMethods.ByName("GetNPMVersion")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getPythonVersion: connect.NewClient[v1alpha1.GetPythonVersionRequest, v1alpha1.GetPythonVersionResponse](
-			httpClient,
-			baseURL+ResolveServiceGetPythonVersionProcedure,
-			connect.WithSchema(resolveServiceMethods.ByName("GetPythonVersion")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getCargoVersion: connect.NewClient[v1alpha1.GetCargoVersionRequest, v1alpha1.GetCargoVersionResponse](
-			httpClient,
-			baseURL+ResolveServiceGetCargoVersionProcedure,
-			connect.WithSchema(resolveServiceMethods.ByName("GetCargoVersion")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getNugetVersion: connect.NewClient[v1alpha1.GetNugetVersionRequest, v1alpha1.GetNugetVersionResponse](
-			httpClient,
-			baseURL+ResolveServiceGetNugetVersionProcedure,
-			connect.WithSchema(resolveServiceMethods.ByName("GetNugetVersion")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getCmakeVersion: connect.NewClient[v1alpha1.GetCmakeVersionRequest, v1alpha1.GetCmakeVersionResponse](
-			httpClient,
-			baseURL+ResolveServiceGetCmakeVersionProcedure,
-			connect.WithSchema(resolveServiceMethods.ByName("GetCmakeVersion")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// resolveServiceClient implements ResolveServiceClient.
-type resolveServiceClient struct {
-	getModulePins    *connect.Client[v1alpha1.GetModulePinsRequest, v1alpha1.GetModulePinsResponse]
-	getSDKInfo       *connect.Client[v1alpha1.GetSDKInfoRequest, v1alpha1.GetSDKInfoResponse]
-	getGoVersion     *connect.Client[v1alpha1.GetGoVersionRequest, v1alpha1.GetGoVersionResponse]
-	getSwiftVersion  *connect.Client[v1alpha1.GetSwiftVersionRequest, v1alpha1.GetSwiftVersionResponse]
-	getMavenVersion  *connect.Client[v1alpha1.GetMavenVersionRequest, v1alpha1.GetMavenVersionResponse]
-	getNPMVersion    *connect.Client[v1alpha1.GetNPMVersionRequest, v1alpha1.GetNPMVersionResponse]
-	getPythonVersion *connect.Client[v1alpha1.GetPythonVersionRequest, v1alpha1.GetPythonVersionResponse]
-	getCargoVersion  *connect.Client[v1alpha1.GetCargoVersionRequest, v1alpha1.GetCargoVersionResponse]
-	getNugetVersion  *connect.Client[v1alpha1.GetNugetVersionRequest, v1alpha1.GetNugetVersionResponse]
-	getCmakeVersion  *connect.Client[v1alpha1.GetCmakeVersionRequest, v1alpha1.GetCmakeVersionResponse]
-}
-
-// GetModulePins calls buf.alpha.registry.v1alpha1.ResolveService.GetModulePins.
-func (c *resolveServiceClient) GetModulePins(ctx context.Context, req *connect.Request[v1alpha1.GetModulePinsRequest]) (*connect.Response[v1alpha1.GetModulePinsResponse], error) {
-	return c.getModulePins.CallUnary(ctx, req)
-}
-
-// GetSDKInfo calls buf.alpha.registry.v1alpha1.ResolveService.GetSDKInfo.
-func (c *resolveServiceClient) GetSDKInfo(ctx context.Context, req *connect.Request[v1alpha1.GetSDKInfoRequest]) (*connect.Response[v1alpha1.GetSDKInfoResponse], error) {
-	return c.getSDKInfo.CallUnary(ctx, req)
-}
-
-// GetGoVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetGoVersion.
-func (c *resolveServiceClient) GetGoVersion(ctx context.Context, req *connect.Request[v1alpha1.GetGoVersionRequest]) (*connect.Response[v1alpha1.GetGoVersionResponse], error) {
-	return c.getGoVersion.CallUnary(ctx, req)
-}
-
-// GetSwiftVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetSwiftVersion.
-func (c *resolveServiceClient) GetSwiftVersion(ctx context.Context, req *connect.Request[v1alpha1.GetSwiftVersionRequest]) (*connect.Response[v1alpha1.GetSwiftVersionResponse], error) {
-	return c.getSwiftVersion.CallUnary(ctx, req)
-}
-
-// GetMavenVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetMavenVersion.
-func (c *resolveServiceClient) GetMavenVersion(ctx context.Context, req *connect.Request[v1alpha1.GetMavenVersionRequest]) (*connect.Response[v1alpha1.GetMavenVersionResponse], error) {
-	return c.getMavenVersion.CallUnary(ctx, req)
-}
-
-// GetNPMVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetNPMVersion.
-func (c *resolveServiceClient) GetNPMVersion(ctx context.Context, req *connect.Request[v1alpha1.GetNPMVersionRequest]) (*connect.Response[v1alpha1.GetNPMVersionResponse], error) {
-	return c.getNPMVersion.CallUnary(ctx, req)
-}
-
-// GetPythonVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetPythonVersion.
-func (c *resolveServiceClient) GetPythonVersion(ctx context.Context, req *connect.Request[v1alpha1.GetPythonVersionRequest]) (*connect.Response[v1alpha1.GetPythonVersionResponse], error) {
-	return c.getPythonVersion.CallUnary(ctx, req)
-}
-
-// GetCargoVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetCargoVersion.
-func (c *resolveServiceClient) GetCargoVersion(ctx context.Context, req *connect.Request[v1alpha1.GetCargoVersionRequest]) (*connect.Response[v1alpha1.GetCargoVersionResponse], error) {
-	return c.getCargoVersion.CallUnary(ctx, req)
-}
-
-// GetNugetVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetNugetVersion.
-func (c *resolveServiceClient) GetNugetVersion(ctx context.Context, req *connect.Request[v1alpha1.GetNugetVersionRequest]) (*connect.Response[v1alpha1.GetNugetVersionResponse], error) {
-	return c.getNugetVersion.CallUnary(ctx, req)
-}
-
-// GetCmakeVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetCmakeVersion.
-func (c *resolveServiceClient) GetCmakeVersion(ctx context.Context, req *connect.Request[v1alpha1.GetCmakeVersionRequest]) (*connect.Response[v1alpha1.GetCmakeVersionResponse], error) {
-	return c.getCmakeVersion.CallUnary(ctx, req)
+// service. Multiple service clients may share a single connect.Client.
+func NewResolveServiceClient(client *connect.Client) ResolveServiceClient {
+	return &resolveServiceClient{client: client}
 }
 
 // ResolveServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.ResolveService
@@ -283,7 +214,7 @@ type ResolveServiceHandler interface {
 	// to make sure this function can do dependency resolution.
 	//
 	// This function also deals with tiebreaking what ModulePin wins for the same repository.
-	GetModulePins(context.Context, *connect.Request[v1alpha1.GetModulePinsRequest]) (*connect.Response[v1alpha1.GetModulePinsResponse], error)
+	GetModulePins(context.Context, *v1alpha1.GetModulePinsRequest) (*v1alpha1.GetModulePinsResponse, error)
 	// GetSDKInfo takes a module, plugin, and optionally SDK version, and returns the SDK
 	// info. The SDK info includes the module, module commit, module commit create time, plugin,
 	// plugin version, plugin revision, and the SDK version string
@@ -296,172 +227,302 @@ type ResolveServiceHandler interface {
 	// This replaces the need for all subsequent RPCs, which requires the caller to resolve
 	// the registry type first. Instead, the registry type will be resolved based on the plugin
 	// information provided.
-	GetSDKInfo(context.Context, *connect.Request[v1alpha1.GetSDKInfoRequest]) (*connect.Response[v1alpha1.GetSDKInfoResponse], error)
+	GetSDKInfo(context.Context, *v1alpha1.GetSDKInfoRequest) (*v1alpha1.GetSDKInfoResponse, error)
 	// GetGoVersion resolves the given plugin and module references to a version.
-	GetGoVersion(context.Context, *connect.Request[v1alpha1.GetGoVersionRequest]) (*connect.Response[v1alpha1.GetGoVersionResponse], error)
+	GetGoVersion(context.Context, *v1alpha1.GetGoVersionRequest) (*v1alpha1.GetGoVersionResponse, error)
 	// GetSwiftVersion resolves the given plugin and module references to a version.
-	GetSwiftVersion(context.Context, *connect.Request[v1alpha1.GetSwiftVersionRequest]) (*connect.Response[v1alpha1.GetSwiftVersionResponse], error)
+	GetSwiftVersion(context.Context, *v1alpha1.GetSwiftVersionRequest) (*v1alpha1.GetSwiftVersionResponse, error)
 	// GetMavenVersion resolves the given plugin and module references to a version.
-	GetMavenVersion(context.Context, *connect.Request[v1alpha1.GetMavenVersionRequest]) (*connect.Response[v1alpha1.GetMavenVersionResponse], error)
+	GetMavenVersion(context.Context, *v1alpha1.GetMavenVersionRequest) (*v1alpha1.GetMavenVersionResponse, error)
 	// GetNPMVersion resolves the given plugin and module references to a version.
-	GetNPMVersion(context.Context, *connect.Request[v1alpha1.GetNPMVersionRequest]) (*connect.Response[v1alpha1.GetNPMVersionResponse], error)
+	GetNPMVersion(context.Context, *v1alpha1.GetNPMVersionRequest) (*v1alpha1.GetNPMVersionResponse, error)
 	// GetPythonVersion resolves the given plugin and module references to a version.
-	GetPythonVersion(context.Context, *connect.Request[v1alpha1.GetPythonVersionRequest]) (*connect.Response[v1alpha1.GetPythonVersionResponse], error)
+	GetPythonVersion(context.Context, *v1alpha1.GetPythonVersionRequest) (*v1alpha1.GetPythonVersionResponse, error)
 	// GetCargoVersion resolves the given plugin and module references to a version.
-	GetCargoVersion(context.Context, *connect.Request[v1alpha1.GetCargoVersionRequest]) (*connect.Response[v1alpha1.GetCargoVersionResponse], error)
+	GetCargoVersion(context.Context, *v1alpha1.GetCargoVersionRequest) (*v1alpha1.GetCargoVersionResponse, error)
 	// GetNugetVersion resolves the given plugin and module references to a version.
-	GetNugetVersion(context.Context, *connect.Request[v1alpha1.GetNugetVersionRequest]) (*connect.Response[v1alpha1.GetNugetVersionResponse], error)
+	GetNugetVersion(context.Context, *v1alpha1.GetNugetVersionRequest) (*v1alpha1.GetNugetVersionResponse, error)
 	// GetCmakeVersion resolves the given plugin and module references to a version.
-	GetCmakeVersion(context.Context, *connect.Request[v1alpha1.GetCmakeVersionRequest]) (*connect.Response[v1alpha1.GetCmakeVersionResponse], error)
+	GetCmakeVersion(context.Context, *v1alpha1.GetCmakeVersionRequest) (*v1alpha1.GetCmakeVersionResponse, error)
 }
 
-// NewResolveServiceHandler builds an HTTP handler from the service implementation. It returns the
-// path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewResolveServiceHandler(svc ResolveServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	resolveServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("ResolveService").Methods()
-	resolveServiceGetModulePinsHandler := connect.NewUnaryHandler(
-		ResolveServiceGetModulePinsProcedure,
-		svc.GetModulePins,
-		connect.WithSchema(resolveServiceMethods.ByName("GetModulePins")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
+// RegisterResolveServiceHandler registers svc as the buf.alpha.registry.v1alpha1.ResolveService
+// implementation on server.
+func RegisterResolveServiceHandler(server *connect.Server, svc ResolveServiceHandler) {
+	adapter := resolveServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: resolveServiceGetModulePinsSpec(), Handler: adapter.getModulePins},
+		connect.Method{Spec: resolveServiceGetSDKInfoSpec(), Handler: adapter.getSDKInfo},
+		connect.Method{Spec: resolveServiceGetGoVersionSpec(), Handler: adapter.getGoVersion},
+		connect.Method{Spec: resolveServiceGetSwiftVersionSpec(), Handler: adapter.getSwiftVersion},
+		connect.Method{Spec: resolveServiceGetMavenVersionSpec(), Handler: adapter.getMavenVersion},
+		connect.Method{Spec: resolveServiceGetNPMVersionSpec(), Handler: adapter.getNPMVersion},
+		connect.Method{Spec: resolveServiceGetPythonVersionSpec(), Handler: adapter.getPythonVersion},
+		connect.Method{Spec: resolveServiceGetCargoVersionSpec(), Handler: adapter.getCargoVersion},
+		connect.Method{Spec: resolveServiceGetNugetVersionSpec(), Handler: adapter.getNugetVersion},
+		connect.Method{Spec: resolveServiceGetCmakeVersionSpec(), Handler: adapter.getCmakeVersion},
 	)
-	resolveServiceGetSDKInfoHandler := connect.NewUnaryHandler(
-		ResolveServiceGetSDKInfoProcedure,
-		svc.GetSDKInfo,
-		connect.WithSchema(resolveServiceMethods.ByName("GetSDKInfo")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	resolveServiceGetGoVersionHandler := connect.NewUnaryHandler(
-		ResolveServiceGetGoVersionProcedure,
-		svc.GetGoVersion,
-		connect.WithSchema(resolveServiceMethods.ByName("GetGoVersion")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	resolveServiceGetSwiftVersionHandler := connect.NewUnaryHandler(
-		ResolveServiceGetSwiftVersionProcedure,
-		svc.GetSwiftVersion,
-		connect.WithSchema(resolveServiceMethods.ByName("GetSwiftVersion")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	resolveServiceGetMavenVersionHandler := connect.NewUnaryHandler(
-		ResolveServiceGetMavenVersionProcedure,
-		svc.GetMavenVersion,
-		connect.WithSchema(resolveServiceMethods.ByName("GetMavenVersion")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	resolveServiceGetNPMVersionHandler := connect.NewUnaryHandler(
-		ResolveServiceGetNPMVersionProcedure,
-		svc.GetNPMVersion,
-		connect.WithSchema(resolveServiceMethods.ByName("GetNPMVersion")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	resolveServiceGetPythonVersionHandler := connect.NewUnaryHandler(
-		ResolveServiceGetPythonVersionProcedure,
-		svc.GetPythonVersion,
-		connect.WithSchema(resolveServiceMethods.ByName("GetPythonVersion")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	resolveServiceGetCargoVersionHandler := connect.NewUnaryHandler(
-		ResolveServiceGetCargoVersionProcedure,
-		svc.GetCargoVersion,
-		connect.WithSchema(resolveServiceMethods.ByName("GetCargoVersion")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	resolveServiceGetNugetVersionHandler := connect.NewUnaryHandler(
-		ResolveServiceGetNugetVersionProcedure,
-		svc.GetNugetVersion,
-		connect.WithSchema(resolveServiceMethods.ByName("GetNugetVersion")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	resolveServiceGetCmakeVersionHandler := connect.NewUnaryHandler(
-		ResolveServiceGetCmakeVersionProcedure,
-		svc.GetCmakeVersion,
-		connect.WithSchema(resolveServiceMethods.ByName("GetCmakeVersion")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	return "/buf.alpha.registry.v1alpha1.ResolveService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case ResolveServiceGetModulePinsProcedure:
-			resolveServiceGetModulePinsHandler.ServeHTTP(w, r)
-		case ResolveServiceGetSDKInfoProcedure:
-			resolveServiceGetSDKInfoHandler.ServeHTTP(w, r)
-		case ResolveServiceGetGoVersionProcedure:
-			resolveServiceGetGoVersionHandler.ServeHTTP(w, r)
-		case ResolveServiceGetSwiftVersionProcedure:
-			resolveServiceGetSwiftVersionHandler.ServeHTTP(w, r)
-		case ResolveServiceGetMavenVersionProcedure:
-			resolveServiceGetMavenVersionHandler.ServeHTTP(w, r)
-		case ResolveServiceGetNPMVersionProcedure:
-			resolveServiceGetNPMVersionHandler.ServeHTTP(w, r)
-		case ResolveServiceGetPythonVersionProcedure:
-			resolveServiceGetPythonVersionHandler.ServeHTTP(w, r)
-		case ResolveServiceGetCargoVersionProcedure:
-			resolveServiceGetCargoVersionHandler.ServeHTTP(w, r)
-		case ResolveServiceGetNugetVersionProcedure:
-			resolveServiceGetNugetVersionHandler.ServeHTTP(w, r)
-		case ResolveServiceGetCmakeVersionProcedure:
-			resolveServiceGetCmakeVersionHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedResolveServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedResolveServiceHandler struct{}
 
-func (UnimplementedResolveServiceHandler) GetModulePins(context.Context, *connect.Request[v1alpha1.GetModulePinsRequest]) (*connect.Response[v1alpha1.GetModulePinsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetModulePins is not implemented"))
+func (UnimplementedResolveServiceHandler) GetModulePins(context.Context, *v1alpha1.GetModulePinsRequest) (*v1alpha1.GetModulePinsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.ResolveService.GetModulePins is not implemented")
 }
 
-func (UnimplementedResolveServiceHandler) GetSDKInfo(context.Context, *connect.Request[v1alpha1.GetSDKInfoRequest]) (*connect.Response[v1alpha1.GetSDKInfoResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetSDKInfo is not implemented"))
+func (UnimplementedResolveServiceHandler) GetSDKInfo(context.Context, *v1alpha1.GetSDKInfoRequest) (*v1alpha1.GetSDKInfoResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.ResolveService.GetSDKInfo is not implemented")
 }
 
-func (UnimplementedResolveServiceHandler) GetGoVersion(context.Context, *connect.Request[v1alpha1.GetGoVersionRequest]) (*connect.Response[v1alpha1.GetGoVersionResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetGoVersion is not implemented"))
+func (UnimplementedResolveServiceHandler) GetGoVersion(context.Context, *v1alpha1.GetGoVersionRequest) (*v1alpha1.GetGoVersionResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.ResolveService.GetGoVersion is not implemented")
 }
 
-func (UnimplementedResolveServiceHandler) GetSwiftVersion(context.Context, *connect.Request[v1alpha1.GetSwiftVersionRequest]) (*connect.Response[v1alpha1.GetSwiftVersionResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetSwiftVersion is not implemented"))
+func (UnimplementedResolveServiceHandler) GetSwiftVersion(context.Context, *v1alpha1.GetSwiftVersionRequest) (*v1alpha1.GetSwiftVersionResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.ResolveService.GetSwiftVersion is not implemented")
 }
 
-func (UnimplementedResolveServiceHandler) GetMavenVersion(context.Context, *connect.Request[v1alpha1.GetMavenVersionRequest]) (*connect.Response[v1alpha1.GetMavenVersionResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetMavenVersion is not implemented"))
+func (UnimplementedResolveServiceHandler) GetMavenVersion(context.Context, *v1alpha1.GetMavenVersionRequest) (*v1alpha1.GetMavenVersionResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.ResolveService.GetMavenVersion is not implemented")
 }
 
-func (UnimplementedResolveServiceHandler) GetNPMVersion(context.Context, *connect.Request[v1alpha1.GetNPMVersionRequest]) (*connect.Response[v1alpha1.GetNPMVersionResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetNPMVersion is not implemented"))
+func (UnimplementedResolveServiceHandler) GetNPMVersion(context.Context, *v1alpha1.GetNPMVersionRequest) (*v1alpha1.GetNPMVersionResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.ResolveService.GetNPMVersion is not implemented")
 }
 
-func (UnimplementedResolveServiceHandler) GetPythonVersion(context.Context, *connect.Request[v1alpha1.GetPythonVersionRequest]) (*connect.Response[v1alpha1.GetPythonVersionResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetPythonVersion is not implemented"))
+func (UnimplementedResolveServiceHandler) GetPythonVersion(context.Context, *v1alpha1.GetPythonVersionRequest) (*v1alpha1.GetPythonVersionResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.ResolveService.GetPythonVersion is not implemented")
 }
 
-func (UnimplementedResolveServiceHandler) GetCargoVersion(context.Context, *connect.Request[v1alpha1.GetCargoVersionRequest]) (*connect.Response[v1alpha1.GetCargoVersionResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetCargoVersion is not implemented"))
+func (UnimplementedResolveServiceHandler) GetCargoVersion(context.Context, *v1alpha1.GetCargoVersionRequest) (*v1alpha1.GetCargoVersionResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.ResolveService.GetCargoVersion is not implemented")
 }
 
-func (UnimplementedResolveServiceHandler) GetNugetVersion(context.Context, *connect.Request[v1alpha1.GetNugetVersionRequest]) (*connect.Response[v1alpha1.GetNugetVersionResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetNugetVersion is not implemented"))
+func (UnimplementedResolveServiceHandler) GetNugetVersion(context.Context, *v1alpha1.GetNugetVersionRequest) (*v1alpha1.GetNugetVersionResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.ResolveService.GetNugetVersion is not implemented")
 }
 
-func (UnimplementedResolveServiceHandler) GetCmakeVersion(context.Context, *connect.Request[v1alpha1.GetCmakeVersionRequest]) (*connect.Response[v1alpha1.GetCmakeVersionResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetCmakeVersion is not implemented"))
+func (UnimplementedResolveServiceHandler) GetCmakeVersion(context.Context, *v1alpha1.GetCmakeVersionRequest) (*v1alpha1.GetCmakeVersionResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.ResolveService.GetCmakeVersion is not implemented")
 }
+
+type resolveServiceClient struct {
+	client *connect.Client
+}
+
+func (c *resolveServiceClient) GetModulePins(ctx context.Context, req *v1alpha1.GetModulePinsRequest) (*v1alpha1.GetModulePinsResponse, error) {
+	var res v1alpha1.GetModulePinsResponse
+	if err := c.client.CallUnary(ctx, resolveServiceGetModulePinsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *resolveServiceClient) GetSDKInfo(ctx context.Context, req *v1alpha1.GetSDKInfoRequest) (*v1alpha1.GetSDKInfoResponse, error) {
+	var res v1alpha1.GetSDKInfoResponse
+	if err := c.client.CallUnary(ctx, resolveServiceGetSDKInfoSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *resolveServiceClient) GetGoVersion(ctx context.Context, req *v1alpha1.GetGoVersionRequest) (*v1alpha1.GetGoVersionResponse, error) {
+	var res v1alpha1.GetGoVersionResponse
+	if err := c.client.CallUnary(ctx, resolveServiceGetGoVersionSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *resolveServiceClient) GetSwiftVersion(ctx context.Context, req *v1alpha1.GetSwiftVersionRequest) (*v1alpha1.GetSwiftVersionResponse, error) {
+	var res v1alpha1.GetSwiftVersionResponse
+	if err := c.client.CallUnary(ctx, resolveServiceGetSwiftVersionSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *resolveServiceClient) GetMavenVersion(ctx context.Context, req *v1alpha1.GetMavenVersionRequest) (*v1alpha1.GetMavenVersionResponse, error) {
+	var res v1alpha1.GetMavenVersionResponse
+	if err := c.client.CallUnary(ctx, resolveServiceGetMavenVersionSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *resolveServiceClient) GetNPMVersion(ctx context.Context, req *v1alpha1.GetNPMVersionRequest) (*v1alpha1.GetNPMVersionResponse, error) {
+	var res v1alpha1.GetNPMVersionResponse
+	if err := c.client.CallUnary(ctx, resolveServiceGetNPMVersionSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *resolveServiceClient) GetPythonVersion(ctx context.Context, req *v1alpha1.GetPythonVersionRequest) (*v1alpha1.GetPythonVersionResponse, error) {
+	var res v1alpha1.GetPythonVersionResponse
+	if err := c.client.CallUnary(ctx, resolveServiceGetPythonVersionSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *resolveServiceClient) GetCargoVersion(ctx context.Context, req *v1alpha1.GetCargoVersionRequest) (*v1alpha1.GetCargoVersionResponse, error) {
+	var res v1alpha1.GetCargoVersionResponse
+	if err := c.client.CallUnary(ctx, resolveServiceGetCargoVersionSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *resolveServiceClient) GetNugetVersion(ctx context.Context, req *v1alpha1.GetNugetVersionRequest) (*v1alpha1.GetNugetVersionResponse, error) {
+	var res v1alpha1.GetNugetVersionResponse
+	if err := c.client.CallUnary(ctx, resolveServiceGetNugetVersionSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *resolveServiceClient) GetCmakeVersion(ctx context.Context, req *v1alpha1.GetCmakeVersionRequest) (*v1alpha1.GetCmakeVersionResponse, error) {
+	var res v1alpha1.GetCmakeVersionResponse
+	if err := c.client.CallUnary(ctx, resolveServiceGetCmakeVersionSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type resolveServiceHandler struct{ svc ResolveServiceHandler }
+
+func (h resolveServiceHandler) getModulePins(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetModulePinsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetModulePins(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h resolveServiceHandler) getSDKInfo(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetSDKInfoRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetSDKInfo(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h resolveServiceHandler) getGoVersion(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetGoVersionRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetGoVersion(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h resolveServiceHandler) getSwiftVersion(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetSwiftVersionRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetSwiftVersion(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h resolveServiceHandler) getMavenVersion(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetMavenVersionRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetMavenVersion(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h resolveServiceHandler) getNPMVersion(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetNPMVersionRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetNPMVersion(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h resolveServiceHandler) getPythonVersion(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetPythonVersionRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetPythonVersion(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h resolveServiceHandler) getCargoVersion(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetCargoVersionRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetCargoVersion(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h resolveServiceHandler) getNugetVersion(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetNugetVersionRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetNugetVersion(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h resolveServiceHandler) getCmakeVersion(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetCmakeVersionRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetCmakeVersion(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+var (
+	localResolveServiceGetLocalModulePinsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("LocalResolveService").Methods().ByName("GetLocalModulePins"),
+			Procedure:        LocalResolveServiceGetLocalModulePinsProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+)
 
 // LocalResolveServiceClient is a client for the buf.alpha.registry.v1alpha1.LocalResolveService
 // service.
@@ -478,39 +539,14 @@ type LocalResolveServiceClient interface {
 	//  2. Having a separate method makes us able to say "do not make decisions about what
 	//     wins between competing pins for the same repo". This should only be done in
 	//     GetModulePins, not in this function, i.e. only done at the top level.
-	GetLocalModulePins(context.Context, *connect.Request[v1alpha1.GetLocalModulePinsRequest]) (*connect.Response[v1alpha1.GetLocalModulePinsResponse], error)
+	GetLocalModulePins(context.Context, *v1alpha1.GetLocalModulePinsRequest) (*v1alpha1.GetLocalModulePinsResponse, error)
 }
 
 // NewLocalResolveServiceClient constructs a client for the
-// buf.alpha.registry.v1alpha1.LocalResolveService service. By default, it uses the Connect protocol
-// with the binary Protobuf Codec, asks for gzipped responses, and sends uncompressed requests. To
-// use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or connect.WithGRPCWeb()
-// options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewLocalResolveServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) LocalResolveServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	localResolveServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("LocalResolveService").Methods()
-	return &localResolveServiceClient{
-		getLocalModulePins: connect.NewClient[v1alpha1.GetLocalModulePinsRequest, v1alpha1.GetLocalModulePinsResponse](
-			httpClient,
-			baseURL+LocalResolveServiceGetLocalModulePinsProcedure,
-			connect.WithSchema(localResolveServiceMethods.ByName("GetLocalModulePins")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// localResolveServiceClient implements LocalResolveServiceClient.
-type localResolveServiceClient struct {
-	getLocalModulePins *connect.Client[v1alpha1.GetLocalModulePinsRequest, v1alpha1.GetLocalModulePinsResponse]
-}
-
-// GetLocalModulePins calls buf.alpha.registry.v1alpha1.LocalResolveService.GetLocalModulePins.
-func (c *localResolveServiceClient) GetLocalModulePins(ctx context.Context, req *connect.Request[v1alpha1.GetLocalModulePinsRequest]) (*connect.Response[v1alpha1.GetLocalModulePinsResponse], error) {
-	return c.getLocalModulePins.CallUnary(ctx, req)
+// buf.alpha.registry.v1alpha1.LocalResolveService service. Multiple service clients may share a
+// single connect.Client.
+func NewLocalResolveServiceClient(client *connect.Client) LocalResolveServiceClient {
+	return &localResolveServiceClient{client: client}
 }
 
 // LocalResolveServiceHandler is an implementation of the
@@ -528,36 +564,47 @@ type LocalResolveServiceHandler interface {
 	//  2. Having a separate method makes us able to say "do not make decisions about what
 	//     wins between competing pins for the same repo". This should only be done in
 	//     GetModulePins, not in this function, i.e. only done at the top level.
-	GetLocalModulePins(context.Context, *connect.Request[v1alpha1.GetLocalModulePinsRequest]) (*connect.Response[v1alpha1.GetLocalModulePinsResponse], error)
+	GetLocalModulePins(context.Context, *v1alpha1.GetLocalModulePinsRequest) (*v1alpha1.GetLocalModulePinsResponse, error)
 }
 
-// NewLocalResolveServiceHandler builds an HTTP handler from the service implementation. It returns
-// the path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewLocalResolveServiceHandler(svc LocalResolveServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	localResolveServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("LocalResolveService").Methods()
-	localResolveServiceGetLocalModulePinsHandler := connect.NewUnaryHandler(
-		LocalResolveServiceGetLocalModulePinsProcedure,
-		svc.GetLocalModulePins,
-		connect.WithSchema(localResolveServiceMethods.ByName("GetLocalModulePins")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
+// RegisterLocalResolveServiceHandler registers svc as the
+// buf.alpha.registry.v1alpha1.LocalResolveService implementation on server.
+func RegisterLocalResolveServiceHandler(server *connect.Server, svc LocalResolveServiceHandler) {
+	adapter := localResolveServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: localResolveServiceGetLocalModulePinsSpec(), Handler: adapter.getLocalModulePins},
 	)
-	return "/buf.alpha.registry.v1alpha1.LocalResolveService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case LocalResolveServiceGetLocalModulePinsProcedure:
-			localResolveServiceGetLocalModulePinsHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedLocalResolveServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedLocalResolveServiceHandler struct{}
 
-func (UnimplementedLocalResolveServiceHandler) GetLocalModulePins(context.Context, *connect.Request[v1alpha1.GetLocalModulePinsRequest]) (*connect.Response[v1alpha1.GetLocalModulePinsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.LocalResolveService.GetLocalModulePins is not implemented"))
+func (UnimplementedLocalResolveServiceHandler) GetLocalModulePins(context.Context, *v1alpha1.GetLocalModulePinsRequest) (*v1alpha1.GetLocalModulePinsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.LocalResolveService.GetLocalModulePins is not implemented")
+}
+
+type localResolveServiceClient struct {
+	client *connect.Client
+}
+
+func (c *localResolveServiceClient) GetLocalModulePins(ctx context.Context, req *v1alpha1.GetLocalModulePinsRequest) (*v1alpha1.GetLocalModulePinsResponse, error) {
+	var res v1alpha1.GetLocalModulePinsResponse
+	if err := c.client.CallUnary(ctx, localResolveServiceGetLocalModulePinsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type localResolveServiceHandler struct{ svc LocalResolveServiceHandler }
+
+func (h localResolveServiceHandler) getLocalModulePins(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetLocalModulePinsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetLocalModulePins(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

@@ -6,7 +6,6 @@ require (
 	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.12-20260722160903-4d94f3df3a7b.2
 	buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go v1.36.12-20250109164928-1da0de137947.2
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260825204119-511051f7f437.2
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.21.0-20260917220747-82d6da681af1.1
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.12-20260917220747-82d6da681af1.2
 	buf.build/go/app v0.2.1-0.20260824172350-b0e76892c61a
 	buf.build/go/bufplugin v0.10.0
@@ -16,9 +15,9 @@ require (
 	buf.build/go/spdx v0.2.0
 	buf.build/go/standard v0.1.1-0.20260325175353-2b287e071df5
 	cel.dev/cel-go v0.32.0
-	connectrpc.com/connect v1.21.0
-	connectrpc.com/grpcreflect v1.3.0
-	connectrpc.com/otelconnect v0.9.0
+	connectrpc.com/connect/v2 v2.0.0-alpha.1
+	connectrpc.com/grpcreflect/v2 v2.0.0-20260914175832-5035f742eef9
+	connectrpc.com/otelconnect v0.9.1-0.20260914135333-6e9967342265
 	github.com/bufbuild/protocompile v0.14.2-0.20260917202354-386f9fcfc7b9
 	github.com/bufbuild/protoplugin v0.0.0-20260414125817-25d1d281b46b
 	github.com/cli/browser v1.3.0
@@ -100,3 +99,5 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260921155816-b14227669459 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260921155816-b14227669459 // indirect
 )
+
+replace connectrpc.com/grpcreflect/v2 => github.com/connectrpc/grpcreflect-go/v2 v2.0.0-20260914175832-5035f742eef9

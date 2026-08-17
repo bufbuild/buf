@@ -21,7 +21,7 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
@@ -122,23 +122,22 @@ func run(
 	}
 	if _, err := moduleServiceClient.UpdateModules(
 		ctx,
-		&connect.Request[modulev1.UpdateModulesRequest]{
-			Msg: &modulev1.UpdateModulesRequest{
-				Values: []*modulev1.UpdateModulesRequest_Value{
-					{
-						ModuleRef: &modulev1.ModuleRef{
-							Value: &modulev1.ModuleRef_Name_{
-								Name: &modulev1.ModuleRef_Name{
-									Owner:  moduleFullName.Owner(),
-									Module: moduleFullName.Name(),
-								},
+
+		&modulev1.UpdateModulesRequest{
+			Values: []*modulev1.UpdateModulesRequest_Value{
+				{
+					ModuleRef: &modulev1.ModuleRef{
+						Value: &modulev1.ModuleRef_Name_{
+							Name: &modulev1.ModuleRef_Name{
+								Owner:  moduleFullName.Owner(),
+								Module: moduleFullName.Name(),
 							},
 						},
-						Description:      flags.Description,
-						Url:              flags.URL,
-						Visibility:       visibilityUpdate,
-						DefaultLabelName: defaultLabelUpdate,
 					},
+					Description:      flags.Description,
+					Url:              flags.URL,
+					Visibility:       visibilityUpdate,
+					DefaultLabelName: defaultLabelUpdate,
 				},
 			},
 		},

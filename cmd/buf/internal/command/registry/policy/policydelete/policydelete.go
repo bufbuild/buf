@@ -21,7 +21,7 @@ import (
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapipolicy"
@@ -88,7 +88,7 @@ func run(
 	policyServiceClient := bufregistryapipolicy.NewClientProvider(clientConfig).
 		V1Beta1PolicyServiceClient(policyFullName.Registry())
 
-	if _, err := policyServiceClient.DeletePolicies(ctx, connect.NewRequest(
+	if _, err := policyServiceClient.DeletePolicies(ctx,
 		&policyv1beta1.DeletePoliciesRequest{
 			PolicyRefs: []*policyv1beta1.PolicyRef{
 				{
@@ -101,7 +101,7 @@ func run(
 				},
 			},
 		},
-	)); err != nil {
+	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewPolicyNotFoundError(container.Arg(0))
 		}

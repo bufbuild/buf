@@ -21,7 +21,7 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -95,23 +95,22 @@ func run(
 	commitServiceClient := bufregistryapimodule.NewClientProvider(clientConfig).V1CommitServiceClient(moduleRef.FullName().Registry())
 	resp, err := commitServiceClient.GetCommits(
 		ctx,
-		connect.NewRequest(
-			&modulev1.GetCommitsRequest{
-				ResourceRefs: []*modulev1.ResourceRef{
-					{
-						Value: &modulev1.ResourceRef_Name_{
-							Name: &modulev1.ResourceRef_Name{
-								Owner:  moduleRef.FullName().Owner(),
-								Module: moduleRef.FullName().Name(),
-								Child: &modulev1.ResourceRef_Name_Ref{
-									Ref: moduleRef.Ref(),
-								},
+
+		&modulev1.GetCommitsRequest{
+			ResourceRefs: []*modulev1.ResourceRef{
+				{
+					Value: &modulev1.ResourceRef_Name_{
+						Name: &modulev1.ResourceRef_Name{
+							Owner:  moduleRef.FullName().Owner(),
+							Module: moduleRef.FullName().Name(),
+							Child: &modulev1.ResourceRef_Name_Ref{
+								Ref: moduleRef.Ref(),
 							},
 						},
 					},
 				},
 			},
-		),
+		},
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -119,7 +118,7 @@ func run(
 		}
 		return err
 	}
-	commits := resp.Msg.Commits
+	commits := resp.Commits
 	if len(commits) != 1 {
 		return syserror.Newf("expect 1 commit from response, got %d", len(commits))
 	}

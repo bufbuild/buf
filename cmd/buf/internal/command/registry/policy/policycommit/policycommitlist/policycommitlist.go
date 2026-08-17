@@ -22,7 +22,7 @@ import (
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -135,23 +135,22 @@ func run(
 
 	resourceResp, err := resourceServiceClient.GetResources(
 		ctx,
-		connect.NewRequest(
-			&policyv1beta1.GetResourcesRequest{
-				ResourceRefs: []*policyv1beta1.ResourceRef{
-					{
-						Value: &policyv1beta1.ResourceRef_Name_{
-							Name: &policyv1beta1.ResourceRef_Name{
-								Owner:  policyRef.FullName().Owner(),
-								Policy: policyRef.FullName().Name(),
-								Child: &policyv1beta1.ResourceRef_Name_Ref{
-									Ref: policyRef.Ref(),
-								},
+
+		&policyv1beta1.GetResourcesRequest{
+			ResourceRefs: []*policyv1beta1.ResourceRef{
+				{
+					Value: &policyv1beta1.ResourceRef_Name_{
+						Name: &policyv1beta1.ResourceRef_Name{
+							Owner:  policyRef.FullName().Owner(),
+							Policy: policyRef.FullName().Name(),
+							Child: &policyv1beta1.ResourceRef_Name_Ref{
+								Ref: policyRef.Ref(),
 							},
 						},
 					},
 				},
 			},
-		),
+		},
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -159,7 +158,7 @@ func run(
 		}
 		return err
 	}
-	resources := resourceResp.Msg.Resources
+	resources := resourceResp.Resources
 	if len(resources) != 1 {
 		return syserror.Newf("expect 1 resource from response, got %d", len(resources))
 	}
@@ -182,21 +181,20 @@ func run(
 		}
 		resp, err := commitServiceClient.ListCommits(
 			ctx,
-			connect.NewRequest(
-				&policyv1beta1.ListCommitsRequest{
-					PageSize:  flags.PageSize,
-					PageToken: flags.PageToken,
-					ResourceRef: &policyv1beta1.ResourceRef{
-						Value: &policyv1beta1.ResourceRef_Name_{
-							Name: &policyv1beta1.ResourceRef_Name{
-								Owner:  policyRef.FullName().Owner(),
-								Policy: policyRef.FullName().Name(),
-							},
+
+			&policyv1beta1.ListCommitsRequest{
+				PageSize:  flags.PageSize,
+				PageToken: flags.PageToken,
+				ResourceRef: &policyv1beta1.ResourceRef{
+					Value: &policyv1beta1.ResourceRef_Name_{
+						Name: &policyv1beta1.ResourceRef_Name{
+							Owner:  policyRef.FullName().Owner(),
+							Policy: policyRef.FullName().Name(),
 						},
 					},
-					Order: commitOrder,
 				},
-			),
+				Order: commitOrder,
+			},
 		)
 		if err != nil {
 			if connect.CodeOf(err) == connect.CodeNotFound {
@@ -207,9 +205,9 @@ func run(
 		return bufprint.PrintPage(
 			container.Stdout(),
 			format,
-			resp.Msg.NextPageToken,
-			nextPageCommand(container, flags, resp.Msg.NextPageToken),
-			xslices.Map(resp.Msg.Commits, func(commit *policyv1beta1.Commit) bufprint.Entity {
+			resp.NextPageToken,
+			nextPageCommand(container, flags, resp.NextPageToken),
+			xslices.Map(resp.Commits, func(commit *policyv1beta1.Commit) bufprint.Entity {
 				return bufprint.NewCommitEntity(commit, policyRef.FullName(), "") // No source control URL for policy commits
 			}),
 		)
@@ -226,22 +224,21 @@ func run(
 	}
 	resp, err := labelServiceClient.ListLabelHistory(
 		ctx,
-		connect.NewRequest(
-			&policyv1beta1.ListLabelHistoryRequest{
-				PageSize:  flags.PageSize,
-				PageToken: flags.PageToken,
-				LabelRef: &policyv1beta1.LabelRef{
-					Value: &policyv1beta1.LabelRef_Name_{
-						Name: &policyv1beta1.LabelRef_Name{
-							Owner:  policyRef.FullName().Owner(),
-							Policy: policyRef.FullName().Name(),
-							Label:  policyRef.Ref(),
-						},
+
+		&policyv1beta1.ListLabelHistoryRequest{
+			PageSize:  flags.PageSize,
+			PageToken: flags.PageToken,
+			LabelRef: &policyv1beta1.LabelRef{
+				Value: &policyv1beta1.LabelRef_Name_{
+					Name: &policyv1beta1.LabelRef_Name{
+						Owner:  policyRef.FullName().Owner(),
+						Policy: policyRef.FullName().Name(),
+						Label:  policyRef.Ref(),
 					},
 				},
-				Order: labelHistoryOrder,
 			},
-		),
+			Order: labelHistoryOrder,
+		},
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -251,7 +248,7 @@ func run(
 		return err
 	}
 	commits := xslices.Map(
-		resp.Msg.Values,
+		resp.Values,
 		func(value *policyv1beta1.ListLabelHistoryResponse_Value) *policyv1beta1.Commit {
 			return value.Commit
 		},
@@ -259,8 +256,8 @@ func run(
 	return bufprint.PrintPage(
 		container.Stdout(),
 		format,
-		resp.Msg.NextPageToken,
-		nextPageCommand(container, flags, resp.Msg.NextPageToken),
+		resp.NextPageToken,
+		nextPageCommand(container, flags, resp.NextPageToken),
 		xslices.Map(commits, func(commit *policyv1beta1.Commit) bufprint.Entity {
 			return bufprint.NewCommitEntity(commit, policyRef.FullName(), "") // No source control URL for policy commits
 		}),

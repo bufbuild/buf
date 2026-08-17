@@ -23,7 +23,7 @@ import (
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -171,13 +171,13 @@ func (u *uploader) uploadIndexedPluginsForRegistry(
 
 	uploadResponse, err := u.pluginClientProvider.V1Beta1UploadServiceClient(registry).Upload(
 		ctx,
-		connect.NewRequest(&pluginv1beta1.UploadRequest{
+		&pluginv1beta1.UploadRequest{
 			Contents: contents,
-		}))
+		})
 	if err != nil {
 		return nil, err
 	}
-	pluginCommits := uploadResponse.Msg.Commits
+	pluginCommits := uploadResponse.Commits
 	if len(pluginCommits) != len(indexedPlugins) {
 		return nil, syserror.Newf("expected %d Commits, found %d", len(indexedPlugins), len(pluginCommits))
 	}
@@ -233,22 +233,21 @@ func (u *uploader) createPluginIfNotExist(
 	}
 	response, err := u.pluginClientProvider.V1Beta1PluginServiceClient(primaryRegistry).CreatePlugins(
 		ctx,
-		connect.NewRequest(
-			&pluginv1beta1.CreatePluginsRequest{
-				Values: []*pluginv1beta1.CreatePluginsRequest_Value{
-					{
-						OwnerRef: &ownerv1.OwnerRef{
-							Value: &ownerv1.OwnerRef_Name{
-								Name: plugin.FullName().Owner(),
-							},
+
+		&pluginv1beta1.CreatePluginsRequest{
+			Values: []*pluginv1beta1.CreatePluginsRequest_Value{
+				{
+					OwnerRef: &ownerv1.OwnerRef{
+						Value: &ownerv1.OwnerRef_Name{
+							Name: plugin.FullName().Owner(),
 						},
-						Name:       plugin.FullName().Name(),
-						Visibility: v1Beta1ProtoCreatePluginVisibility,
-						Type:       v1Beta1ProtoCreatePluginType,
 					},
+					Name:       plugin.FullName().Name(),
+					Visibility: v1Beta1ProtoCreatePluginVisibility,
+					Type:       v1Beta1ProtoCreatePluginType,
 				},
 			},
-		),
+		},
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {
@@ -264,11 +263,11 @@ func (u *uploader) createPluginIfNotExist(
 		}
 		return nil, err
 	}
-	if len(response.Msg.Plugins) != 1 {
-		return nil, syserror.Newf("expected 1 Plugin, found %d", len(response.Msg.Plugins))
+	if len(response.Plugins) != 1 {
+		return nil, syserror.Newf("expected 1 Plugin, found %d", len(response.Plugins))
 	}
 	// Otherwise we return the plugin we created.
-	return response.Msg.Plugins[0], nil
+	return response.Plugins[0], nil
 }
 
 func (u *uploader) validatePluginsExist(
@@ -278,28 +277,27 @@ func (u *uploader) validatePluginsExist(
 ) ([]*pluginv1beta1.Plugin, error) {
 	response, err := u.pluginClientProvider.V1Beta1PluginServiceClient(primaryRegistry).GetPlugins(
 		ctx,
-		connect.NewRequest(
-			&pluginv1beta1.GetPluginsRequest{
-				PluginRefs: xslices.Map(
-					plugins,
-					func(plugin bufplugin.Plugin) *pluginv1beta1.PluginRef {
-						return &pluginv1beta1.PluginRef{
-							Value: &pluginv1beta1.PluginRef_Name_{
-								Name: &pluginv1beta1.PluginRef_Name{
-									Owner:  plugin.FullName().Owner(),
-									Plugin: plugin.FullName().Name(),
-								},
+
+		&pluginv1beta1.GetPluginsRequest{
+			PluginRefs: xslices.Map(
+				plugins,
+				func(plugin bufplugin.Plugin) *pluginv1beta1.PluginRef {
+					return &pluginv1beta1.PluginRef{
+						Value: &pluginv1beta1.PluginRef_Name_{
+							Name: &pluginv1beta1.PluginRef_Name{
+								Owner:  plugin.FullName().Owner(),
+								Plugin: plugin.FullName().Name(),
 							},
-						}
-					},
-				),
-			},
-		),
+						},
+					}
+				},
+			),
+		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	return response.Msg.Plugins, nil
+	return response.Plugins, nil
 }
 
 func zstdCompress(data []byte) ([]byte, error) {

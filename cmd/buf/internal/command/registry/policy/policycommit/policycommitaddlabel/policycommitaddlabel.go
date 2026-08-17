@@ -22,7 +22,6 @@ import (
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -131,11 +130,10 @@ func run(
 	})
 	resp, err := labelServiceClient.CreateOrUpdateLabels(
 		ctx,
-		connect.NewRequest(
-			&policyv1beta1.CreateOrUpdateLabelsRequest{
-				Values: requestValues,
-			},
-		),
+
+		&policyv1beta1.CreateOrUpdateLabelsRequest{
+			Values: requestValues,
+		},
 	)
 	if err != nil {
 		// Not explicitly handling error with connect.CodeNotFound as
@@ -146,7 +144,7 @@ func run(
 	return bufprint.PrintNames(
 		container.Stdout(),
 		format,
-		xslices.Map(resp.Msg.Labels, func(label *policyv1beta1.Label) bufprint.Entity {
+		xslices.Map(resp.Labels, func(label *policyv1beta1.Label) bufprint.Entity {
 			return bufprint.NewLabelEntity(label, policyRef.FullName())
 		})...,
 	)

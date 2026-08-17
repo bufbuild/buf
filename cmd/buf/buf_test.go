@@ -32,7 +32,7 @@ import (
 	"buf.build/go/app/appcmd/appcmdtesting"
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
@@ -4987,7 +4987,7 @@ func TestWrapErrorInterrupt(t *testing.T) {
 	t.Parallel()
 	canceledCtx, cancel := context.WithCancel(t.Context())
 	cancel()
-	connectCanceledErr := connect.NewError(connect.CodeCanceled, context.Canceled)
+	connectCanceledErr := connect.NewError(connect.CodeCanceled, context.Canceled.Error()).WithCause(context.Canceled)
 
 	// Root context is canceled.
 	require.EqualError(t, wrapError(canceledCtx, connectCanceledErr), "Failure: interrupted")

@@ -21,7 +21,7 @@ import (
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
@@ -93,17 +93,16 @@ func run(
 	organizationServiceClient := ownerClientProvider.V1OrganizationServiceClient(moduleOwner.Registry())
 	resp, err := organizationServiceClient.GetOrganizations(
 		ctx,
-		connect.NewRequest(
-			&ownerv1.GetOrganizationsRequest{
-				OrganizationRefs: []*ownerv1.OrganizationRef{
-					{
-						Value: &ownerv1.OrganizationRef_Name{
-							Name: moduleOwner.Owner(),
-						},
+
+		&ownerv1.GetOrganizationsRequest{
+			OrganizationRefs: []*ownerv1.OrganizationRef{
+				{
+					Value: &ownerv1.OrganizationRef_Name{
+						Name: moduleOwner.Owner(),
 					},
 				},
 			},
-		),
+		},
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -111,7 +110,7 @@ func run(
 		}
 		return err
 	}
-	organizations := resp.Msg.GetOrganizations()
+	organizations := resp.GetOrganizations()
 	if len(organizations) != 1 {
 		return syserror.Newf("unexpected number of organizations returned from server: %d", len(organizations))
 	}

@@ -22,7 +22,7 @@ import (
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -135,25 +135,24 @@ func run(
 	}
 	resp, err := labelServiceClient.ListLabels(
 		ctx,
-		connect.NewRequest(
-			&modulev1.ListLabelsRequest{
-				PageSize:  flags.PageSize,
-				PageToken: flags.PageToken,
-				ResourceRef: &modulev1.ResourceRef{
-					Value: &modulev1.ResourceRef_Name_{
-						Name: &modulev1.ResourceRef_Name{
-							Owner:  moduleFullName.Owner(),
-							Module: moduleFullName.Name(),
-							Child: &modulev1.ResourceRef_Name_Ref{
-								Ref: moduleRef.Ref(),
-							},
+
+		&modulev1.ListLabelsRequest{
+			PageSize:  flags.PageSize,
+			PageToken: flags.PageToken,
+			ResourceRef: &modulev1.ResourceRef{
+				Value: &modulev1.ResourceRef_Name_{
+					Name: &modulev1.ResourceRef_Name{
+						Owner:  moduleFullName.Owner(),
+						Module: moduleFullName.Name(),
+						Child: &modulev1.ResourceRef_Name_Ref{
+							Ref: moduleRef.Ref(),
 						},
 					},
 				},
-				Order:         order,
-				ArchiveFilter: archiveStatusFilter,
 			},
-		),
+			Order:         order,
+			ArchiveFilter: archiveStatusFilter,
+		},
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -164,9 +163,9 @@ func run(
 	return bufprint.PrintPage(
 		container.Stdout(),
 		format,
-		resp.Msg.NextPageToken,
-		nextPageCommand(container, flags, resp.Msg.NextPageToken),
-		xslices.Map(resp.Msg.Labels, func(label *modulev1.Label) bufprint.Entity {
+		resp.NextPageToken,
+		nextPageCommand(container, flags, resp.NextPageToken),
+		xslices.Map(resp.Labels, func(label *modulev1.Label) bufprint.Entity {
 			return bufprint.NewLabelEntity(label, moduleFullName)
 		}),
 	)

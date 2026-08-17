@@ -19,7 +19,6 @@ import (
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -90,11 +89,10 @@ func run(
 	service := connectclient.Make(clientConfig, flags.Remote, registryv1alpha1connect.NewWebhookServiceClient)
 	if _, err := service.DeleteWebhook(
 		ctx,
-		connect.NewRequest(
-			registryv1alpha1.DeleteWebhookRequest_builder{
-				WebhookId: flags.WebhookID,
-			}.Build(),
-		),
+
+		registryv1alpha1.DeleteWebhookRequest_builder{
+			WebhookId: flags.WebhookID,
+		}.Build(),
 	); err != nil {
 		return err
 	}
