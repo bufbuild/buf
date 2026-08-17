@@ -20,7 +20,6 @@ import (
 	"log/slog"
 
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
 	"github.com/bufbuild/buf/private/pkg/cache"
 )
@@ -56,25 +55,24 @@ func (a *v1ProtoOwnerProvider) getV1ProtoOwnerForProtoOwnerID(
 		func() (*ownerv1.Owner, error) {
 			response, err := a.ownerClientProvider.V1OwnerServiceClient(registry).GetOwners(
 				ctx,
-				connect.NewRequest(
-					&ownerv1.GetOwnersRequest{
-						OwnerRefs: []*ownerv1.OwnerRef{
-							{
-								Value: &ownerv1.OwnerRef_Id{
-									Id: protoOwnerID,
-								},
+
+				&ownerv1.GetOwnersRequest{
+					OwnerRefs: []*ownerv1.OwnerRef{
+						{
+							Value: &ownerv1.OwnerRef_Id{
+								Id: protoOwnerID,
 							},
 						},
 					},
-				),
+				},
 			)
 			if err != nil {
 				return nil, err
 			}
-			if len(response.Msg.Owners) != 1 {
-				return nil, fmt.Errorf("expected 1 Owner, got %d", len(response.Msg.Owners))
+			if len(response.Owners) != 1 {
+				return nil, fmt.Errorf("expected 1 Owner, got %d", len(response.Owners))
 			}
-			return response.Msg.Owners[0], nil
+			return response.Owners[0], nil
 		},
 	)
 }

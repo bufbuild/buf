@@ -19,73 +19,50 @@
 package registryv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// ConvertServiceName is the fully-qualified name of the ConvertService service.
 	ConvertServiceName = "buf.alpha.registry.v1alpha1.ConvertService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// ConvertServiceConvertProcedure is the fully-qualified name of the ConvertService's Convert RPC.
+	// ConvertServiceConvertProcedure is the procedure name of the ConvertService's Convert RPC.
 	ConvertServiceConvertProcedure = "/buf.alpha.registry.v1alpha1.ConvertService/Convert"
+)
+
+var (
+	convertServiceConvertSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1alpha1.File_buf_alpha_registry_v1alpha1_convert_proto.Services().ByName("ConvertService").Methods().ByName("Convert"),
+			Procedure:  ConvertServiceConvertProcedure,
+		}
+	})
 )
 
 // ConvertServiceClient is a client for the buf.alpha.registry.v1alpha1.ConvertService service.
 type ConvertServiceClient interface {
 	// Convert converts a serialized message according to
 	// the provided type name using an image.
-	Convert(context.Context, *connect.Request[v1alpha1.ConvertRequest]) (*connect.Response[v1alpha1.ConvertResponse], error)
+	Convert(context.Context, *v1alpha1.ConvertRequest) (*v1alpha1.ConvertResponse, error)
 }
 
 // NewConvertServiceClient constructs a client for the buf.alpha.registry.v1alpha1.ConvertService
-// service. By default, it uses the Connect protocol with the binary Protobuf Codec, asks for
-// gzipped responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply
-// the connect.WithGRPC() or connect.WithGRPCWeb() options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewConvertServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ConvertServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	convertServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_convert_proto.Services().ByName("ConvertService").Methods()
-	return &convertServiceClient{
-		convert: connect.NewClient[v1alpha1.ConvertRequest, v1alpha1.ConvertResponse](
-			httpClient,
-			baseURL+ConvertServiceConvertProcedure,
-			connect.WithSchema(convertServiceMethods.ByName("Convert")),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// convertServiceClient implements ConvertServiceClient.
-type convertServiceClient struct {
-	convert *connect.Client[v1alpha1.ConvertRequest, v1alpha1.ConvertResponse]
-}
-
-// Convert calls buf.alpha.registry.v1alpha1.ConvertService.Convert.
-func (c *convertServiceClient) Convert(ctx context.Context, req *connect.Request[v1alpha1.ConvertRequest]) (*connect.Response[v1alpha1.ConvertResponse], error) {
-	return c.convert.CallUnary(ctx, req)
+// service. Multiple service clients may share a single connect.Client.
+func NewConvertServiceClient(client *connect.Client) ConvertServiceClient {
+	return &convertServiceClient{client: client}
 }
 
 // ConvertServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.ConvertService
@@ -93,35 +70,47 @@ func (c *convertServiceClient) Convert(ctx context.Context, req *connect.Request
 type ConvertServiceHandler interface {
 	// Convert converts a serialized message according to
 	// the provided type name using an image.
-	Convert(context.Context, *connect.Request[v1alpha1.ConvertRequest]) (*connect.Response[v1alpha1.ConvertResponse], error)
+	Convert(context.Context, *v1alpha1.ConvertRequest) (*v1alpha1.ConvertResponse, error)
 }
 
-// NewConvertServiceHandler builds an HTTP handler from the service implementation. It returns the
-// path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewConvertServiceHandler(svc ConvertServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	convertServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_convert_proto.Services().ByName("ConvertService").Methods()
-	convertServiceConvertHandler := connect.NewUnaryHandler(
-		ConvertServiceConvertProcedure,
-		svc.Convert,
-		connect.WithSchema(convertServiceMethods.ByName("Convert")),
-		connect.WithHandlerOptions(opts...),
+// RegisterConvertServiceHandler registers svc as the buf.alpha.registry.v1alpha1.ConvertService
+// implementation on server.
+func RegisterConvertServiceHandler(server *connect.Server, svc ConvertServiceHandler) {
+	adapter := convertServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: convertServiceConvertSpec(), Handler: adapter.convert},
 	)
-	return "/buf.alpha.registry.v1alpha1.ConvertService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case ConvertServiceConvertProcedure:
-			convertServiceConvertHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedConvertServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedConvertServiceHandler struct{}
 
-func (UnimplementedConvertServiceHandler) Convert(context.Context, *connect.Request[v1alpha1.ConvertRequest]) (*connect.Response[v1alpha1.ConvertResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ConvertService.Convert is not implemented"))
+func (UnimplementedConvertServiceHandler) Convert(context.Context, *v1alpha1.ConvertRequest) (*v1alpha1.ConvertResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.ConvertService.Convert is not implemented")
+}
+
+type convertServiceClient struct {
+	client *connect.Client
+}
+
+func (c *convertServiceClient) Convert(ctx context.Context, req *v1alpha1.ConvertRequest) (*v1alpha1.ConvertResponse, error) {
+	var res v1alpha1.ConvertResponse
+	if err := c.client.CallUnary(ctx, convertServiceConvertSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type convertServiceHandler struct{ svc ConvertServiceHandler }
+
+func (h convertServiceHandler) convert(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ConvertRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.Convert(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

@@ -19,43 +19,60 @@
 package registryv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// SCIMTokenServiceName is the fully-qualified name of the SCIMTokenService service.
 	SCIMTokenServiceName = "buf.alpha.registry.v1alpha1.SCIMTokenService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// SCIMTokenServiceCreateSCIMTokenProcedure is the fully-qualified name of the SCIMTokenService's
+	// SCIMTokenServiceCreateSCIMTokenProcedure is the procedure name of the SCIMTokenService's
 	// CreateSCIMToken RPC.
 	SCIMTokenServiceCreateSCIMTokenProcedure = "/buf.alpha.registry.v1alpha1.SCIMTokenService/CreateSCIMToken"
-	// SCIMTokenServiceListSCIMTokensProcedure is the fully-qualified name of the SCIMTokenService's
+	// SCIMTokenServiceListSCIMTokensProcedure is the procedure name of the SCIMTokenService's
 	// ListSCIMTokens RPC.
 	SCIMTokenServiceListSCIMTokensProcedure = "/buf.alpha.registry.v1alpha1.SCIMTokenService/ListSCIMTokens"
-	// SCIMTokenServiceDeleteSCIMTokenProcedure is the fully-qualified name of the SCIMTokenService's
+	// SCIMTokenServiceDeleteSCIMTokenProcedure is the procedure name of the SCIMTokenService's
 	// DeleteSCIMToken RPC.
 	SCIMTokenServiceDeleteSCIMTokenProcedure = "/buf.alpha.registry.v1alpha1.SCIMTokenService/DeleteSCIMToken"
+)
+
+var (
+	sCIMTokenServiceCreateSCIMTokenSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1alpha1.File_buf_alpha_registry_v1alpha1_scim_token_proto.Services().ByName("SCIMTokenService").Methods().ByName("CreateSCIMToken"),
+			Procedure:  SCIMTokenServiceCreateSCIMTokenProcedure,
+		}
+	})
+	sCIMTokenServiceListSCIMTokensSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_scim_token_proto.Services().ByName("SCIMTokenService").Methods().ByName("ListSCIMTokens"),
+			Procedure:        SCIMTokenServiceListSCIMTokensProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	sCIMTokenServiceDeleteSCIMTokenSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_scim_token_proto.Services().ByName("SCIMTokenService").Methods().ByName("DeleteSCIMToken"),
+			Procedure:        SCIMTokenServiceDeleteSCIMTokenProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
 )
 
 // SCIMTokenServiceClient is a client for the buf.alpha.registry.v1alpha1.SCIMTokenService service.
@@ -63,72 +80,22 @@ type SCIMTokenServiceClient interface {
 	// CreateToken creates a new token suitable for authentication to the SCIM API.
 	//
 	// This method requires authentication.
-	CreateSCIMToken(context.Context, *connect.Request[v1alpha1.CreateSCIMTokenRequest]) (*connect.Response[v1alpha1.CreateSCIMTokenResponse], error)
+	CreateSCIMToken(context.Context, *v1alpha1.CreateSCIMTokenRequest) (*v1alpha1.CreateSCIMTokenResponse, error)
 	// ListTokens lists all active SCIM tokens.
 	//
 	// This method requires authentication.
-	ListSCIMTokens(context.Context, *connect.Request[v1alpha1.ListSCIMTokensRequest]) (*connect.Response[v1alpha1.ListSCIMTokensResponse], error)
+	ListSCIMTokens(context.Context, *v1alpha1.ListSCIMTokensRequest) (*v1alpha1.ListSCIMTokensResponse, error)
 	// DeleteToken deletes an existing token.
 	//
 	// This method requires authentication.
-	DeleteSCIMToken(context.Context, *connect.Request[v1alpha1.DeleteSCIMTokenRequest]) (*connect.Response[v1alpha1.DeleteSCIMTokenResponse], error)
+	DeleteSCIMToken(context.Context, *v1alpha1.DeleteSCIMTokenRequest) (*v1alpha1.DeleteSCIMTokenResponse, error)
 }
 
 // NewSCIMTokenServiceClient constructs a client for the
-// buf.alpha.registry.v1alpha1.SCIMTokenService service. By default, it uses the Connect protocol
-// with the binary Protobuf Codec, asks for gzipped responses, and sends uncompressed requests. To
-// use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or connect.WithGRPCWeb()
-// options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewSCIMTokenServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) SCIMTokenServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	sCIMTokenServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_scim_token_proto.Services().ByName("SCIMTokenService").Methods()
-	return &sCIMTokenServiceClient{
-		createSCIMToken: connect.NewClient[v1alpha1.CreateSCIMTokenRequest, v1alpha1.CreateSCIMTokenResponse](
-			httpClient,
-			baseURL+SCIMTokenServiceCreateSCIMTokenProcedure,
-			connect.WithSchema(sCIMTokenServiceMethods.ByName("CreateSCIMToken")),
-			connect.WithClientOptions(opts...),
-		),
-		listSCIMTokens: connect.NewClient[v1alpha1.ListSCIMTokensRequest, v1alpha1.ListSCIMTokensResponse](
-			httpClient,
-			baseURL+SCIMTokenServiceListSCIMTokensProcedure,
-			connect.WithSchema(sCIMTokenServiceMethods.ByName("ListSCIMTokens")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		deleteSCIMToken: connect.NewClient[v1alpha1.DeleteSCIMTokenRequest, v1alpha1.DeleteSCIMTokenResponse](
-			httpClient,
-			baseURL+SCIMTokenServiceDeleteSCIMTokenProcedure,
-			connect.WithSchema(sCIMTokenServiceMethods.ByName("DeleteSCIMToken")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// sCIMTokenServiceClient implements SCIMTokenServiceClient.
-type sCIMTokenServiceClient struct {
-	createSCIMToken *connect.Client[v1alpha1.CreateSCIMTokenRequest, v1alpha1.CreateSCIMTokenResponse]
-	listSCIMTokens  *connect.Client[v1alpha1.ListSCIMTokensRequest, v1alpha1.ListSCIMTokensResponse]
-	deleteSCIMToken *connect.Client[v1alpha1.DeleteSCIMTokenRequest, v1alpha1.DeleteSCIMTokenResponse]
-}
-
-// CreateSCIMToken calls buf.alpha.registry.v1alpha1.SCIMTokenService.CreateSCIMToken.
-func (c *sCIMTokenServiceClient) CreateSCIMToken(ctx context.Context, req *connect.Request[v1alpha1.CreateSCIMTokenRequest]) (*connect.Response[v1alpha1.CreateSCIMTokenResponse], error) {
-	return c.createSCIMToken.CallUnary(ctx, req)
-}
-
-// ListSCIMTokens calls buf.alpha.registry.v1alpha1.SCIMTokenService.ListSCIMTokens.
-func (c *sCIMTokenServiceClient) ListSCIMTokens(ctx context.Context, req *connect.Request[v1alpha1.ListSCIMTokensRequest]) (*connect.Response[v1alpha1.ListSCIMTokensResponse], error) {
-	return c.listSCIMTokens.CallUnary(ctx, req)
-}
-
-// DeleteSCIMToken calls buf.alpha.registry.v1alpha1.SCIMTokenService.DeleteSCIMToken.
-func (c *sCIMTokenServiceClient) DeleteSCIMToken(ctx context.Context, req *connect.Request[v1alpha1.DeleteSCIMTokenRequest]) (*connect.Response[v1alpha1.DeleteSCIMTokenResponse], error) {
-	return c.deleteSCIMToken.CallUnary(ctx, req)
+// buf.alpha.registry.v1alpha1.SCIMTokenService service. Multiple service clients may share a single
+// connect.Client.
+func NewSCIMTokenServiceClient(client *connect.Client) SCIMTokenServiceClient {
+	return &sCIMTokenServiceClient{client: client}
 }
 
 // SCIMTokenServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.SCIMTokenService
@@ -137,69 +104,105 @@ type SCIMTokenServiceHandler interface {
 	// CreateToken creates a new token suitable for authentication to the SCIM API.
 	//
 	// This method requires authentication.
-	CreateSCIMToken(context.Context, *connect.Request[v1alpha1.CreateSCIMTokenRequest]) (*connect.Response[v1alpha1.CreateSCIMTokenResponse], error)
+	CreateSCIMToken(context.Context, *v1alpha1.CreateSCIMTokenRequest) (*v1alpha1.CreateSCIMTokenResponse, error)
 	// ListTokens lists all active SCIM tokens.
 	//
 	// This method requires authentication.
-	ListSCIMTokens(context.Context, *connect.Request[v1alpha1.ListSCIMTokensRequest]) (*connect.Response[v1alpha1.ListSCIMTokensResponse], error)
+	ListSCIMTokens(context.Context, *v1alpha1.ListSCIMTokensRequest) (*v1alpha1.ListSCIMTokensResponse, error)
 	// DeleteToken deletes an existing token.
 	//
 	// This method requires authentication.
-	DeleteSCIMToken(context.Context, *connect.Request[v1alpha1.DeleteSCIMTokenRequest]) (*connect.Response[v1alpha1.DeleteSCIMTokenResponse], error)
+	DeleteSCIMToken(context.Context, *v1alpha1.DeleteSCIMTokenRequest) (*v1alpha1.DeleteSCIMTokenResponse, error)
 }
 
-// NewSCIMTokenServiceHandler builds an HTTP handler from the service implementation. It returns the
-// path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewSCIMTokenServiceHandler(svc SCIMTokenServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	sCIMTokenServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_scim_token_proto.Services().ByName("SCIMTokenService").Methods()
-	sCIMTokenServiceCreateSCIMTokenHandler := connect.NewUnaryHandler(
-		SCIMTokenServiceCreateSCIMTokenProcedure,
-		svc.CreateSCIMToken,
-		connect.WithSchema(sCIMTokenServiceMethods.ByName("CreateSCIMToken")),
-		connect.WithHandlerOptions(opts...),
+// RegisterSCIMTokenServiceHandler registers svc as the buf.alpha.registry.v1alpha1.SCIMTokenService
+// implementation on server.
+func RegisterSCIMTokenServiceHandler(server *connect.Server, svc SCIMTokenServiceHandler) {
+	adapter := sCIMTokenServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: sCIMTokenServiceCreateSCIMTokenSpec(), Handler: adapter.createSCIMToken},
+		connect.Method{Spec: sCIMTokenServiceListSCIMTokensSpec(), Handler: adapter.listSCIMTokens},
+		connect.Method{Spec: sCIMTokenServiceDeleteSCIMTokenSpec(), Handler: adapter.deleteSCIMToken},
 	)
-	sCIMTokenServiceListSCIMTokensHandler := connect.NewUnaryHandler(
-		SCIMTokenServiceListSCIMTokensProcedure,
-		svc.ListSCIMTokens,
-		connect.WithSchema(sCIMTokenServiceMethods.ByName("ListSCIMTokens")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	sCIMTokenServiceDeleteSCIMTokenHandler := connect.NewUnaryHandler(
-		SCIMTokenServiceDeleteSCIMTokenProcedure,
-		svc.DeleteSCIMToken,
-		connect.WithSchema(sCIMTokenServiceMethods.ByName("DeleteSCIMToken")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	return "/buf.alpha.registry.v1alpha1.SCIMTokenService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case SCIMTokenServiceCreateSCIMTokenProcedure:
-			sCIMTokenServiceCreateSCIMTokenHandler.ServeHTTP(w, r)
-		case SCIMTokenServiceListSCIMTokensProcedure:
-			sCIMTokenServiceListSCIMTokensHandler.ServeHTTP(w, r)
-		case SCIMTokenServiceDeleteSCIMTokenProcedure:
-			sCIMTokenServiceDeleteSCIMTokenHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedSCIMTokenServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedSCIMTokenServiceHandler struct{}
 
-func (UnimplementedSCIMTokenServiceHandler) CreateSCIMToken(context.Context, *connect.Request[v1alpha1.CreateSCIMTokenRequest]) (*connect.Response[v1alpha1.CreateSCIMTokenResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SCIMTokenService.CreateSCIMToken is not implemented"))
+func (UnimplementedSCIMTokenServiceHandler) CreateSCIMToken(context.Context, *v1alpha1.CreateSCIMTokenRequest) (*v1alpha1.CreateSCIMTokenResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.SCIMTokenService.CreateSCIMToken is not implemented")
 }
 
-func (UnimplementedSCIMTokenServiceHandler) ListSCIMTokens(context.Context, *connect.Request[v1alpha1.ListSCIMTokensRequest]) (*connect.Response[v1alpha1.ListSCIMTokensResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SCIMTokenService.ListSCIMTokens is not implemented"))
+func (UnimplementedSCIMTokenServiceHandler) ListSCIMTokens(context.Context, *v1alpha1.ListSCIMTokensRequest) (*v1alpha1.ListSCIMTokensResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.SCIMTokenService.ListSCIMTokens is not implemented")
 }
 
-func (UnimplementedSCIMTokenServiceHandler) DeleteSCIMToken(context.Context, *connect.Request[v1alpha1.DeleteSCIMTokenRequest]) (*connect.Response[v1alpha1.DeleteSCIMTokenResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SCIMTokenService.DeleteSCIMToken is not implemented"))
+func (UnimplementedSCIMTokenServiceHandler) DeleteSCIMToken(context.Context, *v1alpha1.DeleteSCIMTokenRequest) (*v1alpha1.DeleteSCIMTokenResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.SCIMTokenService.DeleteSCIMToken is not implemented")
+}
+
+type sCIMTokenServiceClient struct {
+	client *connect.Client
+}
+
+func (c *sCIMTokenServiceClient) CreateSCIMToken(ctx context.Context, req *v1alpha1.CreateSCIMTokenRequest) (*v1alpha1.CreateSCIMTokenResponse, error) {
+	var res v1alpha1.CreateSCIMTokenResponse
+	if err := c.client.CallUnary(ctx, sCIMTokenServiceCreateSCIMTokenSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *sCIMTokenServiceClient) ListSCIMTokens(ctx context.Context, req *v1alpha1.ListSCIMTokensRequest) (*v1alpha1.ListSCIMTokensResponse, error) {
+	var res v1alpha1.ListSCIMTokensResponse
+	if err := c.client.CallUnary(ctx, sCIMTokenServiceListSCIMTokensSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *sCIMTokenServiceClient) DeleteSCIMToken(ctx context.Context, req *v1alpha1.DeleteSCIMTokenRequest) (*v1alpha1.DeleteSCIMTokenResponse, error) {
+	var res v1alpha1.DeleteSCIMTokenResponse
+	if err := c.client.CallUnary(ctx, sCIMTokenServiceDeleteSCIMTokenSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type sCIMTokenServiceHandler struct{ svc SCIMTokenServiceHandler }
+
+func (h sCIMTokenServiceHandler) createSCIMToken(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.CreateSCIMTokenRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateSCIMToken(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h sCIMTokenServiceHandler) listSCIMTokens(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ListSCIMTokensRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListSCIMTokens(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h sCIMTokenServiceHandler) deleteSCIMToken(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.DeleteSCIMTokenRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteSCIMToken(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

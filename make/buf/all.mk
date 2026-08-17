@@ -123,6 +123,7 @@ bufgenerateclean:: \
 bufgeneratego:
 	$(BUF_BIN) generate --template etc/template/buf.go.gen.yaml
 	$(BUF_BIN) generate --template etc/template/buf.go-client.gen.yaml
+	$(BUF_BIN) generate --template etc/template/buf.go-bsr-client.gen.yaml
 
 .PHONY: bufgeneratetestdata
 bufgeneratetestdata:

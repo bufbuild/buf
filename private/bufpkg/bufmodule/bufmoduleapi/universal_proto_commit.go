@@ -22,7 +22,6 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
@@ -155,20 +154,19 @@ func getV1ProtoCommitsForRegistryAndResourceRefs(
 ) ([]*modulev1.Commit, error) {
 	response, err := moduleClientProvider.V1CommitServiceClient(registry).GetCommits(
 		ctx,
-		connect.NewRequest(
-			&modulev1.GetCommitsRequest{
-				// TODO FUTURE: chunking
-				ResourceRefs: v1ProtoResourceRefs,
-			},
-		),
+
+		&modulev1.GetCommitsRequest{
+			// TODO FUTURE: chunking
+			ResourceRefs: v1ProtoResourceRefs,
+		},
 	)
 	if err != nil {
 		return nil, maybeNewNotFoundError(err)
 	}
-	if len(response.Msg.Commits) != len(v1ProtoResourceRefs) {
-		return nil, fmt.Errorf("expected %d Commits, got %d", len(v1ProtoResourceRefs), len(response.Msg.Commits))
+	if len(response.Commits) != len(v1ProtoResourceRefs) {
+		return nil, fmt.Errorf("expected %d Commits, got %d", len(v1ProtoResourceRefs), len(response.Commits))
 	}
-	return response.Msg.Commits, nil
+	return response.Commits, nil
 }
 
 func getV1Beta1ProtoCommitsForRegistryAndResourceRefs(
@@ -184,19 +182,18 @@ func getV1Beta1ProtoCommitsForRegistryAndResourceRefs(
 	}
 	response, err := moduleClientProvider.V1Beta1CommitServiceClient(registry).GetCommits(
 		ctx,
-		connect.NewRequest(
-			&modulev1beta1.GetCommitsRequest{
-				// TODO FUTURE: chunking
-				ResourceRefs: v1beta1ProtoResourceRefs,
-				DigestType:   v1beta1ProtoDigestType,
-			},
-		),
+
+		&modulev1beta1.GetCommitsRequest{
+			// TODO FUTURE: chunking
+			ResourceRefs: v1beta1ProtoResourceRefs,
+			DigestType:   v1beta1ProtoDigestType,
+		},
 	)
 	if err != nil {
 		return nil, maybeNewNotFoundError(err)
 	}
-	if len(response.Msg.Commits) != len(v1beta1ProtoResourceRefs) {
-		return nil, fmt.Errorf("expected %d Commits, got %d", len(v1beta1ProtoResourceRefs), len(response.Msg.Commits))
+	if len(response.Commits) != len(v1beta1ProtoResourceRefs) {
+		return nil, fmt.Errorf("expected %d Commits, got %d", len(v1beta1ProtoResourceRefs), len(response.Commits))
 	}
-	return response.Msg.Commits, nil
+	return response.Commits, nil
 }

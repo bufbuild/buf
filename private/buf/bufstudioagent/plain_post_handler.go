@@ -27,7 +27,8 @@ import (
 	"net/url"
 
 	"buf.build/go/standard/xlog/xslog"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 	studiov1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"google.golang.org/protobuf/proto"
@@ -119,23 +120,22 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	request := connect.NewRequest(bytes.NewBuffer(envelopeRequest.GetBody()))
+	// TODO(rvanginkel) should this context be cloned to remove attached values (but keep timeout)?
+	ctx, info := connect.NewClientContext(r.Context())
+	request := bytes.NewBuffer(envelopeRequest.GetBody())
 	for _, header := range envelopeRequest.GetHeaders() {
 		if _, ok := i.DisallowedHeaders[textproto.CanonicalMIMEHeaderKey(header.GetKey())]; ok {
 			http.Error(w, fmt.Sprintf("header %q disallowed by agent", header.GetKey()), http.StatusBadRequest)
 			return
 		}
 		for _, value := range header.GetValue() {
-			request.Header().Add(header.GetKey(), value)
+			info.RequestHeader().Add(header.GetKey(), value)
 		}
 	}
 	for fromHeader, toHeader := range i.ForwardHeaders {
 		headerValues := r.Header.Values(fromHeader)
 		if len(headerValues) > 0 {
-			request.Header().Del(toHeader)
-			for _, headerValue := range headerValues {
-				request.Header().Add(toHeader, headerValue)
-			}
+			info.RequestHeader().SetValues(toHeader, headerValues)
 		}
 	}
 	targetURL, err := url.Parse(envelopeRequest.GetTarget())
@@ -151,45 +151,49 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("must specify http or https url scheme, got %q", targetURL.Scheme), http.StatusBadRequest)
 		return
 	}
-	clientOptions, err := connectClientOptionsFromContentType(request.Header().Get("Content-Type"))
+	clientOptions, err := connectClientOptionsFromContentType(info.RequestHeader().Get("Content-Type"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	client := connect.NewClient[bytes.Buffer, bytes.Buffer](
+	// The target URL contains the full procedure path. The transport takes the
+	// base URL and the procedure is carried on the spec.
+	spec := connect.Spec{
+		StreamType: connect.StreamTypeUnary,
+		Procedure:  targetURL.Path,
+	}
+	baseURL := *targetURL
+	baseURL.Path = ""
+	baseURL.RawPath = ""
+	client := connect.NewClient(connecthttp.NewTransport(
 		httpClient,
-		targetURL.String(),
+		baseURL.String(),
 		clientOptions...,
-	)
-	// TODO(rvanginkel) should this context be cloned to remove attached values (but keep timeout)?
-	response, err := client.CallUnary(r.Context(), request)
-	if err != nil {
+	))
+	response := &bytes.Buffer{}
+	if err := client.CallUnary(ctx, spec, request, response); err != nil {
 		// We need to differentiate client errors from server errors. In the former,
 		// trigger a `StatusBadGateway` result, and in the latter surface whatever
 		// error information came back from the server.
 		//
 		// Any error here is expected to be wrapped in a `connect.Error` struct. We
-		// need to check *first* if it's not a wire error, so we can assume the
+		// need to check *first* if it's not a remote error, so we can assume the
 		// request never left the client, or a response never arrived from the
 		// server. In those scenarios we trigger a `StatusBadGateway` to signal
 		// that the upstream server is unreachable or in a bad status...
-		if !connect.IsWireError(err) {
-			http.Error(w, err.Error(), http.StatusBadGateway)
-			return
-		}
-		// ... but if a response was received from the server, we assume there's
-		// error information from the server we can surface to the user by including
-		// it in the headers response, unless it is a `CodeUnknown` error. Connect
-		// marks any issues connecting with the `CodeUnknown` error.
 		if connectErr := new(connect.Error); errors.As(err, &connectErr) {
-			if connectErr.Code() == connect.CodeUnknown {
+			// ... but if a response was received from the server, we assume there's
+			// error information from the server we can surface to the user by including
+			// it in the headers response, unless it is a `CodeUnknown` error. Connect
+			// marks any issues connecting with the `CodeUnknown` error.
+			if !connectErr.IsRemote() || connectErr.Code() == connect.CodeUnknown {
 				http.Error(w, err.Error(), http.StatusBadGateway)
 				return
 			}
 			i.writeProtoMessage(w, studiov1alpha1.InvokeResponse_builder{
-				// connectErr.Meta contains the trailers for the
-				// caller to find out the error details.
-				Headers: goHeadersToProtoHeaders(connectErr.Meta()),
+				// The response headers and trailers contain the error
+				// details for the caller to find out.
+				Headers: connectHeadersToProtoHeaders(info.ResponseHeader(), info.ResponseTrailer()),
 			}.Build())
 			return
 		}
@@ -201,31 +205,31 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	i.writeProtoMessage(w, studiov1alpha1.InvokeResponse_builder{
-		Headers:  goHeadersToProtoHeaders(response.Header()),
-		Body:     response.Msg.Bytes(),
-		Trailers: goHeadersToProtoHeaders(response.Trailer()),
+		Headers:  connectHeadersToProtoHeaders(info.ResponseHeader()),
+		Body:     response.Bytes(),
+		Trailers: connectHeadersToProtoHeaders(info.ResponseTrailer()),
 	}.Build())
 }
 
-func connectClientOptionsFromContentType(contentType string) ([]connect.ClientOption, error) {
+func connectClientOptionsFromContentType(contentType string) ([]connecthttp.Option, error) {
 	switch contentType {
 	case "application/grpc", "application/grpc+proto":
-		return []connect.ClientOption{
-			connect.WithGRPC(),
-			connect.WithCodec(&bufferCodec{name: "proto"}),
+		return []connecthttp.Option{
+			connecthttp.WithGRPC(),
+			connecthttp.WithCodec(&bufferCodec{name: "proto"}),
 		}, nil
 	case "application/grpc+json":
-		return []connect.ClientOption{
-			connect.WithGRPC(),
-			connect.WithCodec(&bufferCodec{name: "json"}),
+		return []connecthttp.Option{
+			connecthttp.WithGRPC(),
+			connecthttp.WithCodec(&bufferCodec{name: "json"}),
 		}, nil
 	case "application/json":
-		return []connect.ClientOption{
-			connect.WithCodec(&bufferCodec{name: "json"}),
+		return []connecthttp.Option{
+			connecthttp.WithCodec(&bufferCodec{name: "json"}),
 		}, nil
 	case "application/proto":
-		return []connect.ClientOption{
-			connect.WithCodec(&bufferCodec{name: "proto"}),
+		return []connecthttp.Option{
+			connecthttp.WithCodec(&bufferCodec{name: "proto"}),
 		}, nil
 	default:
 		return nil, fmt.Errorf("unknown Content-Type: %q", contentType)
@@ -251,13 +255,15 @@ func (i *plainPostHandler) writeProtoMessage(w http.ResponseWriter, message prot
 	}
 }
 
-func goHeadersToProtoHeaders(in http.Header) []*studiov1alpha1.Headers {
+func connectHeadersToProtoHeaders(ins ...*connect.Header) []*studiov1alpha1.Headers {
 	var out []*studiov1alpha1.Headers
-	for k, v := range in {
-		out = append(out, studiov1alpha1.Headers_builder{
-			Key:   k,
-			Value: v,
-		}.Build())
+	for _, in := range ins {
+		for k, v := range in.All() {
+			out = append(out, studiov1alpha1.Headers_builder{
+				Key:   k,
+				Value: v,
+			}.Build())
+		}
 	}
 	return out
 }

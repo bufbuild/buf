@@ -21,7 +21,6 @@ import (
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
@@ -93,22 +92,21 @@ func run(
 	organizationServiceClient := ownerClientProvider.V1OrganizationServiceClient(moduleOwner.Registry())
 	resp, err := organizationServiceClient.CreateOrganizations(
 		ctx,
-		connect.NewRequest(
-			&ownerv1.CreateOrganizationsRequest{
-				Values: []*ownerv1.CreateOrganizationsRequest_Value{
-					{
-						Name: moduleOwner.Owner(),
-					},
+
+		&ownerv1.CreateOrganizationsRequest{
+			Values: []*ownerv1.CreateOrganizationsRequest_Value{
+				{
+					Name: moduleOwner.Owner(),
 				},
 			},
-		),
+		},
 	)
 	if err != nil {
 		// Not explicitly handling error with connect.AlreadyExists as it can be a user or an
 		// organization that already exists with that name.
 		return err
 	}
-	organizations := resp.Msg.GetOrganizations()
+	organizations := resp.GetOrganizations()
 	if len(organizations) != 1 {
 		return syserror.Newf("unexpected number of organizations created by server: %d", len(organizations))
 	}

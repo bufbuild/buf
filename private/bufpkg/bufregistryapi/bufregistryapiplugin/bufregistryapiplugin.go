@@ -15,7 +15,7 @@
 package bufregistryapiplugin
 
 import (
-	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/plugin/v1beta1/pluginv1beta1connect"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/registry/plugin/v1beta1/pluginv1beta1connect"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 )
 

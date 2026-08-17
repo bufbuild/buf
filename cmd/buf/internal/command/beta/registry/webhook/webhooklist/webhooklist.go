@@ -19,7 +19,6 @@ import (
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -100,24 +99,23 @@ func run(
 	service := connectclient.Make(clientConfig, flags.Remote, registryv1alpha1connect.NewWebhookServiceClient)
 	resp, err := service.ListWebhooks(
 		ctx,
-		connect.NewRequest(
-			registryv1alpha1.ListWebhooksRequest_builder{
-				RepositoryName: flags.RepositoryName,
-				OwnerName:      flags.OwnerName,
-				// TODO FUTURE: this should probably be in a loop so we can get page token from
-				//   response and query for the next page
-			}.Build(),
-		),
+
+		registryv1alpha1.ListWebhooksRequest_builder{
+			RepositoryName: flags.RepositoryName,
+			OwnerName:      flags.OwnerName,
+			// TODO FUTURE: this should probably be in a loop so we can get page token from
+			//   response and query for the next page
+		}.Build(),
 	)
 	if err != nil {
 		return err
 	}
-	if resp.Msg.GetWebhooks() == nil {
+	if resp.GetWebhooks() == nil {
 		// Ignore errors for writing to stdout.
 		_, _ = container.Stdout().Write([]byte("[]"))
 		return nil
 	}
-	webhooksJSON, err := protoencoding.NewJSONMarshaler(nil, protoencoding.JSONMarshalerWithIndent()).Marshal(resp.Msg)
+	webhooksJSON, err := protoencoding.NewJSONMarshaler(nil, protoencoding.JSONMarshalerWithIndent()).Marshal(resp)
 	if err != nil {
 		return err
 	}

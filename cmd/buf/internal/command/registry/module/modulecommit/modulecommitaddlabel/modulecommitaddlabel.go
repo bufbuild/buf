@@ -22,7 +22,6 @@ import (
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -131,11 +130,10 @@ func run(
 	})
 	resp, err := labelServiceClient.CreateOrUpdateLabels(
 		ctx,
-		connect.NewRequest(
-			&modulev1.CreateOrUpdateLabelsRequest{
-				Values: requestValues,
-			},
-		),
+
+		&modulev1.CreateOrUpdateLabelsRequest{
+			Values: requestValues,
+		},
 	)
 	if err != nil {
 		// Not explicitly handling error with connect.CodeNotFound as it can be repository not found or commit not found.
@@ -143,7 +141,7 @@ func run(
 		return err
 	}
 	if format == bufprint.FormatText {
-		for _, label := range resp.Msg.Labels {
+		for _, label := range resp.Labels {
 			fmt.Fprintf(container.Stdout(), "%s:%s\n", moduleRef.FullName(), label.Name)
 		}
 		return nil
@@ -151,7 +149,7 @@ func run(
 	return bufprint.PrintNames(
 		container.Stdout(),
 		format,
-		xslices.Map(resp.Msg.Labels, func(label *modulev1.Label) bufprint.Entity {
+		xslices.Map(resp.Labels, func(label *modulev1.Label) bufprint.Entity {
 			return bufprint.NewLabelEntity(label, moduleRef.FullName())
 		})...,
 	)

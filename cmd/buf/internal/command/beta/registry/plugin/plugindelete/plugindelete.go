@@ -21,7 +21,7 @@ import (
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
@@ -100,13 +100,12 @@ func run(
 	)
 	if _, err := service.DeleteCuratedPlugin(
 		ctx,
-		connect.NewRequest(
-			registryv1alpha1.DeleteCuratedPluginRequest_builder{
-				Owner:   pluginIdentity.Owner(),
-				Name:    pluginIdentity.Plugin(),
-				Version: version,
-			}.Build(),
-		),
+
+		registryv1alpha1.DeleteCuratedPluginRequest_builder{
+			Owner:   pluginIdentity.Owner(),
+			Name:    pluginIdentity.Plugin(),
+			Version: version,
+		}.Build(),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return fmt.Errorf("the plugin %s does not exist", container.Arg(0))

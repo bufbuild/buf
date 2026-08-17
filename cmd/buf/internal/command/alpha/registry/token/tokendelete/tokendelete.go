@@ -19,7 +19,7 @@ import (
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -99,9 +99,9 @@ func run(
 	}
 	if _, err := service.DeleteToken(
 		ctx,
-		connect.NewRequest(registryv1alpha1.DeleteTokenRequest_builder{
+		registryv1alpha1.DeleteTokenRequest_builder{
 			TokenId: flags.TokenID,
-		}.Build()),
+		}.Build(),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewTokenNotFoundError(flags.TokenID)

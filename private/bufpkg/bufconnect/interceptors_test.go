@@ -20,11 +20,12 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"testing"
 
 	"buf.build/go/app"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/slogapp"
 	"github.com/stretchr/testify/assert"
@@ -45,16 +46,34 @@ func (testMachine) Password() string {
 	return "password"
 }
 
+// nopClientStream is a no-op connect.ClientStream for testing interceptors.
+type nopClientStream struct{}
+
+func (nopClientStream) SendHeaders() error { return nil }
+func (nopClientStream) Send(any) error     { return nil }
+func (nopClientStream) CloseSend() error   { return nil }
+func (nopClientStream) Receive(any) error  { return io.EOF }
+func (nopClientStream) Close() error       { return nil }
+
+// checkAuthHeaderClientFunc returns a connect.ClientFunc that errors if the
+// authentication header on the client CallInfo does not match want.
+func checkAuthHeaderClientFunc(info *connect.CallInfo, want string) connect.ClientFunc {
+	return func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
+		if info.RequestHeader().Get(AuthenticationHeader) != want {
+			return nil, errors.New("error auth token")
+		}
+		return nopClientStream{}, nil
+	}
+}
+
 func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 	t.Parallel()
 	tokenSet, err := NewTokenProviderFromString("token1@host1,token2@host2")
 	assert.NoError(t, err)
-	_, err = NewAuthorizationInterceptorProvider(tokenSet)("host1")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"token1" {
-			return nil, errors.New("error auth token")
-		}
-		return nil, nil
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
+	ctx, info := connect.NewClientContext(t.Context())
+	_, err = NewAuthorizationInterceptorProvider(tokenSet)("host1")(
+		checkAuthHeaderClientFunc(info, AuthenticationTokenPrefix+"token1"),
+	)(ctx, connect.Spec{})
 	assert.NoError(t, err)
 
 	getMachineForName := func(app.EnvContainer, string) (netrc.Machine, error) {
@@ -62,47 +81,42 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 	}
 	netrcTokens := &netrcTokenProvider{getMachineForName: getMachineForName}
 	assert.NoError(t, err)
-	_, err = NewAuthorizationInterceptorProvider(netrcTokens)("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"password" {
-			return nil, errors.New("error auth token")
-		}
-		return nil, nil
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
+	ctx, info = connect.NewClientContext(t.Context())
+	_, err = NewAuthorizationInterceptorProvider(netrcTokens)("default")(
+		checkAuthHeaderClientFunc(info, AuthenticationTokenPrefix+"password"),
+	)(ctx, connect.Spec{})
 	assert.NoError(t, err)
 
 	// testing using tokenSet over netrc tokenToAuthKey
-	_, err = NewAuthorizationInterceptorProvider(tokenSet, netrcTokens)("host2")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"token2" {
-			return nil, errors.New("error auth token")
-		}
-		return nil, nil
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
+	ctx, info = connect.NewClientContext(t.Context())
+	_, err = NewAuthorizationInterceptorProvider(tokenSet, netrcTokens)("host2")(
+		checkAuthHeaderClientFunc(info, AuthenticationTokenPrefix+"token2"),
+	)(ctx, connect.Spec{})
 	assert.NoError(t, err)
 
 	// testing using netrc tokenToAuthKey over tokenSet
-	_, err = NewAuthorizationInterceptorProvider(netrcTokens, tokenSet)("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"password" {
-			return nil, errors.New("error auth token")
-		}
-		return nil, nil
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
+	ctx, info = connect.NewClientContext(t.Context())
+	_, err = NewAuthorizationInterceptorProvider(netrcTokens, tokenSet)("default")(
+		checkAuthHeaderClientFunc(info, AuthenticationTokenPrefix+"password"),
+	)(ctx, connect.Spec{})
 	assert.NoError(t, err)
 
-	_, err = NewAuthorizationInterceptorProvider()("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		if req.Header().Get(AuthenticationHeader) != "" {
-			return nil, errors.New("error auth token")
-		}
-		return nil, nil
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
+	ctx, info = connect.NewClientContext(t.Context())
+	_, err = NewAuthorizationInterceptorProvider()("default")(
+		checkAuthHeaderClientFunc(info, ""),
+	)(ctx, connect.Spec{})
 	assert.NoError(t, err)
 
 	tokenSet, err = NewTokenProviderFromContainer(app.NewEnvContainer(map[string]string{
 		TokenEnvKey: "default",
 	}))
 	assert.NoError(t, err)
-	_, err = NewAuthorizationInterceptorProvider(tokenSet)("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		return nil, errors.New("underlying cause")
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
+	ctx, _ = connect.NewClientContext(t.Context())
+	_, err = NewAuthorizationInterceptorProvider(tokenSet)("default")(
+		func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
+			return nil, errors.New("underlying cause")
+		},
+	)(ctx, connect.Spec{})
 	authErr, ok := AsAuthError(err)
 	assert.True(t, ok)
 	assert.Equal(t, TokenEnvKey, authErr.tokenEnvKey)
@@ -115,20 +129,27 @@ func TestCLIWarningInterceptor(t *testing.T) {
 	logger, err := slogapp.NewLogger(&buf, appext.LogLevelWarn, appext.LogFormatText)
 	require.NoError(t, err)
 	// testing valid warning message
-	_, err = NewCLIWarningInterceptor(appext.NewLoggerContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		resp := connect.NewResponse(&bytes.Buffer{})
-		resp.Header().Set(CLIWarningHeaderName, base64.StdEncoding.EncodeToString([]byte(warningMessage)))
-		return resp, nil
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
-	assert.NoError(t, err)
+	ctx, info := connect.NewClientContext(t.Context())
+	stream, err := NewCLIWarningInterceptor(appext.NewLoggerContainer(logger))(
+		func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
+			info.ResponseHeader().Set(CLIWarningHeaderName, base64.StdEncoding.EncodeToString([]byte(warningMessage)))
+			return nopClientStream{}, nil
+		},
+	)(ctx, connect.Spec{})
+	require.NoError(t, err)
+	require.NoError(t, stream.Close())
 	assert.Equal(t, fmt.Sprintf("WARN\t%s\n", warningMessage), buf.String())
 
 	// testing no warning message in valid response with no header
 	buf.Reset()
-	_, err = NewCLIWarningInterceptor(appext.NewLoggerContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		return connect.NewResponse(&bytes.Buffer{}), nil
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
-	assert.NoError(t, err)
+	ctx, _ = connect.NewClientContext(t.Context())
+	stream, err = NewCLIWarningInterceptor(appext.NewLoggerContainer(logger))(
+		func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
+			return nopClientStream{}, nil
+		},
+	)(ctx, connect.Spec{})
+	require.NoError(t, err)
+	require.NoError(t, stream.Close())
 	assert.Equal(t, "", buf.String())
 }
 
@@ -138,37 +159,28 @@ func TestCLIWarningInterceptorFromError(t *testing.T) {
 	var buf bytes.Buffer
 	logger, err := slogapp.NewLogger(&buf, appext.LogLevelWarn, appext.LogFormatText)
 	require.NoError(t, err)
-	// testing valid warning message from error
-	_, err = NewCLIWarningInterceptor(appext.NewLoggerContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		err := connect.NewError(connect.CodeInternal, errors.New("error"))
-		err.Meta().Set(CLIWarningHeaderName, base64.StdEncoding.EncodeToString([]byte(warningMessage)))
-		return nil, err
-	})(t.Context(), connect.NewRequest(&bytes.Buffer{}))
+	// testing valid warning message from an errored call whose response
+	// headers carry the warning
+	ctx, info := connect.NewClientContext(t.Context())
+	_, err = NewCLIWarningInterceptor(appext.NewLoggerContainer(logger))(
+		func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
+			info.ResponseHeader().Set(CLIWarningHeaderName, base64.StdEncoding.EncodeToString([]byte(warningMessage)))
+			return nil, connect.NewError(connect.CodeInternal, "error")
+		},
+	)(ctx, connect.Spec{})
 	assert.Error(t, err)
 	assert.Equal(t, fmt.Sprintf("WARN\t%s\n", warningMessage), buf.String())
 }
 
-type testRequest[T any] struct {
-	*connect.Request[T]
-}
-
-func (r testRequest[_]) Spec() connect.Spec {
-	return connect.Spec{
-		Procedure: "/service/method",
-	}
-}
-func (r testRequest[_]) Peer() connect.Peer {
-	return connect.Peer{
-		Addr: "example.com",
-	}
-}
-
 func TestNewAugmentedConnectErrorInterceptor(t *testing.T) {
 	t.Parallel()
-	_, err := NewAugmentedConnectErrorInterceptor()(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		err := connect.NewError(connect.CodeUnknown, errors.New("405 Method Not Allowed"))
-		return nil, err
-	})(t.Context(), testRequest[bytes.Buffer]{Request: connect.NewRequest(&bytes.Buffer{})})
+	ctx, info := connect.NewClientContext(t.Context())
+	info.PeerAddr = "example.com"
+	_, err := NewAugmentedConnectErrorInterceptor()(
+		func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
+			return nil, connect.NewError(connect.CodeUnknown, "405 Method Not Allowed")
+		},
+	)(ctx, connect.Spec{Procedure: "/service/method"})
 	assert.Error(t, err)
 	var augmentedConnectError *AugmentedConnectError
 	assert.ErrorAs(t, err, &augmentedConnectError)

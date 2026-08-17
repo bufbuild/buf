@@ -27,7 +27,7 @@ import (
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xslices"
 	"buf.build/go/standard/xstrings"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/buffetch"
@@ -272,20 +272,19 @@ func run(
 			commitServiceClient := moduleServiceProvider.V1CommitServiceClient(moduleFullName.Registry())
 			if _, err := commitServiceClient.GetCommits(
 				ctx,
-				connect.NewRequest(
-					&modulev1.GetCommitsRequest{
-						ResourceRefs: []*modulev1.ResourceRef{
-							{
-								Value: &modulev1.ResourceRef_Name_{
-									Name: &modulev1.ResourceRef_Name{
-										Owner:  moduleFullName.Owner(),
-										Module: moduleFullName.Name(),
-									},
+
+				&modulev1.GetCommitsRequest{
+					ResourceRefs: []*modulev1.ResourceRef{
+						{
+							Value: &modulev1.ResourceRef_Name_{
+								Name: &modulev1.ResourceRef_Name{
+									Owner:  moduleFullName.Owner(),
+									Module: moduleFullName.Name(),
 								},
 							},
 						},
 					},
-				),
+				},
 			); err != nil {
 				if connect.CodeOf(err) == connect.CodeFailedPrecondition {
 					// This error occurs when the against input is a module that has no commits on the default branch.

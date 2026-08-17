@@ -21,7 +21,7 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -93,20 +93,19 @@ func run(
 	moduleServiceClient := bufregistryapimodule.NewClientProvider(clientConfig).V1ModuleServiceClient(moduleFullName.Registry())
 	resp, err := moduleServiceClient.GetModules(
 		ctx,
-		connect.NewRequest(
-			&modulev1.GetModulesRequest{
-				ModuleRefs: []*modulev1.ModuleRef{
-					{
-						Value: &modulev1.ModuleRef_Name_{
-							Name: &modulev1.ModuleRef_Name{
-								Owner:  moduleFullName.Owner(),
-								Module: moduleFullName.Name(),
-							},
+
+		&modulev1.GetModulesRequest{
+			ModuleRefs: []*modulev1.ModuleRef{
+				{
+					Value: &modulev1.ModuleRef_Name_{
+						Name: &modulev1.ModuleRef_Name{
+							Owner:  moduleFullName.Owner(),
+							Module: moduleFullName.Name(),
 						},
 					},
 				},
 			},
-		),
+		},
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -114,7 +113,7 @@ func run(
 		}
 		return err
 	}
-	modules := resp.Msg.Modules
+	modules := resp.Modules
 	if len(modules) != 1 {
 		return syserror.Newf("unexpected number of modules returned from server: %d", len(modules))
 	}

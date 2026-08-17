@@ -18,7 +18,7 @@ import (
 	"errors"
 	"io/fs"
 
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 )
 
 // notFoundError represents when a resource was not found.

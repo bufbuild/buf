@@ -19,76 +19,53 @@
 package registryv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// ReferenceServiceName is the fully-qualified name of the ReferenceService service.
 	ReferenceServiceName = "buf.alpha.registry.v1alpha1.ReferenceService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// ReferenceServiceGetReferenceByNameProcedure is the fully-qualified name of the ReferenceService's
+	// ReferenceServiceGetReferenceByNameProcedure is the procedure name of the ReferenceService's
 	// GetReferenceByName RPC.
 	ReferenceServiceGetReferenceByNameProcedure = "/buf.alpha.registry.v1alpha1.ReferenceService/GetReferenceByName"
+)
+
+var (
+	referenceServiceGetReferenceByNameSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_reference_proto.Services().ByName("ReferenceService").Methods().ByName("GetReferenceByName"),
+			Procedure:        ReferenceServiceGetReferenceByNameProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
 )
 
 // ReferenceServiceClient is a client for the buf.alpha.registry.v1alpha1.ReferenceService service.
 type ReferenceServiceClient interface {
 	// GetReferenceByName takes a reference name and returns the
 	// reference either as main, a tag, or a commit.
-	GetReferenceByName(context.Context, *connect.Request[v1alpha1.GetReferenceByNameRequest]) (*connect.Response[v1alpha1.GetReferenceByNameResponse], error)
+	GetReferenceByName(context.Context, *v1alpha1.GetReferenceByNameRequest) (*v1alpha1.GetReferenceByNameResponse, error)
 }
 
 // NewReferenceServiceClient constructs a client for the
-// buf.alpha.registry.v1alpha1.ReferenceService service. By default, it uses the Connect protocol
-// with the binary Protobuf Codec, asks for gzipped responses, and sends uncompressed requests. To
-// use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or connect.WithGRPCWeb()
-// options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewReferenceServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ReferenceServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	referenceServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_reference_proto.Services().ByName("ReferenceService").Methods()
-	return &referenceServiceClient{
-		getReferenceByName: connect.NewClient[v1alpha1.GetReferenceByNameRequest, v1alpha1.GetReferenceByNameResponse](
-			httpClient,
-			baseURL+ReferenceServiceGetReferenceByNameProcedure,
-			connect.WithSchema(referenceServiceMethods.ByName("GetReferenceByName")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// referenceServiceClient implements ReferenceServiceClient.
-type referenceServiceClient struct {
-	getReferenceByName *connect.Client[v1alpha1.GetReferenceByNameRequest, v1alpha1.GetReferenceByNameResponse]
-}
-
-// GetReferenceByName calls buf.alpha.registry.v1alpha1.ReferenceService.GetReferenceByName.
-func (c *referenceServiceClient) GetReferenceByName(ctx context.Context, req *connect.Request[v1alpha1.GetReferenceByNameRequest]) (*connect.Response[v1alpha1.GetReferenceByNameResponse], error) {
-	return c.getReferenceByName.CallUnary(ctx, req)
+// buf.alpha.registry.v1alpha1.ReferenceService service. Multiple service clients may share a single
+// connect.Client.
+func NewReferenceServiceClient(client *connect.Client) ReferenceServiceClient {
+	return &referenceServiceClient{client: client}
 }
 
 // ReferenceServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.ReferenceService
@@ -96,36 +73,47 @@ func (c *referenceServiceClient) GetReferenceByName(ctx context.Context, req *co
 type ReferenceServiceHandler interface {
 	// GetReferenceByName takes a reference name and returns the
 	// reference either as main, a tag, or a commit.
-	GetReferenceByName(context.Context, *connect.Request[v1alpha1.GetReferenceByNameRequest]) (*connect.Response[v1alpha1.GetReferenceByNameResponse], error)
+	GetReferenceByName(context.Context, *v1alpha1.GetReferenceByNameRequest) (*v1alpha1.GetReferenceByNameResponse, error)
 }
 
-// NewReferenceServiceHandler builds an HTTP handler from the service implementation. It returns the
-// path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewReferenceServiceHandler(svc ReferenceServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	referenceServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_reference_proto.Services().ByName("ReferenceService").Methods()
-	referenceServiceGetReferenceByNameHandler := connect.NewUnaryHandler(
-		ReferenceServiceGetReferenceByNameProcedure,
-		svc.GetReferenceByName,
-		connect.WithSchema(referenceServiceMethods.ByName("GetReferenceByName")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
+// RegisterReferenceServiceHandler registers svc as the buf.alpha.registry.v1alpha1.ReferenceService
+// implementation on server.
+func RegisterReferenceServiceHandler(server *connect.Server, svc ReferenceServiceHandler) {
+	adapter := referenceServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: referenceServiceGetReferenceByNameSpec(), Handler: adapter.getReferenceByName},
 	)
-	return "/buf.alpha.registry.v1alpha1.ReferenceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case ReferenceServiceGetReferenceByNameProcedure:
-			referenceServiceGetReferenceByNameHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedReferenceServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedReferenceServiceHandler struct{}
 
-func (UnimplementedReferenceServiceHandler) GetReferenceByName(context.Context, *connect.Request[v1alpha1.GetReferenceByNameRequest]) (*connect.Response[v1alpha1.GetReferenceByNameResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ReferenceService.GetReferenceByName is not implemented"))
+func (UnimplementedReferenceServiceHandler) GetReferenceByName(context.Context, *v1alpha1.GetReferenceByNameRequest) (*v1alpha1.GetReferenceByNameResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.ReferenceService.GetReferenceByName is not implemented")
+}
+
+type referenceServiceClient struct {
+	client *connect.Client
+}
+
+func (c *referenceServiceClient) GetReferenceByName(ctx context.Context, req *v1alpha1.GetReferenceByNameRequest) (*v1alpha1.GetReferenceByNameResponse, error) {
+	var res v1alpha1.GetReferenceByNameResponse
+	if err := c.client.CallUnary(ctx, referenceServiceGetReferenceByNameSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type referenceServiceHandler struct{ svc ReferenceServiceHandler }
+
+func (h referenceServiceHandler) getReferenceByName(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetReferenceByNameRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetReferenceByName(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

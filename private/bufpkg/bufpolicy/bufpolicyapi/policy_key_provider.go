@@ -20,7 +20,6 @@ import (
 
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapipolicy"
@@ -125,14 +124,14 @@ func (p *policyKeyProvider) getIndexedPolicyKeysForRegistryAndIndexedPolicyRefs(
 	})
 	policyResponse, err := p.clientProvider.V1Beta1CommitServiceClient(registry).GetCommits(
 		ctx,
-		connect.NewRequest(&policyv1beta1.GetCommitsRequest{
+		&policyv1beta1.GetCommitsRequest{
 			ResourceRefs: resourceRefs,
-		}),
+		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	commits := policyResponse.Msg.Commits
+	commits := policyResponse.Commits
 	if len(commits) != len(indexedPolicyRefs) {
 		return nil, syserror.New("did not get the expected number of policy datas")
 	}

@@ -20,7 +20,6 @@ import (
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
@@ -117,18 +116,17 @@ func run(
 	)
 	getLatestCuratedPluginResponse, err := pluginCurationServiceClient.GetLatestCuratedPlugin(
 		ctx,
-		connect.NewRequest(
-			registryv1alpha1.GetLatestCuratedPluginRequest_builder{
-				Owner:   pluginIdentity.Owner(),
-				Name:    pluginIdentity.Plugin(),
-				Version: pluginVersion,
-			}.Build(),
-		),
+
+		registryv1alpha1.GetLatestCuratedPluginRequest_builder{
+			Owner:   pluginIdentity.Owner(),
+			Name:    pluginIdentity.Plugin(),
+			Version: pluginVersion,
+		}.Build(),
 	)
 	if err != nil {
 		return err
 	}
-	pluginRegistryType := getLatestCuratedPluginResponse.Msg.GetPlugin().GetRegistryType()
+	pluginRegistryType := getLatestCuratedPluginResponse.GetPlugin().GetRegistryType()
 	if pluginRegistryType == 0 {
 		return fmt.Errorf("plugin %q is not associated with a package ecosystem", flags.Plugin)
 	}
@@ -147,115 +145,107 @@ func run(
 	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_GO:
 		goVersionResponse, err := resolveServiceClient.GetGoVersion(
 			ctx,
-			connect.NewRequest(
-				registryv1alpha1.GetGoVersionRequest_builder{
-					ModuleReference: moduleReference,
-					PluginReference: pluginReference,
-				}.Build(),
-			),
+
+			registryv1alpha1.GetGoVersionRequest_builder{
+				ModuleReference: moduleReference,
+				PluginReference: pluginReference,
+			}.Build(),
 		)
 		if err != nil {
 			return err
 		}
-		version = goVersionResponse.Msg.GetVersion()
+		version = goVersionResponse.GetVersion()
 	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NPM:
 		npmVersionResponse, err := resolveServiceClient.GetNPMVersion(
 			ctx,
-			connect.NewRequest(
-				registryv1alpha1.GetNPMVersionRequest_builder{
-					ModuleReference: moduleReference,
-					PluginReference: pluginReference,
-				}.Build(),
-			),
+
+			registryv1alpha1.GetNPMVersionRequest_builder{
+				ModuleReference: moduleReference,
+				PluginReference: pluginReference,
+			}.Build(),
 		)
 		if err != nil {
 			return err
 		}
-		version = npmVersionResponse.Msg.GetVersion()
+		version = npmVersionResponse.GetVersion()
 	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_MAVEN:
 		mavenVersionResponse, err := resolveServiceClient.GetMavenVersion(
 			ctx,
-			connect.NewRequest(
-				registryv1alpha1.GetMavenVersionRequest_builder{
-					ModuleReference: moduleReference,
-					PluginReference: pluginReference,
-				}.Build(),
-			),
+
+			registryv1alpha1.GetMavenVersionRequest_builder{
+				ModuleReference: moduleReference,
+				PluginReference: pluginReference,
+			}.Build(),
 		)
 		if err != nil {
 			return err
 		}
-		version = mavenVersionResponse.Msg.GetVersion()
+		version = mavenVersionResponse.GetVersion()
 	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_SWIFT:
 		swiftVersionResponse, err := resolveServiceClient.GetSwiftVersion(
 			ctx,
-			connect.NewRequest(
-				registryv1alpha1.GetSwiftVersionRequest_builder{
-					ModuleReference: moduleReference,
-					PluginReference: pluginReference,
-				}.Build(),
-			),
+
+			registryv1alpha1.GetSwiftVersionRequest_builder{
+				ModuleReference: moduleReference,
+				PluginReference: pluginReference,
+			}.Build(),
 		)
 		if err != nil {
 			return err
 		}
-		version = swiftVersionResponse.Msg.GetVersion()
+		version = swiftVersionResponse.GetVersion()
 	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_PYTHON:
 		pythonVersionResponse, err := resolveServiceClient.GetPythonVersion(
 			ctx,
-			connect.NewRequest(
-				registryv1alpha1.GetPythonVersionRequest_builder{
-					ModuleReference: moduleReference,
-					PluginReference: pluginReference,
-				}.Build(),
-			),
+
+			registryv1alpha1.GetPythonVersionRequest_builder{
+				ModuleReference: moduleReference,
+				PluginReference: pluginReference,
+			}.Build(),
 		)
 		if err != nil {
 			return err
 		}
-		version = pythonVersionResponse.Msg.GetVersion()
+		version = pythonVersionResponse.GetVersion()
 	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_CARGO:
 		cargoVersionResponse, err := resolveServiceClient.GetCargoVersion(
 			ctx,
-			connect.NewRequest(
-				registryv1alpha1.GetCargoVersionRequest_builder{
-					ModuleReference: moduleReference,
-					PluginReference: pluginReference,
-				}.Build(),
-			),
+
+			registryv1alpha1.GetCargoVersionRequest_builder{
+				ModuleReference: moduleReference,
+				PluginReference: pluginReference,
+			}.Build(),
 		)
 		if err != nil {
 			return err
 		}
-		version = cargoVersionResponse.Msg.GetVersion()
+		version = cargoVersionResponse.GetVersion()
 	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NUGET:
 		nugetVersionResponse, err := resolveServiceClient.GetNugetVersion(
 			ctx,
-			connect.NewRequest(
-				registryv1alpha1.GetNugetVersionRequest_builder{
-					ModuleReference: moduleReference,
-					PluginReference: pluginReference,
-				}.Build(),
-			),
+
+			registryv1alpha1.GetNugetVersionRequest_builder{
+				ModuleReference: moduleReference,
+				PluginReference: pluginReference,
+			}.Build(),
 		)
 		if err != nil {
 			return err
 		}
-		version = nugetVersionResponse.Msg.GetVersion()
+		version = nugetVersionResponse.GetVersion()
 	case registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_CMAKE:
 		cmakeVersionResponse, err := resolveServiceClient.GetCmakeVersion(
 			ctx,
-			connect.NewRequest(
-				registryv1alpha1.GetCmakeVersionRequest_builder{
-					ModuleReference: moduleReference,
-					PluginReference: pluginReference,
-				}.Build(),
-			),
+
+			registryv1alpha1.GetCmakeVersionRequest_builder{
+				ModuleReference: moduleReference,
+				PluginReference: pluginReference,
+			}.Build(),
 		)
 		if err != nil {
 			return err
 		}
-		version = cmakeVersionResponse.Msg.GetVersion()
+		version = cmakeVersionResponse.GetVersion()
 	default:
 		return syserror.Newf("unknown PluginRegistryType: %v", pluginRegistryType)
 	}

@@ -20,7 +20,6 @@ import (
 	"log/slog"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
 	"github.com/bufbuild/buf/private/pkg/cache"
 )
@@ -56,25 +55,24 @@ func (a *v1ProtoModuleProvider) getV1ProtoModuleForProtoModuleID(
 		func() (*modulev1.Module, error) {
 			response, err := a.moduleClientProvider.V1ModuleServiceClient(registry).GetModules(
 				ctx,
-				connect.NewRequest(
-					&modulev1.GetModulesRequest{
-						ModuleRefs: []*modulev1.ModuleRef{
-							{
-								Value: &modulev1.ModuleRef_Id{
-									Id: protoModuleID,
-								},
+
+				&modulev1.GetModulesRequest{
+					ModuleRefs: []*modulev1.ModuleRef{
+						{
+							Value: &modulev1.ModuleRef_Id{
+								Id: protoModuleID,
 							},
 						},
 					},
-				),
+				},
 			)
 			if err != nil {
 				return nil, err
 			}
-			if len(response.Msg.Modules) != 1 {
-				return nil, fmt.Errorf("expected 1 Module, got %d", len(response.Msg.Modules))
+			if len(response.Modules) != 1 {
+				return nil, fmt.Errorf("expected 1 Module, got %d", len(response.Modules))
 			}
-			return response.Msg.Modules[0], nil
+			return response.Modules[0], nil
 		},
 	)
 }

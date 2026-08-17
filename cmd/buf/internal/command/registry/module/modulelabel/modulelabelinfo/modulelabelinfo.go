@@ -21,7 +21,7 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -100,21 +100,20 @@ func run(
 	labelServiceClient := moduleClientProvider.V1LabelServiceClient(moduleFullName.Registry())
 	resp, err := labelServiceClient.GetLabels(
 		ctx,
-		connect.NewRequest(
-			&modulev1.GetLabelsRequest{
-				LabelRefs: []*modulev1.LabelRef{
-					{
-						Value: &modulev1.LabelRef_Name_{
-							Name: &modulev1.LabelRef_Name{
-								Owner:  moduleFullName.Owner(),
-								Module: moduleFullName.Name(),
-								Label:  labelName,
-							},
+
+		&modulev1.GetLabelsRequest{
+			LabelRefs: []*modulev1.LabelRef{
+				{
+					Value: &modulev1.LabelRef_Name_{
+						Name: &modulev1.LabelRef_Name{
+							Owner:  moduleFullName.Owner(),
+							Module: moduleFullName.Name(),
+							Label:  labelName,
 						},
 					},
 				},
 			},
-		),
+		},
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -122,7 +121,7 @@ func run(
 		}
 		return err
 	}
-	labels := resp.Msg.Labels
+	labels := resp.Labels
 	if len(labels) != 1 {
 		return syserror.Newf("expect 1 label from response, got %d", len(labels))
 	}

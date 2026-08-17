@@ -18,14 +18,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
-	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
-	"google.golang.org/protobuf/proto"
+	"connectrpc.com/connect/v2"
 )
 
 const (
@@ -33,58 +33,78 @@ const (
 	TokenEnvKey = "BUF_TOKEN"
 )
 
-// NewAugmentedConnectErrorInterceptor returns a new Connect Interceptor that wraps
-// [connect.Error]s in an [AugmentedConnectError].
-func NewAugmentedConnectErrorInterceptor() connect.UnaryInterceptorFunc {
-	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
-		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-			resp, err := next(ctx, req)
-			if err != nil {
+// NewAugmentedConnectErrorInterceptor returns a new Connect client interceptor
+// that wraps [connect.Error]s in an [AugmentedConnectError].
+func NewAugmentedConnectErrorInterceptor() connect.ClientInterceptor {
+	return func(next connect.ClientFunc) connect.ClientFunc {
+		return func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
+			info, _ := connect.CallInfoForClientContext(ctx)
+			mapError := func(err error) error {
 				if connectErr := new(connect.Error); errors.As(err, &connectErr) {
-					err = &AugmentedConnectError{
+					var addr string
+					if info != nil {
+						addr = info.PeerAddr
+					}
+					return &AugmentedConnectError{
 						// Using the original err to avoid throwing information away.
 						cause:     err,
-						procedure: req.Spec().Procedure,
-						addr:      req.Peer().Addr,
+						procedure: spec.Procedure,
+						addr:      addr,
 					}
 				}
+				return err
 			}
-			return resp, err
-		}
-	}
-	return interceptor
-}
-
-// NewSetCLIVersionInterceptor returns a new Connect Interceptor that sets the Buf CLI version into all request headers
-func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
-	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
-		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-			req.Header().Set(CliVersionHeaderName, version)
-			return next(ctx, req)
-		}
-	}
-	return interceptor
-}
-
-// NewCLIWarningInterceptor returns a new Connect Interceptor that logs CLI warnings returned by server responses.
-func NewCLIWarningInterceptor(container appext.LoggerContainer) connect.UnaryInterceptorFunc {
-	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
-		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-			resp, err := next(ctx, req)
-			if resp != nil {
-				logWarningFromHeader(container, resp.Header())
-			} else if err != nil {
-				if connectErr := new(connect.Error); errors.As(err, &connectErr) {
-					logWarningFromHeader(container, connectErr.Meta())
-				}
+			stream, err := next(ctx, spec)
+			if err != nil {
+				return nil, mapError(err)
 			}
-			return resp, err
+			return &wrappedClientStream{
+				ClientStream: stream,
+				mapError:     mapError,
+			}, nil
 		}
 	}
-	return interceptor
 }
 
-func logWarningFromHeader(container appext.LoggerContainer, header http.Header) {
+// NewSetCLIVersionInterceptor returns a new Connect client interceptor that sets
+// the Buf CLI version into all request headers
+func NewSetCLIVersionInterceptor(version string) connect.ClientInterceptor {
+	return func(next connect.ClientFunc) connect.ClientFunc {
+		return func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
+			if info, ok := connect.CallInfoForClientContext(ctx); ok {
+				info.RequestHeader().Set(CliVersionHeaderName, version)
+			}
+			return next(ctx, spec)
+		}
+	}
+}
+
+// NewCLIWarningInterceptor returns a new Connect client interceptor that logs CLI
+// warnings returned by server responses.
+func NewCLIWarningInterceptor(container appext.LoggerContainer) connect.ClientInterceptor {
+	return func(next connect.ClientFunc) connect.ClientFunc {
+		return func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
+			info, ok := connect.CallInfoForClientContext(ctx)
+			if !ok {
+				return next(ctx, spec)
+			}
+			stream, err := next(ctx, spec)
+			if err != nil {
+				logWarningFromHeader(container, info.ResponseHeader())
+				return nil, err
+			}
+			return &wrappedClientStream{
+				ClientStream: stream,
+				onTerminal: func(error) {
+					logWarningFromHeader(container, info.ResponseHeader())
+					logWarningFromHeader(container, info.ResponseTrailer())
+				},
+			}, nil
+		}
+	}
+}
+
+func logWarningFromHeader(container appext.LoggerContainer, header *connect.Header) {
 	encoded := header.Get(CLIWarningHeaderName)
 	if encoded != "" {
 		warning, err := connect.DecodeBinaryHeader(encoded)
@@ -111,86 +131,147 @@ type TokenProvider interface {
 //
 // Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
 // a client.
-func NewAuthorizationInterceptorProvider(tokenProviders ...TokenProvider) func(string) connect.UnaryInterceptorFunc {
-	return func(address string) connect.UnaryInterceptorFunc {
-		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
-			return connect.UnaryFunc(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+func NewAuthorizationInterceptorProvider(tokenProviders ...TokenProvider) func(string) connect.ClientInterceptor {
+	return func(address string) connect.ClientInterceptor {
+		return func(next connect.ClientFunc) connect.ClientFunc {
+			return func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
 				usingTokenEnvKey := false
 				hasToken := false
-				for _, tf := range tokenProviders {
-					if token := tf.RemoteToken(address); token != "" {
-						req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
-						usingTokenEnvKey = tf.IsFromEnvVar()
-						hasToken = true
-						break
+				if info, ok := connect.CallInfoForClientContext(ctx); ok {
+					for _, tokenProvider := range tokenProviders {
+						if token := tokenProvider.RemoteToken(address); token != "" {
+							info.RequestHeader().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
+							usingTokenEnvKey = tokenProvider.IsFromEnvVar()
+							hasToken = true
+							break
+						}
 					}
 				}
-				response, err := next(ctx, req)
-				if err != nil {
+				mapError := func(err error) error {
 					var envKey string
 					if usingTokenEnvKey {
 						envKey = TokenEnvKey
 					}
-					err = &AuthError{
+					return &AuthError{
 						cause:       err,
 						remote:      address,
 						hasToken:    hasToken,
 						tokenEnvKey: envKey,
 					}
 				}
-				return response, err
-			})
+				stream, err := next(ctx, spec)
+				if err != nil {
+					return nil, mapError(err)
+				}
+				return &wrappedClientStream{
+					ClientStream: stream,
+					mapError:     mapError,
+				}, nil
+			}
 		}
-		return interceptor
 	}
 }
 
-// NewDebugLoggingInterceptor returns a new Connect Interceptor that adds debug log
-// statements for each rpc call.
+// NewDebugLoggingInterceptor returns a new Connect client interceptor that adds
+// debug log statements for each rpc call.
 //
 // The following information is collected for logging: duration, status code, peer name,
 // rpc system, request size, and response size.
-func NewDebugLoggingInterceptor(container appext.LoggerContainer) connect.UnaryInterceptorFunc {
-	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
-		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-			var requestSize int
-			if req.Any() != nil {
-				msg, ok := req.Any().(proto.Message)
-				if ok {
-					requestSize = proto.Size(msg)
-				}
+func NewDebugLoggingInterceptor(container appext.LoggerContainer) connect.ClientInterceptor {
+	return func(next connect.ClientFunc) connect.ClientFunc {
+		return func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
+			info, ok := connect.CallInfoForClientContext(ctx)
+			if !ok {
+				return next(ctx, spec)
 			}
 			startTime := time.Now()
-			resp, err := next(ctx, req)
-			duration := time.Since(startTime)
-			var status connect.Code
-			if err != nil {
-				status = connect.CodeOf(err)
-			}
-			var responseSize int
-			if resp != nil && resp.Any() != nil {
-				msg, ok := resp.Any().(proto.Message)
-				if ok {
-					responseSize = proto.Size(msg)
+			logCall := func(err error) {
+				var status connect.Code
+				if err != nil && !errors.Is(err, io.EOF) {
+					status = connect.CodeOf(err)
 				}
+				attrs := []slog.Attr{
+					slog.Duration("duration", time.Since(startTime)),
+					slog.String("status", status.String()),
+					slog.String("net.peer.name", info.PeerAddr),
+					slog.String("rpc.system", info.Protocol),
+					slog.Int("message.sent.uncompressed_size", info.SendStats.Size),
+					slog.Int("message.received.uncompressed_size", info.ReceiveStats.Size),
+				}
+				container.Logger().LogAttrs(
+					ctx,
+					slog.LevelDebug,
+					// Remove the leading "/" from Procedure name
+					strings.TrimPrefix(spec.Procedure, "/"),
+					attrs...,
+				)
 			}
-			attrs := []slog.Attr{
-				slog.Duration("duration", duration),
-				slog.String("status", status.String()),
-				slog.String("net.peer.name", req.Peer().Addr),
-				slog.String("rpc.system", req.Peer().Protocol),
-				slog.Int("message.sent.uncompressed_size", requestSize),
-				slog.Int("message.received.uncompressed_size", responseSize),
+			stream, err := next(ctx, spec)
+			if err != nil {
+				logCall(err)
+				return nil, err
 			}
-			container.Logger().LogAttrs(
-				ctx,
-				slog.LevelDebug,
-				// Remove the leading "/" from Procedure name
-				strings.TrimPrefix(req.Spec().Procedure, "/"),
-				attrs...,
-			)
-			return resp, err
+			return &wrappedClientStream{
+				ClientStream: stream,
+				onTerminal:   logCall,
+			}, nil
 		}
 	}
-	return interceptor
+}
+
+// wrappedClientStream wraps a [connect.ClientStream] so interceptors can map
+// errors returned by the stream and observe the end of the RPC.
+//
+// mapError, if non-nil, is applied to every non-nil error returned by the
+// stream, except errors that report clean receive-side completion (matching
+// [io.EOF]). onTerminal, if non-nil, is invoked at most once when the RPC
+// reaches a terminal event: Receive returning a non-nil error (including
+// [io.EOF]) or Close. It receives the raw (unmapped) error.
+type wrappedClientStream struct {
+	connect.ClientStream
+	mapError   func(error) error
+	onTerminal func(error)
+	once       sync.Once
+}
+
+func (s *wrappedClientStream) SendHeaders() error {
+	return s.wrapError(s.ClientStream.SendHeaders())
+}
+
+func (s *wrappedClientStream) Send(msg any) error {
+	return s.wrapError(s.ClientStream.Send(msg))
+}
+
+func (s *wrappedClientStream) CloseSend() error {
+	return s.wrapError(s.ClientStream.CloseSend())
+}
+
+func (s *wrappedClientStream) Receive(msg any) error {
+	err := s.ClientStream.Receive(msg)
+	if err != nil {
+		s.terminal(err)
+	}
+	return s.wrapError(err)
+}
+
+func (s *wrappedClientStream) Close() error {
+	err := s.ClientStream.Close()
+	s.terminal(err)
+	return s.wrapError(err)
+}
+
+func (s *wrappedClientStream) wrapError(err error) error {
+	if err == nil || s.mapError == nil || errors.Is(err, io.EOF) {
+		return err
+	}
+	return s.mapError(err)
+}
+
+func (s *wrappedClientStream) terminal(err error) {
+	if s.onTerminal == nil {
+		return
+	}
+	s.once.Do(func() {
+		s.onTerminal(err)
+	})
 }

@@ -22,7 +22,7 @@ import (
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -141,23 +141,22 @@ func run(
 
 	resourceResp, err := resourceServiceClient.GetResources(
 		ctx,
-		connect.NewRequest(
-			&pluginv1beta1.GetResourcesRequest{
-				ResourceRefs: []*pluginv1beta1.ResourceRef{
-					{
-						Value: &pluginv1beta1.ResourceRef_Name_{
-							Name: &pluginv1beta1.ResourceRef_Name{
-								Owner:  pluginRef.FullName().Owner(),
-								Plugin: pluginRef.FullName().Name(),
-								Child: &pluginv1beta1.ResourceRef_Name_Ref{
-									Ref: pluginRef.Ref(),
-								},
+
+		&pluginv1beta1.GetResourcesRequest{
+			ResourceRefs: []*pluginv1beta1.ResourceRef{
+				{
+					Value: &pluginv1beta1.ResourceRef_Name_{
+						Name: &pluginv1beta1.ResourceRef_Name{
+							Owner:  pluginRef.FullName().Owner(),
+							Plugin: pluginRef.FullName().Name(),
+							Child: &pluginv1beta1.ResourceRef_Name_Ref{
+								Ref: pluginRef.Ref(),
 							},
 						},
 					},
 				},
 			},
-		),
+		},
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -165,7 +164,7 @@ func run(
 		}
 		return err
 	}
-	resources := resourceResp.Msg.Resources
+	resources := resourceResp.Resources
 	if len(resources) != 1 {
 		return syserror.Newf("expect 1 resource from response, got %d", len(resources))
 	}
@@ -188,21 +187,20 @@ func run(
 		}
 		resp, err := commitServiceClient.ListCommits(
 			ctx,
-			connect.NewRequest(
-				&pluginv1beta1.ListCommitsRequest{
-					PageSize:  flags.PageSize,
-					PageToken: flags.PageToken,
-					ResourceRef: &pluginv1beta1.ResourceRef{
-						Value: &pluginv1beta1.ResourceRef_Name_{
-							Name: &pluginv1beta1.ResourceRef_Name{
-								Owner:  pluginRef.FullName().Owner(),
-								Plugin: pluginRef.FullName().Name(),
-							},
+
+			&pluginv1beta1.ListCommitsRequest{
+				PageSize:  flags.PageSize,
+				PageToken: flags.PageToken,
+				ResourceRef: &pluginv1beta1.ResourceRef{
+					Value: &pluginv1beta1.ResourceRef_Name_{
+						Name: &pluginv1beta1.ResourceRef_Name{
+							Owner:  pluginRef.FullName().Owner(),
+							Plugin: pluginRef.FullName().Name(),
 						},
 					},
-					Order: commitOrder,
 				},
-			),
+				Order: commitOrder,
+			},
 		)
 		if err != nil {
 			if connect.CodeOf(err) == connect.CodeNotFound {
@@ -213,9 +211,9 @@ func run(
 		return bufprint.PrintPage(
 			container.Stdout(),
 			format,
-			resp.Msg.NextPageToken,
-			nextPageCommand(container, flags, resp.Msg.NextPageToken),
-			xslices.Map(resp.Msg.Commits, func(commit *pluginv1beta1.Commit) bufprint.Entity {
+			resp.NextPageToken,
+			nextPageCommand(container, flags, resp.NextPageToken),
+			xslices.Map(resp.Commits, func(commit *pluginv1beta1.Commit) bufprint.Entity {
 				return bufprint.NewCommitEntity(commit, pluginRef.FullName(), commit.GetSourceControlUrl())
 			}),
 		)
@@ -232,23 +230,22 @@ func run(
 	}
 	resp, err := labelServiceClient.ListLabelHistory(
 		ctx,
-		connect.NewRequest(
-			&pluginv1beta1.ListLabelHistoryRequest{
-				PageSize:  flags.PageSize,
-				PageToken: flags.PageToken,
-				LabelRef: &pluginv1beta1.LabelRef{
-					Value: &pluginv1beta1.LabelRef_Name_{
-						Name: &pluginv1beta1.LabelRef_Name{
-							Owner:  pluginRef.FullName().Owner(),
-							Plugin: pluginRef.FullName().Name(),
-							Label:  pluginRef.Ref(),
-						},
+
+		&pluginv1beta1.ListLabelHistoryRequest{
+			PageSize:  flags.PageSize,
+			PageToken: flags.PageToken,
+			LabelRef: &pluginv1beta1.LabelRef{
+				Value: &pluginv1beta1.LabelRef_Name_{
+					Name: &pluginv1beta1.LabelRef_Name{
+						Owner:  pluginRef.FullName().Owner(),
+						Plugin: pluginRef.FullName().Name(),
+						Label:  pluginRef.Ref(),
 					},
 				},
-				Order:                         labelHistoryOrder,
-				OnlyCommitsWithChangedDigests: flags.DigestChangesOnly,
 			},
-		),
+			Order:                         labelHistoryOrder,
+			OnlyCommitsWithChangedDigests: flags.DigestChangesOnly,
+		},
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -258,7 +255,7 @@ func run(
 		return err
 	}
 	commits := xslices.Map(
-		resp.Msg.Values,
+		resp.Values,
 		func(value *pluginv1beta1.ListLabelHistoryResponse_Value) *pluginv1beta1.Commit {
 			return value.Commit
 		},
@@ -266,8 +263,8 @@ func run(
 	return bufprint.PrintPage(
 		container.Stdout(),
 		format,
-		resp.Msg.NextPageToken,
-		nextPageCommand(container, flags, resp.Msg.NextPageToken),
+		resp.NextPageToken,
+		nextPageCommand(container, flags, resp.NextPageToken),
 		xslices.Map(commits, func(commit *pluginv1beta1.Commit) bufprint.Entity {
 			return bufprint.NewCommitEntity(commit, pluginRef.FullName(), commit.GetSourceControlUrl())
 		}),

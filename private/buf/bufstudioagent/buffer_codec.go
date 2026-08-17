@@ -16,18 +16,19 @@ package bufstudioagent
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 
-	connect "connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"google.golang.org/protobuf/proto"
 )
 
-// bufferCodec is a connect.Codec for use with clients of type
-// connect.Client[bytes.Buffer, bytes.Buffer] which does not attempt to parse
-// messages but instead allows the application layer to work on the buffers
-// directly. This is useful for creating proxies.
+// bufferCodec is a connect.Codec for use with clients that pass raw
+// *bytes.Buffer messages, which does not attempt to parse messages but
+// instead allows the application layer to work on the buffers directly. This
+// is useful for creating proxies.
 type bufferCodec struct {
 	name string
 }
@@ -36,33 +37,43 @@ var _ connect.Codec = (*bufferCodec)(nil)
 
 func (b *bufferCodec) Name() string { return b.name }
 
-func (b *bufferCodec) Marshal(src any) ([]byte, error) {
+func (b *bufferCodec) MarshalWrite(_ context.Context, dst io.Writer, src any) error {
 	switch typedSrc := src.(type) {
 	case *bytes.Buffer:
-		return typedSrc.Bytes(), nil
+		_, err := dst.Write(typedSrc.Bytes())
+		return err
 	case proto.Message:
 		// When the codec is named "proto", connect will assume that it
-		// may also be used to unmarshal the errors in the
+		// may also be used to marshal the errors in the
 		// grpc-status-details-bin trailer. The type used is not
 		// exported so we match against the general proto.Message.
-		return protoencoding.NewWireMarshaler().Marshal(typedSrc)
+		data, err := protoencoding.NewWireMarshaler().Marshal(typedSrc)
+		if err != nil {
+			return err
+		}
+		_, err = dst.Write(data)
+		return err
 	default:
-		return nil, fmt.Errorf("marshal unexpected type %T", src)
+		return fmt.Errorf("marshal unexpected type %T", src)
 	}
 }
 
-func (b *bufferCodec) Unmarshal(src []byte, dst any) error {
+func (b *bufferCodec) UnmarshalRead(_ context.Context, src io.Reader, dst any) error {
 	switch destination := dst.(type) {
 	case *bytes.Buffer:
 		destination.Reset()
-		_, err := io.Copy(destination, bytes.NewReader(src))
+		_, err := io.Copy(destination, src)
 		return err
 	case proto.Message:
 		// When the codec is named "proto", connect will assume that it
 		// may also be used to unmarshal the errors in the
 		// grpc-status-details-bin trailer. The type used is not
 		// exported so we match against the general proto.Message.
-		return protoencoding.NewWireUnmarshaler(nil).Unmarshal(src, destination)
+		data, err := io.ReadAll(src)
+		if err != nil {
+			return err
+		}
+		return protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, destination)
 	default:
 		return fmt.Errorf("unmarshal unexpected type %T", dst)
 	}

@@ -21,7 +21,7 @@ import (
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -95,23 +95,22 @@ func run(
 	commitServiceClient := bufregistryapipolicy.NewClientProvider(clientConfig).V1Beta1CommitServiceClient(policyRef.FullName().Registry())
 	resp, err := commitServiceClient.GetCommits(
 		ctx,
-		connect.NewRequest(
-			&policyv1beta1.GetCommitsRequest{
-				ResourceRefs: []*policyv1beta1.ResourceRef{
-					{
-						Value: &policyv1beta1.ResourceRef_Name_{
-							Name: &policyv1beta1.ResourceRef_Name{
-								Owner:  policyRef.FullName().Owner(),
-								Policy: policyRef.FullName().Name(),
-								Child: &policyv1beta1.ResourceRef_Name_Ref{
-									Ref: policyRef.Ref(),
-								},
+
+		&policyv1beta1.GetCommitsRequest{
+			ResourceRefs: []*policyv1beta1.ResourceRef{
+				{
+					Value: &policyv1beta1.ResourceRef_Name_{
+						Name: &policyv1beta1.ResourceRef_Name{
+							Owner:  policyRef.FullName().Owner(),
+							Policy: policyRef.FullName().Name(),
+							Child: &policyv1beta1.ResourceRef_Name_Ref{
+								Ref: policyRef.Ref(),
 							},
 						},
 					},
 				},
 			},
-		),
+		},
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -119,7 +118,7 @@ func run(
 		}
 		return err
 	}
-	commits := resp.Msg.Commits
+	commits := resp.Commits
 	if len(commits) != 1 {
 		return syserror.Newf("expect 1 commit from response, got %d", len(commits))
 	}

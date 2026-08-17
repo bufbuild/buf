@@ -19,791 +19,910 @@
 package registryv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// RepositoryServiceName is the fully-qualified name of the RepositoryService service.
 	RepositoryServiceName = "buf.alpha.registry.v1alpha1.RepositoryService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// RepositoryServiceGetRepositoryProcedure is the fully-qualified name of the RepositoryService's
+	// RepositoryServiceGetRepositoryProcedure is the procedure name of the RepositoryService's
 	// GetRepository RPC.
 	RepositoryServiceGetRepositoryProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepository"
-	// RepositoryServiceGetRepositoryByFullNameProcedure is the fully-qualified name of the
+	// RepositoryServiceGetRepositoryByFullNameProcedure is the procedure name of the
 	// RepositoryService's GetRepositoryByFullName RPC.
 	RepositoryServiceGetRepositoryByFullNameProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryByFullName"
-	// RepositoryServiceListRepositoriesProcedure is the fully-qualified name of the RepositoryService's
+	// RepositoryServiceListRepositoriesProcedure is the procedure name of the RepositoryService's
 	// ListRepositories RPC.
 	RepositoryServiceListRepositoriesProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositories"
-	// RepositoryServiceListUserRepositoriesProcedure is the fully-qualified name of the
-	// RepositoryService's ListUserRepositories RPC.
+	// RepositoryServiceListUserRepositoriesProcedure is the procedure name of the RepositoryService's
+	// ListUserRepositories RPC.
 	RepositoryServiceListUserRepositoriesProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/ListUserRepositories"
-	// RepositoryServiceListRepositoriesUserCanAccessProcedure is the fully-qualified name of the
+	// RepositoryServiceListRepositoriesUserCanAccessProcedure is the procedure name of the
 	// RepositoryService's ListRepositoriesUserCanAccess RPC.
 	RepositoryServiceListRepositoriesUserCanAccessProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositoriesUserCanAccess"
-	// RepositoryServiceListOrganizationRepositoriesProcedure is the fully-qualified name of the
+	// RepositoryServiceListOrganizationRepositoriesProcedure is the procedure name of the
 	// RepositoryService's ListOrganizationRepositories RPC.
 	RepositoryServiceListOrganizationRepositoriesProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/ListOrganizationRepositories"
-	// RepositoryServiceCreateRepositoryByFullNameProcedure is the fully-qualified name of the
+	// RepositoryServiceCreateRepositoryByFullNameProcedure is the procedure name of the
 	// RepositoryService's CreateRepositoryByFullName RPC.
 	RepositoryServiceCreateRepositoryByFullNameProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/CreateRepositoryByFullName"
-	// RepositoryServiceDeleteRepositoryProcedure is the fully-qualified name of the RepositoryService's
+	// RepositoryServiceDeleteRepositoryProcedure is the procedure name of the RepositoryService's
 	// DeleteRepository RPC.
 	RepositoryServiceDeleteRepositoryProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/DeleteRepository"
-	// RepositoryServiceDeleteRepositoryByFullNameProcedure is the fully-qualified name of the
+	// RepositoryServiceDeleteRepositoryByFullNameProcedure is the procedure name of the
 	// RepositoryService's DeleteRepositoryByFullName RPC.
 	RepositoryServiceDeleteRepositoryByFullNameProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/DeleteRepositoryByFullName"
-	// RepositoryServiceDeprecateRepositoryByNameProcedure is the fully-qualified name of the
+	// RepositoryServiceDeprecateRepositoryByNameProcedure is the procedure name of the
 	// RepositoryService's DeprecateRepositoryByName RPC.
 	RepositoryServiceDeprecateRepositoryByNameProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/DeprecateRepositoryByName"
-	// RepositoryServiceUndeprecateRepositoryByNameProcedure is the fully-qualified name of the
+	// RepositoryServiceUndeprecateRepositoryByNameProcedure is the procedure name of the
 	// RepositoryService's UndeprecateRepositoryByName RPC.
 	RepositoryServiceUndeprecateRepositoryByNameProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/UndeprecateRepositoryByName"
-	// RepositoryServiceGetRepositoriesByFullNameProcedure is the fully-qualified name of the
+	// RepositoryServiceGetRepositoriesByFullNameProcedure is the procedure name of the
 	// RepositoryService's GetRepositoriesByFullName RPC.
 	RepositoryServiceGetRepositoriesByFullNameProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesByFullName"
-	// RepositoryServiceSetRepositoryContributorProcedure is the fully-qualified name of the
+	// RepositoryServiceSetRepositoryContributorProcedure is the procedure name of the
 	// RepositoryService's SetRepositoryContributor RPC.
 	RepositoryServiceSetRepositoryContributorProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/SetRepositoryContributor"
-	// RepositoryServiceListRepositoryContributorsProcedure is the fully-qualified name of the
+	// RepositoryServiceListRepositoryContributorsProcedure is the procedure name of the
 	// RepositoryService's ListRepositoryContributors RPC.
 	RepositoryServiceListRepositoryContributorsProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositoryContributors"
-	// RepositoryServiceGetRepositorySettingsProcedure is the fully-qualified name of the
-	// RepositoryService's GetRepositorySettings RPC.
+	// RepositoryServiceGetRepositorySettingsProcedure is the procedure name of the RepositoryService's
+	// GetRepositorySettings RPC.
 	RepositoryServiceGetRepositorySettingsProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositorySettings"
-	// RepositoryServiceUpdateRepositorySettingsByNameProcedure is the fully-qualified name of the
+	// RepositoryServiceUpdateRepositorySettingsByNameProcedure is the procedure name of the
 	// RepositoryService's UpdateRepositorySettingsByName RPC.
 	RepositoryServiceUpdateRepositorySettingsByNameProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositorySettingsByName"
-	// RepositoryServiceGetRepositoriesMetadataProcedure is the fully-qualified name of the
+	// RepositoryServiceGetRepositoriesMetadataProcedure is the procedure name of the
 	// RepositoryService's GetRepositoriesMetadata RPC.
 	RepositoryServiceGetRepositoriesMetadataProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesMetadata"
-	// RepositoryServiceGetRepositoryDependencyDOTStringProcedure is the fully-qualified name of the
+	// RepositoryServiceGetRepositoryDependencyDOTStringProcedure is the procedure name of the
 	// RepositoryService's GetRepositoryDependencyDOTString RPC.
 	RepositoryServiceGetRepositoryDependencyDOTStringProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryDependencyDOTString"
-	// RepositoryServiceAddRepositoryGroupProcedure is the fully-qualified name of the
-	// RepositoryService's AddRepositoryGroup RPC.
+	// RepositoryServiceAddRepositoryGroupProcedure is the procedure name of the RepositoryService's
+	// AddRepositoryGroup RPC.
 	RepositoryServiceAddRepositoryGroupProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/AddRepositoryGroup"
-	// RepositoryServiceUpdateRepositoryGroupProcedure is the fully-qualified name of the
-	// RepositoryService's UpdateRepositoryGroup RPC.
+	// RepositoryServiceUpdateRepositoryGroupProcedure is the procedure name of the RepositoryService's
+	// UpdateRepositoryGroup RPC.
 	RepositoryServiceUpdateRepositoryGroupProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositoryGroup"
-	// RepositoryServiceRemoveRepositoryGroupProcedure is the fully-qualified name of the
-	// RepositoryService's RemoveRepositoryGroup RPC.
+	// RepositoryServiceRemoveRepositoryGroupProcedure is the procedure name of the RepositoryService's
+	// RemoveRepositoryGroup RPC.
 	RepositoryServiceRemoveRepositoryGroupProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/RemoveRepositoryGroup"
+)
+
+var (
+	repositoryServiceGetRepositorySpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("GetRepository"),
+			Procedure:        RepositoryServiceGetRepositoryProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	repositoryServiceGetRepositoryByFullNameSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("GetRepositoryByFullName"),
+			Procedure:        RepositoryServiceGetRepositoryByFullNameProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	repositoryServiceListRepositoriesSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("ListRepositories"),
+			Procedure:        RepositoryServiceListRepositoriesProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	repositoryServiceListUserRepositoriesSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("ListUserRepositories"),
+			Procedure:        RepositoryServiceListUserRepositoriesProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	repositoryServiceListRepositoriesUserCanAccessSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("ListRepositoriesUserCanAccess"),
+			Procedure:        RepositoryServiceListRepositoriesUserCanAccessProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	repositoryServiceListOrganizationRepositoriesSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("ListOrganizationRepositories"),
+			Procedure:        RepositoryServiceListOrganizationRepositoriesProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	repositoryServiceCreateRepositoryByFullNameSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("CreateRepositoryByFullName"),
+			Procedure:        RepositoryServiceCreateRepositoryByFullNameProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	repositoryServiceDeleteRepositorySpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("DeleteRepository"),
+			Procedure:        RepositoryServiceDeleteRepositoryProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	repositoryServiceDeleteRepositoryByFullNameSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("DeleteRepositoryByFullName"),
+			Procedure:        RepositoryServiceDeleteRepositoryByFullNameProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	repositoryServiceDeprecateRepositoryByNameSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("DeprecateRepositoryByName"),
+			Procedure:  RepositoryServiceDeprecateRepositoryByNameProcedure,
+		}
+	})
+	repositoryServiceUndeprecateRepositoryByNameSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("UndeprecateRepositoryByName"),
+			Procedure:  RepositoryServiceUndeprecateRepositoryByNameProcedure,
+		}
+	})
+	repositoryServiceGetRepositoriesByFullNameSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("GetRepositoriesByFullName"),
+			Procedure:        RepositoryServiceGetRepositoriesByFullNameProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	repositoryServiceSetRepositoryContributorSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("SetRepositoryContributor"),
+			Procedure:  RepositoryServiceSetRepositoryContributorProcedure,
+		}
+	})
+	repositoryServiceListRepositoryContributorsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("ListRepositoryContributors"),
+			Procedure:        RepositoryServiceListRepositoryContributorsProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	repositoryServiceGetRepositorySettingsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("GetRepositorySettings"),
+			Procedure:        RepositoryServiceGetRepositorySettingsProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	repositoryServiceUpdateRepositorySettingsByNameSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("UpdateRepositorySettingsByName"),
+			Procedure:  RepositoryServiceUpdateRepositorySettingsByNameProcedure,
+		}
+	})
+	repositoryServiceGetRepositoriesMetadataSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("GetRepositoriesMetadata"),
+			Procedure:        RepositoryServiceGetRepositoriesMetadataProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	repositoryServiceGetRepositoryDependencyDOTStringSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("GetRepositoryDependencyDOTString"),
+			Procedure:        RepositoryServiceGetRepositoryDependencyDOTStringProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	repositoryServiceAddRepositoryGroupSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("AddRepositoryGroup"),
+			Procedure:        RepositoryServiceAddRepositoryGroupProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	repositoryServiceUpdateRepositoryGroupSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("UpdateRepositoryGroup"),
+			Procedure:        RepositoryServiceUpdateRepositoryGroupProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	repositoryServiceRemoveRepositoryGroupSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods().ByName("RemoveRepositoryGroup"),
+			Procedure:        RepositoryServiceRemoveRepositoryGroupProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
 )
 
 // RepositoryServiceClient is a client for the buf.alpha.registry.v1alpha1.RepositoryService
 // service.
 type RepositoryServiceClient interface {
 	// GetRepository gets a repository by ID.
-	GetRepository(context.Context, *connect.Request[v1alpha1.GetRepositoryRequest]) (*connect.Response[v1alpha1.GetRepositoryResponse], error)
+	GetRepository(context.Context, *v1alpha1.GetRepositoryRequest) (*v1alpha1.GetRepositoryResponse, error)
 	// GetRepositoryByFullName gets a repository by full name.
-	GetRepositoryByFullName(context.Context, *connect.Request[v1alpha1.GetRepositoryByFullNameRequest]) (*connect.Response[v1alpha1.GetRepositoryByFullNameResponse], error)
+	GetRepositoryByFullName(context.Context, *v1alpha1.GetRepositoryByFullNameRequest) (*v1alpha1.GetRepositoryByFullNameResponse, error)
 	// ListRepositories lists all repositories.
-	ListRepositories(context.Context, *connect.Request[v1alpha1.ListRepositoriesRequest]) (*connect.Response[v1alpha1.ListRepositoriesResponse], error)
+	ListRepositories(context.Context, *v1alpha1.ListRepositoriesRequest) (*v1alpha1.ListRepositoriesResponse, error)
 	// ListUserRepositories lists all repositories belonging to a user.
-	ListUserRepositories(context.Context, *connect.Request[v1alpha1.ListUserRepositoriesRequest]) (*connect.Response[v1alpha1.ListUserRepositoriesResponse], error)
+	ListUserRepositories(context.Context, *v1alpha1.ListUserRepositoriesRequest) (*v1alpha1.ListUserRepositoriesResponse, error)
 	// ListRepositoriesUserCanAccess lists all repositories a user can access.
-	ListRepositoriesUserCanAccess(context.Context, *connect.Request[v1alpha1.ListRepositoriesUserCanAccessRequest]) (*connect.Response[v1alpha1.ListRepositoriesUserCanAccessResponse], error)
+	ListRepositoriesUserCanAccess(context.Context, *v1alpha1.ListRepositoriesUserCanAccessRequest) (*v1alpha1.ListRepositoriesUserCanAccessResponse, error)
 	// ListOrganizationRepositories lists all repositories for an organization.
-	ListOrganizationRepositories(context.Context, *connect.Request[v1alpha1.ListOrganizationRepositoriesRequest]) (*connect.Response[v1alpha1.ListOrganizationRepositoriesResponse], error)
+	ListOrganizationRepositories(context.Context, *v1alpha1.ListOrganizationRepositoriesRequest) (*v1alpha1.ListOrganizationRepositoriesResponse, error)
 	// CreateRepositoryByFullName creates a new repository by full name.
-	CreateRepositoryByFullName(context.Context, *connect.Request[v1alpha1.CreateRepositoryByFullNameRequest]) (*connect.Response[v1alpha1.CreateRepositoryByFullNameResponse], error)
+	CreateRepositoryByFullName(context.Context, *v1alpha1.CreateRepositoryByFullNameRequest) (*v1alpha1.CreateRepositoryByFullNameResponse, error)
 	// DeleteRepository deletes a repository.
-	DeleteRepository(context.Context, *connect.Request[v1alpha1.DeleteRepositoryRequest]) (*connect.Response[v1alpha1.DeleteRepositoryResponse], error)
+	DeleteRepository(context.Context, *v1alpha1.DeleteRepositoryRequest) (*v1alpha1.DeleteRepositoryResponse, error)
 	// DeleteRepositoryByFullName deletes a repository by full name.
-	DeleteRepositoryByFullName(context.Context, *connect.Request[v1alpha1.DeleteRepositoryByFullNameRequest]) (*connect.Response[v1alpha1.DeleteRepositoryByFullNameResponse], error)
+	DeleteRepositoryByFullName(context.Context, *v1alpha1.DeleteRepositoryByFullNameRequest) (*v1alpha1.DeleteRepositoryByFullNameResponse, error)
 	// DeprecateRepositoryByName deprecates the repository.
-	DeprecateRepositoryByName(context.Context, *connect.Request[v1alpha1.DeprecateRepositoryByNameRequest]) (*connect.Response[v1alpha1.DeprecateRepositoryByNameResponse], error)
+	DeprecateRepositoryByName(context.Context, *v1alpha1.DeprecateRepositoryByNameRequest) (*v1alpha1.DeprecateRepositoryByNameResponse, error)
 	// UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.
-	UndeprecateRepositoryByName(context.Context, *connect.Request[v1alpha1.UndeprecateRepositoryByNameRequest]) (*connect.Response[v1alpha1.UndeprecateRepositoryByNameResponse], error)
+	UndeprecateRepositoryByName(context.Context, *v1alpha1.UndeprecateRepositoryByNameRequest) (*v1alpha1.UndeprecateRepositoryByNameResponse, error)
 	// GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
 	// Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
-	GetRepositoriesByFullName(context.Context, *connect.Request[v1alpha1.GetRepositoriesByFullNameRequest]) (*connect.Response[v1alpha1.GetRepositoriesByFullNameResponse], error)
+	GetRepositoriesByFullName(context.Context, *v1alpha1.GetRepositoriesByFullNameRequest) (*v1alpha1.GetRepositoriesByFullNameResponse, error)
 	// SetRepositoryContributor sets the role of a user in the repository.
-	SetRepositoryContributor(context.Context, *connect.Request[v1alpha1.SetRepositoryContributorRequest]) (*connect.Response[v1alpha1.SetRepositoryContributorResponse], error)
+	SetRepositoryContributor(context.Context, *v1alpha1.SetRepositoryContributorRequest) (*v1alpha1.SetRepositoryContributorResponse, error)
 	// ListRepositoryContributors returns the list of contributors that has an explicit role against the repository.
 	// This does not include users who have implicit roles against the repository, unless they have also been
 	// assigned a role explicitly.
-	ListRepositoryContributors(context.Context, *connect.Request[v1alpha1.ListRepositoryContributorsRequest]) (*connect.Response[v1alpha1.ListRepositoryContributorsResponse], error)
+	ListRepositoryContributors(context.Context, *v1alpha1.ListRepositoryContributorsRequest) (*v1alpha1.ListRepositoryContributorsResponse, error)
 	// GetRepositorySettings gets the settings of a repository.
-	GetRepositorySettings(context.Context, *connect.Request[v1alpha1.GetRepositorySettingsRequest]) (*connect.Response[v1alpha1.GetRepositorySettingsResponse], error)
+	GetRepositorySettings(context.Context, *v1alpha1.GetRepositorySettingsRequest) (*v1alpha1.GetRepositorySettingsResponse, error)
 	// UpdateRepositorySettingsByName updates the settings of a repository.
-	UpdateRepositorySettingsByName(context.Context, *connect.Request[v1alpha1.UpdateRepositorySettingsByNameRequest]) (*connect.Response[v1alpha1.UpdateRepositorySettingsByNameResponse], error)
+	UpdateRepositorySettingsByName(context.Context, *v1alpha1.UpdateRepositorySettingsByNameRequest) (*v1alpha1.UpdateRepositorySettingsByNameResponse, error)
 	// GetRepositoriesMetadata gets the metadata of the repositories in the request, the length of repositories in the
 	// request should match the length of the metadata in the response, and the order of repositories in the response
 	// should match the order of the metadata in the request.
-	GetRepositoriesMetadata(context.Context, *connect.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
+	GetRepositoriesMetadata(context.Context, *v1alpha1.GetRepositoriesMetadataRequest) (*v1alpha1.GetRepositoriesMetadataResponse, error)
 	// GetRepositoryDependencyDOTString gets the dependency graph DOT string for the repository.
-	GetRepositoryDependencyDOTString(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error)
+	GetRepositoryDependencyDOTString(context.Context, *v1alpha1.GetRepositoryDependencyDOTStringRequest) (*v1alpha1.GetRepositoryDependencyDOTStringResponse, error)
 	// AddRepositoryGroup adds an IdP Group to the repository.
 	//
 	// Only repositories owned by an organization can have groups.
-	AddRepositoryGroup(context.Context, *connect.Request[v1alpha1.AddRepositoryGroupRequest]) (*connect.Response[v1alpha1.AddRepositoryGroupResponse], error)
+	AddRepositoryGroup(context.Context, *v1alpha1.AddRepositoryGroupRequest) (*v1alpha1.AddRepositoryGroupResponse, error)
 	// UpdateRepositoryGroup updates an IdP Group for the repository.
-	UpdateRepositoryGroup(context.Context, *connect.Request[v1alpha1.UpdateRepositoryGroupRequest]) (*connect.Response[v1alpha1.UpdateRepositoryGroupResponse], error)
+	UpdateRepositoryGroup(context.Context, *v1alpha1.UpdateRepositoryGroupRequest) (*v1alpha1.UpdateRepositoryGroupResponse, error)
 	// RemoveRepositoryGroup removes an IdP Group from the repository.
-	RemoveRepositoryGroup(context.Context, *connect.Request[v1alpha1.RemoveRepositoryGroupRequest]) (*connect.Response[v1alpha1.RemoveRepositoryGroupResponse], error)
+	RemoveRepositoryGroup(context.Context, *v1alpha1.RemoveRepositoryGroupRequest) (*v1alpha1.RemoveRepositoryGroupResponse, error)
 }
 
 // NewRepositoryServiceClient constructs a client for the
-// buf.alpha.registry.v1alpha1.RepositoryService service. By default, it uses the Connect protocol
-// with the binary Protobuf Codec, asks for gzipped responses, and sends uncompressed requests. To
-// use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or connect.WithGRPCWeb()
-// options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewRepositoryServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) RepositoryServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	repositoryServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods()
-	return &repositoryServiceClient{
-		getRepository: connect.NewClient[v1alpha1.GetRepositoryRequest, v1alpha1.GetRepositoryResponse](
-			httpClient,
-			baseURL+RepositoryServiceGetRepositoryProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("GetRepository")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getRepositoryByFullName: connect.NewClient[v1alpha1.GetRepositoryByFullNameRequest, v1alpha1.GetRepositoryByFullNameResponse](
-			httpClient,
-			baseURL+RepositoryServiceGetRepositoryByFullNameProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoryByFullName")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		listRepositories: connect.NewClient[v1alpha1.ListRepositoriesRequest, v1alpha1.ListRepositoriesResponse](
-			httpClient,
-			baseURL+RepositoryServiceListRepositoriesProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("ListRepositories")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		listUserRepositories: connect.NewClient[v1alpha1.ListUserRepositoriesRequest, v1alpha1.ListUserRepositoriesResponse](
-			httpClient,
-			baseURL+RepositoryServiceListUserRepositoriesProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("ListUserRepositories")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		listRepositoriesUserCanAccess: connect.NewClient[v1alpha1.ListRepositoriesUserCanAccessRequest, v1alpha1.ListRepositoriesUserCanAccessResponse](
-			httpClient,
-			baseURL+RepositoryServiceListRepositoriesUserCanAccessProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("ListRepositoriesUserCanAccess")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		listOrganizationRepositories: connect.NewClient[v1alpha1.ListOrganizationRepositoriesRequest, v1alpha1.ListOrganizationRepositoriesResponse](
-			httpClient,
-			baseURL+RepositoryServiceListOrganizationRepositoriesProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("ListOrganizationRepositories")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		createRepositoryByFullName: connect.NewClient[v1alpha1.CreateRepositoryByFullNameRequest, v1alpha1.CreateRepositoryByFullNameResponse](
-			httpClient,
-			baseURL+RepositoryServiceCreateRepositoryByFullNameProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("CreateRepositoryByFullName")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		deleteRepository: connect.NewClient[v1alpha1.DeleteRepositoryRequest, v1alpha1.DeleteRepositoryResponse](
-			httpClient,
-			baseURL+RepositoryServiceDeleteRepositoryProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("DeleteRepository")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		deleteRepositoryByFullName: connect.NewClient[v1alpha1.DeleteRepositoryByFullNameRequest, v1alpha1.DeleteRepositoryByFullNameResponse](
-			httpClient,
-			baseURL+RepositoryServiceDeleteRepositoryByFullNameProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("DeleteRepositoryByFullName")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		deprecateRepositoryByName: connect.NewClient[v1alpha1.DeprecateRepositoryByNameRequest, v1alpha1.DeprecateRepositoryByNameResponse](
-			httpClient,
-			baseURL+RepositoryServiceDeprecateRepositoryByNameProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("DeprecateRepositoryByName")),
-			connect.WithClientOptions(opts...),
-		),
-		undeprecateRepositoryByName: connect.NewClient[v1alpha1.UndeprecateRepositoryByNameRequest, v1alpha1.UndeprecateRepositoryByNameResponse](
-			httpClient,
-			baseURL+RepositoryServiceUndeprecateRepositoryByNameProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("UndeprecateRepositoryByName")),
-			connect.WithClientOptions(opts...),
-		),
-		getRepositoriesByFullName: connect.NewClient[v1alpha1.GetRepositoriesByFullNameRequest, v1alpha1.GetRepositoriesByFullNameResponse](
-			httpClient,
-			baseURL+RepositoryServiceGetRepositoriesByFullNameProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoriesByFullName")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		setRepositoryContributor: connect.NewClient[v1alpha1.SetRepositoryContributorRequest, v1alpha1.SetRepositoryContributorResponse](
-			httpClient,
-			baseURL+RepositoryServiceSetRepositoryContributorProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("SetRepositoryContributor")),
-			connect.WithClientOptions(opts...),
-		),
-		listRepositoryContributors: connect.NewClient[v1alpha1.ListRepositoryContributorsRequest, v1alpha1.ListRepositoryContributorsResponse](
-			httpClient,
-			baseURL+RepositoryServiceListRepositoryContributorsProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("ListRepositoryContributors")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getRepositorySettings: connect.NewClient[v1alpha1.GetRepositorySettingsRequest, v1alpha1.GetRepositorySettingsResponse](
-			httpClient,
-			baseURL+RepositoryServiceGetRepositorySettingsProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("GetRepositorySettings")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		updateRepositorySettingsByName: connect.NewClient[v1alpha1.UpdateRepositorySettingsByNameRequest, v1alpha1.UpdateRepositorySettingsByNameResponse](
-			httpClient,
-			baseURL+RepositoryServiceUpdateRepositorySettingsByNameProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("UpdateRepositorySettingsByName")),
-			connect.WithClientOptions(opts...),
-		),
-		getRepositoriesMetadata: connect.NewClient[v1alpha1.GetRepositoriesMetadataRequest, v1alpha1.GetRepositoriesMetadataResponse](
-			httpClient,
-			baseURL+RepositoryServiceGetRepositoriesMetadataProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoriesMetadata")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getRepositoryDependencyDOTString: connect.NewClient[v1alpha1.GetRepositoryDependencyDOTStringRequest, v1alpha1.GetRepositoryDependencyDOTStringResponse](
-			httpClient,
-			baseURL+RepositoryServiceGetRepositoryDependencyDOTStringProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoryDependencyDOTString")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		addRepositoryGroup: connect.NewClient[v1alpha1.AddRepositoryGroupRequest, v1alpha1.AddRepositoryGroupResponse](
-			httpClient,
-			baseURL+RepositoryServiceAddRepositoryGroupProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("AddRepositoryGroup")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		updateRepositoryGroup: connect.NewClient[v1alpha1.UpdateRepositoryGroupRequest, v1alpha1.UpdateRepositoryGroupResponse](
-			httpClient,
-			baseURL+RepositoryServiceUpdateRepositoryGroupProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("UpdateRepositoryGroup")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		removeRepositoryGroup: connect.NewClient[v1alpha1.RemoveRepositoryGroupRequest, v1alpha1.RemoveRepositoryGroupResponse](
-			httpClient,
-			baseURL+RepositoryServiceRemoveRepositoryGroupProcedure,
-			connect.WithSchema(repositoryServiceMethods.ByName("RemoveRepositoryGroup")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// repositoryServiceClient implements RepositoryServiceClient.
-type repositoryServiceClient struct {
-	getRepository                    *connect.Client[v1alpha1.GetRepositoryRequest, v1alpha1.GetRepositoryResponse]
-	getRepositoryByFullName          *connect.Client[v1alpha1.GetRepositoryByFullNameRequest, v1alpha1.GetRepositoryByFullNameResponse]
-	listRepositories                 *connect.Client[v1alpha1.ListRepositoriesRequest, v1alpha1.ListRepositoriesResponse]
-	listUserRepositories             *connect.Client[v1alpha1.ListUserRepositoriesRequest, v1alpha1.ListUserRepositoriesResponse]
-	listRepositoriesUserCanAccess    *connect.Client[v1alpha1.ListRepositoriesUserCanAccessRequest, v1alpha1.ListRepositoriesUserCanAccessResponse]
-	listOrganizationRepositories     *connect.Client[v1alpha1.ListOrganizationRepositoriesRequest, v1alpha1.ListOrganizationRepositoriesResponse]
-	createRepositoryByFullName       *connect.Client[v1alpha1.CreateRepositoryByFullNameRequest, v1alpha1.CreateRepositoryByFullNameResponse]
-	deleteRepository                 *connect.Client[v1alpha1.DeleteRepositoryRequest, v1alpha1.DeleteRepositoryResponse]
-	deleteRepositoryByFullName       *connect.Client[v1alpha1.DeleteRepositoryByFullNameRequest, v1alpha1.DeleteRepositoryByFullNameResponse]
-	deprecateRepositoryByName        *connect.Client[v1alpha1.DeprecateRepositoryByNameRequest, v1alpha1.DeprecateRepositoryByNameResponse]
-	undeprecateRepositoryByName      *connect.Client[v1alpha1.UndeprecateRepositoryByNameRequest, v1alpha1.UndeprecateRepositoryByNameResponse]
-	getRepositoriesByFullName        *connect.Client[v1alpha1.GetRepositoriesByFullNameRequest, v1alpha1.GetRepositoriesByFullNameResponse]
-	setRepositoryContributor         *connect.Client[v1alpha1.SetRepositoryContributorRequest, v1alpha1.SetRepositoryContributorResponse]
-	listRepositoryContributors       *connect.Client[v1alpha1.ListRepositoryContributorsRequest, v1alpha1.ListRepositoryContributorsResponse]
-	getRepositorySettings            *connect.Client[v1alpha1.GetRepositorySettingsRequest, v1alpha1.GetRepositorySettingsResponse]
-	updateRepositorySettingsByName   *connect.Client[v1alpha1.UpdateRepositorySettingsByNameRequest, v1alpha1.UpdateRepositorySettingsByNameResponse]
-	getRepositoriesMetadata          *connect.Client[v1alpha1.GetRepositoriesMetadataRequest, v1alpha1.GetRepositoriesMetadataResponse]
-	getRepositoryDependencyDOTString *connect.Client[v1alpha1.GetRepositoryDependencyDOTStringRequest, v1alpha1.GetRepositoryDependencyDOTStringResponse]
-	addRepositoryGroup               *connect.Client[v1alpha1.AddRepositoryGroupRequest, v1alpha1.AddRepositoryGroupResponse]
-	updateRepositoryGroup            *connect.Client[v1alpha1.UpdateRepositoryGroupRequest, v1alpha1.UpdateRepositoryGroupResponse]
-	removeRepositoryGroup            *connect.Client[v1alpha1.RemoveRepositoryGroupRequest, v1alpha1.RemoveRepositoryGroupResponse]
-}
-
-// GetRepository calls buf.alpha.registry.v1alpha1.RepositoryService.GetRepository.
-func (c *repositoryServiceClient) GetRepository(ctx context.Context, req *connect.Request[v1alpha1.GetRepositoryRequest]) (*connect.Response[v1alpha1.GetRepositoryResponse], error) {
-	return c.getRepository.CallUnary(ctx, req)
-}
-
-// GetRepositoryByFullName calls
-// buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryByFullName.
-func (c *repositoryServiceClient) GetRepositoryByFullName(ctx context.Context, req *connect.Request[v1alpha1.GetRepositoryByFullNameRequest]) (*connect.Response[v1alpha1.GetRepositoryByFullNameResponse], error) {
-	return c.getRepositoryByFullName.CallUnary(ctx, req)
-}
-
-// ListRepositories calls buf.alpha.registry.v1alpha1.RepositoryService.ListRepositories.
-func (c *repositoryServiceClient) ListRepositories(ctx context.Context, req *connect.Request[v1alpha1.ListRepositoriesRequest]) (*connect.Response[v1alpha1.ListRepositoriesResponse], error) {
-	return c.listRepositories.CallUnary(ctx, req)
-}
-
-// ListUserRepositories calls buf.alpha.registry.v1alpha1.RepositoryService.ListUserRepositories.
-func (c *repositoryServiceClient) ListUserRepositories(ctx context.Context, req *connect.Request[v1alpha1.ListUserRepositoriesRequest]) (*connect.Response[v1alpha1.ListUserRepositoriesResponse], error) {
-	return c.listUserRepositories.CallUnary(ctx, req)
-}
-
-// ListRepositoriesUserCanAccess calls
-// buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoriesUserCanAccess.
-func (c *repositoryServiceClient) ListRepositoriesUserCanAccess(ctx context.Context, req *connect.Request[v1alpha1.ListRepositoriesUserCanAccessRequest]) (*connect.Response[v1alpha1.ListRepositoriesUserCanAccessResponse], error) {
-	return c.listRepositoriesUserCanAccess.CallUnary(ctx, req)
-}
-
-// ListOrganizationRepositories calls
-// buf.alpha.registry.v1alpha1.RepositoryService.ListOrganizationRepositories.
-func (c *repositoryServiceClient) ListOrganizationRepositories(ctx context.Context, req *connect.Request[v1alpha1.ListOrganizationRepositoriesRequest]) (*connect.Response[v1alpha1.ListOrganizationRepositoriesResponse], error) {
-	return c.listOrganizationRepositories.CallUnary(ctx, req)
-}
-
-// CreateRepositoryByFullName calls
-// buf.alpha.registry.v1alpha1.RepositoryService.CreateRepositoryByFullName.
-func (c *repositoryServiceClient) CreateRepositoryByFullName(ctx context.Context, req *connect.Request[v1alpha1.CreateRepositoryByFullNameRequest]) (*connect.Response[v1alpha1.CreateRepositoryByFullNameResponse], error) {
-	return c.createRepositoryByFullName.CallUnary(ctx, req)
-}
-
-// DeleteRepository calls buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepository.
-func (c *repositoryServiceClient) DeleteRepository(ctx context.Context, req *connect.Request[v1alpha1.DeleteRepositoryRequest]) (*connect.Response[v1alpha1.DeleteRepositoryResponse], error) {
-	return c.deleteRepository.CallUnary(ctx, req)
-}
-
-// DeleteRepositoryByFullName calls
-// buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepositoryByFullName.
-func (c *repositoryServiceClient) DeleteRepositoryByFullName(ctx context.Context, req *connect.Request[v1alpha1.DeleteRepositoryByFullNameRequest]) (*connect.Response[v1alpha1.DeleteRepositoryByFullNameResponse], error) {
-	return c.deleteRepositoryByFullName.CallUnary(ctx, req)
-}
-
-// DeprecateRepositoryByName calls
-// buf.alpha.registry.v1alpha1.RepositoryService.DeprecateRepositoryByName.
-func (c *repositoryServiceClient) DeprecateRepositoryByName(ctx context.Context, req *connect.Request[v1alpha1.DeprecateRepositoryByNameRequest]) (*connect.Response[v1alpha1.DeprecateRepositoryByNameResponse], error) {
-	return c.deprecateRepositoryByName.CallUnary(ctx, req)
-}
-
-// UndeprecateRepositoryByName calls
-// buf.alpha.registry.v1alpha1.RepositoryService.UndeprecateRepositoryByName.
-func (c *repositoryServiceClient) UndeprecateRepositoryByName(ctx context.Context, req *connect.Request[v1alpha1.UndeprecateRepositoryByNameRequest]) (*connect.Response[v1alpha1.UndeprecateRepositoryByNameResponse], error) {
-	return c.undeprecateRepositoryByName.CallUnary(ctx, req)
-}
-
-// GetRepositoriesByFullName calls
-// buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesByFullName.
-func (c *repositoryServiceClient) GetRepositoriesByFullName(ctx context.Context, req *connect.Request[v1alpha1.GetRepositoriesByFullNameRequest]) (*connect.Response[v1alpha1.GetRepositoriesByFullNameResponse], error) {
-	return c.getRepositoriesByFullName.CallUnary(ctx, req)
-}
-
-// SetRepositoryContributor calls
-// buf.alpha.registry.v1alpha1.RepositoryService.SetRepositoryContributor.
-func (c *repositoryServiceClient) SetRepositoryContributor(ctx context.Context, req *connect.Request[v1alpha1.SetRepositoryContributorRequest]) (*connect.Response[v1alpha1.SetRepositoryContributorResponse], error) {
-	return c.setRepositoryContributor.CallUnary(ctx, req)
-}
-
-// ListRepositoryContributors calls
-// buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoryContributors.
-func (c *repositoryServiceClient) ListRepositoryContributors(ctx context.Context, req *connect.Request[v1alpha1.ListRepositoryContributorsRequest]) (*connect.Response[v1alpha1.ListRepositoryContributorsResponse], error) {
-	return c.listRepositoryContributors.CallUnary(ctx, req)
-}
-
-// GetRepositorySettings calls buf.alpha.registry.v1alpha1.RepositoryService.GetRepositorySettings.
-func (c *repositoryServiceClient) GetRepositorySettings(ctx context.Context, req *connect.Request[v1alpha1.GetRepositorySettingsRequest]) (*connect.Response[v1alpha1.GetRepositorySettingsResponse], error) {
-	return c.getRepositorySettings.CallUnary(ctx, req)
-}
-
-// UpdateRepositorySettingsByName calls
-// buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositorySettingsByName.
-func (c *repositoryServiceClient) UpdateRepositorySettingsByName(ctx context.Context, req *connect.Request[v1alpha1.UpdateRepositorySettingsByNameRequest]) (*connect.Response[v1alpha1.UpdateRepositorySettingsByNameResponse], error) {
-	return c.updateRepositorySettingsByName.CallUnary(ctx, req)
-}
-
-// GetRepositoriesMetadata calls
-// buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesMetadata.
-func (c *repositoryServiceClient) GetRepositoriesMetadata(ctx context.Context, req *connect.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[v1alpha1.GetRepositoriesMetadataResponse], error) {
-	return c.getRepositoriesMetadata.CallUnary(ctx, req)
-}
-
-// GetRepositoryDependencyDOTString calls
-// buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryDependencyDOTString.
-func (c *repositoryServiceClient) GetRepositoryDependencyDOTString(ctx context.Context, req *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error) {
-	return c.getRepositoryDependencyDOTString.CallUnary(ctx, req)
-}
-
-// AddRepositoryGroup calls buf.alpha.registry.v1alpha1.RepositoryService.AddRepositoryGroup.
-func (c *repositoryServiceClient) AddRepositoryGroup(ctx context.Context, req *connect.Request[v1alpha1.AddRepositoryGroupRequest]) (*connect.Response[v1alpha1.AddRepositoryGroupResponse], error) {
-	return c.addRepositoryGroup.CallUnary(ctx, req)
-}
-
-// UpdateRepositoryGroup calls buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositoryGroup.
-func (c *repositoryServiceClient) UpdateRepositoryGroup(ctx context.Context, req *connect.Request[v1alpha1.UpdateRepositoryGroupRequest]) (*connect.Response[v1alpha1.UpdateRepositoryGroupResponse], error) {
-	return c.updateRepositoryGroup.CallUnary(ctx, req)
-}
-
-// RemoveRepositoryGroup calls buf.alpha.registry.v1alpha1.RepositoryService.RemoveRepositoryGroup.
-func (c *repositoryServiceClient) RemoveRepositoryGroup(ctx context.Context, req *connect.Request[v1alpha1.RemoveRepositoryGroupRequest]) (*connect.Response[v1alpha1.RemoveRepositoryGroupResponse], error) {
-	return c.removeRepositoryGroup.CallUnary(ctx, req)
+// buf.alpha.registry.v1alpha1.RepositoryService service. Multiple service clients may share a
+// single connect.Client.
+func NewRepositoryServiceClient(client *connect.Client) RepositoryServiceClient {
+	return &repositoryServiceClient{client: client}
 }
 
 // RepositoryServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.RepositoryService service.
 type RepositoryServiceHandler interface {
 	// GetRepository gets a repository by ID.
-	GetRepository(context.Context, *connect.Request[v1alpha1.GetRepositoryRequest]) (*connect.Response[v1alpha1.GetRepositoryResponse], error)
+	GetRepository(context.Context, *v1alpha1.GetRepositoryRequest) (*v1alpha1.GetRepositoryResponse, error)
 	// GetRepositoryByFullName gets a repository by full name.
-	GetRepositoryByFullName(context.Context, *connect.Request[v1alpha1.GetRepositoryByFullNameRequest]) (*connect.Response[v1alpha1.GetRepositoryByFullNameResponse], error)
+	GetRepositoryByFullName(context.Context, *v1alpha1.GetRepositoryByFullNameRequest) (*v1alpha1.GetRepositoryByFullNameResponse, error)
 	// ListRepositories lists all repositories.
-	ListRepositories(context.Context, *connect.Request[v1alpha1.ListRepositoriesRequest]) (*connect.Response[v1alpha1.ListRepositoriesResponse], error)
+	ListRepositories(context.Context, *v1alpha1.ListRepositoriesRequest) (*v1alpha1.ListRepositoriesResponse, error)
 	// ListUserRepositories lists all repositories belonging to a user.
-	ListUserRepositories(context.Context, *connect.Request[v1alpha1.ListUserRepositoriesRequest]) (*connect.Response[v1alpha1.ListUserRepositoriesResponse], error)
+	ListUserRepositories(context.Context, *v1alpha1.ListUserRepositoriesRequest) (*v1alpha1.ListUserRepositoriesResponse, error)
 	// ListRepositoriesUserCanAccess lists all repositories a user can access.
-	ListRepositoriesUserCanAccess(context.Context, *connect.Request[v1alpha1.ListRepositoriesUserCanAccessRequest]) (*connect.Response[v1alpha1.ListRepositoriesUserCanAccessResponse], error)
+	ListRepositoriesUserCanAccess(context.Context, *v1alpha1.ListRepositoriesUserCanAccessRequest) (*v1alpha1.ListRepositoriesUserCanAccessResponse, error)
 	// ListOrganizationRepositories lists all repositories for an organization.
-	ListOrganizationRepositories(context.Context, *connect.Request[v1alpha1.ListOrganizationRepositoriesRequest]) (*connect.Response[v1alpha1.ListOrganizationRepositoriesResponse], error)
+	ListOrganizationRepositories(context.Context, *v1alpha1.ListOrganizationRepositoriesRequest) (*v1alpha1.ListOrganizationRepositoriesResponse, error)
 	// CreateRepositoryByFullName creates a new repository by full name.
-	CreateRepositoryByFullName(context.Context, *connect.Request[v1alpha1.CreateRepositoryByFullNameRequest]) (*connect.Response[v1alpha1.CreateRepositoryByFullNameResponse], error)
+	CreateRepositoryByFullName(context.Context, *v1alpha1.CreateRepositoryByFullNameRequest) (*v1alpha1.CreateRepositoryByFullNameResponse, error)
 	// DeleteRepository deletes a repository.
-	DeleteRepository(context.Context, *connect.Request[v1alpha1.DeleteRepositoryRequest]) (*connect.Response[v1alpha1.DeleteRepositoryResponse], error)
+	DeleteRepository(context.Context, *v1alpha1.DeleteRepositoryRequest) (*v1alpha1.DeleteRepositoryResponse, error)
 	// DeleteRepositoryByFullName deletes a repository by full name.
-	DeleteRepositoryByFullName(context.Context, *connect.Request[v1alpha1.DeleteRepositoryByFullNameRequest]) (*connect.Response[v1alpha1.DeleteRepositoryByFullNameResponse], error)
+	DeleteRepositoryByFullName(context.Context, *v1alpha1.DeleteRepositoryByFullNameRequest) (*v1alpha1.DeleteRepositoryByFullNameResponse, error)
 	// DeprecateRepositoryByName deprecates the repository.
-	DeprecateRepositoryByName(context.Context, *connect.Request[v1alpha1.DeprecateRepositoryByNameRequest]) (*connect.Response[v1alpha1.DeprecateRepositoryByNameResponse], error)
+	DeprecateRepositoryByName(context.Context, *v1alpha1.DeprecateRepositoryByNameRequest) (*v1alpha1.DeprecateRepositoryByNameResponse, error)
 	// UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.
-	UndeprecateRepositoryByName(context.Context, *connect.Request[v1alpha1.UndeprecateRepositoryByNameRequest]) (*connect.Response[v1alpha1.UndeprecateRepositoryByNameResponse], error)
+	UndeprecateRepositoryByName(context.Context, *v1alpha1.UndeprecateRepositoryByNameRequest) (*v1alpha1.UndeprecateRepositoryByNameResponse, error)
 	// GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
 	// Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
-	GetRepositoriesByFullName(context.Context, *connect.Request[v1alpha1.GetRepositoriesByFullNameRequest]) (*connect.Response[v1alpha1.GetRepositoriesByFullNameResponse], error)
+	GetRepositoriesByFullName(context.Context, *v1alpha1.GetRepositoriesByFullNameRequest) (*v1alpha1.GetRepositoriesByFullNameResponse, error)
 	// SetRepositoryContributor sets the role of a user in the repository.
-	SetRepositoryContributor(context.Context, *connect.Request[v1alpha1.SetRepositoryContributorRequest]) (*connect.Response[v1alpha1.SetRepositoryContributorResponse], error)
+	SetRepositoryContributor(context.Context, *v1alpha1.SetRepositoryContributorRequest) (*v1alpha1.SetRepositoryContributorResponse, error)
 	// ListRepositoryContributors returns the list of contributors that has an explicit role against the repository.
 	// This does not include users who have implicit roles against the repository, unless they have also been
 	// assigned a role explicitly.
-	ListRepositoryContributors(context.Context, *connect.Request[v1alpha1.ListRepositoryContributorsRequest]) (*connect.Response[v1alpha1.ListRepositoryContributorsResponse], error)
+	ListRepositoryContributors(context.Context, *v1alpha1.ListRepositoryContributorsRequest) (*v1alpha1.ListRepositoryContributorsResponse, error)
 	// GetRepositorySettings gets the settings of a repository.
-	GetRepositorySettings(context.Context, *connect.Request[v1alpha1.GetRepositorySettingsRequest]) (*connect.Response[v1alpha1.GetRepositorySettingsResponse], error)
+	GetRepositorySettings(context.Context, *v1alpha1.GetRepositorySettingsRequest) (*v1alpha1.GetRepositorySettingsResponse, error)
 	// UpdateRepositorySettingsByName updates the settings of a repository.
-	UpdateRepositorySettingsByName(context.Context, *connect.Request[v1alpha1.UpdateRepositorySettingsByNameRequest]) (*connect.Response[v1alpha1.UpdateRepositorySettingsByNameResponse], error)
+	UpdateRepositorySettingsByName(context.Context, *v1alpha1.UpdateRepositorySettingsByNameRequest) (*v1alpha1.UpdateRepositorySettingsByNameResponse, error)
 	// GetRepositoriesMetadata gets the metadata of the repositories in the request, the length of repositories in the
 	// request should match the length of the metadata in the response, and the order of repositories in the response
 	// should match the order of the metadata in the request.
-	GetRepositoriesMetadata(context.Context, *connect.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
+	GetRepositoriesMetadata(context.Context, *v1alpha1.GetRepositoriesMetadataRequest) (*v1alpha1.GetRepositoriesMetadataResponse, error)
 	// GetRepositoryDependencyDOTString gets the dependency graph DOT string for the repository.
-	GetRepositoryDependencyDOTString(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error)
+	GetRepositoryDependencyDOTString(context.Context, *v1alpha1.GetRepositoryDependencyDOTStringRequest) (*v1alpha1.GetRepositoryDependencyDOTStringResponse, error)
 	// AddRepositoryGroup adds an IdP Group to the repository.
 	//
 	// Only repositories owned by an organization can have groups.
-	AddRepositoryGroup(context.Context, *connect.Request[v1alpha1.AddRepositoryGroupRequest]) (*connect.Response[v1alpha1.AddRepositoryGroupResponse], error)
+	AddRepositoryGroup(context.Context, *v1alpha1.AddRepositoryGroupRequest) (*v1alpha1.AddRepositoryGroupResponse, error)
 	// UpdateRepositoryGroup updates an IdP Group for the repository.
-	UpdateRepositoryGroup(context.Context, *connect.Request[v1alpha1.UpdateRepositoryGroupRequest]) (*connect.Response[v1alpha1.UpdateRepositoryGroupResponse], error)
+	UpdateRepositoryGroup(context.Context, *v1alpha1.UpdateRepositoryGroupRequest) (*v1alpha1.UpdateRepositoryGroupResponse, error)
 	// RemoveRepositoryGroup removes an IdP Group from the repository.
-	RemoveRepositoryGroup(context.Context, *connect.Request[v1alpha1.RemoveRepositoryGroupRequest]) (*connect.Response[v1alpha1.RemoveRepositoryGroupResponse], error)
+	RemoveRepositoryGroup(context.Context, *v1alpha1.RemoveRepositoryGroupRequest) (*v1alpha1.RemoveRepositoryGroupResponse, error)
 }
 
-// NewRepositoryServiceHandler builds an HTTP handler from the service implementation. It returns
-// the path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	repositoryServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_repository_proto.Services().ByName("RepositoryService").Methods()
-	repositoryServiceGetRepositoryHandler := connect.NewUnaryHandler(
-		RepositoryServiceGetRepositoryProcedure,
-		svc.GetRepository,
-		connect.WithSchema(repositoryServiceMethods.ByName("GetRepository")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
+// RegisterRepositoryServiceHandler registers svc as the
+// buf.alpha.registry.v1alpha1.RepositoryService implementation on server.
+func RegisterRepositoryServiceHandler(server *connect.Server, svc RepositoryServiceHandler) {
+	adapter := repositoryServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: repositoryServiceGetRepositorySpec(), Handler: adapter.getRepository},
+		connect.Method{Spec: repositoryServiceGetRepositoryByFullNameSpec(), Handler: adapter.getRepositoryByFullName},
+		connect.Method{Spec: repositoryServiceListRepositoriesSpec(), Handler: adapter.listRepositories},
+		connect.Method{Spec: repositoryServiceListUserRepositoriesSpec(), Handler: adapter.listUserRepositories},
+		connect.Method{Spec: repositoryServiceListRepositoriesUserCanAccessSpec(), Handler: adapter.listRepositoriesUserCanAccess},
+		connect.Method{Spec: repositoryServiceListOrganizationRepositoriesSpec(), Handler: adapter.listOrganizationRepositories},
+		connect.Method{Spec: repositoryServiceCreateRepositoryByFullNameSpec(), Handler: adapter.createRepositoryByFullName},
+		connect.Method{Spec: repositoryServiceDeleteRepositorySpec(), Handler: adapter.deleteRepository},
+		connect.Method{Spec: repositoryServiceDeleteRepositoryByFullNameSpec(), Handler: adapter.deleteRepositoryByFullName},
+		connect.Method{Spec: repositoryServiceDeprecateRepositoryByNameSpec(), Handler: adapter.deprecateRepositoryByName},
+		connect.Method{Spec: repositoryServiceUndeprecateRepositoryByNameSpec(), Handler: adapter.undeprecateRepositoryByName},
+		connect.Method{Spec: repositoryServiceGetRepositoriesByFullNameSpec(), Handler: adapter.getRepositoriesByFullName},
+		connect.Method{Spec: repositoryServiceSetRepositoryContributorSpec(), Handler: adapter.setRepositoryContributor},
+		connect.Method{Spec: repositoryServiceListRepositoryContributorsSpec(), Handler: adapter.listRepositoryContributors},
+		connect.Method{Spec: repositoryServiceGetRepositorySettingsSpec(), Handler: adapter.getRepositorySettings},
+		connect.Method{Spec: repositoryServiceUpdateRepositorySettingsByNameSpec(), Handler: adapter.updateRepositorySettingsByName},
+		connect.Method{Spec: repositoryServiceGetRepositoriesMetadataSpec(), Handler: adapter.getRepositoriesMetadata},
+		connect.Method{Spec: repositoryServiceGetRepositoryDependencyDOTStringSpec(), Handler: adapter.getRepositoryDependencyDOTString},
+		connect.Method{Spec: repositoryServiceAddRepositoryGroupSpec(), Handler: adapter.addRepositoryGroup},
+		connect.Method{Spec: repositoryServiceUpdateRepositoryGroupSpec(), Handler: adapter.updateRepositoryGroup},
+		connect.Method{Spec: repositoryServiceRemoveRepositoryGroupSpec(), Handler: adapter.removeRepositoryGroup},
 	)
-	repositoryServiceGetRepositoryByFullNameHandler := connect.NewUnaryHandler(
-		RepositoryServiceGetRepositoryByFullNameProcedure,
-		svc.GetRepositoryByFullName,
-		connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoryByFullName")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceListRepositoriesHandler := connect.NewUnaryHandler(
-		RepositoryServiceListRepositoriesProcedure,
-		svc.ListRepositories,
-		connect.WithSchema(repositoryServiceMethods.ByName("ListRepositories")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceListUserRepositoriesHandler := connect.NewUnaryHandler(
-		RepositoryServiceListUserRepositoriesProcedure,
-		svc.ListUserRepositories,
-		connect.WithSchema(repositoryServiceMethods.ByName("ListUserRepositories")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceListRepositoriesUserCanAccessHandler := connect.NewUnaryHandler(
-		RepositoryServiceListRepositoriesUserCanAccessProcedure,
-		svc.ListRepositoriesUserCanAccess,
-		connect.WithSchema(repositoryServiceMethods.ByName("ListRepositoriesUserCanAccess")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceListOrganizationRepositoriesHandler := connect.NewUnaryHandler(
-		RepositoryServiceListOrganizationRepositoriesProcedure,
-		svc.ListOrganizationRepositories,
-		connect.WithSchema(repositoryServiceMethods.ByName("ListOrganizationRepositories")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceCreateRepositoryByFullNameHandler := connect.NewUnaryHandler(
-		RepositoryServiceCreateRepositoryByFullNameProcedure,
-		svc.CreateRepositoryByFullName,
-		connect.WithSchema(repositoryServiceMethods.ByName("CreateRepositoryByFullName")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceDeleteRepositoryHandler := connect.NewUnaryHandler(
-		RepositoryServiceDeleteRepositoryProcedure,
-		svc.DeleteRepository,
-		connect.WithSchema(repositoryServiceMethods.ByName("DeleteRepository")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceDeleteRepositoryByFullNameHandler := connect.NewUnaryHandler(
-		RepositoryServiceDeleteRepositoryByFullNameProcedure,
-		svc.DeleteRepositoryByFullName,
-		connect.WithSchema(repositoryServiceMethods.ByName("DeleteRepositoryByFullName")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceDeprecateRepositoryByNameHandler := connect.NewUnaryHandler(
-		RepositoryServiceDeprecateRepositoryByNameProcedure,
-		svc.DeprecateRepositoryByName,
-		connect.WithSchema(repositoryServiceMethods.ByName("DeprecateRepositoryByName")),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceUndeprecateRepositoryByNameHandler := connect.NewUnaryHandler(
-		RepositoryServiceUndeprecateRepositoryByNameProcedure,
-		svc.UndeprecateRepositoryByName,
-		connect.WithSchema(repositoryServiceMethods.ByName("UndeprecateRepositoryByName")),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceGetRepositoriesByFullNameHandler := connect.NewUnaryHandler(
-		RepositoryServiceGetRepositoriesByFullNameProcedure,
-		svc.GetRepositoriesByFullName,
-		connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoriesByFullName")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceSetRepositoryContributorHandler := connect.NewUnaryHandler(
-		RepositoryServiceSetRepositoryContributorProcedure,
-		svc.SetRepositoryContributor,
-		connect.WithSchema(repositoryServiceMethods.ByName("SetRepositoryContributor")),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceListRepositoryContributorsHandler := connect.NewUnaryHandler(
-		RepositoryServiceListRepositoryContributorsProcedure,
-		svc.ListRepositoryContributors,
-		connect.WithSchema(repositoryServiceMethods.ByName("ListRepositoryContributors")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceGetRepositorySettingsHandler := connect.NewUnaryHandler(
-		RepositoryServiceGetRepositorySettingsProcedure,
-		svc.GetRepositorySettings,
-		connect.WithSchema(repositoryServiceMethods.ByName("GetRepositorySettings")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceUpdateRepositorySettingsByNameHandler := connect.NewUnaryHandler(
-		RepositoryServiceUpdateRepositorySettingsByNameProcedure,
-		svc.UpdateRepositorySettingsByName,
-		connect.WithSchema(repositoryServiceMethods.ByName("UpdateRepositorySettingsByName")),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceGetRepositoriesMetadataHandler := connect.NewUnaryHandler(
-		RepositoryServiceGetRepositoriesMetadataProcedure,
-		svc.GetRepositoriesMetadata,
-		connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoriesMetadata")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceGetRepositoryDependencyDOTStringHandler := connect.NewUnaryHandler(
-		RepositoryServiceGetRepositoryDependencyDOTStringProcedure,
-		svc.GetRepositoryDependencyDOTString,
-		connect.WithSchema(repositoryServiceMethods.ByName("GetRepositoryDependencyDOTString")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceAddRepositoryGroupHandler := connect.NewUnaryHandler(
-		RepositoryServiceAddRepositoryGroupProcedure,
-		svc.AddRepositoryGroup,
-		connect.WithSchema(repositoryServiceMethods.ByName("AddRepositoryGroup")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceUpdateRepositoryGroupHandler := connect.NewUnaryHandler(
-		RepositoryServiceUpdateRepositoryGroupProcedure,
-		svc.UpdateRepositoryGroup,
-		connect.WithSchema(repositoryServiceMethods.ByName("UpdateRepositoryGroup")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryServiceRemoveRepositoryGroupHandler := connect.NewUnaryHandler(
-		RepositoryServiceRemoveRepositoryGroupProcedure,
-		svc.RemoveRepositoryGroup,
-		connect.WithSchema(repositoryServiceMethods.ByName("RemoveRepositoryGroup")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	return "/buf.alpha.registry.v1alpha1.RepositoryService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case RepositoryServiceGetRepositoryProcedure:
-			repositoryServiceGetRepositoryHandler.ServeHTTP(w, r)
-		case RepositoryServiceGetRepositoryByFullNameProcedure:
-			repositoryServiceGetRepositoryByFullNameHandler.ServeHTTP(w, r)
-		case RepositoryServiceListRepositoriesProcedure:
-			repositoryServiceListRepositoriesHandler.ServeHTTP(w, r)
-		case RepositoryServiceListUserRepositoriesProcedure:
-			repositoryServiceListUserRepositoriesHandler.ServeHTTP(w, r)
-		case RepositoryServiceListRepositoriesUserCanAccessProcedure:
-			repositoryServiceListRepositoriesUserCanAccessHandler.ServeHTTP(w, r)
-		case RepositoryServiceListOrganizationRepositoriesProcedure:
-			repositoryServiceListOrganizationRepositoriesHandler.ServeHTTP(w, r)
-		case RepositoryServiceCreateRepositoryByFullNameProcedure:
-			repositoryServiceCreateRepositoryByFullNameHandler.ServeHTTP(w, r)
-		case RepositoryServiceDeleteRepositoryProcedure:
-			repositoryServiceDeleteRepositoryHandler.ServeHTTP(w, r)
-		case RepositoryServiceDeleteRepositoryByFullNameProcedure:
-			repositoryServiceDeleteRepositoryByFullNameHandler.ServeHTTP(w, r)
-		case RepositoryServiceDeprecateRepositoryByNameProcedure:
-			repositoryServiceDeprecateRepositoryByNameHandler.ServeHTTP(w, r)
-		case RepositoryServiceUndeprecateRepositoryByNameProcedure:
-			repositoryServiceUndeprecateRepositoryByNameHandler.ServeHTTP(w, r)
-		case RepositoryServiceGetRepositoriesByFullNameProcedure:
-			repositoryServiceGetRepositoriesByFullNameHandler.ServeHTTP(w, r)
-		case RepositoryServiceSetRepositoryContributorProcedure:
-			repositoryServiceSetRepositoryContributorHandler.ServeHTTP(w, r)
-		case RepositoryServiceListRepositoryContributorsProcedure:
-			repositoryServiceListRepositoryContributorsHandler.ServeHTTP(w, r)
-		case RepositoryServiceGetRepositorySettingsProcedure:
-			repositoryServiceGetRepositorySettingsHandler.ServeHTTP(w, r)
-		case RepositoryServiceUpdateRepositorySettingsByNameProcedure:
-			repositoryServiceUpdateRepositorySettingsByNameHandler.ServeHTTP(w, r)
-		case RepositoryServiceGetRepositoriesMetadataProcedure:
-			repositoryServiceGetRepositoriesMetadataHandler.ServeHTTP(w, r)
-		case RepositoryServiceGetRepositoryDependencyDOTStringProcedure:
-			repositoryServiceGetRepositoryDependencyDOTStringHandler.ServeHTTP(w, r)
-		case RepositoryServiceAddRepositoryGroupProcedure:
-			repositoryServiceAddRepositoryGroupHandler.ServeHTTP(w, r)
-		case RepositoryServiceUpdateRepositoryGroupProcedure:
-			repositoryServiceUpdateRepositoryGroupHandler.ServeHTTP(w, r)
-		case RepositoryServiceRemoveRepositoryGroupProcedure:
-			repositoryServiceRemoveRepositoryGroupHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedRepositoryServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedRepositoryServiceHandler struct{}
 
-func (UnimplementedRepositoryServiceHandler) GetRepository(context.Context, *connect.Request[v1alpha1.GetRepositoryRequest]) (*connect.Response[v1alpha1.GetRepositoryResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.GetRepository is not implemented"))
+func (UnimplementedRepositoryServiceHandler) GetRepository(context.Context, *v1alpha1.GetRepositoryRequest) (*v1alpha1.GetRepositoryResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.GetRepository is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) GetRepositoryByFullName(context.Context, *connect.Request[v1alpha1.GetRepositoryByFullNameRequest]) (*connect.Response[v1alpha1.GetRepositoryByFullNameResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryByFullName is not implemented"))
+func (UnimplementedRepositoryServiceHandler) GetRepositoryByFullName(context.Context, *v1alpha1.GetRepositoryByFullNameRequest) (*v1alpha1.GetRepositoryByFullNameResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryByFullName is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) ListRepositories(context.Context, *connect.Request[v1alpha1.ListRepositoriesRequest]) (*connect.Response[v1alpha1.ListRepositoriesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.ListRepositories is not implemented"))
+func (UnimplementedRepositoryServiceHandler) ListRepositories(context.Context, *v1alpha1.ListRepositoriesRequest) (*v1alpha1.ListRepositoriesResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.ListRepositories is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) ListUserRepositories(context.Context, *connect.Request[v1alpha1.ListUserRepositoriesRequest]) (*connect.Response[v1alpha1.ListUserRepositoriesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.ListUserRepositories is not implemented"))
+func (UnimplementedRepositoryServiceHandler) ListUserRepositories(context.Context, *v1alpha1.ListUserRepositoriesRequest) (*v1alpha1.ListUserRepositoriesResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.ListUserRepositories is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) ListRepositoriesUserCanAccess(context.Context, *connect.Request[v1alpha1.ListRepositoriesUserCanAccessRequest]) (*connect.Response[v1alpha1.ListRepositoriesUserCanAccessResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoriesUserCanAccess is not implemented"))
+func (UnimplementedRepositoryServiceHandler) ListRepositoriesUserCanAccess(context.Context, *v1alpha1.ListRepositoriesUserCanAccessRequest) (*v1alpha1.ListRepositoriesUserCanAccessResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoriesUserCanAccess is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) ListOrganizationRepositories(context.Context, *connect.Request[v1alpha1.ListOrganizationRepositoriesRequest]) (*connect.Response[v1alpha1.ListOrganizationRepositoriesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.ListOrganizationRepositories is not implemented"))
+func (UnimplementedRepositoryServiceHandler) ListOrganizationRepositories(context.Context, *v1alpha1.ListOrganizationRepositoriesRequest) (*v1alpha1.ListOrganizationRepositoriesResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.ListOrganizationRepositories is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) CreateRepositoryByFullName(context.Context, *connect.Request[v1alpha1.CreateRepositoryByFullNameRequest]) (*connect.Response[v1alpha1.CreateRepositoryByFullNameResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.CreateRepositoryByFullName is not implemented"))
+func (UnimplementedRepositoryServiceHandler) CreateRepositoryByFullName(context.Context, *v1alpha1.CreateRepositoryByFullNameRequest) (*v1alpha1.CreateRepositoryByFullNameResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.CreateRepositoryByFullName is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) DeleteRepository(context.Context, *connect.Request[v1alpha1.DeleteRepositoryRequest]) (*connect.Response[v1alpha1.DeleteRepositoryResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepository is not implemented"))
+func (UnimplementedRepositoryServiceHandler) DeleteRepository(context.Context, *v1alpha1.DeleteRepositoryRequest) (*v1alpha1.DeleteRepositoryResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepository is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) DeleteRepositoryByFullName(context.Context, *connect.Request[v1alpha1.DeleteRepositoryByFullNameRequest]) (*connect.Response[v1alpha1.DeleteRepositoryByFullNameResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepositoryByFullName is not implemented"))
+func (UnimplementedRepositoryServiceHandler) DeleteRepositoryByFullName(context.Context, *v1alpha1.DeleteRepositoryByFullNameRequest) (*v1alpha1.DeleteRepositoryByFullNameResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepositoryByFullName is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) DeprecateRepositoryByName(context.Context, *connect.Request[v1alpha1.DeprecateRepositoryByNameRequest]) (*connect.Response[v1alpha1.DeprecateRepositoryByNameResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.DeprecateRepositoryByName is not implemented"))
+func (UnimplementedRepositoryServiceHandler) DeprecateRepositoryByName(context.Context, *v1alpha1.DeprecateRepositoryByNameRequest) (*v1alpha1.DeprecateRepositoryByNameResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.DeprecateRepositoryByName is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) UndeprecateRepositoryByName(context.Context, *connect.Request[v1alpha1.UndeprecateRepositoryByNameRequest]) (*connect.Response[v1alpha1.UndeprecateRepositoryByNameResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.UndeprecateRepositoryByName is not implemented"))
+func (UnimplementedRepositoryServiceHandler) UndeprecateRepositoryByName(context.Context, *v1alpha1.UndeprecateRepositoryByNameRequest) (*v1alpha1.UndeprecateRepositoryByNameResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.UndeprecateRepositoryByName is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) GetRepositoriesByFullName(context.Context, *connect.Request[v1alpha1.GetRepositoriesByFullNameRequest]) (*connect.Response[v1alpha1.GetRepositoriesByFullNameResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesByFullName is not implemented"))
+func (UnimplementedRepositoryServiceHandler) GetRepositoriesByFullName(context.Context, *v1alpha1.GetRepositoriesByFullNameRequest) (*v1alpha1.GetRepositoriesByFullNameResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesByFullName is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) SetRepositoryContributor(context.Context, *connect.Request[v1alpha1.SetRepositoryContributorRequest]) (*connect.Response[v1alpha1.SetRepositoryContributorResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.SetRepositoryContributor is not implemented"))
+func (UnimplementedRepositoryServiceHandler) SetRepositoryContributor(context.Context, *v1alpha1.SetRepositoryContributorRequest) (*v1alpha1.SetRepositoryContributorResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.SetRepositoryContributor is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) ListRepositoryContributors(context.Context, *connect.Request[v1alpha1.ListRepositoryContributorsRequest]) (*connect.Response[v1alpha1.ListRepositoryContributorsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoryContributors is not implemented"))
+func (UnimplementedRepositoryServiceHandler) ListRepositoryContributors(context.Context, *v1alpha1.ListRepositoryContributorsRequest) (*v1alpha1.ListRepositoryContributorsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoryContributors is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) GetRepositorySettings(context.Context, *connect.Request[v1alpha1.GetRepositorySettingsRequest]) (*connect.Response[v1alpha1.GetRepositorySettingsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.GetRepositorySettings is not implemented"))
+func (UnimplementedRepositoryServiceHandler) GetRepositorySettings(context.Context, *v1alpha1.GetRepositorySettingsRequest) (*v1alpha1.GetRepositorySettingsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.GetRepositorySettings is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) UpdateRepositorySettingsByName(context.Context, *connect.Request[v1alpha1.UpdateRepositorySettingsByNameRequest]) (*connect.Response[v1alpha1.UpdateRepositorySettingsByNameResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositorySettingsByName is not implemented"))
+func (UnimplementedRepositoryServiceHandler) UpdateRepositorySettingsByName(context.Context, *v1alpha1.UpdateRepositorySettingsByNameRequest) (*v1alpha1.UpdateRepositorySettingsByNameResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositorySettingsByName is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) GetRepositoriesMetadata(context.Context, *connect.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[v1alpha1.GetRepositoriesMetadataResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesMetadata is not implemented"))
+func (UnimplementedRepositoryServiceHandler) GetRepositoriesMetadata(context.Context, *v1alpha1.GetRepositoriesMetadataRequest) (*v1alpha1.GetRepositoriesMetadataResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesMetadata is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) GetRepositoryDependencyDOTString(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryDependencyDOTString is not implemented"))
+func (UnimplementedRepositoryServiceHandler) GetRepositoryDependencyDOTString(context.Context, *v1alpha1.GetRepositoryDependencyDOTStringRequest) (*v1alpha1.GetRepositoryDependencyDOTStringResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryDependencyDOTString is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) AddRepositoryGroup(context.Context, *connect.Request[v1alpha1.AddRepositoryGroupRequest]) (*connect.Response[v1alpha1.AddRepositoryGroupResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.AddRepositoryGroup is not implemented"))
+func (UnimplementedRepositoryServiceHandler) AddRepositoryGroup(context.Context, *v1alpha1.AddRepositoryGroupRequest) (*v1alpha1.AddRepositoryGroupResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.AddRepositoryGroup is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) UpdateRepositoryGroup(context.Context, *connect.Request[v1alpha1.UpdateRepositoryGroupRequest]) (*connect.Response[v1alpha1.UpdateRepositoryGroupResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositoryGroup is not implemented"))
+func (UnimplementedRepositoryServiceHandler) UpdateRepositoryGroup(context.Context, *v1alpha1.UpdateRepositoryGroupRequest) (*v1alpha1.UpdateRepositoryGroupResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositoryGroup is not implemented")
 }
 
-func (UnimplementedRepositoryServiceHandler) RemoveRepositoryGroup(context.Context, *connect.Request[v1alpha1.RemoveRepositoryGroupRequest]) (*connect.Response[v1alpha1.RemoveRepositoryGroupResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.RemoveRepositoryGroup is not implemented"))
+func (UnimplementedRepositoryServiceHandler) RemoveRepositoryGroup(context.Context, *v1alpha1.RemoveRepositoryGroupRequest) (*v1alpha1.RemoveRepositoryGroupResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryService.RemoveRepositoryGroup is not implemented")
+}
+
+type repositoryServiceClient struct {
+	client *connect.Client
+}
+
+func (c *repositoryServiceClient) GetRepository(ctx context.Context, req *v1alpha1.GetRepositoryRequest) (*v1alpha1.GetRepositoryResponse, error) {
+	var res v1alpha1.GetRepositoryResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceGetRepositorySpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) GetRepositoryByFullName(ctx context.Context, req *v1alpha1.GetRepositoryByFullNameRequest) (*v1alpha1.GetRepositoryByFullNameResponse, error) {
+	var res v1alpha1.GetRepositoryByFullNameResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceGetRepositoryByFullNameSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) ListRepositories(ctx context.Context, req *v1alpha1.ListRepositoriesRequest) (*v1alpha1.ListRepositoriesResponse, error) {
+	var res v1alpha1.ListRepositoriesResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceListRepositoriesSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) ListUserRepositories(ctx context.Context, req *v1alpha1.ListUserRepositoriesRequest) (*v1alpha1.ListUserRepositoriesResponse, error) {
+	var res v1alpha1.ListUserRepositoriesResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceListUserRepositoriesSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) ListRepositoriesUserCanAccess(ctx context.Context, req *v1alpha1.ListRepositoriesUserCanAccessRequest) (*v1alpha1.ListRepositoriesUserCanAccessResponse, error) {
+	var res v1alpha1.ListRepositoriesUserCanAccessResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceListRepositoriesUserCanAccessSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) ListOrganizationRepositories(ctx context.Context, req *v1alpha1.ListOrganizationRepositoriesRequest) (*v1alpha1.ListOrganizationRepositoriesResponse, error) {
+	var res v1alpha1.ListOrganizationRepositoriesResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceListOrganizationRepositoriesSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) CreateRepositoryByFullName(ctx context.Context, req *v1alpha1.CreateRepositoryByFullNameRequest) (*v1alpha1.CreateRepositoryByFullNameResponse, error) {
+	var res v1alpha1.CreateRepositoryByFullNameResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceCreateRepositoryByFullNameSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) DeleteRepository(ctx context.Context, req *v1alpha1.DeleteRepositoryRequest) (*v1alpha1.DeleteRepositoryResponse, error) {
+	var res v1alpha1.DeleteRepositoryResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceDeleteRepositorySpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) DeleteRepositoryByFullName(ctx context.Context, req *v1alpha1.DeleteRepositoryByFullNameRequest) (*v1alpha1.DeleteRepositoryByFullNameResponse, error) {
+	var res v1alpha1.DeleteRepositoryByFullNameResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceDeleteRepositoryByFullNameSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) DeprecateRepositoryByName(ctx context.Context, req *v1alpha1.DeprecateRepositoryByNameRequest) (*v1alpha1.DeprecateRepositoryByNameResponse, error) {
+	var res v1alpha1.DeprecateRepositoryByNameResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceDeprecateRepositoryByNameSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) UndeprecateRepositoryByName(ctx context.Context, req *v1alpha1.UndeprecateRepositoryByNameRequest) (*v1alpha1.UndeprecateRepositoryByNameResponse, error) {
+	var res v1alpha1.UndeprecateRepositoryByNameResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceUndeprecateRepositoryByNameSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) GetRepositoriesByFullName(ctx context.Context, req *v1alpha1.GetRepositoriesByFullNameRequest) (*v1alpha1.GetRepositoriesByFullNameResponse, error) {
+	var res v1alpha1.GetRepositoriesByFullNameResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceGetRepositoriesByFullNameSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) SetRepositoryContributor(ctx context.Context, req *v1alpha1.SetRepositoryContributorRequest) (*v1alpha1.SetRepositoryContributorResponse, error) {
+	var res v1alpha1.SetRepositoryContributorResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceSetRepositoryContributorSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) ListRepositoryContributors(ctx context.Context, req *v1alpha1.ListRepositoryContributorsRequest) (*v1alpha1.ListRepositoryContributorsResponse, error) {
+	var res v1alpha1.ListRepositoryContributorsResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceListRepositoryContributorsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) GetRepositorySettings(ctx context.Context, req *v1alpha1.GetRepositorySettingsRequest) (*v1alpha1.GetRepositorySettingsResponse, error) {
+	var res v1alpha1.GetRepositorySettingsResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceGetRepositorySettingsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) UpdateRepositorySettingsByName(ctx context.Context, req *v1alpha1.UpdateRepositorySettingsByNameRequest) (*v1alpha1.UpdateRepositorySettingsByNameResponse, error) {
+	var res v1alpha1.UpdateRepositorySettingsByNameResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceUpdateRepositorySettingsByNameSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) GetRepositoriesMetadata(ctx context.Context, req *v1alpha1.GetRepositoriesMetadataRequest) (*v1alpha1.GetRepositoriesMetadataResponse, error) {
+	var res v1alpha1.GetRepositoriesMetadataResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceGetRepositoriesMetadataSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) GetRepositoryDependencyDOTString(ctx context.Context, req *v1alpha1.GetRepositoryDependencyDOTStringRequest) (*v1alpha1.GetRepositoryDependencyDOTStringResponse, error) {
+	var res v1alpha1.GetRepositoryDependencyDOTStringResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceGetRepositoryDependencyDOTStringSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) AddRepositoryGroup(ctx context.Context, req *v1alpha1.AddRepositoryGroupRequest) (*v1alpha1.AddRepositoryGroupResponse, error) {
+	var res v1alpha1.AddRepositoryGroupResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceAddRepositoryGroupSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) UpdateRepositoryGroup(ctx context.Context, req *v1alpha1.UpdateRepositoryGroupRequest) (*v1alpha1.UpdateRepositoryGroupResponse, error) {
+	var res v1alpha1.UpdateRepositoryGroupResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceUpdateRepositoryGroupSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryServiceClient) RemoveRepositoryGroup(ctx context.Context, req *v1alpha1.RemoveRepositoryGroupRequest) (*v1alpha1.RemoveRepositoryGroupResponse, error) {
+	var res v1alpha1.RemoveRepositoryGroupResponse
+	if err := c.client.CallUnary(ctx, repositoryServiceRemoveRepositoryGroupSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type repositoryServiceHandler struct{ svc RepositoryServiceHandler }
+
+func (h repositoryServiceHandler) getRepository(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetRepositoryRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetRepository(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) getRepositoryByFullName(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetRepositoryByFullNameRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetRepositoryByFullName(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) listRepositories(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ListRepositoriesRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListRepositories(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) listUserRepositories(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ListUserRepositoriesRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListUserRepositories(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) listRepositoriesUserCanAccess(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ListRepositoriesUserCanAccessRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListRepositoriesUserCanAccess(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) listOrganizationRepositories(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ListOrganizationRepositoriesRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListOrganizationRepositories(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) createRepositoryByFullName(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.CreateRepositoryByFullNameRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateRepositoryByFullName(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) deleteRepository(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.DeleteRepositoryRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteRepository(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) deleteRepositoryByFullName(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.DeleteRepositoryByFullNameRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteRepositoryByFullName(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) deprecateRepositoryByName(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.DeprecateRepositoryByNameRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeprecateRepositoryByName(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) undeprecateRepositoryByName(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UndeprecateRepositoryByNameRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UndeprecateRepositoryByName(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) getRepositoriesByFullName(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetRepositoriesByFullNameRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetRepositoriesByFullName(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) setRepositoryContributor(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.SetRepositoryContributorRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.SetRepositoryContributor(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) listRepositoryContributors(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ListRepositoryContributorsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListRepositoryContributors(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) getRepositorySettings(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetRepositorySettingsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetRepositorySettings(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) updateRepositorySettingsByName(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UpdateRepositorySettingsByNameRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateRepositorySettingsByName(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) getRepositoriesMetadata(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetRepositoriesMetadataRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetRepositoriesMetadata(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) getRepositoryDependencyDOTString(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetRepositoryDependencyDOTStringRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetRepositoryDependencyDOTString(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) addRepositoryGroup(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.AddRepositoryGroupRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.AddRepositoryGroup(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) updateRepositoryGroup(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UpdateRepositoryGroupRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateRepositoryGroup(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryServiceHandler) removeRepositoryGroup(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.RemoveRepositoryGroupRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RemoveRepositoryGroup(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

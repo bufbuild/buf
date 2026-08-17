@@ -20,7 +20,6 @@ import (
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -123,19 +122,18 @@ func run(
 	}
 	resp, err := service.CreateWebhook(
 		ctx,
-		connect.NewRequest(
-			registryv1alpha1.CreateWebhookRequest_builder{
-				WebhookEvent:   registryv1alpha1.WebhookEvent(event),
-				OwnerName:      flags.OwnerName,
-				RepositoryName: flags.RepositoryName,
-				CallbackUrl:    flags.CallbackURL,
-			}.Build(),
-		),
+
+		registryv1alpha1.CreateWebhookRequest_builder{
+			WebhookEvent:   registryv1alpha1.WebhookEvent(event),
+			OwnerName:      flags.OwnerName,
+			RepositoryName: flags.RepositoryName,
+			CallbackUrl:    flags.CallbackURL,
+		}.Build(),
 	)
 	if err != nil {
 		return err
 	}
-	webhookJSON, err := protoencoding.NewJSONMarshaler(nil, protoencoding.JSONMarshalerWithIndent()).Marshal(resp.Msg)
+	webhookJSON, err := protoencoding.NewJSONMarshaler(nil, protoencoding.JSONMarshalerWithIndent()).Marshal(resp)
 	if err != nil {
 		return err
 	}

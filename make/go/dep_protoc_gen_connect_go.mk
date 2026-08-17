@@ -8,10 +8,10 @@ $(call _assert_var,CACHE_BIN)
 
 # Settable
 # https://github.com/connectrpc/connect-go 20260520 checked 20260521
-CONNECT_VERSION ?= v1.20.0
+CONNECT_VERSION ?= v2.0.0-alpha.1
 
 GO_GET_PKGS := $(GO_GET_PKGS) \
-	connectrpc.com/connect@$(CONNECT_VERSION)
+	connectrpc.com/connect/v2@$(CONNECT_VERSION)
 
 PROTOC_GEN_CONNECT_GO := $(CACHE_BIN)/protoc-gen-connect-go
 
@@ -19,7 +19,7 @@ $(CACHE_VERSIONS)/connect-go/protoc-gen-connect-go-$(CONNECT_VERSION):
 	@rm -f $(PROTOC_GEN_CONNECT_GO)
 	@rm -rf $(dir $@)
 	@mkdir -p $(dir $@)
-	GOBIN=$(dir $@) go install connectrpc.com/connect/cmd/protoc-gen-connect-go@$(CONNECT_VERSION)
+	GOBIN=$(dir $@) go install connectrpc.com/connect/v2/cmd/protoc-gen-connect-go@$(CONNECT_VERSION)
 	@mv $(dir $@)/protoc-gen-connect-go $@
 	@test -x $@
 	@touch $@

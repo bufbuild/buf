@@ -19,247 +19,262 @@
 package registryv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// RepositoryTagServiceName is the fully-qualified name of the RepositoryTagService service.
 	RepositoryTagServiceName = "buf.alpha.registry.v1alpha1.RepositoryTagService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// RepositoryTagServiceGetRepositoryTagProcedure is the fully-qualified name of the
-	// RepositoryTagService's GetRepositoryTag RPC.
+	// RepositoryTagServiceGetRepositoryTagProcedure is the procedure name of the RepositoryTagService's
+	// GetRepositoryTag RPC.
 	RepositoryTagServiceGetRepositoryTagProcedure = "/buf.alpha.registry.v1alpha1.RepositoryTagService/GetRepositoryTag"
-	// RepositoryTagServiceCreateRepositoryTagProcedure is the fully-qualified name of the
+	// RepositoryTagServiceCreateRepositoryTagProcedure is the procedure name of the
 	// RepositoryTagService's CreateRepositoryTag RPC.
 	RepositoryTagServiceCreateRepositoryTagProcedure = "/buf.alpha.registry.v1alpha1.RepositoryTagService/CreateRepositoryTag"
-	// RepositoryTagServiceUpdateRepositoryTagProcedure is the fully-qualified name of the
+	// RepositoryTagServiceUpdateRepositoryTagProcedure is the procedure name of the
 	// RepositoryTagService's UpdateRepositoryTag RPC.
 	RepositoryTagServiceUpdateRepositoryTagProcedure = "/buf.alpha.registry.v1alpha1.RepositoryTagService/UpdateRepositoryTag"
-	// RepositoryTagServiceListRepositoryTagsProcedure is the fully-qualified name of the
+	// RepositoryTagServiceListRepositoryTagsProcedure is the procedure name of the
 	// RepositoryTagService's ListRepositoryTags RPC.
 	RepositoryTagServiceListRepositoryTagsProcedure = "/buf.alpha.registry.v1alpha1.RepositoryTagService/ListRepositoryTags"
-	// RepositoryTagServiceListRepositoryTagsForReferenceProcedure is the fully-qualified name of the
+	// RepositoryTagServiceListRepositoryTagsForReferenceProcedure is the procedure name of the
 	// RepositoryTagService's ListRepositoryTagsForReference RPC.
 	RepositoryTagServiceListRepositoryTagsForReferenceProcedure = "/buf.alpha.registry.v1alpha1.RepositoryTagService/ListRepositoryTagsForReference"
+)
+
+var (
+	repositoryTagServiceGetRepositoryTagSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_tag_proto.Services().ByName("RepositoryTagService").Methods().ByName("GetRepositoryTag"),
+			Procedure:        RepositoryTagServiceGetRepositoryTagProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	repositoryTagServiceCreateRepositoryTagSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_tag_proto.Services().ByName("RepositoryTagService").Methods().ByName("CreateRepositoryTag"),
+			Procedure:        RepositoryTagServiceCreateRepositoryTagProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	repositoryTagServiceUpdateRepositoryTagSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_tag_proto.Services().ByName("RepositoryTagService").Methods().ByName("UpdateRepositoryTag"),
+			Procedure:        RepositoryTagServiceUpdateRepositoryTagProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	repositoryTagServiceListRepositoryTagsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_tag_proto.Services().ByName("RepositoryTagService").Methods().ByName("ListRepositoryTags"),
+			Procedure:        RepositoryTagServiceListRepositoryTagsProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	repositoryTagServiceListRepositoryTagsForReferenceSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_repository_tag_proto.Services().ByName("RepositoryTagService").Methods().ByName("ListRepositoryTagsForReference"),
+			Procedure:        RepositoryTagServiceListRepositoryTagsForReferenceProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
 )
 
 // RepositoryTagServiceClient is a client for the buf.alpha.registry.v1alpha1.RepositoryTagService
 // service.
 type RepositoryTagServiceClient interface {
 	// GetRepositoryTag gets an existing repository tag.
-	GetRepositoryTag(context.Context, *connect.Request[v1alpha1.GetRepositoryTagRequest]) (*connect.Response[v1alpha1.GetRepositoryTagResponse], error)
+	GetRepositoryTag(context.Context, *v1alpha1.GetRepositoryTagRequest) (*v1alpha1.GetRepositoryTagResponse, error)
 	// CreateRepositoryTag creates a new repository tag.
-	CreateRepositoryTag(context.Context, *connect.Request[v1alpha1.CreateRepositoryTagRequest]) (*connect.Response[v1alpha1.CreateRepositoryTagResponse], error)
+	CreateRepositoryTag(context.Context, *v1alpha1.CreateRepositoryTagRequest) (*v1alpha1.CreateRepositoryTagResponse, error)
 	// UpdateRepositoryTag update an existing repository tag.
-	UpdateRepositoryTag(context.Context, *connect.Request[v1alpha1.UpdateRepositoryTagRequest]) (*connect.Response[v1alpha1.UpdateRepositoryTagResponse], error)
+	UpdateRepositoryTag(context.Context, *v1alpha1.UpdateRepositoryTagRequest) (*v1alpha1.UpdateRepositoryTagResponse, error)
 	// ListRepositoryTags lists the repository tags associated with a Repository.
-	ListRepositoryTags(context.Context, *connect.Request[v1alpha1.ListRepositoryTagsRequest]) (*connect.Response[v1alpha1.ListRepositoryTagsResponse], error)
+	ListRepositoryTags(context.Context, *v1alpha1.ListRepositoryTagsRequest) (*v1alpha1.ListRepositoryTagsResponse, error)
 	// ListRepositoryTagsForReference lists the repository tags associated with a repository
 	// reference name.
-	ListRepositoryTagsForReference(context.Context, *connect.Request[v1alpha1.ListRepositoryTagsForReferenceRequest]) (*connect.Response[v1alpha1.ListRepositoryTagsForReferenceResponse], error)
+	ListRepositoryTagsForReference(context.Context, *v1alpha1.ListRepositoryTagsForReferenceRequest) (*v1alpha1.ListRepositoryTagsForReferenceResponse, error)
 }
 
 // NewRepositoryTagServiceClient constructs a client for the
-// buf.alpha.registry.v1alpha1.RepositoryTagService service. By default, it uses the Connect
-// protocol with the binary Protobuf Codec, asks for gzipped responses, and sends uncompressed
-// requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
-// connect.WithGRPCWeb() options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewRepositoryTagServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) RepositoryTagServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	repositoryTagServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_repository_tag_proto.Services().ByName("RepositoryTagService").Methods()
-	return &repositoryTagServiceClient{
-		getRepositoryTag: connect.NewClient[v1alpha1.GetRepositoryTagRequest, v1alpha1.GetRepositoryTagResponse](
-			httpClient,
-			baseURL+RepositoryTagServiceGetRepositoryTagProcedure,
-			connect.WithSchema(repositoryTagServiceMethods.ByName("GetRepositoryTag")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		createRepositoryTag: connect.NewClient[v1alpha1.CreateRepositoryTagRequest, v1alpha1.CreateRepositoryTagResponse](
-			httpClient,
-			baseURL+RepositoryTagServiceCreateRepositoryTagProcedure,
-			connect.WithSchema(repositoryTagServiceMethods.ByName("CreateRepositoryTag")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		updateRepositoryTag: connect.NewClient[v1alpha1.UpdateRepositoryTagRequest, v1alpha1.UpdateRepositoryTagResponse](
-			httpClient,
-			baseURL+RepositoryTagServiceUpdateRepositoryTagProcedure,
-			connect.WithSchema(repositoryTagServiceMethods.ByName("UpdateRepositoryTag")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		listRepositoryTags: connect.NewClient[v1alpha1.ListRepositoryTagsRequest, v1alpha1.ListRepositoryTagsResponse](
-			httpClient,
-			baseURL+RepositoryTagServiceListRepositoryTagsProcedure,
-			connect.WithSchema(repositoryTagServiceMethods.ByName("ListRepositoryTags")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		listRepositoryTagsForReference: connect.NewClient[v1alpha1.ListRepositoryTagsForReferenceRequest, v1alpha1.ListRepositoryTagsForReferenceResponse](
-			httpClient,
-			baseURL+RepositoryTagServiceListRepositoryTagsForReferenceProcedure,
-			connect.WithSchema(repositoryTagServiceMethods.ByName("ListRepositoryTagsForReference")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// repositoryTagServiceClient implements RepositoryTagServiceClient.
-type repositoryTagServiceClient struct {
-	getRepositoryTag               *connect.Client[v1alpha1.GetRepositoryTagRequest, v1alpha1.GetRepositoryTagResponse]
-	createRepositoryTag            *connect.Client[v1alpha1.CreateRepositoryTagRequest, v1alpha1.CreateRepositoryTagResponse]
-	updateRepositoryTag            *connect.Client[v1alpha1.UpdateRepositoryTagRequest, v1alpha1.UpdateRepositoryTagResponse]
-	listRepositoryTags             *connect.Client[v1alpha1.ListRepositoryTagsRequest, v1alpha1.ListRepositoryTagsResponse]
-	listRepositoryTagsForReference *connect.Client[v1alpha1.ListRepositoryTagsForReferenceRequest, v1alpha1.ListRepositoryTagsForReferenceResponse]
-}
-
-// GetRepositoryTag calls buf.alpha.registry.v1alpha1.RepositoryTagService.GetRepositoryTag.
-func (c *repositoryTagServiceClient) GetRepositoryTag(ctx context.Context, req *connect.Request[v1alpha1.GetRepositoryTagRequest]) (*connect.Response[v1alpha1.GetRepositoryTagResponse], error) {
-	return c.getRepositoryTag.CallUnary(ctx, req)
-}
-
-// CreateRepositoryTag calls buf.alpha.registry.v1alpha1.RepositoryTagService.CreateRepositoryTag.
-func (c *repositoryTagServiceClient) CreateRepositoryTag(ctx context.Context, req *connect.Request[v1alpha1.CreateRepositoryTagRequest]) (*connect.Response[v1alpha1.CreateRepositoryTagResponse], error) {
-	return c.createRepositoryTag.CallUnary(ctx, req)
-}
-
-// UpdateRepositoryTag calls buf.alpha.registry.v1alpha1.RepositoryTagService.UpdateRepositoryTag.
-func (c *repositoryTagServiceClient) UpdateRepositoryTag(ctx context.Context, req *connect.Request[v1alpha1.UpdateRepositoryTagRequest]) (*connect.Response[v1alpha1.UpdateRepositoryTagResponse], error) {
-	return c.updateRepositoryTag.CallUnary(ctx, req)
-}
-
-// ListRepositoryTags calls buf.alpha.registry.v1alpha1.RepositoryTagService.ListRepositoryTags.
-func (c *repositoryTagServiceClient) ListRepositoryTags(ctx context.Context, req *connect.Request[v1alpha1.ListRepositoryTagsRequest]) (*connect.Response[v1alpha1.ListRepositoryTagsResponse], error) {
-	return c.listRepositoryTags.CallUnary(ctx, req)
-}
-
-// ListRepositoryTagsForReference calls
-// buf.alpha.registry.v1alpha1.RepositoryTagService.ListRepositoryTagsForReference.
-func (c *repositoryTagServiceClient) ListRepositoryTagsForReference(ctx context.Context, req *connect.Request[v1alpha1.ListRepositoryTagsForReferenceRequest]) (*connect.Response[v1alpha1.ListRepositoryTagsForReferenceResponse], error) {
-	return c.listRepositoryTagsForReference.CallUnary(ctx, req)
+// buf.alpha.registry.v1alpha1.RepositoryTagService service. Multiple service clients may share a
+// single connect.Client.
+func NewRepositoryTagServiceClient(client *connect.Client) RepositoryTagServiceClient {
+	return &repositoryTagServiceClient{client: client}
 }
 
 // RepositoryTagServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.RepositoryTagService service.
 type RepositoryTagServiceHandler interface {
 	// GetRepositoryTag gets an existing repository tag.
-	GetRepositoryTag(context.Context, *connect.Request[v1alpha1.GetRepositoryTagRequest]) (*connect.Response[v1alpha1.GetRepositoryTagResponse], error)
+	GetRepositoryTag(context.Context, *v1alpha1.GetRepositoryTagRequest) (*v1alpha1.GetRepositoryTagResponse, error)
 	// CreateRepositoryTag creates a new repository tag.
-	CreateRepositoryTag(context.Context, *connect.Request[v1alpha1.CreateRepositoryTagRequest]) (*connect.Response[v1alpha1.CreateRepositoryTagResponse], error)
+	CreateRepositoryTag(context.Context, *v1alpha1.CreateRepositoryTagRequest) (*v1alpha1.CreateRepositoryTagResponse, error)
 	// UpdateRepositoryTag update an existing repository tag.
-	UpdateRepositoryTag(context.Context, *connect.Request[v1alpha1.UpdateRepositoryTagRequest]) (*connect.Response[v1alpha1.UpdateRepositoryTagResponse], error)
+	UpdateRepositoryTag(context.Context, *v1alpha1.UpdateRepositoryTagRequest) (*v1alpha1.UpdateRepositoryTagResponse, error)
 	// ListRepositoryTags lists the repository tags associated with a Repository.
-	ListRepositoryTags(context.Context, *connect.Request[v1alpha1.ListRepositoryTagsRequest]) (*connect.Response[v1alpha1.ListRepositoryTagsResponse], error)
+	ListRepositoryTags(context.Context, *v1alpha1.ListRepositoryTagsRequest) (*v1alpha1.ListRepositoryTagsResponse, error)
 	// ListRepositoryTagsForReference lists the repository tags associated with a repository
 	// reference name.
-	ListRepositoryTagsForReference(context.Context, *connect.Request[v1alpha1.ListRepositoryTagsForReferenceRequest]) (*connect.Response[v1alpha1.ListRepositoryTagsForReferenceResponse], error)
+	ListRepositoryTagsForReference(context.Context, *v1alpha1.ListRepositoryTagsForReferenceRequest) (*v1alpha1.ListRepositoryTagsForReferenceResponse, error)
 }
 
-// NewRepositoryTagServiceHandler builds an HTTP handler from the service implementation. It returns
-// the path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewRepositoryTagServiceHandler(svc RepositoryTagServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	repositoryTagServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_repository_tag_proto.Services().ByName("RepositoryTagService").Methods()
-	repositoryTagServiceGetRepositoryTagHandler := connect.NewUnaryHandler(
-		RepositoryTagServiceGetRepositoryTagProcedure,
-		svc.GetRepositoryTag,
-		connect.WithSchema(repositoryTagServiceMethods.ByName("GetRepositoryTag")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
+// RegisterRepositoryTagServiceHandler registers svc as the
+// buf.alpha.registry.v1alpha1.RepositoryTagService implementation on server.
+func RegisterRepositoryTagServiceHandler(server *connect.Server, svc RepositoryTagServiceHandler) {
+	adapter := repositoryTagServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: repositoryTagServiceGetRepositoryTagSpec(), Handler: adapter.getRepositoryTag},
+		connect.Method{Spec: repositoryTagServiceCreateRepositoryTagSpec(), Handler: adapter.createRepositoryTag},
+		connect.Method{Spec: repositoryTagServiceUpdateRepositoryTagSpec(), Handler: adapter.updateRepositoryTag},
+		connect.Method{Spec: repositoryTagServiceListRepositoryTagsSpec(), Handler: adapter.listRepositoryTags},
+		connect.Method{Spec: repositoryTagServiceListRepositoryTagsForReferenceSpec(), Handler: adapter.listRepositoryTagsForReference},
 	)
-	repositoryTagServiceCreateRepositoryTagHandler := connect.NewUnaryHandler(
-		RepositoryTagServiceCreateRepositoryTagProcedure,
-		svc.CreateRepositoryTag,
-		connect.WithSchema(repositoryTagServiceMethods.ByName("CreateRepositoryTag")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryTagServiceUpdateRepositoryTagHandler := connect.NewUnaryHandler(
-		RepositoryTagServiceUpdateRepositoryTagProcedure,
-		svc.UpdateRepositoryTag,
-		connect.WithSchema(repositoryTagServiceMethods.ByName("UpdateRepositoryTag")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryTagServiceListRepositoryTagsHandler := connect.NewUnaryHandler(
-		RepositoryTagServiceListRepositoryTagsProcedure,
-		svc.ListRepositoryTags,
-		connect.WithSchema(repositoryTagServiceMethods.ByName("ListRepositoryTags")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	repositoryTagServiceListRepositoryTagsForReferenceHandler := connect.NewUnaryHandler(
-		RepositoryTagServiceListRepositoryTagsForReferenceProcedure,
-		svc.ListRepositoryTagsForReference,
-		connect.WithSchema(repositoryTagServiceMethods.ByName("ListRepositoryTagsForReference")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	return "/buf.alpha.registry.v1alpha1.RepositoryTagService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case RepositoryTagServiceGetRepositoryTagProcedure:
-			repositoryTagServiceGetRepositoryTagHandler.ServeHTTP(w, r)
-		case RepositoryTagServiceCreateRepositoryTagProcedure:
-			repositoryTagServiceCreateRepositoryTagHandler.ServeHTTP(w, r)
-		case RepositoryTagServiceUpdateRepositoryTagProcedure:
-			repositoryTagServiceUpdateRepositoryTagHandler.ServeHTTP(w, r)
-		case RepositoryTagServiceListRepositoryTagsProcedure:
-			repositoryTagServiceListRepositoryTagsHandler.ServeHTTP(w, r)
-		case RepositoryTagServiceListRepositoryTagsForReferenceProcedure:
-			repositoryTagServiceListRepositoryTagsForReferenceHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedRepositoryTagServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedRepositoryTagServiceHandler struct{}
 
-func (UnimplementedRepositoryTagServiceHandler) GetRepositoryTag(context.Context, *connect.Request[v1alpha1.GetRepositoryTagRequest]) (*connect.Response[v1alpha1.GetRepositoryTagResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryTagService.GetRepositoryTag is not implemented"))
+func (UnimplementedRepositoryTagServiceHandler) GetRepositoryTag(context.Context, *v1alpha1.GetRepositoryTagRequest) (*v1alpha1.GetRepositoryTagResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryTagService.GetRepositoryTag is not implemented")
 }
 
-func (UnimplementedRepositoryTagServiceHandler) CreateRepositoryTag(context.Context, *connect.Request[v1alpha1.CreateRepositoryTagRequest]) (*connect.Response[v1alpha1.CreateRepositoryTagResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryTagService.CreateRepositoryTag is not implemented"))
+func (UnimplementedRepositoryTagServiceHandler) CreateRepositoryTag(context.Context, *v1alpha1.CreateRepositoryTagRequest) (*v1alpha1.CreateRepositoryTagResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryTagService.CreateRepositoryTag is not implemented")
 }
 
-func (UnimplementedRepositoryTagServiceHandler) UpdateRepositoryTag(context.Context, *connect.Request[v1alpha1.UpdateRepositoryTagRequest]) (*connect.Response[v1alpha1.UpdateRepositoryTagResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryTagService.UpdateRepositoryTag is not implemented"))
+func (UnimplementedRepositoryTagServiceHandler) UpdateRepositoryTag(context.Context, *v1alpha1.UpdateRepositoryTagRequest) (*v1alpha1.UpdateRepositoryTagResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryTagService.UpdateRepositoryTag is not implemented")
 }
 
-func (UnimplementedRepositoryTagServiceHandler) ListRepositoryTags(context.Context, *connect.Request[v1alpha1.ListRepositoryTagsRequest]) (*connect.Response[v1alpha1.ListRepositoryTagsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryTagService.ListRepositoryTags is not implemented"))
+func (UnimplementedRepositoryTagServiceHandler) ListRepositoryTags(context.Context, *v1alpha1.ListRepositoryTagsRequest) (*v1alpha1.ListRepositoryTagsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryTagService.ListRepositoryTags is not implemented")
 }
 
-func (UnimplementedRepositoryTagServiceHandler) ListRepositoryTagsForReference(context.Context, *connect.Request[v1alpha1.ListRepositoryTagsForReferenceRequest]) (*connect.Response[v1alpha1.ListRepositoryTagsForReferenceResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryTagService.ListRepositoryTagsForReference is not implemented"))
+func (UnimplementedRepositoryTagServiceHandler) ListRepositoryTagsForReference(context.Context, *v1alpha1.ListRepositoryTagsForReferenceRequest) (*v1alpha1.ListRepositoryTagsForReferenceResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.RepositoryTagService.ListRepositoryTagsForReference is not implemented")
+}
+
+type repositoryTagServiceClient struct {
+	client *connect.Client
+}
+
+func (c *repositoryTagServiceClient) GetRepositoryTag(ctx context.Context, req *v1alpha1.GetRepositoryTagRequest) (*v1alpha1.GetRepositoryTagResponse, error) {
+	var res v1alpha1.GetRepositoryTagResponse
+	if err := c.client.CallUnary(ctx, repositoryTagServiceGetRepositoryTagSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryTagServiceClient) CreateRepositoryTag(ctx context.Context, req *v1alpha1.CreateRepositoryTagRequest) (*v1alpha1.CreateRepositoryTagResponse, error) {
+	var res v1alpha1.CreateRepositoryTagResponse
+	if err := c.client.CallUnary(ctx, repositoryTagServiceCreateRepositoryTagSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryTagServiceClient) UpdateRepositoryTag(ctx context.Context, req *v1alpha1.UpdateRepositoryTagRequest) (*v1alpha1.UpdateRepositoryTagResponse, error) {
+	var res v1alpha1.UpdateRepositoryTagResponse
+	if err := c.client.CallUnary(ctx, repositoryTagServiceUpdateRepositoryTagSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryTagServiceClient) ListRepositoryTags(ctx context.Context, req *v1alpha1.ListRepositoryTagsRequest) (*v1alpha1.ListRepositoryTagsResponse, error) {
+	var res v1alpha1.ListRepositoryTagsResponse
+	if err := c.client.CallUnary(ctx, repositoryTagServiceListRepositoryTagsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *repositoryTagServiceClient) ListRepositoryTagsForReference(ctx context.Context, req *v1alpha1.ListRepositoryTagsForReferenceRequest) (*v1alpha1.ListRepositoryTagsForReferenceResponse, error) {
+	var res v1alpha1.ListRepositoryTagsForReferenceResponse
+	if err := c.client.CallUnary(ctx, repositoryTagServiceListRepositoryTagsForReferenceSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type repositoryTagServiceHandler struct{ svc RepositoryTagServiceHandler }
+
+func (h repositoryTagServiceHandler) getRepositoryTag(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetRepositoryTagRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetRepositoryTag(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryTagServiceHandler) createRepositoryTag(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.CreateRepositoryTagRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateRepositoryTag(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryTagServiceHandler) updateRepositoryTag(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UpdateRepositoryTagRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateRepositoryTag(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryTagServiceHandler) listRepositoryTags(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ListRepositoryTagsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListRepositoryTags(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h repositoryTagServiceHandler) listRepositoryTagsForReference(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ListRepositoryTagsForReferenceRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListRepositoryTagsForReference(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

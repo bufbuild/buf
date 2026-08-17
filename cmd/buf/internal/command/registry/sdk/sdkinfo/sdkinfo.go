@@ -20,7 +20,6 @@ import (
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -181,7 +180,7 @@ func run(
 	)
 	res, err := resolveServiceClient.GetSDKInfo(
 		ctx,
-		connect.NewRequest(registryv1alpha1.GetSDKInfoRequest_builder{
+		registryv1alpha1.GetSDKInfoRequest_builder{
 			ModuleReference: registryv1alpha1.LocalModuleReference_builder{
 				Owner:      moduleRef.FullName().Owner(),
 				Repository: moduleRef.FullName().Name(),
@@ -193,7 +192,7 @@ func run(
 				Version: pluginVersion,
 			}.Build(),
 			SdkVersion: flags.Version,
-		}.Build()),
+		}.Build(),
 	)
 	if err != nil {
 		return err
@@ -205,6 +204,6 @@ func run(
 	return bufprint.NewSDKInfoPrinter(container.Stdout()).PrintSDKInfo(
 		ctx,
 		format,
-		res.Msg,
+		res,
 	)
 }

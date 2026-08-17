@@ -24,7 +24,7 @@ import (
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xstrings"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -143,7 +143,7 @@ func run(
 	pluginServiceClient := bufregistryapiplugin.NewClientProvider(clientConfig).
 		V1Beta1PluginServiceClient(pluginFullName.Registry())
 
-	pluginResponse, err := pluginServiceClient.CreatePlugins(ctx, connect.NewRequest(
+	pluginResponse, err := pluginServiceClient.CreatePlugins(ctx,
 		&pluginv1beta1.CreatePluginsRequest{
 			Values: []*pluginv1beta1.CreatePluginsRequest_Value{
 				{
@@ -158,14 +158,14 @@ func run(
 				},
 			},
 		},
-	))
+	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {
 			return bufcli.NewPluginNameAlreadyExistsError(pluginFullName.String())
 		}
 		return err
 	}
-	plugins := pluginResponse.Msg.Plugins
+	plugins := pluginResponse.Plugins
 	if len(plugins) != 1 {
 		return syserror.Newf("unexpected number of plugins returned from server: %d", len(plugins))
 	}

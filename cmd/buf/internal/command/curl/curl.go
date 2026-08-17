@@ -37,7 +37,8 @@ import (
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xstrings"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufcurl"
 	"github.com/bufbuild/buf/private/pkg/netrc"
@@ -314,7 +315,7 @@ respectively`,
 	flagSet.StringVar(
 		&f.Protocol,
 		protocolFlagName,
-		connect.ProtocolConnect,
+		connect.ProtocolNameConnect,
 		`The RPC protocol to use. This can be one of "grpc", "grpcweb", or "connect"`,
 	)
 	flagSet.StringVar(
@@ -568,7 +569,7 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 		return fmt.Errorf("if --%s is set, --%s should not be set as it is unused", insecureFlagName, caCertFlagName)
 	}
 
-	if !isSecure && !f.HTTP2PriorKnowledge && f.Protocol == connect.ProtocolGRPC {
+	if !isSecure && !f.HTTP2PriorKnowledge && f.Protocol == connect.ProtocolNameGRPC {
 		return fmt.Errorf("grpc protocol cannot be used with plain-text URLs (http) unless --%s flag is set", http2PriorKnowledgeFlagName)
 	}
 
@@ -614,11 +615,11 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 	}
 
 	switch f.Protocol {
-	case connect.ProtocolConnect, connect.ProtocolGRPC, connect.ProtocolGRPCWeb:
+	case connect.ProtocolNameConnect, connect.ProtocolNameGRPC, connect.ProtocolNameGRPCWeb:
 	default:
 		return fmt.Errorf(
 			"--%s value must be one of %q, %q, or %q",
-			protocolFlagName, connect.ProtocolConnect, connect.ProtocolGRPC, connect.ProtocolGRPCWeb)
+			protocolFlagName, connect.ProtocolNameConnect, connect.ProtocolNameGRPC, connect.ProtocolNameGRPCWeb)
 	}
 
 	if f.NoKeepAlive && f.flagSet.Changed(keepAliveFlagName) {
@@ -742,9 +743,9 @@ func completeCurlCommand(cmd *cobra.Command) error {
 		cmd.RegisterFlagCompletionFunc(
 			protocolFlagName,
 			cobra.FixedCompletions([]string{
-				connect.ProtocolConnect,
-				connect.ProtocolGRPC,
-				connect.ProtocolGRPCWeb,
+				connect.ProtocolNameConnect,
+				connect.ProtocolNameGRPC,
+				connect.ProtocolNameGRPCWeb,
 			}, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder),
 		),
 		cmd.RegisterFlagCompletionFunc(
@@ -908,20 +909,21 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		verbosePrinter = verbose.NewPrinter(container.Stderr(), container.AppName())
 	}
 
-	var clientOptions []connect.ClientOption
+	var clientOptions []connecthttp.Option
 	switch f.Protocol {
-	case connect.ProtocolGRPC:
-		clientOptions = []connect.ClientOption{connect.WithGRPC()}
-	case connect.ProtocolGRPCWeb:
-		clientOptions = []connect.ClientOption{connect.WithGRPCWeb()}
+	case connect.ProtocolNameGRPC:
+		clientOptions = []connecthttp.Option{connecthttp.WithGRPC()}
+	case connect.ProtocolNameGRPCWeb:
+		clientOptions = []connecthttp.Option{connecthttp.WithGRPCWeb()}
 	}
-	if f.Protocol != connect.ProtocolGRPC {
+	var clientInterceptors []connect.ClientInterceptor
+	if f.Protocol != connect.ProtocolNameGRPC {
 		// The transport will log trailers to the verbose printer. But if
 		// we're not using standard grpc protocol, trailers are actually encoded
 		// in an end-of-stream message for streaming calls. So this interceptor
 		// will print the trailers for streaming calls when the response stream
 		// is drained.
-		clientOptions = append(clientOptions, connect.WithInterceptors(bufcurl.TraceTrailersInterceptor(verbosePrinter)))
+		clientInterceptors = append(clientInterceptors, bufcurl.TraceTrailersInterceptor(verbosePrinter))
 	}
 
 	dataSource := "(argument)"
@@ -980,7 +982,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		}
 	}()
 
-	makeTransportOnce := sync.OnceValues(func() (connect.HTTPClient, error) {
+	makeTransportOnce := sync.OnceValues(func() (connecthttp.HTTPClient, error) {
 		// We do this lazily since some commands don't need a transport, like listing
 		// services and methods and describing elements when the schema source is
 		// something other than server reflection. We memoize the result to use the
@@ -1035,7 +1037,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		if err != nil {
 			return err
 		}
-		res, closeRes := bufcurl.NewServerReflectionResolver(ctx, transport, clientOptions, baseURL, reflectProtocol, reflectHeaders, verbosePrinter)
+		res, closeRes := bufcurl.NewServerReflectionResolver(ctx, transport, clientOptions, clientInterceptors, baseURL, reflectProtocol, reflectHeaders, verbosePrinter)
 		defer closeRes()
 		resolvers = append(resolvers, res)
 	}
@@ -1100,7 +1102,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		if err != nil {
 			return err
 		}
-		invoker := bufcurl.NewInvoker(container, verbosePrinter, methodDescriptor, res, f.EmitDefaults, transport, clientOptions, urlArg, output)
+		invoker := bufcurl.NewInvoker(container, verbosePrinter, methodDescriptor, res, f.EmitDefaults, transport, clientOptions, clientInterceptors, baseURL, output)
 		return invoker.Invoke(ctx, dataSource, dataReader, requestHeaders)
 	}
 }
@@ -1281,11 +1283,12 @@ func completeURL(cmd *cobra.Command, _ []string, toComplete string) ([]string, c
 // Reflection for completion always uses gRPC regardless of --protocol or
 // --reflect-protocol, and does not forward --reflect-header. Servers that
 // require auth on the reflection endpoint will silently produce no completions.
-func completeURLFromReflection(ctx context.Context, httpClient connect.HTTPClient, baseURL, rawPath string) ([]string, cobra.ShellCompDirective, bool) {
+func completeURLFromReflection(ctx context.Context, httpClient connecthttp.HTTPClient, baseURL, rawPath string) ([]string, cobra.ShellCompDirective, bool) {
 	reflectionResolver, closeResolver := bufcurl.NewServerReflectionResolver(
 		ctx,
 		httpClient,
-		[]connect.ClientOption{connect.WithGRPC()},
+		[]connecthttp.Option{connecthttp.WithGRPC()},
+		nil,
 		baseURL,
 		bufcurl.ReflectProtocolUnknown,
 		http.Header{},
@@ -1477,7 +1480,7 @@ func completePathFromServices(
 // makeCompletionHTTPClient builds an HTTP client for use during shell
 // completion. Returns (client, true) on success, or (nil, false) when
 // reflection is not possible (e.g. plain HTTP without HTTP/2 prior knowledge).
-func makeCompletionHTTPClient(cmd *cobra.Command, isSecure bool, authority string) (connect.HTTPClient, bool) {
+func makeCompletionHTTPClient(cmd *cobra.Command, isSecure bool, authority string) (connecthttp.HTTPClient, bool) {
 	insecure, _ := cmd.Flags().GetBool(insecureFlagName)
 	http2PriorKnowledge, _ := cmd.Flags().GetBool(http2PriorKnowledgeFlagName)
 	if !isSecure && !http2PriorKnowledge {

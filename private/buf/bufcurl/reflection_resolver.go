@@ -18,13 +18,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
 
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 	reflectionv1 "github.com/bufbuild/buf/private/gen/proto/go/grpc/reflection/v1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/verbose"
@@ -97,24 +97,19 @@ func ParseReflectProtocol(s string) (ReflectProtocol, error) {
 // create an RPC reflection client, to ask the server for descriptors.
 func NewServerReflectionResolver(
 	ctx context.Context,
-	httpClient connect.HTTPClient,
-	opts []connect.ClientOption,
+	httpClient connecthttp.HTTPClient,
+	opts []connecthttp.Option,
+	interceptors []connect.ClientInterceptor,
 	baseURL string,
 	reflectProtocol ReflectProtocol,
 	headers http.Header,
 	printer verbose.Printer,
 ) (r Resolver, closeResolver func()) {
 	baseURL = strings.TrimSuffix(baseURL, "/")
-	var v1Client, v1alphaClient *reflectClient
-	if reflectProtocol != ReflectProtocolGRPCV1 {
-		v1alphaClient = connect.NewClient[reflectionv1.ServerReflectionRequest, reflectionv1.ServerReflectionResponse](httpClient, baseURL+"/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo", opts...)
-	}
-	if reflectProtocol != ReflectProtocolGRPCV1Alpha {
-		v1Client = connect.NewClient[reflectionv1.ServerReflectionRequest, reflectionv1.ServerReflectionResponse](httpClient, baseURL+"/grpc.reflection.v1.ServerReflection/ServerReflectionInfo", opts...)
-	}
-	// if version is neither "v1" nor "v1alpha", then we have both clients and
-	// will automatically decide which one to use by trying v1 first and falling
-	// back to v1alpha on "not implemented" error
+	client := connect.NewClient(connecthttp.NewTransport(httpClient, baseURL, opts...), interceptors...)
+	// if the protocol is neither "v1" nor "v1alpha", then we will automatically
+	// decide which one to use by trying v1 first and falling back to v1alpha on
+	// "not implemented" error
 
 	// elide the "upload finished" trace message for reflection calls
 	ctx = skippingUploadFinishedMessage(ctx)
@@ -123,29 +118,38 @@ func NewServerReflectionResolver(
 	ctx = withUserAgent(ctx, headers)
 
 	res := &reflectionResolver{
-		ctx:              ctx,
-		v1Client:         v1Client,
-		v1alphaClient:    v1alphaClient,
-		useV1Alpha:       reflectProtocol == ReflectProtocolGRPCV1Alpha,
-		headers:          headers,
-		printer:          printer,
-		downloadedProtos: map[string]*descriptorpb.FileDescriptorProto{},
+		ctx:                  ctx,
+		client:               client,
+		useV1Alpha:           reflectProtocol == ReflectProtocolGRPCV1Alpha,
+		allowV1AlphaFallback: reflectProtocol != ReflectProtocolGRPCV1,
+		headers:              headers,
+		printer:              printer,
+		downloadedProtos:     map[string]*descriptorpb.FileDescriptorProto{},
 	}
 	return res, res.Reset
 }
 
-type reflectClient = connect.Client[reflectionv1.ServerReflectionRequest, reflectionv1.ServerReflectionResponse]
-type reflectStream = connect.BidiStreamForClient[reflectionv1.ServerReflectionRequest, reflectionv1.ServerReflectionResponse]
+var (
+	reflectSpecV1 = connect.Spec{
+		Procedure:  "/grpc.reflection.v1.ServerReflection/ServerReflectionInfo",
+		StreamType: connect.StreamTypeBidi,
+	}
+	reflectSpecV1Alpha = connect.Spec{
+		Procedure:  "/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
+		StreamType: connect.StreamTypeBidi,
+	}
+)
 
 type reflectionResolver struct {
-	ctx                     context.Context
-	headers                 http.Header
-	printer                 verbose.Printer
-	v1Client, v1alphaClient *reflectClient
+	ctx     context.Context
+	headers http.Header
+	printer verbose.Printer
+	client  *connect.Client
 
 	mu                      sync.Mutex
 	useV1Alpha              bool
-	v1Stream, v1alphaStream *reflectStream
+	allowV1AlphaFallback    bool
+	v1Stream, v1alphaStream connect.ClientStream
 	downloadedProtos        map[string]*descriptorpb.FileDescriptorProto
 	cachedFiles             protoregistry.Files
 	cachedExts              protoregistry.Types
@@ -169,7 +173,7 @@ func (r *reflectionResolver) ListServices() ([]protoreflect.FullName, error) {
 		if resp.GetErrorResponse().GetErrorCode() < 0 {
 			return nil, fmt.Errorf("server replied with unsupported error code: %v", resp.GetErrorResponse().GetErrorCode())
 		}
-		return nil, connect.NewWireError(connect.Code(resp.GetErrorResponse().GetErrorCode()), errors.New(resp.GetErrorResponse().GetErrorMessage()))
+		return nil, connect.NewError(connect.Code(resp.GetErrorResponse().GetErrorCode()), resp.GetErrorResponse().GetErrorMessage()).WithRemote()
 	case reflectionv1.ServerReflectionResponse_ListServicesResponse_case:
 		serviceNames := make([]protoreflect.FullName, len(resp.GetListServicesResponse().GetService()))
 		for i, service := range resp.GetListServicesResponse().GetService() {
@@ -342,7 +346,7 @@ func descriptorsInResponse(resp *reflectionv1.ServerReflectionResponse) ([]*desc
 		if resp.GetErrorResponse().GetErrorCode() < 0 {
 			return nil, fmt.Errorf("server replied with unsupported error code: %v", resp.GetErrorResponse().GetErrorCode())
 		}
-		return nil, connect.NewWireError(connect.Code(resp.GetErrorResponse().GetErrorCode()), errors.New(resp.GetErrorResponse().GetErrorMessage()))
+		return nil, connect.NewError(connect.Code(resp.GetErrorResponse().GetErrorCode()), resp.GetErrorResponse().GetErrorMessage()).WithRemote()
 	case reflectionv1.ServerReflectionResponse_FileDescriptorResponse_case:
 		files := make([]*descriptorpb.FileDescriptorProto, len(resp.GetFileDescriptorResponse().GetFileDescriptorProto()))
 		for i, data := range resp.GetFileDescriptorResponse().GetFileDescriptorProto() {
@@ -427,7 +431,7 @@ func (r *reflectionResolver) cacheFileLocked(name string, seen []string) error {
 func (r *reflectionResolver) sendLocked(req *reflectionv1.ServerReflectionRequest) (*reflectionv1.ServerReflectionResponse, error) {
 	stream, isNew := r.getStreamLocked()
 	resp, err := send(stream, req)
-	if isNotImplemented(err) && !r.useV1Alpha && r.v1alphaClient != nil {
+	if isNotImplemented(err) && !r.useV1Alpha && r.allowV1AlphaFallback {
 		r.resetLocked()
 		r.useV1Alpha = true
 		stream, isNew = r.getStreamLocked()
@@ -448,34 +452,56 @@ func isNotImplemented(err error) bool {
 	return ok && connErr.Code() == connect.CodeUnimplemented
 }
 
-func send(stream *reflectStream, req *reflectionv1.ServerReflectionRequest) (*reflectionv1.ServerReflectionResponse, error) {
+func send(stream connect.ClientStream, req *reflectionv1.ServerReflectionRequest) (*reflectionv1.ServerReflectionResponse, error) {
 	sendErr := stream.Send(req)
 	// even if sendErr != nil, we still call Receive because Send will typically return
 	// io.EOF and caller is expected to use Receive to get the RPC error result.
-	resp, recvErr := stream.Receive()
+	resp := &reflectionv1.ServerReflectionResponse{}
+	recvErr := stream.Receive(resp)
 	if sendErr != nil && recvErr == nil {
 		return nil, sendErr
 	}
-	return resp, recvErr
+	if recvErr != nil {
+		return nil, recvErr
+	}
+	return resp, nil
 }
 
-func (r *reflectionResolver) getStreamLocked() (*reflectStream, bool) {
+func (r *reflectionResolver) getStreamLocked() (connect.ClientStream, bool) {
 	if r.useV1Alpha {
-		isNew := r.maybeCreateStreamLocked(r.v1alphaClient, &r.v1alphaStream)
+		isNew := r.maybeCreateStreamLocked(reflectSpecV1Alpha, &r.v1alphaStream)
 		return r.v1alphaStream, isNew
 	}
-	isNew := r.maybeCreateStreamLocked(r.v1Client, &r.v1Stream)
+	isNew := r.maybeCreateStreamLocked(reflectSpecV1, &r.v1Stream)
 	return r.v1Stream, isNew
 }
 
-func (r *reflectionResolver) maybeCreateStreamLocked(client *reflectClient, stream **reflectStream) bool {
+func (r *reflectionResolver) maybeCreateStreamLocked(spec connect.Spec, stream *connect.ClientStream) bool {
 	if *stream != nil {
 		return false // already created
 	}
-	*stream = client.CallBidiStream(r.ctx)
-	maps.Copy((*stream).RequestHeader(), r.headers)
+	ctx, info := connect.NewClientContext(r.ctx)
+	setRequestHeaders(info, r.headers)
+	newStream, err := r.client.CallClientStream(ctx, spec)
+	if err != nil {
+		*stream = errClientStream{err: err}
+		return true
+	}
+	*stream = newStream
 	return true
 }
+
+// errClientStream is a connect.ClientStream that always returns the given
+// error. It is used when opening a stream fails.
+type errClientStream struct {
+	err error
+}
+
+func (e errClientStream) SendHeaders() error { return e.err }
+func (e errClientStream) Send(any) error     { return e.err }
+func (e errClientStream) CloseSend() error   { return e.err }
+func (e errClientStream) Receive(any) error  { return e.err }
+func (e errClientStream) Close() error       { return nil }
 
 func (r *reflectionResolver) Reset() {
 	r.mu.Lock()
@@ -494,15 +520,14 @@ func (r *reflectionResolver) resetLocked() {
 	}
 }
 
-func reset(stream *reflectStream) {
-	_ = stream.CloseRequest()
+func reset(stream connect.ClientStream) {
+	_ = stream.CloseSend()
 	// Try to terminate gracefully by receiving the end of stream
 	// (this call should return io.EOF). If we skip this and
-	// immediately call CloseResponse, it could result in the
-	// RPC being cancelled, which results in some nuisance
-	// "cancel" errors.
-	_, _ = stream.Receive()
-	_ = stream.CloseResponse()
+	// immediately call Close, it could result in the RPC being
+	// cancelled, which results in some nuisance "cancel" errors.
+	_ = stream.Receive(&reflectionv1.ServerReflectionResponse{})
+	_ = stream.Close()
 }
 
 type extensionContainer interface {

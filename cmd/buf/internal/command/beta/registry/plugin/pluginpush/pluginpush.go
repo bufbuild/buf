@@ -27,7 +27,7 @@ import (
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xstrings"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
@@ -245,14 +245,13 @@ func run(
 	)
 	latestPluginResp, err := service.GetLatestCuratedPlugin(
 		ctx,
-		connect.NewRequest(
-			registryv1alpha1.GetLatestCuratedPluginRequest_builder{
-				Owner:    pluginConfig.Name.Owner(),
-				Name:     pluginConfig.Name.Plugin(),
-				Version:  pluginConfig.PluginVersion,
-				Revision: 0, // get latest revision for the plugin version.
-			}.Build(),
-		),
+
+		registryv1alpha1.GetLatestCuratedPluginRequest_builder{
+			Owner:    pluginConfig.Name.Owner(),
+			Name:     pluginConfig.Name.Plugin(),
+			Version:  pluginConfig.PluginVersion,
+			Revision: 0, // get latest revision for the plugin version.
+		}.Build(),
 	)
 	var currentImageDigest string
 	var nextRevision uint32
@@ -262,8 +261,8 @@ func run(
 		}
 		nextRevision = 1
 	} else {
-		nextRevision = latestPluginResp.Msg.GetPlugin().GetRevision() + 1
-		currentImageDigest = latestPluginResp.Msg.GetPlugin().GetContainerImageDigest()
+		nextRevision = latestPluginResp.GetPlugin().GetRevision() + 1
+		currentImageDigest = latestPluginResp.GetPlugin().GetContainerImageDigest()
 	}
 	machine, err := netrc.GetMachineForName(container, pluginConfig.Name.Remote())
 	if err != nil {
@@ -303,7 +302,7 @@ func run(
 		return err
 	}
 	var curatedPlugin *registryv1alpha1.CuratedPlugin
-	createPluginResp, err := service.CreateCuratedPlugin(ctx, connect.NewRequest(createRequest))
+	createPluginResp, err := service.CreateCuratedPlugin(ctx, createRequest)
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeAlreadyExists {
 			return err
@@ -317,26 +316,25 @@ func run(
 		if latestPluginResp == nil {
 			latestPluginResp, err = service.GetLatestCuratedPlugin(
 				ctx,
-				connect.NewRequest(
-					registryv1alpha1.GetLatestCuratedPluginRequest_builder{
-						Owner:    pluginConfig.Name.Owner(),
-						Name:     pluginConfig.Name.Plugin(),
-						Version:  pluginConfig.PluginVersion,
-						Revision: 0, // get latest revision for the plugin version.
-					}.Build(),
-				),
+
+				registryv1alpha1.GetLatestCuratedPluginRequest_builder{
+					Owner:    pluginConfig.Name.Owner(),
+					Name:     pluginConfig.Name.Plugin(),
+					Version:  pluginConfig.PluginVersion,
+					Revision: 0, // get latest revision for the plugin version.
+				}.Build(),
 			)
 			if err != nil {
 				return fmt.Errorf("unable to fetch latest plugin after AlreadyExists error: %w", err)
 			}
 		}
 		// Ensure the image digest matches.
-		if latestPluginResp.Msg.GetPlugin().GetContainerImageDigest() != plugin.ContainerImageDigest() {
-			return fmt.Errorf("a plugin with the same name and version already exists, but with a different image digest (%s). If you want to push a new revision, please retry", latestPluginResp.Msg.GetPlugin().GetContainerImageDigest())
+		if latestPluginResp.GetPlugin().GetContainerImageDigest() != plugin.ContainerImageDigest() {
+			return fmt.Errorf("a plugin with the same name and version already exists, but with a different image digest (%s). If you want to push a new revision, please retry", latestPluginResp.GetPlugin().GetContainerImageDigest())
 		}
-		curatedPlugin = latestPluginResp.Msg.GetPlugin()
+		curatedPlugin = latestPluginResp.GetPlugin()
 	} else {
-		curatedPlugin = createPluginResp.Msg.GetConfiguration()
+		curatedPlugin = createPluginResp.GetConfiguration()
 	}
 	return bufprint.NewCuratedPluginPrinter(container.Stdout()).PrintCuratedPlugin(ctx, format, curatedPlugin)
 }

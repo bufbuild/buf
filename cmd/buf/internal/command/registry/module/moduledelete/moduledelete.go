@@ -21,7 +21,7 @@ import (
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapimodule"
@@ -88,20 +88,19 @@ func run(
 	moduleServiceClient := bufregistryapimodule.NewClientProvider(clientConfig).V1ModuleServiceClient(moduleFullName.Registry())
 	if _, err := moduleServiceClient.DeleteModules(
 		ctx,
-		connect.NewRequest(
-			&modulev1.DeleteModulesRequest{
-				ModuleRefs: []*modulev1.ModuleRef{
-					{
-						Value: &modulev1.ModuleRef_Name_{
-							Name: &modulev1.ModuleRef_Name{
-								Owner:  moduleFullName.Owner(),
-								Module: moduleFullName.Name(),
-							},
+
+		&modulev1.DeleteModulesRequest{
+			ModuleRefs: []*modulev1.ModuleRef{
+				{
+					Value: &modulev1.ModuleRef_Name_{
+						Name: &modulev1.ModuleRef_Name{
+							Owner:  moduleFullName.Owner(),
+							Module: moduleFullName.Name(),
 						},
 					},
 				},
 			},
-		),
+		},
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewModuleNotFoundError(container.Arg(0))

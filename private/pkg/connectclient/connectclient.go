@@ -17,22 +17,23 @@ package connectclient
 import (
 	"slices"
 
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 )
 
 // TODO FUTURE: eliminate config, just make the below MakeOptions, add httpClient as a parameter to Make
 
 // Config holds configuration for creating Connect RPC clients.
 type Config struct {
-	httpClient              connect.HTTPClient
+	httpClient              connecthttp.HTTPClient
 	addressMapper           func(string) string
-	interceptors            []connect.Interceptor
-	authInterceptorProvider func(string) connect.UnaryInterceptorFunc
+	interceptors            []connect.ClientInterceptor
+	authInterceptorProvider func(string) connect.ClientInterceptor
 }
 
 // NewConfig creates a new client configuration with the given HTTP client
 // and options.
-func NewConfig(httpClient connect.HTTPClient, options ...ConfigOption) *Config {
+func NewConfig(httpClient connecthttp.HTTPClient, options ...ConfigOption) *Config {
 	cfg := &Config{
 		httpClient: httpClient,
 	}
@@ -53,7 +54,7 @@ func WithAddressMapper(addressMapper func(string) string) ConfigOption {
 }
 
 // WithInterceptors adds the slice of interceptors to all clients returned from this provider.
-func WithInterceptors(interceptors []connect.Interceptor) ConfigOption {
+func WithInterceptors(interceptors []connect.ClientInterceptor) ConfigOption {
 	return func(cfg *Config) {
 		cfg.interceptors = interceptors
 	}
@@ -61,14 +62,14 @@ func WithInterceptors(interceptors []connect.Interceptor) ConfigOption {
 
 // WithAuthInterceptorProvider configures a provider that, when invoked, returns an interceptor that can be added
 // to a client for setting the auth token
-func WithAuthInterceptorProvider(authInterceptorProvider func(string) connect.UnaryInterceptorFunc) ConfigOption {
+func WithAuthInterceptorProvider(authInterceptorProvider func(string) connect.ClientInterceptor) ConfigOption {
 	return func(cfg *Config) {
 		cfg.authInterceptorProvider = authInterceptorProvider
 	}
 }
 
 // StubFactory is the type of a generated factory function, for creating Connect client stubs.
-type StubFactory[T any] func(connect.HTTPClient, string, ...connect.ClientOption) T
+type StubFactory[T any] func(*connect.Client) T
 
 // Make uses the given generated factory function to create a new connect client.
 func Make[T any](cfg *Config, address string, factory StubFactory[T]) T {
@@ -80,5 +81,8 @@ func Make[T any](cfg *Config, address string, factory StubFactory[T]) T {
 	if cfg.addressMapper != nil {
 		address = cfg.addressMapper(address)
 	}
-	return factory(cfg.httpClient, address, connect.WithInterceptors(interceptors...))
+	return factory(connect.NewClient(
+		connecthttp.NewTransport(cfg.httpClient, address),
+		interceptors...,
+	))
 }

@@ -22,8 +22,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"connectrpc.com/connect"
-	"connectrpc.com/grpcreflect"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
+	"connectrpc.com/grpcreflect/v2"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -99,13 +100,14 @@ func newTestDescriptorResolver(t *testing.T) protodesc.Resolver {
 // completes.
 func newTestReflectionServer(t *testing.T, resolver protodesc.Resolver, serviceNames ...string) *httptest.Server {
 	t.Helper()
-	reflector := grpcreflect.NewReflector(
-		grpcreflect.NamerFunc(func() []string { return serviceNames }),
+	mux := http.NewServeMux()
+	connectServer := connect.NewServer()
+	grpcreflect.Register(
+		connectServer,
+		grpcreflect.WithNamer(grpcreflect.NamerFunc(func() []string { return serviceNames })),
 		grpcreflect.WithDescriptorResolver(resolver),
 	)
-	mux := http.NewServeMux()
-	mux.Handle(grpcreflect.NewHandlerV1(reflector))
-	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
+	connecthttp.Mount(mux, connectServer)
 
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
@@ -138,7 +140,7 @@ func TestFlagCompletions(t *testing.T) {
 	require.NotNil(t, protocolFn)
 	protocols, directive := protocolFn(cmd, nil, "")
 	assert.Equal(t, cobra.ShellCompDirectiveNoFileComp|cobra.ShellCompDirectiveKeepOrder, directive)
-	assert.ElementsMatch(t, []string{connect.ProtocolConnect, connect.ProtocolGRPC, connect.ProtocolGRPCWeb}, protocols)
+	assert.ElementsMatch(t, []string{connect.ProtocolNameConnect, connect.ProtocolNameGRPC, connect.ProtocolNameGRPCWeb}, protocols)
 
 	reflectFn, _ := cmd.GetFlagCompletionFunc(reflectProtocolFlagName)
 	require.NotNil(t, reflectFn)

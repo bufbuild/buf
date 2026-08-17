@@ -24,7 +24,6 @@ import (
 
 	"buf.build/go/app"
 	"buf.build/go/standard/xslices"
-	connect "connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -367,17 +366,15 @@ func (g *generator) execRemotePluginsV2(
 	}
 	response, err := codeGenerationService.GenerateCode(
 		ctx,
-		connect.NewRequest(
-			registryv1alpha1.GenerateCodeRequest_builder{
-				Image:    protoImage,
-				Requests: requests,
-			}.Build(),
-		),
+		registryv1alpha1.GenerateCodeRequest_builder{
+			Image:    protoImage,
+			Requests: requests,
+		}.Build(),
 	)
 	if err != nil {
 		return nil, err
 	}
-	responses := response.Msg.GetResponses()
+	responses := response.GetResponses()
 	if len(responses) != len(requests) {
 		return nil, fmt.Errorf("unexpected number of responses received, got %d, wanted %d", len(responses), len(requests))
 	}

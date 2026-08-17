@@ -21,14 +21,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"maps"
 	"net/http"
 	"net/http/httptest"
 	"sync"
 
 	"buf.build/go/app"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"google.golang.org/protobuf/proto"
@@ -46,38 +46,72 @@ func (p protoCodec) Name() string {
 	return "proto"
 }
 
-func (p protoCodec) Marshal(a any) ([]byte, error) {
-	protoMessage, ok := a.(proto.Message)
+func (p protoCodec) MarshalWrite(_ context.Context, dst io.Writer, msg any) error {
+	protoMessage, ok := msg.(proto.Message)
 	if !ok {
-		return nil, fmt.Errorf("cannot marshal: %T does not implement proto.Message", a)
+		return fmt.Errorf("cannot marshal: %T does not implement proto.Message", msg)
 	}
-	return protoencoding.NewWireMarshaler().Marshal(protoMessage)
+	data, err := protoencoding.NewWireMarshaler().Marshal(protoMessage)
+	if err != nil {
+		return err
+	}
+	_, err = dst.Write(data)
+	return err
 }
 
-func (p protoCodec) Unmarshal(bytes []byte, a any) error {
-	if deferred, ok := a.(*deferredMessage); ok {
-		// must make a copy since Connect framework will re-use the byte slice
-		deferred.data = make([]byte, len(bytes))
-		copy(deferred.data, bytes)
+func (p protoCodec) UnmarshalRead(_ context.Context, src io.Reader, msg any) error {
+	data, err := io.ReadAll(src)
+	if err != nil {
+		return err
+	}
+	if deferred, ok := msg.(*deferredMessage); ok {
+		deferred.data = data
 		return nil
 	}
-	protoMessage, ok := a.(proto.Message)
+	protoMessage, ok := msg.(proto.Message)
 	if !ok {
-		return fmt.Errorf("cannot unmarshal: %T does not implement proto.Message", a)
+		return fmt.Errorf("cannot unmarshal: %T does not implement proto.Message", msg)
 	}
-	return protoencoding.NewWireUnmarshaler(nil).Unmarshal(bytes, protoMessage)
+	return protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, protoMessage)
 }
-
-type invokeClient = connect.Client[dynamicpb.Message, deferredMessage]
 
 type invoker struct {
 	md           protoreflect.MethodDescriptor
 	res          protoencoding.Resolver
 	emitDefaults bool
-	client       *invokeClient
+	client       *connect.Client
+	spec         connect.Spec
 	output       io.Writer
 	errOutput    io.Writer
 	printer      verbose.Printer
+}
+
+// specForMethod builds the connect.Spec for invoking the given method.
+func specForMethod(md protoreflect.MethodDescriptor) connect.Spec {
+	var streamType connect.StreamType
+	switch {
+	case md.IsStreamingClient() && md.IsStreamingServer():
+		streamType = connect.StreamTypeBidi
+	case md.IsStreamingClient():
+		streamType = connect.StreamTypeClient
+	case md.IsStreamingServer():
+		streamType = connect.StreamTypeServer
+	default:
+		streamType = connect.StreamTypeUnary
+	}
+	return connect.Spec{
+		Procedure:  fmt.Sprintf("/%s/%s", md.Parent().FullName(), md.Name()),
+		StreamType: streamType,
+		Schema:     md,
+	}
+}
+
+// setRequestHeaders copies the given HTTP headers onto the request headers of
+// the given client call info.
+func setRequestHeaders(info *connect.CallInfo, headers http.Header) {
+	for key, values := range headers {
+		info.RequestHeader().SetValues(key, values)
+	}
 }
 
 // NewInvoker creates a new invoker for invoking the method described by the
@@ -85,8 +119,8 @@ type invoker struct {
 // in JSON format. The given resolver is used to resolve Any messages and
 // extensions that appear in the input or output. Other parameters are used
 // to create a Connect client, for issuing the RPC.
-func NewInvoker(container appext.Container, verbosePrinter verbose.Printer, md protoreflect.MethodDescriptor, res protoencoding.Resolver, emitDefaults bool, httpClient connect.HTTPClient, opts []connect.ClientOption, url string, out io.Writer) Invoker {
-	opts = append(opts, connect.WithCodec(protoCodec{}))
+func NewInvoker(container appext.Container, verbosePrinter verbose.Printer, md protoreflect.MethodDescriptor, res protoencoding.Resolver, emitDefaults bool, httpClient connecthttp.HTTPClient, opts []connecthttp.Option, interceptors []connect.ClientInterceptor, baseURL string, out io.Writer) Invoker {
+	opts = append(opts, connecthttp.WithCodec(protoCodec{}))
 	// TODO: could also provide custom compressor implementations that could give us
 	//  optics into when request and response messages are compressed (which could be
 	//  useful to include in verbose output).
@@ -97,7 +131,8 @@ func NewInvoker(container appext.Container, verbosePrinter verbose.Printer, md p
 		output:       out,
 		printer:      verbosePrinter,
 		errOutput:    container.Stderr(),
-		client:       connect.NewClient[dynamicpb.Message, deferredMessage](httpClient, url, opts...),
+		client:       connect.NewClient(connecthttp.NewTransport(httpClient, baseURL, opts...), interceptors...),
+		spec:         specForMethod(md),
 	}
 }
 
@@ -130,10 +165,11 @@ func (inv *invoker) handleUnary(ctx context.Context, dataSource string, data io.
 		return fmt.Errorf("method %s is a unary RPC, but input contained more than one request message", inv.md.Name())
 	}
 
-	req := connect.NewRequest(msg)
-	maps.Copy(req.Header(), headers)
-	resp, err := inv.client.CallUnary(ctx, req)
-	if err != nil {
+	req := msg
+	ctx, info := connect.NewClientContext(ctx)
+	setRequestHeaders(info, headers)
+	resp := &deferredMessage{}
+	if err := inv.client.CallUnary(ctx, inv.spec, req, resp); err != nil {
 		var connErr *connect.Error
 		if !errors.As(err, &connErr) {
 			return err
@@ -141,15 +177,21 @@ func (inv *invoker) handleUnary(ctx context.Context, dataSource string, data io.
 		err := inv.handleErrorResponse(connErr)
 		return err
 	}
-	return inv.handleResponse(resp.Msg.data, nil)
+	return inv.handleResponse(resp.data, nil)
 }
 
 func (inv *invoker) handleClientStream(ctx context.Context, dataSource string, data io.Reader, headers http.Header) (retErr error) {
 	provider := newStreamMessageProvider(dataSource, data, inv.res)
 	msg := dynamicpb.NewMessage(inv.md.Input())
-	stream := inv.client.CallClientStream(ctx)
-	maps.Copy(stream.RequestHeader(), headers)
+	ctx, info := connect.NewClientContext(ctx)
+	setRequestHeaders(info, headers)
+	stream, err := inv.client.CallClientStream(ctx, inv.spec)
+	if err != nil {
+		return err
+	}
+	adapter := &streamAdapter{stream: stream}
 	defer func() {
+		retErr = errors.Join(retErr, stream.Close())
 		if retErr != nil {
 			var connErr *connect.Error
 			if errors.As(retErr, &connErr) {
@@ -157,22 +199,34 @@ func (inv *invoker) handleClientStream(ctx context.Context, dataSource string, d
 			}
 		}
 	}()
-	if err, isStreamError := inv.handleStreamRequest(provider, msg, stream); err != nil {
+	if err, isStreamError := inv.handleStreamRequest(provider, msg, adapter); err != nil {
 		if isStreamError {
-			_, recvErr := stream.CloseAndReceive()
 			// stream.Send should return io.EOF on error, and caller is expected to call
 			// stream.Receive to get the actual RPC error.
-			if recvErr != nil {
+			if _, recvErr := closeSendAndReceive(stream); recvErr != nil {
 				return recvErr
 			}
 		}
 		return err
 	}
-	resp, err := stream.CloseAndReceive()
+	resp, err := closeSendAndReceive(stream)
 	if err != nil {
 		return err
 	}
-	return inv.handleResponse(resp.Msg.data, nil)
+	return inv.handleResponse(resp.data, nil)
+}
+
+// closeSendAndReceive closes the send side of the stream and receives the
+// single response message, mirroring the v1 CloseAndReceive helper.
+func closeSendAndReceive(stream connect.ClientStream) (*deferredMessage, error) {
+	if err := stream.CloseSend(); err != nil {
+		return nil, err
+	}
+	resp := &deferredMessage{}
+	if err := stream.Receive(resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 func (inv *invoker) handleServerStream(ctx context.Context, dataSource string, data io.Reader, headers http.Header) (retErr error) {
@@ -187,8 +241,9 @@ func (inv *invoker) handleServerStream(ctx context.Context, dataSource string, d
 		return fmt.Errorf("method %s is a unary RPC, but input contained more than one request message", inv.md.Name())
 	}
 
-	req := connect.NewRequest(msg)
-	maps.Copy(req.Header(), headers)
+	req := msg
+	ctx, info := connect.NewClientContext(ctx)
+	setRequestHeaders(info, headers)
 	defer func() {
 		if retErr != nil {
 			var connErr *connect.Error
@@ -198,19 +253,25 @@ func (inv *invoker) handleServerStream(ctx context.Context, dataSource string, d
 		}
 	}()
 
-	stream, err := inv.client.CallServerStream(ctx, req)
+	stream, err := inv.client.CallServerStream(ctx, inv.spec, req)
 	if err != nil {
 		return err
 	}
-	return inv.handleStreamResponse(&serverStreamAdapter{stream: stream})
+	return inv.handleStreamResponse(&streamAdapter{stream: stream})
 }
 
 func (inv *invoker) handleBidiStream(ctx context.Context, dataSource string, data io.Reader, headers http.Header) (retErr error) {
 	ctx, cancel := context.WithCancel(ctx)
 	provider := newStreamMessageProvider(dataSource, data, inv.res)
 	msg := dynamicpb.NewMessage(inv.md.Input())
-	stream := inv.client.CallBidiStream(ctx)
-	maps.Copy(stream.RequestHeader(), headers)
+	ctx, info := connect.NewClientContext(ctx)
+	setRequestHeaders(info, headers)
+	stream, err := inv.client.CallClientStream(ctx, inv.spec)
+	if err != nil {
+		cancel()
+		return err
+	}
+	adapter := &streamAdapter{stream: stream}
 
 	defer func() {
 		if retErr != nil {
@@ -225,7 +286,7 @@ func (inv *invoker) handleBidiStream(ctx context.Context, dataSource string, dat
 	var wg sync.WaitGroup
 	wg.Go(func() {
 		defer cancel()
-		if err := inv.handleStreamResponse(stream); err != nil {
+		if err := inv.handleStreamResponse(adapter); err != nil {
 			recvErr = err
 		}
 	})
@@ -246,12 +307,12 @@ func (inv *invoker) handleBidiStream(ctx context.Context, dataSource string, dat
 		}
 	}()
 
-	err, isStreamError := inv.handleStreamRequest(provider, msg, stream)
+	err, isStreamError := inv.handleStreamRequest(provider, msg, adapter)
 	shouldCancel = err != nil && !isStreamError
 	if err != nil {
 		return err
 	}
-	return stream.CloseRequest()
+	return stream.CloseSend()
 }
 
 func isCancelled(err error) bool {
@@ -303,23 +364,26 @@ type serverStream interface {
 	CloseResponse() error
 }
 
-type serverStreamAdapter struct {
-	stream *connect.ServerStreamForClient[deferredMessage]
+// streamAdapter adapts a [connect.ClientStream] to the clientStream and
+// serverStream interfaces used by the shared send/receive loops.
+type streamAdapter struct {
+	stream connect.ClientStream
 }
 
-func (ssa *serverStreamAdapter) Receive() (*deferredMessage, error) {
-	if !ssa.stream.Receive() {
-		err := ssa.stream.Err()
-		if err == nil {
-			err = io.EOF
-		}
+func (a *streamAdapter) Send(message *dynamicpb.Message) error {
+	return a.stream.Send(message)
+}
+
+func (a *streamAdapter) Receive() (*deferredMessage, error) {
+	msg := &deferredMessage{}
+	if err := a.stream.Receive(msg); err != nil {
 		return nil, err
 	}
-	return ssa.stream.Msg(), nil
+	return msg, nil
 }
 
-func (ssa *serverStreamAdapter) CloseResponse() error {
-	return ssa.stream.Close()
+func (a *streamAdapter) CloseResponse() error {
+	return a.stream.Close()
 }
 
 func (inv *invoker) handleStreamRequest(provider messageProvider, msg *dynamicpb.Message, stream clientStream) (error, bool) {
@@ -371,7 +435,7 @@ func (inv *invoker) handleErrorResponse(connErr *connect.Error) error {
 	}
 	req.Header.Add("content-type", "application/json")
 
-	w := connect.NewErrorWriter()
+	w := connecthttp.NewErrorWriter()
 	responseWriter := httptest.NewRecorder()
 	err := w.Write(responseWriter, req, connErr)
 	if err != nil {

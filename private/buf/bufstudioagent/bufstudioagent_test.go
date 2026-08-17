@@ -19,7 +19,6 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/base64"
-	"errors"
 	"io"
 	"log/slog"
 	"net"
@@ -29,7 +28,8 @@ import (
 	"testing"
 	"time"
 
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 	studiov1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slogtestext"
@@ -250,29 +250,46 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 
 func newTestConnectServer(t *testing.T, tls bool) *httptest.Server {
 	mux := http.NewServeMux()
-	// echoPath echoes all incoming headers (prefixed with "Echo-") and the
-	// body bytes prefixed with "echo: "
-	mux.Handle(echoPath, connect.NewUnaryHandler(
-		echoPath,
-		func(ctx context.Context, r *connect.Request[bytes.Buffer]) (*connect.Response[bytes.Buffer], error) {
-			response := connect.NewResponse(bytes.NewBuffer(append([]byte("echo: "), r.Msg.Bytes()...)))
-			for header, values := range r.Header() {
-				for _, value := range values {
-					response.Header().Add("Echo-"+header, value)
+	connectServer := connect.NewServer()
+	connectServer.Register(
+		// echoPath echoes all incoming headers (prefixed with "Echo-") and the
+		// body bytes prefixed with "echo: "
+		connect.Method{
+			Spec: connect.Spec{
+				Procedure:  echoPath,
+				StreamType: connect.StreamTypeUnary,
+			},
+			Handler: func(ctx context.Context, spec connect.Spec, stream connect.ServerStream) error {
+				request := &bytes.Buffer{}
+				if err := stream.Receive(request); err != nil {
+					return err
 				}
-			}
-			return response, nil
+				info, _ := connect.CallInfoForServerContext(ctx)
+				response := bytes.NewBuffer(append([]byte("echo: "), request.Bytes()...))
+				for header, values := range info.RequestHeader().All() {
+					for _, value := range values {
+						info.ResponseHeader().Add("Echo-"+header, value)
+					}
+				}
+				return stream.Send(response)
+			},
 		},
-		connect.WithCodec(&bufferCodec{name: "proto"}),
-	))
-	// errorPath returns the body as error message with code failed precondition
-	mux.Handle(errorPath, connect.NewUnaryHandler(
-		errorPath,
-		func(ctx context.Context, r *connect.Request[bytes.Buffer]) (*connect.Response[bytes.Buffer], error) {
-			return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New(r.Msg.String()))
+		// errorPath returns the body as error message with code failed precondition
+		connect.Method{
+			Spec: connect.Spec{
+				Procedure:  errorPath,
+				StreamType: connect.StreamTypeUnary,
+			},
+			Handler: func(ctx context.Context, spec connect.Spec, stream connect.ServerStream) error {
+				request := &bytes.Buffer{}
+				if err := stream.Receive(request); err != nil {
+					return err
+				}
+				return connect.NewError(connect.CodeFailedPrecondition, request.String())
+			},
 		},
-		connect.WithCodec(&bufferCodec{name: "proto"}),
-	))
+	)
+	connecthttp.Mount(mux, connectServer, connecthttp.WithCodec(&bufferCodec{name: "proto"}))
 	protocols := new(http.Protocols)
 	protocols.SetHTTP1(true)
 	server := httptest.NewUnstartedServer(mux)
@@ -308,6 +325,17 @@ func protoUnmarshalBase64(t *testing.T, base64Bytes []byte, message proto.Messag
 	require.NoError(t, err)
 	protoBytes = protoBytes[:actualLen]
 	require.NoError(t, protoencoding.NewWireUnmarshaler(nil).Unmarshal(protoBytes, message))
+}
+
+func goHeadersToProtoHeaders(in http.Header) []*studiov1alpha1.Headers {
+	var out []*studiov1alpha1.Headers
+	for k, v := range in {
+		out = append(out, studiov1alpha1.Headers_builder{
+			Key:   k,
+			Value: v,
+		}.Build())
+	}
+	return out
 }
 
 func addProtoHeadersToGoHeader(fromHeaders []*studiov1alpha1.Headers, toHeaders http.Header) {

@@ -16,8 +16,8 @@ package bufcli
 
 import (
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
-	otelconnect "connectrpc.com/otelconnect"
+	"connectrpc.com/connect/v2"
+	otelconnect "connectrpc.com/otelconnect/v2"
 	"github.com/bufbuild/buf/private/buf/bufapp"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
@@ -64,7 +64,7 @@ func newConnectClientConfigWithOptions(container appext.Container, opts ...conne
 	if err != nil {
 		return nil, err
 	}
-	otelconnectInterceptor, err := otelconnect.NewInterceptor()
+	otelconnectInterceptor, err := otelconnect.NewClientInterceptor()
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func newConnectClientConfigWithOptions(container appext.Container, opts ...conne
 			return buftransport.PrependHTTPS(address)
 		}),
 		connectclient.WithInterceptors(
-			[]connect.Interceptor{
+			[]connect.ClientInterceptor{
 				bufconnect.NewAugmentedConnectErrorInterceptor(),
 				bufconnect.NewSetCLIVersionInterceptor(Version),
 				bufconnect.NewCLIWarningInterceptor(container),

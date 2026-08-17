@@ -21,7 +21,6 @@ import (
 
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
@@ -126,14 +125,14 @@ func (p *pluginDataProvider) getIndexedPluginDatasForRegistryAndIndexedPluginKey
 
 	pluginResponse, err := p.clientProvider.V1Beta1DownloadServiceClient(registry).Download(
 		ctx,
-		connect.NewRequest(&pluginv1beta1.DownloadRequest{
+		&pluginv1beta1.DownloadRequest{
 			Values: values,
-		}),
+		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	pluginContents := pluginResponse.Msg.Contents
+	pluginContents := pluginResponse.Contents
 	if len(pluginContents) != len(indexedPluginKeys) {
 		return nil, syserror.New("did not get the expected number of plugin datas")
 	}
