@@ -20,6 +20,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
@@ -308,7 +309,8 @@ func TestHoverImportInDependencyFile(t *testing.T) {
 	}, &hover)
 	require.NoError(t, hoverErr)
 	require.NotNil(t, hover, "expected hover to be non-nil")
-	assert.Contains(t, hover.Contents.Value, "google/protobuf/source_context.proto")
+	expectedImportPath := filepath.Join(filepath.Dir(dependencyURI.Filename()), "source_context.proto")
+	assert.Contains(t, hover.Contents.Value, expectedImportPath)
 
 	// Go to definition on the same import must resolve to the imported file
 	// rather than panicking or pointing at nothing.
@@ -326,5 +328,5 @@ func TestHoverImportInDependencyFile(t *testing.T) {
 	}, &dependencyLocations)
 	require.NoError(t, definitionErr)
 	require.Len(t, dependencyLocations, 1)
-	assert.Contains(t, string(dependencyLocations[0].URI), "google/protobuf/source_context.proto")
+	assert.Equal(t, buflsp.FilePathToURI(expectedImportPath), dependencyLocations[0].URI)
 }
