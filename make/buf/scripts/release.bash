@@ -184,4 +184,8 @@ for file in $(find . -maxdepth 1 -type f | sed 's/^\.\///' | sort | uniq); do
   mv "${file}" "assets/${file}"
 done
 
+pushd "${DIR}"/packaging/python >/dev/null
+uv run python scripts/generate_wheels.py
+popd > /dev/null
+
 echo Upload all the files in this directory to GitHub: open "${RELEASE_DIR}/assets"

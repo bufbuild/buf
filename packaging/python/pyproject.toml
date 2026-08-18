@@ -1,0 +1,44 @@
+[project]
+name = "buf-bin"
+version = "1.71.0"
+description = "Buf CLI distributed via PyPI"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+keywords = [
+  "buf",
+  "bufbuild",
+  "protobuf",
+  "protoc",
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Software Development :: Build Tools",
+  "Topic :: Software Development :: Code Generators",
+  "Topic :: Software Development :: Compilers",
+]
+
+[project.urls]
+Changelog = "https://github.com/bufbuild/buf/blob/main/CHANGELOG.md"
+Documentation = "https://buf.build/docs/cli/"
+Homepage = "https://buf.build/docs/cli/"
+Issue = "https://github.com/bufbuild/buf/issues"
+Repository = "https://github.com/bufbuild/buf"
+
+[dependency-groups]
+dev = ["wheel"]
+
+[build-system]
+requires = ["uv_build>=0.11.0,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "buf_bin"
+module-root = ""
+data = { scripts = "out/bin" }
