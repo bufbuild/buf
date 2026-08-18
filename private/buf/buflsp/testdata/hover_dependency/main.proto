@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package hoverdependency.v1;
+
+// google/protobuf/api.proto is a well-known type that itself has imports, which
+// lets us exercise hovering an import from inside a dependency file.
+import "google/protobuf/api.proto";
+
+message ApiHolder {
+  google.protobuf.Api api = 1;
+}

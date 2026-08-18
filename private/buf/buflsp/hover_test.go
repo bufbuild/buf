@@ -15,9 +15,12 @@
 package buflsp_test
 
 import (
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
@@ -245,4 +248,85 @@ func TestHover(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestHoverImportInDependencyFile hovers an import inside a file that the editor
+// reached by following an import out of the workspace.
+func TestHoverImportInDependencyFile(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+
+	protoPath, err := filepath.Abs("testdata/hover_dependency/main.proto")
+	require.NoError(t, err)
+	clientJSONConn, testURI := setupLSPServer(t, protoPath)
+
+	// Follow the import to the well-known type.
+	var locations []protocol.Location
+	_, definitionErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentDefinition, protocol.DefinitionParams{
+		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+			TextDocument: protocol.TextDocumentIdentifier{
+				URI: testURI,
+			},
+			Position: protocol.Position{
+				Line:      6, // Line with `import "google/protobuf/api.proto";`
+				Character: 12,
+			},
+		},
+	}, &locations)
+	require.NoError(t, definitionErr)
+	require.Len(t, locations, 1)
+	dependencyURI := locations[0].URI
+	require.Contains(t, string(dependencyURI), "google/protobuf/api.proto")
+
+	// Locate the first import in the dependency, which is
+	// google/protobuf/source_context.proto. The line is found rather than hardcoded
+	// so the test survives a well-known type update.
+	dependencyText, err := os.ReadFile(dependencyURI.Filename())
+	require.NoError(t, err)
+	var importLine uint32
+	var foundImport bool
+	for line := range strings.SplitSeq(string(dependencyText), "\n") {
+		if strings.HasPrefix(line, "import ") {
+			foundImport = true
+			break
+		}
+		importLine++
+	}
+	require.True(t, foundImport, "expected an import in %s", dependencyURI.Filename())
+
+	var hover *protocol.Hover
+	_, hoverErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, protocol.HoverParams{
+		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+			TextDocument: protocol.TextDocumentIdentifier{
+				URI: dependencyURI,
+			},
+			Position: protocol.Position{
+				Line:      importLine,
+				Character: 12,
+			},
+		},
+	}, &hover)
+	require.NoError(t, hoverErr)
+	require.NotNil(t, hover, "expected hover to be non-nil")
+	expectedImportPath := filepath.Join(filepath.Dir(dependencyURI.Filename()), "source_context.proto")
+	assert.Contains(t, hover.Contents.Value, expectedImportPath)
+
+	// Go to definition on the same import must resolve to the imported file
+	// rather than panicking or pointing at nothing.
+	var dependencyLocations []protocol.Location
+	_, definitionErr = clientJSONConn.Call(ctx, protocol.MethodTextDocumentDefinition, protocol.DefinitionParams{
+		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+			TextDocument: protocol.TextDocumentIdentifier{
+				URI: dependencyURI,
+			},
+			Position: protocol.Position{
+				Line:      importLine,
+				Character: 12,
+			},
+		},
+	}, &dependencyLocations)
+	require.NoError(t, definitionErr)
+	require.Len(t, dependencyLocations, 1)
+	assert.Equal(t, buflsp.FilePathToURI(expectedImportPath), dependencyLocations[0].URI)
 }

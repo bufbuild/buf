@@ -878,9 +878,21 @@ func (f *file) importToSymbol(imp ir.Import) *symbol {
 		file: f,
 		span: imp.Decl.ImportPath().Span(),
 		kind: &imported{
-			file: f.workspace.PathToFile()[imp.File.Path()],
+			file: f.importedFile(imp),
 		},
 	}
+}
+
+func (f *file) importedFile(imp ir.Import) *file {
+	path := imp.File.Path()
+	if imported, ok := f.workspace.PathToFile()[path]; ok {
+		return imported
+	}
+	sourceFile, ok := f.lsp.opener.Get()[path]
+	if !ok {
+		return nil
+	}
+	return f.Manager().Get(FilePathToURI(sourceFile.Path()))
 }
 
 // messageToSymbols takes an [ir.MessageValue] and returns the symbols parsed from it.
