@@ -168,7 +168,7 @@ func TestHover(t *testing.T) {
 			protoFile:        "testdata/completion/map_test.proto",
 			line:             16, // Line with "map<int32, string> field0 = 10;"
 			character:        3,  // On "map" keyword
-			expectedContains: "language-spec#maps",
+			expectedContains: "https://buf.build/docs/reference/protobuf-language-spec/#maps",
 		},
 		{
 			name:          "hover_on_message_after_import_with_trailing_comment",
