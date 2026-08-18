@@ -120,6 +120,14 @@ func (s *symbol) IsBuiltIn() bool {
 // Definition returns the location of the definition of the symbol.
 func (s *symbol) Definition() protocol.Location {
 	if imported, ok := s.kind.(*imported); ok {
+		if imported.file == nil {
+			// The import could not be resolved to a tracked file, so there is nowhere to jump
+			// to. Fall back to the import declaration itself.
+			return protocol.Location{
+				URI:   s.file.uri,
+				Range: s.Range(),
+			}
+		}
 		return protocol.Location{
 			URI: imported.file.uri,
 		}
@@ -267,7 +275,7 @@ func (s *symbol) LogValue() slog.Value {
 		slog.Any("start", loc(s.span.StartLoc())),
 		slog.Any("end", loc(s.span.EndLoc())),
 	}
-	if imported, ok := s.kind.(*imported); ok {
+	if imported, ok := s.kind.(*imported); ok && imported.file != nil {
 		attrs = append(attrs, slog.String("imported", imported.file.uri.Filename()))
 	} else if s.def != nil {
 		attrs = append(attrs,
@@ -287,6 +295,9 @@ func (s *symbol) FormatDocs() string {
 	switch s.kind.(type) {
 	case *imported:
 		imported, _ := s.kind.(*imported)
+		if imported.file == nil || imported.file.file == nil {
+			return ""
+		}
 		// Show the path to the file on disk, which is similar to how other LSP clients treat hovering
 		// on an import file.
 		return imported.file.file.Path()
