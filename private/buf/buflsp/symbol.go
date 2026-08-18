@@ -39,6 +39,8 @@ import (
 	"google.golang.org/protobuf/encoding/protowire"
 )
 
+const protobufLanguageSpecURL = "https://buf.build/docs/reference/protobuf-language-spec/"
+
 // symbol represents a named symbol inside of a [file].
 //
 // For each symbol, we keep track of the location [source.Span] and file [*file] of the
@@ -316,8 +318,9 @@ func (s *symbol) FormatDocs() string {
 				comments,
 				"",
 				fmt.Sprintf(
-					"`%s` is a Protobuf builtin. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#%s)",
+					"`%s` is a Protobuf builtin. [Learn more in the Protobuf Language Specification.](%s#%s)",
 					builtin.predeclared,
+					protobufLanguageSpecURL,
 					anchor,
 				),
 			)
@@ -332,8 +335,9 @@ func (s *symbol) FormatDocs() string {
 				comments,
 				"",
 				fmt.Sprintf(
-					"`%s` is a Protobuf keyword. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#%s)",
+					"`%s` is a Protobuf keyword. [Learn more in the Protobuf Language Specification.](%s#%s)",
 					kwBuiltin.name,
+					protobufLanguageSpecURL,
 					kwBuiltin.anchor,
 				),
 			)
