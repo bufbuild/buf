@@ -172,31 +172,22 @@ func (s *symbol) TypeDefinition() protocol.Location {
 // It also accepts the includeDeclaration param from the client - if true, the declaration
 // of the symbol is included as a reference.
 func (s *symbol) References(includeDeclaration bool) []protocol.Location {
-	var references []protocol.Location
-	declaration, referenceSymbols, ok := s.referenceSymbols()
-	if ok {
-		for _, reference := range referenceSymbols {
-			references = append(references, protocol.Location{
-				URI:   reference.file.uri,
-				Range: reference.Range(),
-			})
-		}
-	} else {
-		// No referenceable kind; add the location of the symbol itself.
-		references = append(references, protocol.Location{
+	declaration, ok := s.referenceDeclaration()
+	if !ok {
+		// No referenceable declaration; the symbol's own location is the only result.
+		return []protocol.Location{{
 			URI:   s.file.uri,
 			Range: s.Range(),
-		})
-		// Declaration symbols are self-referential, e.g. service.def == service, so only take
-		// the definition when it is a distinct symbol. Otherwise it was just added above.
-		if s.def != s {
-			declaration = s.def
-		}
+		}}
 	}
-	if includeDeclaration && declaration != nil {
-		// Add the declaration of the symbol to the list of references. The declaration is the
-		// symbol itself when it is the referenceable one, so requesting references on a
-		// declaration includes it.
+	var references []protocol.Location
+	for _, reference := range declaration.referenceSymbols() {
+		references = append(references, protocol.Location{
+			URI:   reference.file.uri,
+			Range: reference.Range(),
+		})
+	}
+	if includeDeclaration {
 		references = append(references, protocol.Location{
 			URI:   declaration.file.uri,
 			Range: declaration.Range(),
@@ -205,33 +196,29 @@ func (s *symbol) References(includeDeclaration bool) []protocol.Location {
 	return references
 }
 
-// referenceSymbols returns the symbol declaring what this symbol names, together with every
-// symbol referencing that declaration across all indexed workspaces.
-//
-// The declaration is this symbol when it is itself referenceable, and its resolved definition
-// otherwise. Returns false if neither is referenceable, meaning the symbol cannot be
-// referenced.
-func (s *symbol) referenceSymbols() (*symbol, []*symbol, bool) {
-	declaration := s
-	if _, ok := s.kind.(*referenceable); !ok {
-		// If the symbol isn't referenceable itself, but has a referenceable definition, use the
-		// definition for the references.
-		if s.def == nil {
-			return nil, nil, false
+// referenceDeclaration returns the referenceable symbol declaring what this symbol names:
+// the symbol itself if it is referenceable, otherwise its resolved definition. Returns
+// false if neither is, meaning the symbol cannot be referenced.
+func (s *symbol) referenceDeclaration() (*symbol, bool) {
+	if _, ok := s.kind.(*referenceable); ok {
+		return s, true
+	}
+	if s.def != nil {
+		if _, ok := s.def.kind.(*referenceable); ok {
+			return s.def, true
 		}
-		if _, ok := s.def.kind.(*referenceable); !ok {
-			return nil, nil, false
-		}
-		declaration = s.def
 	}
-	if declaration.file == nil || declaration.ir.IsZero() {
-		return declaration, nil, true
+	return nil, false
+}
+
+// referenceSymbols returns every symbol referencing this declaration symbol, across all
+// indexed workspaces.
+func (s *symbol) referenceSymbols() []*symbol {
+	key, ok := newReferenceKeyForDeclaration(s)
+	if !ok {
+		return nil
 	}
-	key := referenceKey{
-		path:     declaration.file.uri.Filename(),
-		fullName: declaration.ir.FullName(),
-	}
-	return declaration, declaration.file.lsp.referenceIndex.References(key), true
+	return s.file.lsp.referenceIndex.References(key)
 }
 
 // DocumentHighlights returns document highlights for the symbol within the current file.
@@ -244,7 +231,7 @@ func (s *symbol) DocumentHighlights() []protocol.DocumentHighlight {
 	}
 
 	// Get the referenceable declaration to find all references
-	_, referenceSymbols, ok := s.referenceSymbols()
+	declaration, ok := s.referenceDeclaration()
 	if !ok {
 		return nil
 	}
@@ -257,9 +244,10 @@ func (s *symbol) DocumentHighlights() []protocol.DocumentHighlight {
 	}
 
 	var highlights []protocol.DocumentHighlight
-	// Add all references in the same file
-	for _, reference := range referenceSymbols {
-		if reference.file.uri == s.file.uri {
+	// Add all references in the same file. Only this file's entries are needed, so avoid the
+	// cross-file merge and sort of References.
+	if key, ok := newReferenceKeyForDeclaration(declaration); ok {
+		for _, reference := range s.file.lsp.referenceIndex.FileReferences(key, s.file.uri) {
 			highlights = append(highlights, protocol.DocumentHighlight{
 				Range: reference.Range(),
 				Kind:  protocol.DocumentHighlightKindText,
@@ -267,16 +255,10 @@ func (s *symbol) DocumentHighlights() []protocol.DocumentHighlight {
 		}
 	}
 
-	// Add the definition if it's in the same file
-	if s.def != nil && s.def.file.uri == s.file.uri {
+	// Add the declaration if it's in the same file
+	if declaration.file.uri == s.file.uri {
 		highlights = append(highlights, protocol.DocumentHighlight{
-			Range: s.def.Range(),
-			Kind:  protocol.DocumentHighlightKindText,
-		})
-	} else if s.def == nil {
-		// If there's no separate definition, the symbol itself is the definition
-		highlights = append(highlights, protocol.DocumentHighlight{
-			Range: s.Range(),
+			Range: declaration.Range(),
 			Kind:  protocol.DocumentHighlightKindText,
 		})
 	}
@@ -482,9 +464,9 @@ func renameChangesForReferenceableSymbol(s *symbol, newName string) (map[protoco
 		}},
 	}
 	// Get the referenceable declaration to find all references
-	_, referenceSymbols, ok := s.referenceSymbols()
+	declaration, ok := s.referenceDeclaration()
 	if ok {
-		for _, reference := range referenceSymbols {
+		for _, reference := range declaration.referenceSymbols() {
 			newText := newName
 			// For option references (extension usages), preserve package qualification and parentheses.
 			// e.g., if renaming "(subpkg.testing)" to "validated", result should be "(subpkg.validated)"

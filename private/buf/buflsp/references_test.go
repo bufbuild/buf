@@ -143,22 +143,7 @@ func TestReferences(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			var locations []protocol.Location
-			_, refErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentReferences, protocol.ReferenceParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: tt.targetURI,
-					},
-					Position: protocol.Position{
-						Line:      tt.line,
-						Character: tt.character,
-					},
-				},
-				Context: protocol.ReferenceContext{
-					IncludeDeclaration: tt.includeDeclaration,
-				},
-			}, &locations)
-			require.NoError(t, refErr)
+			locations := requestReferences(ctx, t, clientJSONConn, tt.targetURI, tt.line, tt.character, tt.includeDeclaration)
 
 			require.Len(t, locations, len(tt.expectedReferences))
 
@@ -174,12 +159,6 @@ func TestReferences(t *testing.T) {
 
 // TestReferencesToDependency verifies that references to a symbol declared in a dependency
 // file are found across every indexed file, not only the file open in the editor.
-//
-// Regression test. References used to be recorded only when the referencing file could
-// resolve the declaration, which required that file to own a workspace. Only the file open
-// in the editor does, so references from every other file were silently dropped. Re-indexing
-// the declaring file then discarded whatever had accumulated, leaving a subset that varied
-// with map iteration order.
 func TestReferencesToDependency(t *testing.T) {
 	t.Parallel()
 
@@ -266,12 +245,8 @@ func TestReferencesToDependency(t *testing.T) {
 }
 
 // TestReferencesStableAcrossReindex verifies that re-indexing does not drop or duplicate
-// references.
-//
-// This guards the invariant that made the deduplication in server.References unnecessary:
-// each file's references are replaced wholesale on re-index, so they can neither accumulate
-// nor be dropped. Unlike TestReferencesToDependency, this does not fail against the previous
-// implementation, which was stable for a fixture this small.
+// references. This guards the invariant that makes deduplication in server.References
+// unnecessary.
 func TestReferencesStableAcrossReindex(t *testing.T) {
 	t.Parallel()
 

@@ -97,8 +97,7 @@ func (f *file) Reset(ctx context.Context) {
 		f.workspace.Release()
 		f.workspace = nil
 	}
-	// Drop this file's references. The index holds symbols pointing back at this file, which
-	// is zeroed below, so entries left behind would resolve to an empty URI.
+	// Drop this file's references from the index before the file is zeroed.
 	f.lsp.referenceIndex.RemoveFile(f.uri)
 	// Evict the query key if there is a query cached on the file. We cache the [queries.File]
 	// query since this allows the executor to evict all dependent queries, e.g. AST and IR.
@@ -377,17 +376,16 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	}
 
 	// Resolve all unresolved symbols from this file, and record the references they make in
-	// the reference index.
-	//
-	// A reference is recorded by definition site rather than by resolved symbol, so it is
-	// indexed whether or not the declaring file has been indexed yet. Resolution below only
-	// populates def and typeDef, which go-to-definition and hover need; find-references does
-	// not depend on it, and so no longer depends on the order files happen to be indexed in.
-	references := make(map[referenceKey][]*symbol)
+	// the reference index. References are keyed by definition site rather than by resolved
+	// symbol, so recording does not depend on the order files are indexed in.
+	var references map[referenceKey][]*symbol
 	addReference := func(def ast.DeclDef, fullName ir.FullName, sym *symbol) {
 		key, ok := newReferenceKey(def, fullName)
 		if !ok {
 			return
+		}
+		if references == nil {
+			references = make(map[referenceKey][]*symbol)
 		}
 		references[key] = append(references[key], sym)
 	}

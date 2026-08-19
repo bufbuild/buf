@@ -25,22 +25,15 @@ import (
 	"go.lsp.dev/protocol"
 )
 
-// referenceKey identifies a symbol definition site.
-//
-// The key is the absolute local path of the file declaring the symbol plus the symbol's
-// fully-qualified name. Keying on the definition's path, rather than on a resolved
-// [symbol] pointer, means a reference can be recorded before the declaring file has been
-// indexed. Including the path, rather than keying on the full name alone, keeps two
-// workspaces that legitimately declare the same fully-qualified name from cross-linking.
+// referenceKey identifies a symbol definition site: the path of the declaring file as it
+// appears in source spans, plus the symbol's fully-qualified name.
 type referenceKey struct {
 	path     string
 	fullName ir.FullName
 }
 
-// newReferenceKey builds the key for the definition an unresolved symbol names.
-//
-// Returns false if the definition has no span to take a path from, which happens for a
-// zero [ast.DeclDef].
+// newReferenceKey builds the key for the definition an unresolved symbol names. Returns
+// false if the definition has no span to take a path from, such as a zero [ast.DeclDef].
 func newReferenceKey(def ast.DeclDef, fullName ir.FullName) (referenceKey, bool) {
 	path := def.Span().Path()
 	if path == "" || fullName == "" {
@@ -49,21 +42,25 @@ func newReferenceKey(def ast.DeclDef, fullName ir.FullName) (referenceKey, bool)
 	return referenceKey{path: path, fullName: fullName}, true
 }
 
-// referenceIndex is a reverse index from a symbol definition to the symbols referencing it.
+// newReferenceKeyForDeclaration builds the key for a declaration symbol. This is the only
+// other way to construct a key, and derives the path from the same source as spans do, so
+// lookups cannot diverge from what [newReferenceKey] indexed.
+func newReferenceKeyForDeclaration(declaration *symbol) (referenceKey, bool) {
+	if declaration.file == nil || declaration.file.file == nil || declaration.ir.IsZero() {
+		return referenceKey{}, false
+	}
+	return referenceKey{
+		path:     declaration.file.file.Path(),
+		fullName: declaration.ir.FullName(),
+	}, true
+}
+
+// referenceIndex is a reverse index from a symbol definition to the symbols referencing it,
+// across all workspaces. References are grouped by the file containing them, so re-indexing
+// a file replaces only that file's contribution.
 //
-// The index is owned by the [lsp] rather than by a file or a workspace, so references
-// resolve across every workspace the server has indexed. This matters for shared
-// dependencies: a well-known type is reachable from many workspaces, but a file belongs to
-// at most one, so a per-workspace index only ever sees a fraction of its references.
-//
-// References are grouped by the file containing them so that re-indexing a file replaces
-// only that file's contribution, leaving every other file's references untouched. Indexing
-// a file therefore costs time proportional to the references in that file alone.
-//
-// The index is not safe for concurrent use. It is protected by the [lsp] lock, which
-// already serializes all request handling.
+// The index is not safe for concurrent use; it is protected by the [lsp] lock.
 type referenceIndex struct {
-	// keyToFileRefs maps a definition to the referencing symbols, grouped by containing file.
 	keyToFileRefs map[referenceKey]map[protocol.URI][]*symbol
 	// uriToKeys records which definitions each file contributes references to, so that a
 	// file's contribution can be removed without scanning the whole index.
@@ -99,9 +96,9 @@ func (i *referenceIndex) SetFile(uri protocol.URI, references map[referenceKey][
 
 // RemoveFile drops all references contributed by the file at the given URI.
 //
-// This must be called when a file is evicted. The index holds [symbol] values that point
-// back at their file, and an evicted file is zeroed, so entries left behind would resolve
-// to locations with an empty URI.
+// This must be called when a file is evicted. The index holds symbols pointing back at
+// their file, and an evicted file is zeroed, so entries left behind would resolve to
+// locations with an empty URI.
 func (i *referenceIndex) RemoveFile(uri protocol.URI) {
 	for _, key := range i.uriToKeys[uri] {
 		fileRefs, ok := i.keyToFileRefs[key]
@@ -116,10 +113,8 @@ func (i *referenceIndex) RemoveFile(uri protocol.URI) {
 	delete(i.uriToKeys, uri)
 }
 
-// References returns all symbols referencing the given definition.
-//
-// The result is ordered by file URI and then by position, so that results are stable
-// across calls. The index is built from maps, whose iteration order is not.
+// References returns all symbols referencing the given definition, ordered by file URI and
+// then by position so that results are stable across calls.
 func (i *referenceIndex) References(key referenceKey) []*symbol {
 	fileRefs := i.keyToFileRefs[key]
 	if len(fileRefs) == 0 {
@@ -137,4 +132,11 @@ func (i *referenceIndex) References(key referenceKey) []*symbol {
 		)
 	})
 	return symbols
+}
+
+// FileReferences returns the symbols in the file at the given URI that reference the given
+// definition. Unlike [referenceIndex.References], this needs no cross-file merge or sort,
+// so it is cheap enough for per-cursor-move requests.
+func (i *referenceIndex) FileReferences(key referenceKey, uri protocol.URI) []*symbol {
+	return i.keyToFileRefs[key][uri]
 }
