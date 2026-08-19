@@ -135,8 +135,7 @@ func (i *referenceIndex) References(key referenceKey) []*symbol {
 }
 
 // FileReferences returns the symbols in the file at the given URI that reference the given
-// definition. Unlike [referenceIndex.References], this needs no cross-file merge or sort,
-// so it is cheap enough for per-cursor-move requests.
+// definition. This is a direct lookup, cheap enough for per-cursor-move requests.
 func (i *referenceIndex) FileReferences(key referenceKey, uri protocol.URI) []*symbol {
 	return i.keyToFileRefs[key][uri]
 }

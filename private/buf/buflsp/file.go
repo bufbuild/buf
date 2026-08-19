@@ -376,8 +376,8 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	}
 
 	// Resolve all unresolved symbols from this file, and record the references they make in
-	// the reference index. References are keyed by definition site rather than by resolved
-	// symbol, so recording does not depend on the order files are indexed in.
+	// the reference index. References are keyed by definition site, so recording does not
+	// depend on the order files are indexed in.
 	var references map[referenceKey][]*symbol
 	addReference := func(def ast.DeclDef, fullName ir.FullName, sym *symbol) {
 		key, ok := newReferenceKey(def, fullName)

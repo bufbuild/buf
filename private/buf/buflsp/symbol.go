@@ -196,31 +196,6 @@ func (s *symbol) References(includeDeclaration bool) []protocol.Location {
 	return references
 }
 
-// referenceDeclaration returns the referenceable symbol declaring what this symbol names:
-// the symbol itself if it is referenceable, otherwise its resolved definition. Returns
-// false if neither is, meaning the symbol cannot be referenced.
-func (s *symbol) referenceDeclaration() (*symbol, bool) {
-	if _, ok := s.kind.(*referenceable); ok {
-		return s, true
-	}
-	if s.def != nil {
-		if _, ok := s.def.kind.(*referenceable); ok {
-			return s.def, true
-		}
-	}
-	return nil, false
-}
-
-// referenceSymbols returns every symbol referencing this declaration symbol, across all
-// indexed workspaces.
-func (s *symbol) referenceSymbols() []*symbol {
-	key, ok := newReferenceKeyForDeclaration(s)
-	if !ok {
-		return nil
-	}
-	return s.file.lsp.referenceIndex.References(key)
-}
-
 // DocumentHighlights returns document highlights for the symbol within the current file.
 // This includes the definition (if in the same file) and all references in the same file.
 // All highlights use the [protocol.DocumentHighlightKindText] kind.
@@ -244,8 +219,7 @@ func (s *symbol) DocumentHighlights() []protocol.DocumentHighlight {
 	}
 
 	var highlights []protocol.DocumentHighlight
-	// Add all references in the same file. Only this file's entries are needed, so avoid the
-	// cross-file merge and sort of References.
+	// Add all references in the same file.
 	if key, ok := newReferenceKeyForDeclaration(declaration); ok {
 		for _, reference := range s.file.lsp.referenceIndex.FileReferences(key, s.file.uri) {
 			highlights = append(highlights, protocol.DocumentHighlight{
@@ -451,6 +425,31 @@ func (s *symbol) Rename(newName string) (*protocol.WorkspaceEdit, error) {
 	}
 	// All other symbol types (options, imports, built-ins, and tags) cannot be renamed.
 	return &edits, nil
+}
+
+// referenceDeclaration returns the referenceable symbol declaring what this symbol names:
+// the symbol itself if it is referenceable, otherwise its resolved definition. Returns
+// false if neither is, meaning the symbol cannot be referenced.
+func (s *symbol) referenceDeclaration() (*symbol, bool) {
+	if _, ok := s.kind.(*referenceable); ok {
+		return s, true
+	}
+	if s.def != nil {
+		if _, ok := s.def.kind.(*referenceable); ok {
+			return s.def, true
+		}
+	}
+	return nil, false
+}
+
+// referenceSymbols returns every symbol referencing this declaration symbol, across all
+// indexed workspaces.
+func (s *symbol) referenceSymbols() []*symbol {
+	key, ok := newReferenceKeyForDeclaration(s)
+	if !ok {
+		return nil
+	}
+	return s.file.lsp.referenceIndex.References(key)
 }
 
 // renameChangesForReferenceableSymbol is a helper for getting all rename changes for the

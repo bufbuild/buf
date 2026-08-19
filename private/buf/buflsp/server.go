@@ -517,9 +517,6 @@ func (s *server) References(
 	if symbol == nil {
 		return nil, nil
 	}
-	// The reference index stores each file's references separately and replaces them wholesale
-	// when the file is re-indexed, so references cannot accumulate duplicates and need no
-	// deduplication here.
 	return symbol.References(params.Context.IncludeDeclaration), nil
 }
 

@@ -143,7 +143,7 @@ func TestReferences(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			locations := requestReferences(ctx, t, clientJSONConn, tt.targetURI, tt.line, tt.character, tt.includeDeclaration)
+			locations := testRequestReferences(ctx, t, clientJSONConn, tt.targetURI, tt.line, tt.character, tt.includeDeclaration)
 
 			require.Len(t, locations, len(tt.expectedReferences))
 
@@ -157,8 +157,6 @@ func TestReferences(t *testing.T) {
 	}
 }
 
-// TestReferencesToDependency verifies that references to a symbol declared in a dependency
-// file are found across every indexed file, not only the file open in the editor.
 func TestReferencesToDependency(t *testing.T) {
 	t.Parallel()
 
@@ -214,8 +212,6 @@ func TestReferencesToDependency(t *testing.T) {
 			},
 		},
 		{
-			// The reported case: a well-known type is a dependency shared by every workspace,
-			// so it is the symbol most likely to lose references.
 			name:               "wellknown_type_across_files",
 			line:               9, // google.protobuf.Timestamp created_at = 2;
 			character:          20,
@@ -231,7 +227,7 @@ func TestReferencesToDependency(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			locations := requestReferences(ctx, t, clientJSONConn, firstURI, tt.line, tt.character, tt.includeDeclaration)
+			locations := testRequestReferences(ctx, t, clientJSONConn, firstURI, tt.line, tt.character, tt.includeDeclaration)
 
 			require.Len(t, locations, len(tt.expectedReferences))
 			for _, expectedRef := range tt.expectedReferences {
@@ -244,9 +240,6 @@ func TestReferencesToDependency(t *testing.T) {
 	}
 }
 
-// TestReferencesStableAcrossReindex verifies that re-indexing does not drop or duplicate
-// references. This guards the invariant that makes deduplication in server.References
-// unnecessary.
 func TestReferencesStableAcrossReindex(t *testing.T) {
 	t.Parallel()
 
@@ -263,7 +256,7 @@ func TestReferencesStableAcrossReindex(t *testing.T) {
 	// Position of the google.protobuf.Timestamp reference in first.proto.
 	const timestampLine, timestampCharacter = 9, 20
 
-	before := requestReferences(ctx, t, clientJSONConn, firstURI, timestampLine, timestampCharacter, true)
+	before := testRequestReferences(ctx, t, clientJSONConn, firstURI, timestampLine, timestampCharacter, true)
 	require.NotEmpty(t, before)
 
 	// Re-send the file unchanged. This forces a full re-index without moving any position, so
@@ -276,14 +269,14 @@ func TestReferencesStableAcrossReindex(t *testing.T) {
 		ContentChanges: []protocol.TextDocumentContentChangeEvent{{Text: string(firstProtoContent)}},
 	}))
 
-	after := requestReferences(ctx, t, clientJSONConn, firstURI, timestampLine, timestampCharacter, true)
+	after := testRequestReferences(ctx, t, clientJSONConn, firstURI, timestampLine, timestampCharacter, true)
 
 	assert.ElementsMatch(t, before, after, "reference set changed after re-indexing")
 	assert.Len(t, slices.Compact(slices.Clone(after)), len(after), "re-indexing introduced duplicate references")
 }
 
-// requestReferences sends a textDocument/references request and returns the locations.
-func requestReferences(
+// testRequestReferences sends a textDocument/references request and returns the locations.
+func testRequestReferences(
 	ctx context.Context,
 	t *testing.T,
 	clientJSONConn jsonrpc2.Conn,
