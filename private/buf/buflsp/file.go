@@ -108,22 +108,9 @@ func (f *file) Reset(ctx context.Context) {
 // evicted when the ref count reaches zero. The workspace may hold additional
 // references.
 func (f *file) Close(ctx context.Context) {
-	// Manager().Close may evict the file and zero *f, so capture locals first.
-	fileManager := f.Manager()
-	uri := f.uri
 	f.clearEditorState(ctx)
 	f.releaseWorkspace()
-	fileManager.Close(ctx, uri)
-}
-
-// releaseWorkspace releases this file's lease on its workspace, if any. A
-// non-nil workspace is the lease. Only files the editor opened directly have
-// one, taken in [file.RefreshWorkspace].
-func (f *file) releaseWorkspace() {
-	if f.workspace != nil {
-		f.workspace.Release()
-		f.workspace = nil
-	}
+	f.Manager().Close(ctx, f.uri)
 }
 
 // IsOpenInEditor returns whether this file was opened in the LSP client's
@@ -333,6 +320,16 @@ func (f *file) RefreshIR(ctx context.Context) {
 		slog.String("uri", f.uri.Filename()),
 		slog.Int("count", len(f.diagnostics)),
 	)
+}
+
+// releaseWorkspace releases this file's lease on its workspace, if any. A
+// non-nil workspace is the lease. Only files the editor opened directly have
+// one, taken in [file.RefreshWorkspace].
+func (f *file) releaseWorkspace() {
+	if f.workspace != nil {
+		f.workspace.Release()
+		f.workspace = nil
+	}
 }
 
 // queryIR returns the [queries.IR] for the current file.

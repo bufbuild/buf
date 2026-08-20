@@ -154,9 +154,6 @@ func (w *workspace) Release() {
 }
 
 // hasOpenFile reports whether any file in this workspace is open in the editor.
-// Dependency files hold no lease, so an open one keeps the workspace alive
-// through this check instead. Tearing the workspace down under an open file
-// would evict files its symbols still point into.
 func (w *workspace) hasOpenFile() bool {
 	for _, file := range w.pathToFile {
 		if file.IsOpenInEditor() {
