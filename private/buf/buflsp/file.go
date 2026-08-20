@@ -60,11 +60,6 @@ type file struct {
 	hasText    bool               // Whether this file has ever had text read into it.
 	workspace  *workspace         // May be nil.
 	objectInfo storage.ObjectInfo // Info in the context of the workspace.
-	// hasWorkspaceLease reports whether this file holds a lease on workspace.
-	// A lease is counted in the workspace's reference count. Only files opened
-	// in the editor take a lease. Dependency and WKT files have a workspace
-	// without a lease.
-	hasWorkspaceLease bool
 
 	ir                   *ir.File
 	referenceableSymbols map[ir.FullName]*symbol
@@ -99,8 +94,7 @@ func (f *file) Manager() *fileManager {
 // Reset clears all bookkeeping information on this file and resets it.
 func (f *file) Reset(ctx context.Context) {
 	f.lsp.logger.DebugContext(ctx, "resetting file", slog.String("uri", f.uri.Filename()))
-	f.releaseWorkspaceLease()
-	f.workspace = nil
+	f.releaseWorkspace()
 	// Evict the query key if there is a query cached on the file. We cache the [queries.File]
 	// query since this allows the executor to evict all dependent queries, e.g. AST and IR.
 	f.lsp.queryExecutor.Evict(f.queryFileKeys()...)
@@ -110,27 +104,25 @@ func (f *file) Reset(ctx context.Context) {
 }
 
 // Close marks a file as closed by the editor. It clears the editor state,
-// releases the workspace lease, and decrements the ref count. The file is
-// only evicted when the ref count reaches zero. The workspace may hold
-// additional references.
+// releases the workspace, and decrements the ref count. The file is only
+// evicted when the ref count reaches zero. The workspace may hold additional
+// references.
 func (f *file) Close(ctx context.Context) {
 	// Manager().Close may evict the file and zero *f, so capture locals first.
 	fileManager := f.Manager()
 	uri := f.uri
 	f.clearEditorState(ctx)
-	f.releaseWorkspaceLease()
+	f.releaseWorkspace()
 	fileManager.Close(ctx, uri)
 }
 
-// releaseWorkspaceLease releases this file's lease on its workspace, if any.
-// Only the first call releases.
-func (f *file) releaseWorkspaceLease() {
-	if !f.hasWorkspaceLease {
-		return
-	}
-	f.hasWorkspaceLease = false
+// releaseWorkspace releases this file's lease on its workspace, if any. A
+// non-nil workspace is the lease. Only files the editor opened directly have
+// one, taken in [file.RefreshWorkspace].
+func (f *file) releaseWorkspace() {
 	if f.workspace != nil {
 		f.workspace.Release()
+		f.workspace = nil
 	}
 }
 
@@ -204,7 +196,8 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 //
 // The Buf workspace provides the sources for the compiler to work with. Only
 // files the editor interacts with directly are refreshed, so the lease taken
-// here pairs with the release in [file.Close].
+// here pairs with the release in [file.Close]. Dependency and WKT files have
+// no resolvable workspace and stay workspace-less.
 func (f *file) RefreshWorkspace(ctx context.Context) {
 	f.lsp.logger.Debug(
 		"refresh workspace",
@@ -212,34 +205,32 @@ func (f *file) RefreshWorkspace(ctx context.Context) {
 		slog.Int("version", int(f.version)),
 	)
 	defer f.lsp.workspaceManager.Cleanup(ctx)
-	if f.workspace == nil {
-		workspace, err := f.lsp.workspaceManager.LeaseWorkspace(ctx, f.uri)
-		if err != nil {
+	if f.workspace != nil {
+		if err := f.workspace.Refresh(ctx); err != nil {
 			f.lsp.logger.Error(
-				"could not lease workspace",
+				"could not refresh workspace",
 				slog.String("uri", string(f.uri)),
 				xslog.ErrorAttr(err),
 			)
-			return
 		}
-		f.workspace = workspace
-		f.hasWorkspaceLease = true
 		return
 	}
-	if !f.hasWorkspaceLease {
-		// The workspace associated this file when indexing it. This happens for
-		// dependency and WKT files the editor opens directly. Take a lease so
-		// the workspace outlives the open document.
-		f.workspace.Lease()
-		f.hasWorkspaceLease = true
-	}
-	if err := f.workspace.Refresh(ctx); err != nil {
+	workspace, err := f.lsp.workspaceManager.LeaseWorkspace(ctx, f.uri)
+	if err != nil {
+		var unresolvable errUnresolvableWorkspace
+		if errors.As(err, &unresolvable) {
+			// Expected for dependency and WKT files opened from the cache.
+			f.lsp.logger.Debug("no workspace for file", slog.String("uri", string(f.uri)))
+			return
+		}
 		f.lsp.logger.Error(
-			"could not refresh workspace",
+			"could not lease workspace",
 			slog.String("uri", string(f.uri)),
 			xslog.ErrorAttr(err),
 		)
+		return
 	}
+	f.workspace = workspace
 }
 
 // RefreshIR queries for the IR of the file and the IR of each import file.
@@ -252,6 +243,13 @@ func (f *file) RefreshIR(ctx context.Context) {
 		// includes/excludes in the build. In those cases, we ignore the file, the same way
 		// the rest of our tools would.
 		// In the future, we may want to rework this behavior in the LSP.
+		return
+	}
+
+	if f.workspace == nil {
+		// Dependency and WKT files have no workspace to compile against. Their
+		// IR and symbols are populated when a workspace member that imports
+		// them refreshes, so keep that state instead of wiping it.
 		return
 	}
 
@@ -1068,14 +1066,16 @@ func (f *file) resolveASTDefinition(def ast.DeclDef, defName ir.FullName) *symbo
 	if def.Span().Path() == f.file.Path() {
 		return f.referenceableSymbols[defName]
 	}
-	// No workspace, we cannot resolve the AST definition from outside of the file.
-	if f.workspace == nil {
-		return nil
-	}
 	for _, file := range f.workspace.PathToFile() {
 		if file.file.Path() == def.Span().Path() {
 			return file.referenceableSymbols[defName]
 		}
+	}
+	// Fall back to the file manager. Dependency and WKT files have no
+	// workspace, and span paths are absolute local paths, so the lookup by
+	// path is exact.
+	if file := f.lsp.fileManager.Get(FilePathToURI(def.Span().Path())); file != nil {
+		return file.referenceableSymbols[defName]
 	}
 	return nil
 }
@@ -1106,6 +1106,7 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 		symbol = before
 	}
 	if symbol != nil {
+		symbol.resolveDefinition()
 		f.lsp.logger.DebugContext(
 			ctx,
 			"symbol at",

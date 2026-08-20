@@ -71,23 +71,13 @@ func (w *workspaceManager) Cleanup(ctx context.Context) {
 	// Delete in-place.
 	index := 0
 	for _, workspace := range w.workspaces {
-		if workspace.refCount > 0 {
+		if workspace.refCount > 0 || workspace.hasOpenFile() {
 			w.workspaces[index] = workspace
 			index++
-			continue // workspace leased
+			continue // workspace in use
 		}
 		w.lsp.logger.Debug("workspace: cleanup removing workspace", slog.String("parent", workspace.workspaceURI.Filename()))
 		for _, file := range workspace.pathToFile {
-			if file.IsOpenInEditor() {
-				// A file open in the editor leases its workspace, so it should be
-				// unreachable here. Drop the association rather than closing the
-				// file, which would silence its diagnostics.
-				w.lsp.logger.Error("workspace: cleanup reached an open file", slog.String("path", file.uri.Filename()))
-				if file.workspace == workspace {
-					file.workspace = nil
-				}
-				continue
-			}
 			file.Close(ctx)
 		}
 		workspace.pathToFile = nil
@@ -161,6 +151,19 @@ func (w *workspace) Release() {
 		return
 	}
 	w.refCount--
+}
+
+// hasOpenFile reports whether any file in this workspace is open in the editor.
+// Dependency files hold no lease, so an open one keeps the workspace alive
+// through this check instead. Tearing the workspace down under an open file
+// would evict files its symbols still point into.
+func (w *workspace) hasOpenFile() bool {
+	for _, file := range w.pathToFile {
+		if file.IsOpenInEditor() {
+			return true
+		}
+	}
+	return false
 }
 
 // Refresh rebuilds the workspace and required context.
@@ -265,16 +268,13 @@ func (w *workspace) indexFiles(ctx context.Context) {
 			w.lsp.logger.Debug("workspace: index track file", slog.String("path", file.uri.Filename()))
 		}
 
-		// Associate every indexed file with this workspace. A file belongs to
-		// one workspace at a time, and for shared dependencies the latest
-		// workspace wins. Only files opened in the editor hold a lease, so a
-		// lease moves only when such a file changes workspace.
-		if oldWorkspace := file.workspace; oldWorkspace != w {
+		// Currently we only associate a file with one workspace. This assumption isn't accurate
+		// for shared dependencies. Here we update to the latest, most recently used, workspace.
+		// This will make goto definition and find references only work in that workspace.
+		if oldWorkspace := file.workspace; oldWorkspace != nil && oldWorkspace != w {
+			oldWorkspace.Release()
+			w.Lease()
 			file.workspace = w
-			if file.hasWorkspaceLease && oldWorkspace != nil {
-				w.Lease()
-				oldWorkspace.Release()
-			}
 		}
 
 		file.objectInfo = fileInfo

@@ -151,14 +151,18 @@ func TestWorkspaceDependencyFile(t *testing.T) {
 	dependencyURI := resolveDependencyURI(ctx, t, clientJSONConn, testURI)
 	dependencyPosition := dependencyTypePosition(t, dependencyURI)
 
-	// Completion inside the dependency file works before it is even opened.
-	items := requestCompletion(ctx, t, clientJSONConn, dependencyURI, dependencyPosition)
-	assert.NotEmpty(t, items, "expected completions inside the dependency file")
+	// Definition inside the dependency file resolves to another dependency
+	// file before it is even opened. Dependency files have no workspace, so
+	// this exercises the file manager fallback.
+	locations := requestDefinition(ctx, t, clientJSONConn, dependencyURI, dependencyPosition)
+	require.Len(t, locations, 1)
+	assert.Contains(t, string(locations[0].URI), "source_context.proto")
 
 	// Opening the dependency file in the editor keeps it working.
 	openFileFromDisk(ctx, t, clientJSONConn, dependencyURI)
-	items = requestCompletion(ctx, t, clientJSONConn, dependencyURI, dependencyPosition)
-	assert.NotEmpty(t, items, "expected completions in the opened dependency file")
+	locations = requestDefinition(ctx, t, clientJSONConn, dependencyURI, dependencyPosition)
+	require.Len(t, locations, 1)
+	assert.Contains(t, string(locations[0].URI), "source_context.proto")
 }
 
 func TestWorkspaceReleasedOnClose(t *testing.T) {
@@ -204,16 +208,16 @@ func TestWorkspaceSurvivesCloseOrder(t *testing.T) {
 	dependencyPosition := dependencyTypePosition(t, dependencyURI)
 	openFileFromDisk(ctx, t, clientJSONConn, dependencyURI)
 
-	// Close the main file first. The workspace must survive on the dependency
-	// file's lease.
+	// Close the main file first. The open dependency file holds no lease, so
+	// the workspace must be kept alive by the open file check instead.
 	closeFile(ctx, t, clientJSONConn, testURI)
-	items := requestCompletion(ctx, t, clientJSONConn, dependencyURI, dependencyPosition)
-	assert.NotEmpty(t, items, "expected completions while the dependency file is still open")
+	locations := requestDefinition(ctx, t, clientJSONConn, dependencyURI, dependencyPosition)
+	require.Len(t, locations, 1, "expected definitions while the dependency file is still open")
 
-	// Closing the dependency file drops the last lease and evicts everything.
+	// Closing the dependency file drops the workspace and evicts everything.
 	closeFile(ctx, t, clientJSONConn, dependencyURI)
-	items = requestCompletion(ctx, t, clientJSONConn, dependencyURI, dependencyPosition)
-	assert.Empty(t, items, "expected no completions after the last open document closed")
+	hover := requestHover(ctx, t, clientJSONConn, dependencyURI, dependencyPosition)
+	assert.Nil(t, hover, "expected no hover after the last open document closed")
 }
 
 // resolveDependencyURI follows the import in main.proto to the well-known
@@ -300,28 +304,25 @@ func closeFile(
 	}))
 }
 
-// requestCompletion requests completion items at the given position.
-func requestCompletion(
+// requestDefinition requests the definition locations at the given position.
+func requestDefinition(
 	ctx context.Context,
 	t *testing.T,
 	clientJSONConn jsonrpc2.Conn,
 	uri protocol.URI,
 	position protocol.Position,
-) []protocol.CompletionItem {
+) []protocol.Location {
 	t.Helper()
 
-	var completionList *protocol.CompletionList
-	_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
+	var locations []protocol.Location
+	_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentDefinition, protocol.DefinitionParams{
 		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 			TextDocument: protocol.TextDocumentIdentifier{URI: uri},
 			Position:     position,
 		},
-	}, &completionList)
+	}, &locations)
 	require.NoError(t, err)
-	if completionList == nil {
-		return nil
-	}
-	return completionList.Items
+	return locations
 }
 
 // requestHover requests hover contents at the given position.

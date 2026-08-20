@@ -107,6 +107,24 @@ func (*builtin) isSymbolKind()        {}
 func (*tag) isSymbolKind()            {}
 func (*keywordBuiltin) isSymbolKind() {}
 
+// resolveDefinition resolves the symbol's definition if it has none yet. A
+// definition can be missing when this symbol's file was indexed before the
+// file declaring the definition. Resolution is cheap, so retry at query time.
+func (s *symbol) resolveDefinition() {
+	if s.def != nil {
+		return
+	}
+	switch kind := s.kind.(type) {
+	case *reference:
+		s.def = s.file.resolveASTDefinition(kind.def, kind.fullName)
+	case *option:
+		s.def = s.file.resolveASTDefinition(kind.def, kind.defFullName)
+		if s.typeDef == nil {
+			s.typeDef = s.file.resolveASTDefinition(kind.typeDef, kind.typeDefFullName)
+		}
+	}
+}
+
 // Range constructs an LSP protocol code range for this symbol.
 func (s *symbol) Range() protocol.Range {
 	return reportSpanToProtocolRange(s.span)
