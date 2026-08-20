@@ -736,7 +736,7 @@ func TestBufGenYAMLCheckPluginUpdates(t *testing.T) {
 				ctx := t.Context()
 
 				var result any
-				_, err = clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
+				_, err := clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
 					Command:   buflsp.CommandCheckPluginUpdates,
 					Arguments: []any{string(bufGenYAMLURI)},
 				}, &result)

@@ -388,6 +388,8 @@ func (s *server) DidClose(
 	}
 	if file := s.fileManager.Get(params.TextDocument.URI); file != nil {
 		file.Close(ctx)
+		// Drop workspaces that no longer have any open files.
+		s.lsp.workspaceManager.Cleanup(ctx)
 	}
 	return nil
 }
@@ -416,6 +418,8 @@ func (s *server) DidDeleteFiles(
 			}
 		}
 	}
+	// Drop workspaces that no longer have any open files.
+	s.lsp.workspaceManager.Cleanup(ctx)
 	return nil
 }
 

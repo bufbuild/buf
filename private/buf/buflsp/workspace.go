@@ -78,6 +78,16 @@ func (w *workspaceManager) Cleanup(ctx context.Context) {
 		}
 		w.lsp.logger.Debug("workspace: cleanup removing workspace", slog.String("parent", workspace.workspaceURI.Filename()))
 		for _, file := range workspace.pathToFile {
+			if file.IsOpenInEditor() {
+				// A file open in the editor leases its workspace, so it should be
+				// unreachable here. Drop the association rather than closing the
+				// file, which would silence its diagnostics.
+				w.lsp.logger.Error("workspace: cleanup reached an open file", slog.String("path", file.uri.Filename()))
+				if file.workspace == workspace {
+					file.workspace = nil
+				}
+				continue
+			}
 			file.Close(ctx)
 		}
 		workspace.pathToFile = nil
@@ -144,10 +154,13 @@ func (w *workspace) Lease() {
 }
 
 // Release decrements the reference count.
-func (w *workspace) Release() int {
+func (w *workspace) Release() {
 	w.lsp.logger.Debug("workspace: release", slog.String("path", w.workspaceURI.Filename()))
+	if w.refCount <= 0 {
+		w.lsp.logger.Error("workspace: refcount released below zero", slog.String("path", w.workspaceURI.Filename()))
+		return
+	}
 	w.refCount--
-	return w.refCount
 }
 
 // Refresh rebuilds the workspace and required context.
@@ -252,13 +265,16 @@ func (w *workspace) indexFiles(ctx context.Context) {
 			w.lsp.logger.Debug("workspace: index track file", slog.String("path", file.uri.Filename()))
 		}
 
-		// Currently we only associate a file with one workspace. This assumption isn't accurate
-		// for shared dependencies. Here we update to the latest, most recently used, workspace.
-		// This will make goto definition and find references only work in that workspace.
-		if oldWorkspace := file.workspace; oldWorkspace != nil && oldWorkspace != w {
-			oldWorkspace.Release()
-			w.Lease()
+		// Associate every indexed file with this workspace. A file belongs to
+		// one workspace at a time, and for shared dependencies the latest
+		// workspace wins. Only files opened in the editor hold a lease, so a
+		// lease moves only when such a file changes workspace.
+		if oldWorkspace := file.workspace; oldWorkspace != w {
 			file.workspace = w
+			if file.hasWorkspaceLease && oldWorkspace != nil {
+				w.Lease()
+				oldWorkspace.Release()
+			}
 		}
 
 		file.objectInfo = fileInfo
