@@ -163,10 +163,9 @@ type Config_builder struct {
 	IgnoreIdPaths []*IDPaths
 	// ignore_unstable_packages ignores packages with a last component that is one of the unstable forms recognised
 	// by the PACKAGE_VERSION_SUFFIX:
-	//
-	//	v\d+test.*
-	//	v\d+(alpha|beta)\d+
-	//	v\d+p\d+(alpha|beta)\d+
+	//   v\d+test.*
+	//   v\d+(alpha|beta)\d+
+	//   v\d+p\d+(alpha|beta)\d+
 	IgnoreUnstablePackages bool
 }
 

@@ -395,9 +395,7 @@ type PushManifestAndBlobsRequest_builder struct {
 	Repository string
 	// Manifest with all the module files being pushed.
 	// The content of the manifest blob is a text encoding of an ordered list of unique paths, each path encoded as:
-	//
-	//	<digest_type>:<digest>[SP][SP]<path>[LF]
-	//
+	//   <digest_type>:<digest>[SP][SP]<path>[LF]
 	// The only current supported digest type is 'shake256'. The shake256 digest consists of 64 bytes of lowercase hex
 	// encoded output of SHAKE256. See buf.alpha.module.v1alpha1.Digest for more details.
 	Manifest *v1alpha1.Blob

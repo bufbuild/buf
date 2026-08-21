@@ -154,11 +154,11 @@ type GetModulePinsRequest_builder struct {
 	// identities of the dependencies they want to update in module_references.
 	//
 	// When resolving, if a client supplied module pin is:
-	//   - in the transitive closure of pins resolved from the module_references,
-	//     the client supplied module pin will be an extra candidate for tie
-	//     breaking.
-	//   - NOT in the in the transitive closure of pins resolved from the
-	//     module_references, it will be returned as is.
+	// - in the transitive closure of pins resolved from the module_references,
+	//   the client supplied module pin will be an extra candidate for tie
+	//   breaking.
+	// - NOT in the in the transitive closure of pins resolved from the
+	//   module_references, it will be returned as is.
 	CurrentModulePins []*v1alpha1.ModulePin
 }
 
