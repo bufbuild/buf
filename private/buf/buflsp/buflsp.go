@@ -100,6 +100,7 @@ func Serve(
 	}
 	lsp.fileManager = newFileManager(lsp)
 	lsp.workspaceManager = newWorkspaceManager(lsp)
+	lsp.referenceIndex = newReferenceIndex()
 	lsp.bufYAMLManager = newBufYAMLManager(lsp)
 	lsp.bufGenYAMLManager = newBufGenYAMLManager(lsp)
 	lsp.bufPolicyYAMLManager = newBufPolicyYAMLManager()
@@ -137,6 +138,7 @@ type lsp struct {
 	wasmRuntime          wasm.Runtime
 	fileManager          *fileManager
 	workspaceManager     *workspaceManager
+	referenceIndex       *referenceIndex
 	bufYAMLManager       *bufYAMLManager
 	bufGenYAMLManager    *bufGenYAMLManager
 	bufPolicyYAMLManager *bufPolicyYAMLManager

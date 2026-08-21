@@ -517,14 +517,7 @@ func (s *server) References(
 	if symbol == nil {
 		return nil, nil
 	}
-	// We deduplicate the references here in the case where a file's symbols have not yet
-	// been refreshed, but a new file with references to symbols in said file is opened. This
-	// can cause duplicate references to be appended and not all clients deduplicate the
-	// returned references.
-	//
-	// We also do not want to refresh all symbols in the workspace when a single file is
-	// interacted with, since that could be detrimental to performance.
-	return xslices.Deduplicate(symbol.References(params.Context.IncludeDeclaration)), nil
+	return symbol.References(params.Context.IncludeDeclaration), nil
 }
 
 // Completion is the entry point for code completion.

@@ -63,8 +63,7 @@ type kind interface {
 }
 
 type referenceable struct {
-	ast        ast.DeclDef
-	references []*symbol
+	ast ast.DeclDef
 }
 
 type reference struct {
@@ -173,35 +172,26 @@ func (s *symbol) TypeDefinition() protocol.Location {
 // It also accepts the includeDeclaration param from the client - if true, the declaration
 // of the symbol is included as a reference.
 func (s *symbol) References(includeDeclaration bool) []protocol.Location {
-	var references []protocol.Location
-	referenceableKind, ok := s.kind.(*referenceable)
-	if !ok && s.def != nil {
-		// If the symbol isn't referenceable itself, but has a referenceable definition, use the
-		// definition for the references.
-		referenceableKind, ok = s.def.kind.(*referenceable)
-	}
-	if ok {
-		for _, reference := range referenceableKind.references {
-			references = append(references, protocol.Location{
-				URI:   reference.file.uri,
-				Range: reference.Range(),
-			})
-		}
-	} else {
-		// No referenceable kind; add the location of the symbol itself.
-		references = append(references, protocol.Location{
+	declaration, ok := s.referenceDeclaration()
+	if !ok {
+		// No referenceable declaration; the symbol's own location is the only result.
+		return []protocol.Location{{
 			URI:   s.file.uri,
 			Range: s.Range(),
+		}}
+	}
+	var references []protocol.Location
+	for _, reference := range declaration.referenceSymbols() {
+		references = append(references, protocol.Location{
+			URI:   reference.file.uri,
+			Range: reference.Range(),
 		})
 	}
 	if includeDeclaration {
-		// Add the definition of the symbol to the list of references.
-		if s.def != nil {
-			references = append(references, protocol.Location{
-				URI:   s.def.file.uri,
-				Range: s.def.Range(),
-			})
-		}
+		references = append(references, protocol.Location{
+			URI:   declaration.file.uri,
+			Range: declaration.Range(),
+		})
 	}
 	return references
 }
@@ -215,13 +205,8 @@ func (s *symbol) DocumentHighlights() []protocol.DocumentHighlight {
 		return nil
 	}
 
-	// Get the referenceable kind to find all references
-	referenceableKind, ok := s.kind.(*referenceable)
-	if !ok && s.def != nil {
-		// If the symbol isn't referenceable itself, but has a referenceable definition, use the
-		// definition for the references.
-		referenceableKind, ok = s.def.kind.(*referenceable)
-	}
+	// Get the referenceable declaration to find all references
+	declaration, ok := s.referenceDeclaration()
 	if !ok {
 		return nil
 	}
@@ -234,9 +219,9 @@ func (s *symbol) DocumentHighlights() []protocol.DocumentHighlight {
 	}
 
 	var highlights []protocol.DocumentHighlight
-	// Add all references in the same file
-	for _, reference := range referenceableKind.references {
-		if reference.file.uri == s.file.uri {
+	// Add all references in the same file.
+	if key, ok := newReferenceKeyForDeclaration(declaration); ok {
+		for _, reference := range s.file.lsp.referenceIndex.FileReferences(key, s.file.uri) {
 			highlights = append(highlights, protocol.DocumentHighlight{
 				Range: reference.Range(),
 				Kind:  protocol.DocumentHighlightKindText,
@@ -244,16 +229,10 @@ func (s *symbol) DocumentHighlights() []protocol.DocumentHighlight {
 		}
 	}
 
-	// Add the definition if it's in the same file
-	if s.def != nil && s.def.file.uri == s.file.uri {
+	// Add the declaration if it's in the same file
+	if declaration.file.uri == s.file.uri {
 		highlights = append(highlights, protocol.DocumentHighlight{
-			Range: s.def.Range(),
-			Kind:  protocol.DocumentHighlightKindText,
-		})
-	} else if s.def == nil {
-		// If there's no separate definition, the symbol itself is the definition
-		highlights = append(highlights, protocol.DocumentHighlight{
-			Range: s.Range(),
+			Range: declaration.Range(),
 			Kind:  protocol.DocumentHighlightKindText,
 		})
 	}
@@ -448,6 +427,31 @@ func (s *symbol) Rename(newName string) (*protocol.WorkspaceEdit, error) {
 	return &edits, nil
 }
 
+// referenceDeclaration returns the referenceable symbol declaring what this symbol names:
+// the symbol itself if it is referenceable, otherwise its resolved definition. Returns
+// false if neither is, meaning the symbol cannot be referenced.
+func (s *symbol) referenceDeclaration() (*symbol, bool) {
+	if _, ok := s.kind.(*referenceable); ok {
+		return s, true
+	}
+	if s.def != nil {
+		if _, ok := s.def.kind.(*referenceable); ok {
+			return s.def, true
+		}
+	}
+	return nil, false
+}
+
+// referenceSymbols returns every symbol referencing this declaration symbol, across all
+// indexed workspaces.
+func (s *symbol) referenceSymbols() []*symbol {
+	key, ok := newReferenceKeyForDeclaration(s)
+	if !ok {
+		return nil
+	}
+	return s.file.lsp.referenceIndex.References(key)
+}
+
 // renameChangesForReferenceableSymbol is a helper for getting all rename changes for the
 // given referenceable symbol.
 func renameChangesForReferenceableSymbol(s *symbol, newName string) (map[protocol.DocumentURI][]protocol.TextEdit, error) {
@@ -458,15 +462,10 @@ func renameChangesForReferenceableSymbol(s *symbol, newName string) (map[protoco
 			NewText: newName,
 		}},
 	}
-	// Get the referenceable kind to find all references
-	referenceableKind, ok := s.kind.(*referenceable)
-	if !ok && s.def != nil {
-		// If the symbol isn't referenceable itself, but has a referenceable definition, use the
-		// definition for the references.
-		referenceableKind, ok = s.def.kind.(*referenceable)
-	}
+	// Get the referenceable declaration to find all references
+	declaration, ok := s.referenceDeclaration()
 	if ok {
-		for _, reference := range referenceableKind.references {
+		for _, reference := range declaration.referenceSymbols() {
 			newText := newName
 			// For option references (extension usages), preserve package qualification and parentheses.
 			// e.g., if renaming "(subpkg.testing)" to "validated", result should be "(subpkg.validated)"
