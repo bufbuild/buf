@@ -94,10 +94,7 @@ func (f *file) Manager() *fileManager {
 // Reset clears all bookkeeping information on this file and resets it.
 func (f *file) Reset(ctx context.Context) {
 	f.lsp.logger.DebugContext(ctx, "resetting file", slog.String("uri", f.uri.Filename()))
-	if f.workspace != nil {
-		f.workspace.Release()
-		f.workspace = nil
-	}
+	f.releaseWorkspace()
 	// Evict the query key if there is a query cached on the file. We cache the [queries.File]
 	// query since this allows the executor to evict all dependent queries, e.g. AST and IR.
 	f.lsp.queryExecutor.Evict(f.queryFileKeys()...)
@@ -106,12 +103,13 @@ func (f *file) Reset(ctx context.Context) {
 	*f = file{}
 }
 
-// Close marks a file as closed by the editor. It clears the editor state
-// (cancels in-flight checks and publishes empty diagnostics) then decrements
-// the ref count. The file is only evicted when the ref count reaches zero,
-// since the workspace may hold additional references.
+// Close marks a file as closed by the editor. It clears the editor state,
+// releases the workspace, and decrements the ref count. The file is only
+// evicted when the ref count reaches zero. The workspace may hold additional
+// references.
 func (f *file) Close(ctx context.Context) {
 	f.clearEditorState(ctx)
+	f.releaseWorkspace()
 	f.Manager().Close(ctx, f.uri)
 }
 
@@ -180,15 +178,20 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 	f.PublishDiagnostics(ctx)
 }
 
-// RefreshWorkspace rebuilds the workspace for the current file and sets the workspace.
+// RefreshWorkspace rebuilds the workspace for the current file. It takes a
+// lease on the workspace if this file does not hold one yet.
 //
-// The Buf workspace provides the sources for the compiler to work with.
+// The Buf workspace provides the sources for the compiler to work with. Only
+// files the editor interacts with directly are refreshed, so the lease taken
+// here pairs with the release in [file.Close]. Dependency and WKT files have
+// no resolvable workspace and stay workspace-less.
 func (f *file) RefreshWorkspace(ctx context.Context) {
 	f.lsp.logger.Debug(
 		"refresh workspace",
 		slog.String("file", f.uri.Filename()),
 		slog.Int("version", int(f.version)),
 	)
+	defer f.lsp.workspaceManager.Cleanup(ctx)
 	if f.workspace != nil {
 		if err := f.workspace.Refresh(ctx); err != nil {
 			f.lsp.logger.Error(
@@ -197,18 +200,24 @@ func (f *file) RefreshWorkspace(ctx context.Context) {
 				xslog.ErrorAttr(err),
 			)
 		}
-	} else {
-		workspace, err := f.lsp.workspaceManager.LeaseWorkspace(ctx, f.uri)
-		if err != nil {
-			f.lsp.logger.Error(
-				"could not lease workspace",
-				slog.String("uri", string(f.uri)),
-				xslog.ErrorAttr(err),
-			)
+		return
+	}
+	workspace, err := f.lsp.workspaceManager.LeaseWorkspace(ctx, f.uri)
+	if err != nil {
+		var unresolvable errUnresolvableWorkspace
+		if errors.As(err, &unresolvable) {
+			// Expected for dependency and WKT files opened from the cache.
+			f.lsp.logger.Debug("no workspace for file", slog.String("uri", string(f.uri)))
 			return
 		}
-		f.workspace = workspace
+		f.lsp.logger.Error(
+			"could not lease workspace",
+			slog.String("uri", string(f.uri)),
+			xslog.ErrorAttr(err),
+		)
+		return
 	}
+	f.workspace = workspace
 }
 
 // RefreshIR queries for the IR of the file and the IR of each import file.
@@ -221,6 +230,13 @@ func (f *file) RefreshIR(ctx context.Context) {
 		// includes/excludes in the build. In those cases, we ignore the file, the same way
 		// the rest of our tools would.
 		// In the future, we may want to rework this behavior in the LSP.
+		return
+	}
+
+	if f.workspace == nil {
+		// Dependency and WKT files have no workspace to compile against. Their
+		// IR and symbols are populated when a workspace member that imports
+		// them refreshes, so keep that state instead of wiping it.
 		return
 	}
 
@@ -304,6 +320,16 @@ func (f *file) RefreshIR(ctx context.Context) {
 		slog.String("uri", f.uri.Filename()),
 		slog.Int("count", len(f.diagnostics)),
 	)
+}
+
+// releaseWorkspace releases this file's lease on its workspace, if any. A
+// non-nil workspace is the lease. Only files the editor opened directly have
+// one, taken in [file.RefreshWorkspace].
+func (f *file) releaseWorkspace() {
+	if f.workspace != nil {
+		f.workspace.Release()
+		f.workspace = nil
+	}
 }
 
 // queryIR returns the [queries.IR] for the current file.
@@ -1037,14 +1063,16 @@ func (f *file) resolveASTDefinition(def ast.DeclDef, defName ir.FullName) *symbo
 	if def.Span().Path() == f.file.Path() {
 		return f.referenceableSymbols[defName]
 	}
-	// No workspace, we cannot resolve the AST definition from outside of the file.
-	if f.workspace == nil {
-		return nil
-	}
 	for _, file := range f.workspace.PathToFile() {
 		if file.file.Path() == def.Span().Path() {
 			return file.referenceableSymbols[defName]
 		}
+	}
+	// Fall back to the file manager. Dependency and WKT files have no
+	// workspace, and span paths are absolute local paths, so the lookup by
+	// path is exact.
+	if file := f.lsp.fileManager.Get(FilePathToURI(def.Span().Path())); file != nil {
+		return file.referenceableSymbols[defName]
 	}
 	return nil
 }
@@ -1075,6 +1103,7 @@ func (f *file) SymbolAt(ctx context.Context, cursor protocol.Position) *symbol {
 		symbol = before
 	}
 	if symbol != nil {
+		symbol.resolveDefinition()
 		f.lsp.logger.DebugContext(
 			ctx,
 			"symbol at",
@@ -1155,11 +1184,18 @@ func (f *file) RunChecks(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(f.lsp.connCtx, checkTimeout)
 	f.cancelChecks = cancel
 
+	// Capture values used by the goroutine below. Eviction zeroes *f while
+	// checks run, so the goroutine must re-resolve the file under the lock
+	// before reading f.
+	lsp := f.lsp
+	uri := f.uri
+	uriFilename := f.uri.Filename()
+
 	go func() {
 		var annotations []bufanalysis.FileAnnotation
-		image, diagnostics := buildImage(ctx, path, f.lsp.logger, opener)
+		image, diagnostics := buildImage(ctx, path, lsp.logger, opener)
 		if image != nil {
-			f.lsp.logger.DebugContext(ctx, "checks running lint", slog.String("uri", f.uri.Filename()), slog.String("module", module.OpaqueID()))
+			lsp.logger.DebugContext(ctx, "checks running lint", slog.String("uri", uriFilename), slog.String("module", module.OpaqueID()))
 			if err := checkClient.Lint(
 				ctx,
 				workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
@@ -1170,16 +1206,16 @@ func (f *file) RunChecks(ctx context.Context) {
 				var fileAnnotationSet bufanalysis.FileAnnotationSet
 				if !errors.As(err, &fileAnnotationSet) {
 					if errors.Is(err, context.Canceled) || ctx.Err() != nil {
-						f.lsp.logger.DebugContext(ctx, "checks cancelled", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(err))
+						lsp.logger.DebugContext(ctx, "checks cancelled", slog.String("uri", uriFilename), xslog.ErrorAttr(err))
 					} else if errors.Is(err, context.DeadlineExceeded) {
-						f.lsp.logger.WarnContext(ctx, "checks deadline exceeded", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(err))
+						lsp.logger.WarnContext(ctx, "checks deadline exceeded", slog.String("uri", uriFilename), xslog.ErrorAttr(err))
 					} else {
-						f.lsp.logger.WarnContext(ctx, "checks failed", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(err))
+						lsp.logger.WarnContext(ctx, "checks failed", slog.String("uri", uriFilename), xslog.ErrorAttr(err))
 					}
 					return
 				}
 				if len(fileAnnotationSet.FileAnnotations()) == 0 {
-					f.lsp.logger.DebugContext(ctx, "checks lint passed", slog.String("uri", f.uri.Filename()))
+					lsp.logger.DebugContext(ctx, "checks lint passed", slog.String("uri", uriFilename))
 				} else {
 					annotations = append(annotations, fileAnnotationSet.FileAnnotations()...)
 				}
@@ -1188,17 +1224,21 @@ func (f *file) RunChecks(ctx context.Context) {
 
 		select {
 		case <-ctx.Done():
-			f.lsp.logger.DebugContext(ctx, "checks cancelled", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(ctx.Err()))
+			lsp.logger.DebugContext(ctx, "checks cancelled", slog.String("uri", uriFilename), xslog.ErrorAttr(ctx.Err()))
 			return
 		default:
 		}
 
-		f.lsp.lock.Lock()
-		defer f.lsp.lock.Unlock()
+		lsp.lock.Lock()
+		defer lsp.lock.Unlock()
 
+		if lsp.fileManager.Get(uri) != f {
+			lsp.logger.DebugContext(ctx, "checks: file evicted while checks ran", slog.String("uri", uriFilename))
+			return // The file was evicted, and possibly re-tracked, while checks ran.
+		}
 		select {
 		case <-ctx.Done():
-			f.lsp.logger.DebugContext(ctx, "checks: cancelled after waiting for file lock", slog.String("uri", f.uri.Filename()), xslog.ErrorAttr(ctx.Err()))
+			lsp.logger.DebugContext(ctx, "checks: cancelled after waiting for file lock", slog.String("uri", uriFilename), xslog.ErrorAttr(ctx.Err()))
 			return // Context cancelled whilst waiting to publishing diagnostics.
 		default:
 		}
