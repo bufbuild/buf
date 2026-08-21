@@ -20,18 +20,17 @@ import (
 	"strconv"
 	"strings"
 
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 func newVersion(major int32, minor int32, patch int32, suffix string) *pluginpb.Version {
 	version := &pluginpb.Version{
-		Major: proto.Int32(major),
-		Minor: proto.Int32(minor),
-		Patch: proto.Int32(patch),
+		Major: new(major),
+		Minor: new(minor),
+		Patch: new(patch),
 	}
 	if suffix != "" {
-		version.Suffix = proto.String(suffix)
+		version.Suffix = new(suffix)
 	}
 	return version
 }

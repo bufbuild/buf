@@ -1364,8 +1364,7 @@ func (c *controller) handleFileAnnotationSetRetError(retErrAddr *error) {
 	if *retErrAddr == nil {
 		return
 	}
-	var fileAnnotationSet bufanalysis.FileAnnotationSet
-	if errors.As(*retErrAddr, &fileAnnotationSet) {
+	if fileAnnotationSet, ok := errors.AsType[bufanalysis.FileAnnotationSet](*retErrAddr); ok {
 		writer := c.container.Stderr()
 		if c.fileAnnotationsToStdout {
 			writer = c.container.Stdout()

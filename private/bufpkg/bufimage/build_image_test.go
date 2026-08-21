@@ -406,8 +406,7 @@ func testBuild(t *testing.T, includeSourceInfo bool, dirPath string, parallelism
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)
-	var fileAnnotationSet bufanalysis.FileAnnotationSet
-	if errors.As(err, &fileAnnotationSet) {
+	if fileAnnotationSet, ok := errors.AsType[bufanalysis.FileAnnotationSet](err); ok {
 		return image, fileAnnotationSet.FileAnnotations()
 	}
 	require.NoError(t, err)

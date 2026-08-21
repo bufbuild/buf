@@ -12,7 +12,7 @@ linters:
     # - depguard
     - dogsled
     - errcheck
-    - exhaustruct
+    - exhaustruct_v5
     - forbidigo
     - forcetypeassert
     - gochecknoinits
@@ -111,6 +111,17 @@ linters:
         # code review.
         text: "QF1001"
       - linters:
+          - staticcheck
+        # These tests exercise the deprecated RootURI initialize parameter on purpose, as
+        # clients still send it.
+        path: private/buf/buflsp/.*_test\.go
+        text: "SA1019"
+      - linters:
+          - staticcheck
+        # This test sets the deprecated Weak field precisely to check that it is stripped.
+        path: private/pkg/protoencoding/strip_legacy_options_test.go
+        text: "SA1019"
+      - linters:
           - paralleltest
         # We use chdir in these tests.
         path: cmd/buf/workspace_subdir_test.go
@@ -138,7 +149,7 @@ linters:
         path: cmd/buf/internal/command/generate/generate_test.go
         text: os.Getwd
       - linters:
-          - exhaustruct
+          - exhaustruct_v5
         # We didn't turn on exhaustruct historically, but we really want to make sure it is turned on
         # for this file, as we do conversion between v1beta1 and v1 registry-proto types.
         path-except: private/bufpkg/bufmodule/bufmoduleapi/convert.go
@@ -228,6 +239,11 @@ linters:
         # G115 checks for use of truncating conversions.
         path: private/buf/buflsp/buf_policy_yaml_completion.go
         text: "G115:"
+      - linters:
+          - gosec
+        # G404 checks for weak random number generators. This test only shuffles its inputs.
+        path: private/bufpkg/bufcheck/bufcheckserver/internal/bufcheckserverhandle/tag_ranges_test.go
+        text: "G404:"
       - linters:
           - containedctx
         # Type must implement an interface whose methods do not accept context. But this

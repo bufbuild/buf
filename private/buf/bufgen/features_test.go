@@ -207,8 +207,8 @@ func makeImageNoRequiredFeatures(t *testing.T) bufimage.Image {
 	t.Helper()
 	testFile, err := bufimage.NewImageFile(
 		&descriptorpb.FileDescriptorProto{
-			Name:   proto.String("test.proto"),
-			Syntax: proto.String("proto3"),
+			Name:   new("test.proto"),
+			Syntax: new("proto3"),
 			Dependency: []string{
 				"imported_editions.proto",
 				"imported_proto3_optional.proto",
@@ -260,24 +260,24 @@ func makeImageFileRequiresProto3Optional(t *testing.T, name string, isImport boo
 	t.Helper()
 	imageFile, err := bufimage.NewImageFile(
 		&descriptorpb.FileDescriptorProto{
-			Syntax: proto.String("proto3"),
-			Name:   proto.String(name),
+			Syntax: new("proto3"),
+			Name:   new(name),
 			MessageType: []*descriptorpb.DescriptorProto{
 				{
-					Name: proto.String("Foo"),
+					Name: new("Foo"),
 					Field: []*descriptorpb.FieldDescriptorProto{
 						{
-							Name:           proto.String("bar"),
+							Name:           new("bar"),
 							Label:          descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 							Type:           descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
-							JsonName:       proto.String("bar"),
+							JsonName:       new("bar"),
 							OneofIndex:     proto.Int32(0),
-							Proto3Optional: proto.Bool(true),
+							Proto3Optional: new(true),
 						},
 					},
 					OneofDecl: []*descriptorpb.OneofDescriptorProto{
 						{
-							Name: proto.String("_bar"),
+							Name: new("_bar"),
 						},
 					},
 				},
@@ -299,18 +299,18 @@ func makeImageFileRequiresEditions(t *testing.T, name string, isImport bool) buf
 	t.Helper()
 	imageFile, err := bufimage.NewImageFile(
 		&descriptorpb.FileDescriptorProto{
-			Syntax:  proto.String("editions"),
+			Syntax:  new("editions"),
 			Edition: descriptorpb.Edition_EDITION_2023.Enum(),
-			Name:    proto.String(name),
+			Name:    new(name),
 			MessageType: []*descriptorpb.DescriptorProto{
 				{
-					Name: proto.String("Bar"),
+					Name: new("Bar"),
 					Field: []*descriptorpb.FieldDescriptorProto{
 						{
-							Name:     proto.String("baz"),
+							Name:     new("baz"),
 							Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 							Type:     descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
-							JsonName: proto.String("baz"),
+							JsonName: new("baz"),
 						},
 					},
 				},

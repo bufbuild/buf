@@ -33,8 +33,7 @@ func handlePotentialTooManyFilesError(err error) error {
 }
 
 func isTooManyFilesError(err error) bool {
-	var syscallError *os.SyscallError
-	if errors.As(err, &syscallError) {
+	if syscallError, ok := errors.AsType[*os.SyscallError](err); ok {
 		// This may not actually be correct on other platforms, however the worst case
 		// is that we just don't provide the additional help message.
 		//

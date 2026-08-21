@@ -235,8 +235,7 @@ func CheckDirectoryIsValidGitCheckout(
 		xexec.WithDir(dir),
 		xexec.WithEnv(app.Environ(envContainer)),
 	); err != nil {
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
+		if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
 			if exitErr.ExitCode() == 128 {
 				return fmt.Errorf("dir %s: %w", dir, ErrInvalidGitCheckout)
 			}
@@ -373,8 +372,7 @@ func IsValidRef(
 		xexec.WithDir(dir),
 		xexec.WithEnv(app.Environ(envContainer)),
 	); err != nil {
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
+		if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
 			if exitErr.ExitCode() == 128 {
 				return fmt.Errorf("could not find ref %s in %s: %w", ref, dir, ErrInvalidRef)
 			}

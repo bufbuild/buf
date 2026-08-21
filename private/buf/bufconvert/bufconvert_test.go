@@ -152,48 +152,48 @@ func doFindMessageInFile(t *testing.T, name protoreflect.FullName, file *descrip
 func getTestFile(pkg string) *descriptorpb.FileDescriptorProto {
 	var protoPkg *string
 	if pkg != "" {
-		protoPkg = proto.String(pkg)
+		protoPkg = new(pkg)
 	}
 	return &descriptorpb.FileDescriptorProto{
-		Name:    proto.String("test.proto"),
+		Name:    new("test.proto"),
 		Package: protoPkg,
 		MessageType: []*descriptorpb.DescriptorProto{
 			{
-				Name: proto.String("Foo"),
+				Name: new("Foo"),
 				NestedType: []*descriptorpb.DescriptorProto{
 					{
-						Name: proto.String("Frob"),
+						Name: new("Frob"),
 					},
 					{
-						Name: proto.String("Nitz"),
+						Name: new("Nitz"),
 					},
 				},
 			},
 			{
-				Name: proto.String("Bar"),
+				Name: new("Bar"),
 				NestedType: []*descriptorpb.DescriptorProto{
 					{
-						Name: proto.String("Fizz"),
+						Name: new("Fizz"),
 					},
 					{
-						Name: proto.String("Buzz"),
+						Name: new("Buzz"),
 					},
 				},
 			},
 			{
-				Name: proto.String("Baz"),
+				Name: new("Baz"),
 				NestedType: []*descriptorpb.DescriptorProto{
 					{
-						Name: proto.String("Abc"),
+						Name: new("Abc"),
 						NestedType: []*descriptorpb.DescriptorProto{
 							{
-								Name: proto.String("Xyz"),
+								Name: new("Xyz"),
 								NestedType: []*descriptorpb.DescriptorProto{
 									{
-										Name: proto.String("Deeper"),
+										Name: new("Deeper"),
 										NestedType: []*descriptorpb.DescriptorProto{
 											{
-												Name: proto.String("AndDeeper"),
+												Name: new("AndDeeper"),
 											},
 										},
 									},
@@ -209,91 +209,91 @@ func getTestFile(pkg string) *descriptorpb.FileDescriptorProto {
 
 func getTestFileWithMessageSets() *descriptorpb.FileDescriptorProto {
 	return &descriptorpb.FileDescriptorProto{
-		Name:    proto.String("test.proto"),
-		Package: proto.String("foo.bar"),
+		Name:    new("test.proto"),
+		Package: new("foo.bar"),
 		MessageType: []*descriptorpb.DescriptorProto{
 			{
-				Name: proto.String("Baz"),
+				Name: new("Baz"),
 				ExtensionRange: []*descriptorpb.DescriptorProto_ExtensionRange{
 					{Start: proto.Int32(100), End: proto.Int32(99999)},
 				},
 				Field: []*descriptorpb.FieldDescriptorProto{
 					{
-						Name:   proto.String("name"),
+						Name:   new("name"),
 						Number: proto.Int32(1),
 						Label:  descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 						Type:   descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
 					},
 					{
-						Name:     proto.String("fizz"),
+						Name:     new("fizz"),
 						Number:   proto.Int32(2),
 						Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 						Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
-						TypeName: proto.String(".foo.bar.Fizz"),
+						TypeName: new(".foo.bar.Fizz"),
 					},
 					{
-						Name:     proto.String("buzz"),
+						Name:     new("buzz"),
 						Number:   proto.Int32(3),
 						Label:    descriptorpb.FieldDescriptorProto_LABEL_REPEATED.Enum(),
 						Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
-						TypeName: proto.String(".foo.bar.Buzz"),
+						TypeName: new(".foo.bar.Buzz"),
 					},
 				},
 			},
 			{
-				Name:    proto.String("Fizz"),
-				Options: &descriptorpb.MessageOptions{Deprecated: proto.Bool(true)},
+				Name:    new("Fizz"),
+				Options: &descriptorpb.MessageOptions{Deprecated: new(true)},
 			},
 			{
-				Name: proto.String("Buzz"),
+				Name: new("Buzz"),
 			},
 			{
-				Name:    proto.String("MessageSetBaz"),
-				Options: &descriptorpb.MessageOptions{MessageSetWireFormat: proto.Bool(true)},
+				Name:    new("MessageSetBaz"),
+				Options: &descriptorpb.MessageOptions{MessageSetWireFormat: new(true)},
 				ExtensionRange: []*descriptorpb.DescriptorProto_ExtensionRange{
 					{Start: proto.Int32(1), End: proto.Int32(9999999)},
 				},
 			},
 			{
-				Name: proto.String("ContainsMessageSetBaz"),
+				Name: new("ContainsMessageSetBaz"),
 				Field: []*descriptorpb.FieldDescriptorProto{
 					{
-						Name:     proto.String("baz"),
+						Name:     new("baz"),
 						Number:   proto.Int32(1),
 						Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 						Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
-						TypeName: proto.String(".foo.bar.MessageSetBaz"),
+						TypeName: new(".foo.bar.MessageSetBaz"),
 					},
 				},
 			},
 			{
-				Name: proto.String("IndirectContainsMessageSetBaz"),
+				Name: new("IndirectContainsMessageSetBaz"),
 				Field: []*descriptorpb.FieldDescriptorProto{
 					{
-						Name:     proto.String("bazes"),
+						Name:     new("bazes"),
 						Number:   proto.Int32(1),
 						Label:    descriptorpb.FieldDescriptorProto_LABEL_REPEATED.Enum(),
 						Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
-						TypeName: proto.String(".foo.bar.IndirectContainsMessageSetBaz.BazesEntry"),
+						TypeName: new(".foo.bar.IndirectContainsMessageSetBaz.BazesEntry"),
 					},
 				},
 				NestedType: []*descriptorpb.DescriptorProto{
 					{
-						Name:    proto.String("BazesEntry"),
-						Options: &descriptorpb.MessageOptions{MapEntry: proto.Bool(true)},
+						Name:    new("BazesEntry"),
+						Options: &descriptorpb.MessageOptions{MapEntry: new(true)},
 						Field: []*descriptorpb.FieldDescriptorProto{
 							{
-								Name:   proto.String("key"),
+								Name:   new("key"),
 								Number: proto.Int32(1),
 								Label:  descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 								Type:   descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
 							},
 							{
-								Name:     proto.String("value"),
+								Name:     new("value"),
 								Number:   proto.Int32(2),
 								Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 								Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
-								TypeName: proto.String(".foo.bar.ContainsMessageSetBaz"),
+								TypeName: new(".foo.bar.ContainsMessageSetBaz"),
 							},
 						},
 					},
@@ -302,10 +302,10 @@ func getTestFileWithMessageSets() *descriptorpb.FileDescriptorProto {
 		},
 		EnumType: []*descriptorpb.EnumDescriptorProto{
 			{
-				Name: proto.String("Enum"),
+				Name: new("Enum"),
 				Value: []*descriptorpb.EnumValueDescriptorProto{
 					{
-						Name:   proto.String("ZERO"),
+						Name:   new("ZERO"),
 						Number: proto.Int32(0),
 					},
 				},
@@ -313,43 +313,43 @@ func getTestFileWithMessageSets() *descriptorpb.FileDescriptorProto {
 		},
 		Extension: []*descriptorpb.FieldDescriptorProto{
 			{
-				Extendee: proto.String(".foo.bar.Baz"),
-				Name:     proto.String("str"),
+				Extendee: new(".foo.bar.Baz"),
+				Name:     new("str"),
 				Number:   proto.Int32(10101),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
 			},
 			{
-				Extendee: proto.String(".foo.bar.Baz"),
-				Name:     proto.String("baz"),
+				Extendee: new(".foo.bar.Baz"),
+				Name:     new("baz"),
 				Number:   proto.Int32(10102),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
-				TypeName: proto.String(".foo.bar.Baz"),
+				TypeName: new(".foo.bar.Baz"),
 			},
 			{
-				Extendee: proto.String(".foo.bar.Baz"),
-				Name:     proto.String("message_set_baz"),
+				Extendee: new(".foo.bar.Baz"),
+				Name:     new("message_set_baz"),
 				Number:   proto.Int32(10103),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
-				TypeName: proto.String(".foo.bar.MessageSetBaz"),
+				TypeName: new(".foo.bar.MessageSetBaz"),
 			},
 			{
-				Extendee: proto.String(".foo.bar.Baz"),
-				Name:     proto.String("contains_message_set_baz"),
+				Extendee: new(".foo.bar.Baz"),
+				Name:     new("contains_message_set_baz"),
 				Number:   proto.Int32(10104),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
-				TypeName: proto.String(".foo.bar.ContainsMessageSetBaz"),
+				TypeName: new(".foo.bar.ContainsMessageSetBaz"),
 			},
 			{
-				Extendee: proto.String(".foo.bar.Baz"),
-				Name:     proto.String("indirect_contains_message_set_baz"),
+				Extendee: new(".foo.bar.Baz"),
+				Name:     new("indirect_contains_message_set_baz"),
 				Number:   proto.Int32(10105),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
-				TypeName: proto.String(".foo.bar.IndirectContainsMessageSetBaz"),
+				TypeName: new(".foo.bar.IndirectContainsMessageSetBaz"),
 			},
 		},
 	}

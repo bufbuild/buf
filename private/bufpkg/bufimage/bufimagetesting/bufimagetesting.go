@@ -24,7 +24,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
 )
 
 // NewImageFile returns a new ImageFile for testing.
@@ -64,11 +63,11 @@ func NewProtoImageFile(
 	importPaths ...string,
 ) *imagev1.ImageFile {
 	return imagev1.ImageFile_builder{
-		Name:       proto.String(path),
+		Name:       new(path),
 		Dependency: importPaths,
 		BufExtension: imagev1.ImageFileExtension_builder{
-			IsImport:            proto.Bool(false),
-			IsSyntaxUnspecified: proto.Bool(false),
+			IsImport:            new(false),
+			IsSyntaxUnspecified: new(false),
 		}.Build(),
 	}.Build()
 }
@@ -82,11 +81,11 @@ func NewProtoImageFileIsImport(
 	importPaths ...string,
 ) *imagev1.ImageFile {
 	return imagev1.ImageFile_builder{
-		Name:       proto.String(path),
+		Name:       new(path),
 		Dependency: importPaths,
 		BufExtension: imagev1.ImageFileExtension_builder{
-			IsImport:            proto.Bool(true),
-			IsSyntaxUnspecified: proto.Bool(false),
+			IsImport:            new(true),
+			IsSyntaxUnspecified: new(false),
 		}.Build(),
 	}.Build()
 }

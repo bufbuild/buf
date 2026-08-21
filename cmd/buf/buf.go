@@ -582,8 +582,7 @@ func wrapError(err error) error {
 		)
 	}
 
-	var importNotExistError *bufmodule.ImportNotExistError
-	if errors.As(err, &importNotExistError) {
+	if importNotExistError, ok := errors.AsType[*bufmodule.ImportNotExistError](err); ok {
 		// There must be a better place to do this, perhaps in the Controller, but this works for now.
 		err = app.WrapError(bufctl.ExitCodeFileAnnotation, importNotExistError)
 	}
