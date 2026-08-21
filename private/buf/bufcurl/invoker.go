@@ -151,8 +151,7 @@ func (inv *invoker) handleClientStream(ctx context.Context, dataSource string, d
 	maps.Copy(stream.RequestHeader(), headers)
 	defer func() {
 		if retErr != nil {
-			var connErr *connect.Error
-			if errors.As(retErr, &connErr) {
+			if connErr, ok := errors.AsType[*connect.Error](retErr); ok {
 				retErr = inv.handleErrorResponse(connErr)
 			}
 		}
@@ -191,8 +190,7 @@ func (inv *invoker) handleServerStream(ctx context.Context, dataSource string, d
 	maps.Copy(req.Header(), headers)
 	defer func() {
 		if retErr != nil {
-			var connErr *connect.Error
-			if errors.As(retErr, &connErr) {
+			if connErr, ok := errors.AsType[*connect.Error](retErr); ok {
 				retErr = inv.handleErrorResponse(connErr)
 			}
 		}
@@ -214,8 +212,7 @@ func (inv *invoker) handleBidiStream(ctx context.Context, dataSource string, dat
 
 	defer func() {
 		if retErr != nil {
-			var connErr *connect.Error
-			if errors.As(retErr, &connErr) {
+			if connErr, ok := errors.AsType[*connect.Error](retErr); ok {
 				retErr = inv.handleErrorResponse(connErr)
 			}
 		}
@@ -258,8 +255,7 @@ func isCancelled(err error) bool {
 	if errors.Is(err, context.Canceled) {
 		return true
 	}
-	var connErr *connect.Error
-	if errors.As(err, &connErr) {
+	if connErr, ok := errors.AsType[*connect.Error](err); ok {
 		return connErr.Code() == connect.CodeCanceled
 	}
 	return false

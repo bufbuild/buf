@@ -702,13 +702,13 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 	strategy := generatePluginConfig.strategy
 	switch {
 	case strategy != nil && *strategy == GenerateStrategyDirectory:
-		externalPluginConfigV2.Strategy = toPointer("directory")
+		externalPluginConfigV2.Strategy = new("directory")
 	case strategy != nil && *strategy == GenerateStrategyAll:
-		externalPluginConfigV2.Strategy = toPointer("all")
+		externalPluginConfigV2.Strategy = new("all")
 	}
 	switch generatePluginConfig.Type() {
 	case GeneratePluginConfigTypeRemote:
-		externalPluginConfigV2.Remote = toPointer(generatePluginConfig.Name())
+		externalPluginConfigV2.Remote = new(generatePluginConfig.Name())
 		if revision := generatePluginConfig.Revision(); revision != 0 {
 			externalPluginConfigV2.Revision = &revision
 		}
@@ -721,7 +721,7 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 			externalPluginConfigV2.Local = path
 		}
 	case GeneratePluginConfigTypeProtocBuiltin:
-		externalPluginConfigV2.ProtocBuiltin = toPointer(generatePluginConfig.Name())
+		externalPluginConfigV2.ProtocBuiltin = new(generatePluginConfig.Name())
 		if protocPath := generatePluginConfig.ProtocPath(); len(protocPath) > 0 {
 			if len(protocPath) == 1 {
 				externalPluginConfigV2.ProtocPath = protocPath[0]
@@ -739,7 +739,7 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 		}
 		// If not, check if it is a protoc plugin.
 		if _, isProtocBuiltin := ProtocProxyPluginNames[generatePluginConfig.Name()]; isProtocBuiltin {
-			externalPluginConfigV2.ProtocBuiltin = toPointer(generatePluginConfig.Name())
+			externalPluginConfigV2.ProtocBuiltin = new(generatePluginConfig.Name())
 			break
 		}
 		// Otherwise, assume this is a binary.
@@ -772,8 +772,4 @@ func parseRemoteHostName(fullName string) (string, error) {
 		return reference.Remote(), nil
 	}
 	return "", err
-}
-
-func toPointer[T any](value T) *T {
-	return &value
 }

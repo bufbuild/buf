@@ -873,8 +873,7 @@ func fsRootAndFSRelPathForPath(path string) (string, string, error) {
 //
 // This is going to take away other intermediate errors unfortunately.
 func attemptToFixOSRootBucketPathErrors(fsRoot string, err error) error {
-	var pathError *fs.PathError
-	if errors.As(err, &pathError) {
+	if pathError, ok := errors.AsType[*fs.PathError](err); ok {
 		pwd, err := osext.Getwd()
 		if err != nil {
 			return err

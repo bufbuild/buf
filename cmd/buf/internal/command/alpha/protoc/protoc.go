@@ -129,8 +129,7 @@ func run(
 		buildOptions...,
 	)
 	if err != nil {
-		var fileAnnotationSet bufanalysis.FileAnnotationSet
-		if errors.As(err, &fileAnnotationSet) {
+		if fileAnnotationSet, ok := errors.AsType[bufanalysis.FileAnnotationSet](err); ok {
 			if err := bufanalysis.PrintFileAnnotationSet(
 				container.Stderr(),
 				fileAnnotationSet,

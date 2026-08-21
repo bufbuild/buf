@@ -19,7 +19,6 @@ import (
 
 	"buf.build/go/standard/xslices"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -52,7 +51,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 						out:                      "java/out",
 						// one string because it's one string in the config
 						opts:     []string{"a=b,c"},
-						strategy: toPointer(GenerateStrategyAll),
+						strategy: new(GenerateStrategyAll),
 					},
 				},
 			},
@@ -78,7 +77,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 						name:                     "java",
 						out:                      "java/out",
 						opts:                     []string{"a"},
-						strategy:                 toPointer(GenerateStrategyAll),
+						strategy:                 new(GenerateStrategyAll),
 					},
 				},
 			},
@@ -106,7 +105,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 						out:                      "go/out",
 						path:                     []string{"go", "run", "goplugin"},
 						opts:                     []string{"a=b", "c"},
-						strategy:                 toPointer(GenerateStrategyDirectory),
+						strategy:                 new(GenerateStrategyDirectory),
 					},
 				},
 			},
@@ -134,7 +133,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 						out:                      "go/out",
 						path:                     []string{"go", "run", "goplugin"},
 						opts:                     []string{"a=b", "c"},
-						strategy:                 toPointer(GenerateStrategyDirectory),
+						strategy:                 new(GenerateStrategyDirectory),
 					},
 				},
 			},
@@ -324,9 +323,9 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				},
 				Managed: externalGenerateManagedConfigV1{
 					Enabled:             true,
-					CcEnableArenas:      proto.Bool(true),
-					JavaMultipleFiles:   proto.Bool(true),
-					JavaStringCheckUtf8: proto.Bool(true),
+					CcEnableArenas:      new(true),
+					JavaMultipleFiles:   new(true),
+					JavaStringCheckUtf8: new(true),
 					JavaPackagePrefix: externalJavaPackagePrefixConfigV1{
 						Default: "foo",
 						Except:  []string{"buf.build/acme/foo", "buf.build/acme/bar"},

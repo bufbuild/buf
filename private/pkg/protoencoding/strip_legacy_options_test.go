@@ -87,15 +87,15 @@ func TestStripLegacyOptions(t *testing.T) {
 
 func getFileWithNoLegacyOptions() *descriptorpb.FileDescriptorProto {
 	return &descriptorpb.FileDescriptorProto{
-		Name:    proto.String("no_legacy.proto"),
-		Package: proto.String("foo.bar"),
-		Syntax:  proto.String("proto2"),
+		Name:    new("no_legacy.proto"),
+		Package: new("foo.bar"),
+		Syntax:  new("proto2"),
 		MessageType: []*descriptorpb.DescriptorProto{
 			{
-				Name: proto.String("Foo"),
+				Name: new("Foo"),
 				Options: &descriptorpb.MessageOptions{
-					NoStandardDescriptorAccessor: proto.Bool(true),
-					Deprecated:                   proto.Bool(true),
+					NoStandardDescriptorAccessor: new(true),
+					Deprecated:                   new(true),
 				},
 				ExtensionRange: []*descriptorpb.DescriptorProto_ExtensionRange{
 					{
@@ -105,15 +105,15 @@ func getFileWithNoLegacyOptions() *descriptorpb.FileDescriptorProto {
 				},
 			},
 			{
-				Name: proto.String("Bar"),
+				Name: new("Bar"),
 				Field: []*descriptorpb.FieldDescriptorProto{
 					{
-						Name:   proto.String("name"),
+						Name:   new("name"),
 						Number: proto.Int32(1),
 						Label:  descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 						Type:   descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
 						Options: &descriptorpb.FieldOptions{
-							DebugRedact: proto.Bool(true),
+							DebugRedact: new(true),
 						},
 					},
 				},
@@ -121,8 +121,8 @@ func getFileWithNoLegacyOptions() *descriptorpb.FileDescriptorProto {
 		},
 		Extension: []*descriptorpb.FieldDescriptorProto{
 			{
-				Extendee: proto.String(".foo.bar.Foo"),
-				Name:     proto.String("a"),
+				Extendee: new(".foo.bar.Foo"),
+				Name:     new("a"),
 				Number:   proto.Int32(maxTagNumber),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_INT64.Enum(),
@@ -136,16 +136,16 @@ func getFileWithNoLegacyOptions() *descriptorpb.FileDescriptorProto {
 
 func getFileWithLegacyOptions() *descriptorpb.FileDescriptorProto {
 	return &descriptorpb.FileDescriptorProto{
-		Name:       proto.String("legacy.proto"),
-		Package:    proto.String("foo.bar"),
-		Syntax:     proto.String("proto2"),
+		Name:       new("legacy.proto"),
+		Package:    new("foo.bar"),
+		Syntax:     new("proto2"),
 		Dependency: []string{"no_legacy.proto"},
 		MessageType: []*descriptorpb.DescriptorProto{
 			{
-				Name: proto.String("Baz"),
+				Name: new("Baz"),
 				Options: &descriptorpb.MessageOptions{
-					NoStandardDescriptorAccessor: proto.Bool(true),
-					Deprecated:                   proto.Bool(true),
+					NoStandardDescriptorAccessor: new(true),
+					Deprecated:                   new(true),
 				},
 				ExtensionRange: []*descriptorpb.DescriptorProto_ExtensionRange{
 					{
@@ -155,32 +155,32 @@ func getFileWithLegacyOptions() *descriptorpb.FileDescriptorProto {
 				},
 			},
 			{
-				Name: proto.String("Frob"),
+				Name: new("Frob"),
 				Field: []*descriptorpb.FieldDescriptorProto{
 					{
-						Name:   proto.String("name"),
+						Name:   new("name"),
 						Number: proto.Int32(1),
 						Label:  descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 						Type:   descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
 						Options: &descriptorpb.FieldOptions{
-							DebugRedact: proto.Bool(true),
+							DebugRedact: new(true),
 							// TO BE REMOVED
-							Weak: proto.Bool(true),
+							Weak: new(true),
 						},
 					},
 				},
 				NestedType: []*descriptorpb.DescriptorProto{
 					{
-						Name: proto.String("Nitz"),
+						Name: new("Nitz"),
 						Field: []*descriptorpb.FieldDescriptorProto{
 							{
-								Name:   proto.String("name"),
+								Name:   new("name"),
 								Number: proto.Int32(1),
 								Label:  descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 								Type:   descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
 								Options: &descriptorpb.FieldOptions{
 									// TO BE REMOVED
-									Weak: proto.Bool(true),
+									Weak: new(true),
 								},
 							},
 						},
@@ -188,24 +188,24 @@ func getFileWithLegacyOptions() *descriptorpb.FileDescriptorProto {
 				},
 				Extension: []*descriptorpb.FieldDescriptorProto{
 					{
-						Extendee: proto.String(".foo.bar.Baz"),
-						Name:     proto.String("a"),
+						Extendee: new(".foo.bar.Baz"),
+						Name:     new("a"),
 						Number:   proto.Int32(1000),
 						Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 						Type:     descriptorpb.FieldDescriptorProto_TYPE_UINT64.Enum(),
 						Options: &descriptorpb.FieldOptions{
 							Jstype: descriptorpb.FieldOptions_JS_STRING.Enum(),
 							// TO BE REMOVED
-							Weak: proto.Bool(true),
+							Weak: new(true),
 						},
 					},
 				},
 			},
 			{
-				Name: proto.String("Fizz"),
+				Name: new("Fizz"),
 				Options: &descriptorpb.MessageOptions{
 					// TO BE REMOVED
-					MessageSetWireFormat: proto.Bool(true),
+					MessageSetWireFormat: new(true),
 				},
 				ExtensionRange: []*descriptorpb.DescriptorProto_ExtensionRange{
 					{
@@ -231,62 +231,62 @@ func getFileWithLegacyOptions() *descriptorpb.FileDescriptorProto {
 			}},
 		Extension: []*descriptorpb.FieldDescriptorProto{
 			{
-				Extendee: proto.String(".foo.bar.Foo"),
-				Name:     proto.String("b"),
+				Extendee: new(".foo.bar.Foo"),
+				Name:     new("b"),
 				Number:   proto.Int32(100),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_INT64.Enum(),
 				Options: &descriptorpb.FieldOptions{
 					Jstype: descriptorpb.FieldOptions_JS_STRING.Enum(),
 					// TO BE REMOVED
-					Weak: proto.Bool(true),
+					Weak: new(true),
 				},
 			},
 			{
-				Extendee: proto.String(".foo.bar.Baz"),
-				Name:     proto.String("c"),
+				Extendee: new(".foo.bar.Baz"),
+				Name:     new("c"),
 				Number:   proto.Int32(100),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_INT64.Enum(),
 				Options: &descriptorpb.FieldOptions{
 					Jstype: descriptorpb.FieldOptions_JS_STRING.Enum(),
 					// TO BE REMOVED
-					Weak: proto.Bool(true),
+					Weak: new(true),
 				},
 			},
 			{
-				Extendee: proto.String(".foo.bar.Fizz"),
-				Name:     proto.String("d"),
+				Extendee: new(".foo.bar.Fizz"),
+				Name:     new("d"),
 				Number:   proto.Int32(100),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
-				TypeName: proto.String(".foo.bar.Foo"),
+				TypeName: new(".foo.bar.Foo"),
 			},
 			{
-				Extendee: proto.String(".foo.bar.Fizz"),
-				Name:     proto.String("e"),
+				Extendee: new(".foo.bar.Fizz"),
+				Name:     new("e"),
 				Number:   proto.Int32(maxTagNumber),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
-				TypeName: proto.String(".foo.bar.Bar"),
+				TypeName: new(".foo.bar.Bar"),
 			},
 			{
 				// TO BE REMOVED
-				Extendee: proto.String(".foo.bar.Fizz"),
-				Name:     proto.String("f"),
+				Extendee: new(".foo.bar.Fizz"),
+				Name:     new("f"),
 				Number:   proto.Int32(maxTagNumber * 2),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
-				TypeName: proto.String(".foo.bar.Baz"),
+				TypeName: new(".foo.bar.Baz"),
 			},
 			{
 				// TO BE REMOVED
-				Extendee: proto.String(".foo.bar.Fizz"),
-				Name:     proto.String("g"),
+				Extendee: new(".foo.bar.Fizz"),
+				Name:     new("g"),
 				Number:   proto.Int32(maxTagNumber * 4),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
-				TypeName: proto.String(".foo.bar.Frob"),
+				TypeName: new(".foo.bar.Frob"),
 			},
 		},
 	}
@@ -296,16 +296,16 @@ func getFileWithLegacyOptionsRemoved() *descriptorpb.FileDescriptorProto {
 	// Returns the same thing as getFileWithLegacyOptions, but without
 	// legacy options/values in it.
 	return &descriptorpb.FileDescriptorProto{
-		Name:       proto.String("legacy.proto"),
-		Package:    proto.String("foo.bar"),
-		Syntax:     proto.String("proto2"),
+		Name:       new("legacy.proto"),
+		Package:    new("foo.bar"),
+		Syntax:     new("proto2"),
 		Dependency: []string{"no_legacy.proto"},
 		MessageType: []*descriptorpb.DescriptorProto{
 			{
-				Name: proto.String("Baz"),
+				Name: new("Baz"),
 				Options: &descriptorpb.MessageOptions{
-					NoStandardDescriptorAccessor: proto.Bool(true),
-					Deprecated:                   proto.Bool(true),
+					NoStandardDescriptorAccessor: new(true),
+					Deprecated:                   new(true),
 				},
 				ExtensionRange: []*descriptorpb.DescriptorProto_ExtensionRange{
 					{
@@ -315,24 +315,24 @@ func getFileWithLegacyOptionsRemoved() *descriptorpb.FileDescriptorProto {
 				},
 			},
 			{
-				Name: proto.String("Frob"),
+				Name: new("Frob"),
 				Field: []*descriptorpb.FieldDescriptorProto{
 					{
-						Name:   proto.String("name"),
+						Name:   new("name"),
 						Number: proto.Int32(1),
 						Label:  descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 						Type:   descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
 						Options: &descriptorpb.FieldOptions{
-							DebugRedact: proto.Bool(true),
+							DebugRedact: new(true),
 						},
 					},
 				},
 				NestedType: []*descriptorpb.DescriptorProto{
 					{
-						Name: proto.String("Nitz"),
+						Name: new("Nitz"),
 						Field: []*descriptorpb.FieldDescriptorProto{
 							{
-								Name:    proto.String("name"),
+								Name:    new("name"),
 								Number:  proto.Int32(1),
 								Label:   descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 								Type:    descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
@@ -343,8 +343,8 @@ func getFileWithLegacyOptionsRemoved() *descriptorpb.FileDescriptorProto {
 				},
 				Extension: []*descriptorpb.FieldDescriptorProto{
 					{
-						Extendee: proto.String(".foo.bar.Baz"),
-						Name:     proto.String("a"),
+						Extendee: new(".foo.bar.Baz"),
+						Name:     new("a"),
 						Number:   proto.Int32(1000),
 						Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 						Type:     descriptorpb.FieldDescriptorProto_TYPE_UINT64.Enum(),
@@ -355,7 +355,7 @@ func getFileWithLegacyOptionsRemoved() *descriptorpb.FileDescriptorProto {
 				},
 			},
 			{
-				Name:    proto.String("Fizz"),
+				Name:    new("Fizz"),
 				Options: &descriptorpb.MessageOptions{},
 				ExtensionRange: []*descriptorpb.DescriptorProto_ExtensionRange{
 					{
@@ -370,8 +370,8 @@ func getFileWithLegacyOptionsRemoved() *descriptorpb.FileDescriptorProto {
 			}},
 		Extension: []*descriptorpb.FieldDescriptorProto{
 			{
-				Extendee: proto.String(".foo.bar.Foo"),
-				Name:     proto.String("b"),
+				Extendee: new(".foo.bar.Foo"),
+				Name:     new("b"),
 				Number:   proto.Int32(100),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_INT64.Enum(),
@@ -380,8 +380,8 @@ func getFileWithLegacyOptionsRemoved() *descriptorpb.FileDescriptorProto {
 				},
 			},
 			{
-				Extendee: proto.String(".foo.bar.Baz"),
-				Name:     proto.String("c"),
+				Extendee: new(".foo.bar.Baz"),
+				Name:     new("c"),
 				Number:   proto.Int32(100),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_INT64.Enum(),
@@ -390,20 +390,20 @@ func getFileWithLegacyOptionsRemoved() *descriptorpb.FileDescriptorProto {
 				},
 			},
 			{
-				Extendee: proto.String(".foo.bar.Fizz"),
-				Name:     proto.String("d"),
+				Extendee: new(".foo.bar.Fizz"),
+				Name:     new("d"),
 				Number:   proto.Int32(100),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
-				TypeName: proto.String(".foo.bar.Foo"),
+				TypeName: new(".foo.bar.Foo"),
 			},
 			{
-				Extendee: proto.String(".foo.bar.Fizz"),
-				Name:     proto.String("e"),
+				Extendee: new(".foo.bar.Fizz"),
+				Name:     new("e"),
 				Number:   proto.Int32(maxTagNumber),
 				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 				Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
-				TypeName: proto.String(".foo.bar.Bar"),
+				TypeName: new(".foo.bar.Bar"),
 			},
 		},
 	}

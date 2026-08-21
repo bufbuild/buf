@@ -169,8 +169,7 @@ func validateRemoteExists(
 		xexec.WithDir(dir),
 		xexec.WithEnv(app.Environ(envContainer)),
 	); err != nil {
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
+		if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
 			if exitErr.ProcessState.ExitCode() == 128 {
 				return fmt.Errorf("remote %s: %w", name, ErrRemoteNotFound)
 			}

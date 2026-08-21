@@ -16,6 +16,7 @@ package buflsp
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"go.lsp.dev/protocol"
@@ -253,7 +254,7 @@ func searchMappingForHover(node *yaml.Node, pos protocol.Position, parentPath []
 
 		// Build the path for this key, ensuring a new backing array each iteration
 		// to avoid mutating parentPath across loop iterations.
-		currentPath := append(parentPath[:len(parentPath):len(parentPath)], keyNode.Value)
+		currentPath := append(slices.Clip(parentPath), keyNode.Value)
 
 		if yamlNodeContainsPosition(keyNode, pos) {
 			return hoverForKeyPath(currentPath, yamlNodeRange(keyNode))

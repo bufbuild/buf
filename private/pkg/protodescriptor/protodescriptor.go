@@ -78,13 +78,13 @@ func FileDescriptorProtoForFileDescriptor(fileDescriptor FileDescriptor) *descri
 	// Note that if a *descriptorpb.FileDescriptorProto has a set but empty name, package,
 	// or syntax, this won't be an exact round trip. But for our use, we say this is fine.
 	if name := fileDescriptor.GetName(); name != "" {
-		fileDescriptorProto.Name = proto.String(name)
+		fileDescriptorProto.Name = new(name)
 	}
 	if pkg := fileDescriptor.GetPackage(); pkg != "" {
-		fileDescriptorProto.Package = proto.String(pkg)
+		fileDescriptorProto.Package = new(pkg)
 	}
 	if syntax := fileDescriptor.GetSyntax(); syntax != "" {
-		fileDescriptorProto.Syntax = proto.String(syntax)
+		fileDescriptorProto.Syntax = new(syntax)
 	}
 	if edition := fileDescriptor.GetEdition(); edition != descriptorpb.Edition_EDITION_UNKNOWN {
 		fileDescriptorProto.Edition = &edition
