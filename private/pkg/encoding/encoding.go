@@ -195,8 +195,7 @@ func updateYAMLTypeError(err error) error {
 	if err == nil {
 		return nil
 	}
-	var yamlTypeError *yaml.TypeError
-	if errors.As(err, &yamlTypeError) {
+	if yamlTypeError, ok := errors.AsType[*yaml.TypeError](err); ok {
 		for i, errString := range yamlTypeError.Errors {
 			yamlTypeError.Errors[i] = replaceAfter(
 				replaceAfter(

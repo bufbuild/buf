@@ -969,8 +969,7 @@ func checkExampleValues(
 		if err == nil {
 			continue
 		}
-		var compilationErr *protovalidate.CompilationError
-		if errors.As(err, &compilationErr) {
+		if _, ok := errors.AsType[*protovalidate.CompilationError](err); ok {
 			// Expression failing to compile meaning some CEL expressions are invalid,
 			// which is checked in this rule (PROTOVALIDATE), but not by this function.
 			break

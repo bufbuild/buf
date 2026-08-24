@@ -34,15 +34,15 @@ func TestStripBufExtensionField(t *testing.T) {
 	t.Parallel()
 	file := imagev1.ImageFile_builder{
 		BufExtension: imagev1.ImageFileExtension_builder{
-			IsImport:         proto.Bool(true),
+			IsImport:         new(true),
 			UnusedDependency: []int32{1, 3, 5},
 			ModuleInfo: imagev1.ModuleInfo_builder{
 				Name: imagev1.ModuleName_builder{
-					Remote:     proto.String("buf.build"),
-					Owner:      proto.String("foo"),
-					Repository: proto.String("bar"),
+					Remote:     new("buf.build"),
+					Owner:      new("foo"),
+					Repository: new("bar"),
 				}.Build(),
-				Commit: proto.String("1234981234123412341234"),
+				Commit: new("1234981234123412341234"),
 			}.Build(),
 		}.Build(),
 	}.Build()
@@ -110,26 +110,26 @@ func TestStripBufExtensionField(t *testing.T) {
 func TestImageToProtoPreservesUnrecognizedFields(t *testing.T) {
 	t.Parallel()
 	fileDescriptor := &descriptorpb.FileDescriptorProto{
-		Name:    proto.String("foo/bar/baz.proto"),
-		Package: proto.String("foo.bar.baz"),
-		Syntax:  proto.String("proto3"),
+		Name:    new("foo/bar/baz.proto"),
+		Package: new("foo.bar.baz"),
+		Syntax:  new("proto3"),
 		MessageType: []*descriptorpb.DescriptorProto{
 			{
-				Name: proto.String("Foo"),
+				Name: new("Foo"),
 				Field: []*descriptorpb.FieldDescriptorProto{
 					{
-						Name:     proto.String("id"),
+						Name:     new("id"),
 						Number:   proto.Int32(1),
 						Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 						Type:     descriptorpb.FieldDescriptorProto_TYPE_INT64.Enum(),
-						JsonName: proto.String("id"),
+						JsonName: new("id"),
 					},
 					{
-						Name:     proto.String("name"),
+						Name:     new("name"),
 						Number:   proto.Int32(2),
 						Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
 						Type:     descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum(),
-						JsonName: proto.String("name"),
+						JsonName: new("name"),
 					},
 				},
 			},

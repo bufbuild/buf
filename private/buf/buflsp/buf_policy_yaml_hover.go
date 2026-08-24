@@ -15,6 +15,8 @@
 package buflsp
 
 import (
+	"slices"
+
 	"go.lsp.dev/protocol"
 	"gopkg.in/yaml.v3"
 )
@@ -40,7 +42,7 @@ var bufPolicyYAMLLintDocs = map[string]bufYAMLDoc{
 	"rpc_allow_same_request_response": {summary: "When `true`, permits using the same message type for both the request and response of an RPC. Defaults to `false`.", valueType: "bool", url: bufPolicyYAMLDocsURL + "#lint"},
 	"rpc_allow_google_protobuf_empty_requests":  {summary: "When `true`, allows RPC methods to use `google.protobuf.Empty` as the request type. Defaults to `false`.", valueType: "bool", url: bufPolicyYAMLDocsURL + "#lint"},
 	"rpc_allow_google_protobuf_empty_responses": {summary: "When `true`, allows RPC methods to use `google.protobuf.Empty` as the response type. Defaults to `false`.", valueType: "bool", url: bufPolicyYAMLDocsURL + "#lint"},
-	"disable_builtin":                           {summary: "When `true`, disables all built-in lint rules. Use this when relying entirely on custom plugin-provided rules. Defaults to `false`.", valueType: "bool", url: bufPolicyYAMLDocsURL + "#lint"},
+	"disable_builtin": {summary: "When `true`, disables all built-in lint rules. Use this when relying entirely on custom plugin-provided rules. Defaults to `false`.", valueType: "bool", url: bufPolicyYAMLDocsURL + "#lint"},
 }
 
 // bufPolicyYAMLBreakingDocs maps breaking sub-keys supported in buf.policy.yaml.
@@ -76,7 +78,7 @@ func searchBufPolicyYAMLMappingForHover(node *yaml.Node, pos protocol.Position, 
 		keyNode := node.Content[i]
 		valNode := node.Content[i+1]
 
-		currentPath := append(parentPath[:len(parentPath):len(parentPath)], keyNode.Value)
+		currentPath := append(slices.Clip(parentPath), keyNode.Value)
 
 		if yamlNodeContainsPosition(keyNode, pos) {
 			return bufPolicyYAMLHoverForKeyPath(currentPath, yamlNodeRange(keyNode))

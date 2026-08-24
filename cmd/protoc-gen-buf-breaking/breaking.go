@@ -152,8 +152,7 @@ func handle(
 		againstImage,
 		breakingOptions...,
 	); err != nil {
-		var fileAnnotationSet bufanalysis.FileAnnotationSet
-		if errors.As(err, &fileAnnotationSet) {
+		if fileAnnotationSet, ok := errors.AsType[bufanalysis.FileAnnotationSet](err); ok {
 			buffer := bytes.NewBuffer(nil)
 			if err := bufanalysis.PrintFileAnnotationSet(
 				buffer,

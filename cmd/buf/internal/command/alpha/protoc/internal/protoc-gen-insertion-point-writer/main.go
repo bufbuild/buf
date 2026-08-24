@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"github.com/bufbuild/protoplugin"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -34,9 +33,9 @@ func handle(
 ) error {
 	responseWriter.AddCodeGeneratorResponseFiles(
 		&pluginpb.CodeGeneratorResponse_File{
-			Name:           proto.String("test.txt"),
-			InsertionPoint: proto.String("example"),
-			Content: proto.String(`
+			Name:           new("test.txt"),
+			InsertionPoint: new("example"),
+			Content: new(`
 			// Include this comment on the 'example' insertion point.
 			  // This is another example where whitespaces are preserved.
 			  // And this demonstrates a newline literal (\n).
@@ -44,9 +43,9 @@ func handle(
 		`),
 		},
 		&pluginpb.CodeGeneratorResponse_File{
-			Name:           proto.String("test.txt"),
-			InsertionPoint: proto.String("other"),
-			Content: proto.String(`
+			Name:           new("test.txt"),
+			InsertionPoint: new("other"),
+			Content: new(`
 			// Include this comment on the 'other' insertion point.
 		`),
 		},

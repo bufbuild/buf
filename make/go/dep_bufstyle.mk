@@ -14,7 +14,7 @@ BUFSTYLE_GO_VERSION := $(call _major_minor,$(shell go list -m -f '{{.GoVersion}}
 
 # Settable
 # https://github.com/bufbuild/bufstyle-go/releases
-BUFSTYLE_VERSION ?= v0.5.0
+BUFSTYLE_VERSION ?= v0.6.0
 
 BUFSTYLE := $(CACHE_BIN)/bufstyle
 

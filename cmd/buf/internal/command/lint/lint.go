@@ -163,8 +163,7 @@ func run(
 			imageWithConfig,
 			lintOptions...,
 		); err != nil {
-			var fileAnnotationSet bufanalysis.FileAnnotationSet
-			if errors.As(err, &fileAnnotationSet) {
+			if fileAnnotationSet, ok := errors.AsType[bufanalysis.FileAnnotationSet](err); ok {
 				allFileAnnotations = append(allFileAnnotations, fileAnnotationSet.FileAnnotations()...)
 			} else {
 				return err

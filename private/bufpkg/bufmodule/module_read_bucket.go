@@ -617,8 +617,7 @@ func (b *moduleReadBucket) getFastscanResultForPathUncached(
 	}()
 	fastscanResult, err = fastscan.Scan(path, readObjectCloser)
 	if err != nil {
-		var syntaxError fastscan.SyntaxError
-		if errors.As(err, &syntaxError) {
+		if syntaxError, ok := errors.AsType[fastscan.SyntaxError](err); ok {
 			fileAnnotationSet, err := bufprotocompile.FileAnnotationSetForErrorsWithPos(
 				syntaxError,
 				bufprotocompile.WithExternalPathResolver(

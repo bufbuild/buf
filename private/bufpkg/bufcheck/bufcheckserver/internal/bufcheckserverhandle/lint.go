@@ -895,6 +895,7 @@ func handleLintPackageSameOptionValue(
 				getFileOptionLocation(file),
 				nil,
 				file.Path(),
+				"%s",
 				message,
 			)
 		}
