@@ -204,8 +204,7 @@ func (f *file) RefreshWorkspace(ctx context.Context) {
 	}
 	workspace, err := f.lsp.workspaceManager.LeaseWorkspace(ctx, f.uri)
 	if err != nil {
-		var unresolvable errUnresolvableWorkspace
-		if errors.As(err, &unresolvable) {
+		if _, ok := errors.AsType[errUnresolvableWorkspace](err); ok {
 			// Expected for dependency and WKT files opened from the cache.
 			f.lsp.logger.Debug("no workspace for file", slog.String("uri", string(f.uri)))
 			return
