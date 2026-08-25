@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package referencesdep.v1;
+
+import "google/protobuf/timestamp.proto";
+import "shared.proto";
+
+message First {
+  Shared shared = 1;
+  google.protobuf.Timestamp created_at = 2;
+  repeated Shared others = 3;
+}

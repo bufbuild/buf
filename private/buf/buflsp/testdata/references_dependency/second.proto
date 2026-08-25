@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package referencesdep.v1;
+
+import "google/protobuf/timestamp.proto";
+import "shared.proto";
+
+message Second {
+  Shared shared = 1;
+  google.protobuf.Timestamp updated_at = 2;
+}
