@@ -9,6 +9,8 @@
   files, and release workspaces when their last open file closes to free resources.
 - Fix LSP finding only a subset of references to symbols declared in
   dependencies, including well-known types.
+- Fix `buf format` non-idempotent trailing comment formatting.
+- Update built-in Well-Known Types to Protobuf v35.1.
 
 ## [v1.72.0] - 2026-07-17
 
