@@ -63,7 +63,7 @@ message EnumOptions {
   optional bool deprecated_legacy_json_field_conflicts = 6 [deprecated = true];
   optional FeatureSet features = 7;
   repeated UninterpretedOption uninterpreted_option = 999;
-  extensions 1000 to max;
+  extensions 990 to 998, 1000 to max;
   reserved 5;
 }
 message EnumValueOptions {
@@ -72,7 +72,7 @@ message EnumValueOptions {
   optional bool debug_redact = 3 [default = false];
   optional FieldOptions.FeatureSupport feature_support = 4;
   repeated UninterpretedOption uninterpreted_option = 999;
-  extensions 1000 to max;
+  extensions 990 to 998, 1000 to max;
 }
 message FeatureSet {
   optional FieldPresence field_presence = 1 [
@@ -127,6 +127,7 @@ message FeatureSet {
   optional EnforceNamingStyle enforce_naming_style = 7 [
     edition_defaults = { value: "STYLE_LEGACY", edition: EDITION_LEGACY },
     edition_defaults = { value: "STYLE2024", edition: EDITION_2024 },
+    edition_defaults = { value: "STYLE2026", edition: EDITION_UNSTABLE },
     feature_support = { edition_introduced: EDITION_2024 },
     retention = RETENTION_SOURCE,
     targets = TARGET_TYPE_FILE,
@@ -159,6 +160,7 @@ message FeatureSet {
     ENFORCE_NAMING_STYLE_UNKNOWN = 0;
     STYLE2024 = 1;
     STYLE_LEGACY = 2;
+    STYLE2026 = 3;
   }
   enum EnumType {
     ENUM_TYPE_UNKNOWN = 0;
@@ -214,6 +216,11 @@ message FeatureSet {
       type: ".pb.PythonFeatures"
     },
     declaration = {
+      number: 1004,
+      full_name: ".pb.csharp",
+      type: ".pb.CSharpFeatures"
+    },
+    declaration = {
       number: 1100,
       full_name: ".imp.impress_feature_set",
       type: ".imp.ImpressFeatureSet"
@@ -256,6 +263,7 @@ message FieldOptions {
     optional Edition edition_deprecated = 2;
     optional string deprecation_warning = 3;
     optional Edition edition_removed = 4;
+    optional string removal_error = 5;
   }
   enum CType {
     STRING = 0;
@@ -284,14 +292,21 @@ message FieldOptions {
     TARGET_TYPE_SERVICE = 8;
     TARGET_TYPE_METHOD = 9;
   }
-  extensions 1000 to max;
+  extensions 990 to 998, 1000 to max;
   reserved 4, 18;
 }
 message FileOptions {
   optional string java_package = 1;
   optional string java_outer_classname = 8;
   optional OptimizeMode optimize_for = 9 [default = SPEED];
-  optional bool java_multiple_files = 10 [default = false];
+  optional bool java_multiple_files = 10 [
+    default = false,
+    feature_support = {
+      edition_introduced: EDITION_PROTO2,
+      edition_removed: EDITION_2024,
+      removal_error: "This behavior is enabled by default in editions 2024 and above. To disable it, you can set `features.(pb.java).nest_in_file_class = YES` on individual messages, enums, or services."
+    }
+  ];
   optional string go_package = 11;
   optional bool cc_generic_services = 16 [default = false];
   optional bool java_generic_services = 17 [default = false];
@@ -314,6 +329,13 @@ message FileOptions {
     CODE_SIZE = 2;
     LITE_RUNTIME = 3;
   }
+  extensions 990 to 998 [
+    declaration = {
+      number: 990,
+      full_name: ".pb.file.cpp",
+      type: ".pb.file.CppFileOptions"
+    }
+  ];
   extensions 1000 to max;
   reserved 38, 42;
   reserved "php_generic_services";
@@ -326,7 +348,7 @@ message MessageOptions {
   optional bool deprecated_legacy_json_field_conflicts = 11 [deprecated = true];
   optional FeatureSet features = 12;
   repeated UninterpretedOption uninterpreted_option = 999;
-  extensions 1000 to max;
+  extensions 990 to 998, 1000 to max;
   reserved 4, 5, 6, 8, 9;
 }
 message MethodOptions {
@@ -339,18 +361,18 @@ message MethodOptions {
     NO_SIDE_EFFECTS = 1;
     IDEMPOTENT = 2;
   }
-  extensions 1000 to max;
+  extensions 990 to 998, 1000 to max;
 }
 message OneofOptions {
   optional FeatureSet features = 1;
   repeated UninterpretedOption uninterpreted_option = 999;
-  extensions 1000 to max;
+  extensions 990 to 998, 1000 to max;
 }
 message ServiceOptions {
   optional bool deprecated = 33 [default = false];
   optional FeatureSet features = 34;
   repeated UninterpretedOption uninterpreted_option = 999;
-  extensions 1000 to max;
+  extensions 990 to 998, 1000 to max;
 }
 message UninterpretedOption {
   repeated NamePart name = 2;
@@ -374,6 +396,7 @@ enum Edition {
   EDITION_PROTO3 = 999;
   EDITION_2023 = 1000;
   EDITION_2024 = 1001;
+  EDITION_2026 = 1002;
   EDITION_UNSTABLE = 9999;
   EDITION_99997_TEST_ONLY = 99997;
   EDITION_99998_TEST_ONLY = 99998;

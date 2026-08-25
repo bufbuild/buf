@@ -113,6 +113,7 @@ message FeatureSet {
   optional EnforceNamingStyle enforce_naming_style = 7 [
     edition_defaults = { value: "STYLE_LEGACY", edition: EDITION_LEGACY },
     edition_defaults = { value: "STYLE2024", edition: EDITION_2024 },
+    edition_defaults = { value: "STYLE2026", edition: EDITION_UNSTABLE },
     feature_support = { edition_introduced: EDITION_2024 },
     retention = RETENTION_SOURCE,
     targets = TARGET_TYPE_FILE,
@@ -145,6 +146,7 @@ message FeatureSet {
     ENFORCE_NAMING_STYLE_UNKNOWN = 0;
     STYLE2024 = 1;
     STYLE_LEGACY = 2;
+    STYLE2026 = 3;
   }
   enum EnumType {
     ENUM_TYPE_UNKNOWN = 0;
@@ -200,6 +202,11 @@ message FeatureSet {
       type: ".pb.PythonFeatures"
     },
     declaration = {
+      number: 1004,
+      full_name: ".pb.csharp",
+      type: ".pb.CSharpFeatures"
+    },
+    declaration = {
       number: 1100,
       full_name: ".imp.impress_feature_set",
       type: ".imp.ImpressFeatureSet"
@@ -222,7 +229,7 @@ message ServiceOptions {
   optional bool deprecated = 33 [default = false];
   optional FeatureSet features = 34;
   repeated UninterpretedOption uninterpreted_option = 999;
-  extensions 1000 to max;
+  extensions 990 to 998, 1000 to max;
 }
 message UninterpretedOption {
   repeated NamePart name = 2;
