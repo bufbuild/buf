@@ -71,10 +71,10 @@ func (w *workspaceManager) Cleanup(ctx context.Context) {
 	// Delete in-place.
 	index := 0
 	for _, workspace := range w.workspaces {
-		if workspace.refCount > 0 {
+		if workspace.refCount > 0 || workspace.hasOpenFile() {
 			w.workspaces[index] = workspace
 			index++
-			continue // workspace leased
+			continue // workspace in use
 		}
 		w.lsp.logger.Debug("workspace: cleanup removing workspace", slog.String("parent", workspace.workspaceURI.Filename()))
 		for _, file := range workspace.pathToFile {
@@ -144,10 +144,23 @@ func (w *workspace) Lease() {
 }
 
 // Release decrements the reference count.
-func (w *workspace) Release() int {
+func (w *workspace) Release() {
 	w.lsp.logger.Debug("workspace: release", slog.String("path", w.workspaceURI.Filename()))
+	if w.refCount <= 0 {
+		w.lsp.logger.Error("workspace: refcount released below zero", slog.String("path", w.workspaceURI.Filename()))
+		return
+	}
 	w.refCount--
-	return w.refCount
+}
+
+// hasOpenFile reports whether any file in this workspace is open in the editor.
+func (w *workspace) hasOpenFile() bool {
+	for _, file := range w.pathToFile {
+		if file.IsOpenInEditor() {
+			return true
+		}
+	}
+	return false
 }
 
 // Refresh rebuilds the workspace and required context.

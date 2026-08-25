@@ -352,7 +352,7 @@ func TestBufYAMLCheckUpdates(t *testing.T) {
 				ctx := t.Context()
 
 				var result any
-				_, err = clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
+				_, err := clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
 					Command:   "buf.dep.checkUpdates",
 					Arguments: []any{string(bufYAMLURI)},
 				}, &result)
