@@ -63,7 +63,6 @@ type file struct {
 
 	ir                   *ir.File
 	referenceableSymbols map[ir.FullName]*symbol
-	referenceSymbols     []*symbol
 	symbols              []*symbol
 	irReport             *report.Report        // IR diagnostic report for code actions
 	diagnostics          []protocol.Diagnostic // Converted LSP diagnostics
@@ -98,6 +97,8 @@ func (f *file) Reset(ctx context.Context) {
 		f.workspace.Release()
 		f.workspace = nil
 	}
+	// Drop this file's references from the index before the file is zeroed.
+	f.lsp.referenceIndex.RemoveFile(f.uri)
 	// Evict the query key if there is a query cached on the file. We cache the [queries.File]
 	// query since this allows the executor to evict all dependent queries, e.g. AST and IR.
 	f.lsp.queryExecutor.Evict(f.queryFileKeys()...)
@@ -354,7 +355,6 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	// Throw away all the old symbols and rebuild symbols unconditionally. This is because if
 	// this file depends on a file that has since been modified, we may need to update references.
 	f.symbols = nil
-	f.referenceSymbols = nil
 	f.referenceableSymbols = make(map[ir.FullName]*symbol)
 
 	// Process all imports as symbols
@@ -365,7 +365,6 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	resolved, unresolved := f.indexSymbols()
 	f.symbols = append(f.symbols, resolved...)
 	f.symbols = append(f.symbols, unresolved...)
-	f.referenceSymbols = append(f.referenceSymbols, unresolved...)
 
 	// Index all referenceable symbols
 	for _, sym := range resolved {
@@ -376,47 +375,29 @@ func (f *file) IndexSymbols(ctx context.Context) {
 		f.referenceableSymbols[sym.ir.FullName()] = sym
 	}
 
-	// TODO: this could use a refactor, probably.
-	//
-	// Resolve all unresolved symbols from this file
+	// Resolve all unresolved symbols from this file, and record the references they make in
+	// the reference index. References are keyed by definition site, so recording does not
+	// depend on the order files are indexed in.
+	var references map[referenceKey][]*symbol
+	addReference := func(def ast.DeclDef, fullName ir.FullName, sym *symbol) {
+		key, ok := newReferenceKey(def, fullName)
+		if !ok {
+			return
+		}
+		if references == nil {
+			references = make(map[referenceKey][]*symbol)
+		}
+		references[key] = append(references[key], sym)
+	}
 	for _, sym := range unresolved {
 		switch kind := sym.kind.(type) {
 		case *reference:
-			def := f.resolveASTDefinition(kind.def, kind.fullName)
-			sym.def = def
-			if def == nil {
-				// In the case where the symbol is not resolved, we continue
-				continue
-			}
-			referenceable, ok := def.kind.(*referenceable)
-			if !ok {
-				// This shouldn't happen, logging a warning
-				f.lsp.logger.Warn(
-					"found non-referenceable symbol in index",
-					slog.String("file", f.uri.Filename()),
-					slog.Any("symbol", def),
-				)
-				continue
-			}
-			referenceable.references = append(referenceable.references, sym)
+			sym.def = f.resolveASTDefinition(kind.def, kind.fullName)
+			addReference(kind.def, kind.fullName, sym)
 		case *option:
-			def := f.resolveASTDefinition(kind.def, kind.defFullName)
-			sym.def = def
-			if def != nil {
-				referenceable, ok := def.kind.(*referenceable)
-				if !ok {
-					// This shouldn't happen, logging a warning
-					f.lsp.logger.Warn(
-						"found non-referenceable symbol in index",
-						slog.String("file", f.uri.Filename()),
-						slog.Any("symbol", def),
-					)
-				} else {
-					referenceable.references = append(referenceable.references, sym)
-				}
-			}
-			typeDef := f.resolveASTDefinition(kind.typeDef, kind.typeDefFullName)
-			sym.typeDef = typeDef
+			sym.def = f.resolveASTDefinition(kind.def, kind.defFullName)
+			addReference(kind.def, kind.defFullName, sym)
+			sym.typeDef = f.resolveASTDefinition(kind.typeDef, kind.typeDefFullName)
 		default:
 			// This shouldn't happen, logging a warning
 			f.lsp.logger.Warn(
@@ -426,58 +407,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			)
 		}
 	}
-
-	// Resolve all references outside of this file to symbols in this file
-	for _, file := range f.workspace.PathToFile() {
-		if f == file {
-			continue // ignore self
-		}
-		for _, sym := range file.referenceSymbols {
-			var fullName ir.FullName
-			switch kind := sym.kind.(type) {
-			case *reference:
-				if kind.def.Span().Path() != f.objectInfo.LocalPath() {
-					continue
-				}
-				fullName = kind.fullName
-			case *option:
-				if kind.def.Span().Path() != f.objectInfo.LocalPath() {
-					continue
-				}
-				fullName = kind.defFullName
-			default:
-				// This shouldn't happen, logging a warning
-				f.lsp.logger.Warn(
-					"found unresolved non-reference and non-option symbol",
-					slog.String("file", f.uri.Filename()),
-					slog.Any("symbol", sym),
-				)
-				continue
-			}
-			def, ok := f.referenceableSymbols[fullName]
-			if !ok {
-				// This shouldn't happen, if a symbol is pointing at this file, all definitions
-				// should be resolved, logging a warning
-				f.lsp.logger.Warn(
-					"found reference to unknown symbol",
-					slog.String("file", f.uri.Filename()),
-					slog.Any("reference", sym),
-				)
-				continue
-			}
-			referenceable, ok := def.kind.(*referenceable)
-			if !ok {
-				// This shouldn't happen, logging a warning
-				f.lsp.logger.Warn(
-					"found non-referenceable symbol in index",
-					slog.String("file", f.uri.Filename()),
-					slog.Any("symbol", def),
-				)
-				continue
-			}
-			referenceable.references = append(referenceable.references, sym)
-		}
-	}
+	f.lsp.referenceIndex.SetFile(f.uri, references)
 
 	// Finally, sort the symbols in position order, with shorter symbols sorting smaller.
 	slices.SortFunc(f.symbols, func(s1, s2 *symbol) int {
