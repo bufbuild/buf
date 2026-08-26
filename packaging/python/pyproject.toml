@@ -1,6 +1,6 @@
 [project]
 name = "buf-bin"
-version = "1.71.0"
+version = "1.72.0"
 description = "Buf CLI distributed via PyPI"
 readme = "README.md"
 requires-python = ">=3.10"
