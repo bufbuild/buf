@@ -5,6 +5,7 @@ $(call _assert_var,MAKEGO)
 $(call _conditional_include,$(MAKEGO)/base.mk)
 $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
+$(call _assert_var,GO_VERSION)
 
 # Settable
 # https://github.com/protocolbuffers/protobuf-go/releases 20260810 checked 20260813
@@ -15,7 +16,8 @@ GO_GET_PKGS := $(GO_GET_PKGS) \
 
 PROTOC_GEN_GO := $(CACHE_BIN)/protoc-gen-go
 
-$(CACHE_VERSIONS)/protoc-gen-go/protoc-gen-go-$(PROTOC_GEN_GO_VERSION):
+# Keyed by GO_VERSION: the plugin formats its output with go/format
+$(CACHE_VERSIONS)/protoc-gen-go/protoc-gen-go-$(PROTOC_GEN_GO_VERSION)-go$(GO_VERSION):
 	@rm -f $(PROTOC_GEN_GO)
 	@rm -rf $(dir $@)
 	@mkdir -p $(dir $@)
@@ -24,7 +26,7 @@ $(CACHE_VERSIONS)/protoc-gen-go/protoc-gen-go-$(PROTOC_GEN_GO_VERSION):
 	@test -x $@
 	@touch $@
 
-$(PROTOC_GEN_GO): $(CACHE_VERSIONS)/protoc-gen-go/protoc-gen-go-$(PROTOC_GEN_GO_VERSION)
+$(PROTOC_GEN_GO): $(CACHE_VERSIONS)/protoc-gen-go/protoc-gen-go-$(PROTOC_GEN_GO_VERSION)-go$(GO_VERSION)
 	@mkdir -p $(dir $@)
 	@ln -sf $< $@
 
