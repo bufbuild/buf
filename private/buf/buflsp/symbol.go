@@ -39,6 +39,8 @@ import (
 	"google.golang.org/protobuf/encoding/protowire"
 )
 
+const protobufLanguageSpecURL = "https://buf.build/docs/reference/protobuf-language-spec/"
+
 // symbol represents a named symbol inside of a [file].
 //
 // For each symbol, we keep track of the location [source.Span] and file [*file] of the
@@ -61,8 +63,7 @@ type kind interface {
 }
 
 type referenceable struct {
-	ast        ast.DeclDef
-	references []*symbol
+	ast ast.DeclDef
 }
 
 type reference struct {
@@ -105,6 +106,24 @@ func (*builtin) isSymbolKind()        {}
 func (*tag) isSymbolKind()            {}
 func (*keywordBuiltin) isSymbolKind() {}
 
+// resolveDefinition resolves the symbol's definition if it has none yet. A
+// definition can be missing when this symbol's file was indexed before the
+// file declaring the definition. Resolution is cheap, so retry at query time.
+func (s *symbol) resolveDefinition() {
+	if s.def != nil {
+		return
+	}
+	switch kind := s.kind.(type) {
+	case *reference:
+		s.def = s.file.resolveASTDefinition(kind.def, kind.fullName)
+	case *option:
+		s.def = s.file.resolveASTDefinition(kind.def, kind.defFullName)
+		if s.typeDef == nil {
+			s.typeDef = s.file.resolveASTDefinition(kind.typeDef, kind.typeDefFullName)
+		}
+	}
+}
+
 // Range constructs an LSP protocol code range for this symbol.
 func (s *symbol) Range() protocol.Range {
 	return reportSpanToProtocolRange(s.span)
@@ -120,6 +139,14 @@ func (s *symbol) IsBuiltIn() bool {
 // Definition returns the location of the definition of the symbol.
 func (s *symbol) Definition() protocol.Location {
 	if imported, ok := s.kind.(*imported); ok {
+		if imported.file == nil {
+			// The import could not be resolved to a tracked file, so there is nowhere to jump
+			// to. Fall back to the import declaration itself.
+			return protocol.Location{
+				URI:   s.file.uri,
+				Range: s.Range(),
+			}
+		}
 		return protocol.Location{
 			URI: imported.file.uri,
 		}
@@ -163,35 +190,26 @@ func (s *symbol) TypeDefinition() protocol.Location {
 // It also accepts the includeDeclaration param from the client - if true, the declaration
 // of the symbol is included as a reference.
 func (s *symbol) References(includeDeclaration bool) []protocol.Location {
-	var references []protocol.Location
-	referenceableKind, ok := s.kind.(*referenceable)
-	if !ok && s.def != nil {
-		// If the symbol isn't referenceable itself, but has a referenceable definition, use the
-		// definition for the references.
-		referenceableKind, ok = s.def.kind.(*referenceable)
-	}
-	if ok {
-		for _, reference := range referenceableKind.references {
-			references = append(references, protocol.Location{
-				URI:   reference.file.uri,
-				Range: reference.Range(),
-			})
-		}
-	} else {
-		// No referenceable kind; add the location of the symbol itself.
-		references = append(references, protocol.Location{
+	declaration, ok := s.referenceDeclaration()
+	if !ok {
+		// No referenceable declaration; the symbol's own location is the only result.
+		return []protocol.Location{{
 			URI:   s.file.uri,
 			Range: s.Range(),
+		}}
+	}
+	var references []protocol.Location
+	for _, reference := range declaration.referenceSymbols() {
+		references = append(references, protocol.Location{
+			URI:   reference.file.uri,
+			Range: reference.Range(),
 		})
 	}
 	if includeDeclaration {
-		// Add the definition of the symbol to the list of references.
-		if s.def != nil {
-			references = append(references, protocol.Location{
-				URI:   s.def.file.uri,
-				Range: s.def.Range(),
-			})
-		}
+		references = append(references, protocol.Location{
+			URI:   declaration.file.uri,
+			Range: declaration.Range(),
+		})
 	}
 	return references
 }
@@ -205,13 +223,8 @@ func (s *symbol) DocumentHighlights() []protocol.DocumentHighlight {
 		return nil
 	}
 
-	// Get the referenceable kind to find all references
-	referenceableKind, ok := s.kind.(*referenceable)
-	if !ok && s.def != nil {
-		// If the symbol isn't referenceable itself, but has a referenceable definition, use the
-		// definition for the references.
-		referenceableKind, ok = s.def.kind.(*referenceable)
-	}
+	// Get the referenceable declaration to find all references
+	declaration, ok := s.referenceDeclaration()
 	if !ok {
 		return nil
 	}
@@ -224,9 +237,9 @@ func (s *symbol) DocumentHighlights() []protocol.DocumentHighlight {
 	}
 
 	var highlights []protocol.DocumentHighlight
-	// Add all references in the same file
-	for _, reference := range referenceableKind.references {
-		if reference.file.uri == s.file.uri {
+	// Add all references in the same file.
+	if key, ok := newReferenceKeyForDeclaration(declaration); ok {
+		for _, reference := range s.file.lsp.referenceIndex.FileReferences(key, s.file.uri) {
 			highlights = append(highlights, protocol.DocumentHighlight{
 				Range: reference.Range(),
 				Kind:  protocol.DocumentHighlightKindText,
@@ -234,16 +247,10 @@ func (s *symbol) DocumentHighlights() []protocol.DocumentHighlight {
 		}
 	}
 
-	// Add the definition if it's in the same file
-	if s.def != nil && s.def.file.uri == s.file.uri {
+	// Add the declaration if it's in the same file
+	if declaration.file.uri == s.file.uri {
 		highlights = append(highlights, protocol.DocumentHighlight{
-			Range: s.def.Range(),
-			Kind:  protocol.DocumentHighlightKindText,
-		})
-	} else if s.def == nil {
-		// If there's no separate definition, the symbol itself is the definition
-		highlights = append(highlights, protocol.DocumentHighlight{
-			Range: s.Range(),
+			Range: declaration.Range(),
 			Kind:  protocol.DocumentHighlightKindText,
 		})
 	}
@@ -267,7 +274,7 @@ func (s *symbol) LogValue() slog.Value {
 		slog.Any("start", loc(s.span.StartLoc())),
 		slog.Any("end", loc(s.span.EndLoc())),
 	}
-	if imported, ok := s.kind.(*imported); ok {
+	if imported, ok := s.kind.(*imported); ok && imported.file != nil {
 		attrs = append(attrs, slog.String("imported", imported.file.uri.Filename()))
 	} else if s.def != nil {
 		attrs = append(attrs,
@@ -287,6 +294,9 @@ func (s *symbol) FormatDocs() string {
 	switch s.kind.(type) {
 	case *imported:
 		imported, _ := s.kind.(*imported)
+		if imported.file == nil || imported.file.file == nil {
+			return ""
+		}
 		// Show the path to the file on disk, which is similar to how other LSP clients treat hovering
 		// on an import file.
 		return imported.file.file.Path()
@@ -305,8 +315,9 @@ func (s *symbol) FormatDocs() string {
 				comments,
 				"",
 				fmt.Sprintf(
-					"`%s` is a Protobuf builtin. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#%s)",
+					"`%s` is a Protobuf builtin. [Learn more in the Protobuf Language Specification.](%s#%s)",
 					builtin.predeclared,
+					protobufLanguageSpecURL,
 					anchor,
 				),
 			)
@@ -321,8 +332,9 @@ func (s *symbol) FormatDocs() string {
 				comments,
 				"",
 				fmt.Sprintf(
-					"`%s` is a Protobuf keyword. [Learn more on protobuf.com.](https://protobuf.com/docs/language-spec#%s)",
+					"`%s` is a Protobuf keyword. [Learn more in the Protobuf Language Specification.](%s#%s)",
 					kwBuiltin.name,
+					protobufLanguageSpecURL,
 					kwBuiltin.anchor,
 				),
 			)
@@ -433,6 +445,31 @@ func (s *symbol) Rename(newName string) (*protocol.WorkspaceEdit, error) {
 	return &edits, nil
 }
 
+// referenceDeclaration returns the referenceable symbol declaring what this symbol names:
+// the symbol itself if it is referenceable, otherwise its resolved definition. Returns
+// false if neither is, meaning the symbol cannot be referenced.
+func (s *symbol) referenceDeclaration() (*symbol, bool) {
+	if _, ok := s.kind.(*referenceable); ok {
+		return s, true
+	}
+	if s.def != nil {
+		if _, ok := s.def.kind.(*referenceable); ok {
+			return s.def, true
+		}
+	}
+	return nil, false
+}
+
+// referenceSymbols returns every symbol referencing this declaration symbol, across all
+// indexed workspaces.
+func (s *symbol) referenceSymbols() []*symbol {
+	key, ok := newReferenceKeyForDeclaration(s)
+	if !ok {
+		return nil
+	}
+	return s.file.lsp.referenceIndex.References(key)
+}
+
 // renameChangesForReferenceableSymbol is a helper for getting all rename changes for the
 // given referenceable symbol.
 func renameChangesForReferenceableSymbol(s *symbol, newName string) (map[protocol.DocumentURI][]protocol.TextEdit, error) {
@@ -443,15 +480,10 @@ func renameChangesForReferenceableSymbol(s *symbol, newName string) (map[protoco
 			NewText: newName,
 		}},
 	}
-	// Get the referenceable kind to find all references
-	referenceableKind, ok := s.kind.(*referenceable)
-	if !ok && s.def != nil {
-		// If the symbol isn't referenceable itself, but has a referenceable definition, use the
-		// definition for the references.
-		referenceableKind, ok = s.def.kind.(*referenceable)
-	}
+	// Get the referenceable declaration to find all references
+	declaration, ok := s.referenceDeclaration()
 	if ok {
-		for _, reference := range referenceableKind.references {
+		for _, reference := range declaration.referenceSymbols() {
 			newText := newName
 			// For option references (extension usages), preserve package qualification and parentheses.
 			// e.g., if renaming "(subpkg.testing)" to "validated", result should be "(subpkg.validated)"

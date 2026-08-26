@@ -202,8 +202,7 @@ func getProtosourceFiles(
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	if err != nil {
-		var fileAnnotationSet bufanalysis.FileAnnotationSet
-		if errors.As(err, &fileAnnotationSet) {
+		if fileAnnotationSet, ok := errors.AsType[bufanalysis.FileAnnotationSet](err); ok {
 			// stderr since we do output to stdout
 			if err := bufanalysis.PrintFileAnnotationSet(
 				container.Stderr(),

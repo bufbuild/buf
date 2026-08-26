@@ -589,9 +589,8 @@ func runCommand(
 	t.Helper()
 	output, err := runStdout(ctx, container, name, args...)
 	if err != nil {
-		var exitErr *exec.ExitError
 		var stdErr []byte
-		if errors.As(err, &exitErr) {
+		if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
 			stdErr = exitErr.Stderr
 		}
 		assert.FailNow(t, err.Error(), "stdout: %s\nstderr: %s", output, stdErr)

@@ -632,7 +632,7 @@ func TestCELHover(t *testing.T) {
 			t.Parallel()
 
 			var hoverResult *protocol.Hover
-			_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, protocol.HoverParams{
+			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, protocol.HoverParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{URI: testURI},
 					Position:     protocol.Position{Line: tc.line, Character: tc.char},

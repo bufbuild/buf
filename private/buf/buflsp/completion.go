@@ -953,7 +953,7 @@ func predeclaredTypeKeywords() iter.Seq[keyword.Keyword] {
 
 // mapKeyTypeKeywords returns keywords for valid map key types.
 // Map keys can only be integral types, bool, or string (not floating point or bytes).
-// See https://protobuf.com/docs/language-spec#maps
+// See https://buf.build/docs/reference/protobuf-language-spec/#maps
 func mapKeyTypeKeywords() iter.Seq[keyword.Keyword] {
 	return func(yield func(keyword.Keyword) bool) {
 		_ = yield(keyword.Int32) &&
@@ -2000,7 +2000,7 @@ func completionItemsForFieldNumber(
 // Enum values are _any_ int32 value, but we make the assumption here that the user is using the
 // "typical" incrementing from 0 approach and suggest the next available positive int32 value.
 //
-// Ref: https://protobuf.com/docs/language-spec#enum-values
+// Ref: https://buf.build/docs/reference/protobuf-language-spec/#enum-values
 func completionItemsForEnumNumber(
 	file *file,
 	parentDef ast.DeclDef,

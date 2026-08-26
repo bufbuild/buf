@@ -5,6 +5,10 @@
 - Fix `buf format` dropping comments next to commas or semicolons in message literals.
 - Fix compilation failing to resolve symbols re-exported through `import public` when the
   re-exporting file also reaches those symbols through a non-public import.
+- Fix LSP go to definition not resolving across files inside dependency and well-known-type
+  files, and release workspaces when their last open file closes to free resources.
+- Fix LSP finding only a subset of references to symbols declared in
+  dependencies, including well-known types.
 
 ## [v1.72.0] - 2026-07-17
 

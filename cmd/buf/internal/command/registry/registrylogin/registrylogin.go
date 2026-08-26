@@ -295,8 +295,7 @@ func doBrowserLogin(
 		ClientName: clientName,
 	})
 	if err != nil {
-		var oauth2Err *oauth2.Error
-		if errors.As(err, &oauth2Err) {
+		if oauth2Err, ok := errors.AsType[*oauth2.Error](err); ok {
 			return "", fmt.Errorf("authorization failed: %s", oauth2Err.ErrorDescription)
 		}
 		return "", err
@@ -307,8 +306,7 @@ func doBrowserLogin(
 		ClientSecret: deviceRegistration.ClientSecret,
 	})
 	if err != nil {
-		var oauth2Err *oauth2.Error
-		if errors.As(err, &oauth2Err) {
+		if oauth2Err, ok := errors.AsType[*oauth2.Error](err); ok {
 			return "", fmt.Errorf("authorization failed: %s", oauth2Err.ErrorDescription)
 		}
 		return "", err
@@ -337,8 +335,7 @@ If your browser doesn't open automatically, please open this URL in a browser to
 		GrantType:    oauth2.DeviceAuthorizationGrantType,
 	}, oauth2.AccessDeviceTokenWithPollingInterval(time.Duration(deviceAuthorization.Interval)*time.Second))
 	if err != nil {
-		var oauth2Err *oauth2.Error
-		if errors.As(err, &oauth2Err) {
+		if oauth2Err, ok := errors.AsType[*oauth2.Error](err); ok {
 			return "", fmt.Errorf("authorization failed: %s", oauth2Err.ErrorDescription)
 		}
 		return "", err

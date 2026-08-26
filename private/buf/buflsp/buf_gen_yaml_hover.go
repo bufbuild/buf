@@ -15,6 +15,8 @@
 package buflsp
 
 import (
+	"slices"
+
 	"go.lsp.dev/protocol"
 	"gopkg.in/yaml.v3"
 )
@@ -116,7 +118,7 @@ func searchBufGenYAMLMappingForHover(node *yaml.Node, pos protocol.Position, par
 		keyNode := node.Content[i]
 		valNode := node.Content[i+1]
 
-		currentPath := append(parentPath[:len(parentPath):len(parentPath)], keyNode.Value)
+		currentPath := append(slices.Clip(parentPath), keyNode.Value)
 
 		if yamlNodeContainsPosition(keyNode, pos) {
 			return bufGenYAMLHoverForKeyPath(currentPath, yamlNodeRange(keyNode))

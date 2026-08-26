@@ -161,8 +161,7 @@ func getModuleDepsRec(
 
 			fastscanResult, err := module.getFastscanResultForPath(ctx, fileInfo.Path())
 			if err != nil {
-				var fileAnnotationSet bufanalysis.FileAnnotationSet
-				if errors.As(err, &fileAnnotationSet) {
+				if fileAnnotationSet, ok := errors.AsType[bufanalysis.FileAnnotationSet](err); ok {
 					// If a FileAnnotationSet, the error already contains path information, just return directly.
 					//
 					// We also specially handle FileAnnotationSets for exit code 100.
