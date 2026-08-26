@@ -10,7 +10,7 @@ $(call _assert_var,CACHE_INCLUDE)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/protocolbuffers/protobuf/releases 20260611 checked 20260825
+# https://github.com/protocolbuffers/protobuf/releases 20260611 checked 20260826
 # NOTE: Set to version compatible with genproto source code (only used in tests).
 # This version must be supported by the matching https://github.com/protocolbuffers/protobuf-go version.
 PROTOC_VERSION ?= 35.1
