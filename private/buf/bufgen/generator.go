@@ -42,6 +42,14 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+// codeGenerationReadMaxBytes is the maximum size of a single GenerateCode
+// response that remote generation will read.
+//
+// Remote generation returns a whole generated SDK in one message, so it is by
+// far the largest response the CLI reads - observed peaks are in the hundreds
+// of megabytes. It needs a much higher bound than other registry clients.
+const codeGenerationReadMaxBytes = 1 << 30 // 1 GiB
+
 type generator struct {
 	logger              *slog.Logger
 	storageosProvider   storageos.Provider
@@ -360,7 +368,12 @@ func (g *generator) execRemotePluginsV2(
 		}
 		requests[i] = request
 	}
-	codeGenerationService := connectclient.Make(g.clientConfig, remote, registryv1alpha1connect.NewCodeGenerationServiceClient)
+	codeGenerationService := connectclient.Make(
+		g.clientConfig,
+		remote,
+		registryv1alpha1connect.NewCodeGenerationServiceClient,
+		connect.WithReadMaxBytes(codeGenerationReadMaxBytes),
+	)
 	protoImage, err := bufimage.ImageToProtoImage(image)
 	if err != nil {
 		return nil, err

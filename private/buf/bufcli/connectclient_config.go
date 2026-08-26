@@ -26,6 +26,16 @@ import (
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
 )
 
+// defaultReadMaxBytes is the maximum size of a single message that a registry
+// client will read.
+//
+// Connect defaults to allowing any message size, and is expected to adopt a
+// 4 MiB default. That is well below what the BSR already returns for module,
+// plugin, and policy downloads, so we set an explicit bound instead of
+// inheriting one. Individual clients that need more can override this by
+// passing connect.WithReadMaxBytes to connectclient.Make.
+const defaultReadMaxBytes = 128 << 20 // 128 MiB
+
 // NewConnectClientConfig creates a new connect.ClientConfig which uses a token reader to look
 // up the token in the container or in netrc based on the address of each individual client.
 // It is then set in the header of all outgoing requests from clients created using this config.
@@ -84,6 +94,9 @@ func newConnectClientConfigWithOptions(container appext.Container, opts ...conne
 				bufconnect.NewDebugLoggingInterceptor(container),
 				otelconnectInterceptor,
 			},
+		),
+		connectclient.WithClientOptions(
+			connect.WithReadMaxBytes(defaultReadMaxBytes),
 		),
 	}
 	return connectclient.NewConfig(client, append(options, opts...)...), nil

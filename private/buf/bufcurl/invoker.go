@@ -24,6 +24,7 @@ import (
 	"maps"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"sync"
 
 	"buf.build/go/app"
@@ -86,7 +87,13 @@ type invoker struct {
 // extensions that appear in the input or output. Other parameters are used
 // to create a Connect client, for issuing the RPC.
 func NewInvoker(container appext.Container, verbosePrinter verbose.Printer, md protoreflect.MethodDescriptor, res protoencoding.Resolver, emitDefaults bool, httpClient connect.HTTPClient, opts []connect.ClientOption, url string, out io.Writer) Invoker {
-	opts = append(opts, connect.WithCodec(protoCodec{}))
+	// buf curl invokes whatever RPC the user names, so there is no response size
+	// we can assume is illegitimate. Connect is expected to adopt a default
+	// per-message read limit, so opt out explicitly to preserve behavior.
+	//
+	// Clone rather than append in place: callers share this slice with other
+	// clients.
+	opts = append(slices.Clone(opts), connect.WithReadMaxBytes(0), connect.WithCodec(protoCodec{}))
 	// TODO: could also provide custom compressor implementations that could give us
 	//  optics into when request and response messages are compressed (which could be
 	//  useful to include in verbose output).

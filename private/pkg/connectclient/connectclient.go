@@ -28,6 +28,7 @@ type Config struct {
 	addressMapper           func(string) string
 	interceptors            []connect.Interceptor
 	authInterceptorProvider func(string) connect.UnaryInterceptorFunc
+	clientOptions           []connect.ClientOption
 }
 
 // NewConfig creates a new client configuration with the given HTTP client
@@ -67,11 +68,24 @@ func WithAuthInterceptorProvider(authInterceptorProvider func(string) connect.Un
 	}
 }
 
+// WithClientOptions adds the given options to every client returned from this config.
+//
+// Options passed to Make are applied after these, so an individual client can
+// override a default set here.
+func WithClientOptions(clientOptions ...connect.ClientOption) ConfigOption {
+	return func(cfg *Config) {
+		cfg.clientOptions = clientOptions
+	}
+}
+
 // StubFactory is the type of a generated factory function, for creating Connect client stubs.
 type StubFactory[T any] func(connect.HTTPClient, string, ...connect.ClientOption) T
 
 // Make uses the given generated factory function to create a new connect client.
-func Make[T any](cfg *Config, address string, factory StubFactory[T]) T {
+//
+// The given options are applied after any set with WithClientOptions, so they
+// take precedence over the config's defaults.
+func Make[T any](cfg *Config, address string, factory StubFactory[T], options ...connect.ClientOption) T {
 	interceptors := slices.Clone(cfg.interceptors)
 	if cfg.authInterceptorProvider != nil {
 		interceptor := cfg.authInterceptorProvider(address)
@@ -80,5 +94,9 @@ func Make[T any](cfg *Config, address string, factory StubFactory[T]) T {
 	if cfg.addressMapper != nil {
 		address = cfg.addressMapper(address)
 	}
-	return factory(cfg.httpClient, address, connect.WithInterceptors(interceptors...))
+	clientOptions := make([]connect.ClientOption, 0, len(cfg.clientOptions)+len(options)+1)
+	clientOptions = append(clientOptions, connect.WithInterceptors(interceptors...))
+	clientOptions = append(clientOptions, cfg.clientOptions...)
+	clientOptions = append(clientOptions, options...)
+	return factory(cfg.httpClient, address, clientOptions...)
 }

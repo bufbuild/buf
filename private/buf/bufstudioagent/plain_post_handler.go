@@ -156,6 +156,11 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	// The agent proxies requests to whatever target the caller names, so there
+	// is no response size it can assume is illegitimate. Connect is expected to
+	// adopt a default per-message read limit, so opt out explicitly to preserve
+	// behavior.
+	clientOptions = append(clientOptions, connect.WithReadMaxBytes(0))
 	client := connect.NewClient[bytes.Buffer, bytes.Buffer](
 		httpClient,
 		targetURL.String(),

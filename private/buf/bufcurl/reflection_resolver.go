@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"maps"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -104,6 +105,14 @@ func NewServerReflectionResolver(
 	printer verbose.Printer,
 ) (r Resolver, closeResolver func()) {
 	baseURL = strings.TrimSuffix(baseURL, "/")
+	// Reflection responses carry FileDescriptorProtos, which are unbounded in
+	// the size of the schema being served. Connect is expected to adopt a
+	// default per-message read limit, so opt out explicitly to preserve
+	// behavior.
+	//
+	// Clone rather than append in place: callers share this slice with other
+	// clients.
+	opts = append(slices.Clone(opts), connect.WithReadMaxBytes(0))
 	var v1Client, v1alphaClient *reflectClient
 	if reflectProtocol != ReflectProtocolGRPCV1 {
 		v1alphaClient = connect.NewClient[reflectionv1.ServerReflectionRequest, reflectionv1.ServerReflectionResponse](httpClient, baseURL+"/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo", opts...)
