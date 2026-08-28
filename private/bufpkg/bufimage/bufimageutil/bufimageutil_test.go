@@ -511,6 +511,15 @@ func TestTypesFromMainModule(t *testing.T) {
 	_, err = FilterImage(image, WithIncludeTypes("nonexisting"))
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrImageFilterTypeNotFound)
+
+	_, err = FilterImage(image, WithIncludeTypes("invalid-include"))
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrImageFilterTypeInvalid)
+
+	_, err = FilterImage(image, WithExcludeTypes("invalid-exclude"))
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrImageFilterTypeInvalid)
+
 }
 
 func TestMutateInPlace(t *testing.T) {
