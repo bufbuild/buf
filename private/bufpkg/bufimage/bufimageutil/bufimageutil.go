@@ -41,7 +41,7 @@ var (
 
 	// ErrImageFilterTypeInvalid is returned from FilterImage when
 	// a specified type is invalid.
-	ErrImageFilterTypeInvalid = errors.New("invalid type filter")
+	ErrImageFilterTypeInvalid = errors.New("invalid filter type")
 
 	// ErrImageFilterTypeIsImport is returned from FilterImage when
 	// a specified type name is declared in a module dependency.

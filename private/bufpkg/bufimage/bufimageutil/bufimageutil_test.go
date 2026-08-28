@@ -374,9 +374,9 @@ func TestPackages(t *testing.T) {
 		_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/packages", bufimage.WithExcludeSourceCodeInfo())
 		require.NoError(t, err)
 		_, err = FilterImage(image, WithIncludeTypes("foo.**.bar"))
-		require.ErrorContains(t, err, "invalid type filter: include type \"foo.**.bar\": the only supported wildcard is \".**\" and it must come at the end")
+		require.ErrorContains(t, err, "invalid filter type: include type \"foo.**.bar\": the only supported wildcard is \".**\" and it must come at the end")
 		_, err = FilterImage(image, WithExcludeTypes("foo.*"))
-		require.ErrorContains(t, err, "invalid type filter: exclude type \"foo.*\": the only supported wildcard is \".**\" and it must come at the end")
+		require.ErrorContains(t, err, "invalid filter type: exclude type \"foo.*\": the only supported wildcard is \".**\" and it must come at the end")
 	})
 }
 
