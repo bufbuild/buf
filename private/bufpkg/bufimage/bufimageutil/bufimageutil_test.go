@@ -374,9 +374,9 @@ func TestPackages(t *testing.T) {
 		_, image, err := getImage(ctx, slogtestext.NewLogger(t), "testdata/packages", bufimage.WithExcludeSourceCodeInfo())
 		require.NoError(t, err)
 		_, err = FilterImage(image, WithIncludeTypes("foo.**.bar"))
-		require.ErrorContains(t, err, "invalid include type \"foo.**.bar\": the only supported wildcard is \".**\" and it must come at the end")
+		require.ErrorContains(t, err, "invalid filter type: include type \"foo.**.bar\": the only supported wildcard is \".**\" and it must come at the end")
 		_, err = FilterImage(image, WithExcludeTypes("foo.*"))
-		require.ErrorContains(t, err, "invalid exclude type \"foo.*\": the only supported wildcard is \".**\" and it must come at the end")
+		require.ErrorContains(t, err, "invalid filter type: exclude type \"foo.*\": the only supported wildcard is \".**\" and it must come at the end")
 	})
 }
 
@@ -511,6 +511,14 @@ func TestTypesFromMainModule(t *testing.T) {
 	_, err = FilterImage(image, WithIncludeTypes("nonexisting"))
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrImageFilterTypeNotFound)
+
+	_, err = FilterImage(image, WithIncludeTypes("invalid-include"))
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrImageFilterTypeInvalid)
+
+	_, err = FilterImage(image, WithExcludeTypes("invalid-exclude"))
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrImageFilterTypeInvalid)
 }
 
 func TestMutateInPlace(t *testing.T) {
