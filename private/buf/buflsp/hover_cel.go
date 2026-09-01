@@ -19,14 +19,14 @@ import (
 	"maps"
 	"strings"
 
+	"cel.dev/cel-go/cel"
+	"cel.dev/cel-go/common"
+	"cel.dev/cel-go/common/ast"
+	"cel.dev/cel-go/common/operators"
+	"cel.dev/cel-go/common/overloads"
+	"cel.dev/cel-go/common/types"
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/experimental/seq"
-	"github.com/google/cel-go/cel"
-	"github.com/google/cel-go/common"
-	"github.com/google/cel-go/common/ast"
-	"github.com/google/cel-go/common/operators"
-	"github.com/google/cel-go/common/overloads"
-	"github.com/google/cel-go/common/types"
 	"go.lsp.dev/protocol"
 )
 

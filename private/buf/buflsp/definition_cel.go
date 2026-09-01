@@ -15,9 +15,9 @@
 package buflsp
 
 import (
+	"cel.dev/cel-go/cel"
+	"cel.dev/cel-go/common/types"
 	"github.com/bufbuild/protocompile/experimental/ir"
-	"github.com/google/cel-go/cel"
-	"github.com/google/cel-go/common/types"
 	"go.lsp.dev/protocol"
 )
 
