@@ -11,6 +11,8 @@
   dependencies, including well-known types.
 - Fix `buf format` non-idempotent trailing comment formatting.
 - Update built-in Well-Known Types to Protobuf v35.1.
+- Fix managed mode setting `java_multiple_files` on Edition 2024 files, which is not
+  allowed and causes code generation to fail.
 
 ## [v1.72.0] - 2026-07-17
 

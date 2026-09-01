@@ -1,0 +1,3 @@
+edition = "2023";
+
+package editions.v2023;
