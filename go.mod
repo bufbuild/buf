@@ -11,10 +11,11 @@ require (
 	buf.build/go/app v0.2.1-0.20260824172350-b0e76892c61a
 	buf.build/go/bufplugin v0.10.0
 	buf.build/go/bufprivateusage v0.1.0
-	buf.build/go/protovalidate v1.3.0
+	buf.build/go/protovalidate v1.4.0
 	buf.build/go/protoyaml v0.7.0
 	buf.build/go/spdx v0.2.0
 	buf.build/go/standard v0.1.1-0.20260325175353-2b287e071df5
+	cel.dev/cel-go v0.32.0
 	connectrpc.com/connect v1.20.0
 	connectrpc.com/grpcreflect v1.3.0
 	connectrpc.com/otelconnect v0.9.0
@@ -22,7 +23,6 @@ require (
 	github.com/bufbuild/protoplugin v0.0.0-20260414125817-25d1d281b46b
 	github.com/cli/browser v1.3.0
 	github.com/gofrs/flock v0.13.1
-	github.com/google/cel-go v0.31.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-containerregistry v0.22.0
 	github.com/google/uuid v1.6.0

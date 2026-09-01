@@ -18,9 +18,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	celast "cel.dev/cel-go/common/ast"
+	"cel.dev/cel-go/common/operators"
 	"github.com/bufbuild/protocompile/experimental/source"
-	celast "github.com/google/cel-go/common/ast"
-	"github.com/google/cel-go/common/operators"
 )
 
 // celIsIdentChar reports whether c is a valid CEL identifier character:
