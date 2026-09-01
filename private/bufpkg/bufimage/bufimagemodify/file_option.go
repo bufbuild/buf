@@ -433,6 +433,11 @@ func modifyJavaMultipleFiles(
 	config bufconfig.GenerateManagedConfig,
 	options ...ModifyOption,
 ) error {
+	// The option was removed in edition 2024, where its behavior became the
+	// default. The latest protoc plugins reject any file that still sets it.
+	if imageFile.FileDescriptorProto().GetEdition() >= descriptorpb.Edition_EDITION_2024 {
+		return nil
+	}
 	modifyOptions := newModifyOptions()
 	for _, option := range options {
 		option(modifyOptions)
