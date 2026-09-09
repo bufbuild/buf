@@ -4803,7 +4803,7 @@ func testLsRuleOutputJSON(
 
 func TestWrapErrorInterrupt(t *testing.T) {
 	t.Parallel()
-	canceledCtx, cancel := context.WithCancel(context.Background())
+	canceledCtx, cancel := context.WithCancel(t.Context())
 	cancel()
 	connectCanceledErr := connect.NewError(connect.CodeCanceled, context.Canceled)
 
