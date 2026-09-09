@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -61,6 +62,11 @@ type reader struct {
 
 	moduleEnabled     bool
 	moduleKeyProvider bufmodule.ModuleKeyProvider
+
+	// Keyed so that Refs sharing a fetch share an entry, see reader_cache.go.
+	fileDataCache      cache.Cache[fileDataCacheKey, []byte]
+	archiveBucketCache cache.Cache[archiveBucketCacheKey, storage.ReadBucket]
+	gitBucketCache     cache.Cache[gitBucketCacheKey, storage.ReadBucket]
 }
 
 func newReader(
@@ -244,10 +250,46 @@ func (r *reader) getArchiveBucket(
 	targetPaths []string,
 	targetExcludePaths []string,
 	terminateFunc buftarget.TerminateFunc,
-) (_ ReadBucketCloser, _ buftarget.BucketTargeting, retErr error) {
-	readCloser, size, err := r.getFileReadCloserAndSize(ctx, container, archiveRef, false)
+) (ReadBucketCloser, buftarget.BucketTargeting, error) {
+	readBucket, err := r.getArchiveReadBucket(ctx, container, archiveRef)
 	if err != nil {
 		return nil, nil, err
+	}
+	return getReadBucketCloserForBucket(
+		ctx,
+		r.logger,
+		storage.NopReadBucketCloser(readBucket),
+		archiveRef.SubDirPath(),
+		targetPaths,
+		targetExcludePaths,
+		terminateFunc,
+	)
+}
+
+func (r *reader) getArchiveReadBucket(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	archiveRef ArchiveRef,
+) (storage.ReadBucket, error) {
+	if !isRemoteFileScheme(archiveRef.FileScheme()) {
+		return r.unarchive(ctx, container, archiveRef)
+	}
+	return r.archiveBucketCache.GetOrAdd(
+		newArchiveBucketCacheKey(archiveRef),
+		func() (storage.ReadBucket, error) {
+			return r.unarchive(ctx, container, archiveRef)
+		},
+	)
+}
+
+func (r *reader) unarchive(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	archiveRef ArchiveRef,
+) (_ storage.ReadBucket, retErr error) {
+	readCloser, size, err := r.getFileReadCloserAndSizeUncached(ctx, container, archiveRef, false)
+	if err != nil {
+		return nil, err
 	}
 	defer func() {
 		retErr = errors.Join(retErr, readCloser.Close())
@@ -263,21 +305,21 @@ func (r *reader) getArchiveBucket(
 				archiveRef.StripComponents(),
 			),
 		); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	case ArchiveTypeZip:
 		var readerAt io.ReaderAt
 		if size < 0 {
 			data, err := io.ReadAll(readCloser)
 			if err != nil {
-				return nil, nil, err
+				return nil, err
 			}
 			readerAt = bytes.NewReader(data)
 			size = int64(len(data))
 		} else {
 			readerAt, err = xio.ReaderAtForReader(readCloser)
 			if err != nil {
-				return nil, nil, err
+				return nil, err
 			}
 		}
 		if err := storagearchive.Unzip(
@@ -289,20 +331,12 @@ func (r *reader) getArchiveBucket(
 				archiveRef.StripComponents(),
 			),
 		); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	default:
-		return nil, nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
+		return nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
 	}
-	return getReadBucketCloserForBucket(
-		ctx,
-		r.logger,
-		storage.NopReadBucketCloser(readWriteBucket),
-		archiveRef.SubDirPath(),
-		targetPaths,
-		targetExcludePaths,
-		terminateFunc,
-	)
+	return readWriteBucket, nil
 }
 
 func (r *reader) getDirBucket(
@@ -359,9 +393,34 @@ func (r *reader) getGitBucket(
 	if r.gitCloner == nil {
 		return nil, nil, errors.New("git cloner is nil")
 	}
-	gitURL, err := getGitURL(gitRef)
+	readBucket, err := r.gitBucketCache.GetOrAdd(
+		newGitBucketCacheKey(gitRef),
+		func() (storage.ReadBucket, error) {
+			return r.clone(ctx, container, gitRef)
+		},
+	)
 	if err != nil {
 		return nil, nil, err
+	}
+	return getReadBucketCloserForBucket(
+		ctx,
+		r.logger,
+		storage.NopReadBucketCloser(readBucket),
+		gitRef.SubDirPath(),
+		targetPaths,
+		targetExcludePaths,
+		terminateFunc,
+	)
+}
+
+func (r *reader) clone(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	gitRef GitRef,
+) (storage.ReadBucket, error) {
+	gitURL, err := getGitURL(gitRef)
+	if err != nil {
+		return nil, err
 	}
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	if err := r.gitCloner.CloneToBucket(
@@ -377,17 +436,9 @@ func (r *reader) getGitBucket(
 			Filter:            gitRef.Filter(),
 		},
 	); err != nil {
-		return nil, nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
+		return nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
 	}
-	return getReadBucketCloserForBucket(
-		ctx,
-		r.logger,
-		storage.NopReadBucketCloser(readWriteBucket),
-		gitRef.SubDirPath(),
-		targetPaths,
-		targetExcludePaths,
-		terminateFunc,
-	)
+	return readWriteBucket, nil
 }
 
 func (r *reader) getModuleKey(
@@ -416,6 +467,36 @@ func (r *reader) getModuleKey(
 }
 
 func (r *reader) getFileReadCloserAndSize(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	fileRef FileRef,
+	keepFileCompression bool,
+) (io.ReadCloser, int64, error) {
+	if !isRemoteFileScheme(fileRef.FileScheme()) {
+		return r.getFileReadCloserAndSizeUncached(ctx, container, fileRef, keepFileCompression)
+	}
+	data, err := r.fileDataCache.GetOrAdd(
+		fileDataCacheKey{
+			path:                fileRef.Path(),
+			fileScheme:          fileRef.FileScheme(),
+			compressionType:     fileRef.CompressionType(),
+			keepFileCompression: keepFileCompression,
+		},
+		func() ([]byte, error) {
+			readCloser, _, err := r.getFileReadCloserAndSizeUncached(ctx, container, fileRef, keepFileCompression)
+			if err != nil {
+				return nil, err
+			}
+			return xio.ReadAllAndClose(readCloser)
+		},
+	)
+	if err != nil {
+		return nil, -1, err
+	}
+	return io.NopCloser(bytes.NewReader(data)), int64(len(data)), nil
+}
+
+func (r *reader) getFileReadCloserAndSizeUncached(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	fileRef FileRef,

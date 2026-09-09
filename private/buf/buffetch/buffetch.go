@@ -414,6 +414,9 @@ type ModuleFetcher interface {
 }
 
 // Reader is a reader for Buf.
+//
+// A Reader fetches a given remote file or git repository at most once, for the
+// lifetime of the Reader.
 type Reader interface {
 	MessageReader
 	SourceReader
