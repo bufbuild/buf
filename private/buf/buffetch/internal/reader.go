@@ -63,7 +63,7 @@ type reader struct {
 	moduleEnabled     bool
 	moduleKeyProvider bufmodule.ModuleKeyProvider
 
-	// See reader_cache.go for the deduplication these provide.
+	// Keyed so that Refs sharing a fetch share an entry, see reader_cache.go.
 	fileDataCache  cache.Cache[fileDataCacheKey, []byte]
 	gitBucketCache cache.Cache[gitBucketCacheKey, storage.ReadBucket]
 }

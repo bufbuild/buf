@@ -16,14 +16,8 @@ package internal
 
 import "github.com/bufbuild/buf/private/pkg/git"
 
-// A Reader fetches at most once per cache key below, for the lifetime of the
-// Reader, which is the lifetime of a single command invocation. Fetched content
-// is held for that whole lifetime, so only remote fetches and clones are
-// cached: a local file has no fetch work to save, and a stream cannot be
-// re-read at all.
-//
-// A key must contain every field that affects what is fetched, and must exclude
-// everything applied to the result afterwards, such as SubDirPath and target
+// A cache key must contain everything that affects what is fetched, and nothing
+// that is applied to the result afterwards, such as SubDirPath and target
 // paths, so that Refs differing only in those still share a fetch.
 
 // fileDataCacheKey identifies the contents of a fetched file.
@@ -43,10 +37,8 @@ type gitBucketCacheKey struct {
 	depth             uint32
 	recurseSubmodules bool
 	filter            string
-	// subDirPath is part of the key only when filter is set, as that is the only
-	// case where it changes what is cloned: the clone is then a sparse checkout
-	// of subDirPath. Otherwise the whole repository is cloned and subDirPath is
-	// applied to the resulting bucket.
+	// Set only when filter is set, the one case where it changes what is cloned:
+	// the clone is then a sparse checkout of subDirPath.
 	subDirPath string
 }
 
@@ -70,7 +62,8 @@ func newGitBucketCacheKey(gitRef GitRef) gitBucketCacheKey {
 }
 
 // isRemoteFileScheme returns whether a FileRef with the given FileScheme is
-// fetched from a remote host.
+// fetched over the network. Local files have no fetch to save, and streams
+// cannot be re-read at all, so neither is cached.
 func isRemoteFileScheme(fileScheme FileScheme) bool {
 	return fileScheme == FileSchemeHTTP || fileScheme == FileSchemeHTTPS
 }

@@ -42,8 +42,7 @@ func TestReaderArchiveFetchDeduplication(t *testing.T) {
 	ctx := t.Context()
 	server, requestCount := newTestArchiveServer(t)
 	reader := newTestHTTPReader(t)
-	// Reads of the same archive that differ only in what is applied to the
-	// fetched contents afterwards share a single fetch.
+	// Reads differing only in what is applied after the fetch share one fetch.
 	for _, read := range []archiveTestRead{
 		{subDirPath: "svc-a"},
 		{subDirPath: "svc-b"},
@@ -66,8 +65,7 @@ func TestReaderArchiveFetchDeduplication(t *testing.T) {
 		)
 		require.NoError(t, err)
 		if read.subDirPath != "" {
-			// Each read must still be scoped to its own subdirectory. Each
-			// file's contents are the name of its subdirectory.
+			// Each read is still scoped to its own subdirectory.
 			require.Equal(t, read.subDirPath, bucketTargeting.SubDirPath())
 			data, err := storage.ReadPath(ctx, readBucketCloser, read.subDirPath+"/test.proto")
 			require.NoError(t, err)
@@ -117,8 +115,7 @@ func TestReaderFileFetchNoDeduplicationForStdin(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, readCloser.Close())
 	require.Equal(t, "image", string(data))
-	// Stdin is a stream, so it is not cached: the second read sees an exhausted
-	// stream rather than the first read's data.
+	// Stdin is a stream, so it is not cached: the second read is exhausted.
 	readCloser, err = reader.GetFile(ctx, container, singleRef)
 	require.NoError(t, err)
 	data, err = io.ReadAll(readCloser)
@@ -151,8 +148,7 @@ func TestReaderGitCloneDeduplication(t *testing.T) {
 			expectedClones: 1,
 		},
 		{
-			// git.Name.String is identical for these, so keying on it would
-			// wrongly collapse them into one clone.
+			// These share a String, so the key holds the fetch identity.
 			name: "ref and branch with the same value are separate clones",
 			reads: []gitTestRead{
 				{gitName: git.NewBranchName("main")},
@@ -178,8 +174,7 @@ func TestReaderGitCloneDeduplication(t *testing.T) {
 			expectedClones: 2,
 		},
 		{
-			// With a filter, the subdirectory is a sparse checkout, so it does
-			// change what is cloned.
+			// With a filter the subdirectory is a sparse checkout.
 			name: "different subdirs with a filter are separate clones",
 			reads: []gitTestRead{
 				{gitName: git.NewBranchName("main"), subDirPath: "svc-a", filter: "blob:none"},
@@ -238,9 +233,7 @@ type gitTestRead struct {
 	filter            string
 }
 
-// testCloner writes the same fixed contents on every clone and counts calls.
-//
-// It is not safe for concurrent use, which matches how a Reader is used.
+// testCloner writes fixed contents on every clone and counts calls.
 type testCloner struct {
 	cloneCount int
 }
@@ -257,8 +250,8 @@ func (c *testCloner) CloneToBucket(
 	return putTestArchiveFiles(ctx, writeBucket)
 }
 
-// newTestArchiveServer returns a server serving a gzipped tarball of the
-// contents written by putTestArchiveFiles, and a count of requests to it.
+// newTestArchiveServer serves a gzipped tarball of putTestArchiveFiles, and
+// counts requests.
 func newTestArchiveServer(t *testing.T) (*httptest.Server, *atomic.Int64) {
 	t.Helper()
 	ctx := t.Context()
@@ -281,8 +274,8 @@ func newTestArchiveServer(t *testing.T) (*httptest.Server, *atomic.Int64) {
 	return server, &requestCount
 }
 
-// putTestArchiveFiles writes a workspace with one module per subdirectory, where
-// each file's contents are the name of the subdirectory containing it.
+// putTestArchiveFiles writes a workspace with one module per subdirectory. Each
+// file's contents are the name of the subdirectory containing it.
 func putTestArchiveFiles(ctx context.Context, writeBucket storage.WriteBucket) error {
 	if err := storage.PutPath(ctx, writeBucket, "buf.yaml", []byte("version: v2\n")); err != nil {
 		return err
