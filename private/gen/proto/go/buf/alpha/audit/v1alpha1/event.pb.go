@@ -9486,6 +9486,7 @@ type PayloadRepositoryLabelCreated struct {
 	xxx_hidden_RepositoryName string                 `protobuf:"bytes,4,opt,name=repository_name,json=repositoryName,proto3"`
 	xxx_hidden_LabelNamespace string                 `protobuf:"bytes,5,opt,name=label_namespace,json=labelNamespace,proto3"`
 	xxx_hidden_CommitId       string                 `protobuf:"bytes,6,opt,name=commit_id,json=commitId,proto3"`
+	xxx_hidden_CommitName     string                 `protobuf:"bytes,7,opt,name=commit_name,json=commitName,proto3"`
 	unknownFields             protoimpl.UnknownFields
 	sizeCache                 protoimpl.SizeCache
 }
@@ -9558,6 +9559,13 @@ func (x *PayloadRepositoryLabelCreated) GetCommitId() string {
 	return ""
 }
 
+func (x *PayloadRepositoryLabelCreated) GetCommitName() string {
+	if x != nil {
+		return x.xxx_hidden_CommitName
+	}
+	return ""
+}
+
 func (x *PayloadRepositoryLabelCreated) SetOwnerId(v string) {
 	x.xxx_hidden_OwnerId = v
 }
@@ -9583,6 +9591,10 @@ func (x *PayloadRepositoryLabelCreated) SetCommitId(v string) {
 	x.xxx_hidden_CommitId = v
 }
 
+func (x *PayloadRepositoryLabelCreated) SetCommitName(v string) {
+	x.xxx_hidden_CommitName = v
+}
+
 type PayloadRepositoryLabelCreated_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -9600,6 +9612,8 @@ type PayloadRepositoryLabelCreated_builder struct {
 	LabelNamespace string
 	// commit_id is the id of the commit on which the label was created.
 	CommitId string
+	// commit_name is the name of the commit on which the label was created.
+	CommitName string
 }
 
 func (b0 PayloadRepositoryLabelCreated_builder) Build() *PayloadRepositoryLabelCreated {
@@ -9612,6 +9626,7 @@ func (b0 PayloadRepositoryLabelCreated_builder) Build() *PayloadRepositoryLabelC
 	x.xxx_hidden_RepositoryName = b.RepositoryName
 	x.xxx_hidden_LabelNamespace = b.LabelNamespace
 	x.xxx_hidden_CommitId = b.CommitId
+	x.xxx_hidden_CommitName = b.CommitName
 	return m0
 }
 
@@ -9624,6 +9639,8 @@ type PayloadRepositoryLabelMoved struct {
 	xxx_hidden_LabelNamespace string                 `protobuf:"bytes,5,opt,name=label_namespace,json=labelNamespace,proto3"`
 	xxx_hidden_ToCommitId     string                 `protobuf:"bytes,6,opt,name=to_commit_id,json=toCommitId,proto3"`
 	xxx_hidden_FromCommitId   string                 `protobuf:"bytes,7,opt,name=from_commit_id,json=fromCommitId,proto3"`
+	xxx_hidden_ToCommitName   string                 `protobuf:"bytes,8,opt,name=to_commit_name,json=toCommitName,proto3"`
+	xxx_hidden_FromCommitName string                 `protobuf:"bytes,9,opt,name=from_commit_name,json=fromCommitName,proto3"`
 	unknownFields             protoimpl.UnknownFields
 	sizeCache                 protoimpl.SizeCache
 }
@@ -9703,6 +9720,20 @@ func (x *PayloadRepositoryLabelMoved) GetFromCommitId() string {
 	return ""
 }
 
+func (x *PayloadRepositoryLabelMoved) GetToCommitName() string {
+	if x != nil {
+		return x.xxx_hidden_ToCommitName
+	}
+	return ""
+}
+
+func (x *PayloadRepositoryLabelMoved) GetFromCommitName() string {
+	if x != nil {
+		return x.xxx_hidden_FromCommitName
+	}
+	return ""
+}
+
 func (x *PayloadRepositoryLabelMoved) SetOwnerId(v string) {
 	x.xxx_hidden_OwnerId = v
 }
@@ -9732,6 +9763,14 @@ func (x *PayloadRepositoryLabelMoved) SetFromCommitId(v string) {
 	x.xxx_hidden_FromCommitId = v
 }
 
+func (x *PayloadRepositoryLabelMoved) SetToCommitName(v string) {
+	x.xxx_hidden_ToCommitName = v
+}
+
+func (x *PayloadRepositoryLabelMoved) SetFromCommitName(v string) {
+	x.xxx_hidden_FromCommitName = v
+}
+
 type PayloadRepositoryLabelMoved_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -9751,6 +9790,10 @@ type PayloadRepositoryLabelMoved_builder struct {
 	ToCommitId string
 	// from_commit_id is the id of the commit on which the label was moved from.
 	FromCommitId string
+	// to_commit_name is the name of the commit on which the label was moved to.
+	ToCommitName string
+	// from_commit_name is the name of the commit on which the label was moved from.
+	FromCommitName string
 }
 
 func (b0 PayloadRepositoryLabelMoved_builder) Build() *PayloadRepositoryLabelMoved {
@@ -9764,6 +9807,8 @@ func (b0 PayloadRepositoryLabelMoved_builder) Build() *PayloadRepositoryLabelMov
 	x.xxx_hidden_LabelNamespace = b.LabelNamespace
 	x.xxx_hidden_ToCommitId = b.ToCommitId
 	x.xxx_hidden_FromCommitId = b.FromCommitId
+	x.xxx_hidden_ToCommitName = b.ToCommitName
+	x.xxx_hidden_FromCommitName = b.FromCommitName
 	return m0
 }
 
@@ -14281,7 +14326,7 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\rrepository_id\x18\x03 \x01(\tR\frepositoryId\x12'\n" +
 	"\x0frepository_name\x18\x04 \x01(\tR\x0erepositoryName\x12\x1d\n" +
 	"\n" +
-	"draft_name\x18\x05 \x01(\tR\tdraftName:\x02\x18\x01\"\xf1\x01\n" +
+	"draft_name\x18\x05 \x01(\tR\tdraftName:\x02\x18\x01\"\x92\x02\n" +
 	"\x1dPayloadRepositoryLabelCreated\x12\x19\n" +
 	"\bowner_id\x18\x01 \x01(\tR\aownerId\x12\x1d\n" +
 	"\n" +
@@ -14289,7 +14334,9 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\rrepository_id\x18\x03 \x01(\tR\frepositoryId\x12'\n" +
 	"\x0frepository_name\x18\x04 \x01(\tR\x0erepositoryName\x12+\n" +
 	"\x0flabel_namespace\x18\x05 \x01(\tB\x02\x18\x01R\x0elabelNamespace\x12\x1b\n" +
-	"\tcommit_id\x18\x06 \x01(\tR\bcommitId\"\x9a\x02\n" +
+	"\tcommit_id\x18\x06 \x01(\tR\bcommitId\x12\x1f\n" +
+	"\vcommit_name\x18\a \x01(\tR\n" +
+	"commitName\"\xea\x02\n" +
 	"\x1bPayloadRepositoryLabelMoved\x12\x19\n" +
 	"\bowner_id\x18\x01 \x01(\tR\aownerId\x12\x1d\n" +
 	"\n" +
@@ -14299,7 +14346,9 @@ const file_buf_alpha_audit_v1alpha1_event_proto_rawDesc = "" +
 	"\x0flabel_namespace\x18\x05 \x01(\tB\x02\x18\x01R\x0elabelNamespace\x12 \n" +
 	"\fto_commit_id\x18\x06 \x01(\tR\n" +
 	"toCommitId\x12$\n" +
-	"\x0efrom_commit_id\x18\a \x01(\tR\ffromCommitId\"\xa8\x01\n" +
+	"\x0efrom_commit_id\x18\a \x01(\tR\ffromCommitId\x12$\n" +
+	"\x0eto_commit_name\x18\b \x01(\tR\ftoCommitName\x12(\n" +
+	"\x10from_commit_name\x18\t \x01(\tR\x0efromCommitName\"\xa8\x01\n" +
 	"\x1ePayloadRepositoryLabelArchived\x12\x19\n" +
 	"\bowner_id\x18\x01 \x01(\tR\aownerId\x12\x1d\n" +
 	"\n" +
