@@ -1,0 +1,62 @@
+# NOTE: This filename is hardcoded in our trusted publishing setup on pypi.org and test.pypi.org;
+# do not change this filename without updating it in both places as well.
+name: Publish to PyPI
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+
+      - run: uv sync
+
+      - run: uv run python scripts/generate_wheels.py
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wheels
+          path: dist/
+
+  test-publish:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi-test
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: wheels
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+
+  publish:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: pypi-release
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: wheels
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
