@@ -800,6 +800,8 @@ message PayloadRepositoryLabelCreated {
   string label_namespace = 5 [deprecated = true];
   // commit_id is the id of the commit on which the label was created.
   string commit_id = 6;
+  // commit_name is the name of the commit on which the label was created.
+  string commit_name = 7;
 }
 
 message PayloadRepositoryLabelMoved {
@@ -817,6 +819,10 @@ message PayloadRepositoryLabelMoved {
   string to_commit_id = 6;
   // from_commit_id is the id of the commit on which the label was moved from.
   string from_commit_id = 7;
+  // to_commit_name is the name of the commit on which the label was moved to.
+  string to_commit_name = 8;
+  // from_commit_name is the name of the commit on which the label was moved from.
+  string from_commit_name = 9;
 }
 
 message PayloadRepositoryLabelArchived {
