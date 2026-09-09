@@ -13,6 +13,9 @@
 - Update built-in Well-Known Types to Protobuf v35.1.
 - Fix managed mode setting `java_multiple_files` on Edition 2024 files, which is not
   allowed and causes code generation to fail.
+- Deduplicate remote input fetches within a single command invocation, so that multiple
+  `inputs` in a `buf.gen.yaml` that resolve to the same archive, git repository, or image
+  are fetched once instead of once per input.
 
 ## [v1.72.0] - 2026-07-17
 

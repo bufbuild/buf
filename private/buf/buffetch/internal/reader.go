@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
+	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -61,6 +62,10 @@ type reader struct {
 
 	moduleEnabled     bool
 	moduleKeyProvider bufmodule.ModuleKeyProvider
+
+	// See reader_cache.go for the deduplication these provide.
+	fileDataCache  cache.Cache[fileDataCacheKey, []byte]
+	gitBucketCache cache.Cache[gitBucketCacheKey, storage.ReadBucket]
 }
 
 func newReader(
@@ -359,9 +364,34 @@ func (r *reader) getGitBucket(
 	if r.gitCloner == nil {
 		return nil, nil, errors.New("git cloner is nil")
 	}
-	gitURL, err := getGitURL(gitRef)
+	readBucket, err := r.gitBucketCache.GetOrAdd(
+		newGitBucketCacheKey(gitRef),
+		func() (storage.ReadBucket, error) {
+			return r.clone(ctx, container, gitRef)
+		},
+	)
 	if err != nil {
 		return nil, nil, err
+	}
+	return getReadBucketCloserForBucket(
+		ctx,
+		r.logger,
+		storage.NopReadBucketCloser(readBucket),
+		gitRef.SubDirPath(),
+		targetPaths,
+		targetExcludePaths,
+		terminateFunc,
+	)
+}
+
+func (r *reader) clone(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	gitRef GitRef,
+) (storage.ReadBucket, error) {
+	gitURL, err := getGitURL(gitRef)
+	if err != nil {
+		return nil, err
 	}
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	if err := r.gitCloner.CloneToBucket(
@@ -377,17 +407,9 @@ func (r *reader) getGitBucket(
 			Filter:            gitRef.Filter(),
 		},
 	); err != nil {
-		return nil, nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
+		return nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
 	}
-	return getReadBucketCloserForBucket(
-		ctx,
-		r.logger,
-		storage.NopReadBucketCloser(readWriteBucket),
-		gitRef.SubDirPath(),
-		targetPaths,
-		targetExcludePaths,
-		terminateFunc,
-	)
+	return readWriteBucket, nil
 }
 
 func (r *reader) getModuleKey(
@@ -416,6 +438,36 @@ func (r *reader) getModuleKey(
 }
 
 func (r *reader) getFileReadCloserAndSize(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	fileRef FileRef,
+	keepFileCompression bool,
+) (io.ReadCloser, int64, error) {
+	if !isRemoteFileScheme(fileRef.FileScheme()) {
+		return r.getFileReadCloserAndSizeUncached(ctx, container, fileRef, keepFileCompression)
+	}
+	data, err := r.fileDataCache.GetOrAdd(
+		fileDataCacheKey{
+			path:                fileRef.Path(),
+			fileScheme:          fileRef.FileScheme(),
+			compressionType:     fileRef.CompressionType(),
+			keepFileCompression: keepFileCompression,
+		},
+		func() ([]byte, error) {
+			readCloser, _, err := r.getFileReadCloserAndSizeUncached(ctx, container, fileRef, keepFileCompression)
+			if err != nil {
+				return nil, err
+			}
+			return xio.ReadAllAndClose(readCloser)
+		},
+	)
+	if err != nil {
+		return nil, -1, err
+	}
+	return io.NopCloser(bytes.NewReader(data)), int64(len(data)), nil
+}
+
+func (r *reader) getFileReadCloserAndSizeUncached(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	fileRef FileRef,
