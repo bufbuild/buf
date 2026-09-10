@@ -16,6 +16,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -31,6 +32,7 @@ import (
 	"buf.build/go/app/appcmd/appcmdtesting"
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/standard/xslices"
+	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
@@ -4797,4 +4799,19 @@ func testLsRuleOutputJSON(
 			},
 		)
 	require.Equal(t, expectedRules, outputRules)
+}
+
+func TestWrapErrorInterrupt(t *testing.T) {
+	t.Parallel()
+	canceledCtx, cancel := context.WithCancel(t.Context())
+	cancel()
+	connectCanceledErr := connect.NewError(connect.CodeCanceled, context.Canceled)
+
+	// Root context is canceled.
+	require.EqualError(t, wrapError(canceledCtx, connectCanceledErr), "Failure: interrupted")
+	require.EqualError(t, wrapError(canceledCtx, context.Canceled), "Failure: interrupted")
+
+	// Root context is canceled but the command failed for an unrelated reason.
+	require.EqualError(t, wrapError(canceledCtx, errors.New("parse failed")), "Failure: parse failed")
+	require.NoError(t, wrapError(canceledCtx, nil))
 }
