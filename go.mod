@@ -19,7 +19,7 @@ require (
 	connectrpc.com/connect v1.20.0
 	connectrpc.com/grpcreflect v1.3.0
 	connectrpc.com/otelconnect v0.9.0
-	github.com/bufbuild/protocompile v0.14.2-0.20260825174057-3dfa26e2df9b
+	github.com/bufbuild/protocompile v0.14.2-0.20260910151042-7436f7c76201
 	github.com/bufbuild/protoplugin v0.0.0-20260414125817-25d1d281b46b
 	github.com/cli/browser v1.3.0
 	github.com/gofrs/flock v0.13.1
@@ -44,7 +44,7 @@ require (
 	go.lsp.dev/uri v0.3.0
 	go.uber.org/zap v1.28.0
 	golang.org/x/mod v0.40.0
-	golang.org/x/sync v0.22.0
+	golang.org/x/sync v0.23.0
 	golang.org/x/term v0.45.0
 	golang.org/x/tools v0.49.0
 	google.golang.org/protobuf v1.36.12
