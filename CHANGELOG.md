@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.73.0] - 2026-09-11
 
 - Fix `buf format` dropping comments next to commas or semicolons in message literals.
@@ -1582,6 +1586,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.73.0...HEAD
 [v1.73.0]: https://github.com/bufbuild/buf/compare/v1.72.0...v1.73.0
 [v1.72.0]: https://github.com/bufbuild/buf/compare/v1.71.0...v1.72.0
 [v1.71.0]: https://github.com/bufbuild/buf/compare/v1.70.0...v1.71.0
