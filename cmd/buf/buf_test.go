@@ -4379,20 +4379,28 @@ func TestFormatStdinEquivalence(t *testing.T) {
 // is what the diff is reported against.
 func TestFormatStdinDiff(t *testing.T) {
 	t.Parallel()
-	stdout := bytes.NewBuffer(nil)
-	testRun(
-		t,
-		0,
-		strings.NewReader("syntax=\"proto3\";\n"),
-		stdout,
-		"format",
-		"--stdin-filepath",
+	for _, stdinFilePath := range []string{
 		"simple/simple.proto",
-		"-d",
-	)
-	assert.Contains(t, stdout.String(), filepath.FromSlash("simple/simple.proto"))
-	assert.Contains(t, stdout.String(), "-syntax=\"proto3\";")
-	assert.Contains(t, stdout.String(), "+syntax = \"proto3\";")
+		`C:\simple\simple.proto`,
+	} {
+		t.Run(stdinFilePath, func(t *testing.T) {
+			t.Parallel()
+			stdout := bytes.NewBuffer(nil)
+			testRun(
+				t,
+				0,
+				strings.NewReader("syntax=\"proto3\";\n"),
+				stdout,
+				"format",
+				"--stdin-filepath",
+				stdinFilePath,
+				"-d",
+			)
+			assert.Contains(t, stdout.String(), stdinFilePath)
+			assert.Contains(t, stdout.String(), "-syntax=\"proto3\";")
+			assert.Contains(t, stdout.String(), "+syntax = \"proto3\";")
+		})
+	}
 }
 
 func TestFormatStdinExitCode(t *testing.T) {
