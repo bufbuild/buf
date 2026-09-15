@@ -4435,7 +4435,7 @@ func TestFormatStdinParseError(t *testing.T) {
 	)
 }
 
-func TestFormatStdinInvalidFilepath(t *testing.T) {
+func TestFormatStdinInvalidFilePath(t *testing.T) {
 	t.Parallel()
 	testRunStderrContainsNoWarn(
 		t,

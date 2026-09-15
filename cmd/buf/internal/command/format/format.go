@@ -52,7 +52,7 @@ const (
 	outputFlagName          = "output"
 	outputFlagShortName     = "o"
 	pathsFlagName           = "path"
-	stdinFilepathFlagName   = "stdin-filepath"
+	stdinFilePathFlagName   = "stdin-filepath"
 	writeFlagName           = "write"
 	writeFlagShortName      = "w"
 )
@@ -193,7 +193,7 @@ type flags struct {
 	ExitCode        bool
 	Paths           []string
 	Output          string
-	StdinFilepath   string
+	StdinFilePath   string
 	Write           bool
 	// special
 	InputHashtag string
@@ -254,8 +254,8 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		`The buf.yaml file or data to use for configuration`,
 	)
 	flagSet.StringVar(
-		&f.StdinFilepath,
-		stdinFilepathFlagName,
+		&f.StdinFilePath,
+		stdinFilePathFlagName,
 		"",
 		fmt.Sprintf(
 			`The path to pretend the stdin input comes from. Reads a single .proto file from stdin and writes the formatted result to stdout. Cannot be used with an input, or with the --%s, --%s, --%s, --%s, or --%s flags`,
@@ -273,7 +273,7 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	if flags.StdinFilepath != "" {
+	if flags.StdinFilePath != "" {
 		return runStdin(ctx, container, flags)
 	}
 	return runSource(ctx, container, flags)
@@ -445,12 +445,12 @@ func runStdin(
 	if err := validateStdinFlags(container, flags); err != nil {
 		return err
 	}
-	externalPath := flags.StdinFilepath
+	externalPath := flags.StdinFilePath
 	path := normalpath.Base(normalpath.Normalize(externalPath))
 	if normalpath.Ext(path) != ".proto" {
 		return appcmd.NewInvalidArgumentErrorf(
 			"--%s must be a path to a .proto file",
-			stdinFilepathFlagName,
+			stdinFilePathFlagName,
 		)
 	}
 	data, err := io.ReadAll(container.Stdin())
@@ -502,42 +502,42 @@ func validateStdinFlags(container appext.Container, flags *flags) error {
 	if container.NumArgs() > 0 || flags.InputHashtag != "" {
 		return appcmd.NewInvalidArgumentErrorf(
 			"cannot specify an input when using --%s",
-			stdinFilepathFlagName,
+			stdinFilePathFlagName,
 		)
 	}
 	if flags.Write {
 		return appcmd.NewInvalidArgumentErrorf(
 			"cannot use --%s when using --%s",
 			writeFlagName,
-			stdinFilepathFlagName,
+			stdinFilePathFlagName,
 		)
 	}
 	if flags.Output != "-" {
 		return appcmd.NewInvalidArgumentErrorf(
 			"cannot use --%s when using --%s",
 			outputFlagName,
-			stdinFilepathFlagName,
+			stdinFilePathFlagName,
 		)
 	}
 	if len(flags.Paths) > 0 {
 		return appcmd.NewInvalidArgumentErrorf(
 			"cannot use --%s when using --%s",
 			pathsFlagName,
-			stdinFilepathFlagName,
+			stdinFilePathFlagName,
 		)
 	}
 	if len(flags.ExcludePaths) > 0 {
 		return appcmd.NewInvalidArgumentErrorf(
 			"cannot use --%s when using --%s",
 			excludePathsFlagName,
-			stdinFilepathFlagName,
+			stdinFilePathFlagName,
 		)
 	}
 	if flags.Config != "" {
 		return appcmd.NewInvalidArgumentErrorf(
 			"cannot use --%s when using --%s",
 			configFlagName,
-			stdinFilepathFlagName,
+			stdinFilePathFlagName,
 		)
 	}
 	return nil
