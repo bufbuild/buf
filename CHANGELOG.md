@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Update `buf curl` to automatically use HTTP/2 prior knowledge for `http` URLs when server
+  reflection, the gRPC protocol, or a bidirectional streaming method is used, since all of these
+  require HTTP/2. The `--http2-prior-knowledge` flag is no longer required in these cases.
 
 ## [v1.73.0] - 2026-09-11
 
