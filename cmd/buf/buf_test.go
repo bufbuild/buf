@@ -4376,7 +4376,7 @@ func TestFormatStdinEquivalence(t *testing.T) {
 }
 
 // Tests that the --stdin-filepath value, and not the actual source of the input,
-// is what the diff is reported against.
+// is what the diff is reported against. Diffs always print slash separators.
 func TestFormatStdinDiff(t *testing.T) {
 	t.Parallel()
 	for _, stdinFilePath := range []string{
@@ -4396,7 +4396,7 @@ func TestFormatStdinDiff(t *testing.T) {
 				stdinFilePath,
 				"-d",
 			)
-			assert.Contains(t, stdout.String(), stdinFilePath)
+			assert.Contains(t, stdout.String(), filepath.ToSlash(stdinFilePath))
 			assert.Contains(t, stdout.String(), "-syntax=\"proto3\";")
 			assert.Contains(t, stdout.String(), "+syntax = \"proto3\";")
 		})
