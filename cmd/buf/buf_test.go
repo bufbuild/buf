@@ -4334,6 +4334,180 @@ func TestFormatInvalidIncludePackageFiles(t *testing.T) {
 	)
 }
 
+func TestFormatStdin(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		strings.NewReader(`syntax="proto3";
+
+package simple;
+
+message Object{string key=1;bytes value=2;}
+`),
+		0,
+		`
+syntax = "proto3";
+
+package simple;
+
+message Object {
+  string key = 1;
+  bytes value = 2;
+}
+		`,
+		"format",
+		"--stdin-filepath",
+		"simple/simple.proto",
+	)
+}
+
+// Tests that the result of formatting from stdin is the same as formatting the
+// equivalent file on disk.
+func TestFormatStdinEquivalence(t *testing.T) {
+	t.Parallel()
+	filePath := filepath.Join("testdata", "format", "complex", "complex.proto")
+	fileData, err := os.ReadFile(filePath)
+	require.NoError(t, err)
+	fileStdout := bytes.NewBuffer(nil)
+	testRun(t, 0, nil, fileStdout, "format", filePath)
+	stdinStdout := bytes.NewBuffer(nil)
+	testRun(t, 0, bytes.NewReader(fileData), stdinStdout, "format", "--stdin-filepath", filePath)
+	require.Equal(t, fileStdout.String(), stdinStdout.String())
+}
+
+// Tests that the --stdin-filepath value, and not the actual source of the input,
+// is what the diff is reported against.
+func TestFormatStdinDiff(t *testing.T) {
+	t.Parallel()
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		strings.NewReader("syntax=\"proto3\";\n"),
+		stdout,
+		"format",
+		"--stdin-filepath",
+		"simple/simple.proto",
+		"-d",
+	)
+	assert.Contains(t, stdout.String(), filepath.FromSlash("simple/simple.proto"))
+	assert.Contains(t, stdout.String(), "-syntax=\"proto3\";")
+	assert.Contains(t, stdout.String(), "+syntax = \"proto3\";")
+}
+
+func TestFormatStdinExitCode(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		strings.NewReader("syntax=\"proto3\";\n"),
+		bufctl.ExitCodeFileAnnotation,
+		`syntax = "proto3";`,
+		"format",
+		"--stdin-filepath",
+		"simple/simple.proto",
+		"--exit-code",
+	)
+	testRunStdout(
+		t,
+		strings.NewReader("syntax = \"proto3\";\n"),
+		0,
+		`syntax = "proto3";`,
+		"format",
+		"--stdin-filepath",
+		"simple/simple.proto",
+		"--exit-code",
+	)
+}
+
+// Tests that parse errors are reported against the --stdin-filepath value.
+func TestFormatStdinParseError(t *testing.T) {
+	t.Parallel()
+	testRunStderrContainsNoWarn(
+		t,
+		strings.NewReader("syntax=\"proto3\";\nmessage ..Bad {}\n"),
+		1,
+		[]string{
+			"Failure: simple/simple.proto:2:",
+		},
+		"format",
+		"--stdin-filepath",
+		"simple/simple.proto",
+	)
+}
+
+func TestFormatStdinInvalidFilepath(t *testing.T) {
+	t.Parallel()
+	testRunStderrContainsNoWarn(
+		t,
+		strings.NewReader("syntax=\"proto3\";\n"),
+		1,
+		[]string{
+			"Failure: --stdin-filepath must be a path to a .proto file",
+		},
+		"format",
+		"--stdin-filepath",
+		"simple/simple.txt",
+	)
+}
+
+// Tests that flags that have no meaning when reading from stdin are rejected
+// instead of silently ignored.
+func TestFormatStdinInvalidFlagCombination(t *testing.T) {
+	t.Parallel()
+	for _, testCase := range []struct {
+		name          string
+		args          []string
+		expectedError string
+	}{
+		{
+			name:          "write",
+			args:          []string{"-w"},
+			expectedError: "Failure: cannot use --write when using --stdin-filepath",
+		},
+		{
+			name:          "output",
+			args:          []string{"-o", "formatted"},
+			expectedError: "Failure: cannot use --output when using --stdin-filepath",
+		},
+		{
+			name:          "path",
+			args:          []string{"--path", "simple/simple.proto"},
+			expectedError: "Failure: cannot use --path when using --stdin-filepath",
+		},
+		{
+			name:          "exclude-path",
+			args:          []string{"--exclude-path", "simple/simple.proto"},
+			expectedError: "Failure: cannot use --exclude-path when using --stdin-filepath",
+		},
+		{
+			name:          "config",
+			args:          []string{"--config", "buf.yaml"},
+			expectedError: "Failure: cannot use --config when using --stdin-filepath",
+		},
+		{
+			name:          "input",
+			args:          []string{filepath.Join("testdata", "format", "simple")},
+			expectedError: "Failure: cannot specify an input when using --stdin-filepath",
+		},
+		{
+			name:          "input hashtag",
+			args:          []string{"-#format=dir"},
+			expectedError: "Failure: cannot specify an input when using --stdin-filepath",
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			testRunStderrContainsNoWarn(
+				t,
+				strings.NewReader("syntax=\"proto3\";\n"),
+				1,
+				[]string{testCase.expectedError},
+				append([]string{"format", "--stdin-filepath", "simple/simple.proto"}, testCase.args...)...,
+			)
+		})
+	}
+}
+
 func TestFormatInvalidInputDoesNotCreateDirectory(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()

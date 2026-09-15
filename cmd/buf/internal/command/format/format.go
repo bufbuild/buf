@@ -32,7 +32,9 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufformat"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/cobra"
@@ -50,6 +52,7 @@ const (
 	outputFlagName          = "output"
 	outputFlagShortName     = "o"
 	pathsFlagName           = "path"
+	stdinFilepathFlagName   = "stdin-filepath"
 	writeFlagName           = "write"
 	writeFlagShortName      = "w"
 )
@@ -158,6 +161,15 @@ Write a diff and rewrite the file(s) in-place:
     ...
 
 The -w and -o flags cannot be used together in a single invocation.
+
+Format a single file read from stdin with --stdin-filepath, writing the result to stdout.
+The path is not read from disk, only used to report parse errors and diffs. This 
+flag can be useful for editor integrations that format unsaved buffers:
+
+    $ cat simple/simple.proto | buf format --stdin-filepath simple/simple.proto
+
+The --stdin-filepath flag cannot be used with an input, or with the -w, -o, --path,
+--exclude-path, or --config flags.
 `,
 		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -181,6 +193,7 @@ type flags struct {
 	ExitCode        bool
 	Paths           []string
 	Output          string
+	StdinFilepath   string
 	Write           bool
 	// special
 	InputHashtag string
@@ -240,9 +253,33 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		`The buf.yaml file or data to use for configuration`,
 	)
+	flagSet.StringVar(
+		&f.StdinFilepath,
+		stdinFilepathFlagName,
+		"",
+		fmt.Sprintf(
+			`The path to pretend the stdin input comes from. Reads a single .proto file from stdin and writes the formatted result to stdout. Cannot be used with an input, or with the --%s, --%s, --%s, --%s, or --%s flags`,
+			writeFlagName,
+			outputFlagName,
+			pathsFlagName,
+			excludePathsFlagName,
+			configFlagName,
+		),
+	)
 }
 
 func run(
+	ctx context.Context,
+	container appext.Container,
+	flags *flags,
+) error {
+	if flags.StdinFilepath != "" {
+		return runStdin(ctx, container, flags)
+	}
+	return runSource(ctx, container, flags)
+}
+
+func runSource(
 	ctx context.Context,
 	container appext.Container,
 	flags *flags,
@@ -397,6 +434,138 @@ func run(
 		return syserror.Newf("buffetch ref type must be dir or proto file: %T", dirOrProtoFileRef)
 	}
 	return nil
+}
+
+// runStdin formats a single .proto file read from stdin and writes the result to stdout.
+func runStdin(
+	ctx context.Context,
+	container appext.Container,
+	flags *flags,
+) (retErr error) {
+	if err := validateStdinFlags(container, flags); err != nil {
+		return err
+	}
+	externalPath := flags.StdinFilepath
+	path := normalpath.Base(normalpath.Normalize(externalPath))
+	if normalpath.Ext(path) != ".proto" {
+		return appcmd.NewInvalidArgumentErrorf(
+			"--%s must be a path to a .proto file",
+			stdinFilepathFlagName,
+		)
+	}
+	data, err := io.ReadAll(container.Stdin())
+	if err != nil {
+		return err
+	}
+	originalReadBucket, err := newStdinReadBucket(ctx, path, externalPath, data)
+	if err != nil {
+		return err
+	}
+	formattedReadBucket, err := bufformat.FormatBucket(ctx, originalReadBucket)
+	if err != nil {
+		return err
+	}
+	diffBuffer := bytes.NewBuffer(nil)
+	if _, err := storage.DiffWithFilenames(
+		ctx,
+		diffBuffer,
+		originalReadBucket,
+		formattedReadBucket,
+		storage.DiffWithExternalPaths(), // No need to set prefixes as the buckets are from the same location.
+	); err != nil {
+		return err
+	}
+	diffExists := diffBuffer.Len() > 0
+	defer func() {
+		if retErr == nil && flags.ExitCode && diffExists {
+			retErr = bufctl.ErrFileAnnotation
+		}
+	}()
+	if flags.Diff {
+		_, err := io.Copy(container.Stdout(), diffBuffer)
+		return err
+	}
+	readObjectCloser, err := formattedReadBucket.Get(ctx, path)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = errors.Join(retErr, readObjectCloser.Close())
+	}()
+	_, err = io.Copy(container.Stdout(), readObjectCloser)
+	return err
+}
+
+// validateStdinFlags returns an error if any flag that has no meaning when reading
+// from stdin was set.
+func validateStdinFlags(container appext.Container, flags *flags) error {
+	if container.NumArgs() > 0 || flags.InputHashtag != "" {
+		return appcmd.NewInvalidArgumentErrorf(
+			"cannot specify an input when using --%s",
+			stdinFilepathFlagName,
+		)
+	}
+	if flags.Write {
+		return appcmd.NewInvalidArgumentErrorf(
+			"cannot use --%s when using --%s",
+			writeFlagName,
+			stdinFilepathFlagName,
+		)
+	}
+	if flags.Output != "-" {
+		return appcmd.NewInvalidArgumentErrorf(
+			"cannot use --%s when using --%s",
+			outputFlagName,
+			stdinFilepathFlagName,
+		)
+	}
+	if len(flags.Paths) > 0 {
+		return appcmd.NewInvalidArgumentErrorf(
+			"cannot use --%s when using --%s",
+			pathsFlagName,
+			stdinFilepathFlagName,
+		)
+	}
+	if len(flags.ExcludePaths) > 0 {
+		return appcmd.NewInvalidArgumentErrorf(
+			"cannot use --%s when using --%s",
+			excludePathsFlagName,
+			stdinFilepathFlagName,
+		)
+	}
+	if flags.Config != "" {
+		return appcmd.NewInvalidArgumentErrorf(
+			"cannot use --%s when using --%s",
+			configFlagName,
+			stdinFilepathFlagName,
+		)
+	}
+	return nil
+}
+
+// newStdinReadBucket returns a ReadBucket containing the single file read from stdin,
+// stored at path with the given external path.
+func newStdinReadBucket(
+	ctx context.Context,
+	path string,
+	externalPath string,
+	data []byte,
+) (_ storage.ReadBucket, retErr error) {
+	readWriteBucket := storagemem.NewReadWriteBucket()
+	writeObjectCloser, err := readWriteBucket.Put(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		retErr = errors.Join(retErr, writeObjectCloser.Close())
+	}()
+	if _, err := writeObjectCloser.Write(data); err != nil {
+		return nil, err
+	}
+	if err := writeObjectCloser.SetExternalPath(externalPath); err != nil {
+		return nil, err
+	}
+	return readWriteBucket, nil
 }
 
 func writeToDir(
