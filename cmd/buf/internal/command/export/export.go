@@ -44,6 +44,7 @@ const (
 	configFlagName          = "config"
 	excludePathsFlagName    = "exclude-path"
 	disableSymlinksFlagName = "disable-symlinks"
+	lockedFlagName          = "locked"
 	allFlagName             = "all"
 )
 
@@ -103,6 +104,7 @@ type flags struct {
 	Config          string
 	ExcludePaths    []string
 	DisableSymlinks bool
+	Locked          bool
 	All             bool
 
 	// special
@@ -115,6 +117,7 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
+	bufcli.BindLocked(flagSet, &f.Locked, lockedFlagName)
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindExcludeImports(flagSet, &f.ExcludeImports, excludeImportsFlagName)
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
@@ -162,6 +165,7 @@ func run(
 		input,
 		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
 		bufctl.WithConfigOverride(flags.Config),
+		bufctl.WithLocked(flags.Locked),
 	)
 	if err != nil {
 		return err

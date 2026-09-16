@@ -45,6 +45,7 @@ const (
 	pathsFlagName             = "path"
 	excludePathsFlagName      = "exclude-path"
 	disableSymlinksFlagName   = "disable-symlinks"
+	lockedFlagName            = "locked"
 	asImportPathsFlagName     = "as-import-paths"
 
 	formatText   = "text"
@@ -94,6 +95,7 @@ type flags struct {
 	Paths             []string
 	ExcludePaths      []string
 	DisableSymlinks   bool
+	Locked            bool
 	// Deprecated. This flag no longer has any effect as we don't build images anymore.
 	ErrorFormat string
 	// Deprecated
@@ -111,6 +113,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
+	bufcli.BindLocked(flagSet, &f.Locked, lockedFlagName)
 	flagSet.StringVar(
 		&f.Config,
 		configFlagName,
@@ -187,6 +190,7 @@ func run(
 		input,
 		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
 		bufctl.WithConfigOverride(flags.Config),
+		bufctl.WithLocked(flags.Locked),
 	)
 	if err != nil {
 		return err

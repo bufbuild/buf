@@ -310,10 +310,7 @@ func (w *workspaceDepManager) ConfiguredLocalPolicyNameToRemotePluginRefs(ctx co
 }
 
 func (w *workspaceDepManager) BufLockFileDigestType() bufmodule.DigestType {
-	if w.isV2 {
-		return bufmodule.DigestTypeB5
-	}
-	return bufmodule.DigestTypeB4
+	return bufLockFileDigestTypeForIsV2(w.isV2)
 }
 
 func (w *workspaceDepManager) ExistingBufLockFileDepModuleKeys(ctx context.Context) ([]bufmodule.ModuleKey, error) {

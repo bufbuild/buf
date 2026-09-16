@@ -50,6 +50,7 @@ const (
 	includeWKTFlagName          = "include-wkt"
 	excludePathsFlagName        = "exclude-path"
 	disableSymlinksFlagName     = "disable-symlinks"
+	lockedFlagName              = "locked"
 	typeFlagName                = "type"
 	typeDeprecatedFlagName      = "include-types"
 	excludeTypeFlagName         = "exclude-type"
@@ -416,6 +417,7 @@ type flags struct {
 	IncludeWKTOverride     *bool
 	ExcludePaths           []string
 	DisableSymlinks        bool
+	Locked                 bool
 	// We may be able to bind two flags to one string slice but I don't
 	// want to find out what will break if we do.
 	Types           []string
@@ -431,6 +433,7 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
+	bufcli.BindLocked(flagSet, &f.Locked, lockedFlagName)
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
@@ -557,6 +560,7 @@ func run(
 		flags.ExcludePaths,
 		append(flags.Types, flags.TypesDeprecated...),
 		flags.ExcludeTypes,
+		flags.Locked,
 	)
 	if err != nil {
 		return err
@@ -632,6 +636,7 @@ func getInputImages(
 	excludePathsOverride []string,
 	includeTypesOverride []string,
 	excludeTypesOverride []string,
+	locked bool,
 ) ([]bufimage.Image, error) {
 	// If input is specified on the command line, we use that. If input is not
 	// specified on the command line, use the default input.
@@ -658,6 +663,7 @@ func getInputImages(
 			bufctl.WithTargetPaths(targetPathsOverride, excludePathsOverride),
 			bufctl.WithImageIncludeTypes(includeTypes),
 			bufctl.WithImageExcludeTypes(excludeTypes),
+			bufctl.WithLocked(locked),
 		)
 		if err != nil {
 			return nil, err
@@ -689,6 +695,7 @@ func getInputImages(
 			bufctl.WithTargetPaths(targetPaths, excludePaths),
 			bufctl.WithImageIncludeTypes(includeTypes),
 			bufctl.WithImageExcludeTypes(excludeTypes),
+			bufctl.WithLocked(locked),
 		)
 		if err != nil {
 			return nil, err

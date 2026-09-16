@@ -37,6 +37,7 @@ const (
 	pathsFlagName           = "path"
 	excludePathsFlagName    = "exclude-path"
 	disableSymlinksFlagName = "disable-symlinks"
+	lockedFlagName          = "locked"
 )
 
 // NewCommand returns a new Command.
@@ -68,6 +69,7 @@ type flags struct {
 	Paths           []string
 	ExcludePaths    []string
 	DisableSymlinks bool
+	Locked          bool
 	// special
 	InputHashtag string
 }
@@ -81,6 +83,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
+	bufcli.BindLocked(flagSet, &f.Locked, lockedFlagName)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -138,6 +141,7 @@ func run(
 		wasmRuntime,
 		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
 		bufctl.WithConfigOverride(flags.Config),
+		bufctl.WithLocked(flags.Locked),
 	)
 	if err != nil {
 		return err

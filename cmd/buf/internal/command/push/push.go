@@ -43,6 +43,7 @@ const (
 	labelFlagName              = "label"
 	errorFormatFlagName        = "error-format"
 	disableSymlinksFlagName    = "disable-symlinks"
+	lockedFlagName             = "locked"
 	createFlagName             = "create"
 	createVisibilityFlagName   = "create-visibility"
 	createDefaultLabelFlagName = "create-default-label"
@@ -97,6 +98,7 @@ type flags struct {
 	Labels             []string
 	ErrorFormat        string
 	DisableSymlinks    bool
+	Locked             bool
 	Create             bool
 	CreateVisibility   string
 	CreateDefaultLabel string
@@ -114,6 +116,7 @@ func newFlags() *flags {
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
+	bufcli.BindLocked(flagSet, &f.Locked, lockedFlagName)
 	bufcli.BindCreateVisibility(flagSet, &f.CreateVisibility, createVisibilityFlagName, createFlagName)
 	flagSet.StringSliceVar(
 		&f.Labels,
@@ -324,6 +327,7 @@ func getBuildableWorkspace(
 		// that we don't want to deal with. If we have a v1 workspace, just outlaw pushing the whole
 		// workspace, and force people into the pre-refactor behavior.
 		bufctl.WithIgnoreAndDisallowV1BufWorkYAMLs(),
+		bufctl.WithLocked(flags.Locked),
 	)
 	if err != nil {
 		return nil, err

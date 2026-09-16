@@ -148,6 +148,17 @@ By default, symlinks are followed in this CLI, but never followed on the Buf Sch
 	)
 }
 
+// BindLocked binds the locked flag.
+func BindLocked(flagSet *pflag.FlagSet, addr *bool, flagName string) {
+	flagSet.BoolVar(
+		addr,
+		flagName,
+		false,
+		`Error if the buf.lock is out of sync with the buf.yaml
+A module dependency, remote plugin, or remote policy declared in the buf.yaml with an explicit reference must be pinned to the commit that the reference resolves to in the buf.lock. Run "buf dep update", "buf plugin update", or "buf policy update" to update the buf.lock`,
+	)
+}
+
 // BindVisibility binds the visibility flag.
 func BindVisibility(flagSet *pflag.FlagSet, addr *string, flagName string, emptyDefault bool) {
 	defaultVisibility := privateVisibility

@@ -204,6 +204,7 @@ func NewController(
 type controller struct {
 	logger             *slog.Logger
 	container          app.EnvStdioContainer
+	moduleKeyProvider  bufmodule.ModuleKeyProvider
 	moduleDataProvider bufmodule.ModuleDataProvider
 	graphProvider      bufmodule.GraphProvider
 	commitProvider     bufmodule.CommitProvider
@@ -247,6 +248,7 @@ func newController(
 		logger:             logger,
 		container:          container,
 		graphProvider:      graphProvider,
+		moduleKeyProvider:  moduleKeyProvider,
 		moduleDataProvider: moduleDataProvider,
 		commitProvider:     commitProvider,
 		pluginKeyProvider:  pluginKeyProvider,
@@ -975,6 +977,30 @@ func (c *controller) getImageForWorkspace(
 	return image, nil
 }
 
+// checkLocked verifies that the buf.lock of the Workspace is in sync with its buf.yaml,
+// if the locked FunctionOption was set. This covers the module, remote plugin, and remote
+// policy deps declared in the buf.yaml.
+func (c *controller) checkLocked(
+	ctx context.Context,
+	workspace bufworkspace.Workspace,
+	functionOptions *functionOptions,
+) error {
+	if !functionOptions.locked {
+		return nil
+	}
+	outOfSyncDeps, err := bufworkspace.OutOfSyncDepsForWorkspace(
+		ctx,
+		c.moduleKeyProvider,
+		c.pluginKeyProvider,
+		c.policyKeyProvider,
+		workspace,
+	)
+	if err != nil {
+		return err
+	}
+	return bufworkspace.NewOutOfSyncDepsError(outOfSyncDeps)
+}
+
 func (c *controller) getWorkspaceForProtoFileRef(
 	ctx context.Context,
 	protoFileRef buffetch.ProtoFileRef,
@@ -1021,12 +1047,19 @@ func (c *controller) getWorkspaceForProtoFileRef(
 			bufworkspace.WithIgnoreAndDisallowV1BufWorkYAMLs(),
 		)
 	}
-	return c.workspaceProvider.GetWorkspaceForBucket(
+	workspace, err := c.workspaceProvider.GetWorkspaceForBucket(
 		ctx,
 		readBucketCloser,
 		bucketTargeting,
 		options...,
 	)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.checkLocked(ctx, workspace, functionOptions); err != nil {
+		return nil, err
+	}
+	return workspace, nil
 }
 
 func (c *controller) getWorkspaceForSourceRef(
@@ -1057,12 +1090,19 @@ func (c *controller) getWorkspaceForSourceRef(
 			bufworkspace.WithIgnoreAndDisallowV1BufWorkYAMLs(),
 		)
 	}
-	return c.workspaceProvider.GetWorkspaceForBucket(
+	workspace, err := c.workspaceProvider.GetWorkspaceForBucket(
 		ctx,
 		readBucketCloser,
 		bucketTargeting,
 		options...,
 	)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.checkLocked(ctx, workspace, functionOptions); err != nil {
+		return nil, err
+	}
+	return workspace, nil
 }
 
 func (c *controller) getWorkspaceDepManagerForDirRef(
@@ -1093,6 +1133,11 @@ func (c *controller) getWorkspaceForModuleRef(
 	moduleRef buffetch.ModuleRef,
 	functionOptions *functionOptions,
 ) (bufworkspace.Workspace, error) {
+	if functionOptions.locked {
+		// A module reference has no buf.yaml or buf.lock of its own to compare.
+		// TODO FUTURE: Feed flag names through to here.
+		return nil, errors.New("--locked is not valid for use with module references")
+	}
 	moduleKey, err := c.buffetchReader.GetModuleKey(ctx, c.container, moduleRef)
 	if err != nil {
 		return nil, err

@@ -132,6 +132,16 @@ func WithIgnoreAndDisallowV1BufWorkYAMLs() FunctionOption {
 	}
 }
 
+// WithLocked returns a new FunctionOption that says to verify that the buf.lock of the
+// workspace is in sync with its buf.yaml, and to error if it is not.
+//
+// See bufworkspace.OutOfSyncDepsForWorkspace for what is and is not compared.
+func WithLocked(locked bool) FunctionOption {
+	return func(functionOptions *functionOptions) {
+		functionOptions.locked = locked
+	}
+}
+
 // WithMessageValidation returns a new FunctionOption that says to validate the
 // message as it is being read.
 //
@@ -157,6 +167,7 @@ type functionOptions struct {
 	imageAsFileDescriptorSet        bool
 	configOverride                  string
 	ignoreAndDisallowV1BufWorkYAMLs bool
+	locked                          bool
 	messageValidation               bool
 }
 

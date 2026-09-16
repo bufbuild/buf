@@ -8,6 +8,12 @@
 - Add `--stdin-filepath` flag to `buf format`, which reads a single `.proto` file from
   stdin and writes the formatted result to stdout. The path is not read from disk, and is
   only used to report parse errors and diffs.
+- Add `--locked` flag to `buf build`, `buf breaking`, `buf export`, `buf generate`,
+  `buf lint`, `buf ls-files`, `buf push`, and `buf stats`, which errors if the `buf.lock`
+  of the input does not satisfy its `buf.yaml`. A module dependency, remote plugin, or
+  remote policy declared with an explicit reference, such as
+  `buf.build/bufbuild/protovalidate:v0.14.1`, must be pinned to the commit that the
+  reference resolves to.
 
 ## [v1.73.0] - 2026-09-11
 

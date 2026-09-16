@@ -33,6 +33,7 @@ import (
 const (
 	formatFlagName          = "format"
 	disableSymlinksFlagName = "disable-symlinks"
+	lockedFlagName          = "locked"
 )
 
 // NewCommand returns a new Command.
@@ -61,6 +62,7 @@ func NewCommand(
 type flags struct {
 	Format          string
 	DisableSymlinks bool
+	Locked          bool
 
 	// special
 	InputHashtag string
@@ -78,6 +80,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
 	)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
+	bufcli.BindLocked(flagSet, &f.Locked, lockedFlagName)
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 }
 
@@ -104,6 +107,7 @@ func run(
 	workspace, err := controller.GetWorkspace(
 		ctx,
 		input,
+		bufctl.WithLocked(flags.Locked),
 	)
 	if err != nil {
 		return err
