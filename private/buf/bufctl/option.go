@@ -42,6 +42,16 @@ func WithFileAnnotationsToStdout() ControllerOption {
 	}
 }
 
+// WithReaderFetchCache returns a new ControllerOption that fetches a given
+// remote input at most once for the lifetime of the Controller.
+//
+// See buffetch.WithReaderFetchCache.
+func WithReaderFetchCache() ControllerOption {
+	return func(controller *controller) {
+		controller.readerFetchCacheEnabled = true
+	}
+}
+
 // WithCopyToInMemory returns a new ControllerOption that copies to memory.
 func WithCopyToInMemory() ControllerOption {
 	return func(controller *controller) {

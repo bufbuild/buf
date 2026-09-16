@@ -217,6 +217,7 @@ type controller struct {
 	fileAnnotationErrorFormat string
 	fileAnnotationsToStdout   bool
 	copyToInMemory            bool
+	readerFetchCacheEnabled   bool
 
 	storageosProvider           storageos.Provider
 	buffetchRefParser           buffetch.RefParser
@@ -263,6 +264,10 @@ func newController(
 	}
 	controller.storageosProvider = newStorageosProvider(controller.disableSymlinks)
 	controller.buffetchRefParser = buffetch.NewRefParser(logger)
+	var buffetchReaderOptions []buffetch.ReaderOption
+	if controller.readerFetchCacheEnabled {
+		buffetchReaderOptions = append(buffetchReaderOptions, buffetch.WithReaderFetchCache())
+	}
 	controller.buffetchReader = buffetch.NewReader(
 		logger,
 		controller.storageosProvider,
@@ -274,6 +279,7 @@ func newController(
 			gitClonerOptions,
 		),
 		moduleKeyProvider,
+		buffetchReaderOptions...,
 	)
 	controller.buffetchWriter = buffetch.NewWriter(logger)
 	controller.workspaceProvider = bufworkspace.NewWorkspaceProvider(
