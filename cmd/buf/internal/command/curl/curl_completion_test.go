@@ -113,6 +113,32 @@ func newTestReflectionServer(t *testing.T, resolver protodesc.Resolver, serviceN
 	return server
 }
 
+// newTestPlainTextReflectionServer starts an in-process plain-text Connect
+// server that serves gRPC reflection (v1 and v1alpha) for the given service
+// names, using resolver to look up their descriptors. If unencryptedHTTP2 is
+// true, the server also accepts HTTP/2 connections via prior knowledge (h2c);
+// otherwise it only speaks HTTP 1.1. The server is automatically closed when
+// t completes.
+func newTestPlainTextReflectionServer(t *testing.T, resolver protodesc.Resolver, unencryptedHTTP2 bool, serviceNames ...string) *httptest.Server {
+	t.Helper()
+	reflector := grpcreflect.NewReflector(
+		grpcreflect.NamerFunc(func() []string { return serviceNames }),
+		grpcreflect.WithDescriptorResolver(resolver),
+	)
+	mux := http.NewServeMux()
+	mux.Handle(grpcreflect.NewHandlerV1(reflector))
+	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
+
+	server := httptest.NewUnstartedServer(mux)
+	protocols := new(http.Protocols)
+	protocols.SetHTTP1(true)
+	protocols.SetUnencryptedHTTP2(unencryptedHTTP2)
+	server.Config.Protocols = protocols
+	server.Start()
+	t.Cleanup(server.Close)
+	return server
+}
+
 // newCompletionCmd returns a minimal cobra.Command that has the flags accessed
 // by completeURL (schema, insecure, http2-prior-knowledge).
 func newCompletionCmd() *cobra.Command {
@@ -334,6 +360,34 @@ func TestCompleteURL_ReflectionServer(t *testing.T) {
 	})
 }
 
+// TestCompleteURL_PlainTextReflectionServer verifies end-to-end completion via a
+// plain-text h2c server with gRPC reflection enabled, without the
+// --http2-prior-knowledge flag, which is implied for http URLs.
+func TestCompleteURL_PlainTextReflectionServer(t *testing.T) {
+	t.Parallel()
+	resolver := newTestDescriptorResolver(t)
+	server := newTestPlainTextReflectionServer(t, resolver, true, "acme.foo.v1.FooService", "acme.bar.v1.BarService")
+
+	cmd := newCompletionCmd()
+
+	t.Run("unambiguous branch jumps to service name", func(t *testing.T) {
+		t.Parallel()
+		completions, directive := completeURL(cmd, nil, server.URL+"/acme.foo.")
+		assert.Equal(t, cobra.ShellCompDirectiveNoSpace|cobra.ShellCompDirectiveNoFileComp, directive)
+		assert.Equal(t, []string{server.URL + "/acme.foo.v1.FooService/\treflection"}, completions)
+	})
+
+	t.Run("lists methods for a service", func(t *testing.T) {
+		t.Parallel()
+		completions, directive := completeURL(cmd, nil, server.URL+"/acme.foo.v1.FooService/")
+		assert.Equal(t, cobra.ShellCompDirectiveNoFileComp, directive)
+		assert.Equal(t, []string{
+			server.URL + "/acme.foo.v1.FooService/GetFoo\treflection",
+			server.URL + "/acme.foo.v1.FooService/ListFoos\treflection",
+		}, completions)
+	})
+}
+
 // TestCompleteURLFromReflection_Unavailable verifies that when a server does not
 // support reflection, completeURLFromReflection returns ok=false so the caller
 // can try an alternative source.
@@ -365,7 +419,8 @@ func TestCompleteURLFromReflection_Unavailable(t *testing.T) {
 	assert.Nil(t, completions)
 }
 
-// TestMakeCompletionHTTPClient verifies the two code paths in makeCompletionHTTPClient.
+// TestMakeCompletionHTTPClient verifies that makeCompletionHTTPClient returns a
+// client for both secure and plain-text URLs.
 func TestMakeCompletionHTTPClient(t *testing.T) {
 	t.Parallel()
 
@@ -377,12 +432,12 @@ func TestMakeCompletionHTTPClient(t *testing.T) {
 		assert.NotNil(t, client)
 	})
 
-	t.Run("http without prior knowledge returns nothing", func(t *testing.T) {
+	t.Run("http without prior knowledge returns client", func(t *testing.T) {
 		t.Parallel()
 		cmd := newCompletionCmd()
 		client, ok := makeCompletionHTTPClient(cmd, false, "localhost:80")
-		assert.False(t, ok)
-		assert.Nil(t, client)
+		assert.True(t, ok)
+		assert.NotNil(t, client)
 	})
 
 	t.Run("http with prior knowledge returns client", func(t *testing.T) {
