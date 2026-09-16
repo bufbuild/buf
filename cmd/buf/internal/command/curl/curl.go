@@ -894,8 +894,8 @@ func parseEndpointURL(urlArg string) (service, method, baseURL string, err error
 // Without this, the CLI's error interceptor would render this without details as:
 //
 //	Failure: the server hosted at that remote is unavailable.
-func wrapPlainTextHTTP2Error(err error, f *flags, host string, isSecure bool) error {
-	if err == nil || isSecure || !f.HTTP2PriorKnowledge ||
+func wrapPlainTextHTTP2Error(err error, http2PriorKnowledge bool, host string, isSecure bool) error {
+	if err == nil || isSecure || !http2PriorKnowledge ||
 		// The stdlib does not expose a structured way of knowing the error is from a
 		// HTTP/1.1-like response so do a string match, meaning this function is
 		// best-effort across Go versions.
@@ -923,7 +923,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		}
 	}
 	defer func() {
-		err = wrapPlainTextHTTP2Error(err, f, host, isSecure)
+		err = wrapPlainTextHTTP2Error(err, f.HTTP2PriorKnowledge, host, isSecure)
 	}()
 	if err := f.validate(urlArg != "", isSecure); err != nil {
 		return err
