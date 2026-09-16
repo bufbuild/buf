@@ -63,7 +63,9 @@ type reader struct {
 	moduleEnabled     bool
 	moduleKeyProvider bufmodule.ModuleKeyProvider
 
-	// Keyed so that Refs sharing a fetch share an entry, see reader_cache.go.
+	// Caches are keyed so that Refs sharing a fetch share an entry, see
+	// reader_cache.go. Entries are held for the lifetime of the reader.
+	fetchCacheEnabled  bool
 	fileDataCache      cache.Cache[fileDataCacheKey, []byte]
 	archiveBucketCache cache.Cache[archiveBucketCacheKey, storage.ReadBucket]
 	gitBucketCache     cache.Cache[gitBucketCacheKey, storage.ReadBucket]
@@ -271,7 +273,7 @@ func (r *reader) getArchiveReadBucket(
 	container app.EnvStdinContainer,
 	archiveRef ArchiveRef,
 ) (storage.ReadBucket, error) {
-	if !isRemoteFileScheme(archiveRef.FileScheme()) {
+	if !r.fetchCacheEnabled || !isRemoteFileScheme(archiveRef.FileScheme()) {
 		return r.unarchive(ctx, container, archiveRef)
 	}
 	return r.archiveBucketCache.GetOrAdd(
@@ -393,12 +395,7 @@ func (r *reader) getGitBucket(
 	if r.gitCloner == nil {
 		return nil, nil, errors.New("git cloner is nil")
 	}
-	readBucket, err := r.gitBucketCache.GetOrAdd(
-		newGitBucketCacheKey(gitRef),
-		func() (storage.ReadBucket, error) {
-			return r.clone(ctx, container, gitRef)
-		},
-	)
+	readBucket, err := r.getGitReadBucket(ctx, container, gitRef)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -410,6 +407,22 @@ func (r *reader) getGitBucket(
 		targetPaths,
 		targetExcludePaths,
 		terminateFunc,
+	)
+}
+
+func (r *reader) getGitReadBucket(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	gitRef GitRef,
+) (storage.ReadBucket, error) {
+	if !r.fetchCacheEnabled {
+		return r.clone(ctx, container, gitRef)
+	}
+	return r.gitBucketCache.GetOrAdd(
+		newGitBucketCacheKey(gitRef),
+		func() (storage.ReadBucket, error) {
+			return r.clone(ctx, container, gitRef)
+		},
 	)
 }
 
@@ -472,7 +485,7 @@ func (r *reader) getFileReadCloserAndSize(
 	fileRef FileRef,
 	keepFileCompression bool,
 ) (io.ReadCloser, int64, error) {
-	if !isRemoteFileScheme(fileRef.FileScheme()) {
+	if !r.fetchCacheEnabled || !isRemoteFileScheme(fileRef.FileScheme()) {
 		return r.getFileReadCloserAndSizeUncached(ctx, container, fileRef, keepFileCompression)
 	}
 	data, err := r.fileDataCache.GetOrAdd(

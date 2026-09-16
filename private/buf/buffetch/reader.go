@@ -33,6 +33,10 @@ type reader struct {
 	internalReader internal.Reader
 }
 
+type readerOptions struct {
+	fetchCacheEnabled bool
+}
+
 func newReader(
 	logger *slog.Logger,
 	storageosProvider storageos.Provider,
@@ -40,23 +44,34 @@ func newReader(
 	httpAuthenticator httpauth.Authenticator,
 	gitCloner git.Cloner,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
+	options ...ReaderOption,
 ) *reader {
+	readerOptions := &readerOptions{}
+	for _, option := range options {
+		option(readerOptions)
+	}
+	internalReaderOptions := []internal.ReaderOption{
+		internal.WithReaderHTTP(
+			httpClient,
+			httpAuthenticator,
+		),
+		internal.WithReaderGit(
+			gitCloner,
+		),
+		internal.WithReaderLocal(),
+		internal.WithReaderStdio(),
+		internal.WithReaderModule(
+			moduleKeyProvider,
+		),
+	}
+	if readerOptions.fetchCacheEnabled {
+		internalReaderOptions = append(internalReaderOptions, internal.WithReaderFetchCache())
+	}
 	return &reader{
 		internalReader: internal.NewReader(
 			logger,
 			storageosProvider,
-			internal.WithReaderHTTP(
-				httpClient,
-				httpAuthenticator,
-			),
-			internal.WithReaderGit(
-				gitCloner,
-			),
-			internal.WithReaderLocal(),
-			internal.WithReaderStdio(),
-			internal.WithReaderModule(
-				moduleKeyProvider,
-			),
+			internalReaderOptions...,
 		),
 	}
 }

@@ -41,7 +41,7 @@ func TestReaderArchiveFetchDeduplication(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
 	server, requestCount := newTestArchiveServer(t)
-	reader := newTestHTTPReader(t)
+	reader := newTestHTTPReader(t, WithReaderFetchCache())
 	// Reads differing only in what is applied after the fetch share one fetch.
 	// StripComponents is applied while unarchiving, so it is not one of those:
 	// the last read fetches again.
@@ -78,6 +78,33 @@ func TestReaderArchiveFetchDeduplication(t *testing.T) {
 	require.Equal(t, int64(2), requestCount.Load())
 }
 
+func TestReaderArchiveFetchWithoutCache(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	server, requestCount := newTestArchiveServer(t)
+	reader := newTestHTTPReader(t)
+	for range 2 {
+		archiveRef, err := newArchiveRef(
+			"targz",
+			server.URL+"/archive.tar.gz",
+			ArchiveTypeTar,
+			CompressionTypeGzip,
+			0,
+			"svc-a",
+		)
+		require.NoError(t, err)
+		readBucketCloser, _, err := reader.GetReadBucketCloser(
+			ctx,
+			newTestStdinContainer(),
+			archiveRef,
+		)
+		require.NoError(t, err)
+		require.NoError(t, readBucketCloser.Close())
+	}
+	// Without WithReaderFetchCache, every read fetches.
+	require.Equal(t, int64(2), requestCount.Load())
+}
+
 func TestReaderFileFetchDeduplication(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
@@ -90,7 +117,7 @@ func TestReaderFileFetchDeduplication(t *testing.T) {
 		}),
 	)
 	t.Cleanup(server.Close)
-	reader := newTestHTTPReader(t)
+	reader := newTestHTTPReader(t, WithReaderFetchCache())
 	for range 3 {
 		singleRef, err := newSingleRef("binpb", server.URL+"/image.binpb", CompressionTypeNone, nil)
 		require.NoError(t, err)
@@ -107,7 +134,12 @@ func TestReaderFileFetchDeduplication(t *testing.T) {
 func TestReaderFileFetchNoDeduplicationForStdin(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
-	reader := NewReader(slogtestext.NewLogger(t), storageos.NewProvider(), WithReaderStdio())
+	reader := NewReader(
+		slogtestext.NewLogger(t),
+		storageos.NewProvider(),
+		WithReaderStdio(),
+		WithReaderFetchCache(),
+	)
 	container := app.NewContainer(nil, strings.NewReader("image"), nil, nil)
 	singleRef, err := newSingleRef("binpb", "-", CompressionTypeNone, nil)
 	require.NoError(t, err)
@@ -193,6 +225,7 @@ func TestReaderGitCloneDeduplication(t *testing.T) {
 				slogtestext.NewLogger(t),
 				storageos.NewProvider(),
 				WithReaderGit(cloner),
+				WithReaderFetchCache(),
 			)
 			for _, read := range testCase.reads {
 				depth := read.depth
@@ -295,12 +328,15 @@ func putTestArchiveFiles(ctx context.Context, writeBucket storage.WriteBucket) e
 	return nil
 }
 
-func newTestHTTPReader(t *testing.T) Reader {
+func newTestHTTPReader(t *testing.T, options ...ReaderOption) Reader {
 	t.Helper()
 	return NewReader(
 		slogtestext.NewLogger(t),
 		storageos.NewProvider(),
-		WithReaderHTTP(http.DefaultClient, httpauth.NewNopAuthenticator()),
+		append(
+			[]ReaderOption{WithReaderHTTP(http.DefaultClient, httpauth.NewNopAuthenticator())},
+			options...,
+		)...,
 	)
 }
 
