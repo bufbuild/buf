@@ -16,6 +16,7 @@ package bufcurl
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/buftesting"
@@ -32,23 +33,7 @@ import (
 
 func TestCountUnrecognized(t *testing.T) {
 	t.Parallel()
-	results, _, err := incremental.Run(t.Context(), incremental.New(), queries.FDS{
-		Opener:    &source.Openers{&source.FS{FS: os.DirFS("./testdata")}, buftesting.WKTOpener()},
-		Session:   new(ir.Session),
-		Workspace: source.NewWorkspace("test.proto"),
-	})
-	require.NoError(t, err)
-	require.Len(t, results, 1)
-	require.NoError(t, results[0].Fatal)
-	// fdp stores option values (e.g. MessageOptions.map_entry) as unknown bytes;
-	// a wire round-trip materializes them as typed fields so the resolver
-	// recognizes map fields as maps. Mirrors build_image.go's resolverForFDS.
-	fdsBytes, err := protoencoding.NewWireMarshaler().Marshal(results[0].Value)
-	require.NoError(t, err)
-	fds := new(descriptorpb.FileDescriptorSet)
-	require.NoError(t, protoencoding.NewWireUnmarshaler(nil).Unmarshal(fdsBytes, fds))
-	resolver, err := protoencoding.NewResolver(fds.File...)
-	require.NoError(t, err)
+	resolver := newTestResolver(t)
 	msgType, err := resolver.FindMessageByName("foo.bar.Message")
 	require.NoError(t, err)
 	msg := msgType.New()
@@ -85,4 +70,49 @@ func TestCountUnrecognized(t *testing.T) {
 
 	unrecognized := countUnrecognized(msg)
 	assert.Equal(t, expectedUnrecognized, unrecognized)
+}
+
+func TestVerifySingleRequest(t *testing.T) {
+	t.Parallel()
+	resolver := newTestResolver(t)
+	// Download is server-streaming: it still accepts only a single request, and
+	// must not be described as unary.
+	descriptor, err := resolver.FindDescriptorByName("foo.bar.Service.Download")
+	require.NoError(t, err)
+	methodDescriptor, ok := descriptor.(protoreflect.MethodDescriptor)
+	require.True(t, ok)
+	inv := &invoker{md: methodDescriptor, res: resolver}
+	verify := func(remainingData string) error {
+		return inv.verifySingleRequest(newMessageProvider("source", strings.NewReader(remainingData), resolver))
+	}
+
+	assert.NoError(t, verify(""))
+	assert.NoError(t, verify("\n  \n"))
+	assert.EqualError(t, verify("}"),
+		"method Download accepts only a single request message, and the input after the first message could not be parsed: source at offset 0: invalid character '}' looking for beginning of value")
+	assert.EqualError(t, verify(`{"s":"two"}`),
+		"method Download accepts only a single request message, but input contained more than one")
+}
+
+// newTestResolver compiles ./testdata/test.proto into a resolver.
+func newTestResolver(t *testing.T) protoencoding.Resolver {
+	t.Helper()
+	results, _, err := incremental.Run(t.Context(), incremental.New(), queries.FDS{
+		Opener:    &source.Openers{&source.FS{FS: os.DirFS("./testdata")}, buftesting.WKTOpener()},
+		Session:   new(ir.Session),
+		Workspace: source.NewWorkspace("test.proto"),
+	})
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	require.NoError(t, results[0].Fatal)
+	// fdp stores option values (e.g. MessageOptions.map_entry) as unknown bytes;
+	// a wire round-trip materializes them as typed fields so the resolver
+	// recognizes map fields as maps. Mirrors build_image.go's resolverForFDS.
+	fdsBytes, err := protoencoding.NewWireMarshaler().Marshal(results[0].Value)
+	require.NoError(t, err)
+	fds := new(descriptorpb.FileDescriptorSet)
+	require.NoError(t, protoencoding.NewWireUnmarshaler(nil).Unmarshal(fdsBytes, fds))
+	resolver, err := protoencoding.NewResolver(fds.File...)
+	require.NoError(t, err)
+	return resolver
 }
