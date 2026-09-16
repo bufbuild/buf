@@ -1,0 +1,22 @@
+syntax = "proto2";
+
+package a;
+
+message Foo {
+  // buf:lint:ignore FIELD_NOT_REQUIRED
+  required group Ignored = 1 {
+    optional string id = 1;
+  }
+  required group NotIgnored = 2 {
+    optional string id = 1;
+  }
+  message Nested {
+    // buf:lint:ignore FIELD_NOT_REQUIRED
+    required group Ignored = 1 {
+      optional string id = 1;
+    }
+    required group NotIgnored = 2 {
+      optional string id = 1;
+    }
+  }
+}

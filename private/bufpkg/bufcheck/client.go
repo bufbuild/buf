@@ -43,6 +43,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"pluginrpc.com/pluginrpc"
 )
 
@@ -824,16 +825,123 @@ func ignoreFileLocation(
 		sourceLocations := protoreflectFileDescriptor.SourceLocations()
 		for _, associatedSourcePath := range associatedSourcePaths {
 			sourceLocation := sourceLocations.ByPath(associatedSourcePath)
-			if leadingComments := sourceLocation.LeadingComments; leadingComments != "" {
-				for _, line := range xstrings.SplitTrimLinesNoEmpty(leadingComments) {
-					if checkCommentLineForCheckIgnore(line, config.CommentIgnorePrefix, ruleID) {
-						return true, nil
-					}
+			if leadingCommentsHaveCheckIgnore(sourceLocation.LeadingComments, config.CommentIgnorePrefix, ruleID) {
+				return true, nil
+			}
+			// A group field has both a field and synthetic message in the descriptor, with comments
+			// that appear to be on the field actually assigned to the synthetic message.
+			// So we need to see if the path is a group, resolve its synthetic message, and check the comments
+			// there if so.
+			if syntheticMessage := groupFieldSyntheticMessage(protoreflectFileDescriptor, associatedSourcePath); syntheticMessage != nil {
+				syntheticMessageSourceLocation := sourceLocations.ByDescriptor(syntheticMessage)
+				if leadingCommentsHaveCheckIgnore(syntheticMessageSourceLocation.LeadingComments, config.CommentIgnorePrefix, ruleID) {
+					return true, nil
 				}
 			}
 		}
 	}
 	return false, nil
+}
+
+// groupFieldSyntheticMessage returns the synthetic message declaration for the group field
+// at the given source path, or nil if the source path does not point to a group field.
+func groupFieldSyntheticMessage(
+	fileDescriptor protoreflect.FileDescriptor,
+	sourcePath protoreflect.SourcePath,
+) protoreflect.MessageDescriptor {
+	fieldDescriptor := fieldDescriptorForSourcePath(fileDescriptor, sourcePath)
+	if fieldDescriptor == nil || fieldDescriptor.Kind() != protoreflect.GroupKind {
+		return nil
+	}
+	return fieldDescriptor.Message()
+}
+
+// Source path tags for the descriptor fields traversed when resolving a source path to a
+// field declaration.
+const (
+	// FileDescriptorProto.message_type.
+	fileMessagesTag = int32(4)
+	// FileDescriptorProto.extension.
+	fileExtensionsTag = int32(7)
+	// DescriptorProto.field.
+	messageFieldsTag = int32(2)
+	// DescriptorProto.nested_type.
+	messageNestedMessagesTag = int32(3)
+	// DescriptorProto.extension.
+	messageExtensionsTag = int32(6)
+)
+
+// fieldDescriptorForSourcePath returns the field declaration at the given source path, or
+// nil if the source path does not point to a field declaration.
+//
+// A source path for a field declaration alternates a tag and an index, descending through
+// message declarations before terminating at a field or an extension field, for example
+// [4, 0, 3, 1, 2, 0] for .message_type(0).nested_type(1).field(0).
+func fieldDescriptorForSourcePath(
+	fileDescriptor protoreflect.FileDescriptor,
+	sourcePath protoreflect.SourcePath,
+) protoreflect.FieldDescriptor {
+	if len(sourcePath) < 2 || len(sourcePath)%2 != 0 {
+		return nil
+	}
+	// The message that the declaration at the end of the source path belongs to, or nil if
+	// the declaration is at the top level of the file.
+	var parentMessageDescriptor protoreflect.MessageDescriptor
+	for i := 0; i < len(sourcePath)-2; i += 2 {
+		tag, index := sourcePath[i], int(sourcePath[i+1])
+		var messageDescriptors protoreflect.MessageDescriptors
+		switch {
+		case parentMessageDescriptor == nil && tag == fileMessagesTag:
+			messageDescriptors = fileDescriptor.Messages()
+		case parentMessageDescriptor != nil && tag == messageNestedMessagesTag:
+			messageDescriptors = parentMessageDescriptor.Messages()
+		default:
+			return nil
+		}
+		if index < 0 || index >= messageDescriptors.Len() {
+			return nil
+		}
+		parentMessageDescriptor = messageDescriptors.Get(index)
+	}
+	tag, index := sourcePath[len(sourcePath)-2], int(sourcePath[len(sourcePath)-1])
+	if index < 0 {
+		return nil
+	}
+	if parentMessageDescriptor == nil {
+		if tag == fileExtensionsTag && index < fileDescriptor.Extensions().Len() {
+			return fileDescriptor.Extensions().Get(index)
+		}
+		return nil
+	}
+	switch tag {
+	case messageFieldsTag:
+		if index < parentMessageDescriptor.Fields().Len() {
+			return parentMessageDescriptor.Fields().Get(index)
+		}
+	case messageExtensionsTag:
+		if index < parentMessageDescriptor.Extensions().Len() {
+			return parentMessageDescriptor.Extensions().Get(index)
+		}
+	}
+	return nil
+}
+
+// leadingCommentsHaveCheckIgnore checks if any line of the given leading comments is a
+// comment ignore for the given rule.
+func leadingCommentsHaveCheckIgnore(
+	leadingComments string,
+	commentIgnorePrefix string,
+	ruleID string,
+) bool {
+	if leadingComments == "" {
+		return false
+	}
+	for _, line := range xstrings.SplitTrimLinesNoEmpty(leadingComments) {
+		if checkCommentLineForCheckIgnore(line, commentIgnorePrefix, ruleID) {
+			return true
+		}
+	}
+	return false
 }
 
 // checkCommentLineForCheckIgnore checks that the comment line starts with the configured
