@@ -108,23 +108,23 @@ func TestWrapPlainTextHTTP2Error(t *testing.T) {
 
 	t.Run("nil error", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, wrapPlainTextHTTP2Error(nil, &flags{HTTP2PriorKnowledge: true, Reflect: true}, "localhost:80", false))
+		assert.NoError(t, wrapPlainTextHTTP2Error(nil, true, "localhost:80", false))
 	})
 	t.Run("secure URL is untouched", func(t *testing.T) {
 		t.Parallel()
-		assert.Same(t, framerErr, wrapPlainTextHTTP2Error(framerErr, &flags{HTTP2PriorKnowledge: true, Reflect: true}, "localhost:443", true))
+		assert.Same(t, framerErr, wrapPlainTextHTTP2Error(framerErr, true, "localhost:443", true))
 	})
 	t.Run("without prior knowledge is untouched", func(t *testing.T) {
 		t.Parallel()
-		assert.Same(t, framerErr, wrapPlainTextHTTP2Error(framerErr, &flags{}, "localhost:80", false))
+		assert.Same(t, framerErr, wrapPlainTextHTTP2Error(framerErr, false, "localhost:80", false))
 	})
 	t.Run("other error is untouched", func(t *testing.T) {
 		t.Parallel()
-		assert.Same(t, otherErr, wrapPlainTextHTTP2Error(otherErr, &flags{HTTP2PriorKnowledge: true, Reflect: true}, "localhost:80", false))
+		assert.Same(t, otherErr, wrapPlainTextHTTP2Error(otherErr, true, "localhost:80", false))
 	})
 	t.Run("http1 response with prior knowledge is rewritten", func(t *testing.T) {
 		t.Parallel()
-		err := wrapPlainTextHTTP2Error(framerErr, &flags{HTTP2PriorKnowledge: true}, "localhost:80", false)
+		err := wrapPlainTextHTTP2Error(framerErr, true, "localhost:80", false)
 		require.Error(t, err)
 		assert.Equal(t,
 			"the RPC protocol or method requires HTTP/2, but the server at localhost:80 responded with HTTP/1.1 and does not appear to support HTTP/2 over plain-text (h2c): "+framerErr.Error(),
