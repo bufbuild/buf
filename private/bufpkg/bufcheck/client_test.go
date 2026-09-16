@@ -15,7 +15,6 @@
 package bufcheck
 
 import (
-	"context"
 	"testing"
 
 	"github.com/bufbuild/protocompile"
@@ -151,7 +150,7 @@ func testCompileFileDescriptor(t *testing.T, fileContent string) protoreflect.Fi
 		},
 		SourceInfoMode: protocompile.SourceInfoStandard,
 	}
-	files, err := compiler.Compile(context.Background(), "a.proto")
+	files, err := compiler.Compile(t.Context(), "a.proto")
 	require.NoError(t, err)
 	require.Len(t, files, 1)
 	return files[0]
