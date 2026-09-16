@@ -122,6 +122,77 @@ policies:
 	)
 }
 
+// TestReadBufLockFileIgnoresUnknownFields covers that a buf.lock written by a newer buf
+// with fields this version does not know is still readable, and that the unknown fields
+// are dropped rather than written back.
+func TestReadBufLockFileIgnoresUnknownFields(t *testing.T) {
+	t.Parallel()
+
+	testReadWriteBufLockFileRoundTrip(
+		t,
+		// input
+		`version: v2
+future_top_level_field: value
+deps:
+  - name: buf.testing/acme/date
+    future_dep_field: value
+    commit: ffded0b4cf6b47cab74da08d291a3c2f
+    digest: b5:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+plugins:
+  - name: buf.testing/acme/plugin
+    future_plugin_field: value
+    commit: ffded0b4cf6b47cab74da08d291a3c2f
+    digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+policies:
+  - name: buf.testing/acme/policy
+    future_policy_field: value
+    commit: b8488077ea6d4f6d9562a337b98259c8
+    digest: o1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+    plugins:
+      - name: buf.testing/acme/plugin
+        future_policy_plugin_field: value
+        commit: ffded0b4cf6b47cab74da08d291a3c2f
+        digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+`,
+		// expected output
+		`version: v2
+deps:
+  - name: buf.testing/acme/date
+    commit: ffded0b4cf6b47cab74da08d291a3c2f
+    digest: b5:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+plugins:
+  - name: buf.testing/acme/plugin
+    commit: ffded0b4cf6b47cab74da08d291a3c2f
+    digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+policies:
+  - name: buf.testing/acme/policy
+    commit: b8488077ea6d4f6d9562a337b98259c8
+    digest: o1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+    plugins:
+      - name: buf.testing/acme/plugin
+        commit: ffded0b4cf6b47cab74da08d291a3c2f
+        digest: p1:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+`,
+	)
+
+	// v1 buf.lock files are still parsed strictly. They are no longer written, so there
+	// is no newer buf that could add a field to them.
+	_, err := ReadBufLockFile(
+		t.Context(),
+		strings.NewReader(testCleanYAMLData(`version: v1
+future_top_level_field: value
+deps:
+  - remote: buf.testing
+    owner: acme
+    repository: date
+    commit: ffded0b4cf6b47cab74da08d291a3c2f
+    digest: shake256:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+`)),
+		DefaultBufLockFileName,
+	)
+	require.ErrorContains(t, err, "future_top_level_field")
+}
+
 func testReadBufLockFile(
 	t *testing.T,
 	inputBufLockFileData string,

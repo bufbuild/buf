@@ -405,7 +405,9 @@ func readBufLockFile(
 		return newBufLockFile(fileVersion, objectData, depModuleKeys, nil /* remotePluginKeys */, nil /* remotePolicyKeys */, nil /* remotePolicyPluginKeys */)
 	case FileVersionV2:
 		var externalBufLockFile externalBufLockFileV2
-		if err := getUnmarshalStrict(allowJSON)(data, &externalBufLockFile); err != nil {
+		// Parse non-strict to allow unknown fields possibly written by a newer version of buf.
+		// Unknown fields are dropped and not written back.
+		if err := getUnmarshalNonStrict(allowJSON)(data, &externalBufLockFile); err != nil {
 			return nil, err
 		}
 		depModuleKeys := make([]bufmodule.ModuleKey, len(externalBufLockFile.Deps))

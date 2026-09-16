@@ -8,6 +8,8 @@
 - Add `--stdin-filepath` flag to `buf format`, which reads a single `.proto` file from
   stdin and writes the formatted result to stdout. The path is not read from disk, and is
   only used to report parse errors and diffs.
+- Parse v2 `buf.lock` files non-strictly, ignoring unknown fields. A `buf.lock` written by a
+  newer `buf` that records additional fields no longer fails to parse on an older `buf`.
 
 ## [v1.73.0] - 2026-09-11
 
