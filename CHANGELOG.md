@@ -8,6 +8,9 @@
 - Add `--stdin-filepath` flag to `buf format`, which reads a single `.proto` file from
   stdin and writes the formatted result to stdout. The path is not read from disk, and is
   only used to report parse errors and diffs.
+- Fix configuration files silently accepting unquoted values that start with `!`, such as
+  `ignore: [!foo/bar.proto]`. Previously they parsed as empty strings, now they rejected
+  with an error.
 
 ## [v1.73.0] - 2026-09-11
 
