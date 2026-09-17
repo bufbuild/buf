@@ -75,22 +75,33 @@ func TestCountUnrecognized(t *testing.T) {
 func TestVerifySingleRequest(t *testing.T) {
 	t.Parallel()
 	resolver := newTestResolver(t)
-	// Download is server-streaming: it still accepts only a single request, and
-	// must not be described as unary.
-	descriptor, err := resolver.FindDescriptorByName("foo.bar.Service.Download")
-	require.NoError(t, err)
-	methodDescriptor, ok := descriptor.(protoreflect.MethodDescriptor)
-	require.True(t, ok)
-	inv := &invoker{md: methodDescriptor, res: resolver}
-	verify := func(remainingData string) error {
-		return inv.verifySingleRequest(newMessageProvider("source", strings.NewReader(remainingData), resolver))
+	newVerify := func(methodName string) func(string) error {
+		descriptor, err := resolver.FindDescriptorByName(protoreflect.FullName("foo.bar.Service." + methodName))
+		require.NoError(t, err)
+		methodDescriptor, ok := descriptor.(protoreflect.MethodDescriptor)
+		require.True(t, ok)
+		inv := &invoker{md: methodDescriptor, res: resolver}
+		return func(remainingData string) error {
+			return inv.verifySingleRequest(newMessageProvider("source", strings.NewReader(remainingData), resolver))
+		}
 	}
 
-	assert.NoError(t, verify(""))
-	assert.NoError(t, verify("\n  \n"))
-	assert.EqualError(t, verify("}"),
+	verifyUnary := newVerify("Unary")
+	assert.NoError(t, verifyUnary(""))
+	assert.NoError(t, verifyUnary("\n  \n"))
+	assert.EqualError(t, verifyUnary("}"),
+		"method Unary accepts only a single request message, and the input after the first message could not be parsed: source at offset 0: invalid character '}' looking for beginning of value")
+	assert.EqualError(t, verifyUnary(`{"s":"two"}`),
+		"method Unary accepts only a single request message, but input contained more than one")
+
+	// Download is server-streaming: it still accepts only a single request, and
+	// must not be described as unary.
+	verifyDownload := newVerify("Download")
+	assert.NoError(t, verifyDownload(""))
+	assert.NoError(t, verifyDownload("\n  \n"))
+	assert.EqualError(t, verifyDownload("}"),
 		"method Download accepts only a single request message, and the input after the first message could not be parsed: source at offset 0: invalid character '}' looking for beginning of value")
-	assert.EqualError(t, verify(`{"s":"two"}`),
+	assert.EqualError(t, verifyDownload(`{"s":"two"}`),
 		"method Download accepts only a single request message, but input contained more than one")
 }
 
