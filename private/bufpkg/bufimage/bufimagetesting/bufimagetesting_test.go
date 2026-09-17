@@ -770,6 +770,88 @@ func TestBasic(t *testing.T) {
 		diff = cmp.Diff(codeGeneratorRequestsIncludeImports[i], requestsFromImages[i], protocmp.Transform())
 		require.Empty(t, diff)
 	}
+
+	// ImageByDirWithIncludeWellKnownTypes has no effect without ImageByDirWithIncludeImports.
+	imagesByDirWellKnownTypesOnly, err := bufimage.ImageByDir(image, bufimage.ImageByDirWithIncludeWellKnownTypes())
+	require.NoError(t, err)
+	require.Equal(t, len(imagesByDir), len(imagesByDirWellKnownTypesOnly))
+	for i := range imagesByDir {
+		AssertImageFilesEqual(t, imagesByDir[i].Files(), imagesByDirWellKnownTypesOnly[i].Files())
+	}
+
+	// With ImageByDirWithIncludeImports, the non-well-known-type import gets its own Image
+	// for its directory, and the other Images are unchanged.
+	imagesByDirIncludeImports, err := bufimage.ImageByDir(image, bufimage.ImageByDirWithIncludeImports())
+	require.NoError(t, err)
+	require.Equal(t, 4, len(imagesByDirIncludeImports))
+	AssertImageFilesEqual(
+		t,
+		[]bufimage.ImageFile{
+			NewImageFile(t, protoImageFileImport, nil, uuid.Nil, "some/import/import.proto", "some/import/import.proto", false, false, nil),
+		},
+		imagesByDirIncludeImports[0].Files(),
+	)
+	for i := range imagesByDir {
+		AssertImageFilesEqual(t, imagesByDir[i].Files(), imagesByDirIncludeImports[i+1].Files())
+	}
+	// Each file is generated in exactly one request, and each request only generates
+	// files from a single directory, even with includeImports set.
+	codeGeneratorRequestsByDirIncludeImports := []*pluginpb.CodeGeneratorRequest{
+		{
+			ProtoFile: []*descriptorpb.FileDescriptorProto{
+				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+			},
+			Parameter: new("foo"),
+			FileToGenerate: []string{
+				"import.proto",
+			},
+			SourceFileDescriptors: []*descriptorpb.FileDescriptorProto{
+				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+			},
+		},
+		codeGeneratorRequests[0],
+		codeGeneratorRequests[1],
+		codeGeneratorRequests[2],
+	}
+	requestsFromImages, err = bufimage.ImagesToCodeGeneratorRequests(imagesByDirIncludeImports, "foo", nil, true, false)
+	require.NoError(t, err)
+	require.Equal(t, len(codeGeneratorRequestsByDirIncludeImports), len(requestsFromImages))
+	for i := range codeGeneratorRequestsByDirIncludeImports {
+		diff = cmp.Diff(codeGeneratorRequestsByDirIncludeImports[i], requestsFromImages[i], protocmp.Transform())
+		require.Empty(t, diff)
+	}
+
+	// With ImageByDirWithIncludeWellKnownTypes as well, the well-known type also gets its own Image.
+	imagesByDirIncludeImportsAndWellKnownTypes, err := bufimage.ImageByDir(
+		image,
+		bufimage.ImageByDirWithIncludeImports(),
+		bufimage.ImageByDirWithIncludeWellKnownTypes(),
+	)
+	require.NoError(t, err)
+	require.Equal(t, 5, len(imagesByDirIncludeImportsAndWellKnownTypes))
+	for i := range imagesByDirIncludeImports {
+		AssertImageFilesEqual(t, imagesByDirIncludeImports[i].Files(), imagesByDirIncludeImportsAndWellKnownTypes[i].Files())
+	}
+	AssertImageFilesEqual(
+		t,
+		[]bufimage.ImageFile{
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, uuid.Nil, "google/protobuf/timestamp.proto", "", false, false, nil),
+		},
+		imagesByDirIncludeImportsAndWellKnownTypes[4].Files(),
+	)
+	requestsFromImages, err = bufimage.ImagesToCodeGeneratorRequests(imagesByDirIncludeImportsAndWellKnownTypes, "foo", nil, true, true)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		[][]string{
+			{"import.proto"},
+			{"a/a.proto", "a/b.proto"},
+			{"b/a.proto", "b/b.proto"},
+			{"d/d.proto/d.proto"},
+			{"google/protobuf/timestamp.proto"},
+		},
+		xslices.Map(requestsFromImages, (*pluginpb.CodeGeneratorRequest).GetFileToGenerate),
+	)
 }
 
 func TestImageFileInfosWithOnlyTargetsAndTargetImports(t *testing.T) {

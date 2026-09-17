@@ -33,6 +33,7 @@ go install connectrpc.com/connect/cmd/protoc-gen-connect-go@${CONNECT_VERSION}
 go install ./cmd/buf \
   ./cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
   ./cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
+  ./cmd/buf/internal/command/generate/internal/protoc-gen-files-to-generate-yaml \
   ./cmd/buf/internal/command/generate/internal/protoc-gen-top-level-type-names-yaml \
   ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-panic \
   ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-suffix \

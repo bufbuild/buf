@@ -8,6 +8,9 @@
 - Add `--stdin-filepath` flag to `buf format`, which reads a single `.proto` file from
   stdin and writes the formatted result to stdout. The path is not read from disk, and is
   only used to report parse errors and diffs.
+- Fix `buf generate` with `strategy: directory` and `include_imports: true` adding imports
+  to the `CodeGeneratorRequest` of the directory that imports them. Imports are now split
+  by directory into their own requests, the same as non-imports.
 
 ## [v1.73.0] - 2026-09-11
 

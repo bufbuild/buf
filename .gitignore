@@ -10,6 +10,7 @@
 /cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
 /cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
 /cmd/buf/internal/command/alpha/protoc/test.txt
+/cmd/buf/internal/command/generate/internal/protoc-gen-files-to-generate-yaml/protoc-gen-files-to-generate-yaml
 /cmd/buf/internal/command/generate/internal/protoc-gen-top-level-type-names-yaml/protoc-gen-top-level-type-names-yaml
 /cmd/buf/testdata/imports/cache/v3/modulelocks/
 /cmd/buf/testdata/imports/corrupted_cache_dep/v3/modulelocks/
