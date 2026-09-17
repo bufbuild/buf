@@ -45,6 +45,9 @@ func UnmarshalYAMLStrict(data []byte, v any) error {
 	if len(data) == 0 {
 		return nil
 	}
+	if err := validateNoLocalYAMLTags(data); err != nil {
+		return err
+	}
 	yamlDecoder := NewYAMLDecoderStrict(bytes.NewReader(data))
 	return updateYAMLTypeError(yamlDecoder.Decode(v))
 }
@@ -190,6 +193,42 @@ func InterfaceSliceOrStringToStringSlice(in any) ([]string, error) {
 }
 
 // *** PRIVATE ***
+
+// validateNoLocalYAMLTags returns an error if the YAML data contains a local
+// tag, that is a tag of the form "!name" as opposed to a standard "!!name" tag.
+// We never register custom tags that would be resolved with "!" so there is
+// no valid use for a value starting with a single exclamation mark. If we don't
+// detect and reject explicitly, they instead cause the tag to be trimmed from
+// the value, usually leaving an empty value behind that we use as the config.
+func validateNoLocalYAMLTags(data []byte) error {
+	var node yaml.Node
+	if err := yaml.Unmarshal(data, &node); err != nil {
+		return err
+	}
+	return walkYAMLNode(&node, func(node *yaml.Node) error {
+		if len(node.Tag) >= 2 && node.Tag[0] == '!' && node.Tag[1] != '!' {
+			return fmt.Errorf(
+				"yaml: line %d: unexpected tag %q: values that start with %q must be quoted",
+				node.Line,
+				node.Tag,
+				"!",
+			)
+		}
+		return nil
+	})
+}
+
+func walkYAMLNode(node *yaml.Node, f func(*yaml.Node) error) error {
+	if err := f(node); err != nil {
+		return err
+	}
+	for _, child := range node.Content {
+		if err := walkYAMLNode(child, f); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 func updateYAMLTypeError(err error) error {
 	if err == nil {
