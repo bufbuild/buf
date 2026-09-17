@@ -42,9 +42,9 @@ func isValidFilterTypeName(name string) bool {
 // message also clarifies that the only supported wildcard is a trailing ".**".
 func invalidFilterTypeError(kind, typeName string) error {
 	if strings.Contains(typeName, "*") {
-		return fmt.Errorf("invalid %s type %q: the only supported wildcard is %q and it must come at the end", kind, typeName, ".**")
+		return fmt.Errorf("%w: %s type %q: the only supported wildcard is %q and it must come at the end", ErrImageFilterTypeInvalid, kind, typeName, ".**")
 	}
-	return fmt.Errorf("invalid %s type %q", kind, typeName)
+	return fmt.Errorf("%w: %s type %q", ErrImageFilterTypeInvalid, kind, typeName)
 }
 
 // filterImage filters the Image for the given options.

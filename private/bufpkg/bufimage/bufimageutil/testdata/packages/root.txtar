@@ -25,7 +25,7 @@ message ExtensionRangeOptions {
     DECLARATION = 0;
     UNVERIFIED = 1;
   }
-  extensions 1000 to max;
+  extensions 990 to 998, 1000 to max;
 }
 message FeatureSet {
   optional FieldPresence field_presence = 1 [
@@ -80,6 +80,7 @@ message FeatureSet {
   optional EnforceNamingStyle enforce_naming_style = 7 [
     edition_defaults = { value: "STYLE_LEGACY", edition: EDITION_LEGACY },
     edition_defaults = { value: "STYLE2024", edition: EDITION_2024 },
+    edition_defaults = { value: "STYLE2026", edition: EDITION_UNSTABLE },
     feature_support = { edition_introduced: EDITION_2024 },
     retention = RETENTION_SOURCE,
     targets = TARGET_TYPE_FILE,
@@ -112,6 +113,7 @@ message FeatureSet {
     ENFORCE_NAMING_STYLE_UNKNOWN = 0;
     STYLE2024 = 1;
     STYLE_LEGACY = 2;
+    STYLE2026 = 3;
   }
   enum EnumType {
     ENUM_TYPE_UNKNOWN = 0;
@@ -167,6 +169,11 @@ message FeatureSet {
       type: ".pb.PythonFeatures"
     },
     declaration = {
+      number: 1004,
+      full_name: ".pb.csharp",
+      type: ".pb.CSharpFeatures"
+    },
+    declaration = {
       number: 1100,
       full_name: ".imp.impress_feature_set",
       type: ".imp.ImpressFeatureSet"
@@ -189,7 +196,14 @@ message FileOptions {
   optional string java_package = 1;
   optional string java_outer_classname = 8;
   optional OptimizeMode optimize_for = 9 [default = SPEED];
-  optional bool java_multiple_files = 10 [default = false];
+  optional bool java_multiple_files = 10 [
+    default = false,
+    feature_support = {
+      edition_introduced: EDITION_PROTO2,
+      edition_removed: EDITION_2024,
+      removal_error: "This behavior is enabled by default in editions 2024 and above. To disable it, you can set `features.(pb.java).nest_in_file_class = YES` on individual messages, enums, or services."
+    }
+  ];
   optional string go_package = 11;
   optional bool cc_generic_services = 16 [default = false];
   optional bool java_generic_services = 17 [default = false];
@@ -212,6 +226,13 @@ message FileOptions {
     CODE_SIZE = 2;
     LITE_RUNTIME = 3;
   }
+  extensions 990 to 998 [
+    declaration = {
+      number: 990,
+      full_name: ".pb.file.cpp",
+      type: ".pb.file.CppFileOptions"
+    }
+  ];
   extensions 1000 to max;
   reserved 38, 42;
   reserved "php_generic_services";
@@ -224,14 +245,14 @@ message MessageOptions {
   optional bool deprecated_legacy_json_field_conflicts = 11 [deprecated = true];
   optional FeatureSet features = 12;
   repeated UninterpretedOption uninterpreted_option = 999;
-  extensions 1000 to max;
+  extensions 990 to 998, 1000 to max;
   reserved 4, 5, 6, 8, 9;
 }
 message ServiceOptions {
   optional bool deprecated = 33 [default = false];
   optional FeatureSet features = 34;
   repeated UninterpretedOption uninterpreted_option = 999;
-  extensions 1000 to max;
+  extensions 990 to 998, 1000 to max;
 }
 message UninterpretedOption {
   repeated NamePart name = 2;

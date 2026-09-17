@@ -20,9 +20,9 @@ import (
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	celpv "buf.build/go/protovalidate/cel"
+	"cel.dev/cel-go/cel"
+	"cel.dev/cel-go/common/types"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"github.com/google/cel-go/cel"
-	"github.com/google/cel-go/common/types"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
 )

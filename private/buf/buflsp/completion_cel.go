@@ -24,13 +24,13 @@ import (
 	"slices"
 	"strings"
 
+	"cel.dev/cel-go/cel"
+	"cel.dev/cel-go/common/decls"
+	"cel.dev/cel-go/common/operators"
+	"cel.dev/cel-go/common/types"
 	"github.com/bufbuild/protocompile/experimental/ast/predeclared"
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/experimental/seq"
-	"github.com/google/cel-go/cel"
-	"github.com/google/cel-go/common/decls"
-	"github.com/google/cel-go/common/operators"
-	"github.com/google/cel-go/common/types"
 	"go.lsp.dev/protocol"
 )
 

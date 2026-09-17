@@ -1,13 +1,12 @@
-name: PR Approval Bypass Notifier
+name: Approval bypass notifier
 on:
-  pull_request:
-    types:
-      - closed
+  push:
     branches:
       - main
 permissions:
   pull-requests: read
 jobs:
-  approval:
+  notify:
+    name: Notify
     uses: bufbuild/base-workflows/.github/workflows/notify-approval-bypass.yaml@main
     secrets: inherit
