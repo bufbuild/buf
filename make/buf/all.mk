@@ -23,6 +23,7 @@ GO_BINS := $(GO_BINS) \
 GO_TEST_BINS := $(GO_TEST_BINS) \
 	cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
 	cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
+	cmd/buf/internal/command/generate/internal/protoc-gen-files-to-generate-yaml \
 	cmd/buf/internal/command/generate/internal/protoc-gen-top-level-type-names-yaml \
 	private/bufpkg/bufcheck/internal/cmd/buf-plugin-panic \
 	private/bufpkg/bufcheck/internal/cmd/buf-plugin-suffix \
