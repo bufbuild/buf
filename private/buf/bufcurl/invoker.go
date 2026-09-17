@@ -124,10 +124,8 @@ func (inv *invoker) handleUnary(ctx context.Context, dataSource string, data io.
 	if err := provider.next(msg); err != nil {
 		return err
 	}
-	// make sure input does not contain a second message
-	dummy := dynamicpb.NewMessage(inv.md.Input())
-	if err := provider.next(dummy); err != io.EOF {
-		return fmt.Errorf("method %s is a unary RPC, but input contained more than one request message", inv.md.Name())
+	if err := inv.verifySingleRequest(provider); err != nil {
+		return err
 	}
 
 	req := connect.NewRequest(msg)
@@ -180,10 +178,8 @@ func (inv *invoker) handleServerStream(ctx context.Context, dataSource string, d
 	if err := provider.next(msg); err != nil {
 		return err
 	}
-	// make sure input does not contain a second message
-	dummy := dynamicpb.NewMessage(inv.md.Input())
-	if err := provider.next(dummy); err != io.EOF {
-		return fmt.Errorf("method %s is a unary RPC, but input contained more than one request message", inv.md.Name())
+	if err := inv.verifySingleRequest(provider); err != nil {
+		return err
 	}
 
 	req := connect.NewRequest(msg)
@@ -259,6 +255,19 @@ func isCancelled(err error) bool {
 		return connErr.Code() == connect.CodeCanceled
 	}
 	return false
+}
+
+// verifySingleRequest validates the messageProvider has no more messages.
+func (inv *invoker) verifySingleRequest(provider messageProvider) error {
+	dummy := dynamicpb.NewMessage(inv.md.Input())
+	switch err := provider.next(dummy); {
+	case errors.Is(err, io.EOF):
+		return nil
+	case err != nil:
+		return fmt.Errorf("method %s accepts only a single request message, and the input after the first message could not be parsed: %w", inv.md.Name(), err)
+	default:
+		return fmt.Errorf("method %s accepts only a single request message, but input contained more than one", inv.md.Name())
+	}
 }
 
 func (inv *invoker) handleResponse(data []byte, msg *dynamicpb.Message) error {

@@ -8,6 +8,7 @@
 - Add `--stdin-filepath` flag to `buf format`, which reads a single `.proto` file from
   stdin and writes the formatted result to stdout. The path is not read from disk, and is
   only used to report parse errors and diffs.
+- Improve the `buf curl` error message for methods that accept a single request message.
 
 ## [v1.73.0] - 2026-09-11
 
