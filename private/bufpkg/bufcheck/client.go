@@ -843,21 +843,18 @@ func ignoreFileLocation(
 	return false, nil
 }
 
-// groupFieldSyntheticMessage returns the synthetic message declaration for the group field
-// at the given source path, or nil if the source path does not point to a group field.
 func groupFieldSyntheticMessage(
 	fileDescriptor protoreflect.FileDescriptor,
 	sourcePath protoreflect.SourcePath,
 ) protoreflect.MessageDescriptor {
-	fieldDescriptor := fieldDescriptorForSourcePath(fileDescriptor, sourcePath)
-	if fieldDescriptor == nil || fieldDescriptor.Kind() != protoreflect.GroupKind {
+	fieldDescriptor, ok := descriptorForSourcePath(fileDescriptor, sourcePath).(protoreflect.FieldDescriptor)
+	if !ok || fieldDescriptor.Kind() != protoreflect.GroupKind {
 		return nil
 	}
 	return fieldDescriptor.Message()
 }
 
-// Source path tags for the descriptor fields traversed when resolving a source path to a
-// field declaration.
+// Source path tags for the declarations traversed when resolving a source path.
 const (
 	// FileDescriptorProto.message_type.
 	fileMessagesTag = int32(4)
@@ -871,59 +868,70 @@ const (
 	messageExtensionsTag = int32(6)
 )
 
-// fieldDescriptorForSourcePath returns the field declaration at the given source path, or
-// nil if the source path does not point to a field declaration.
-//
-// A source path for a field declaration alternates a tag and an index, descending through
-// message declarations before terminating at a field or an extension field, for example
-// [4, 0, 3, 1, 2, 0] for .message_type(0).nested_type(1).field(0).
-func fieldDescriptorForSourcePath(
-	fileDescriptor protoreflect.FileDescriptor,
-	sourcePath protoreflect.SourcePath,
-) protoreflect.FieldDescriptor {
-	if len(sourcePath) < 2 || len(sourcePath)%2 != 0 {
+// descriptorList is the shape shared by protoreflect's descriptor list types, such as
+// protoreflect.MessageDescriptors and protoreflect.FieldDescriptors.
+type descriptorList[D protoreflect.Descriptor] interface {
+	Len() int
+	Get(i int) D
+}
+
+// descriptorAtIndex returns the descriptor at the given index, or nil if the index is out
+// of range.
+func descriptorAtIndex[D protoreflect.Descriptor, L descriptorList[D]](
+	descriptors L,
+	index int,
+) protoreflect.Descriptor {
+	if index < 0 || index >= descriptors.Len() {
 		return nil
 	}
-	// The message that the declaration at the end of the source path belongs to, or nil if
-	// the declaration is at the top level of the file.
-	var parentMessageDescriptor protoreflect.MessageDescriptor
-	for i := 0; i < len(sourcePath)-2; i += 2 {
-		tag, index := sourcePath[i], int(sourcePath[i+1])
-		var messageDescriptors protoreflect.MessageDescriptors
-		switch {
-		case parentMessageDescriptor == nil && tag == fileMessagesTag:
-			messageDescriptors = fileDescriptor.Messages()
-		case parentMessageDescriptor != nil && tag == messageNestedMessagesTag:
-			messageDescriptors = parentMessageDescriptor.Messages()
+	return descriptors.Get(index)
+}
+
+// descriptorForSourcePath returns the declaration at the given source path, or nil if the
+// source path does not point to a declaration.
+//
+// A source path alternates a tag and an index, descending through the declarations of a
+// file, for example [4, 0, 3, 1, 2, 0] for .message_type(0).nested_type(1).field(0). Only
+// the tags needed to reach a field or extension declaration are resolved.
+func descriptorForSourcePath(
+	fileDescriptor protoreflect.FileDescriptor,
+	sourcePath protoreflect.SourcePath,
+) protoreflect.Descriptor {
+	if len(sourcePath) == 0 || len(sourcePath)%2 != 0 {
+		return nil
+	}
+	descriptor := protoreflect.Descriptor(fileDescriptor)
+	for ; len(sourcePath) > 0; sourcePath = sourcePath[2:] {
+		tag, index := sourcePath[0], int(sourcePath[1])
+		switch typedDescriptor := descriptor.(type) {
+		case protoreflect.FileDescriptor:
+			switch tag {
+			case fileMessagesTag:
+				descriptor = descriptorAtIndex(typedDescriptor.Messages(), index)
+			case fileExtensionsTag:
+				descriptor = descriptorAtIndex(typedDescriptor.Extensions(), index)
+			default:
+				return nil
+			}
+		case protoreflect.MessageDescriptor:
+			switch tag {
+			case messageNestedMessagesTag:
+				descriptor = descriptorAtIndex(typedDescriptor.Messages(), index)
+			case messageFieldsTag:
+				descriptor = descriptorAtIndex(typedDescriptor.Fields(), index)
+			case messageExtensionsTag:
+				descriptor = descriptorAtIndex(typedDescriptor.Extensions(), index)
+			default:
+				return nil
+			}
 		default:
 			return nil
 		}
-		if index < 0 || index >= messageDescriptors.Len() {
+		if descriptor == nil {
 			return nil
 		}
-		parentMessageDescriptor = messageDescriptors.Get(index)
 	}
-	tag, index := sourcePath[len(sourcePath)-2], int(sourcePath[len(sourcePath)-1])
-	if index < 0 {
-		return nil
-	}
-	if parentMessageDescriptor == nil {
-		if tag == fileExtensionsTag && index < fileDescriptor.Extensions().Len() {
-			return fileDescriptor.Extensions().Get(index)
-		}
-		return nil
-	}
-	switch tag {
-	case messageFieldsTag:
-		if index < parentMessageDescriptor.Fields().Len() {
-			return parentMessageDescriptor.Fields().Get(index)
-		}
-	case messageExtensionsTag:
-		if index < parentMessageDescriptor.Extensions().Len() {
-			return parentMessageDescriptor.Extensions().Get(index)
-		}
-	}
-	return nil
+	return descriptor
 }
 
 // leadingCommentsHaveCheckIgnore checks if any line of the given leading comments is a
