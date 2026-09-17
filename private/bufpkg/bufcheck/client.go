@@ -843,95 +843,17 @@ func ignoreFileLocation(
 	return false, nil
 }
 
+// groupFieldSyntheticMessage returns the synthetic message declaration for the group field
+// at the given source path, or nil if the source path does not point to a group field.
 func groupFieldSyntheticMessage(
 	fileDescriptor protoreflect.FileDescriptor,
 	sourcePath protoreflect.SourcePath,
 ) protoreflect.MessageDescriptor {
-	fieldDescriptor, ok := descriptorForSourcePath(fileDescriptor, sourcePath).(protoreflect.FieldDescriptor)
+	fieldDescriptor, ok := protosourcepath.DescriptorForSourcePath(fileDescriptor, sourcePath).(protoreflect.FieldDescriptor)
 	if !ok || fieldDescriptor.Kind() != protoreflect.GroupKind {
 		return nil
 	}
 	return fieldDescriptor.Message()
-}
-
-// Source path tags for the declarations traversed when resolving a source path.
-const (
-	// FileDescriptorProto.message_type.
-	fileMessagesTag = int32(4)
-	// FileDescriptorProto.extension.
-	fileExtensionsTag = int32(7)
-	// DescriptorProto.field.
-	messageFieldsTag = int32(2)
-	// DescriptorProto.nested_type.
-	messageNestedMessagesTag = int32(3)
-	// DescriptorProto.extension.
-	messageExtensionsTag = int32(6)
-)
-
-// descriptorList is the shape shared by protoreflect's descriptor list types, such as
-// protoreflect.MessageDescriptors and protoreflect.FieldDescriptors.
-type descriptorList[D protoreflect.Descriptor] interface {
-	Len() int
-	Get(i int) D
-}
-
-// descriptorAtIndex returns the descriptor at the given index, or nil if the index is out
-// of range.
-func descriptorAtIndex[D protoreflect.Descriptor, L descriptorList[D]](
-	descriptors L,
-	index int,
-) protoreflect.Descriptor {
-	if index < 0 || index >= descriptors.Len() {
-		return nil
-	}
-	return descriptors.Get(index)
-}
-
-// descriptorForSourcePath returns the declaration at the given source path, or nil if the
-// source path does not point to a declaration.
-//
-// A source path alternates a tag and an index, descending through the declarations of a
-// file, for example [4, 0, 3, 1, 2, 0] for .message_type(0).nested_type(1).field(0). Only
-// the tags needed to reach a field or extension declaration are resolved.
-func descriptorForSourcePath(
-	fileDescriptor protoreflect.FileDescriptor,
-	sourcePath protoreflect.SourcePath,
-) protoreflect.Descriptor {
-	if len(sourcePath) == 0 || len(sourcePath)%2 != 0 {
-		return nil
-	}
-	descriptor := protoreflect.Descriptor(fileDescriptor)
-	for ; len(sourcePath) > 0; sourcePath = sourcePath[2:] {
-		tag, index := sourcePath[0], int(sourcePath[1])
-		switch typedDescriptor := descriptor.(type) {
-		case protoreflect.FileDescriptor:
-			switch tag {
-			case fileMessagesTag:
-				descriptor = descriptorAtIndex(typedDescriptor.Messages(), index)
-			case fileExtensionsTag:
-				descriptor = descriptorAtIndex(typedDescriptor.Extensions(), index)
-			default:
-				return nil
-			}
-		case protoreflect.MessageDescriptor:
-			switch tag {
-			case messageNestedMessagesTag:
-				descriptor = descriptorAtIndex(typedDescriptor.Messages(), index)
-			case messageFieldsTag:
-				descriptor = descriptorAtIndex(typedDescriptor.Fields(), index)
-			case messageExtensionsTag:
-				descriptor = descriptorAtIndex(typedDescriptor.Extensions(), index)
-			default:
-				return nil
-			}
-		default:
-			return nil
-		}
-		if descriptor == nil {
-			return nil
-		}
-	}
-	return descriptor
 }
 
 // leadingCommentsHaveCheckIgnore checks if any line of the given leading comments is a
@@ -941,9 +863,6 @@ func leadingCommentsHaveCheckIgnore(
 	commentIgnorePrefix string,
 	ruleID string,
 ) bool {
-	if leadingComments == "" {
-		return false
-	}
 	for _, line := range xstrings.SplitTrimLinesNoEmpty(leadingComments) {
 		if checkCommentLineForCheckIgnore(line, commentIgnorePrefix, ruleID) {
 			return true

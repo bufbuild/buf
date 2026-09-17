@@ -1,0 +1,35 @@
+syntax = "proto2";
+
+package foo;
+
+service Service {
+  rpc Method(Message) returns (Message);
+}
+
+enum Enum {
+  ENUM_UNSPECIFIED = 0;
+}
+
+message Message {
+  optional string field = 1;
+  oneof one_of {
+    string one_of_field = 2;
+  }
+  optional group Group = 3 {
+    optional string id = 1;
+  }
+  message NestedMessage {
+    optional string field = 1;
+  }
+  enum NestedEnum {
+    NESTED_ENUM_UNSPECIFIED = 0;
+  }
+  extensions 100 to 200;
+  extend Message {
+    optional string message_extension = 100;
+  }
+}
+
+extend Message {
+  optional string file_extension = 101;
+}

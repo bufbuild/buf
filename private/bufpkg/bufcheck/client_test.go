@@ -110,29 +110,21 @@ func TestGroupFieldSyntheticMessage(t *testing.T) {
 	}
 }
 
-func TestGroupFieldSyntheticMessageNonFieldSourcePaths(t *testing.T) {
+// Source path traversal itself is covered by protosourcepath, this covers the source paths
+// that resolve to something other than a group field.
+func TestGroupFieldSyntheticMessageNonGroupFieldSourcePaths(t *testing.T) {
 	t.Parallel()
 	fileDescriptor := testCompileFileDescriptor(t, groupsProtoFileContent)
 	for _, sourcePath := range []protoreflect.SourcePath{
+		// The file.
 		nil,
 		{},
-		// .package.
-		{2},
-		// .message_type(0).
+		// .message_type(0), a message.
 		{4, 0},
-		// .message_type(0).field(0).name.
-		{4, 0, 2, 0, 1},
-		// .message_type(0).nested_type(0).
+		// .message_type(0).nested_type(0), the synthetic message of a group field.
 		{4, 0, 3, 0},
-		// .message_type(0).enum_type(0).
-		{4, 0, 4, 0},
-		// Out of range indexes.
-		{4, 100, 2, 0},
-		{4, 0, 2, 100},
-		{7, 100},
-		// Negative indexes.
-		{4, -1, 2, 0},
-		{4, 0, 2, -1},
+		// .message_type(0).field(0).name, an attribute of a field.
+		{4, 0, 2, 0, 1},
 	} {
 		require.Nil(
 			t,
