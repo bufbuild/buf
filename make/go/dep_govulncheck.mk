@@ -14,8 +14,8 @@ GOVULNCHECK_GOTOOLCHAIN_VERSION := $(patsubst go%,%,$(shell go env GOVERSION))
 GOVULNCHECK_GO_VERSION := $(call _major_minor,$(GOVULNCHECK_GOTOOLCHAIN_VERSION))
 
 # Settable
-# https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck 20260625 checked 20260625
-GOVULNCHECK_VERSION ?= v1.5.0
+# https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck 20260908 checked 20260914
+GOVULNCHECK_VERSION ?= v1.8.0
 
 GOVULNCHECK := $(CACHE_BIN)/govulncheck
 
