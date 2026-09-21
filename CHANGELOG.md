@@ -11,6 +11,7 @@
 - Fix configuration files silently accepting unquoted values that start with `!`, such as
   `ignore: [!foo/bar.proto]`. Previously they parsed as empty strings, now they rejected
   with an error.
+- Improve the `buf curl` error message for methods that accept a single request message.
 
 ## [v1.73.0] - 2026-09-11
 
