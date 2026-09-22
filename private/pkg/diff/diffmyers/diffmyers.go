@@ -50,7 +50,21 @@ type Edit struct {
 // It implements the linear space refinement of the algorithm described in section 4b. This is the
 // same algorithm used by git.
 func Diff(from, to [][]byte) []Edit {
-	return compactChangeBlocks(from, to, shortestEdits(from, to, 0, 0))
+	// A sub-problem never needs more diagonals than the whole problem, so one
+	// pair of arrays serves the entire recursion.
+	maxD := ceiledHalf(len(from) + len(to))
+	search := &snakeSearch{
+		forward:  make([]int, 2*maxD+1),
+		backward: make([]int, 2*maxD+1),
+	}
+	return compactChangeBlocks(from, to, search.shortestEdits(from, to, 0, 0))
+}
+
+// snakeSearch holds the furthest reaching path arrays that findMiddleSnake
+// works in, so that the recursion allocates once rather than at every level.
+type snakeSearch struct {
+	forward  []int
+	backward []int
 }
 
 // noNewlineMarker records that the line above it was not newline terminated in
@@ -395,7 +409,7 @@ func hunkHeader(oldStart, oldCount, newStart, newCount int) []byte {
 	return fmt.Appendf(nil, "@@ -%d,%d +%d,%d @@\n", oldStart, oldCount, newStart, newCount)
 }
 
-func shortestEdits(from, to [][]byte, fromOffset, toOffset int) []Edit {
+func (s *snakeSearch) shortestEdits(from, to [][]byte, fromOffset, toOffset int) []Edit {
 	n, m := len(from), len(to)
 	if m == 0 { // We've reached the end of the 'to' sequence. So delete the rest of the 'from' sequence.
 		edits := make([]Edit, len(from))
@@ -418,15 +432,15 @@ func shortestEdits(from, to [][]byte, fromOffset, toOffset int) []Edit {
 		}
 		return edits
 	}
-	d, x, y, u, v := findMiddleSnake(from, to)
+	d, x, y, u, v := s.findMiddleSnake(from, to)
 	if d > 1 || x != u && y != v {
-		return append(shortestEdits(from[:x], to[:y], fromOffset, toOffset), shortestEdits(from[u:], to[v:], fromOffset+u, toOffset+v)...)
+		return append(s.shortestEdits(from[:x], to[:y], fromOffset, toOffset), s.shortestEdits(from[u:], to[v:], fromOffset+u, toOffset+v)...)
 	}
 	if m > n {
-		return shortestEdits(nil, to[n:m], fromOffset+n, toOffset+n)
+		return s.shortestEdits(nil, to[n:m], fromOffset+n, toOffset+n)
 	}
 	if m < n {
-		return shortestEdits(from[m:n], nil, fromOffset+m, toOffset+m)
+		return s.shortestEdits(from[m:n], nil, fromOffset+m, toOffset+m)
 	}
 	return nil
 }
@@ -436,13 +450,14 @@ func shortestEdits(from, to [][]byte, fromOffset, toOffset int) []Edit {
 // This is based on the pseudo code in page 11. This deliberately deviates from
 // the style of using descriptive variables names to ease comparison with the
 // pseudo code and variable names in the paper.
-func findMiddleSnake(from, to [][]byte) (d int, x int, y int, u int, v int) {
+func (s *snakeSearch) findMiddleSnake(from, to [][]byte) (d int, x int, y int, u int, v int) {
 	n, m := len(from), len(to)
 	maxD := ceiledHalf(n + m)
-	// We need to allocate 2*maxD+1 because k can go from -maxD to maxD.
-	// Wherever we access them we just offset by maxD.
-	vf := make([]int, 2*maxD+1)
-	vb := make([]int, 2*maxD+1)
+	// k goes from -maxD to maxD, so 2*maxD+1 entries are needed and every
+	// access is offset by maxD. The arrays carry values from the previous
+	// sub-problem and must be reset.
+	vf := s.forward[:2*maxD+1]
+	vb := s.backward[:2*maxD+1]
 	for i := range vf {
 		vf[i] = -1
 		vb[i] = -1
