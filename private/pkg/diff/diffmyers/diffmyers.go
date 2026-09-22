@@ -30,6 +30,13 @@ const (
 	EditKindInsert
 )
 
+const (
+	// defaultContext is the default context window, matching `diff -u` and git.
+	defaultContext = 3
+	// noNewlineMarker records that the line above it was not newline terminated.
+	noNewlineMarker = "\\ No newline at end of file\n"
+)
+
 // Edit is an delete or insert operation.
 type Edit struct {
 	// Kind is the kind of edit. It is either an insert or a delete.
@@ -65,23 +72,6 @@ func Diff(from, to [][]byte) []Edit {
 type snakeSearch struct {
 	forward  []int
 	backward []int
-}
-
-// noNewlineMarker records that the line above it was not newline terminated in
-// the sequence it came from. It is not a line of either sequence, so it is not
-// counted in the hunk header.
-const noNewlineMarker = "\\ No newline at end of file\n"
-
-// defaultContext is the number of carried over lines kept around a change,
-// matching diff -u and git.
-const defaultContext = 3
-
-// printLine is one line of the diff body. A zero EditKind is a line carried
-// over from both sequences.
-type printLine struct {
-	EditKind  EditKind
-	line      []byte
-	noNewline bool
 }
 
 // PrintOption is an option for Print.
@@ -130,6 +120,14 @@ func Print(from, to [][]byte, edits []Edit, options ...PrintOption) ([]byte, err
 		return emitFullContext(lines, resolved.context), nil
 	}
 	return emitHunks(lines, resolved.context), nil
+}
+
+// printLine is one line of the diff body. A zero EditKind is a line carried
+// over from both sequences.
+type printLine struct {
+	EditKind  EditKind
+	line      []byte
+	noNewline bool
 }
 
 // emitHunks writes a unified diff carrying at most context carried over lines
