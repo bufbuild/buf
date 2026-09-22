@@ -202,6 +202,73 @@ The door of all subtleties!
 		testPrint(t, lao, tzu, edits, "lao-tzu")
 	})
 
+	// The raw Myers script for these replacements places an insertion before a
+	// deletion, and for the second case interleaves them. GNU diff and git
+	// always emit a change block as deletions followed by insertions.
+	t.Run("replace-one-line-with-two", func(t *testing.T) {
+		t.Parallel()
+		const from = "a\n"
+		const to = "b\nb\n"
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		assert.Equal(t, []diffmyers.Edit{
+			{
+				Kind: diffmyers.EditKindDelete,
+			},
+			{
+				Kind:         diffmyers.EditKindInsert,
+				FromPosition: 1,
+			},
+			{
+				Kind:         diffmyers.EditKindInsert,
+				FromPosition: 1,
+				ToPosition:   1,
+			},
+		}, edits)
+		testPrint(t, from, to, edits, "replace-one-line-with-two")
+	})
+
+	t.Run("replace-one-line-with-four", func(t *testing.T) {
+		t.Parallel()
+		const from = "a\n"
+		const to = `b
+b
+b
+b
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		assert.Equal(t, []diffmyers.Edit{
+			{
+				Kind: diffmyers.EditKindDelete,
+			},
+			{
+				Kind:         diffmyers.EditKindInsert,
+				FromPosition: 1,
+			},
+			{
+				Kind:         diffmyers.EditKindInsert,
+				FromPosition: 1,
+				ToPosition:   1,
+			},
+			{
+				Kind:         diffmyers.EditKindInsert,
+				FromPosition: 1,
+				ToPosition:   2,
+			},
+			{
+				Kind:         diffmyers.EditKindInsert,
+				FromPosition: 1,
+				ToPosition:   3,
+			},
+		}, edits)
+		testPrint(t, from, to, edits, "replace-one-line-with-four")
+	})
+
 	t.Run("first-line-prefix", func(t *testing.T) {
 		t.Parallel()
 		from := `syntax = "proto3";

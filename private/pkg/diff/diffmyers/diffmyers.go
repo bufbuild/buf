@@ -50,7 +50,7 @@ type Edit struct {
 // It implements the linear space refinement of the algorithm described in section 4b. This is the
 // same algorithm used by git.
 func Diff(from, to [][]byte) []Edit {
-	return shortestEdits(from, to, 0, 0)
+	return orderChangeBlocks(shortestEdits(from, to, 0, 0))
 }
 
 // Print prints the edits in the unified diff format without the header.
@@ -166,6 +166,50 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 		buffer.Write(line.line)
 	}
 	return buffer.Bytes(), nil
+}
+
+// orderChangeBlocks rewrites each change block so that its deletions come
+// before its insertions, which is the shape GNU diff and git always produce.
+//
+// A change block is a maximal run of edits with no unchanged line between them.
+// Deletions and insertions within one block commute, because every original
+// line the block touches is deleted, so reordering them describes the same
+// result. Insertions are moved to the end of the block's deleted range and
+// their FromPosition is updated to match, which keeps the positions of the
+// script monotonically increasing.
+func orderChangeBlocks(edits []Edit) []Edit {
+	if len(edits) == 0 {
+		return edits
+	}
+	ordered := make([]Edit, 0, len(edits))
+	var deletes, inserts []Edit
+	// fromPosition is the index in the original sequence that the block has
+	// consumed up to. An edit positioned beyond it is preceded by unchanged
+	// lines and therefore starts a new block.
+	fromPosition := edits[0].FromPosition
+	flush := func() {
+		ordered = append(ordered, deletes...)
+		for _, insert := range inserts {
+			insert.FromPosition = fromPosition
+			ordered = append(ordered, insert)
+		}
+		deletes, inserts = deletes[:0], inserts[:0]
+	}
+	for _, edit := range edits {
+		if edit.FromPosition > fromPosition {
+			flush()
+			fromPosition = edit.FromPosition
+		}
+		switch edit.Kind {
+		case EditKindDelete:
+			deletes = append(deletes, edit)
+			fromPosition = edit.FromPosition + 1
+		case EditKindInsert:
+			inserts = append(inserts, edit)
+		}
+	}
+	flush()
+	return ordered
 }
 
 func shortestEdits(from, to [][]byte, fromOffset, toOffset int) []Edit {
