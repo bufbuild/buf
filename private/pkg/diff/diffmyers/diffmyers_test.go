@@ -204,8 +204,30 @@ The door of all subtleties!
 
 	t.Run("first-line-prefix", func(t *testing.T) {
 		t.Parallel()
-		from := "syntax = \"proto3\";\n\npackage test;\n\nmessage Foo {\n  string field1 = 1;\n  string field2 = 2;\n  string field3 = 3;\n  string field4 = 4;\n  string field5 = 5;\n}\n"
-		to := "syntax = \"proto3\";\n\npackage test;\n\nmessage Foo {\n  string field1 = 1;\n  string field2 = 2;\n  string field3 = 3;\n  string field4 = 4;\n  int32 field5 = 5;\n}\n"
+		from := `syntax = "proto3";
+
+package test;
+
+message Foo {
+  string field1 = 1;
+  string field2 = 2;
+  string field3 = 3;
+  string field4 = 4;
+  string field5 = 5;
+}
+`
+		to := `syntax = "proto3";
+
+package test;
+
+message Foo {
+  string field1 = 1;
+  string field2 = 2;
+  string field3 = 3;
+  string field4 = 4;
+  int32 field5 = 5;
+}
+`
 		expectedFirstLineOfOutput := " syntax = \"proto3\";"
 		fromLines := splitLines(from)
 		toLines := splitLines(to)
