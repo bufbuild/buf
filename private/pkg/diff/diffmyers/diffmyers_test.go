@@ -373,6 +373,31 @@ Z
 		testPrint(t, from, to, edits, "split-distant-changes")
 	})
 
+	// A sequence whose final line is not newline terminated is recorded with
+	// the same marker GNU diff and git use. Without it the two lines below are
+	// indistinguishable in the output.
+	t.Run("no-newline-at-end-of-from", func(t *testing.T) {
+		t.Parallel()
+		const from = "a\nb"
+		const to = "a\nb\n"
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "no-newline-at-end-of-from")
+	})
+
+	t.Run("no-newline-at-end-of-to", func(t *testing.T) {
+		t.Parallel()
+		const from = "a\nb\n"
+		const to = "a\nb"
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "no-newline-at-end-of-to")
+	})
+
 	t.Run("first-line-prefix", func(t *testing.T) {
 		t.Parallel()
 		from := `syntax = "proto3";
@@ -447,7 +472,11 @@ func TestPrintEmptyLine(t *testing.T) {
 	to := [][]byte{[]byte("Hello, world!\n")}
 	diff, err := diffmyers.Print(from, to, diffmyers.Diff(from, to))
 	require.NoError(t, err)
-	assert.Equal(t, "@@ -1,2 +1,1 @@\n Hello, world!\n-\n", string(diff))
+	assert.Equal(
+		t,
+		"@@ -1,2 +1,1 @@\n Hello, world!\n-\n\\ No newline at end of file\n",
+		string(diff),
+	)
 }
 
 func testPrint(t *testing.T, from, to string, edits []diffmyers.Edit, golden string) {

@@ -53,6 +53,11 @@ func Diff(from, to [][]byte) []Edit {
 	return compactChangeBlocks(from, to, shortestEdits(from, to, 0, 0))
 }
 
+// noNewlineMarker records that the line above it was not newline terminated in
+// the sequence it came from. It is not a line of either sequence, so it is not
+// counted in the hunk header.
+const noNewlineMarker = "\\ No newline at end of file\n"
+
 // Print prints the edits in the unified diff format without the header.
 //
 // Ref: https://www.gnu.org/software/diffutils/manual/html_node/Detailed-Unified.html
@@ -64,19 +69,21 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 	// hunk headers are placed.
 	const maxUnchangedLinesBetweenHunks = 6
 	type printLine struct {
-		EditKind EditKind
-		line     []byte
-		hunk     bool
+		EditKind  EditKind
+		line      []byte
+		hunk      bool
+		noNewline bool
 	}
-	// The final line of from may not be newline terminated. Supply the
-	// terminator when the line is read rather than writing it back into from,
-	// which would modify the caller's slice.
-	fromLine := func(index int) []byte {
-		line := from[index]
-		if index == len(from)-1 && (len(line) == 0 || line[len(line)-1] != '\n') {
-			return append(bytes.Clone(line), '\n')
+	// A sequence's final line may not be newline terminated. Supply the
+	// terminator when the line is read, rather than writing it back into the
+	// caller's slice, and report the fact so that it can be recorded in the
+	// output.
+	lineAt := func(lines [][]byte, index int) ([]byte, bool) {
+		line := lines[index]
+		if index != len(lines)-1 || (len(line) > 0 && line[len(line)-1] == '\n') {
+			return line, false
 		}
-		return line
+		return append(bytes.Clone(line), '\n'), true
 	}
 	// We preallocate the slice to avoid reallocations.
 	//
@@ -103,8 +110,8 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 			// Print the lines before the edit.
 			var advance int
 			for index := fromIndex; index < edits[i].FromPosition; index++ {
-				line := fromLine(index)
-				out = append(out, &printLine{line: line})
+				line, noNewline := lineAt(from, index)
+				out = append(out, &printLine{line: line, noNewline: noNewline})
 				bufferSize += len(line) + 1
 				advance++
 			}
@@ -122,16 +129,20 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 			case EditKindDelete:
 				deleteCount++
 				fromIndex++
+				line, noNewline := lineAt(from, edits[j].FromPosition)
 				out = append(out, &printLine{
-					EditKind: EditKindDelete,
-					line:     fromLine(edits[j].FromPosition),
+					EditKind:  EditKindDelete,
+					line:      line,
+					noNewline: noNewline,
 				})
 			case EditKindInsert:
 				insertCount++
 				toIndex++
+				line, noNewline := lineAt(to, edits[j].ToPosition)
 				out = append(out, &printLine{
-					EditKind: EditKindInsert,
-					line:     to[edits[j].ToPosition],
+					EditKind:  EditKindInsert,
+					line:      line,
+					noNewline: noNewline,
 				})
 			default:
 				return nil, errors.New("unknown edit kind")
@@ -147,8 +158,8 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 	}
 	// Print the lines after the last edit.
 	for index := fromIndex; index < len(from); index++ {
-		line := fromLine(index)
-		out = append(out, &printLine{line: line})
+		line, noNewline := lineAt(from, index)
+		out = append(out, &printLine{line: line, noNewline: noNewline})
 		bufferSize += len(line) + 1
 	}
 	var buffer bytes.Buffer
@@ -169,6 +180,9 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 			buffer.WriteByte(' ')
 		}
 		buffer.Write(line.line)
+		if line.noNewline {
+			buffer.WriteString(noNewlineMarker)
+		}
 	}
 	return buffer.Bytes(), nil
 }
