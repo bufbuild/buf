@@ -72,22 +72,32 @@ type snakeSearch struct {
 // counted in the hunk header.
 const noNewlineMarker = "\\ No newline at end of file\n"
 
+// defaultContext is the number of carried over lines kept around a change,
+// matching diff -u and git.
+const defaultContext = 3
+
+// printLine is one line of the diff body. A zero EditKind is a line carried
+// over from both sequences.
+type printLine struct {
+	EditKind  EditKind
+	line      []byte
+	noNewline bool
+}
+
 // Print prints the edits in the unified diff format without the header.
 //
 // Ref: https://www.gnu.org/software/diffutils/manual/html_node/Detailed-Unified.html
 func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
-	// Hunks are merged when at most this many unchanged lines separate them,
-	// matching diff -U3 and git: twice the three lines of context each hunk
-	// would otherwise carry. Print emits every line of the original sequence
-	// rather than trimming to a context window, so this decides only where
-	// hunk headers are placed.
-	const maxUnchangedLinesBetweenHunks = 6
-	type printLine struct {
-		EditKind  EditKind
-		line      []byte
-		hunk      bool
-		noNewline bool
+	lines, err := diffLines(from, to, edits)
+	if err != nil {
+		return nil, err
 	}
+	return emitFullContext(lines, defaultContext), nil
+}
+
+// diffLines applies the edit script to produce the body of the diff, one entry
+// per line, with no hunk headers.
+func diffLines(from, to [][]byte, edits []Edit) ([]printLine, error) {
 	// A sequence's final line may not be newline terminated. Supply the
 	// terminator when the line is read, rather than writing it back into the
 	// caller's slice, and report the fact so that it can be recorded in the
@@ -99,107 +109,130 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 		}
 		return append(bytes.Clone(line), '\n'), true
 	}
-	// We preallocate the slice to avoid reallocations.
-	//
-	// Each edit is either a delete or an insert so the total number of lines
-	// in the diff is the number of edits plus the number of lines in the
-	// original sequence. The worst case for the hunk headers are
-	// as many edits.
-	out := make([]*printLine, 0, len(from)+2*len(edits))
-	var fromIndex, toIndex, bufferSize int
-	// The lines after the last edit belong to the last hunk, so its header is
-	// rewritten once they have been counted.
-	var lastHunk *printLine
-	var lastOldStart, lastOldCount, lastNewStart, lastNewCount int
-	for i := 0; i < len(edits); i++ {
-		// Remember the start of the hunk. We add 1 to the indexes because
-		// we want to print the line number and they start at 1.
-		hunkOldStart := fromIndex + 1
-		hunkNewStart := toIndex + 1
-		// Reserve the space for the hunk header.
-		hunk := &printLine{hunk: true}
-		out = append(out, hunk)
-		var (
-			insertCount, deleteCount int
-			printHunk                bool
-		)
-		// Print the lines in the edit.
-		for j := i; j < len(edits); j++ {
-			// Print the lines before the edit.
-			var advance int
-			for index := fromIndex; index < edits[i].FromPosition; index++ {
-				line, noNewline := lineAt(from, index)
-				out = append(out, &printLine{line: line, noNewline: noNewline})
-				bufferSize += len(line) + 1
-				advance++
-			}
-			// Advance the indexes.
-			toIndex += advance
-			fromIndex += advance
-			insertCount += advance
-			deleteCount += advance
-			if advance > maxUnchangedLinesBetweenHunks {
-				i--
-				break
-			}
-			printHunk = true
-			switch edits[j].Kind {
-			case EditKindDelete:
-				deleteCount++
-				fromIndex++
-				line, noNewline := lineAt(from, edits[j].FromPosition)
-				out = append(out, &printLine{
-					EditKind:  EditKindDelete,
-					line:      line,
-					noNewline: noNewline,
-				})
-			case EditKindInsert:
-				insertCount++
-				toIndex++
-				line, noNewline := lineAt(to, edits[j].ToPosition)
-				out = append(out, &printLine{
-					EditKind:  EditKindInsert,
-					line:      line,
-					noNewline: noNewline,
-				})
-			default:
-				return nil, errors.New("unknown edit kind")
-			}
-			bufferSize += len(out[len(out)-1].line) + 1
-			i++
+	lines := make([]printLine, 0, len(from)+len(edits))
+	fromIndex := 0
+	for _, edit := range edits {
+		for fromIndex < edit.FromPosition {
+			line, noNewline := lineAt(from, fromIndex)
+			lines = append(lines, printLine{line: line, noNewline: noNewline})
+			fromIndex++
 		}
-		if printHunk {
-			// Print the hunk header.
-			hunk.line = hunkHeader(hunkOldStart, deleteCount, hunkNewStart, insertCount)
-			bufferSize += len(hunk.line) + 1
-			lastHunk = hunk
-			lastOldStart, lastOldCount = hunkOldStart, deleteCount
-			lastNewStart, lastNewCount = hunkNewStart, insertCount
+		switch edit.Kind {
+		case EditKindDelete:
+			line, noNewline := lineAt(from, edit.FromPosition)
+			lines = append(lines, printLine{
+				EditKind:  EditKindDelete,
+				line:      line,
+				noNewline: noNewline,
+			})
+			fromIndex++
+		case EditKindInsert:
+			line, noNewline := lineAt(to, edit.ToPosition)
+			lines = append(lines, printLine{
+				EditKind:  EditKindInsert,
+				line:      line,
+				noNewline: noNewline,
+			})
+		default:
+			return nil, errors.New("unknown edit kind")
 		}
 	}
-	// Print the lines after the last edit.
-	var trailing int
-	for index := fromIndex; index < len(from); index++ {
-		line, noNewline := lineAt(from, index)
-		out = append(out, &printLine{line: line, noNewline: noNewline})
-		bufferSize += len(line) + 1
-		trailing++
+	for fromIndex < len(from) {
+		line, noNewline := lineAt(from, fromIndex)
+		lines = append(lines, printLine{line: line, noNewline: noNewline})
+		fromIndex++
 	}
-	if lastHunk != nil && trailing > 0 {
-		lastHunk.line = hunkHeader(
-			lastOldStart, lastOldCount+trailing,
-			lastNewStart, lastNewCount+trailing,
-		)
-	}
+	return lines, nil
+}
+
+// emitFullContext writes every line of the diff, placing a hunk header before
+// each run of changes. Hunks are split by a run of carried over lines longer
+// than twice the context, which is where diff -u and git stop merging.
+//
+// The result carries the whole original sequence, so a consumer can rebuild it
+// from the output, but for the same reason any lines before the first change
+// precede every header and it is not a valid unified diff.
+func emitFullContext(lines []printLine, context int) []byte {
 	var buffer bytes.Buffer
-	buffer.Grow(bufferSize)
-	for _, line := range out {
-		if line.hunk {
-			if len(line.line) > 0 {
-				buffer.Write(line.line)
-			}
-			continue
+	buffer.Grow(bufferSizeFor(lines))
+	oldLine, newLine := 1, 1
+	for index := 0; index < len(lines); {
+		end := hunkEnd(lines, index, context)
+		region := lines[index:end]
+		if containsChange(region) {
+			oldCount, newCount := countLines(region)
+			buffer.Write(hunkHeader(oldLine, oldCount, newLine, newCount))
 		}
+		writeLines(&buffer, region)
+		oldCount, newCount := countLines(region)
+		oldLine += oldCount
+		newLine += newCount
+		index = end
+	}
+	return buffer.Bytes()
+}
+
+// hunkEnd returns the index just past the hunk that starts at index. A hunk
+// takes carried over lines and changes in turn and ends once it has taken a
+// run of carried over lines longer than twice the context.
+func hunkEnd(lines []printLine, index, context int) int {
+	for {
+		carried := index
+		for carried < len(lines) && lines[carried].EditKind == 0 {
+			carried++
+		}
+		run := carried - index
+		index = carried
+		if run > 2*context || index >= len(lines) {
+			return index
+		}
+		for index < len(lines) && lines[index].EditKind != 0 {
+			index++
+		}
+		if index >= len(lines) {
+			return index
+		}
+	}
+}
+
+func containsChange(lines []printLine) bool {
+	for _, line := range lines {
+		if line.EditKind != 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func countLines(lines []printLine) (int, int) {
+	var oldCount, newCount int
+	for _, line := range lines {
+		switch line.EditKind {
+		case EditKindDelete:
+			oldCount++
+		case EditKindInsert:
+			newCount++
+		default:
+			oldCount++
+			newCount++
+		}
+	}
+	return oldCount, newCount
+}
+
+func bufferSizeFor(lines []printLine) int {
+	size := 0
+	for _, line := range lines {
+		size += len(line.line) + 1
+		if line.noNewline {
+			size += len(noNewlineMarker)
+		}
+	}
+	return size
+}
+
+func writeLines(buffer *bytes.Buffer, lines []printLine) {
+	for _, line := range lines {
 		switch line.EditKind {
 		case EditKindDelete:
 			buffer.WriteByte('-')
@@ -213,7 +246,6 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 			buffer.WriteString(noNewlineMarker)
 		}
 	}
-	return buffer.Bytes(), nil
 }
 
 // changeBlock is a run of deleted lines in the original sequence together with
