@@ -63,12 +63,15 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 		line     []byte
 		hunk     bool
 	}
-	// If the last line of from is not a newline append one.
-	if len(from) > 0 && from[len(from)-1] != nil {
-		last := from[len(from)-1]
-		if last[len(last)-1] != '\n' {
-			from[len(from)-1] = append(last, '\n')
+	// The final line of from may not be newline terminated. Supply the
+	// terminator when the line is read rather than writing it back into from,
+	// which would modify the caller's slice.
+	fromLine := func(index int) []byte {
+		line := from[index]
+		if index == len(from)-1 && (len(line) == 0 || line[len(line)-1] != '\n') {
+			return append(bytes.Clone(line), '\n')
 		}
+		return line
 	}
 	// We preallocate the slice to avoid reallocations.
 	//
@@ -94,7 +97,8 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 		for j := i; j < len(edits); j++ {
 			// Print the lines before the edit.
 			var advance int
-			for _, line := range from[fromIndex:edits[i].FromPosition] {
+			for index := fromIndex; index < edits[i].FromPosition; index++ {
+				line := fromLine(index)
 				out = append(out, &printLine{line: line})
 				bufferSize += len(line) + 1
 				advance++
@@ -115,7 +119,7 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 				fromIndex++
 				out = append(out, &printLine{
 					EditKind: EditKindDelete,
-					line:     from[edits[j].FromPosition],
+					line:     fromLine(edits[j].FromPosition),
 				})
 			case EditKindInsert:
 				insertCount++
@@ -137,7 +141,8 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 		}
 	}
 	// Print the lines after the last edit.
-	for _, line := range from[fromIndex:] {
+	for index := fromIndex; index < len(from); index++ {
+		line := fromLine(index)
 		out = append(out, &printLine{line: line})
 		bufferSize += len(line) + 1
 	}

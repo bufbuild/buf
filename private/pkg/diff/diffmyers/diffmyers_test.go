@@ -251,6 +251,34 @@ message Foo {
 	})
 }
 
+func TestPrintDoesNotModifyInput(t *testing.T) {
+	t.Parallel()
+	// The final line is deliberately not newline terminated, which is the case
+	// Print has to normalize.
+	from := [][]byte{[]byte("Hello, world!\n"), []byte("Goodbye, world!")}
+	to := [][]byte{[]byte("Hello, world!\n")}
+	before := make([][]byte, len(from))
+	for i, line := range from {
+		before[i] = bytes.Clone(line)
+	}
+	_, err := diffmyers.Print(from, to, diffmyers.Diff(from, to))
+	require.NoError(t, err)
+	assert.Equal(t, before, from, "Print must not modify the sequences it is given")
+}
+
+func TestPrintEmptyLine(t *testing.T) {
+	t.Parallel()
+	// An empty final line is not produced by splitLines, but Print is exported
+	// and must not panic on one. Both sequences below hold the same bytes, so
+	// the reported deletion and missing newline are artifacts of that input.
+	// This pins the behavior rather than endorsing it.
+	from := [][]byte{[]byte("Hello, world!\n"), {}}
+	to := [][]byte{[]byte("Hello, world!\n")}
+	diff, err := diffmyers.Print(from, to, diffmyers.Diff(from, to))
+	require.NoError(t, err)
+	assert.Equal(t, "@@ -1,2 +1,1 @@\n Hello, world!\n-\n", string(diff))
+}
+
 func testPrint(t *testing.T, from, to string, edits []diffmyers.Edit, golden string) {
 	t.Run("print", func(t *testing.T) {
 		diff, err := diffmyers.Print(
