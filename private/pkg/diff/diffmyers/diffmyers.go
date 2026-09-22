@@ -195,17 +195,21 @@ type changeBlock struct {
 	toStart, toEnd     int
 }
 
-// compactChangeBlocks shifts every change block to the last position that
-// describes the same edit, and rewrites the script so that each block's
-// deletions precede its insertions.
+// compactChangeBlocks shifts every change block as far as it can go and
+// rewrites the script so that each block's deletions precede its insertions.
 //
 // The Myers bisection places a block wherever the middle snake falls, which is
 // decided by content elsewhere in the file, so one replacement lands
 // differently in different parts of a file and a run gets split by a line that
 // could have been part of it. GNU diff and git both normalize this first.
 //
-// git also scores candidates by indentation (XDF_INDENT_HEURISTIC) and slides
-// blocks earlier as well as later. Neither is implemented here.
+// A block moves as early as it can go, absorbing any block it meets, and then
+// as late as the merged block can go. Absorbing is the part that matters: two
+// runs separated by one carried over line are one run, and only once joined
+// does where they belong have an answer.
+//
+// git also scores candidates by indentation (XDF_INDENT_HEURISTIC) rather than
+// always taking the last. That is not implemented here.
 func compactChangeBlocks(from, to [][]byte, edits []Edit) []Edit {
 	if len(edits) == 0 {
 		return edits
@@ -243,6 +247,8 @@ func compactChangeBlocks(from, to [][]byte, edits []Edit) []Edit {
 		for block.toEnd < len(to) && toChanged[block.toEnd] {
 			block.toEnd++
 		}
+		for block.slideUp(from, to, fromChanged, toChanged) {
+		}
 		for block.slideDown(from, to, fromChanged, toChanged) {
 		}
 		fromIndex, toIndex = block.fromEnd, block.toEnd
@@ -250,11 +256,51 @@ func compactChangeBlocks(from, to [][]byte, edits []Edit) []Edit {
 	return editsFromChanged(fromChanged, toChanged, len(edits))
 }
 
-// slideDown moves the block one line later if that describes the same edit,
-// reporting whether it moved.
+// slideUp moves the block one line earlier if that describes the same edit,
+// reporting whether it moved, absorbing any block the move makes adjacent.
 //
-// The move is safe when each non-empty side's first line equals the line just
-// after its run: the line leaving the front is then the one joining the back.
+// The move is safe when each non-empty side's last line equals the line just
+// before its run: the line joining the front is then the one leaving the back.
+func (b *changeBlock) slideUp(from, to [][]byte, fromChanged, toChanged []bool) bool {
+	// There has to be a carried over line on both sides to move past.
+	if b.fromStart <= 0 || fromChanged[b.fromStart-1] {
+		return false
+	}
+	if b.toStart <= 0 || toChanged[b.toStart-1] {
+		return false
+	}
+	if b.fromEnd > b.fromStart && !bytes.Equal(from[b.fromStart-1], from[b.fromEnd-1]) {
+		return false
+	}
+	if b.toEnd > b.toStart && !bytes.Equal(to[b.toStart-1], to[b.toEnd-1]) {
+		return false
+	}
+	if b.fromEnd > b.fromStart {
+		fromChanged[b.fromStart-1], fromChanged[b.fromEnd-1] = true, false
+	}
+	if b.toEnd > b.toStart {
+		toChanged[b.toStart-1], toChanged[b.toEnd-1] = true, false
+	}
+	b.fromStart--
+	b.fromEnd--
+	b.toStart--
+	b.toEnd--
+	for b.fromStart > 0 && fromChanged[b.fromStart-1] {
+		b.fromStart--
+	}
+	for b.toStart > 0 && toChanged[b.toStart-1] {
+		b.toStart--
+	}
+	return true
+}
+
+// slideDown moves the block one line later if that describes the same edit,
+// reporting whether it moved. Any block the move makes adjacent is absorbed.
+//
+// The block can move past the following pair of carried over lines when each
+// non-empty side's first line equals the line just after that side's run: the
+// line leaving the front of the run is then identical to the one joining the
+// back, so the sequences are unchanged.
 func (b *changeBlock) slideDown(from, to [][]byte, fromChanged, toChanged []bool) bool {
 	// There has to be a carried over line on both sides to move past.
 	if b.fromEnd >= len(from) || fromChanged[b.fromEnd] {
@@ -279,6 +325,12 @@ func (b *changeBlock) slideDown(from, to [][]byte, fromChanged, toChanged []bool
 	b.fromEnd++
 	b.toStart++
 	b.toEnd++
+	for b.fromEnd < len(from) && fromChanged[b.fromEnd] {
+		b.fromEnd++
+	}
+	for b.toEnd < len(to) && toChanged[b.toEnd] {
+		b.toEnd++
+	}
 	return true
 }
 

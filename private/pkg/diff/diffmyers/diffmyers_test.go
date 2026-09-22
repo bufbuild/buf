@@ -398,6 +398,36 @@ Z
 		testPrint(t, from, to, edits, "no-newline-at-end-of-to")
 	})
 
+	// These need the block to move earlier and absorb the one it meets;
+	// sliding later alone leaves the run split by a carried over line.
+	t.Run("merge-deletion-run-backwards", func(t *testing.T) {
+		t.Parallel()
+		const from = `a
+b
+b
+`
+		const to = "b\n"
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "merge-deletion-run-backwards")
+	})
+
+	t.Run("merge-insertion-run-backwards", func(t *testing.T) {
+		t.Parallel()
+		const from = "a\n"
+		const to = `b
+a
+a
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "merge-insertion-run-backwards")
+	})
+
 	t.Run("first-line-prefix", func(t *testing.T) {
 		t.Parallel()
 		from := `syntax = "proto3";
