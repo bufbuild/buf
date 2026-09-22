@@ -319,6 +319,60 @@ message B {
 		testPrint(t, from, to, edits, "appended-block-boundary")
 	})
 
+	// Two changes four unchanged lines apart belong to one hunk, as they would
+	// under diff -U3 and git. Seven lines apart they do not.
+	t.Run("merge-nearby-changes", func(t *testing.T) {
+		t.Parallel()
+		const from = `a
+m
+m
+m
+m
+z
+`
+		const to = `A
+m
+m
+m
+m
+Z
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "merge-nearby-changes")
+	})
+
+	t.Run("split-distant-changes", func(t *testing.T) {
+		t.Parallel()
+		const from = `a
+m
+m
+m
+m
+m
+m
+m
+z
+`
+		const to = `A
+m
+m
+m
+m
+m
+m
+m
+Z
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "split-distant-changes")
+	})
+
 	t.Run("first-line-prefix", func(t *testing.T) {
 		t.Parallel()
 		from := `syntax = "proto3";

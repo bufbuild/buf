@@ -57,7 +57,12 @@ func Diff(from, to [][]byte) []Edit {
 //
 // Ref: https://www.gnu.org/software/diffutils/manual/html_node/Detailed-Unified.html
 func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
-	const contextThreshold = 2
+	// Hunks are merged when at most this many unchanged lines separate them,
+	// matching diff -U3 and git: twice the three lines of context each hunk
+	// would otherwise carry. Print emits every line of the original sequence
+	// rather than trimming to a context window, so this decides only where
+	// hunk headers are placed.
+	const maxUnchangedLinesBetweenHunks = 6
 	type printLine struct {
 		EditKind EditKind
 		line     []byte
@@ -108,7 +113,7 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 			fromIndex += advance
 			insertCount += advance
 			deleteCount += advance
-			if advance > contextThreshold {
+			if advance > maxUnchangedLinesBetweenHunks {
 				i--
 				break
 			}
