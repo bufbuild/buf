@@ -152,7 +152,7 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 		}
 		if printHunk {
 			// Print the hunk header.
-			hunk.line = fmt.Appendf(nil, "@@ -%d,%d +%d,%d @@\n", hunkOldStart, deleteCount, hunkNewStart, insertCount)
+			hunk.line = hunkHeader(hunkOldStart, deleteCount, hunkNewStart, insertCount)
 			bufferSize += len(hunk.line) + 1
 		}
 	}
@@ -364,6 +364,20 @@ func editsFromChanged(fromChanged, toChanged []bool, size int) []Edit {
 		}
 	}
 	return edits
+}
+
+// hunkHeader formats a hunk header. An empty range is numbered with the line
+// before it, which is zero when the range starts the file. GNU patch reads
+// that number, and placing an insertion after the following line instead puts
+// it one line too late.
+func hunkHeader(oldStart, oldCount, newStart, newCount int) []byte {
+	if oldCount == 0 {
+		oldStart--
+	}
+	if newCount == 0 {
+		newStart--
+	}
+	return fmt.Appendf(nil, "@@ -%d,%d +%d,%d @@\n", oldStart, oldCount, newStart, newCount)
 }
 
 func shortestEdits(from, to [][]byte, fromOffset, toOffset int) []Edit {

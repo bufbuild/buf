@@ -428,6 +428,40 @@ a
 		testPrint(t, from, to, edits, "merge-insertion-run-backwards")
 	})
 
+	// An empty range is numbered with the line before it, so this insertion
+	// after old line 8 is recorded as -8,0 rather than -9,0.
+	t.Run("insert-away-from-other-changes", func(t *testing.T) {
+		t.Parallel()
+		const from = `l1
+l2
+l3
+l4
+l5
+l6
+l7
+l8
+l9
+l10
+`
+		const to = `l1
+l2
+l3
+l4
+l5
+l6
+l7
+l8
+NEW
+l9
+l10
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "insert-away-from-other-changes")
+	})
+
 	t.Run("first-line-prefix", func(t *testing.T) {
 		t.Parallel()
 		from := `syntax = "proto3";
