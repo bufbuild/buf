@@ -78,10 +78,11 @@ type snakeSearch struct {
 type PrintOption func(*printOptions)
 
 // PrintWithContext sets the number of carried over lines kept either side of a
-// change. The default is 3, as for diff -u and git.
+// change. The default is 3, as for diff -u and git. A negative value is treated
+// as zero.
 func PrintWithContext(context int) PrintOption {
 	return func(printOptions *printOptions) {
-		printOptions.context = context
+		printOptions.context = max(context, 0)
 		printOptions.fullContext = false
 	}
 }
@@ -135,7 +136,6 @@ type printLine struct {
 // share a hunk, which is where diff -u and git stop merging.
 func emitHunks(lines []printLine, context int) []byte {
 	var buffer bytes.Buffer
-	buffer.Grow(bufferSizeFor(lines))
 	oldLine, newLine := 1, 1
 	emitted := 0
 	for index := 0; index < len(lines); {
@@ -160,10 +160,6 @@ func emitHunks(lines []printLine, context int) []byte {
 		}
 		start := max(index-context, emitted)
 		stop := min(end+context, len(lines))
-		// The marker belongs to the line above it, so it cannot be cut off.
-		for stop < len(lines) && lines[stop].noNewline && lines[stop].EditKind == 0 {
-			stop++
-		}
 		skippedOld, skippedNew := countLines(lines[emitted:start])
 		oldLine += skippedOld
 		newLine += skippedNew

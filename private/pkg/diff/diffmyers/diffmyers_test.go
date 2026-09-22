@@ -517,6 +517,37 @@ Z
 		testPrint(t, from, to, edits, "context-width-one", diffmyers.PrintWithContext(1))
 	})
 
+	// The marker belongs to the line it follows, so a final line outside the
+	// window takes it with it rather than widening the hunk.
+	t.Run("no-newline-outside-context", func(t *testing.T) {
+		t.Parallel()
+		const from = `a
+b
+c
+d
+e
+f
+g
+h
+i
+j`
+		const to = `a
+b
+c
+d
+e
+F
+g
+h
+i
+j`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "no-newline-outside-context")
+	})
+
 	t.Run("first-line-prefix", func(t *testing.T) {
 		t.Parallel()
 		from := `syntax = "proto3";
@@ -594,9 +625,54 @@ func TestPrintEmptyLine(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(
 		t,
-		"@@ -1,2 +1,1 @@\n Hello, world!\n-\n\\ No newline at end of file\n",
+		`@@ -1,2 +1,1 @@
+ Hello, world!
+-
+\ No newline at end of file
+`,
 		string(diff),
 	)
+}
+
+func TestPrintContextBounds(t *testing.T) {
+	t.Parallel()
+	const from = `a
+b
+c
+d
+e
+f
+g
+`
+	const to = `a
+b
+c
+X
+e
+f
+g
+`
+	edits := diffmyers.Diff(splitLines(from), splitLines(to))
+	zero, err := diffmyers.Print(
+		splitLines(from),
+		splitLines(to),
+		edits,
+		diffmyers.PrintWithContext(0),
+	)
+	require.NoError(t, err)
+	assert.Equal(t, `@@ -4,1 +4,1 @@
+-d
++X
+`, string(zero))
+	// A negative window is treated as zero rather than slicing out of range.
+	negative, err := diffmyers.Print(
+		splitLines(from),
+		splitLines(to),
+		edits,
+		diffmyers.PrintWithContext(-1),
+	)
+	require.NoError(t, err)
+	assert.Equal(t, string(zero), string(negative))
 }
 
 func testPrint(
