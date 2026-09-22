@@ -93,6 +93,10 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 	// as many edits.
 	out := make([]*printLine, 0, len(from)+2*len(edits))
 	var fromIndex, toIndex, bufferSize int
+	// The lines after the last edit belong to the last hunk, so its header is
+	// rewritten once they have been counted.
+	var lastHunk *printLine
+	var lastOldStart, lastOldCount, lastNewStart, lastNewCount int
 	for i := 0; i < len(edits); i++ {
 		// Remember the start of the hunk. We add 1 to the indexes because
 		// we want to print the line number and they start at 1.
@@ -154,13 +158,24 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 			// Print the hunk header.
 			hunk.line = hunkHeader(hunkOldStart, deleteCount, hunkNewStart, insertCount)
 			bufferSize += len(hunk.line) + 1
+			lastHunk = hunk
+			lastOldStart, lastOldCount = hunkOldStart, deleteCount
+			lastNewStart, lastNewCount = hunkNewStart, insertCount
 		}
 	}
 	// Print the lines after the last edit.
+	var trailing int
 	for index := fromIndex; index < len(from); index++ {
 		line, noNewline := lineAt(from, index)
 		out = append(out, &printLine{line: line, noNewline: noNewline})
 		bufferSize += len(line) + 1
+		trailing++
+	}
+	if lastHunk != nil && trailing > 0 {
+		lastHunk.line = hunkHeader(
+			lastOldStart, lastOldCount+trailing,
+			lastNewStart, lastNewCount+trailing,
+		)
 	}
 	var buffer bytes.Buffer
 	buffer.Grow(bufferSize)
