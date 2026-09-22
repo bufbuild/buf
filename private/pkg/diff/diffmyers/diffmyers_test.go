@@ -269,6 +269,56 @@ b
 		testPrint(t, from, to, edits, "replace-one-line-with-four")
 	})
 
+	// Without compaction the deletion run below is split by a line that could
+	// have been part of it, producing "-b b -b -b" instead of " b -b -b -b".
+	t.Run("coalesce-deletion-run", func(t *testing.T) {
+		t.Parallel()
+		const from = `a
+b
+b
+b
+b
+a
+d
+b
+`
+		const to = `c
+c
+a
+b
+d
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "coalesce-deletion-run")
+	})
+
+	// Without compaction an appended block is attributed to the closing brace
+	// of the preceding block, so the diff reads as "+}" followed by the new
+	// message and stops before the final brace.
+	t.Run("appended-block-boundary", func(t *testing.T) {
+		t.Parallel()
+		const from = `message A {
+  int32 x = 1;
+}
+`
+		const to = `message A {
+  int32 x = 1;
+}
+
+message B {
+  int32 y = 1;
+}
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "appended-block-boundary")
+	})
+
 	t.Run("first-line-prefix", func(t *testing.T) {
 		t.Parallel()
 		from := `syntax = "proto3";

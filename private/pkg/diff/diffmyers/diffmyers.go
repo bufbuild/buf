@@ -50,7 +50,7 @@ type Edit struct {
 // It implements the linear space refinement of the algorithm described in section 4b. This is the
 // same algorithm used by git.
 func Diff(from, to [][]byte) []Edit {
-	return orderChangeBlocks(shortestEdits(from, to, 0, 0))
+	return compactChangeBlocks(from, to, shortestEdits(from, to, 0, 0))
 }
 
 // Print prints the edits in the unified diff format without the header.
@@ -168,48 +168,131 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-// orderChangeBlocks rewrites each change block so that its deletions come
-// before its insertions, which is the shape GNU diff and git always produce.
+// changeBlock is a run of deleted lines in the original sequence together with
+// the run of inserted lines that replaces them. Either run may be empty, but
+// not both.
+type changeBlock struct {
+	fromStart, fromEnd int
+	toStart, toEnd     int
+}
+
+// compactChangeBlocks shifts every change block to the last position that
+// describes the same edit, and rewrites the script so that each block's
+// deletions precede its insertions.
 //
-// A change block is a maximal run of edits with no unchanged line between them.
-// Deletions and insertions within one block commute, because every original
-// line the block touches is deleted, so reordering them describes the same
-// result. Insertions are moved to the end of the block's deleted range and
-// their FromPosition is updated to match, which keeps the positions of the
-// script monotonically increasing.
-func orderChangeBlocks(edits []Edit) []Edit {
+// The Myers bisection places a block wherever the middle snake falls, which is
+// decided by content elsewhere in the file, so one replacement lands
+// differently in different parts of a file and a run gets split by a line that
+// could have been part of it. GNU diff and git both normalize this first.
+//
+// git also scores candidates by indentation (XDF_INDENT_HEURISTIC) and slides
+// blocks earlier as well as later. Neither is implemented here.
+func compactChangeBlocks(from, to [][]byte, edits []Edit) []Edit {
 	if len(edits) == 0 {
 		return edits
 	}
-	ordered := make([]Edit, 0, len(edits))
-	var deletes, inserts []Edit
-	// fromPosition is the index in the original sequence that the block has
-	// consumed up to. An edit positioned beyond it is preceded by unchanged
-	// lines and therefore starts a new block.
-	fromPosition := edits[0].FromPosition
-	flush := func() {
-		ordered = append(ordered, deletes...)
-		for _, insert := range inserts {
-			insert.FromPosition = fromPosition
-			ordered = append(ordered, insert)
-		}
-		deletes, inserts = deletes[:0], inserts[:0]
-	}
+	// A line is either carried over or it is not, so the whole script is
+	// captured by one flag per line. Shifting a block is then a matter of
+	// moving flags, which keeps the two sequences in step by construction.
+	fromChanged := make([]bool, len(from))
+	toChanged := make([]bool, len(to))
 	for _, edit := range edits {
-		if edit.FromPosition > fromPosition {
-			flush()
-			fromPosition = edit.FromPosition
-		}
 		switch edit.Kind {
 		case EditKindDelete:
-			deletes = append(deletes, edit)
-			fromPosition = edit.FromPosition + 1
+			fromChanged[edit.FromPosition] = true
 		case EditKindInsert:
-			inserts = append(inserts, edit)
+			toChanged[edit.ToPosition] = true
 		}
 	}
-	flush()
-	return ordered
+	fromIndex, toIndex := 0, 0
+	for fromIndex < len(from) || toIndex < len(to) {
+		if !(fromIndex < len(from) && fromChanged[fromIndex]) &&
+			!(toIndex < len(to) && toChanged[toIndex]) {
+			fromIndex++
+			toIndex++
+			continue
+		}
+		block := changeBlock{
+			fromStart: fromIndex,
+			fromEnd:   fromIndex,
+			toStart:   toIndex,
+			toEnd:     toIndex,
+		}
+		for block.fromEnd < len(from) && fromChanged[block.fromEnd] {
+			block.fromEnd++
+		}
+		for block.toEnd < len(to) && toChanged[block.toEnd] {
+			block.toEnd++
+		}
+		for block.slideDown(from, to, fromChanged, toChanged) {
+		}
+		fromIndex, toIndex = block.fromEnd, block.toEnd
+	}
+	return editsFromChanged(fromChanged, toChanged, len(edits))
+}
+
+// slideDown moves the block one line later if that describes the same edit,
+// reporting whether it moved.
+//
+// The move is safe when each non-empty side's first line equals the line just
+// after its run: the line leaving the front is then the one joining the back.
+func (b *changeBlock) slideDown(from, to [][]byte, fromChanged, toChanged []bool) bool {
+	// There has to be a carried over line on both sides to move past.
+	if b.fromEnd >= len(from) || fromChanged[b.fromEnd] {
+		return false
+	}
+	if b.toEnd >= len(to) || toChanged[b.toEnd] {
+		return false
+	}
+	if b.fromEnd > b.fromStart && !bytes.Equal(from[b.fromStart], from[b.fromEnd]) {
+		return false
+	}
+	if b.toEnd > b.toStart && !bytes.Equal(to[b.toStart], to[b.toEnd]) {
+		return false
+	}
+	if b.fromEnd > b.fromStart {
+		fromChanged[b.fromStart], fromChanged[b.fromEnd] = false, true
+	}
+	if b.toEnd > b.toStart {
+		toChanged[b.toStart], toChanged[b.toEnd] = false, true
+	}
+	b.fromStart++
+	b.fromEnd++
+	b.toStart++
+	b.toEnd++
+	return true
+}
+
+// editsFromChanged rebuilds an edit script from per line flags. Each block's
+// deletions are emitted before its insertions, which is the shape GNU diff and
+// git always produce.
+func editsFromChanged(fromChanged, toChanged []bool, size int) []Edit {
+	edits := make([]Edit, 0, size)
+	fromIndex, toIndex := 0, 0
+	for fromIndex < len(fromChanged) || toIndex < len(toChanged) {
+		blockStart := len(edits)
+		for fromIndex < len(fromChanged) && fromChanged[fromIndex] {
+			edits = append(edits, Edit{
+				Kind:         EditKindDelete,
+				FromPosition: fromIndex,
+			})
+			fromIndex++
+		}
+		for toIndex < len(toChanged) && toChanged[toIndex] {
+			edits = append(edits, Edit{
+				Kind:         EditKindInsert,
+				FromPosition: fromIndex,
+				ToPosition:   toIndex,
+			})
+			toIndex++
+		}
+		if len(edits) == blockStart {
+			// A pair of carried over lines.
+			fromIndex++
+			toIndex++
+		}
+	}
+	return edits
 }
 
 func shortestEdits(from, to [][]byte, fromOffset, toOffset int) []Edit {
