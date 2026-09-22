@@ -84,15 +84,101 @@ type printLine struct {
 	noNewline bool
 }
 
+// PrintOption is an option for Print.
+type PrintOption func(*printOptions)
+
+// PrintWithContext sets the number of carried over lines kept either side of a
+// change. The default is 3, as for diff -u and git.
+func PrintWithContext(context int) PrintOption {
+	return func(printOptions *printOptions) {
+		printOptions.context = context
+		printOptions.fullContext = false
+	}
+}
+
+// PrintWithFullContext keeps every line of the original sequence rather than a
+// window around each change.
+//
+// The result is not a valid unified diff: the lines before the first change
+// precede every hunk header, so patch and git apply reject it. In exchange the
+// whole original sequence can be recovered from the output, which a caller
+// that re-slices the context itself needs.
+func PrintWithFullContext() PrintOption {
+	return func(printOptions *printOptions) {
+		printOptions.fullContext = true
+	}
+}
+
+type printOptions struct {
+	context     int
+	fullContext bool
+}
+
 // Print prints the edits in the unified diff format without the header.
 //
 // Ref: https://www.gnu.org/software/diffutils/manual/html_node/Detailed-Unified.html
-func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
+func Print(from, to [][]byte, edits []Edit, options ...PrintOption) ([]byte, error) {
+	resolved := &printOptions{context: defaultContext, fullContext: false}
+	for _, option := range options {
+		option(resolved)
+	}
 	lines, err := diffLines(from, to, edits)
 	if err != nil {
 		return nil, err
 	}
-	return emitFullContext(lines, defaultContext), nil
+	if resolved.fullContext {
+		return emitFullContext(lines, resolved.context), nil
+	}
+	return emitHunks(lines, resolved.context), nil
+}
+
+// emitHunks writes a unified diff carrying at most context carried over lines
+// either side of each change. Changes separated by at most twice the context
+// share a hunk, which is where diff -u and git stop merging.
+func emitHunks(lines []printLine, context int) []byte {
+	var buffer bytes.Buffer
+	buffer.Grow(bufferSizeFor(lines))
+	oldLine, newLine := 1, 1
+	emitted := 0
+	for index := 0; index < len(lines); {
+		if lines[index].EditKind == 0 {
+			index++
+			continue
+		}
+		// Take every change that is close enough to share this hunk.
+		end := index
+		for {
+			for end < len(lines) && lines[end].EditKind != 0 {
+				end++
+			}
+			carried := end
+			for carried < len(lines) && lines[carried].EditKind == 0 {
+				carried++
+			}
+			if carried >= len(lines) || carried-end > 2*context {
+				break
+			}
+			end = carried
+		}
+		start := max(index-context, emitted)
+		stop := min(end+context, len(lines))
+		// The marker belongs to the line above it, so it cannot be cut off.
+		for stop < len(lines) && lines[stop].noNewline && lines[stop].EditKind == 0 {
+			stop++
+		}
+		skippedOld, skippedNew := countLines(lines[emitted:start])
+		oldLine += skippedOld
+		newLine += skippedNew
+		region := lines[start:stop]
+		oldCount, newCount := countLines(region)
+		buffer.Write(hunkHeader(oldLine, oldCount, newLine, newCount))
+		writeLines(&buffer, region)
+		oldLine += oldCount
+		newLine += newCount
+		emitted = stop
+		index = stop
+	}
+	return buffer.Bytes()
 }
 
 // diffLines applies the edit script to produce the body of the diff, one entry

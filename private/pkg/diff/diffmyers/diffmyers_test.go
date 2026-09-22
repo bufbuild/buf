@@ -462,6 +462,61 @@ l10
 		testPrint(t, from, to, edits, "insert-away-from-other-changes")
 	})
 
+	// Full context keeps every line, so the whole original sequence can be
+	// recovered from the output.
+	t.Run("full-context", func(t *testing.T) {
+		t.Parallel()
+		const from = `a
+m
+m
+m
+m
+m
+m
+m
+z
+`
+		const to = `A
+m
+m
+m
+m
+m
+m
+m
+Z
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "full-context", diffmyers.PrintWithFullContext())
+	})
+
+	// A narrower window keeps fewer carried over lines and splits hunks sooner.
+	t.Run("context-width-one", func(t *testing.T) {
+		t.Parallel()
+		const from = `a
+m
+m
+m
+m
+z
+`
+		const to = `A
+m
+m
+m
+m
+Z
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "context-width-one", diffmyers.PrintWithContext(1))
+	})
+
 	t.Run("first-line-prefix", func(t *testing.T) {
 		t.Parallel()
 		from := `syntax = "proto3";
@@ -499,6 +554,7 @@ message Foo {
 			fromLines,
 			toLines,
 			edits,
+			diffmyers.PrintWithFullContext(),
 		)
 		require.NoError(t, err)
 		before, _, _ := bytes.Cut(diff, []byte("\n"))
@@ -507,7 +563,7 @@ message Foo {
 		actualFirstLine := string(firstLine)
 		require.Equal(t, expectedFirstLineOfOutput, actualFirstLine,
 			"First line of diff output should match expected format (single space prefix, no double space)")
-		testPrint(t, from, to, edits, "first-line-prefix")
+		testPrint(t, from, to, edits, "first-line-prefix", diffmyers.PrintWithFullContext())
 	})
 }
 
@@ -543,12 +599,19 @@ func TestPrintEmptyLine(t *testing.T) {
 	)
 }
 
-func testPrint(t *testing.T, from, to string, edits []diffmyers.Edit, golden string) {
+func testPrint(
+	t *testing.T,
+	from, to string,
+	edits []diffmyers.Edit,
+	golden string,
+	options ...diffmyers.PrintOption,
+) {
 	t.Run("print", func(t *testing.T) {
 		diff, err := diffmyers.Print(
 			splitLines(from),
 			splitLines(to),
 			edits,
+			options...,
 		)
 		require.NoError(t, err)
 		goldenFilePath := filepath.Join("testdata", golden)
