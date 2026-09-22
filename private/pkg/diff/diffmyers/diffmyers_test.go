@@ -16,6 +16,7 @@ package diffmyers_test
 
 import (
 	"bytes"
+	"math"
 	"os"
 	"path/filepath"
 	"testing"
@@ -673,6 +674,82 @@ g
 	)
 	require.NoError(t, err)
 	assert.Equal(t, string(zero), string(negative))
+}
+
+func TestPrintHugeContext(t *testing.T) {
+	t.Parallel()
+	const from = `a
+b
+c
+`
+	const to = `a
+X
+c
+`
+	edits := diffmyers.Diff(splitLines(from), splitLines(to))
+	for _, options := range [][]diffmyers.PrintOption{
+		{diffmyers.PrintWithContext(math.MaxInt)},
+		{diffmyers.PrintWithContext(math.MaxInt), diffmyers.PrintWithFullContext()},
+	} {
+		diff, err := diffmyers.Print(splitLines(from), splitLines(to), edits, options...)
+		require.NoError(t, err)
+		assert.Contains(t, string(diff), "-b\n")
+		assert.Contains(t, string(diff), "+X\n")
+	}
+}
+
+func TestPrintEditOutOfRange(t *testing.T) {
+	t.Parallel()
+	for _, edit := range []diffmyers.Edit{
+		{Kind: diffmyers.EditKindDelete, FromPosition: 5},
+		{Kind: diffmyers.EditKindInsert, FromPosition: 0, ToPosition: 5},
+		{Kind: diffmyers.EditKindDelete, FromPosition: -1},
+	} {
+		_, err := diffmyers.Print(
+			splitLines("a\nb\n"),
+			splitLines("a\n"),
+			[]diffmyers.Edit{edit},
+		)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "out of range")
+	}
+}
+
+func TestPrintOptionOrderDecidesMode(t *testing.T) {
+	t.Parallel()
+	const from = `a
+b
+c
+d
+e
+f
+g
+h
+i
+j
+`
+	const to = `a
+b
+c
+d
+X
+f
+g
+h
+i
+j
+`
+	edits := diffmyers.Diff(splitLines(from), splitLines(to))
+	printDiff := func(options ...diffmyers.PrintOption) string {
+		diff, err := diffmyers.Print(splitLines(from), splitLines(to), edits, options...)
+		require.NoError(t, err)
+		return string(diff)
+	}
+	windowed := printDiff(diffmyers.PrintWithFullContext(), diffmyers.PrintWithContext(3))
+	full := printDiff(diffmyers.PrintWithContext(3), diffmyers.PrintWithFullContext())
+	assert.Equal(t, printDiff(), windowed)
+	assert.Equal(t, printDiff(diffmyers.PrintWithFullContext()), full)
+	assert.NotEqual(t, windowed, full)
 }
 
 func testPrint(

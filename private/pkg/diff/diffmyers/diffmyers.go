@@ -56,6 +56,8 @@ type Edit struct {
 //
 // It implements the linear space refinement of the algorithm described in section 4b. This is the
 // same algorithm used by git.
+//
+// The script is then normalized similar to GNU diff and git normalize theirs.
 func Diff(from, to [][]byte) []Edit {
 	// A sub-problem never needs more diagonals than the whole problem, so one
 	// pair of arrays serves the entire recursion.
@@ -80,6 +82,8 @@ type PrintOption func(*printOptions)
 // PrintWithContext sets the number of carried over lines kept either side of a
 // change. The default is 3, as for diff -u and git. A negative value is treated
 // as zero.
+//
+// Mutually exclusive with PrintWithFullContext - the last one wins.
 func PrintWithContext(context int) PrintOption {
 	return func(printOptions *printOptions) {
 		printOptions.context = max(context, 0)
@@ -89,6 +93,8 @@ func PrintWithContext(context int) PrintOption {
 
 // PrintWithFullContext keeps every line of the original sequence rather than a
 // window around each change.
+//
+// Mutually exclusive with PrintWithContext - the last one wins.
 //
 // The result is not a valid unified diff: the lines before the first change
 // precede every hunk header, so patch and git apply reject it. In exchange the
@@ -117,10 +123,11 @@ func Print(from, to [][]byte, edits []Edit, options ...PrintOption) ([]byte, err
 	if err != nil {
 		return nil, err
 	}
+	context := min(resolved.context, len(lines))
 	if resolved.fullContext {
-		return emitFullContext(lines, resolved.context), nil
+		return emitFullContext(lines, context), nil
 	}
-	return emitHunks(lines, resolved.context), nil
+	return emitHunks(lines, context), nil
 }
 
 // printLine is one line of the diff body. A zero EditKind is a line carried
@@ -192,6 +199,9 @@ func diffLines(from, to [][]byte, edits []Edit) ([]printLine, error) {
 	lines := make([]printLine, 0, len(from)+len(edits))
 	fromIndex := 0
 	for _, edit := range edits {
+		if err := validateEdit(edit, len(from), len(to)); err != nil {
+			return nil, err
+		}
 		for fromIndex < edit.FromPosition {
 			line, noNewline := lineAt(from, fromIndex)
 			lines = append(lines, printLine{line: line, noNewline: noNewline})
@@ -213,8 +223,6 @@ func diffLines(from, to [][]byte, edits []Edit) ([]printLine, error) {
 				line:      line,
 				noNewline: noNewline,
 			})
-		default:
-			return nil, errors.New("unknown edit kind")
 		}
 	}
 	for fromIndex < len(from) {
@@ -223,6 +231,37 @@ func diffLines(from, to [][]byte, edits []Edit) ([]printLine, error) {
 		fromIndex++
 	}
 	return lines, nil
+}
+
+func validateEdit(edit Edit, fromLines, toLines int) error {
+	switch edit.Kind {
+	case EditKindDelete:
+		if edit.FromPosition < 0 || edit.FromPosition >= fromLines {
+			return fmt.Errorf(
+				"delete position %d out of range for %d lines",
+				edit.FromPosition,
+				fromLines,
+			)
+		}
+	case EditKindInsert:
+		if edit.FromPosition < 0 || edit.FromPosition > fromLines {
+			return fmt.Errorf(
+				"insert position %d out of range for %d lines",
+				edit.FromPosition,
+				fromLines,
+			)
+		}
+		if edit.ToPosition < 0 || edit.ToPosition >= toLines {
+			return fmt.Errorf(
+				"insert position %d out of range for %d lines",
+				edit.ToPosition,
+				toLines,
+			)
+		}
+	default:
+		return errors.New("unknown edit kind")
+	}
+	return nil
 }
 
 // emitFullContext writes every line of the diff, placing a hunk header before
@@ -239,12 +278,11 @@ func emitFullContext(lines []printLine, context int) []byte {
 	for index := 0; index < len(lines); {
 		end := hunkEnd(lines, index, context)
 		region := lines[index:end]
+		oldCount, newCount := countLines(region)
 		if containsChange(region) {
-			oldCount, newCount := countLines(region)
 			buffer.Write(hunkHeader(oldLine, oldCount, newLine, newCount))
 		}
 		writeLines(&buffer, region)
-		oldCount, newCount := countLines(region)
 		oldLine += oldCount
 		newLine += newCount
 		index = end
