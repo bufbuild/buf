@@ -131,11 +131,11 @@ func Print(from, to [][]byte, edits []Edit, options ...PrintOption) ([]byte, err
 }
 
 // printLine is one line of the diff body. A zero EditKind is a line carried
-// over from both sequences.
+// over from both sequences. The line is the caller's slice, so a final line
+// that is not newline terminated is still missing its terminator here.
 type printLine struct {
-	EditKind  EditKind
-	line      []byte
-	noNewline bool
+	EditKind EditKind
+	line     []byte
 }
 
 // emitHunks writes a unified diff carrying at most context carried over lines
@@ -185,17 +185,6 @@ func emitHunks(lines []printLine, context int) []byte {
 // diffLines applies the edit script to produce the body of the diff, one entry
 // per line, with no hunk headers.
 func diffLines(from, to [][]byte, edits []Edit) ([]printLine, error) {
-	// A sequence's final line may not be newline terminated. Supply the
-	// terminator when the line is read, rather than writing it back into the
-	// caller's slice, and report the fact so that it can be recorded in the
-	// output.
-	lineAt := func(lines [][]byte, index int) ([]byte, bool) {
-		line := lines[index]
-		if index != len(lines)-1 || (len(line) > 0 && line[len(line)-1] == '\n') {
-			return line, false
-		}
-		return append(bytes.Clone(line), '\n'), true
-	}
 	lines := make([]printLine, 0, len(from)+len(edits))
 	fromIndex := 0
 	for _, edit := range edits {
@@ -203,31 +192,25 @@ func diffLines(from, to [][]byte, edits []Edit) ([]printLine, error) {
 			return nil, err
 		}
 		for fromIndex < edit.FromPosition {
-			line, noNewline := lineAt(from, fromIndex)
-			lines = append(lines, printLine{line: line, noNewline: noNewline})
+			lines = append(lines, printLine{line: from[fromIndex]})
 			fromIndex++
 		}
 		switch edit.Kind {
 		case EditKindDelete:
-			line, noNewline := lineAt(from, edit.FromPosition)
 			lines = append(lines, printLine{
-				EditKind:  EditKindDelete,
-				line:      line,
-				noNewline: noNewline,
+				EditKind: EditKindDelete,
+				line:     from[edit.FromPosition],
 			})
 			fromIndex++
 		case EditKindInsert:
-			line, noNewline := lineAt(to, edit.ToPosition)
 			lines = append(lines, printLine{
-				EditKind:  EditKindInsert,
-				line:      line,
-				noNewline: noNewline,
+				EditKind: EditKindInsert,
+				line:     to[edit.ToPosition],
 			})
 		}
 	}
 	for fromIndex < len(from) {
-		line, noNewline := lineAt(from, fromIndex)
-		lines = append(lines, printLine{line: line, noNewline: noNewline})
+		lines = append(lines, printLine{line: from[fromIndex]})
 		fromIndex++
 	}
 	return lines, nil
@@ -342,8 +325,8 @@ func bufferSizeFor(lines []printLine) int {
 	size := 0
 	for _, line := range lines {
 		size += len(line.line) + 1
-		if line.noNewline {
-			size += len(noNewlineMarker)
+		if !isNewlineTerminated(line.line) {
+			size += 1 + len(noNewlineMarker)
 		}
 	}
 	return size
@@ -360,18 +343,17 @@ func writeLines(buffer *bytes.Buffer, lines []printLine) {
 			buffer.WriteByte(' ')
 		}
 		buffer.Write(line.line)
-		if line.noNewline {
+		if !isNewlineTerminated(line.line) {
+			// Only a sequence's final line can lack its terminator. Supply it
+			// and record that it was missing.
+			buffer.WriteByte('\n')
 			buffer.WriteString(noNewlineMarker)
 		}
 	}
 }
 
-// changeBlock is a run of deleted lines in the original sequence together with
-// the run of inserted lines that replaces them. Either run may be empty, but
-// not both.
-type changeBlock struct {
-	fromStart, fromEnd int
-	toStart, toEnd     int
+func isNewlineTerminated(line []byte) bool {
+	return len(line) > 0 && line[len(line)-1] == '\n'
 }
 
 // compactChangeBlocks shifts every change block as far as it can go and
@@ -408,109 +390,89 @@ func compactChangeBlocks(from, to [][]byte, edits []Edit) []Edit {
 	}
 	fromIndex, toIndex := 0, 0
 	for fromIndex < len(from) || toIndex < len(to) {
-		if !(fromIndex < len(from) && fromChanged[fromIndex]) &&
-			!(toIndex < len(to) && toChanged[toIndex]) {
+		fromRun := newChangeRun(from, fromChanged, fromIndex)
+		toRun := newChangeRun(to, toChanged, toIndex)
+		if fromRun.isEmpty() && toRun.isEmpty() {
+			// A pair of carried over lines.
 			fromIndex++
 			toIndex++
 			continue
 		}
-		block := changeBlock{
-			fromStart: fromIndex,
-			fromEnd:   fromIndex,
-			toStart:   toIndex,
-			toEnd:     toIndex,
+		// A block is bounded by a pair of carried over lines or by the ends of
+		// both sequences, so one side's bound speaks for both.
+		for fromRun.start > 0 && fromRun.canSlideUp() && toRun.canSlideUp() {
+			fromRun.slideUp()
+			toRun.slideUp()
 		}
-		for block.fromEnd < len(from) && fromChanged[block.fromEnd] {
-			block.fromEnd++
+		for fromRun.end < len(from) && fromRun.canSlideDown() && toRun.canSlideDown() {
+			fromRun.slideDown()
+			toRun.slideDown()
 		}
-		for block.toEnd < len(to) && toChanged[block.toEnd] {
-			block.toEnd++
-		}
-		for block.slideUp(from, to, fromChanged, toChanged) {
-		}
-		for block.slideDown(from, to, fromChanged, toChanged) {
-		}
-		fromIndex, toIndex = block.fromEnd, block.toEnd
+		fromIndex, toIndex = fromRun.end, toRun.end
 	}
 	return editsFromChanged(fromChanged, toChanged, len(edits))
 }
 
-// slideUp moves the block one line earlier if that describes the same edit,
-// reporting whether it moved, absorbing any block the move makes adjacent.
-//
-// The move is safe when each non-empty side's last line equals the line just
-// before its run: the line joining the front is then the one leaving the back.
-func (b *changeBlock) slideUp(from, to [][]byte, fromChanged, toChanged []bool) bool {
-	// There has to be a carried over line on both sides to move past.
-	if b.fromStart <= 0 || fromChanged[b.fromStart-1] {
-		return false
-	}
-	if b.toStart <= 0 || toChanged[b.toStart-1] {
-		return false
-	}
-	if b.fromEnd > b.fromStart && !bytes.Equal(from[b.fromStart-1], from[b.fromEnd-1]) {
-		return false
-	}
-	if b.toEnd > b.toStart && !bytes.Equal(to[b.toStart-1], to[b.toEnd-1]) {
-		return false
-	}
-	if b.fromEnd > b.fromStart {
-		fromChanged[b.fromStart-1], fromChanged[b.fromEnd-1] = true, false
-	}
-	if b.toEnd > b.toStart {
-		toChanged[b.toStart-1], toChanged[b.toEnd-1] = true, false
-	}
-	b.fromStart--
-	b.fromEnd--
-	b.toStart--
-	b.toEnd--
-	for b.fromStart > 0 && fromChanged[b.fromStart-1] {
-		b.fromStart--
-	}
-	for b.toStart > 0 && toChanged[b.toStart-1] {
-		b.toStart--
-	}
-	return true
+// changeRun is one side of a change block: the changed lines [start, end) of
+// one sequence. A block's deleted lines form its run in the original sequence
+// and its inserted lines its run in the new one. Either run may be empty, but
+// not both.
+type changeRun struct {
+	lines   [][]byte
+	changed []bool
+	start   int
+	end     int
 }
 
-// slideDown moves the block one line later if that describes the same edit,
-// reporting whether it moved. Any block the move makes adjacent is absorbed.
-//
-// The block can move past the following pair of carried over lines when each
-// non-empty side's first line equals the line just after that side's run: the
-// line leaving the front of the run is then identical to the one joining the
-// back, so the sequences are unchanged.
-func (b *changeBlock) slideDown(from, to [][]byte, fromChanged, toChanged []bool) bool {
-	// There has to be a carried over line on both sides to move past.
-	if b.fromEnd >= len(from) || fromChanged[b.fromEnd] {
-		return false
+func newChangeRun(lines [][]byte, changed []bool, start int) changeRun {
+	end := start
+	for end < len(changed) && changed[end] {
+		end++
 	}
-	if b.toEnd >= len(to) || toChanged[b.toEnd] {
-		return false
+	return changeRun{lines: lines, changed: changed, start: start, end: end}
+}
+
+func (r *changeRun) isEmpty() bool {
+	return r.start == r.end
+}
+
+// canSlideUp reports whether the run can move one line earlier and describe
+// the same edit: the line joining its front must equal the one leaving its
+// back, so the carried over lines are unchanged. The caller ensures there is a
+// line before the run.
+func (r *changeRun) canSlideUp() bool {
+	return r.isEmpty() || bytes.Equal(r.lines[r.start-1], r.lines[r.end-1])
+}
+
+// slideUp moves the run one line earlier, absorbing any run it meets.
+func (r *changeRun) slideUp() {
+	if !r.isEmpty() {
+		r.changed[r.start-1], r.changed[r.end-1] = true, false
 	}
-	if b.fromEnd > b.fromStart && !bytes.Equal(from[b.fromStart], from[b.fromEnd]) {
-		return false
+	r.start--
+	r.end--
+	for r.start > 0 && r.changed[r.start-1] {
+		r.start--
 	}
-	if b.toEnd > b.toStart && !bytes.Equal(to[b.toStart], to[b.toEnd]) {
-		return false
+}
+
+// canSlideDown reports whether the run can move one line later and describe
+// the same edit: the line leaving its front must equal the one joining its
+// back. The caller ensures there is a line after the run.
+func (r *changeRun) canSlideDown() bool {
+	return r.isEmpty() || bytes.Equal(r.lines[r.start], r.lines[r.end])
+}
+
+// slideDown moves the run one line later, absorbing any run it meets.
+func (r *changeRun) slideDown() {
+	if !r.isEmpty() {
+		r.changed[r.start], r.changed[r.end] = false, true
 	}
-	if b.fromEnd > b.fromStart {
-		fromChanged[b.fromStart], fromChanged[b.fromEnd] = false, true
+	r.start++
+	r.end++
+	for r.end < len(r.changed) && r.changed[r.end] {
+		r.end++
 	}
-	if b.toEnd > b.toStart {
-		toChanged[b.toStart], toChanged[b.toEnd] = false, true
-	}
-	b.fromStart++
-	b.fromEnd++
-	b.toStart++
-	b.toEnd++
-	for b.fromEnd < len(from) && fromChanged[b.fromEnd] {
-		b.fromEnd++
-	}
-	for b.toEnd < len(to) && toChanged[b.toEnd] {
-		b.toEnd++
-	}
-	return true
 }
 
 // editsFromChanged rebuilds an edit script from per line flags. Each block's

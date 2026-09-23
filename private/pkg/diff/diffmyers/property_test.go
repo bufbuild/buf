@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package diffmyers_test
+package diffmyers
 
 import (
 	"bytes"
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/diff/diffmyers"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,7 +26,7 @@ func TestDiffAppliesCleanly(t *testing.T) {
 	t.Parallel()
 	forEachSequencePair(t, func(t *testing.T, from, to string) {
 		fromLines, toLines := splitLines(from), splitLines(to)
-		edits := diffmyers.Diff(fromLines, toLines)
+		edits := Diff(fromLines, toLines)
 		require.Equal(
 			t,
 			to,
@@ -43,12 +42,28 @@ func TestDiffIsMinimal(t *testing.T) {
 	t.Parallel()
 	forEachSequencePair(t, func(t *testing.T, from, to string) {
 		fromLines, toLines := splitLines(from), splitLines(to)
-		edits := diffmyers.Diff(fromLines, toLines)
+		edits := Diff(fromLines, toLines)
 		require.Len(
 			t,
 			edits,
 			editDistance(fromLines, toLines),
 			"edit script is not minimal\nfrom: %q\nto:   %q",
+			from,
+			to,
+		)
+	})
+}
+
+func TestDiffIsCompacted(t *testing.T) {
+	t.Parallel()
+	forEachSequencePair(t, func(t *testing.T, from, to string) {
+		fromLines, toLines := splitLines(from), splitLines(to)
+		edits := Diff(fromLines, toLines)
+		require.Equal(
+			t,
+			edits,
+			compactChangeBlocks(fromLines, toLines, edits),
+			"compacting the edit script again changed it\nfrom: %q\nto:   %q",
 			from,
 			to,
 		)
@@ -101,8 +116,16 @@ func allSequences(alphabet string, maxLines int) []string {
 	return sequences
 }
 
+func splitLines(s string) [][]byte {
+	lines := bytes.SplitAfter([]byte(s), []byte("\n"))
+	if len(lines[len(lines)-1]) == 0 {
+		lines = lines[:len(lines)-1]
+	}
+	return lines
+}
+
 // applyEdits applies the specified edits, returning the result as a string.
-func applyEdits(from, to [][]byte, edits []diffmyers.Edit) string {
+func applyEdits(from, to [][]byte, edits []Edit) string {
 	var buffer bytes.Buffer
 	fromIndex := 0
 	for _, edit := range edits {
@@ -111,9 +134,9 @@ func applyEdits(from, to [][]byte, edits []diffmyers.Edit) string {
 			fromIndex++
 		}
 		switch edit.Kind {
-		case diffmyers.EditKindDelete:
+		case EditKindDelete:
 			fromIndex++
-		case diffmyers.EditKindInsert:
+		case EditKindInsert:
 			buffer.Write(to[edit.ToPosition])
 		}
 	}
