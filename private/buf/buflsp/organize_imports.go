@@ -187,8 +187,11 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 	default:
 		insertLine = 1 // Default at top of file.
 	}
-	// Start of the insert line, clamped to the end of the file.
-	insertOffset := file.file.InverseLocation(insertLine, 1, length.Bytes).Offset
+	// Start of the insert line, or the end of the file if there is no such line.
+	insertOffset := len(file.file.Text())
+	if insertLine <= file.file.Location(insertOffset, length.Bytes).Line {
+		insertOffset = file.file.InverseLocation(insertLine, 1, length.Bytes).Offset
+	}
 	insertPosition := reportSpanToProtocolRange(file.file.Span(insertOffset, insertOffset)).Start
 	if !dirty && insertOffset < len(file.file.Text()) &&
 		strings.HasPrefix(file.file.Text()[insertOffset:], importText.String()) {
