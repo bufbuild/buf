@@ -10,6 +10,9 @@
   only used to report parse errors and diffs.
 - Fix lint comment ignores on proto2 `group` fields being ignored.
 - Improve the `buf curl` error message for methods that accept a single request message.
+- Deduplicate remote input fetches within a single command invocation, so that multiple
+  `inputs` in a `buf.gen.yaml` that resolve to the same archive, git repository, or image
+  are fetched once instead of once per input.
 
 ## [v1.73.0] - 2026-09-11
 

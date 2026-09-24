@@ -778,6 +778,13 @@ func WithReaderStdio() ReaderOption {
 	}
 }
 
+// WithReaderFetchCache enables caching of remote fetches.
+func WithReaderFetchCache() ReaderOption {
+	return func(reader *reader) {
+		reader.fetchCacheEnabled = true
+	}
+}
+
 // WriterOption is an Writer option.
 type WriterOption func(*writer)
 
