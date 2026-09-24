@@ -231,6 +231,52 @@ import "types/toplevel_field.proto";
 		nil, // No changes are expected.
 	)
 
+	// Files without a trailing newline.
+	testCodeActionOrganizeImports(
+		t,
+		"testdata/organize_imports/empty_test.proto",
+		nil, // No changes are expected.
+	)
+	testCodeActionOrganizeImports(
+		t,
+		"testdata/organize_imports/syntax_nonewline_test.proto",
+		nil, // No changes are expected.
+	)
+	testCodeActionOrganizeImports(
+		t,
+		"testdata/organize_imports/package_nonewline_test.proto",
+		nil, // No changes are expected.
+	)
+	testCodeActionOrganizeImports(
+		t,
+		"testdata/organize_imports/oneline_nonewline_test.proto",
+		[]protocol.TextEdit{
+			// Insert at the end of the file.
+			{
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 0, Character: 67},
+					End:   protocol.Position{Line: 0, Character: 67},
+				},
+				NewText: "\nimport \"types/existing_field.proto\";\n",
+			},
+		},
+	)
+
+	// Unused import on the same line as syntax.
+	testCodeActionOrganizeImports(
+		t,
+		"testdata/organize_imports/oneline_import_test.proto",
+		[]protocol.TextEdit{
+			{
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 0, Character: 18},
+					End:   protocol.Position{Line: 0, Character: 55},
+				},
+				NewText: "",
+			},
+		},
+	)
+
 	testCodeActionOrganizeImports(
 		t,
 		"testdata/organize_imports/unknown_test.proto",
