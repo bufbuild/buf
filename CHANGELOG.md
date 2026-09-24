@@ -8,6 +8,8 @@
 - Add `--stdin-filepath` flag to `buf format`, which reads a single `.proto` file from
   stdin and writes the formatted result to stdout. The path is not read from disk, and is
   only used to report parse errors and diffs.
+- Fix lint comment ignores on proto2 `group` fields being ignored.
+- Improve the `buf curl` error message for methods that accept a single request message.
 - Deduplicate remote input fetches within a single command invocation, so that multiple
   `inputs` in a `buf.gen.yaml` that resolve to the same archive, git repository, or image
   are fetched once instead of once per input.

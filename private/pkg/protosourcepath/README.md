@@ -80,8 +80,8 @@ Details examples for associated paths can be found through the tests.
 
 ## API
 
-There is a single function, `GetAssociatedSourcePaths`, that takes a `protoreflect.SourcePath`
-and returns a list of associated paths.
+`GetAssociatedSourcePaths` takes a `protoreflect.SourcePath` and returns a list of associated
+paths.
 
 ```go
 func GetAssociatedSourcePaths(
@@ -90,6 +90,20 @@ func GetAssociatedSourcePaths(
 ```
 
 We expect there always to be at least one associated path, the path itself.
+
+`DescriptorForSourcePath` resolves a `protoreflect.SourcePath` against a file to the descriptor
+of the Protobuf declaration that the source path points to.
+
+```go
+func DescriptorForSourcePath(
+	fileDescriptor protoreflect.FileDescriptor,
+	sourcePath protoreflect.SourcePath,
+) protoreflect.Descriptor
+```
+
+Source paths that point to an attribute of a declaration rather than to the declaration itself,
+such as `[4, 0, 1]` for `.message_type(0).name`, return `nil`. `GetAssociatedSourcePaths` can be
+used to resolve such a source path to the source paths of the declarations it belongs to.
 
 ## Future
 
