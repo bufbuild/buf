@@ -17,13 +17,13 @@ package buflsp
 import (
 	"slices"
 
+	"cel.dev/cel-go/cel"
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"github.com/bufbuild/protocompile/experimental/seq"
 	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
-	"github.com/google/cel-go/cel"
 	"go.lsp.dev/protocol"
 )
 

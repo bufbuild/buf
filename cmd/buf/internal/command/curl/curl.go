@@ -127,6 +127,10 @@ The URL can use either http or https as the scheme. If http is used then HTTP 1.
 unless the --http2-prior-knowledge flag is set. If https is used then HTTP/2 will be preferred
 during protocol negotiation and HTTP 1.1 used only if the server does not support HTTP/2.
 
+Server reflection, the gRPC protocol, and bidirectional streaming methods all require HTTP/2. So
+if any of them is used with an http URL, HTTP/2 is used as if the --http2-prior-knowledge flag
+were set.
+
 The default RPC protocol used will be Connect. To use a different protocol (gRPC or gRPC-Web),
 use the --protocol flag. Note that the gRPC protocol cannot be used with HTTP 1.1.
 
@@ -152,7 +156,7 @@ Examples:
 Issue a unary RPC to a plain-text (i.e. "h2c") gRPC server, where the schema for the service is
 in a Buf module in the current directory, using an empty request message:
 
-    $ buf curl --schema . --protocol grpc --http2-prior-knowledge \
+    $ buf curl --schema . --protocol grpc \
          http://localhost:20202/foo.bar.v1.FooService/DoSomething
 
 Issue an RPC to a Connect server, where the schema comes from the Buf Schema Registry, using
@@ -328,10 +332,13 @@ and port indicated in the URL`,
 		&f.HTTP2PriorKnowledge,
 		http2PriorKnowledgeFlagName,
 		false,
-		`This flag can be used to indicate that HTTP/2 should be used. Without this, HTTP 1.1
+		fmt.Sprintf(`This flag can be used to indicate that HTTP/2 should be used. Without this, HTTP 1.1
 will be used with URLs with an http scheme, and protocol negotiation will be used to
 choose either HTTP 1.1 or HTTP/2 for URLs with an https scheme. With this flag set,
-HTTP/2 is always used, even over plain-text.`,
+HTTP/2 is always used, even over plain-text. This flag is implied for URLs with an http
+scheme when server reflection is used, when --%s is "grpc", or when the method uses
+bidirectional streaming, since all of these require HTTP/2.`,
+			protocolFlagName),
 	)
 
 	flagSet.BoolVar(
@@ -568,8 +575,12 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 		return fmt.Errorf("if --%s is set, --%s should not be set as it is unused", insecureFlagName, caCertFlagName)
 	}
 
-	if !isSecure && !f.HTTP2PriorKnowledge && f.Protocol == connect.ProtocolGRPC {
-		return fmt.Errorf("grpc protocol cannot be used with plain-text URLs (http) unless --%s flag is set", http2PriorKnowledgeFlagName)
+	if !isSecure && !f.HTTP2PriorKnowledge && (f.Reflect || f.Protocol == connect.ProtocolGRPC) {
+		// Server reflection uses a bidirectional stream and the gRPC protocol
+		// requires HTTP/2, neither of which works over HTTP 1.1. Since a
+		// plain-text URL can only use HTTP/2 via prior knowledge, enable it
+		// automatically rather than requiring the flag.
+		f.HTTP2PriorKnowledge = true
 	}
 
 	if !isSecure && f.HTTP3 {
@@ -601,9 +612,6 @@ func (f *flags) validate(hasURL, isSecure bool) error {
 			reflectHeaderFlagName, reflectProtocolFlagName, reflectFlagName)
 	}
 	if f.Reflect {
-		if !isSecure && !f.HTTP2PriorKnowledge {
-			return fmt.Errorf("--%s cannot be used with plain-text URLs (http) unless --%s flag is set", reflectFlagName, http2PriorKnowledgeFlagName)
-		}
 		if _, err := bufcurl.ParseReflectProtocol(f.ReflectProtocol); err != nil {
 			return fmt.Errorf(
 				"--%s value must be one of %s",
@@ -878,6 +886,31 @@ func parseEndpointURL(urlArg string) (service, method, baseURL string, err error
 	return service, method, baseURL, nil
 }
 
+// wrapPlainTextHTTP2Error is a best effort to return a more helpful error if err indicates
+// that the server answered an HTTP/2 prior knowledge (h2c) connection with an
+// HTTP 1.1 response, which means it does not support HTTP/2 over plain-text.
+// Otherwise, err is returned unchanged.
+//
+// Without this, the CLI's error interceptor would render this without details as:
+//
+//	Failure: the server hosted at that remote is unavailable.
+func wrapPlainTextHTTP2Error(err error, http2PriorKnowledge bool, host string, isSecure bool) error {
+	if err == nil || isSecure || !http2PriorKnowledge ||
+		// The stdlib does not expose a structured way of knowing the error is from a
+		// HTTP/1.1-like response so do a string match, meaning this function is
+		// best-effort across Go versions.
+		!strings.Contains(err.Error(), "frame header looked like an HTTP/1.1 header") {
+		return err
+	}
+	// Format with %v rather than %w on purpose: the CLI's error interceptor
+	// rewrites any error that wraps a connect.CodeUnavailable error into a
+	// generic message, which would hide this explanation.
+	return fmt.Errorf(
+		"the RPC protocol or method requires HTTP/2, but the server at %s responded with HTTP/1.1 and does not appear to support HTTP/2 over plain-text (h2c): %v",
+		host, err,
+	)
+}
+
 func run(ctx context.Context, container appext.Container, f *flags) (err error) {
 	var urlArg, host string
 	var isSecure bool
@@ -889,6 +922,9 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 			return err
 		}
 	}
+	defer func() {
+		err = wrapPlainTextHTTP2Error(err, f.HTTP2PriorKnowledge, host, isSecure)
+	}()
 	if err := f.validate(urlArg != "", isSecure); err != nil {
 		return err
 	}
@@ -1096,6 +1132,11 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		if err != nil {
 			return err
 		}
+		if !isSecure && methodDescriptor.IsStreamingClient() && methodDescriptor.IsStreamingServer() {
+			// Bidirectional streaming requires HTTP/2 regardless of the RPC
+			// protocol, so automatically attempt prior knowledge over plain-text.
+			f.HTTP2PriorKnowledge = true
+		}
 		transport, err := makeTransportOnce()
 		if err != nil {
 			return err
@@ -1160,6 +1201,9 @@ func makeHTTPRoundTripper(f *flags, isSecure bool, authority string, printer ver
 	protocols.SetHTTP1(!f.HTTP2PriorKnowledge)
 	protocols.SetHTTP2(true)
 	protocols.SetUnencryptedHTTP2(f.HTTP2PriorKnowledge && !isSecure)
+	if protocols.UnencryptedHTTP2() {
+		printer.Printf("* Using HTTP/2 prior knowledge over plain-text (h2c)")
+	}
 	return &http.Transport{
 		Proxy:             http.ProxyFromEnvironment,
 		DialContext:       dialFunc,
@@ -1475,15 +1519,16 @@ func completePathFromServices(
 }
 
 // makeCompletionHTTPClient builds an HTTP client for use during shell
-// completion. Returns (client, true) on success, or (nil, false) when
-// reflection is not possible (e.g. plain HTTP without HTTP/2 prior knowledge).
+// completion. Returns (client, true) on success, or (nil, false) when the
+// client could not be built.
 func makeCompletionHTTPClient(cmd *cobra.Command, isSecure bool, authority string) (connect.HTTPClient, bool) {
 	insecure, _ := cmd.Flags().GetBool(insecureFlagName)
 	http2PriorKnowledge, _ := cmd.Flags().GetBool(http2PriorKnowledgeFlagName)
-	if !isSecure && !http2PriorKnowledge {
-		// Plain HTTP: server reflection requires HTTP/2, which needs prior knowledge
-		// over a cleartext connection. Skip completion if the flag is not set.
-		return nil, false
+	if !isSecure {
+		// Completion uses server reflection, which requires HTTP/2. Over
+		// plain-text, HTTP/2 needs prior knowledge, so use it just like the
+		// command itself does when reflection is used with an http URL.
+		http2PriorKnowledge = true
 	}
 	key, _ := cmd.Flags().GetString(keyFlagName)
 	cert, _ := cmd.Flags().GetString(certFlagName)

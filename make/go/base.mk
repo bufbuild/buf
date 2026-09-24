@@ -12,6 +12,11 @@ $(call _assert_var,GO_MODULE)
 UNAME_OS := $(shell uname -s)
 UNAME_ARCH := $(shell uname -m)
 
+# The version of the Go toolchain in use, e.g. 1.27.0. This is the toolchain that builds the
+# binaries in the cache, as opposed to GO_MOD_VERSION, which is the version written to the
+# go directive in go.mod.
+GO_VERSION := $(patsubst go%,%,$(lastword $(shell go env GOVERSION)))
+
 ENV_DIR := .env
 ENV_SH := $(ENV_DIR)/env.sh
 ENV_BACKUP_DIR := $(HOME)/.config/$(PROJECT)/env

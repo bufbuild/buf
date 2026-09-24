@@ -15,7 +15,8 @@ GO_GET_PKGS := $(GO_GET_PKGS) \
 
 PROTOC_GEN_CONNECT_GO := $(CACHE_BIN)/protoc-gen-connect-go
 
-$(CACHE_VERSIONS)/connect-go/protoc-gen-connect-go-$(CONNECT_VERSION):
+# Keyed by GO_VERSION: the plugin formats its output with go/format
+$(CACHE_VERSIONS)/connect-go/protoc-gen-connect-go-$(CONNECT_VERSION)-go$(GO_VERSION):
 	@rm -f $(PROTOC_GEN_CONNECT_GO)
 	@rm -rf $(dir $@)
 	@mkdir -p $(dir $@)
@@ -24,7 +25,7 @@ $(CACHE_VERSIONS)/connect-go/protoc-gen-connect-go-$(CONNECT_VERSION):
 	@test -x $@
 	@touch $@
 
-$(PROTOC_GEN_CONNECT_GO): $(CACHE_VERSIONS)/connect-go/protoc-gen-connect-go-$(CONNECT_VERSION)
+$(PROTOC_GEN_CONNECT_GO): $(CACHE_VERSIONS)/connect-go/protoc-gen-connect-go-$(CONNECT_VERSION)-go$(GO_VERSION)
 	@mkdir -p $(dir $@)
 	@ln -sf $< $@
 

@@ -486,6 +486,33 @@ func TestModifyImageFile(
 			},
 		},
 		{
+			description: "java_multiple_files",
+			dirPathToFullName: map[string]string{
+				filepath.Join("testdata", "foo"):      "buf.build/acme/foo",
+				filepath.Join("testdata", "editions"): "buf.build/acme/editions",
+			},
+			config: bufconfig.NewGenerateManagedConfig(
+				true,
+				[]bufconfig.ManagedDisableRule{},
+				[]bufconfig.ManagedOverrideRule{},
+			),
+			modifyFunc: modifyJavaMultipleFiles,
+			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
+				"foo_empty/with_package.proto": {
+					JavaMultipleFiles: new(true),
+				},
+				"edition_2023/a.proto": {
+					JavaMultipleFiles: new(true),
+				},
+				// Removed in edition 2024, where it is the default behavior.
+				"edition_2024/a.proto": nil,
+			},
+			filePathToExpectedMarkedLocationPaths: map[string][][]int32{
+				"foo_empty/with_package.proto": {javaMultipleFilesPath},
+				"edition_2023/a.proto":         {javaMultipleFilesPath},
+			},
+		},
+		{
 			description: "objc_class_prefix",
 			dirPathToFullName: map[string]string{
 				filepath.Join("testdata", "foo"): "buf.build/acme/foo",

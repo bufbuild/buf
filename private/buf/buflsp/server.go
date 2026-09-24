@@ -24,11 +24,11 @@ import (
 
 	celpv "buf.build/go/protovalidate/cel"
 	"buf.build/go/standard/xslices"
+	"cel.dev/cel-go/cel"
 	"github.com/bufbuild/buf/private/buf/bufformat"
 	"github.com/bufbuild/protocompile/experimental/parser"
 	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/source"
-	"github.com/google/cel-go/cel"
 	"go.lsp.dev/protocol"
 	"mvdan.cc/xurls/v2"
 )
