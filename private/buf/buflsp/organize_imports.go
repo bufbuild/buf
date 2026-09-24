@@ -164,6 +164,9 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 		}
 	}
 	imports = deduped
+	if len(imports) == 0 && len(edits) == 0 {
+		return nil // No imports to delete or insert.
+	}
 
 	// Build the new import text
 	var importText strings.Builder
@@ -184,8 +187,9 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 	default:
 		insertLine = 1 // Default at top of file.
 	}
-	// Compare to the insert offset, at the newline (so increment 1)
-	insertOffset := file.file.InverseLocation(insertLine, 0, length.Bytes).Offset + 1
+	// Start of the insert line, clamped to the end of the file.
+	insertOffset := file.file.InverseLocation(insertLine, 1, length.Bytes).Offset
+	insertPosition := reportSpanToProtocolRange(file.file.Span(insertOffset, insertOffset)).Start
 	if !dirty && insertOffset < len(file.file.Text()) &&
 		strings.HasPrefix(file.file.Text()[insertOffset:], importText.String()) {
 		return nil // Matches, no changes needed.
@@ -194,8 +198,8 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 	if importText.Len() > 0 {
 		edits = append(edits, protocol.TextEdit{
 			Range: protocol.Range{
-				Start: protocol.Position{Line: uint32(insertLine - 1)},
-				End:   protocol.Position{Line: uint32(insertLine - 1)},
+				Start: insertPosition,
+				End:   insertPosition,
 			},
 			NewText: importText.String(),
 		})
@@ -243,7 +247,11 @@ func captureImportSpan(decl ast.DeclImport) source.Span {
 	for isTokenSpace(tok) {
 		tok, prev = cursor.PrevSkippable(), tok
 	}
-	span.Start = tok.Span().Start
+	span.Start = prev.Span().Start
+	if !tok.IsZero() && tok.Kind() != token.Space {
+		// Import shares a line with another declaration.
+		return span
+	}
 	for isTokenNewline(tok) {
 		span.Start = prev.Span().Start // Capture the previous, up until this newline.
 		tok, prev = cursor.PrevSkippable(), tok
