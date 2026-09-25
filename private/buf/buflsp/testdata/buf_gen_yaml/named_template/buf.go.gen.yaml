@@ -1,0 +1,11 @@
+version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: gen/go
+  - remote: buf.build/bufbuild/es:v2.2.2
+    out: gen/es
+  - local: protoc-gen-custom
+    out: gen/custom
+inputs:
+  - module: buf.build/acme/petapis
+  - directory: proto

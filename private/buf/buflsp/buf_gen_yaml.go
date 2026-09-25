@@ -21,6 +21,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"buf.build/go/standard/xos/xexec"
@@ -38,9 +39,13 @@ const CommandRunGenerate = "buf.generate.run"
 // plugins in a buf.gen.yaml file and publish informational diagnostics for any that are outdated.
 const CommandCheckPluginUpdates = "buf.generate.checkPluginUpdates"
 
-// isBufGenYAMLURI reports whether uri refers to a buf.gen.yaml file.
+// isBufGenYAMLURI reports whether uri refers to a buf.gen.yaml file. Named
+// templates such as buf.go.gen.yaml and buf.gen.go.yaml are also matched, since
+// they are commonly passed to buf generate with --template.
 func isBufGenYAMLURI(uri protocol.URI) bool {
-	return filepath.Base(uri.Filename()) == bufconfig.DefaultBufGenYAMLFileName
+	name := filepath.Base(uri.Filename())
+	return (strings.HasPrefix(name, "buf.") && strings.HasSuffix(name, ".gen.yaml")) ||
+		(strings.HasPrefix(name, "buf.gen.") && strings.HasSuffix(name, ".yaml"))
 }
 
 // bufGenYAMLManager tracks open buf.gen.yaml files in the LSP session.
@@ -213,8 +218,9 @@ func (m *bufGenYAMLManager) GetCodeLenses(uri protocol.URI) []protocol.CodeLens 
 	return lenses
 }
 
-// ExecuteRunGenerate runs buf generate in the directory containing the given
-// buf.gen.yaml URI. Results are reported to the user via ShowMessage.
+// ExecuteRunGenerate runs buf generate with the given buf.gen.yaml URI as the
+// template, from the directory containing it. Results are reported to the user
+// via ShowMessage.
 func (m *bufGenYAMLManager) ExecuteRunGenerate(ctx context.Context, uri protocol.URI) error {
 	dirPath := filepath.Dir(uri.Filename())
 	executable, err := os.Executable()
@@ -225,7 +231,7 @@ func (m *bufGenYAMLManager) ExecuteRunGenerate(ctx context.Context, uri protocol
 	msg := "buf generate completed successfully"
 	var outBuf bytes.Buffer
 	if err := xexec.Run(ctx, executable,
-		xexec.WithArgs("generate"),
+		xexec.WithArgs(bufGenerateArgs(uri)...),
 		xexec.WithDir(dirPath),
 		xexec.WithStdout(&outBuf),
 		xexec.WithStderr(&outBuf),
@@ -238,6 +244,15 @@ func (m *bufGenYAMLManager) ExecuteRunGenerate(ctx context.Context, uri protocol
 		Message: msg,
 	})
 	return nil
+}
+
+// bufGenerateArgs returns the buf generate arguments for the template at uri.
+func bufGenerateArgs(uri protocol.URI) []string {
+	name := filepath.Base(uri.Filename())
+	if name == bufconfig.DefaultBufGenYAMLFileName {
+		return []string{"generate"}
+	}
+	return []string{"generate", "--template", name}
 }
 
 // ExecuteCheckPluginUpdates queries the BSR for the latest version of each
