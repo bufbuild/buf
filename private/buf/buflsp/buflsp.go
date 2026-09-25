@@ -209,7 +209,8 @@ func (l *lsp) init(_ context.Context, params *protocol.InitializeParams) error {
 // rootDirPathForFile returns the client's root folder that contains fileName.
 //
 // The deepest matching workspace folder is used, falling back to the root URI
-// and then the current working directory.
+// and then the current working directory. Paths are normalized like file URIs
+// so they share a prefix with fileName.
 func (l *lsp) rootDirPathForFile(fileName string) (string, error) {
 	var rootURIs []protocol.URI
 	if params := l.initParams.Load(); params != nil {
@@ -222,7 +223,7 @@ func (l *lsp) rootDirPathForFile(fileName string) (string, error) {
 	}
 	var rootDirPath string
 	for _, rootURI := range rootURIs {
-		dirPath := rootURI.Filename()
+		dirPath := normalizeURI(rootURI).Filename()
 		if len(dirPath) > len(rootDirPath) && normalpath.EqualsOrContainsPath(
 			normalpath.Normalize(dirPath),
 			normalpath.Normalize(fileName),
@@ -234,7 +235,11 @@ func (l *lsp) rootDirPathForFile(fileName string) (string, error) {
 	if rootDirPath != "" {
 		return rootDirPath, nil
 	}
-	return osext.Getwd()
+	workingDirPath, err := osext.Getwd()
+	if err != nil {
+		return "", err
+	}
+	return FilePathToURI(workingDirPath).Filename(), nil
 }
 
 // newHandler constructs an RPC handler that wraps the default one from jsonrpc2. This allows us
