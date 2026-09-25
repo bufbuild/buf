@@ -63,6 +63,19 @@ type Name interface {
 	checkout() string
 }
 
+// FetchIdentity returns the values that determine what a clone of name fetches:
+// the branch to clone, if any, and the ref to check out afterwards, if any. A
+// nil name has an empty identity.
+//
+// Names with equal identities produce equal clones. String is not sufficient
+// for this: a branch, a tag, and a ref with the same value all share a String.
+func FetchIdentity(name Name) (cloneBranch string, checkout string) {
+	if name == nil {
+		return "", ""
+	}
+	return name.cloneBranch(), name.checkout()
+}
+
 // NewBranchName returns a new Name for the branch.
 func NewBranchName(branch string) Name {
 	return newBranch(branch)
