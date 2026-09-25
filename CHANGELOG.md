@@ -12,6 +12,8 @@
   `ignore: [!foo/bar.proto]`. Previously they parsed as empty strings, now they rejected
   with an error.
 - Fix lint comment ignores on proto2 `group` fields being ignored.
+- Update the LSP to support named generation templates such as `buf.go.gen.yaml` and
+  `buf.gen.go.yaml`.
 - Improve the `buf curl` error message for methods that accept a single request message.
 - Deduplicate remote input fetches within a single command invocation, so that multiple
   `inputs` in a `buf.gen.yaml` that resolve to the same archive, git repository, or image
