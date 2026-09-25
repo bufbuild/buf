@@ -2,9 +2,23 @@
 
 set -eo pipefail
 
-PROTOC_VERSION="35.1"
-PROTOC_GEN_GO_VERSION="v1.36.11"
-CONNECT_VERSION="v1.19.2"
+# Read versions from make/go dependency so this script and the Makefile agree.
+# Resolved without changing the working directory: the commands below are
+# relative to the repository root.
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+mk_var() {
+  sed -n "s/^$1 ?= //p" "${repo_root}/make/go/$2"
+}
+
+PROTOC_VERSION="$(mk_var PROTOC_VERSION dep_protoc.mk)"
+PROTOC_GEN_GO_VERSION="$(mk_var PROTOC_GEN_GO_VERSION dep_protoc_gen_go.mk)"
+CONNECT_VERSION="$(mk_var CONNECT_VERSION dep_protoc_gen_connect_go.mk)"
+for var in PROTOC_VERSION PROTOC_GEN_GO_VERSION CONNECT_VERSION; do
+  if [ -z "${!var}" ]; then
+    echo "error: could not read ${var} from make/go" >&2
+    exit 1
+  fi
+done
 
 # Convert DOWNLOAD_CACHE from d:\path to /d/path
 DOWNLOAD_CACHE="$(echo "/${DOWNLOAD_CACHE}" | sed 's|\\|/|g' | sed 's/://')"
