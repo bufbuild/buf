@@ -1,0 +1,40 @@
+{
+  "name": "@bufbuild/buf",
+  "description": "The buf CLI is a tool for working with Protocol Buffers.",
+  "repository": "https://github.com/bufbuild/buf",
+  "engines": {
+    "node": ">=12"
+  },
+  "bin": {
+    "buf": "./bin/buf",
+    "protoc-gen-buf-breaking": "./bin/protoc-gen-buf-breaking",
+    "protoc-gen-buf-lint": "./bin/protoc-gen-buf-lint"
+  },
+  "main": "index.js",
+  "files": [
+    "bin",
+    "install.js",
+    "index.js",
+    "README.md"
+  ],
+  "scripts": {
+    "prepack": "node ./prepack.js",
+    "postinstall": "node ./install.js"
+  },
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "18.11.18",
+    "esbuild": "^0.17.5",
+    "typescript": "4.9.5"
+  },
+  "optionalDependencies": {
+    "@bufbuild/buf-darwin-arm64": "1.73.0",
+    "@bufbuild/buf-darwin-x64": "1.73.0",
+    "@bufbuild/buf-linux-aarch64": "1.73.0",
+    "@bufbuild/buf-linux-armv7": "1.73.0",
+    "@bufbuild/buf-linux-x64": "1.73.0",
+    "@bufbuild/buf-win32-arm64": "1.73.0",
+    "@bufbuild/buf-win32-x64": "1.73.0"
+  },
+  "version": "1.73.0"
+}
