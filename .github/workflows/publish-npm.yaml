@@ -1,0 +1,77 @@
+# NOTE: This filename is hardcoded in our trusted publishing setup on npmjs.com;
+# do not change this filename without updating it there as well.
+name: Publish to npm
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: packaging/npm
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - run: bash scripts/generate_packages.bash
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: npm-packages
+          path: packaging/npm/dist/
+
+  test-publish:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: npm-packages
+          path: dist/
+
+      - uses: actions/setup-node@v7
+        with:
+          registry-url: "https://registry.npmjs.org"
+          node-version: 24
+
+      - run: |
+          for package in dist/platforms/*.tgz dist/main/*.tgz; do
+            npm publish --dry-run --access public "${package}"
+          done
+
+  publish:
+    if: github.event_name != 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: npm-release
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: npm-packages
+          path: dist/
+
+      - uses: actions/setup-node@v7
+        with:
+          registry-url: "https://registry.npmjs.org"
+          node-version: 24
+
+      # Platform packages are published first since @bufbuild/buf depends on
+      # them as optionalDependencies.
+      - run: |
+          for package in dist/platforms/*.tgz dist/main/*.tgz; do
+            npm publish --access public "${package}"
+          done

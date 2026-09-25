@@ -200,3 +200,5 @@ updatebufversion:
 	$(SED_I) -E "s/BUF_VERSION \?=.*/BUF_VERSION ?= v${RELEASE_BUF_VERSION}/" "make/go/dep_buf.mk"
 	$(SED_I) -E "s/\# https\:\/\/github.com\/bufbuild\/buf\/releases.*/\# https\:\/\/github.com\/bufbuild\/buf\/releases $(shell date "+%Y%m%d") checked $(shell date "+%Y%m%d")/" "make/go/dep_buf.mk"
 	$(SED_I) -E "s/^version = \".*\"/version = \"${RELEASE_BUF_VERSION}\"/" "packaging/python/pyproject.toml"
+	$(SED_I) -E "s/\"version\": \".*\"/\"version\": \"${RELEASE_BUF_VERSION}\"/" packaging/npm/*/package.json
+	$(SED_I) -E "s/(\"@bufbuild\/buf-[a-z0-9-]+\": )\".*\"/\1\"${RELEASE_BUF_VERSION}\"/" "packaging/npm/buf/package.json"

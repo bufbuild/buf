@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    defaults:
+      run:
+        working-directory: packaging/python
     steps:
       - uses: actions/checkout@v7
         with:
@@ -25,7 +28,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: wheels
-          path: dist/
+          path: packaging/python/dist/
 
   test-publish:
     if: github.event_name == 'workflow_dispatch'
@@ -47,6 +50,7 @@ jobs:
 
   publish:
     if: github.event_name != 'workflow_dispatch'
+    needs: build
     runs-on: ubuntu-latest
     environment: pypi-release
     permissions:
