@@ -13,6 +13,8 @@
   with an error.
 - Fix lint comment ignores on proto2 `group` fields being ignored.
 - Improve the `buf curl` error message for methods that accept a single request message.
+- Add `--config` flag to `buf lsp serve` to use a `buf.yaml` file or data in place of
+  discovering `buf.yaml` files. Workspaces are resolved from the editor's root folder.
 - Deduplicate remote input fetches within a single command invocation, so that multiple
   `inputs` in a `buf.gen.yaml` that resolve to the same archive, git repository, or image
   are fetched once instead of once per input.

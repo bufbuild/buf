@@ -1,0 +1,6 @@
+version: v2
+modules:
+  - path: proto
+lint:
+  use:
+    - FIELD_LOWER_SNAKE_CASE

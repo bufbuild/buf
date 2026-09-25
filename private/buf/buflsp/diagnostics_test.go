@@ -53,6 +53,18 @@ func setupLSPServerWithDiagnostics(
 	testProtoPath string,
 ) (jsonrpc2.Conn, protocol.URI, *diagnosticsCapture) {
 	t.Helper()
+	return setupLSPServerWithDiagnosticsForRoot(t, filepath.Dir(testProtoPath), testProtoPath)
+}
+
+// setupLSPServerWithDiagnosticsForRoot is like setupLSPServerWithDiagnostics, but
+// initializes the server with the given root directory and serve options.
+func setupLSPServerWithDiagnosticsForRoot(
+	t *testing.T,
+	rootDirPath string,
+	testProtoPath string,
+	options ...buflsp.ServeOption,
+) (jsonrpc2.Conn, protocol.URI, *diagnosticsCapture) {
+	t.Helper()
 
 	ctx := t.Context()
 
@@ -128,6 +140,7 @@ func setupLSPServerWithDiagnostics(
 		nopModuleKeyProvider{},
 		bufmodule.NopGraphProvider,
 		nopCuratedPluginVersionProvider{},
+		options...,
 	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
@@ -143,11 +156,10 @@ func setupLSPServerWithDiagnostics(
 		require.NoError(t, clientJSONConn.Close())
 	})
 
-	testWorkspaceDir := filepath.Dir(testProtoPath)
 	testURI := buflsp.FilePathToURI(testProtoPath)
 	var initResult protocol.InitializeResult
 	_, initErr := clientJSONConn.Call(ctx, protocol.MethodInitialize, &protocol.InitializeParams{
-		RootURI: uri.New(testWorkspaceDir),
+		RootURI: uri.New(rootDirPath),
 		Capabilities: protocol.ClientCapabilities{
 			TextDocument: &protocol.TextDocumentClientCapabilities{},
 		},
@@ -415,6 +427,39 @@ func TestDiagnostics(t *testing.T) {
 			})
 		})
 	}
+}
+
+// TestDiagnosticsConfigOverride verifies that a config override is used in place
+// of discovering a buf.yaml, with module paths relative to the client's root.
+func TestDiagnosticsConfigOverride(t *testing.T) {
+	t.Parallel()
+
+	synctest.Test(t, func(t *testing.T) {
+		rootDirPath, err := filepath.Abs("testdata/config_override")
+		require.NoError(t, err)
+		protoPath := filepath.Join(rootDirPath, "proto", "foo", "v1", "foo.proto")
+		configPath := filepath.Join(rootDirPath, "config", "buf.yaml")
+
+		_, testURI, capture := setupLSPServerWithDiagnosticsForRoot(
+			t,
+			rootDirPath,
+			protoPath,
+			buflsp.WithConfigOverride(configPath),
+		)
+
+		// Drain every goroutine in the bubble so the async RunChecks publish
+		// has definitely landed in the capture before we assert.
+		synctest.Wait()
+
+		diagnostics := capture.wait(t, testURI, 10*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+			return len(p.Diagnostics) > 0
+		})
+		require.NotNil(t, diagnostics)
+		// The import resolves via the override's module path, and only the
+		// override's lint rules apply.
+		require.Len(t, diagnostics.Diagnostics, 1, "got %+v", diagnostics.Diagnostics)
+		assert.Equal(t, "FIELD_LOWER_SNAKE_CASE", diagnostics.Diagnostics[0].Code)
+	})
 }
 
 // TestDiagnosticsUpdate tests that diagnostics are updated when file content changes.
