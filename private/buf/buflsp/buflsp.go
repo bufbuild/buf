@@ -216,8 +216,8 @@ func (l *lsp) rootDirPathForFile(fileName string) (string, error) {
 		for _, workspaceFolder := range params.WorkspaceFolders {
 			rootURIs = append(rootURIs, protocol.URI(workspaceFolder.URI))
 		}
-		if rootURI := params.RootURI; rootURI != "" { //nolint:staticcheck // Some clients only send RootURI.
-			rootURIs = append(rootURIs, rootURI)
+		if params.RootURI != "" {
+			rootURIs = append(rootURIs, params.RootURI)
 		}
 	}
 	var rootDirPath string

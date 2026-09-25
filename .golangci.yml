@@ -118,6 +118,12 @@ linters:
         text: "SA1019"
       - linters:
           - staticcheck
+        # We fall back to the deprecated RootURI initialize parameter, as some clients
+        # only send it.
+        path: private/buf/buflsp/buflsp.go
+        text: "SA1019: \\(go.lsp.dev/protocol.InitializeParams\\).RootURI"
+      - linters:
+          - staticcheck
         # This test sets the deprecated Weak field precisely to check that it is stripped.
         path: private/pkg/protoencoding/strip_legacy_options_test.go
         text: "SA1019"
