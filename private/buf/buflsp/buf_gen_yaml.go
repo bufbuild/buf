@@ -44,8 +44,8 @@ const CommandCheckPluginUpdates = "buf.generate.checkPluginUpdates"
 // they are commonly passed to buf generate with --template.
 func isBufGenYAMLURI(uri protocol.URI) bool {
 	name := filepath.Base(uri.Filename())
-	return (strings.HasPrefix(name, "buf") && strings.HasSuffix(name, ".gen.yaml")) ||
-		(strings.HasPrefix(name, "buf.gen") && strings.HasSuffix(name, ".yaml"))
+	return (strings.HasPrefix(name, "buf.") && strings.HasSuffix(name, ".gen.yaml")) ||
+		(strings.HasPrefix(name, "buf.gen.") && strings.HasSuffix(name, ".yaml"))
 }
 
 // bufGenYAMLManager tracks open buf.gen.yaml files in the LSP session.
