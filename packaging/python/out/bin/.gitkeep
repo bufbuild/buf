@@ -1,0 +1,2 @@
+Allow uv sync to download tools for generating binaries to this directory for release
+since it would fail on an empty directory otherwise.
