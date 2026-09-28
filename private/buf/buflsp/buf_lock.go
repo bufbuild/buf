@@ -21,7 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"go.lsp.dev/protocol"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 // isBufLockURI reports whether uri refers to a buf.lock file.
