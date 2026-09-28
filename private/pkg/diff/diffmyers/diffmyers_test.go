@@ -16,6 +16,7 @@ package diffmyers_test
 
 import (
 	"bytes"
+	"math"
 	"os"
 	"path/filepath"
 	"testing"
@@ -202,10 +203,378 @@ The door of all subtleties!
 		testPrint(t, lao, tzu, edits, "lao-tzu")
 	})
 
+	// The raw Myers script for these replacements places an insertion before a
+	// deletion, and for the second case interleaves them. GNU diff and git
+	// always emit a change block as deletions followed by insertions.
+	t.Run("replace-one-line-with-two", func(t *testing.T) {
+		t.Parallel()
+		const from = "a\n"
+		const to = "b\nb\n"
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		assert.Equal(t, []diffmyers.Edit{
+			{
+				Kind: diffmyers.EditKindDelete,
+			},
+			{
+				Kind:         diffmyers.EditKindInsert,
+				FromPosition: 1,
+			},
+			{
+				Kind:         diffmyers.EditKindInsert,
+				FromPosition: 1,
+				ToPosition:   1,
+			},
+		}, edits)
+		testPrint(t, from, to, edits, "replace-one-line-with-two")
+	})
+
+	t.Run("replace-one-line-with-four", func(t *testing.T) {
+		t.Parallel()
+		const from = "a\n"
+		const to = `b
+b
+b
+b
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		assert.Equal(t, []diffmyers.Edit{
+			{
+				Kind: diffmyers.EditKindDelete,
+			},
+			{
+				Kind:         diffmyers.EditKindInsert,
+				FromPosition: 1,
+			},
+			{
+				Kind:         diffmyers.EditKindInsert,
+				FromPosition: 1,
+				ToPosition:   1,
+			},
+			{
+				Kind:         diffmyers.EditKindInsert,
+				FromPosition: 1,
+				ToPosition:   2,
+			},
+			{
+				Kind:         diffmyers.EditKindInsert,
+				FromPosition: 1,
+				ToPosition:   3,
+			},
+		}, edits)
+		testPrint(t, from, to, edits, "replace-one-line-with-four")
+	})
+
+	// Without compaction the deletion run below is split by a line that could
+	// have been part of it, producing "-b b -b -b" instead of " b -b -b -b".
+	t.Run("coalesce-deletion-run", func(t *testing.T) {
+		t.Parallel()
+		const from = `a
+b
+b
+b
+b
+a
+d
+b
+`
+		const to = `c
+c
+a
+b
+d
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "coalesce-deletion-run")
+	})
+
+	// Without compaction an appended block is attributed to the closing brace
+	// of the preceding block, so the diff reads as "+}" followed by the new
+	// message and stops before the final brace.
+	t.Run("appended-block-boundary", func(t *testing.T) {
+		t.Parallel()
+		const from = `message A {
+  int32 x = 1;
+}
+`
+		const to = `message A {
+  int32 x = 1;
+}
+
+message B {
+  int32 y = 1;
+}
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "appended-block-boundary")
+	})
+
+	// Two changes four unchanged lines apart belong to one hunk, as they would
+	// under diff -U3 and git. Seven lines apart they do not.
+	t.Run("merge-nearby-changes", func(t *testing.T) {
+		t.Parallel()
+		const from = `a
+m
+m
+m
+m
+z
+`
+		const to = `A
+m
+m
+m
+m
+Z
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "merge-nearby-changes")
+	})
+
+	t.Run("split-distant-changes", func(t *testing.T) {
+		t.Parallel()
+		const from = `a
+m
+m
+m
+m
+m
+m
+m
+z
+`
+		const to = `A
+m
+m
+m
+m
+m
+m
+m
+Z
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "split-distant-changes")
+	})
+
+	// A sequence whose final line is not newline terminated is recorded with
+	// the same marker GNU diff and git use. Without it the two lines below are
+	// indistinguishable in the output.
+	t.Run("no-newline-at-end-of-from", func(t *testing.T) {
+		t.Parallel()
+		const from = "a\nb"
+		const to = "a\nb\n"
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "no-newline-at-end-of-from")
+	})
+
+	t.Run("no-newline-at-end-of-to", func(t *testing.T) {
+		t.Parallel()
+		const from = "a\nb\n"
+		const to = "a\nb"
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "no-newline-at-end-of-to")
+	})
+
+	// These need the block to move earlier and absorb the one it meets;
+	// sliding later alone leaves the run split by a carried over line.
+	t.Run("merge-deletion-run-backwards", func(t *testing.T) {
+		t.Parallel()
+		const from = `a
+b
+b
+`
+		const to = "b\n"
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "merge-deletion-run-backwards")
+	})
+
+	t.Run("merge-insertion-run-backwards", func(t *testing.T) {
+		t.Parallel()
+		const from = "a\n"
+		const to = `b
+a
+a
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "merge-insertion-run-backwards")
+	})
+
+	// An empty range is numbered with the line before it, so this insertion
+	// after old line 8 is recorded as -8,0 rather than -9,0.
+	t.Run("insert-away-from-other-changes", func(t *testing.T) {
+		t.Parallel()
+		const from = `l1
+l2
+l3
+l4
+l5
+l6
+l7
+l8
+l9
+l10
+`
+		const to = `l1
+l2
+l3
+l4
+l5
+l6
+l7
+l8
+NEW
+l9
+l10
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "insert-away-from-other-changes")
+	})
+
+	// Full context keeps every line, so the whole original sequence can be
+	// recovered from the output.
+	t.Run("full-context", func(t *testing.T) {
+		t.Parallel()
+		const from = `a
+m
+m
+m
+m
+m
+m
+m
+z
+`
+		const to = `A
+m
+m
+m
+m
+m
+m
+m
+Z
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "full-context", diffmyers.PrintWithFullContext())
+	})
+
+	// A narrower window keeps fewer carried over lines and splits hunks sooner.
+	t.Run("context-width-one", func(t *testing.T) {
+		t.Parallel()
+		const from = `a
+m
+m
+m
+m
+z
+`
+		const to = `A
+m
+m
+m
+m
+Z
+`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "context-width-one", diffmyers.PrintWithContext(1))
+	})
+
+	// The marker belongs to the line it follows, so a final line outside the
+	// window takes it with it rather than widening the hunk.
+	t.Run("no-newline-outside-context", func(t *testing.T) {
+		t.Parallel()
+		const from = `a
+b
+c
+d
+e
+f
+g
+h
+i
+j`
+		const to = `a
+b
+c
+d
+e
+F
+g
+h
+i
+j`
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		testPrint(t, from, to, edits, "no-newline-outside-context")
+	})
+
 	t.Run("first-line-prefix", func(t *testing.T) {
 		t.Parallel()
-		from := "syntax = \"proto3\";\n\npackage test;\n\nmessage Foo {\n  string field1 = 1;\n  string field2 = 2;\n  string field3 = 3;\n  string field4 = 4;\n  string field5 = 5;\n}\n"
-		to := "syntax = \"proto3\";\n\npackage test;\n\nmessage Foo {\n  string field1 = 1;\n  string field2 = 2;\n  string field3 = 3;\n  string field4 = 4;\n  int32 field5 = 5;\n}\n"
+		from := `syntax = "proto3";
+
+package test;
+
+message Foo {
+  string field1 = 1;
+  string field2 = 2;
+  string field3 = 3;
+  string field4 = 4;
+  string field5 = 5;
+}
+`
+		to := `syntax = "proto3";
+
+package test;
+
+message Foo {
+  string field1 = 1;
+  string field2 = 2;
+  string field3 = 3;
+  string field4 = 4;
+  int32 field5 = 5;
+}
+`
 		expectedFirstLineOfOutput := " syntax = \"proto3\";"
 		fromLines := splitLines(from)
 		toLines := splitLines(to)
@@ -217,6 +586,7 @@ The door of all subtleties!
 			fromLines,
 			toLines,
 			edits,
+			diffmyers.PrintWithFullContext(),
 		)
 		require.NoError(t, err)
 		before, _, _ := bytes.Cut(diff, []byte("\n"))
@@ -225,16 +595,176 @@ The door of all subtleties!
 		actualFirstLine := string(firstLine)
 		require.Equal(t, expectedFirstLineOfOutput, actualFirstLine,
 			"First line of diff output should match expected format (single space prefix, no double space)")
-		testPrint(t, from, to, edits, "first-line-prefix")
+		testPrint(t, from, to, edits, "first-line-prefix", diffmyers.PrintWithFullContext())
 	})
 }
 
-func testPrint(t *testing.T, from, to string, edits []diffmyers.Edit, golden string) {
+func TestPrintDoesNotModifyInput(t *testing.T) {
+	t.Parallel()
+	// The final line is deliberately not newline terminated, which is the case
+	// Print has to normalize.
+	from := [][]byte{[]byte("Hello, world!\n"), []byte("Goodbye, world!")}
+	to := [][]byte{[]byte("Hello, world!\n")}
+	before := make([][]byte, len(from))
+	for i, line := range from {
+		before[i] = bytes.Clone(line)
+	}
+	_, err := diffmyers.Print(from, to, diffmyers.Diff(from, to))
+	require.NoError(t, err)
+	assert.Equal(t, before, from, "Print must not modify the sequences it is given")
+}
+
+func TestPrintEmptyLine(t *testing.T) {
+	t.Parallel()
+	// An empty final line is not produced by splitLines, but Print is exported
+	// and must not panic on one. Both sequences below hold the same bytes, so
+	// the reported deletion and missing newline are artifacts of that input.
+	// This pins the behavior rather than endorsing it.
+	from := [][]byte{[]byte("Hello, world!\n"), {}}
+	to := [][]byte{[]byte("Hello, world!\n")}
+	diff, err := diffmyers.Print(from, to, diffmyers.Diff(from, to))
+	require.NoError(t, err)
+	assert.Equal(
+		t,
+		`@@ -1,2 +1,1 @@
+ Hello, world!
+-
+\ No newline at end of file
+`,
+		string(diff),
+	)
+}
+
+func TestPrintContextBounds(t *testing.T) {
+	t.Parallel()
+	const from = `a
+b
+c
+d
+e
+f
+g
+`
+	const to = `a
+b
+c
+X
+e
+f
+g
+`
+	edits := diffmyers.Diff(splitLines(from), splitLines(to))
+	zero, err := diffmyers.Print(
+		splitLines(from),
+		splitLines(to),
+		edits,
+		diffmyers.PrintWithContext(0),
+	)
+	require.NoError(t, err)
+	assert.Equal(t, `@@ -4,1 +4,1 @@
+-d
++X
+`, string(zero))
+	// A negative window is treated as zero rather than slicing out of range.
+	negative, err := diffmyers.Print(
+		splitLines(from),
+		splitLines(to),
+		edits,
+		diffmyers.PrintWithContext(-1),
+	)
+	require.NoError(t, err)
+	assert.Equal(t, string(zero), string(negative))
+}
+
+func TestPrintHugeContext(t *testing.T) {
+	t.Parallel()
+	const from = `a
+b
+c
+`
+	const to = `a
+X
+c
+`
+	edits := diffmyers.Diff(splitLines(from), splitLines(to))
+	for _, options := range [][]diffmyers.PrintOption{
+		{diffmyers.PrintWithContext(math.MaxInt)},
+		{diffmyers.PrintWithContext(math.MaxInt), diffmyers.PrintWithFullContext()},
+	} {
+		diff, err := diffmyers.Print(splitLines(from), splitLines(to), edits, options...)
+		require.NoError(t, err)
+		assert.Contains(t, string(diff), "-b\n")
+		assert.Contains(t, string(diff), "+X\n")
+	}
+}
+
+func TestPrintEditOutOfRange(t *testing.T) {
+	t.Parallel()
+	for _, edit := range []diffmyers.Edit{
+		{Kind: diffmyers.EditKindDelete, FromPosition: 5},
+		{Kind: diffmyers.EditKindInsert, FromPosition: 0, ToPosition: 5},
+		{Kind: diffmyers.EditKindDelete, FromPosition: -1},
+	} {
+		_, err := diffmyers.Print(
+			splitLines("a\nb\n"),
+			splitLines("a\n"),
+			[]diffmyers.Edit{edit},
+		)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "out of range")
+	}
+}
+
+func TestPrintOptionOrderDecidesMode(t *testing.T) {
+	t.Parallel()
+	const from = `a
+b
+c
+d
+e
+f
+g
+h
+i
+j
+`
+	const to = `a
+b
+c
+d
+X
+f
+g
+h
+i
+j
+`
+	edits := diffmyers.Diff(splitLines(from), splitLines(to))
+	printDiff := func(options ...diffmyers.PrintOption) string {
+		diff, err := diffmyers.Print(splitLines(from), splitLines(to), edits, options...)
+		require.NoError(t, err)
+		return string(diff)
+	}
+	windowed := printDiff(diffmyers.PrintWithFullContext(), diffmyers.PrintWithContext(3))
+	full := printDiff(diffmyers.PrintWithContext(3), diffmyers.PrintWithFullContext())
+	assert.Equal(t, printDiff(), windowed)
+	assert.Equal(t, printDiff(diffmyers.PrintWithFullContext()), full)
+	assert.NotEqual(t, windowed, full)
+}
+
+func testPrint(
+	t *testing.T,
+	from, to string,
+	edits []diffmyers.Edit,
+	golden string,
+	options ...diffmyers.PrintOption,
+) {
 	t.Run("print", func(t *testing.T) {
 		diff, err := diffmyers.Print(
 			splitLines(from),
 			splitLines(to),
 			edits,
+			options...,
 		)
 		require.NoError(t, err)
 		goldenFilePath := filepath.Join("testdata", golden)

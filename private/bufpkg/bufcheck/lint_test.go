@@ -1310,6 +1310,16 @@ func TestCommentIgnoresOnlyRule(t *testing.T) {
 	)
 }
 
+func TestCommentIgnoresGroup(t *testing.T) {
+	t.Parallel()
+	testLint(
+		t,
+		"comment_ignores_group",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 10, 18, 10, 28, "FIELD_NOT_REQUIRED"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 18, 20, 18, 30, "FIELD_NOT_REQUIRED"),
+	)
+}
+
 func TestCommentIgnoresWithTrailingComment(t *testing.T) {
 	t.Parallel()
 	testLint(

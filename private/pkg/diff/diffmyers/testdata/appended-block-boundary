@@ -1,0 +1,8 @@
+@@ -1,3 +1,7 @@
+ message A {
+   int32 x = 1;
+ }
++
++message B {
++  int32 y = 1;
++}

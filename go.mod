@@ -6,8 +6,8 @@ require (
 	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.12-20260722160903-4d94f3df3a7b.2
 	buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go v1.36.12-20250109164928-1da0de137947.2
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260825204119-511051f7f437.2
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.21.0-20260831211851-b4432e12a6e7.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.12-20260831211851-b4432e12a6e7.2
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.21.0-20260917220747-82d6da681af1.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.12-20260917220747-82d6da681af1.2
 	buf.build/go/app v0.2.1-0.20260824172350-b0e76892c61a
 	buf.build/go/bufplugin v0.10.0
 	buf.build/go/bufprivateusage v0.1.0
@@ -18,8 +18,8 @@ require (
 	cel.dev/cel-go v0.32.0
 	connectrpc.com/connect v1.21.0
 	connectrpc.com/grpcreflect v1.3.0
-	connectrpc.com/otelconnect v0.9.0
-	github.com/bufbuild/protocompile v0.14.2-0.20260910151042-7436f7c76201
+	connectrpc.com/otelconnect v0.10.0
+	github.com/bufbuild/protocompile v0.14.2-0.20260917202354-386f9fcfc7b9
 	github.com/bufbuild/protoplugin v0.0.0-20260414125817-25d1d281b46b
 	github.com/cli/browser v1.3.0
 	github.com/gofrs/flock v0.13.1
@@ -64,7 +64,7 @@ require (
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/cli v29.8.0+incompatible // indirect
+	github.com/docker/cli v29.8.1+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.9 // indirect
 	github.com/docker/go-connections v0.8.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
@@ -76,7 +76,7 @@ require (
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
-	github.com/petermattis/goid v0.0.0-20260820044319-269ab09b5261 // indirect
+	github.com/petermattis/goid v0.0.0-20260918085751-abfca077860b // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
@@ -97,6 +97,6 @@ require (
 	golang.org/x/net v0.59.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260911204522-f61a6ca850bd // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260911204522-f61a6ca850bd // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260921155816-b14227669459 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260921155816-b14227669459 // indirect
 )

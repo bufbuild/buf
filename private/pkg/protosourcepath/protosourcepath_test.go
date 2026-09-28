@@ -384,6 +384,22 @@ func testGetAssociatedSourcePaths(
 	sourcePathToExpectedAssociatedPaths map[string][]protoreflect.SourcePath,
 	excludeChildAssociatedPaths bool,
 ) {
+	fileDescriptor := testBuildFileDescriptor(t, testFilePath)
+	sourceLocations := fileDescriptor.SourceLocations()
+	// SourceLocations are indexed starting from 1
+	for i := 1; i < sourceLocations.Len(); i++ {
+		sourceLocation := sourceLocations.Get(i)
+		associatedSourcePaths, err := getAssociatedSourcePaths(sourceLocation.Path, excludeChildAssociatedPaths)
+		require.NoError(t, err)
+		expectedAssociatedPaths, ok := sourcePathToExpectedAssociatedPaths[sourceLocation.Path.String()]
+		require.True(t, ok, sourceLocation.Path)
+		require.Equal(t, expectedAssociatedPaths, associatedSourcePaths, i)
+	}
+}
+
+// testBuildFileDescriptor builds the file descriptor for the given test file path, including
+// source code info.
+func testBuildFileDescriptor(t *testing.T, testFilePath string) protoreflect.FileDescriptor {
 	var fdpOptions fdp.Options
 	fdpOptions.Apply(fdp.IncludeSourceCodeInfo(true))
 	results, _, err := incremental.Run(t.Context(), incremental.New(), queries.FDS{
@@ -403,16 +419,7 @@ func testGetAssociatedSourcePaths(
 	require.NoError(t, protoencoding.NewWireUnmarshaler(nil).Unmarshal(fdsBytes, fds))
 	resolver, err := protoencoding.NewResolver(fds.File...)
 	require.NoError(t, err)
-	fd, err := resolver.FindFileByPath(testFilePath)
+	fileDescriptor, err := resolver.FindFileByPath(testFilePath)
 	require.NoError(t, err)
-	sourceLocations := fd.SourceLocations()
-	// SourceLocations are indexed starting from 1
-	for i := 1; i < sourceLocations.Len(); i++ {
-		sourceLocation := sourceLocations.Get(i)
-		associatedSourcePaths, err := getAssociatedSourcePaths(sourceLocation.Path, excludeChildAssociatedPaths)
-		require.NoError(t, err)
-		expectedAssociatedPaths, ok := sourcePathToExpectedAssociatedPaths[sourceLocation.Path.String()]
-		require.True(t, ok, sourceLocation.Path)
-		require.Equal(t, expectedAssociatedPaths, associatedSourcePaths, i)
-	}
+	return fileDescriptor
 }

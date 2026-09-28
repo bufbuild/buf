@@ -43,6 +43,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"pluginrpc.com/pluginrpc"
 )
 
@@ -824,16 +825,50 @@ func ignoreFileLocation(
 		sourceLocations := protoreflectFileDescriptor.SourceLocations()
 		for _, associatedSourcePath := range associatedSourcePaths {
 			sourceLocation := sourceLocations.ByPath(associatedSourcePath)
-			if leadingComments := sourceLocation.LeadingComments; leadingComments != "" {
-				for _, line := range xstrings.SplitTrimLinesNoEmpty(leadingComments) {
-					if checkCommentLineForCheckIgnore(line, config.CommentIgnorePrefix, ruleID) {
-						return true, nil
-					}
+			if leadingCommentsHaveCheckIgnore(sourceLocation.LeadingComments, config.CommentIgnorePrefix, ruleID) {
+				return true, nil
+			}
+			// A group field has both a field and synthetic message in the descriptor, with comments
+			// that appear to be on the field actually assigned to the synthetic message.
+			// So we need to see if the path is a group, resolve its synthetic message, and check the comments
+			// there if so.
+			if syntheticMessage := groupFieldSyntheticMessage(protoreflectFileDescriptor, associatedSourcePath); syntheticMessage != nil {
+				syntheticMessageSourceLocation := sourceLocations.ByDescriptor(syntheticMessage)
+				if leadingCommentsHaveCheckIgnore(syntheticMessageSourceLocation.LeadingComments, config.CommentIgnorePrefix, ruleID) {
+					return true, nil
 				}
 			}
 		}
 	}
 	return false, nil
+}
+
+// groupFieldSyntheticMessage returns the synthetic message declaration for the group field
+// at the given source path, or nil if the source path does not point to a group field.
+func groupFieldSyntheticMessage(
+	fileDescriptor protoreflect.FileDescriptor,
+	sourcePath protoreflect.SourcePath,
+) protoreflect.MessageDescriptor {
+	fieldDescriptor, ok := protosourcepath.DescriptorForSourcePath(fileDescriptor, sourcePath).(protoreflect.FieldDescriptor)
+	if !ok || fieldDescriptor.Kind() != protoreflect.GroupKind {
+		return nil
+	}
+	return fieldDescriptor.Message()
+}
+
+// leadingCommentsHaveCheckIgnore checks if any line of the given leading comments is a
+// comment ignore for the given rule.
+func leadingCommentsHaveCheckIgnore(
+	leadingComments string,
+	commentIgnorePrefix string,
+	ruleID string,
+) bool {
+	for _, line := range xstrings.SplitTrimLinesNoEmpty(leadingComments) {
+		if checkCommentLineForCheckIgnore(line, commentIgnorePrefix, ruleID) {
+			return true
+		}
+	}
+	return false
 }
 
 // checkCommentLineForCheckIgnore checks that the comment line starts with the configured

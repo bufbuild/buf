@@ -421,6 +421,21 @@ type Reader interface {
 	ModuleFetcher
 }
 
+// ReaderOption is a Reader option.
+type ReaderOption func(*readerOptions)
+
+// WithReaderFetchCache returns a ReaderOption that fetches a given remote file
+// or git repository at most once, so that Refs resolving to the same remote
+// share a fetch.
+//
+// Fetches are held in memory for the lifetime of the Reader, so only use this
+// for a Reader that does not outlive the Refs it is created for.
+func WithReaderFetchCache() ReaderOption {
+	return func(readerOptions *readerOptions) {
+		readerOptions.fetchCacheEnabled = true
+	}
+}
+
 // NewReader returns a new Reader.
 func NewReader(
 	logger *slog.Logger,
@@ -429,6 +444,7 @@ func NewReader(
 	httpAuthenticator httpauth.Authenticator,
 	gitCloner git.Cloner,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
+	options ...ReaderOption,
 ) Reader {
 	return newReader(
 		logger,
@@ -437,6 +453,7 @@ func NewReader(
 		httpAuthenticator,
 		gitCloner,
 		moduleKeyProvider,
+		options...,
 	)
 }
 

@@ -11,6 +11,14 @@
 - Fix `buf generate` with `strategy: directory` and `include_imports: true` adding imports
   to the `CodeGeneratorRequest` of the directory that imports them. Imports are now split
   by directory into their own requests, the same as non-imports.
+- Fix configuration files silently accepting unquoted values that start with `!`, such as
+  `ignore: [!foo/bar.proto]`. Previously they parsed as empty strings, now they rejected
+  with an error.
+- Fix lint comment ignores on proto2 `group` fields being ignored.
+- Improve the `buf curl` error message for methods that accept a single request message.
+- Deduplicate remote input fetches within a single command invocation, so that multiple
+  `inputs` in a `buf.gen.yaml` that resolve to the same archive, git repository, or image
+  are fetched once instead of once per input.
 
 ## [v1.73.0] - 2026-09-11
 

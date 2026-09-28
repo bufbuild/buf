@@ -82,3 +82,8 @@ enum Enum {
   A = 0;
   B = 1;
 }
+
+service Service {
+  rpc Unary(Message) returns (Message);
+  rpc Download(Message) returns (stream Message);
+}

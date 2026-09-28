@@ -7,7 +7,7 @@
    string field2 = 2;
    string field3 = 3;
    string field4 = 4;
-@@ -10,1 +10,1 @@
+@@ -10,2 +10,2 @@
 -  string field5 = 5;
 +  int32 field5 = 5;
  }
