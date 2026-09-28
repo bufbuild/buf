@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package keyvalue.v1;
+
+import "common/v1/value.proto";
+import "google/protobuf/timestamp.proto";
+
+message Entry {
+  common.v1.Value value = 1;
+  google.protobuf.Timestamp updated_at = 2;
+}
