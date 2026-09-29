@@ -2,6 +2,10 @@
 # do not change this filename without updating it there as well.
 name: Publish to npm
 on:
+  pull_request:
+    paths:
+      - 'packaging/npm/**'
+      - '.github/workflows/publish-npm.yaml'
   workflow_dispatch:
   release:
     types: [published]
@@ -30,30 +34,44 @@ jobs:
           name: npm-packages
           path: packaging/npm/dist/
 
-  test-publish:
-    if: github.event_name == 'workflow_dispatch'
+  smoke-test:
     needs: build
-    runs-on: ubuntu-latest
-    permissions: {}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - macos-latest
+          - macos-15-intel
+          - windows-latest
+          - windows-11-arm
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: packaging/npm
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@v7
         with:
-          name: npm-packages
-          path: dist/
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
-          registry-url: "https://registry.npmjs.org"
           node-version: 24
 
-      - run: |
-          for package in dist/platforms/*.tgz dist/main/*.tgz; do
-            npm publish --dry-run --access public "${package}"
-          done
+      - uses: actions/download-artifact@v8
+        with:
+          name: npm-packages
+          path: packaging/npm/dist/
+
+      - run: bash scripts/smoke_test.bash
 
   publish:
-    if: github.event_name != 'workflow_dispatch'
-    needs: build
+    if: github.event_name == 'release'
+    needs: smoke-test
     runs-on: ubuntu-latest
     environment: npm-release
     permissions:
