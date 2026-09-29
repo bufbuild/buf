@@ -12,7 +12,8 @@ cd "${DIR}"
 
 VERDACCIO_VERSION="6.10.4"
 REGISTRY="http://localhost:${VERDACCIO_PORT}"
-VERSION="$(jq -r .version buf/package.json)"
+# jq on Windows writes CRLF line endings, so strip the carriage returns.
+VERSION="$(jq -r .version buf/package.json | tr -d '\r')"
 WORK_DIR="$(mktemp -d)"
 VERDACCIO_PID=""
 
@@ -66,7 +67,7 @@ publish_packages() {
 # published.
 check_optional_dependencies() {
   local dependency
-  for dependency in $(jq -r '.optionalDependencies | keys[]' buf/package.json); do
+  for dependency in $(jq -r '.optionalDependencies | keys[]' buf/package.json | tr -d '\r'); do
     echo "Checking ${dependency}@${VERSION} is published"
     npm view --registry "${REGISTRY}" "${dependency}@${VERSION}" version >/dev/null
   done
@@ -86,7 +87,8 @@ check_install() {
   echo "${package_json}" >"${project_dir}/package.json"
   (
     cd "${project_dir}"
-    npm install --registry "${REGISTRY}" --no-audit --no-fund "${@}" "@bufbuild/buf@${VERSION}"
+    # macOS ships bash 3.2, where an empty "${@}" is unbound under set -u.
+    npm install --registry "${REGISTRY}" --no-audit --no-fund ${@+"${@}"} "@bufbuild/buf@${VERSION}"
 
     local actual_version
     actual_version="$(npm exec --no -- buf --version)"
