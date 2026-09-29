@@ -232,19 +232,6 @@ func (g *generator) execPlugins(
 		}
 
 		// Local plugins.
-		var images []bufimage.Image
-		switch Strategy(pluginConfigForKey.Strategy()) {
-		case StrategyAll:
-			images = []bufimage.Image{image}
-		case StrategyDirectory:
-			var err error
-			images, err = bufimage.ImageByDir(image)
-			if err != nil {
-				return nil, err
-			}
-		default:
-			return nil, fmt.Errorf("unknown strategy: %v", pluginConfigForKey.Strategy())
-		}
 		for _, indexedPluginConfig := range indexedPluginConfigs {
 			jobs = append(jobs, func(ctx context.Context) error {
 				includeImports := indexedPluginConfig.Value.IncludeImports()
@@ -254,6 +241,15 @@ func (g *generator) execPlugins(
 				includeWellKnownTypes := indexedPluginConfig.Value.IncludeWKT()
 				if includeWellKnownTypesOverride != nil {
 					includeWellKnownTypes = *includeWellKnownTypesOverride
+				}
+				images, err := imagesForStrategy(
+					image,
+					Strategy(indexedPluginConfig.Value.Strategy()),
+					includeImports,
+					includeWellKnownTypes,
+				)
+				if err != nil {
+					return err
 				}
 				response, err := g.execLocalPlugin(
 					ctx,
@@ -329,6 +325,31 @@ func (g *generator) execLocalPlugin(
 		return nil, fmt.Errorf("plugin %s: %v", pluginConfig.Name(), err)
 	}
 	return response, nil
+}
+
+// imagesForStrategy returns the Images to use for a local plugin with the given Strategy.
+func imagesForStrategy(
+	image bufimage.Image,
+	strategy Strategy,
+	includeImports bool,
+	includeWellKnownTypes bool,
+) ([]bufimage.Image, error) {
+	switch strategy {
+	case StrategyAll:
+		return []bufimage.Image{image}, nil
+	// Split imports by directory similar to non-imports.
+	case StrategyDirectory:
+		var imageByDirOptions []bufimage.ImageByDirOption
+		if includeImports {
+			imageByDirOptions = append(imageByDirOptions, bufimage.ImageByDirWithIncludeImports())
+			if includeWellKnownTypes {
+				imageByDirOptions = append(imageByDirOptions, bufimage.ImageByDirWithIncludeWellKnownTypes())
+			}
+		}
+		return bufimage.ImageByDir(image, imageByDirOptions...)
+	default:
+		return nil, fmt.Errorf("unknown strategy: %v", strategy)
+	}
 }
 
 func (g *generator) execRemotePluginsV2(

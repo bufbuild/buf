@@ -343,6 +343,103 @@ inputs:
 	)
 }
 
+func TestGenerateV2LocalPluginStrategyDirectoryIncludeImports(t *testing.T) {
+	t.Parallel()
+	testRunTemplate := func(t *testing.T, expect map[string][]byte, template string, extraArgs ...string) {
+		t.Helper()
+		tempDirPath := t.TempDir()
+		testRunSuccess(
+			t,
+			append(
+				[]string{
+					"--output",
+					tempDirPath,
+					"--template",
+					template,
+					// Only target keyvalue, so that common is an import.
+					"--path",
+					filepath.Join("testdata", "v2", "include_imports", "keyvalue"),
+					filepath.Join("testdata", "v2", "include_imports"),
+				},
+				extraArgs...,
+			)...,
+		)
+		expected, err := storagemem.NewReadBucket(expect)
+		require.NoError(t, err)
+		actual, err := storageos.NewProvider().NewReadWriteBucket(tempDirPath)
+		require.NoError(t, err)
+		diff, err := storage.DiffBytes(t.Context(), expected, actual)
+		require.NoError(t, err)
+		require.Empty(t, string(diff))
+	}
+	commonFilesToGenerate := []byte(`files:
+    - common/v1/value.proto
+`)
+	keyValueFilesToGenerate := []byte(`files:
+    - keyvalue/v1/service.proto
+`)
+	timestampFilesToGenerate := []byte(`files:
+    - google/protobuf/timestamp.proto
+`)
+	// Without include_imports, only the directory with non-imports is generated.
+	testRunTemplate(
+		t,
+		map[string][]byte{
+			filepath.Join("gen", "keyvalue", "v1", "files-to-generate.yaml"): keyValueFilesToGenerate,
+		},
+		`version: v2
+plugins:
+  - local: protoc-gen-files-to-generate-yaml
+    out: gen
+    strategy: directory`,
+	)
+	// With include_imports, imports are generated in a separate request for their directory.
+	// The plugin fails if a request has files to generate from more than one directory.
+	testRunTemplate(
+		t,
+		map[string][]byte{
+			filepath.Join("gen", "common", "v1", "files-to-generate.yaml"):   commonFilesToGenerate,
+			filepath.Join("gen", "keyvalue", "v1", "files-to-generate.yaml"): keyValueFilesToGenerate,
+		},
+		`version: v2
+plugins:
+  - local: protoc-gen-files-to-generate-yaml
+    out: gen
+    strategy: directory
+    include_imports: true`,
+	)
+	// With include_wkt as well, well-known types are generated in their own request.
+	testRunTemplate(
+		t,
+		map[string][]byte{
+			filepath.Join("gen", "common", "v1", "files-to-generate.yaml"):       commonFilesToGenerate,
+			filepath.Join("gen", "google", "protobuf", "files-to-generate.yaml"): timestampFilesToGenerate,
+			filepath.Join("gen", "keyvalue", "v1", "files-to-generate.yaml"):     keyValueFilesToGenerate,
+		},
+		`version: v2
+plugins:
+  - local: protoc-gen-files-to-generate-yaml
+    out: gen
+    strategy: directory
+    include_imports: true
+    include_wkt: true`,
+	)
+	// --include-imports on the command line overrides the template.
+	testRunTemplate(
+		t,
+		map[string][]byte{
+			filepath.Join("gen", "common", "v1", "files-to-generate.yaml"):   commonFilesToGenerate,
+			filepath.Join("gen", "keyvalue", "v1", "files-to-generate.yaml"): keyValueFilesToGenerate,
+		},
+		`version: v2
+plugins:
+  - local: protoc-gen-files-to-generate-yaml
+    out: gen
+    strategy: directory`,
+		"--include-imports",
+	)
+}
+
 func TestOutputFlag(t *testing.T) {
 	t.Parallel()
 	for _, paths := range []struct {

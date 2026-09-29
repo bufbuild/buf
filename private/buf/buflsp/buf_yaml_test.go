@@ -133,8 +133,18 @@ func TestIsBufGenYAMLURI(t *testing.T) {
 		expected bool
 	}{
 		{"file:///home/user/project/buf.gen.yaml", true},
+		{"file:///home/user/project/buf.go.gen.yaml", true},
+		{"file:///home/user/project/buf.connect-go.gen.yaml", true},
+		{"file:///home/user/project/buf.gen.go.yaml", true},
+		{"file:///home/user/project/buf.gen-private.yaml", false},
+		{"file:///home/user/project/buf-go.gen.yaml", false},
+		{"file:///home/user/project/bufgo.gen.yaml", false},
+		{"file:///home/user/project/buf.generated.yaml", false},
 		{"file:///home/user/project/buf.yaml", false},
+		{"file:///home/user/project/buf.work.yaml", false},
+		{"file:///home/user/project/buf.policy.yaml", false},
 		{"file:///home/user/project/buf.gen.yaml.bak", false},
+		{"file:///home/user/project/mybuf.gen.yaml", false},
 		{"file:///home/user/project/foo.proto", false},
 	}
 
@@ -142,6 +152,25 @@ func TestIsBufGenYAMLURI(t *testing.T) {
 		t.Run(string(tt.uri), func(t *testing.T) {
 			t.Parallel()
 			assert.Equal(t, tt.expected, isBufGenYAMLURI(tt.uri))
+		})
+	}
+}
+
+func TestBufGenerateArgs(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		uri      protocol.URI
+		expected []string
+	}{
+		{"file:///home/user/project/buf.gen.yaml", []string{"generate"}},
+		{"file:///home/user/project/buf.go.gen.yaml", []string{"generate", "--template", "buf.go.gen.yaml"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.uri), func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tt.expected, bufGenerateArgs(tt.uri))
 		})
 	}
 }
