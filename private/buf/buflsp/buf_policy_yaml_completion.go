@@ -16,7 +16,7 @@ package buflsp
 
 import (
 	"go.lsp.dev/protocol"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 // getBufPolicyYAMLCompletionItems returns completion items for a buf.policy.yaml

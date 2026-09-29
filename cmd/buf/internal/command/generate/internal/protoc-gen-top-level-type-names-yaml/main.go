@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/protoplugin"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 const fileExt = ".top-level-type-names.yaml"
