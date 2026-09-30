@@ -74,6 +74,39 @@ check_optional_dependencies() {
   done
 }
 
+# Runs the installed binaries and checks they are the expected version.
+# The arguments are the command prefix used to run a binary.
+check_binaries() {
+  local actual_version
+  actual_version="$("${@}" buf --version)"
+  if [ "${actual_version}" != "${VERSION}" ]; then
+    echo "expected buf version ${VERSION}, got ${actual_version}" >&2
+    exit 1
+  fi
+
+  # The plugins reject an empty request, which is enough to show that the
+  # binary was found and executed.
+  local plugin
+  for plugin in protoc-gen-buf-breaking protoc-gen-buf-lint; do
+    local output
+    output="$("${@}" "${plugin}" </dev/null 2>&1 || true)"
+    if [[ "${output}" != *"CodeGeneratorRequest"* ]]; then
+      echo "unexpected output from ${plugin}: ${output}" >&2
+      exit 1
+    fi
+  done
+}
+
+# Checks that install.ts removed its temporary npm install directory.
+# ${1} is the installed @bufbuild/buf package directory.
+check_npm_install_cleaned_up() {
+  local package_dir="${1}"
+  if [ -e "${package_dir}/npm-install" ]; then
+    echo "install.ts did not remove ${package_dir}/npm-install" >&2
+    exit 1
+  fi
+}
+
 # Installs @bufbuild/buf into a new project and runs its binaries.
 # ${1} is the scenario name, ${2} is the project package.json, and any
 # remaining arguments are passed to npm install.
@@ -90,26 +123,31 @@ check_install() {
     cd "${project_dir}"
     # macOS ships bash 3.2, where an empty "${@}" is unbound under set -u.
     npm install --registry "${REGISTRY}" --no-audit --no-fund ${@+"${@}"} "@bufbuild/buf@${VERSION}"
-
-    local actual_version
-    actual_version="$(npm exec --no -- buf --version)"
-    if [ "${actual_version}" != "${VERSION}" ]; then
-      echo "expected buf version ${VERSION}, got ${actual_version}" >&2
-      exit 1
-    fi
-
-    # The plugins reject an empty request, which is enough to show that the
-    # binary was found and executed.
-    local plugin
-    for plugin in protoc-gen-buf-breaking protoc-gen-buf-lint; do
-      local output
-      output="$(npm exec --no -- "${plugin}" </dev/null 2>&1 || true)"
-      if [[ "${output}" != *"CodeGeneratorRequest"* ]]; then
-        echo "unexpected output from ${plugin}: ${output}" >&2
-        exit 1
-      fi
-    done
+    check_npm_install_cleaned_up node_modules/@bufbuild/buf
+    check_binaries npm exec --no --
   )
+}
+
+# Checks the install.ts fallback for a global install, where it must clear
+# npm_config_global so its own npm install is not global too.
+check_global_fallback() {
+  local prefix="${WORK_DIR}/global"
+
+  echo "Checking install: global-fallback"
+  npm install --global --prefix "${prefix}" --allow-scripts=@bufbuild/buf \
+    --registry "${REGISTRY}" --no-audit --no-fund "@bufbuild/buf@${VERSION}"
+  local package_dir
+  package_dir="$(npm root --global --prefix "${prefix}" | tr -d '\r')/@bufbuild/buf"
+  # npm ignores --omit=optional for global installs, so remove the platform
+  # package and rerun install.js with the environment of a global install.
+  rm -rf "${package_dir}/node_modules/@bufbuild"
+  (
+    cd "${package_dir}"
+    npm_config_global=true npm_config_registry="${REGISTRY}" node install.js
+  )
+  check_npm_install_cleaned_up "${package_dir}"
+  # Global binaries are in the prefix on Windows and in its bin elsewhere.
+  check_binaries env "PATH=${prefix}/bin:${prefix}:${PATH}"
 }
 
 start_verdaccio
@@ -124,5 +162,6 @@ check_install default '{"private":true}'
 check_install allow-scripts '{"private":true,"allowScripts":{"@bufbuild/buf":true}}'
 # install.ts falls back to installing the platform package itself.
 check_install omit-optional '{"private":true,"allowScripts":{"@bufbuild/buf":true}}' --omit=optional
+check_global_fallback
 
 echo "Smoke test passed"
