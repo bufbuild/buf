@@ -57,10 +57,11 @@ EOF
 publish_packages() {
   # Verdaccio allows anonymous publishing but npm requires some token.
   echo "//localhost:${VERDACCIO_PORT}/:_authToken=anonymous" >"${WORK_DIR}/npmrc"
-  local package
-  for package in dist/platforms/*.tgz dist/main/*.tgz; do
-    npm publish --registry "${REGISTRY}" "${package}"
-  done
+  NPM_CONFIG_REGISTRY="${REGISTRY}" bash scripts/publish.bash
+  # Publish a second time to verify the publish script skips existing versions
+  # without failing.
+  echo "Re-running publish to check already published packages are skipped"
+  NPM_CONFIG_REGISTRY="${REGISTRY}" bash scripts/publish.bash
 }
 
 # Checks for a platform package that is referenced by @bufbuild/buf but was not

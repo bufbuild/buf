@@ -75,21 +75,24 @@ jobs:
     runs-on: ubuntu-latest
     environment: npm-release
     permissions:
+      contents: read
       id-token: write
+    defaults:
+      run:
+        working-directory: packaging/npm
     steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
       - uses: actions/download-artifact@v8
         with:
           name: npm-packages
-          path: dist/
+          path: packaging/npm/dist/
 
       - uses: actions/setup-node@v7
         with:
           registry-url: "https://registry.npmjs.org"
           node-version: 24
 
-      # Platform packages are published first since @bufbuild/buf depends on
-      # them as optionalDependencies.
-      - run: |
-          for package in dist/platforms/*.tgz dist/main/*.tgz; do
-            npm publish --access public "${package}"
-          done
+      - run: bash scripts/publish.bash
