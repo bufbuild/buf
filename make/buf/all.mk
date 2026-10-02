@@ -169,6 +169,8 @@ ifndef VERSION
 	$(error "VERSION must be set")
 endif
 	$(SED_I) -E "s/^version = \".*\"/version = \"$(VERSION)\"/" "packaging/python/pyproject.toml"
+	$(SED_I) -E "s/\"version\": \".*\"/\"version\": \"$(VERSION)\"/" packaging/npm/*/package.json
+	$(SED_I) -E "s/(\"@bufbuild\/buf-[a-z0-9-]+\": )\".*\"/\1\"$(VERSION)\"/" "packaging/npm/buf/package.json"
 
 .PHONY: releasechangelog
 releasechangelog:
