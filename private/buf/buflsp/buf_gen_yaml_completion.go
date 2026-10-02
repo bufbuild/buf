@@ -21,7 +21,7 @@ import (
 
 	"github.com/bufbuild/protocompile/experimental/ir"
 	"go.lsp.dev/protocol"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 // bufGenYAMLPathValueKeys maps buf.gen.yaml value keys whose values are

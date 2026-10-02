@@ -16,7 +16,7 @@ package buflsp
 
 import (
 	"go.lsp.dev/protocol"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 const bufLockDocsURL = "https://buf.build/docs/configuration/v2/buf-lock/"
