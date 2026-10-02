@@ -32,7 +32,9 @@ fi
 if [ "${CACHED_PROTOC_VERSION}" != "$PROTOC_VERSION" ]; then
   PROTOC_RELEASE_VERSION="${PROTOC_VERSION/-rc/-rc-}"
   PROTOC_URL="https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_RELEASE_VERSION}-win64.zip"
-  curl -sSL -o "${DOWNLOAD_CACHE}/protoc.zip" "${PROTOC_URL}"
+  # Windows curl uses schannel, which fails if the certificate revocation
+  # server is unreachable. Treat revocation checks as best effort.
+  curl -sSL --retry 3 --ssl-revoke-best-effort -o "${DOWNLOAD_CACHE}/protoc.zip" "${PROTOC_URL}"
   7z x -y -o"${DOWNLOAD_CACHE}/protoc" "${DOWNLOAD_CACHE}/protoc.zip"
   mkdir -p "${DOWNLOAD_CACHE}/protoc/lib"
   cp -a "${DOWNLOAD_CACHE}/protoc/include" "${DOWNLOAD_CACHE}/protoc/lib/include"
