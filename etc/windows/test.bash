@@ -4,8 +4,10 @@ set -eo pipefail
 
 # Read versions from make so the makego pins, including any overrides, are the
 # single source of truth. Strip CR in case make emits CRLF on Windows.
+# makego only sets OPEN_CMD on Darwin and Linux but asserts it is set, so
+# provide a no-op to let make evaluate on Windows.
 mk_var() {
-  make -s "print-$1" | tr -d '\r'
+  make -s OPEN_CMD=: "print-$1" | tr -d '\r'
 }
 
 PROTOC_VERSION="$(mk_var PROTOC_VERSION)"
