@@ -2,18 +2,18 @@
 
 set -eo pipefail
 
-# Read versions from makego dependencies so make/go is the single source of
-# truth. Strip CR in case the checkout converted line endings to CRLF.
+# Read versions from make so the makego pins, including any overrides, are the
+# single source of truth. Strip CR in case make emits CRLF on Windows.
 mk_var() {
-  sed -n "s/^$1 ?= //p" "make/go/$2" | tr -d '\r'
+  make -s "print-$1" | tr -d '\r'
 }
 
-PROTOC_VERSION="$(mk_var PROTOC_VERSION dep_protoc.mk)"
-PROTOC_GEN_GO_VERSION="$(mk_var PROTOC_GEN_GO_VERSION dep_protoc_gen_go.mk)"
-CONNECT_VERSION="$(mk_var CONNECT_VERSION dep_protoc_gen_connect_go.mk)"
+PROTOC_VERSION="$(mk_var PROTOC_VERSION)"
+PROTOC_GEN_GO_VERSION="$(mk_var PROTOC_GEN_GO_VERSION)"
+CONNECT_VERSION="$(mk_var CONNECT_VERSION)"
 for var in PROTOC_VERSION PROTOC_GEN_GO_VERSION CONNECT_VERSION; do
   if [ -z "${!var}" ]; then
-    echo "error: could not read ${var} from make/go" >&2
+    echo "error: could not read ${var} from make" >&2
     exit 1
   fi
 done
