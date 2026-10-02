@@ -16,6 +16,7 @@ if [[ "${VERSION}" == v* ]]; then
 fi
 
 make updateversion
+make updatepackagingversion
 make releasechangelog
 
 BRANCH="release/v${VERSION}"
