@@ -2,9 +2,21 @@
 
 set -eo pipefail
 
-PROTOC_VERSION="35.1"
-PROTOC_GEN_GO_VERSION="v1.36.11"
-CONNECT_VERSION="v1.19.2"
+# Read versions from make so the makego pins, including any overrides, are the
+# single source of truth. Strip CR in case make emits CRLF on Windows.
+mk_var() {
+  make -s "print-$1" | tr -d '\r'
+}
+
+PROTOC_VERSION="$(mk_var PROTOC_VERSION)"
+PROTOC_GEN_GO_VERSION="$(mk_var PROTOC_GEN_GO_VERSION)"
+CONNECT_VERSION="$(mk_var CONNECT_VERSION)"
+for var in PROTOC_VERSION PROTOC_GEN_GO_VERSION CONNECT_VERSION; do
+  if [ -z "${!var}" ]; then
+    echo "error: could not read ${var} from make" >&2
+    exit 1
+  fi
+done
 
 # Convert DOWNLOAD_CACHE from d:\path to /d/path
 DOWNLOAD_CACHE="$(echo "/${DOWNLOAD_CACHE}" | sed 's|\\|/|g' | sed 's/://')"
@@ -18,7 +30,9 @@ fi
 if [ "${CACHED_PROTOC_VERSION}" != "$PROTOC_VERSION" ]; then
   PROTOC_RELEASE_VERSION="${PROTOC_VERSION/-rc/-rc-}"
   PROTOC_URL="https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_RELEASE_VERSION}-win64.zip"
-  curl -sSL -o "${DOWNLOAD_CACHE}/protoc.zip" "${PROTOC_URL}"
+  # Windows curl uses schannel, which fails if the certificate revocation
+  # server is unreachable. Treat revocation checks as best effort.
+  curl -sSL --retry 3 --ssl-revoke-best-effort -o "${DOWNLOAD_CACHE}/protoc.zip" "${PROTOC_URL}"
   7z x -y -o"${DOWNLOAD_CACHE}/protoc" "${DOWNLOAD_CACHE}/protoc.zip"
   mkdir -p "${DOWNLOAD_CACHE}/protoc/lib"
   cp -a "${DOWNLOAD_CACHE}/protoc/include" "${DOWNLOAD_CACHE}/protoc/lib/include"
