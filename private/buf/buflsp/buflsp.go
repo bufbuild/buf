@@ -28,6 +28,8 @@ import (
 	"buf.build/go/standard/xlog/xslog"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/wasm"
 	"github.com/bufbuild/protocompile/experimental/incremental"
@@ -45,6 +47,21 @@ type CuratedPluginVersionProvider interface {
 	GetLatestVersion(ctx context.Context, registry, owner, plugin string) (string, error)
 }
 
+// ServeOption is an option for Serve.
+type ServeOption func(*lsp)
+
+// WithConfigOverride sets the buf.yaml file or data used to configure every
+// workspace, in place of any buf.yaml found on disk.
+//
+// When set, workspaces are resolved from the client's workspace root folder
+// containing the file, matching the behavior of the --config flag on other
+// commands run from that folder.
+func WithConfigOverride(configOverride string) ServeOption {
+	return func(lsp *lsp) {
+		lsp.configOverride = configOverride
+	}
+}
+
 // Serve spawns a new LSP server, listening on the given stream.
 //
 // Returns a context for managing the server.
@@ -60,6 +77,7 @@ func Serve(
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	graphProvider bufmodule.GraphProvider,
 	curatedPluginVersionProvider CuratedPluginVersionProvider,
+	options ...ServeOption,
 ) (jsonrpc2.Conn, error) {
 	logger := container.Logger()
 	logger = logger.With(slog.String("buf_version", bufVersion))
@@ -97,6 +115,9 @@ func Serve(
 		moduleKeyProvider:            moduleKeyProvider,
 		graphProvider:                graphProvider,
 		curatedPluginVersionProvider: curatedPluginVersionProvider,
+	}
+	for _, option := range options {
+		option(lsp)
 	}
 	lsp.fileManager = newFileManager(lsp)
 	lsp.workspaceManager = newWorkspaceManager(lsp)
@@ -155,6 +176,9 @@ type lsp struct {
 	graphProvider bufmodule.GraphProvider
 	// curatedPluginVersionProvider checks for the latest version of curated plugins (BSR).
 	curatedPluginVersionProvider CuratedPluginVersionProvider
+	// configOverride is the buf.yaml file or data to use for all workspaces.
+	// If empty, the buf.yaml is discovered from disk.
+	configOverride string
 
 	lock sync.Mutex
 
@@ -180,6 +204,42 @@ func (l *lsp) init(_ context.Context, params *protocol.InitializeParams) error {
 	// goroutine and some channels.
 
 	return nil
+}
+
+// rootDirPathForFile returns the client's root folder that contains fileName.
+//
+// The deepest matching workspace folder is used, falling back to the root URI
+// and then the current working directory. Paths are normalized like file URIs
+// so they share a prefix with fileName.
+func (l *lsp) rootDirPathForFile(fileName string) (string, error) {
+	var rootURIs []protocol.URI
+	if params := l.initParams.Load(); params != nil {
+		for _, workspaceFolder := range params.WorkspaceFolders {
+			rootURIs = append(rootURIs, protocol.URI(workspaceFolder.URI))
+		}
+		if params.RootURI != "" {
+			rootURIs = append(rootURIs, params.RootURI)
+		}
+	}
+	var rootDirPath string
+	for _, rootURI := range rootURIs {
+		dirPath := normalizeURI(rootURI).Filename()
+		if len(dirPath) > len(rootDirPath) && normalpath.EqualsOrContainsPath(
+			normalpath.Normalize(dirPath),
+			normalpath.Normalize(fileName),
+			normalpath.Absolute,
+		) {
+			rootDirPath = dirPath
+		}
+	}
+	if rootDirPath != "" {
+		return rootDirPath, nil
+	}
+	workingDirPath, err := osext.Getwd()
+	if err != nil {
+		return "", err
+	}
+	return FilePathToURI(workingDirPath).Filename(), nil
 }
 
 // newHandler constructs an RPC handler that wraps the default one from jsonrpc2. This allows us
