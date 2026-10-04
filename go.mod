@@ -29,7 +29,7 @@ require (
 	github.com/jdx/go-netrc v1.0.0
 	github.com/jhump/protoreflect/v2 v2.0.0-beta.2
 	github.com/klauspost/compress v1.20.1
-	github.com/klauspost/pgzip v1.2.6
+	github.com/klauspost/pgzip v1.2.7
 	github.com/mattn/go-colorable v0.1.15
 	github.com/moby/moby/api v1.56.0
 	github.com/moby/moby/client v0.6.0
