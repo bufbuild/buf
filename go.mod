@@ -17,7 +17,7 @@ require (
 	buf.build/go/standard v0.1.1-0.20260325175353-2b287e071df5
 	cel.dev/cel-go v0.32.0
 	connectrpc.com/connect v1.21.0
-	connectrpc.com/grpcreflect v1.3.0
+	connectrpc.com/grpcreflect v1.3.1
 	connectrpc.com/otelconnect v0.10.0
 	github.com/bufbuild/protocompile v0.14.2-0.20260917202354-386f9fcfc7b9
 	github.com/bufbuild/protoplugin v0.0.0-20260414125817-25d1d281b46b
