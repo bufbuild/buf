@@ -2,6 +2,9 @@
 # do not change this filename without updating it there as well.
 name: Publish to npm
 on:
+  # Triggers on pull requests to verify packaging-related changes with smoke tests.
+  # Below, we filter to make sure not to run on the release PR itself where it
+  # would fail since the release binaries aren't ready yet.
   pull_request:
     paths:
       - 'packaging/npm/**'
@@ -13,6 +16,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || !startsWith(github.event.pull_request.head.ref, 'release')
     permissions:
       contents: read
     defaults:
