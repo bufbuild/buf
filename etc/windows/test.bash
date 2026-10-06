@@ -49,6 +49,7 @@ go install ./cmd/buf \
   ./cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
   ./cmd/buf/internal/command/generate/internal/protoc-gen-files-to-generate-yaml \
   ./cmd/buf/internal/command/generate/internal/protoc-gen-top-level-type-names-yaml \
+  ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-module-name \
   ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-panic \
   ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-suffix \
   ./private/bufpkg/bufcheck/internal/cmd/buf-plugin-protovalidate-ext \
