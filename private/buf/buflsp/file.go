@@ -1134,7 +1134,7 @@ func (f *file) RunChecks(ctx context.Context) {
 			); err != nil {
 				var fileAnnotationSet bufanalysis.FileAnnotationSet
 				if !errors.As(err, &fileAnnotationSet) {
-					if errors.Is(err, context.Canceled) || ctx.Err() != nil {
+					if errors.Is(err, context.Canceled) {
 						lsp.logger.DebugContext(ctx, "checks cancelled", slog.String("uri", uriFilename), xslog.ErrorAttr(err))
 					} else if errors.Is(err, context.DeadlineExceeded) {
 						lsp.logger.WarnContext(ctx, "checks deadline exceeded", slog.String("uri", uriFilename), xslog.ErrorAttr(err))

@@ -4716,6 +4716,24 @@ fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "
 	)
 }
 
+func TestLintWithPluginsModuleName(t *testing.T) {
+	t.Parallel()
+	// Module names that are valid in buf.yaml but not valid BSR module names
+	// are not sent to plugins.
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+testdata/check_plugins_module_name/invalid/invalid.proto:1:1:<none> (buf-plugin-module-name)
+testdata/check_plugins_module_name/named/named.proto:1:1:buf.build/acme/weather (buf-plugin-module-name)
+testdata/check_plugins_module_name/unnamed/unnamed.proto:1:1:<none> (buf-plugin-module-name)
+		`),
+		"lint",
+		filepath.Join("testdata", "check_plugins_module_name"),
+	)
+}
+
 func TestLintDisabledForModuleInWorkspace(t *testing.T) {
 	t.Parallel()
 	testRunStdout(

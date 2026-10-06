@@ -9,7 +9,7 @@ require (
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.21.0-20260930211409-f406cd0c7485.1
 	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.12-20260930211409-f406cd0c7485.2
 	buf.build/go/app v0.2.1-0.20260928213032-9a091f2dc726
-	buf.build/go/bufplugin v0.10.0
+	buf.build/go/bufplugin v0.11.1
 	buf.build/go/bufprivateusage v0.1.0
 	buf.build/go/protovalidate v1.4.0
 	buf.build/go/protoyaml v0.7.0
@@ -50,7 +50,7 @@ require (
 	golang.org/x/tools v0.51.0
 	google.golang.org/protobuf v1.36.12
 	mvdan.cc/xurls/v2 v2.6.0
-	pluginrpc.com/pluginrpc v0.5.0
+	pluginrpc.com/pluginrpc v0.6.0
 )
 
 require (
