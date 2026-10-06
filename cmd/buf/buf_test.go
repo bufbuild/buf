@@ -4724,11 +4724,9 @@ func TestLintWithPluginsModuleName(t *testing.T) {
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
-		filepath.FromSlash(`
-testdata/check_plugins_module_name/invalid/invalid.proto:1:1:<none> (buf-plugin-module-name)
-testdata/check_plugins_module_name/named/named.proto:1:1:buf.build/acme/weather (buf-plugin-module-name)
-testdata/check_plugins_module_name/unnamed/unnamed.proto:1:1:<none> (buf-plugin-module-name)
-		`),
+		filepath.FromSlash("testdata/check_plugins_module_name/invalid/invalid.proto")+":1:1:<none> (buf-plugin-module-name)\n"+
+			filepath.FromSlash("testdata/check_plugins_module_name/named/named.proto")+":1:1:buf.build/acme/weather (buf-plugin-module-name)\n"+
+			filepath.FromSlash("testdata/check_plugins_module_name/unnamed/unnamed.proto")+":1:1:<none> (buf-plugin-module-name)",
 		"lint",
 		filepath.Join("testdata", "check_plugins_module_name"),
 	)
