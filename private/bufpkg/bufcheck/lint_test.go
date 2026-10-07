@@ -836,12 +836,74 @@ func TestRunProtovalidatePredefinedRules(t *testing.T) {
 		"protovalidate_predefined",
 		"buf.testing/lint/proto",
 		nil,
-		bufanalysistesting.NewFileAnnotation(t, "test.proto", 14, 44, 18, 4, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "test.proto", 43, 5, 43, 57, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "test.proto", 43, 5, 43, 57, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "test.proto", 44, 5, 44, 64, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "test.proto", 60, 5, 60, 43, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "test.proto", 15, 44, 19, 4, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "test.proto", 44, 5, 44, 57, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "test.proto", 44, 5, 44, 57, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "test.proto", 45, 5, 45, 64, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "test.proto", 61, 5, 61, 43, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "test.proto", 72, 45, 75, 4, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "test.proto", 82, 5, 82, 49, "PROTOVALIDATE"),
 	)
+}
+
+func TestRunProtovalidateMessages(t *testing.T) {
+	t.Parallel()
+	err := runLintForTest(t, "protovalidate", "buf.testing/lint/protovalidate", nil)
+	var fileAnnotationSet bufanalysis.FileAnnotationSet
+	require.ErrorAs(t, err, &fileAnnotationSet, "error has unexpected type: %T", err)
+	type annotationKey struct {
+		path      string
+		startLine int
+	}
+	actualMessages := make(map[annotationKey][]string)
+	for _, fileAnnotation := range fileAnnotationSet.FileAnnotations() {
+		key := annotationKey{
+			path:      fileAnnotation.FileInfo().Path(),
+			startLine: fileAnnotation.StartLine(),
+		}
+		actualMessages[key] = append(actualMessages[key], fileAnnotation.Message())
+	}
+	testCases := []struct {
+		path            string
+		startLine       int
+		expectedMessage string
+	}{
+		{
+			path:            "repeated.proto",
+			startLine:       25,
+			expectedMessage: `Field "invalid_count_range" has value 2 for (buf.validate.field).repeated.min_items, which must be lower than value 1 for (buf.validate.field).repeated.max_items.`,
+		},
+		{
+			path:            "repeated.proto",
+			startLine:       27,
+			expectedMessage: `Field "invalid_count_range" has value 1 for (buf.validate.field).repeated.max_items, which must be higher than value 2 for (buf.validate.field).repeated.min_items.`,
+		},
+		{
+			path:            "map.proto",
+			startLine:       27,
+			expectedMessage: `Field "invalid_range" has value 2 for (buf.validate.field).map.min_pairs, which must be lower than value 1 for (buf.validate.field).map.max_pairs.`,
+		},
+		{
+			path:            "map.proto",
+			startLine:       29,
+			expectedMessage: `Field "invalid_range" has value 1 for (buf.validate.field).map.max_pairs, which must be higher than value 2 for (buf.validate.field).map.min_pairs.`,
+		},
+		{
+			path:            "field.proto",
+			startLine:       23,
+			expectedMessage: `Field "optional_zero_ignored_field" has (buf.validate.field).ignore=IGNORE_IF_ZERO_VALUE and tracks presence. This is the same as the default and the ignore option can be removed.`,
+		},
+	}
+	for _, testCase := range testCases {
+		assert.Contains(
+			t,
+			actualMessages[annotationKey{path: testCase.path, startLine: testCase.startLine}],
+			testCase.expectedMessage,
+			"%s:%d",
+			testCase.path,
+			testCase.startLine,
+		)
+	}
 }
 
 func TestRunRPCNoStreaming(t *testing.T) {
@@ -1575,6 +1637,27 @@ func testLintWithOptions(
 	imageModifier func(bufimage.Image) bufimage.Image,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
+	err := runLintForTest(t, relDirPath, moduleFullNameString, imageModifier)
+	if len(expectedFileAnnotations) == 0 {
+		assert.NoError(t, err)
+	} else {
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		require.ErrorAs(t, err, &fileAnnotationSet, "error has unexpected type: %T", err)
+		bufanalysistesting.AssertFileAnnotationsEqual(
+			t,
+			expectedFileAnnotations,
+			fileAnnotationSet.FileAnnotations(),
+		)
+	}
+}
+
+func runLintForTest(
+	t *testing.T,
+	relDirPath string,
+	// only set if in workspace
+	moduleFullNameString string,
+	imageModifier func(bufimage.Image) bufimage.Image,
+) error {
 	ctx, cancel := context.WithTimeout(t.Context(), 60*time.Second) // Increased timeout for Wasm runtime
 	defer cancel()
 
@@ -1648,22 +1731,11 @@ func testLintWithOptions(
 		}),
 	)
 	require.NoError(t, err)
-	err = client.Lint(
+	return client.Lint(
 		ctx,
 		lintConfig,
 		image,
 		bufcheck.WithPluginConfigs(workspace.PluginConfigs()...),
 		bufcheck.WithPolicyConfigs(workspace.PolicyConfigs()...),
 	)
-	if len(expectedFileAnnotations) == 0 {
-		assert.NoError(t, err)
-	} else {
-		var fileAnnotationSet bufanalysis.FileAnnotationSet
-		require.ErrorAs(t, err, &fileAnnotationSet, "error has unexpected type: %T", err)
-		bufanalysistesting.AssertFileAnnotationsEqual(
-			t,
-			expectedFileAnnotations,
-			fileAnnotationSet.FileAnnotations(),
-		)
-	}
 }

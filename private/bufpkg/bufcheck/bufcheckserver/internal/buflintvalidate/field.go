@@ -339,7 +339,7 @@ func checkFieldFlags(
 	if fieldRules.GetIgnore() == validate.Ignore_IGNORE_IF_ZERO_VALUE && fieldDescriptor.HasPresence() && !fieldDescriptor.IsExtension() {
 		adder.addForPathf(
 			[]int32{ignoreFieldNumber},
-			"Field %q has %s=%v and tracks presence. This is the same the default and the ignore option can be removed.",
+			"Field %q has %s=%v and tracks presence. This is the same as the default and the ignore option can be removed.",
 			adder.fieldName(),
 			adder.getFieldRuleName(ignoreFieldNumber),
 			validate.Ignore_IGNORE_IF_ZERO_VALUE,
@@ -436,7 +436,7 @@ func checkRepeatedRules(
 	if repeatedRules.MinItems != nil && repeatedRules.MaxItems != nil && *repeatedRules.MinItems > *repeatedRules.MaxItems {
 		baseAdder.addForPathf(
 			[]int32{repeatedRulesFieldNumber, minItemsFieldNumberInRepeatedFieldRules},
-			"Field %q has value %d for %s, which must be higher than value %d for %s.",
+			"Field %q has value %d for %s, which must be lower than value %d for %s.",
 			baseAdder.fieldName(),
 			*repeatedRules.MinItems,
 			baseAdder.getFieldRuleName(repeatedRulesFieldNumber, minItemsFieldNumberInRepeatedFieldRules),
@@ -445,7 +445,7 @@ func checkRepeatedRules(
 		)
 		baseAdder.addForPathf(
 			[]int32{repeatedRulesFieldNumber, maxItemsFieldNumberInRepeatedFieldRules},
-			"Field %q has value %d for %s, which must be lower than value %d for %s.",
+			"Field %q has value %d for %s, which must be higher than value %d for %s.",
 			baseAdder.fieldName(),
 			*repeatedRules.MaxItems,
 			baseAdder.getFieldRuleName(repeatedRulesFieldNumber, maxItemsFieldNumberInRepeatedFieldRules),
@@ -494,7 +494,7 @@ func checkMapRules(
 		)
 		baseAdder.addForPathf(
 			[]int32{mapRulesFieldNumber, maxPairsFieldNumberInMapRules},
-			"Field %q has value %d for %s, which is lower than value %d for %s.",
+			"Field %q has value %d for %s, which must be higher than value %d for %s.",
 			baseAdder.fieldName(),
 			*mapRules.MaxPairs,
 			baseAdder.getFieldRuleName(mapRulesFieldNumber, maxPairsFieldNumberInMapRules),
