@@ -20,7 +20,6 @@ import (
 
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapipolicy"
@@ -118,14 +117,14 @@ func (p *policyDataProvider) getIndexedPolicyDatasForRegistryAndIndexedPolicyKey
 
 	policyResponse, err := p.clientProvider.V1Beta1DownloadServiceClient(registry).Download(
 		ctx,
-		connect.NewRequest(&policyv1beta1.DownloadRequest{
+		&policyv1beta1.DownloadRequest{
 			Values: values,
-		}),
+		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	policyContents := policyResponse.Msg.Contents
+	policyContents := policyResponse.Contents
 	if len(policyContents) != len(indexedPolicyKeys) {
 		return nil, syserror.New("did not get the expected number of policy datas")
 	}

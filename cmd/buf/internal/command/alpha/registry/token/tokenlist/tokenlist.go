@@ -20,7 +20,6 @@ import (
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
@@ -117,11 +116,11 @@ func run(
 	service := connectclient.Make(clientConfig, registryHostname, registryv1alpha1connect.NewTokenServiceClient)
 	resp, err := service.ListTokens(
 		ctx,
-		connect.NewRequest(registryv1alpha1.ListTokensRequest_builder{
+		registryv1alpha1.ListTokensRequest_builder{
 			PageSize:  flags.PageSize,
 			PageToken: flags.PageToken,
 			Reverse:   flags.Reverse,
-		}.Build()),
+		}.Build(),
 	)
 	if err != nil {
 		return err
@@ -132,5 +131,5 @@ func run(
 	}
 	// TODO: flag docs say "next_token" field will be present in the output,
 	//  for paging through results but we are actually ignoring that field now.
-	return printer.PrintTokens(ctx, resp.Msg.GetTokens()...)
+	return printer.PrintTokens(ctx, resp.GetTokens()...)
 }

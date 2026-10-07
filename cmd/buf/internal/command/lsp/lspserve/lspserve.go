@@ -28,7 +28,6 @@ import (
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"buf.build/go/standard/xio"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
@@ -187,19 +186,19 @@ type lspCuratedPluginProvider struct {
 
 func (p *lspCuratedPluginProvider) GetLatestVersion(ctx context.Context, registry, owner, plugin string) (string, error) {
 	client := connectclient.Make(p.clientConfig, registry, registryv1alpha1connect.NewPluginCurationServiceClient)
-	resp, err := client.GetLatestCuratedPlugin(ctx, connect.NewRequest(
+	resp, err := client.GetLatestCuratedPlugin(ctx,
 		registryv1alpha1.GetLatestCuratedPluginRequest_builder{
 			Owner: owner,
 			Name:  plugin,
 		}.Build(),
-	))
+	)
 	if err != nil {
 		return "", err
 	}
-	if !resp.Msg.HasPlugin() {
+	if !resp.HasPlugin() {
 		return "", nil
 	}
-	return resp.Msg.GetPlugin().GetVersion(), nil
+	return resp.GetPlugin().GetVersion(), nil
 }
 
 // dial opens a connection to the LSP client.

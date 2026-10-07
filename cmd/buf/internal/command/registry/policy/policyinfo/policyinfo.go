@@ -21,7 +21,7 @@ import (
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -93,7 +93,7 @@ func run(
 	policieserviceClient := bufregistryapipolicy.NewClientProvider(clientConfig).
 		V1Beta1PolicyServiceClient(policyFullName.Registry())
 
-	policiesResponse, err := policieserviceClient.GetPolicies(ctx, connect.NewRequest(
+	policiesResponse, err := policieserviceClient.GetPolicies(ctx,
 		&policyv1beta1.GetPoliciesRequest{
 			PolicyRefs: []*policyv1beta1.PolicyRef{
 				{
@@ -106,14 +106,14 @@ func run(
 				},
 			},
 		},
-	))
+	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewPolicyNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	policies := policiesResponse.Msg.Policies
+	policies := policiesResponse.Policies
 	if len(policies) != 1 {
 		return syserror.Newf("unexpected number of policies returned from server: %d", len(policies))
 	}
