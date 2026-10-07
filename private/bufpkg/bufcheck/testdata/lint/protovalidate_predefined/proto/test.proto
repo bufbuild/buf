@@ -3,6 +3,7 @@ syntax = "proto2";
 package test;
 
 import "buf/validate/validate.proto";
+import "google/protobuf/field_mask.proto";
 import "import.proto";
 
 extend buf.validate.StringRules {
@@ -58,5 +59,26 @@ message TestInt32Rules {
     (buf.validate.field).int32.(custom.abs_not_in) = -2,
     (buf.validate.field).int32.example = 3,
     (buf.validate.field).int32.example = 2
+  ];
+}
+
+extend buf.validate.FieldMaskRules {
+  optional bool non_empty = 1803 [(buf.validate.predefined).cel = {
+    id: "field_mask.non_empty"
+    expression: "!rule || size(this.paths) > 0"
+    message: "must contain at least one path"
+  }];
+
+  optional bool bad_field_mask_rule = 1903 [(buf.validate.predefined).cel = {
+    id: "field_mask.bad_rule"
+    expression: "this.paths"
+  }];
+}
+
+message TestFieldMaskRules {
+  optional google.protobuf.FieldMask test = 1 [
+    (buf.validate.field).field_mask.(non_empty) = true,
+    (buf.validate.field).field_mask.example = {paths: ["a"]},
+    (buf.validate.field).field_mask.example = {}
   ];
 }
