@@ -15,7 +15,7 @@
 package bufregistryapiowner
 
 import (
-	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/owner/v1/ownerv1connect"
+	"buf.build/gen/go/bufbuild/registry/connectrpc/go/v2/buf/registry/owner/v1/ownerv1connect"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 )
 

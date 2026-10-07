@@ -19,49 +19,82 @@
 package registryv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// DocServiceName is the fully-qualified name of the DocService service.
 	DocServiceName = "buf.alpha.registry.v1alpha1.DocService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// DocServiceGetSourceDirectoryInfoProcedure is the fully-qualified name of the DocService's
+	// DocServiceGetSourceDirectoryInfoProcedure is the procedure name of the DocService's
 	// GetSourceDirectoryInfo RPC.
 	DocServiceGetSourceDirectoryInfoProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetSourceDirectoryInfo"
-	// DocServiceGetSourceFileProcedure is the fully-qualified name of the DocService's GetSourceFile
-	// RPC.
+	// DocServiceGetSourceFileProcedure is the procedure name of the DocService's GetSourceFile RPC.
 	DocServiceGetSourceFileProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetSourceFile"
-	// DocServiceGetModulePackagesProcedure is the fully-qualified name of the DocService's
-	// GetModulePackages RPC.
+	// DocServiceGetModulePackagesProcedure is the procedure name of the DocService's GetModulePackages
+	// RPC.
 	DocServiceGetModulePackagesProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetModulePackages"
-	// DocServiceGetModuleDocumentationProcedure is the fully-qualified name of the DocService's
+	// DocServiceGetModuleDocumentationProcedure is the procedure name of the DocService's
 	// GetModuleDocumentation RPC.
 	DocServiceGetModuleDocumentationProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetModuleDocumentation"
-	// DocServiceGetPackageDocumentationProcedure is the fully-qualified name of the DocService's
+	// DocServiceGetPackageDocumentationProcedure is the procedure name of the DocService's
 	// GetPackageDocumentation RPC.
 	DocServiceGetPackageDocumentationProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetPackageDocumentation"
+)
+
+var (
+	docServiceGetSourceDirectoryInfoSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_doc_proto.Services().ByName("DocService").Methods().ByName("GetSourceDirectoryInfo"),
+			Procedure:        DocServiceGetSourceDirectoryInfoProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	docServiceGetSourceFileSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_doc_proto.Services().ByName("DocService").Methods().ByName("GetSourceFile"),
+			Procedure:        DocServiceGetSourceFileProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	docServiceGetModulePackagesSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_doc_proto.Services().ByName("DocService").Methods().ByName("GetModulePackages"),
+			Procedure:        DocServiceGetModulePackagesProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	docServiceGetModuleDocumentationSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_doc_proto.Services().ByName("DocService").Methods().ByName("GetModuleDocumentation"),
+			Procedure:        DocServiceGetModuleDocumentationProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	docServiceGetPackageDocumentationSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_doc_proto.Services().ByName("DocService").Methods().ByName("GetPackageDocumentation"),
+			Procedure:        DocServiceGetPackageDocumentationProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
 )
 
 // DocServiceClient is a client for the buf.alpha.registry.v1alpha1.DocService service.
@@ -71,102 +104,25 @@ type DocServiceClient interface {
 	//
 	// The purpose of this is to get a representation of the file tree for a given
 	// module to enable exploring the module by navigating through its contents.
-	GetSourceDirectoryInfo(context.Context, *connect.Request[v1alpha1.GetSourceDirectoryInfoRequest]) (*connect.Response[v1alpha1.GetSourceDirectoryInfoResponse], error)
+	GetSourceDirectoryInfo(context.Context, *v1alpha1.GetSourceDirectoryInfoRequest) (*v1alpha1.GetSourceDirectoryInfoResponse, error)
 	// GetSourceFile retrieves the source contents for the given owner, repository,
 	// reference, and path.
-	GetSourceFile(context.Context, *connect.Request[v1alpha1.GetSourceFileRequest]) (*connect.Response[v1alpha1.GetSourceFileResponse], error)
+	GetSourceFile(context.Context, *v1alpha1.GetSourceFileRequest) (*v1alpha1.GetSourceFileResponse, error)
 	// GetModulePackages retrieves the list of packages for the module based on the given
 	// owner, repository, and reference.
-	GetModulePackages(context.Context, *connect.Request[v1alpha1.GetModulePackagesRequest]) (*connect.Response[v1alpha1.GetModulePackagesResponse], error)
+	GetModulePackages(context.Context, *v1alpha1.GetModulePackagesRequest) (*v1alpha1.GetModulePackagesResponse, error)
 	// GetModuleDocumentation retrieves the documentations including buf.md and LICENSE files
 	// for module based on the given owner, repository, and reference.
-	GetModuleDocumentation(context.Context, *connect.Request[v1alpha1.GetModuleDocumentationRequest]) (*connect.Response[v1alpha1.GetModuleDocumentationResponse], error)
+	GetModuleDocumentation(context.Context, *v1alpha1.GetModuleDocumentationRequest) (*v1alpha1.GetModuleDocumentationResponse, error)
 	// GetPackageDocumentation retrieves a a slice of documentation structures
 	// for the given owner, repository, reference, and package name.
-	GetPackageDocumentation(context.Context, *connect.Request[v1alpha1.GetPackageDocumentationRequest]) (*connect.Response[v1alpha1.GetPackageDocumentationResponse], error)
+	GetPackageDocumentation(context.Context, *v1alpha1.GetPackageDocumentationRequest) (*v1alpha1.GetPackageDocumentationResponse, error)
 }
 
 // NewDocServiceClient constructs a client for the buf.alpha.registry.v1alpha1.DocService service.
-// By default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped
-// responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
-// connect.WithGRPC() or connect.WithGRPCWeb() options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewDocServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) DocServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	docServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_doc_proto.Services().ByName("DocService").Methods()
-	return &docServiceClient{
-		getSourceDirectoryInfo: connect.NewClient[v1alpha1.GetSourceDirectoryInfoRequest, v1alpha1.GetSourceDirectoryInfoResponse](
-			httpClient,
-			baseURL+DocServiceGetSourceDirectoryInfoProcedure,
-			connect.WithSchema(docServiceMethods.ByName("GetSourceDirectoryInfo")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getSourceFile: connect.NewClient[v1alpha1.GetSourceFileRequest, v1alpha1.GetSourceFileResponse](
-			httpClient,
-			baseURL+DocServiceGetSourceFileProcedure,
-			connect.WithSchema(docServiceMethods.ByName("GetSourceFile")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getModulePackages: connect.NewClient[v1alpha1.GetModulePackagesRequest, v1alpha1.GetModulePackagesResponse](
-			httpClient,
-			baseURL+DocServiceGetModulePackagesProcedure,
-			connect.WithSchema(docServiceMethods.ByName("GetModulePackages")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getModuleDocumentation: connect.NewClient[v1alpha1.GetModuleDocumentationRequest, v1alpha1.GetModuleDocumentationResponse](
-			httpClient,
-			baseURL+DocServiceGetModuleDocumentationProcedure,
-			connect.WithSchema(docServiceMethods.ByName("GetModuleDocumentation")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getPackageDocumentation: connect.NewClient[v1alpha1.GetPackageDocumentationRequest, v1alpha1.GetPackageDocumentationResponse](
-			httpClient,
-			baseURL+DocServiceGetPackageDocumentationProcedure,
-			connect.WithSchema(docServiceMethods.ByName("GetPackageDocumentation")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// docServiceClient implements DocServiceClient.
-type docServiceClient struct {
-	getSourceDirectoryInfo  *connect.Client[v1alpha1.GetSourceDirectoryInfoRequest, v1alpha1.GetSourceDirectoryInfoResponse]
-	getSourceFile           *connect.Client[v1alpha1.GetSourceFileRequest, v1alpha1.GetSourceFileResponse]
-	getModulePackages       *connect.Client[v1alpha1.GetModulePackagesRequest, v1alpha1.GetModulePackagesResponse]
-	getModuleDocumentation  *connect.Client[v1alpha1.GetModuleDocumentationRequest, v1alpha1.GetModuleDocumentationResponse]
-	getPackageDocumentation *connect.Client[v1alpha1.GetPackageDocumentationRequest, v1alpha1.GetPackageDocumentationResponse]
-}
-
-// GetSourceDirectoryInfo calls buf.alpha.registry.v1alpha1.DocService.GetSourceDirectoryInfo.
-func (c *docServiceClient) GetSourceDirectoryInfo(ctx context.Context, req *connect.Request[v1alpha1.GetSourceDirectoryInfoRequest]) (*connect.Response[v1alpha1.GetSourceDirectoryInfoResponse], error) {
-	return c.getSourceDirectoryInfo.CallUnary(ctx, req)
-}
-
-// GetSourceFile calls buf.alpha.registry.v1alpha1.DocService.GetSourceFile.
-func (c *docServiceClient) GetSourceFile(ctx context.Context, req *connect.Request[v1alpha1.GetSourceFileRequest]) (*connect.Response[v1alpha1.GetSourceFileResponse], error) {
-	return c.getSourceFile.CallUnary(ctx, req)
-}
-
-// GetModulePackages calls buf.alpha.registry.v1alpha1.DocService.GetModulePackages.
-func (c *docServiceClient) GetModulePackages(ctx context.Context, req *connect.Request[v1alpha1.GetModulePackagesRequest]) (*connect.Response[v1alpha1.GetModulePackagesResponse], error) {
-	return c.getModulePackages.CallUnary(ctx, req)
-}
-
-// GetModuleDocumentation calls buf.alpha.registry.v1alpha1.DocService.GetModuleDocumentation.
-func (c *docServiceClient) GetModuleDocumentation(ctx context.Context, req *connect.Request[v1alpha1.GetModuleDocumentationRequest]) (*connect.Response[v1alpha1.GetModuleDocumentationResponse], error) {
-	return c.getModuleDocumentation.CallUnary(ctx, req)
-}
-
-// GetPackageDocumentation calls buf.alpha.registry.v1alpha1.DocService.GetPackageDocumentation.
-func (c *docServiceClient) GetPackageDocumentation(ctx context.Context, req *connect.Request[v1alpha1.GetPackageDocumentationRequest]) (*connect.Response[v1alpha1.GetPackageDocumentationResponse], error) {
-	return c.getPackageDocumentation.CallUnary(ctx, req)
+// Multiple service clients may share a single connect.Client.
+func NewDocServiceClient(client *connect.Client) DocServiceClient {
+	return &docServiceClient{client: client}
 }
 
 // DocServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.DocService service.
@@ -176,100 +132,159 @@ type DocServiceHandler interface {
 	//
 	// The purpose of this is to get a representation of the file tree for a given
 	// module to enable exploring the module by navigating through its contents.
-	GetSourceDirectoryInfo(context.Context, *connect.Request[v1alpha1.GetSourceDirectoryInfoRequest]) (*connect.Response[v1alpha1.GetSourceDirectoryInfoResponse], error)
+	GetSourceDirectoryInfo(context.Context, *v1alpha1.GetSourceDirectoryInfoRequest) (*v1alpha1.GetSourceDirectoryInfoResponse, error)
 	// GetSourceFile retrieves the source contents for the given owner, repository,
 	// reference, and path.
-	GetSourceFile(context.Context, *connect.Request[v1alpha1.GetSourceFileRequest]) (*connect.Response[v1alpha1.GetSourceFileResponse], error)
+	GetSourceFile(context.Context, *v1alpha1.GetSourceFileRequest) (*v1alpha1.GetSourceFileResponse, error)
 	// GetModulePackages retrieves the list of packages for the module based on the given
 	// owner, repository, and reference.
-	GetModulePackages(context.Context, *connect.Request[v1alpha1.GetModulePackagesRequest]) (*connect.Response[v1alpha1.GetModulePackagesResponse], error)
+	GetModulePackages(context.Context, *v1alpha1.GetModulePackagesRequest) (*v1alpha1.GetModulePackagesResponse, error)
 	// GetModuleDocumentation retrieves the documentations including buf.md and LICENSE files
 	// for module based on the given owner, repository, and reference.
-	GetModuleDocumentation(context.Context, *connect.Request[v1alpha1.GetModuleDocumentationRequest]) (*connect.Response[v1alpha1.GetModuleDocumentationResponse], error)
+	GetModuleDocumentation(context.Context, *v1alpha1.GetModuleDocumentationRequest) (*v1alpha1.GetModuleDocumentationResponse, error)
 	// GetPackageDocumentation retrieves a a slice of documentation structures
 	// for the given owner, repository, reference, and package name.
-	GetPackageDocumentation(context.Context, *connect.Request[v1alpha1.GetPackageDocumentationRequest]) (*connect.Response[v1alpha1.GetPackageDocumentationResponse], error)
+	GetPackageDocumentation(context.Context, *v1alpha1.GetPackageDocumentationRequest) (*v1alpha1.GetPackageDocumentationResponse, error)
 }
 
-// NewDocServiceHandler builds an HTTP handler from the service implementation. It returns the path
-// on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewDocServiceHandler(svc DocServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	docServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_doc_proto.Services().ByName("DocService").Methods()
-	docServiceGetSourceDirectoryInfoHandler := connect.NewUnaryHandler(
-		DocServiceGetSourceDirectoryInfoProcedure,
-		svc.GetSourceDirectoryInfo,
-		connect.WithSchema(docServiceMethods.ByName("GetSourceDirectoryInfo")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
+// RegisterDocServiceHandler registers svc as the buf.alpha.registry.v1alpha1.DocService
+// implementation on server.
+func RegisterDocServiceHandler(server *connect.Server, svc DocServiceHandler) {
+	adapter := docServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: docServiceGetSourceDirectoryInfoSpec(), Handler: adapter.getSourceDirectoryInfo},
+		connect.Method{Spec: docServiceGetSourceFileSpec(), Handler: adapter.getSourceFile},
+		connect.Method{Spec: docServiceGetModulePackagesSpec(), Handler: adapter.getModulePackages},
+		connect.Method{Spec: docServiceGetModuleDocumentationSpec(), Handler: adapter.getModuleDocumentation},
+		connect.Method{Spec: docServiceGetPackageDocumentationSpec(), Handler: adapter.getPackageDocumentation},
 	)
-	docServiceGetSourceFileHandler := connect.NewUnaryHandler(
-		DocServiceGetSourceFileProcedure,
-		svc.GetSourceFile,
-		connect.WithSchema(docServiceMethods.ByName("GetSourceFile")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	docServiceGetModulePackagesHandler := connect.NewUnaryHandler(
-		DocServiceGetModulePackagesProcedure,
-		svc.GetModulePackages,
-		connect.WithSchema(docServiceMethods.ByName("GetModulePackages")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	docServiceGetModuleDocumentationHandler := connect.NewUnaryHandler(
-		DocServiceGetModuleDocumentationProcedure,
-		svc.GetModuleDocumentation,
-		connect.WithSchema(docServiceMethods.ByName("GetModuleDocumentation")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	docServiceGetPackageDocumentationHandler := connect.NewUnaryHandler(
-		DocServiceGetPackageDocumentationProcedure,
-		svc.GetPackageDocumentation,
-		connect.WithSchema(docServiceMethods.ByName("GetPackageDocumentation")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	return "/buf.alpha.registry.v1alpha1.DocService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case DocServiceGetSourceDirectoryInfoProcedure:
-			docServiceGetSourceDirectoryInfoHandler.ServeHTTP(w, r)
-		case DocServiceGetSourceFileProcedure:
-			docServiceGetSourceFileHandler.ServeHTTP(w, r)
-		case DocServiceGetModulePackagesProcedure:
-			docServiceGetModulePackagesHandler.ServeHTTP(w, r)
-		case DocServiceGetModuleDocumentationProcedure:
-			docServiceGetModuleDocumentationHandler.ServeHTTP(w, r)
-		case DocServiceGetPackageDocumentationProcedure:
-			docServiceGetPackageDocumentationHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedDocServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedDocServiceHandler struct{}
 
-func (UnimplementedDocServiceHandler) GetSourceDirectoryInfo(context.Context, *connect.Request[v1alpha1.GetSourceDirectoryInfoRequest]) (*connect.Response[v1alpha1.GetSourceDirectoryInfoResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DocService.GetSourceDirectoryInfo is not implemented"))
+func (UnimplementedDocServiceHandler) GetSourceDirectoryInfo(context.Context, *v1alpha1.GetSourceDirectoryInfoRequest) (*v1alpha1.GetSourceDirectoryInfoResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.DocService.GetSourceDirectoryInfo is not implemented")
 }
 
-func (UnimplementedDocServiceHandler) GetSourceFile(context.Context, *connect.Request[v1alpha1.GetSourceFileRequest]) (*connect.Response[v1alpha1.GetSourceFileResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DocService.GetSourceFile is not implemented"))
+func (UnimplementedDocServiceHandler) GetSourceFile(context.Context, *v1alpha1.GetSourceFileRequest) (*v1alpha1.GetSourceFileResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.DocService.GetSourceFile is not implemented")
 }
 
-func (UnimplementedDocServiceHandler) GetModulePackages(context.Context, *connect.Request[v1alpha1.GetModulePackagesRequest]) (*connect.Response[v1alpha1.GetModulePackagesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DocService.GetModulePackages is not implemented"))
+func (UnimplementedDocServiceHandler) GetModulePackages(context.Context, *v1alpha1.GetModulePackagesRequest) (*v1alpha1.GetModulePackagesResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.DocService.GetModulePackages is not implemented")
 }
 
-func (UnimplementedDocServiceHandler) GetModuleDocumentation(context.Context, *connect.Request[v1alpha1.GetModuleDocumentationRequest]) (*connect.Response[v1alpha1.GetModuleDocumentationResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DocService.GetModuleDocumentation is not implemented"))
+func (UnimplementedDocServiceHandler) GetModuleDocumentation(context.Context, *v1alpha1.GetModuleDocumentationRequest) (*v1alpha1.GetModuleDocumentationResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.DocService.GetModuleDocumentation is not implemented")
 }
 
-func (UnimplementedDocServiceHandler) GetPackageDocumentation(context.Context, *connect.Request[v1alpha1.GetPackageDocumentationRequest]) (*connect.Response[v1alpha1.GetPackageDocumentationResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DocService.GetPackageDocumentation is not implemented"))
+func (UnimplementedDocServiceHandler) GetPackageDocumentation(context.Context, *v1alpha1.GetPackageDocumentationRequest) (*v1alpha1.GetPackageDocumentationResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.DocService.GetPackageDocumentation is not implemented")
+}
+
+type docServiceClient struct {
+	client *connect.Client
+}
+
+func (c *docServiceClient) GetSourceDirectoryInfo(ctx context.Context, req *v1alpha1.GetSourceDirectoryInfoRequest) (*v1alpha1.GetSourceDirectoryInfoResponse, error) {
+	var res v1alpha1.GetSourceDirectoryInfoResponse
+	if err := c.client.CallUnary(ctx, docServiceGetSourceDirectoryInfoSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *docServiceClient) GetSourceFile(ctx context.Context, req *v1alpha1.GetSourceFileRequest) (*v1alpha1.GetSourceFileResponse, error) {
+	var res v1alpha1.GetSourceFileResponse
+	if err := c.client.CallUnary(ctx, docServiceGetSourceFileSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *docServiceClient) GetModulePackages(ctx context.Context, req *v1alpha1.GetModulePackagesRequest) (*v1alpha1.GetModulePackagesResponse, error) {
+	var res v1alpha1.GetModulePackagesResponse
+	if err := c.client.CallUnary(ctx, docServiceGetModulePackagesSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *docServiceClient) GetModuleDocumentation(ctx context.Context, req *v1alpha1.GetModuleDocumentationRequest) (*v1alpha1.GetModuleDocumentationResponse, error) {
+	var res v1alpha1.GetModuleDocumentationResponse
+	if err := c.client.CallUnary(ctx, docServiceGetModuleDocumentationSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *docServiceClient) GetPackageDocumentation(ctx context.Context, req *v1alpha1.GetPackageDocumentationRequest) (*v1alpha1.GetPackageDocumentationResponse, error) {
+	var res v1alpha1.GetPackageDocumentationResponse
+	if err := c.client.CallUnary(ctx, docServiceGetPackageDocumentationSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type docServiceHandler struct{ svc DocServiceHandler }
+
+func (h docServiceHandler) getSourceDirectoryInfo(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetSourceDirectoryInfoRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetSourceDirectoryInfo(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h docServiceHandler) getSourceFile(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetSourceFileRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetSourceFile(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h docServiceHandler) getModulePackages(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetModulePackagesRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetModulePackages(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h docServiceHandler) getModuleDocumentation(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetModuleDocumentationRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetModuleDocumentation(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h docServiceHandler) getPackageDocumentation(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetPackageDocumentationRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetPackageDocumentation(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

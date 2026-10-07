@@ -19,110 +19,98 @@
 package registryv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// ImageServiceName is the fully-qualified name of the ImageService service.
 	ImageServiceName = "buf.alpha.registry.v1alpha1.ImageService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// ImageServiceGetImageProcedure is the fully-qualified name of the ImageService's GetImage RPC.
+	// ImageServiceGetImageProcedure is the procedure name of the ImageService's GetImage RPC.
 	ImageServiceGetImageProcedure = "/buf.alpha.registry.v1alpha1.ImageService/GetImage"
+)
+
+var (
+	imageServiceGetImageSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_image_proto.Services().ByName("ImageService").Methods().ByName("GetImage"),
+			Procedure:        ImageServiceGetImageProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
 )
 
 // ImageServiceClient is a client for the buf.alpha.registry.v1alpha1.ImageService service.
 type ImageServiceClient interface {
 	// GetImage serves a compiled image for the local module. It automatically
 	// downloads dependencies if necessary.
-	GetImage(context.Context, *connect.Request[v1alpha1.GetImageRequest]) (*connect.Response[v1alpha1.GetImageResponse], error)
+	GetImage(context.Context, *v1alpha1.GetImageRequest) (*v1alpha1.GetImageResponse, error)
 }
 
 // NewImageServiceClient constructs a client for the buf.alpha.registry.v1alpha1.ImageService
-// service. By default, it uses the Connect protocol with the binary Protobuf Codec, asks for
-// gzipped responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply
-// the connect.WithGRPC() or connect.WithGRPCWeb() options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewImageServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ImageServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	imageServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_image_proto.Services().ByName("ImageService").Methods()
-	return &imageServiceClient{
-		getImage: connect.NewClient[v1alpha1.GetImageRequest, v1alpha1.GetImageResponse](
-			httpClient,
-			baseURL+ImageServiceGetImageProcedure,
-			connect.WithSchema(imageServiceMethods.ByName("GetImage")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// imageServiceClient implements ImageServiceClient.
-type imageServiceClient struct {
-	getImage *connect.Client[v1alpha1.GetImageRequest, v1alpha1.GetImageResponse]
-}
-
-// GetImage calls buf.alpha.registry.v1alpha1.ImageService.GetImage.
-func (c *imageServiceClient) GetImage(ctx context.Context, req *connect.Request[v1alpha1.GetImageRequest]) (*connect.Response[v1alpha1.GetImageResponse], error) {
-	return c.getImage.CallUnary(ctx, req)
+// service. Multiple service clients may share a single connect.Client.
+func NewImageServiceClient(client *connect.Client) ImageServiceClient {
+	return &imageServiceClient{client: client}
 }
 
 // ImageServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.ImageService service.
 type ImageServiceHandler interface {
 	// GetImage serves a compiled image for the local module. It automatically
 	// downloads dependencies if necessary.
-	GetImage(context.Context, *connect.Request[v1alpha1.GetImageRequest]) (*connect.Response[v1alpha1.GetImageResponse], error)
+	GetImage(context.Context, *v1alpha1.GetImageRequest) (*v1alpha1.GetImageResponse, error)
 }
 
-// NewImageServiceHandler builds an HTTP handler from the service implementation. It returns the
-// path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewImageServiceHandler(svc ImageServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	imageServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_image_proto.Services().ByName("ImageService").Methods()
-	imageServiceGetImageHandler := connect.NewUnaryHandler(
-		ImageServiceGetImageProcedure,
-		svc.GetImage,
-		connect.WithSchema(imageServiceMethods.ByName("GetImage")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
+// RegisterImageServiceHandler registers svc as the buf.alpha.registry.v1alpha1.ImageService
+// implementation on server.
+func RegisterImageServiceHandler(server *connect.Server, svc ImageServiceHandler) {
+	adapter := imageServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: imageServiceGetImageSpec(), Handler: adapter.getImage},
 	)
-	return "/buf.alpha.registry.v1alpha1.ImageService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case ImageServiceGetImageProcedure:
-			imageServiceGetImageHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedImageServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedImageServiceHandler struct{}
 
-func (UnimplementedImageServiceHandler) GetImage(context.Context, *connect.Request[v1alpha1.GetImageRequest]) (*connect.Response[v1alpha1.GetImageResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ImageService.GetImage is not implemented"))
+func (UnimplementedImageServiceHandler) GetImage(context.Context, *v1alpha1.GetImageRequest) (*v1alpha1.GetImageResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.ImageService.GetImage is not implemented")
+}
+
+type imageServiceClient struct {
+	client *connect.Client
+}
+
+func (c *imageServiceClient) GetImage(ctx context.Context, req *v1alpha1.GetImageRequest) (*v1alpha1.GetImageResponse, error) {
+	var res v1alpha1.GetImageResponse
+	if err := c.client.CallUnary(ctx, imageServiceGetImageSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type imageServiceHandler struct{ svc ImageServiceHandler }
+
+func (h imageServiceHandler) getImage(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetImageRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetImage(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }
