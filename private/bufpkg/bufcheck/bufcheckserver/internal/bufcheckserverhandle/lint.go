@@ -970,6 +970,10 @@ func handleLintProtovalidate(
 	if err != nil {
 		return err
 	}
+	checker, err := buflintvalidate.NewChecker(extensionResolver)
+	if err != nil {
+		return err
+	}
 	// However, we only want to check non-import files, so we can use NewLintMessageRuleHandler
 	// and NewLintFieldRuleHandler utils to check messages and fields respectively.
 	if err := bufcheckserverutil.NewLintMessageRuleHandler(
@@ -978,7 +982,7 @@ func handleLintProtovalidate(
 			_ bufcheckserverutil.Request,
 			message bufprotosource.Message,
 		) error {
-			return buflintvalidate.CheckMessage(addAnnotationFunc, message)
+			return checker.CheckMessage(addAnnotationFunc, message)
 		},
 		// The responseWriter is being passed in through the shared addAnnotationFunc, so we
 		// do not pass in responseWriter again. This should be addressed in a refactor.
@@ -991,10 +995,10 @@ func handleLintProtovalidate(
 			_ bufcheckserverutil.Request,
 			field bufprotosource.Field,
 		) error {
-			if err := buflintvalidate.CheckPredefinedRuleExtension(addAnnotationFunc, field, extensionResolver); err != nil {
+			if err := checker.CheckPredefinedRuleExtension(addAnnotationFunc, field); err != nil {
 				return err
 			}
-			return buflintvalidate.CheckField(addAnnotationFunc, field, extensionResolver)
+			return checker.CheckField(addAnnotationFunc, field)
 		},
 		// The responseWriter is being passed in through the shared addAnnotationFunc, so we
 		// do not pass in responseWriter again. This should be addressed in a refactor.

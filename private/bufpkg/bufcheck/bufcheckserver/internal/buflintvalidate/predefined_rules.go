@@ -21,7 +21,6 @@ import (
 	celpv "buf.build/go/protovalidate/cel"
 	"cel.dev/cel-go/cel"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -29,10 +28,9 @@ const (
 	celFieldNumberPath = int32(1)
 )
 
-func checkPredefinedRuleExtension(
+func (c *Checker) checkPredefinedRuleExtension(
 	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...any),
 	extension bufprotosource.Field,
-	extensionResolver protoencoding.Resolver,
 ) error {
 	extensionDescriptor, err := extension.AsDescriptor()
 	if err != nil {
@@ -52,18 +50,12 @@ func checkPredefinedRuleExtension(
 	if validate.File_buf_validate_validate_proto.Messages().ByName(extendedRuleFullName.Name()) == nil {
 		return nil
 	}
-	predefinedRules, err := resolveExtension[*validate.PredefinedRules](extensionDescriptor.Options(), validate.E_Predefined, extensionResolver)
+	predefinedRules, err := resolveExtension[*validate.PredefinedRules](extensionDescriptor.Options(), validate.E_Predefined, c.extensionTypeResolver)
 	if err != nil {
 		return err
 	}
 	if predefinedRules == nil {
 		return nil
-	}
-	celEnv, err := cel.NewEnv(
-		cel.Lib(celpv.NewLibrary()),
-	)
-	if err != nil {
-		return err
 	}
 	// In order to evaluate whether the CEL expression for the rule compiles, we need to check
 	// the type declaration for two keywords, "this" and "rule".
@@ -88,13 +80,14 @@ func checkPredefinedRuleExtension(
 	if thisType == nil {
 		return syserror.Newf("extension for unexpected rule type %q found", extendedStandardRuleDescriptor.FullName())
 	}
-	celEnv, err = celEnv.Extend(
-		append(
-			celpv.RequiredEnvOptions(extensionDescriptor),
-			cel.Variable("rule", ruleType),
-			cel.Variable("this", thisType),
-			cel.Variable("rules", cel.ObjectType(string(extendedRuleFullName))),
-		)...,
+	fileCELEnv, err := c.celEnvForFile(extensionDescriptor.ParentFile())
+	if err != nil {
+		return err
+	}
+	celEnv, err := fileCELEnv.Extend(
+		cel.Variable("rule", ruleType),
+		cel.Variable("this", thisType),
+		cel.Variable("rules", cel.ObjectType(string(extendedRuleFullName))),
 	)
 	if err != nil {
 		return err
