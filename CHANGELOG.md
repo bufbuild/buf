@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Improve the performance of the `PROTOVALIDATE` lint rule, which is now up to 3x faster
+  and allocates less memory on modules using `cel` rules or `example` values.
 - Send the module name of each file to check plugins, which is available as
   `FileDescriptor.ModuleName()` in bufplugin-go v0.11.0 and later.
 - Update `buf curl` to automatically use HTTP/2 prior knowledge for `http` URLs when server

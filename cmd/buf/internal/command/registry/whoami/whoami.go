@@ -19,15 +19,14 @@ import (
 	"errors"
 	"fmt"
 
+	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
 	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiowner"
 	"github.com/bufbuild/buf/private/pkg/netext"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -96,8 +95,9 @@ func run(
 	if err != nil {
 		return err
 	}
-	authnService := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewAuthnServiceClient)
-	currentUserResponse, err := authnService.GetCurrentUser(ctx, &registryv1alpha1.GetCurrentUserRequest{})
+	ownerClientProvider := bufregistryapiowner.NewClientProvider(clientConfig)
+	userServiceClient := ownerClientProvider.V1UserServiceClient(remote)
+	currentUserResponse, err := userServiceClient.GetCurrentUser(ctx, &ownerv1.GetCurrentUserRequest{})
 	if err != nil {
 		if connectErr := new(connect.Error); errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnauthenticated {
 			return fmt.Errorf("Not currently logged in for %s.", remote)
@@ -121,13 +121,13 @@ func run(
 	// an error, so do not need a default case for this switch.
 	switch format {
 	case bufprint.FormatText:
-		_, err = fmt.Fprintf(container.Stdout(), "Logged in as %s.\n", user.GetUsername())
+		_, err = fmt.Fprintf(container.Stdout(), "Logged in as %s.\n", user.GetName())
 		return err
 	case bufprint.FormatJSON:
 		return bufprint.PrintEntity(
 			container.Stdout(),
 			format,
-			bufprint.NewUserEntity(user),
+			bufprint.NewUserEntity(user, remote),
 		)
 	}
 	return nil

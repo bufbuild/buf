@@ -290,11 +290,15 @@ func NewPolicyEntity(policy *policyv1beta1.Policy, policyFullName bufparse.FullN
 }
 
 // NewUserEntity returns a new user entity to print.
-func NewUserEntity(user *registryv1alpha1.User) Entity {
+func NewUserEntity(user *ownerv1.User, remote string) Entity {
 	return outputUser{
-		Username: user.GetUsername(),
-		// We use the Username as the full name for the user when printing.
-		FullName: user.GetUsername(),
+		ID:         user.GetId(),
+		Remote:     remote,
+		Username:   user.GetName(),
+		FullName:   fmt.Sprintf("%s/%s", remote, user.GetName()),
+		CreateTime: user.GetCreateTime().AsTime(),
+		Type:       user.GetType().String(),
+		State:      user.GetState().String(),
 	}
 }
 
@@ -545,8 +549,13 @@ func (m outputPolicy) fullName() string {
 }
 
 type outputUser struct {
-	Username string `json:"username,omitempty"`
-	FullName string `json:"-" bufprint:"Name"`
+	ID         string    `json:"id,omitempty"`
+	Remote     string    `json:"remote,omitempty"`
+	Username   string    `json:"username,omitempty"`
+	FullName   string    `json:"-" bufprint:"Name"`
+	CreateTime time.Time `json:"create_time" bufprint:"Create Time"`
+	Type       string    `json:"type,omitempty"`
+	State      string    `json:"state,omitempty"`
 }
 
 func (o outputUser) fullName() string {
