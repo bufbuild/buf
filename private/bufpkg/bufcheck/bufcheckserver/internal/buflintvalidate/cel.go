@@ -24,7 +24,6 @@ import (
 	"cel.dev/cel-go/common/types"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 const (
@@ -38,7 +37,7 @@ const (
 	celExpressionFieldNumberInFieldRules = 29
 )
 
-func checkCELForMessage(
+func (c *Checker) checkCELForMessage(
 	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...any),
 	messageRules *validate.MessageRules,
 	messageDescriptor protoreflect.MessageDescriptor,
@@ -47,14 +46,11 @@ func checkCELForMessage(
 	if len(messageRules.GetCel()) == 0 && len(messageRules.GetCelExpression()) == 0 {
 		return nil
 	}
-	celEnv, err := cel.NewEnv(
-		cel.Lib(celpv.NewLibrary()),
-	)
+	fileCELEnv, err := c.celEnvForFile(messageDescriptor.ParentFile())
 	if err != nil {
 		return err
 	}
-	celEnv, err = celEnv.Extend(
-		cel.Types(dynamicpb.NewMessage(messageDescriptor)),
+	celEnv, err := fileCELEnv.Extend(
 		cel.Variable("this", cel.ObjectType(string(messageDescriptor.FullName()))),
 	)
 	if err != nil {
@@ -103,7 +99,7 @@ func checkCELForMessage(
 	return nil
 }
 
-func checkCELForField(
+func (c *Checker) checkCELForField(
 	adder *adder,
 	fieldRules *validate.FieldRules,
 	fieldDescriptor protoreflect.FieldDescriptor,
@@ -113,17 +109,12 @@ func checkCELForField(
 	if len(fieldRules.GetCel()) == 0 && len(fieldRules.GetCelExpression()) == 0 {
 		return nil
 	}
-	celEnv, err := cel.NewEnv(
-		cel.Lib(celpv.NewLibrary()),
-	)
+	fileCELEnv, err := c.celEnvForFile(fieldDescriptor.ParentFile())
 	if err != nil {
 		return err
 	}
-	celEnv, err = celEnv.Extend(
-		append(
-			celpv.RequiredEnvOptions(fieldDescriptor),
-			cel.Variable("this", celpv.ProtoFieldToType(fieldDescriptor, false, forItems)),
-		)...,
+	celEnv, err := fileCELEnv.Extend(
+		cel.Variable("this", celpv.ProtoFieldToType(fieldDescriptor, false, forItems)),
 	)
 	if err != nil {
 		return err
