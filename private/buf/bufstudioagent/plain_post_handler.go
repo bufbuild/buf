@@ -120,7 +120,6 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	// TODO(rvanginkel) should this context be cloned to remove attached values (but keep timeout)?
 	ctx, info := connect.NewClientContext(r.Context())
 	request := bytes.NewBuffer(envelopeRequest.GetBody())
 	for _, header := range envelopeRequest.GetHeaders() {

@@ -67,6 +67,15 @@ var (
 		"grpc-v1":      ReflectProtocolGRPCV1,
 		"grpc-v1alpha": ReflectProtocolGRPCV1Alpha,
 	}
+
+	reflectSpecV1 = connect.Spec{
+		Procedure:  "/grpc.reflection.v1.ServerReflection/ServerReflectionInfo",
+		StreamType: connect.StreamTypeBidi,
+	}
+	reflectSpecV1Alpha = connect.Spec{
+		Procedure:  "/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
+		StreamType: connect.StreamTypeBidi,
+	}
 )
 
 // ReflectProtocol is a reflection protocol.
@@ -127,17 +136,6 @@ func NewServerReflectionResolver(
 	}
 	return res, res.Reset
 }
-
-var (
-	reflectSpecV1 = connect.Spec{
-		Procedure:  "/grpc.reflection.v1.ServerReflection/ServerReflectionInfo",
-		StreamType: connect.StreamTypeBidi,
-	}
-	reflectSpecV1Alpha = connect.Spec{
-		Procedure:  "/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
-		StreamType: connect.StreamTypeBidi,
-	}
-)
 
 type reflectionResolver struct {
 	ctx     context.Context

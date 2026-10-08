@@ -130,9 +130,9 @@ func run(
 		}
 		return err
 	}
-	policys := policyResponse.Policies
-	if len(policys) != 1 {
-		return syserror.Newf("unexpected number of policys returned from server: %d", len(policys))
+	policies := policyResponse.Policies
+	if len(policies) != 1 {
+		return syserror.Newf("unexpected number of policies returned from server: %d", len(policies))
 	}
 	_, err = fmt.Fprintf(container.Stdout(), "Updated %s.\n", policyFullName)
 	if err != nil {
