@@ -21,7 +21,7 @@ import (
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
@@ -88,7 +88,7 @@ func run(
 	pluginServiceClient := bufregistryapiplugin.NewClientProvider(clientConfig).
 		V1Beta1PluginServiceClient(pluginFullName.Registry())
 
-	if _, err := pluginServiceClient.DeletePlugins(ctx, connect.NewRequest(
+	if _, err := pluginServiceClient.DeletePlugins(ctx,
 		&pluginv1beta1.DeletePluginsRequest{
 			PluginRefs: []*pluginv1beta1.PluginRef{
 				{
@@ -101,7 +101,7 @@ func run(
 				},
 			},
 		},
-	)); err != nil {
+	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewPluginNotFoundError(container.Arg(0))
 		}

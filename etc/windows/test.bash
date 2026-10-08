@@ -43,7 +43,7 @@ fi
 PATH="${DOWNLOAD_CACHE}/protoc/bin:${PATH}"
 
 go install google.golang.org/protobuf/cmd/protoc-gen-go@${PROTOC_GEN_GO_VERSION}
-go install connectrpc.com/connect/cmd/protoc-gen-connect-go@${CONNECT_VERSION}
+go install connectrpc.com/connect/v2/cmd/protoc-gen-connect-go@${CONNECT_VERSION}
 go install ./cmd/buf \
   ./cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
   ./cmd/buf/internal/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \

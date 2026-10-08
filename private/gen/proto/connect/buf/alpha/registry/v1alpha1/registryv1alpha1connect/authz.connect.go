@@ -19,505 +19,561 @@
 package registryv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// AuthzServiceName is the fully-qualified name of the AuthzService service.
 	AuthzServiceName = "buf.alpha.registry.v1alpha1.AuthzService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// AuthzServiceUserCanCreateOrganizationRepositoryProcedure is the fully-qualified name of the
+	// AuthzServiceUserCanCreateOrganizationRepositoryProcedure is the procedure name of the
 	// AuthzService's UserCanCreateOrganizationRepository RPC.
 	AuthzServiceUserCanCreateOrganizationRepositoryProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationRepository"
-	// AuthzServiceUserCanSeeRepositorySettingsProcedure is the fully-qualified name of the
-	// AuthzService's UserCanSeeRepositorySettings RPC.
+	// AuthzServiceUserCanSeeRepositorySettingsProcedure is the procedure name of the AuthzService's
+	// UserCanSeeRepositorySettings RPC.
 	AuthzServiceUserCanSeeRepositorySettingsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeRepositorySettings"
-	// AuthzServiceUserCanSeeOrganizationSettingsProcedure is the fully-qualified name of the
-	// AuthzService's UserCanSeeOrganizationSettings RPC.
+	// AuthzServiceUserCanSeeOrganizationSettingsProcedure is the procedure name of the AuthzService's
+	// UserCanSeeOrganizationSettings RPC.
 	AuthzServiceUserCanSeeOrganizationSettingsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeOrganizationSettings"
-	// AuthzServiceUserCanAddOrganizationMemberProcedure is the fully-qualified name of the
-	// AuthzService's UserCanAddOrganizationMember RPC.
+	// AuthzServiceUserCanAddOrganizationMemberProcedure is the procedure name of the AuthzService's
+	// UserCanAddOrganizationMember RPC.
 	AuthzServiceUserCanAddOrganizationMemberProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanAddOrganizationMember"
-	// AuthzServiceUserCanUpdateOrganizationMemberProcedure is the fully-qualified name of the
-	// AuthzService's UserCanUpdateOrganizationMember RPC.
+	// AuthzServiceUserCanUpdateOrganizationMemberProcedure is the procedure name of the AuthzService's
+	// UserCanUpdateOrganizationMember RPC.
 	AuthzServiceUserCanUpdateOrganizationMemberProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanUpdateOrganizationMember"
-	// AuthzServiceUserCanRemoveOrganizationMemberProcedure is the fully-qualified name of the
-	// AuthzService's UserCanRemoveOrganizationMember RPC.
+	// AuthzServiceUserCanRemoveOrganizationMemberProcedure is the procedure name of the AuthzService's
+	// UserCanRemoveOrganizationMember RPC.
 	AuthzServiceUserCanRemoveOrganizationMemberProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanRemoveOrganizationMember"
-	// AuthzServiceUserCanDeleteOrganizationProcedure is the fully-qualified name of the AuthzService's
+	// AuthzServiceUserCanDeleteOrganizationProcedure is the procedure name of the AuthzService's
 	// UserCanDeleteOrganization RPC.
 	AuthzServiceUserCanDeleteOrganizationProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteOrganization"
-	// AuthzServiceUserCanDeleteRepositoryProcedure is the fully-qualified name of the AuthzService's
+	// AuthzServiceUserCanDeleteRepositoryProcedure is the procedure name of the AuthzService's
 	// UserCanDeleteRepository RPC.
 	AuthzServiceUserCanDeleteRepositoryProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteRepository"
-	// AuthzServiceUserCanDeleteUserProcedure is the fully-qualified name of the AuthzService's
+	// AuthzServiceUserCanDeleteUserProcedure is the procedure name of the AuthzService's
 	// UserCanDeleteUser RPC.
 	AuthzServiceUserCanDeleteUserProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteUser"
-	// AuthzServiceUserCanSeeServerAdminPanelProcedure is the fully-qualified name of the AuthzService's
+	// AuthzServiceUserCanSeeServerAdminPanelProcedure is the procedure name of the AuthzService's
 	// UserCanSeeServerAdminPanel RPC.
 	AuthzServiceUserCanSeeServerAdminPanelProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeServerAdminPanel"
-	// AuthzServiceUserCanManageRepositoryContributorsProcedure is the fully-qualified name of the
+	// AuthzServiceUserCanManageRepositoryContributorsProcedure is the procedure name of the
 	// AuthzService's UserCanManageRepositoryContributors RPC.
 	AuthzServiceUserCanManageRepositoryContributorsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageRepositoryContributors"
-	// AuthzServiceUserCanReviewCommitsProcedure is the fully-qualified name of the AuthzService's
+	// AuthzServiceUserCanReviewCommitsProcedure is the procedure name of the AuthzService's
 	// UserCanReviewCommits RPC.
 	AuthzServiceUserCanReviewCommitsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanReviewCommits"
+)
+
+var (
+	authzServiceUserCanCreateOrganizationRepositorySpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService").Methods().ByName("UserCanCreateOrganizationRepository"),
+			Procedure:        AuthzServiceUserCanCreateOrganizationRepositoryProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	authzServiceUserCanSeeRepositorySettingsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService").Methods().ByName("UserCanSeeRepositorySettings"),
+			Procedure:        AuthzServiceUserCanSeeRepositorySettingsProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	authzServiceUserCanSeeOrganizationSettingsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService").Methods().ByName("UserCanSeeOrganizationSettings"),
+			Procedure:        AuthzServiceUserCanSeeOrganizationSettingsProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	authzServiceUserCanAddOrganizationMemberSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService").Methods().ByName("UserCanAddOrganizationMember"),
+			Procedure:        AuthzServiceUserCanAddOrganizationMemberProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	authzServiceUserCanUpdateOrganizationMemberSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService").Methods().ByName("UserCanUpdateOrganizationMember"),
+			Procedure:        AuthzServiceUserCanUpdateOrganizationMemberProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	authzServiceUserCanRemoveOrganizationMemberSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService").Methods().ByName("UserCanRemoveOrganizationMember"),
+			Procedure:        AuthzServiceUserCanRemoveOrganizationMemberProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	authzServiceUserCanDeleteOrganizationSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService").Methods().ByName("UserCanDeleteOrganization"),
+			Procedure:        AuthzServiceUserCanDeleteOrganizationProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	authzServiceUserCanDeleteRepositorySpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService").Methods().ByName("UserCanDeleteRepository"),
+			Procedure:        AuthzServiceUserCanDeleteRepositoryProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	authzServiceUserCanDeleteUserSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService").Methods().ByName("UserCanDeleteUser"),
+			Procedure:        AuthzServiceUserCanDeleteUserProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	authzServiceUserCanSeeServerAdminPanelSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService").Methods().ByName("UserCanSeeServerAdminPanel"),
+			Procedure:        AuthzServiceUserCanSeeServerAdminPanelProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	authzServiceUserCanManageRepositoryContributorsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService").Methods().ByName("UserCanManageRepositoryContributors"),
+			Procedure:        AuthzServiceUserCanManageRepositoryContributorsProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	authzServiceUserCanReviewCommitsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService").Methods().ByName("UserCanReviewCommits"),
+			Procedure:        AuthzServiceUserCanReviewCommitsProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
 )
 
 // AuthzServiceClient is a client for the buf.alpha.registry.v1alpha1.AuthzService service.
 type AuthzServiceClient interface {
 	// UserCanCreateOrganizationRepository returns whether the user is authorized
 	// to create repositories in an organization.
-	UserCanCreateOrganizationRepository(context.Context, *connect.Request[v1alpha1.UserCanCreateOrganizationRepositoryRequest]) (*connect.Response[v1alpha1.UserCanCreateOrganizationRepositoryResponse], error)
+	UserCanCreateOrganizationRepository(context.Context, *v1alpha1.UserCanCreateOrganizationRepositoryRequest) (*v1alpha1.UserCanCreateOrganizationRepositoryResponse, error)
 	// UserCanSeeRepositorySettings returns whether the user is authorized
 	// to see repository settings.
-	UserCanSeeRepositorySettings(context.Context, *connect.Request[v1alpha1.UserCanSeeRepositorySettingsRequest]) (*connect.Response[v1alpha1.UserCanSeeRepositorySettingsResponse], error)
+	UserCanSeeRepositorySettings(context.Context, *v1alpha1.UserCanSeeRepositorySettingsRequest) (*v1alpha1.UserCanSeeRepositorySettingsResponse, error)
 	// UserCanSeeOrganizationSettings returns whether the user is authorized
 	// to see organization settings.
-	UserCanSeeOrganizationSettings(context.Context, *connect.Request[v1alpha1.UserCanSeeOrganizationSettingsRequest]) (*connect.Response[v1alpha1.UserCanSeeOrganizationSettingsResponse], error)
+	UserCanSeeOrganizationSettings(context.Context, *v1alpha1.UserCanSeeOrganizationSettingsRequest) (*v1alpha1.UserCanSeeOrganizationSettingsResponse, error)
 	// UserCanAddOrganizationMember returns whether the user is authorized to add
 	// any members to the organization and the list of roles they can add.
-	UserCanAddOrganizationMember(context.Context, *connect.Request[v1alpha1.UserCanAddOrganizationMemberRequest]) (*connect.Response[v1alpha1.UserCanAddOrganizationMemberResponse], error)
+	UserCanAddOrganizationMember(context.Context, *v1alpha1.UserCanAddOrganizationMemberRequest) (*v1alpha1.UserCanAddOrganizationMemberResponse, error)
 	// UserCanUpdateOrganizationMember returns whether the user is authorized to update
 	// any members' membership information in the organization and the list of roles they can update.
-	UserCanUpdateOrganizationMember(context.Context, *connect.Request[v1alpha1.UserCanUpdateOrganizationMemberRequest]) (*connect.Response[v1alpha1.UserCanUpdateOrganizationMemberResponse], error)
+	UserCanUpdateOrganizationMember(context.Context, *v1alpha1.UserCanUpdateOrganizationMemberRequest) (*v1alpha1.UserCanUpdateOrganizationMemberResponse, error)
 	// UserCanRemoveOrganizationMember returns whether the user is authorized to remove
 	// any members from the organization and the list of roles they can remove.
-	UserCanRemoveOrganizationMember(context.Context, *connect.Request[v1alpha1.UserCanRemoveOrganizationMemberRequest]) (*connect.Response[v1alpha1.UserCanRemoveOrganizationMemberResponse], error)
+	UserCanRemoveOrganizationMember(context.Context, *v1alpha1.UserCanRemoveOrganizationMemberRequest) (*v1alpha1.UserCanRemoveOrganizationMemberResponse, error)
 	// UserCanDeleteOrganization returns whether the user is authorized
 	// to delete an organization.
-	UserCanDeleteOrganization(context.Context, *connect.Request[v1alpha1.UserCanDeleteOrganizationRequest]) (*connect.Response[v1alpha1.UserCanDeleteOrganizationResponse], error)
+	UserCanDeleteOrganization(context.Context, *v1alpha1.UserCanDeleteOrganizationRequest) (*v1alpha1.UserCanDeleteOrganizationResponse, error)
 	// UserCanDeleteRepository returns whether the user is authorized
 	// to delete a repository.
-	UserCanDeleteRepository(context.Context, *connect.Request[v1alpha1.UserCanDeleteRepositoryRequest]) (*connect.Response[v1alpha1.UserCanDeleteRepositoryResponse], error)
+	UserCanDeleteRepository(context.Context, *v1alpha1.UserCanDeleteRepositoryRequest) (*v1alpha1.UserCanDeleteRepositoryResponse, error)
 	// UserCanDeleteUser returns whether the user is authorized
 	// to delete a user.
-	UserCanDeleteUser(context.Context, *connect.Request[v1alpha1.UserCanDeleteUserRequest]) (*connect.Response[v1alpha1.UserCanDeleteUserResponse], error)
+	UserCanDeleteUser(context.Context, *v1alpha1.UserCanDeleteUserRequest) (*v1alpha1.UserCanDeleteUserResponse, error)
 	// UserCanSeeServerAdminPanel returns whether the user is authorized
 	// to see server admin panel.
-	UserCanSeeServerAdminPanel(context.Context, *connect.Request[v1alpha1.UserCanSeeServerAdminPanelRequest]) (*connect.Response[v1alpha1.UserCanSeeServerAdminPanelResponse], error)
+	UserCanSeeServerAdminPanel(context.Context, *v1alpha1.UserCanSeeServerAdminPanelRequest) (*v1alpha1.UserCanSeeServerAdminPanelResponse, error)
 	// UserCanManageRepositoryContributors returns whether the user is authorized to manage
 	// any contributors to the repository and the list of roles they can manage.
-	UserCanManageRepositoryContributors(context.Context, *connect.Request[v1alpha1.UserCanManageRepositoryContributorsRequest]) (*connect.Response[v1alpha1.UserCanManageRepositoryContributorsResponse], error)
+	UserCanManageRepositoryContributors(context.Context, *v1alpha1.UserCanManageRepositoryContributorsRequest) (*v1alpha1.UserCanManageRepositoryContributorsResponse, error)
 	// UserCanReviewCommits returns whether the user is authorized to review
 	// commits within a repository.
-	UserCanReviewCommits(context.Context, *connect.Request[v1alpha1.UserCanReviewCommitsRequest]) (*connect.Response[v1alpha1.UserCanReviewCommitsResponse], error)
+	UserCanReviewCommits(context.Context, *v1alpha1.UserCanReviewCommitsRequest) (*v1alpha1.UserCanReviewCommitsResponse, error)
 }
 
 // NewAuthzServiceClient constructs a client for the buf.alpha.registry.v1alpha1.AuthzService
-// service. By default, it uses the Connect protocol with the binary Protobuf Codec, asks for
-// gzipped responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply
-// the connect.WithGRPC() or connect.WithGRPCWeb() options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewAuthzServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) AuthzServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	authzServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService").Methods()
-	return &authzServiceClient{
-		userCanCreateOrganizationRepository: connect.NewClient[v1alpha1.UserCanCreateOrganizationRepositoryRequest, v1alpha1.UserCanCreateOrganizationRepositoryResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanCreateOrganizationRepositoryProcedure,
-			connect.WithSchema(authzServiceMethods.ByName("UserCanCreateOrganizationRepository")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		userCanSeeRepositorySettings: connect.NewClient[v1alpha1.UserCanSeeRepositorySettingsRequest, v1alpha1.UserCanSeeRepositorySettingsResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanSeeRepositorySettingsProcedure,
-			connect.WithSchema(authzServiceMethods.ByName("UserCanSeeRepositorySettings")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		userCanSeeOrganizationSettings: connect.NewClient[v1alpha1.UserCanSeeOrganizationSettingsRequest, v1alpha1.UserCanSeeOrganizationSettingsResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanSeeOrganizationSettingsProcedure,
-			connect.WithSchema(authzServiceMethods.ByName("UserCanSeeOrganizationSettings")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		userCanAddOrganizationMember: connect.NewClient[v1alpha1.UserCanAddOrganizationMemberRequest, v1alpha1.UserCanAddOrganizationMemberResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanAddOrganizationMemberProcedure,
-			connect.WithSchema(authzServiceMethods.ByName("UserCanAddOrganizationMember")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		userCanUpdateOrganizationMember: connect.NewClient[v1alpha1.UserCanUpdateOrganizationMemberRequest, v1alpha1.UserCanUpdateOrganizationMemberResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanUpdateOrganizationMemberProcedure,
-			connect.WithSchema(authzServiceMethods.ByName("UserCanUpdateOrganizationMember")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		userCanRemoveOrganizationMember: connect.NewClient[v1alpha1.UserCanRemoveOrganizationMemberRequest, v1alpha1.UserCanRemoveOrganizationMemberResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanRemoveOrganizationMemberProcedure,
-			connect.WithSchema(authzServiceMethods.ByName("UserCanRemoveOrganizationMember")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		userCanDeleteOrganization: connect.NewClient[v1alpha1.UserCanDeleteOrganizationRequest, v1alpha1.UserCanDeleteOrganizationResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanDeleteOrganizationProcedure,
-			connect.WithSchema(authzServiceMethods.ByName("UserCanDeleteOrganization")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		userCanDeleteRepository: connect.NewClient[v1alpha1.UserCanDeleteRepositoryRequest, v1alpha1.UserCanDeleteRepositoryResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanDeleteRepositoryProcedure,
-			connect.WithSchema(authzServiceMethods.ByName("UserCanDeleteRepository")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		userCanDeleteUser: connect.NewClient[v1alpha1.UserCanDeleteUserRequest, v1alpha1.UserCanDeleteUserResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanDeleteUserProcedure,
-			connect.WithSchema(authzServiceMethods.ByName("UserCanDeleteUser")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		userCanSeeServerAdminPanel: connect.NewClient[v1alpha1.UserCanSeeServerAdminPanelRequest, v1alpha1.UserCanSeeServerAdminPanelResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanSeeServerAdminPanelProcedure,
-			connect.WithSchema(authzServiceMethods.ByName("UserCanSeeServerAdminPanel")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		userCanManageRepositoryContributors: connect.NewClient[v1alpha1.UserCanManageRepositoryContributorsRequest, v1alpha1.UserCanManageRepositoryContributorsResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanManageRepositoryContributorsProcedure,
-			connect.WithSchema(authzServiceMethods.ByName("UserCanManageRepositoryContributors")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		userCanReviewCommits: connect.NewClient[v1alpha1.UserCanReviewCommitsRequest, v1alpha1.UserCanReviewCommitsResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanReviewCommitsProcedure,
-			connect.WithSchema(authzServiceMethods.ByName("UserCanReviewCommits")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// authzServiceClient implements AuthzServiceClient.
-type authzServiceClient struct {
-	userCanCreateOrganizationRepository *connect.Client[v1alpha1.UserCanCreateOrganizationRepositoryRequest, v1alpha1.UserCanCreateOrganizationRepositoryResponse]
-	userCanSeeRepositorySettings        *connect.Client[v1alpha1.UserCanSeeRepositorySettingsRequest, v1alpha1.UserCanSeeRepositorySettingsResponse]
-	userCanSeeOrganizationSettings      *connect.Client[v1alpha1.UserCanSeeOrganizationSettingsRequest, v1alpha1.UserCanSeeOrganizationSettingsResponse]
-	userCanAddOrganizationMember        *connect.Client[v1alpha1.UserCanAddOrganizationMemberRequest, v1alpha1.UserCanAddOrganizationMemberResponse]
-	userCanUpdateOrganizationMember     *connect.Client[v1alpha1.UserCanUpdateOrganizationMemberRequest, v1alpha1.UserCanUpdateOrganizationMemberResponse]
-	userCanRemoveOrganizationMember     *connect.Client[v1alpha1.UserCanRemoveOrganizationMemberRequest, v1alpha1.UserCanRemoveOrganizationMemberResponse]
-	userCanDeleteOrganization           *connect.Client[v1alpha1.UserCanDeleteOrganizationRequest, v1alpha1.UserCanDeleteOrganizationResponse]
-	userCanDeleteRepository             *connect.Client[v1alpha1.UserCanDeleteRepositoryRequest, v1alpha1.UserCanDeleteRepositoryResponse]
-	userCanDeleteUser                   *connect.Client[v1alpha1.UserCanDeleteUserRequest, v1alpha1.UserCanDeleteUserResponse]
-	userCanSeeServerAdminPanel          *connect.Client[v1alpha1.UserCanSeeServerAdminPanelRequest, v1alpha1.UserCanSeeServerAdminPanelResponse]
-	userCanManageRepositoryContributors *connect.Client[v1alpha1.UserCanManageRepositoryContributorsRequest, v1alpha1.UserCanManageRepositoryContributorsResponse]
-	userCanReviewCommits                *connect.Client[v1alpha1.UserCanReviewCommitsRequest, v1alpha1.UserCanReviewCommitsResponse]
-}
-
-// UserCanCreateOrganizationRepository calls
-// buf.alpha.registry.v1alpha1.AuthzService.UserCanCreateOrganizationRepository.
-func (c *authzServiceClient) UserCanCreateOrganizationRepository(ctx context.Context, req *connect.Request[v1alpha1.UserCanCreateOrganizationRepositoryRequest]) (*connect.Response[v1alpha1.UserCanCreateOrganizationRepositoryResponse], error) {
-	return c.userCanCreateOrganizationRepository.CallUnary(ctx, req)
-}
-
-// UserCanSeeRepositorySettings calls
-// buf.alpha.registry.v1alpha1.AuthzService.UserCanSeeRepositorySettings.
-func (c *authzServiceClient) UserCanSeeRepositorySettings(ctx context.Context, req *connect.Request[v1alpha1.UserCanSeeRepositorySettingsRequest]) (*connect.Response[v1alpha1.UserCanSeeRepositorySettingsResponse], error) {
-	return c.userCanSeeRepositorySettings.CallUnary(ctx, req)
-}
-
-// UserCanSeeOrganizationSettings calls
-// buf.alpha.registry.v1alpha1.AuthzService.UserCanSeeOrganizationSettings.
-func (c *authzServiceClient) UserCanSeeOrganizationSettings(ctx context.Context, req *connect.Request[v1alpha1.UserCanSeeOrganizationSettingsRequest]) (*connect.Response[v1alpha1.UserCanSeeOrganizationSettingsResponse], error) {
-	return c.userCanSeeOrganizationSettings.CallUnary(ctx, req)
-}
-
-// UserCanAddOrganizationMember calls
-// buf.alpha.registry.v1alpha1.AuthzService.UserCanAddOrganizationMember.
-func (c *authzServiceClient) UserCanAddOrganizationMember(ctx context.Context, req *connect.Request[v1alpha1.UserCanAddOrganizationMemberRequest]) (*connect.Response[v1alpha1.UserCanAddOrganizationMemberResponse], error) {
-	return c.userCanAddOrganizationMember.CallUnary(ctx, req)
-}
-
-// UserCanUpdateOrganizationMember calls
-// buf.alpha.registry.v1alpha1.AuthzService.UserCanUpdateOrganizationMember.
-func (c *authzServiceClient) UserCanUpdateOrganizationMember(ctx context.Context, req *connect.Request[v1alpha1.UserCanUpdateOrganizationMemberRequest]) (*connect.Response[v1alpha1.UserCanUpdateOrganizationMemberResponse], error) {
-	return c.userCanUpdateOrganizationMember.CallUnary(ctx, req)
-}
-
-// UserCanRemoveOrganizationMember calls
-// buf.alpha.registry.v1alpha1.AuthzService.UserCanRemoveOrganizationMember.
-func (c *authzServiceClient) UserCanRemoveOrganizationMember(ctx context.Context, req *connect.Request[v1alpha1.UserCanRemoveOrganizationMemberRequest]) (*connect.Response[v1alpha1.UserCanRemoveOrganizationMemberResponse], error) {
-	return c.userCanRemoveOrganizationMember.CallUnary(ctx, req)
-}
-
-// UserCanDeleteOrganization calls
-// buf.alpha.registry.v1alpha1.AuthzService.UserCanDeleteOrganization.
-func (c *authzServiceClient) UserCanDeleteOrganization(ctx context.Context, req *connect.Request[v1alpha1.UserCanDeleteOrganizationRequest]) (*connect.Response[v1alpha1.UserCanDeleteOrganizationResponse], error) {
-	return c.userCanDeleteOrganization.CallUnary(ctx, req)
-}
-
-// UserCanDeleteRepository calls buf.alpha.registry.v1alpha1.AuthzService.UserCanDeleteRepository.
-func (c *authzServiceClient) UserCanDeleteRepository(ctx context.Context, req *connect.Request[v1alpha1.UserCanDeleteRepositoryRequest]) (*connect.Response[v1alpha1.UserCanDeleteRepositoryResponse], error) {
-	return c.userCanDeleteRepository.CallUnary(ctx, req)
-}
-
-// UserCanDeleteUser calls buf.alpha.registry.v1alpha1.AuthzService.UserCanDeleteUser.
-func (c *authzServiceClient) UserCanDeleteUser(ctx context.Context, req *connect.Request[v1alpha1.UserCanDeleteUserRequest]) (*connect.Response[v1alpha1.UserCanDeleteUserResponse], error) {
-	return c.userCanDeleteUser.CallUnary(ctx, req)
-}
-
-// UserCanSeeServerAdminPanel calls
-// buf.alpha.registry.v1alpha1.AuthzService.UserCanSeeServerAdminPanel.
-func (c *authzServiceClient) UserCanSeeServerAdminPanel(ctx context.Context, req *connect.Request[v1alpha1.UserCanSeeServerAdminPanelRequest]) (*connect.Response[v1alpha1.UserCanSeeServerAdminPanelResponse], error) {
-	return c.userCanSeeServerAdminPanel.CallUnary(ctx, req)
-}
-
-// UserCanManageRepositoryContributors calls
-// buf.alpha.registry.v1alpha1.AuthzService.UserCanManageRepositoryContributors.
-func (c *authzServiceClient) UserCanManageRepositoryContributors(ctx context.Context, req *connect.Request[v1alpha1.UserCanManageRepositoryContributorsRequest]) (*connect.Response[v1alpha1.UserCanManageRepositoryContributorsResponse], error) {
-	return c.userCanManageRepositoryContributors.CallUnary(ctx, req)
-}
-
-// UserCanReviewCommits calls buf.alpha.registry.v1alpha1.AuthzService.UserCanReviewCommits.
-func (c *authzServiceClient) UserCanReviewCommits(ctx context.Context, req *connect.Request[v1alpha1.UserCanReviewCommitsRequest]) (*connect.Response[v1alpha1.UserCanReviewCommitsResponse], error) {
-	return c.userCanReviewCommits.CallUnary(ctx, req)
+// service. Multiple service clients may share a single connect.Client.
+func NewAuthzServiceClient(client *connect.Client) AuthzServiceClient {
+	return &authzServiceClient{client: client}
 }
 
 // AuthzServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.AuthzService service.
 type AuthzServiceHandler interface {
 	// UserCanCreateOrganizationRepository returns whether the user is authorized
 	// to create repositories in an organization.
-	UserCanCreateOrganizationRepository(context.Context, *connect.Request[v1alpha1.UserCanCreateOrganizationRepositoryRequest]) (*connect.Response[v1alpha1.UserCanCreateOrganizationRepositoryResponse], error)
+	UserCanCreateOrganizationRepository(context.Context, *v1alpha1.UserCanCreateOrganizationRepositoryRequest) (*v1alpha1.UserCanCreateOrganizationRepositoryResponse, error)
 	// UserCanSeeRepositorySettings returns whether the user is authorized
 	// to see repository settings.
-	UserCanSeeRepositorySettings(context.Context, *connect.Request[v1alpha1.UserCanSeeRepositorySettingsRequest]) (*connect.Response[v1alpha1.UserCanSeeRepositorySettingsResponse], error)
+	UserCanSeeRepositorySettings(context.Context, *v1alpha1.UserCanSeeRepositorySettingsRequest) (*v1alpha1.UserCanSeeRepositorySettingsResponse, error)
 	// UserCanSeeOrganizationSettings returns whether the user is authorized
 	// to see organization settings.
-	UserCanSeeOrganizationSettings(context.Context, *connect.Request[v1alpha1.UserCanSeeOrganizationSettingsRequest]) (*connect.Response[v1alpha1.UserCanSeeOrganizationSettingsResponse], error)
+	UserCanSeeOrganizationSettings(context.Context, *v1alpha1.UserCanSeeOrganizationSettingsRequest) (*v1alpha1.UserCanSeeOrganizationSettingsResponse, error)
 	// UserCanAddOrganizationMember returns whether the user is authorized to add
 	// any members to the organization and the list of roles they can add.
-	UserCanAddOrganizationMember(context.Context, *connect.Request[v1alpha1.UserCanAddOrganizationMemberRequest]) (*connect.Response[v1alpha1.UserCanAddOrganizationMemberResponse], error)
+	UserCanAddOrganizationMember(context.Context, *v1alpha1.UserCanAddOrganizationMemberRequest) (*v1alpha1.UserCanAddOrganizationMemberResponse, error)
 	// UserCanUpdateOrganizationMember returns whether the user is authorized to update
 	// any members' membership information in the organization and the list of roles they can update.
-	UserCanUpdateOrganizationMember(context.Context, *connect.Request[v1alpha1.UserCanUpdateOrganizationMemberRequest]) (*connect.Response[v1alpha1.UserCanUpdateOrganizationMemberResponse], error)
+	UserCanUpdateOrganizationMember(context.Context, *v1alpha1.UserCanUpdateOrganizationMemberRequest) (*v1alpha1.UserCanUpdateOrganizationMemberResponse, error)
 	// UserCanRemoveOrganizationMember returns whether the user is authorized to remove
 	// any members from the organization and the list of roles they can remove.
-	UserCanRemoveOrganizationMember(context.Context, *connect.Request[v1alpha1.UserCanRemoveOrganizationMemberRequest]) (*connect.Response[v1alpha1.UserCanRemoveOrganizationMemberResponse], error)
+	UserCanRemoveOrganizationMember(context.Context, *v1alpha1.UserCanRemoveOrganizationMemberRequest) (*v1alpha1.UserCanRemoveOrganizationMemberResponse, error)
 	// UserCanDeleteOrganization returns whether the user is authorized
 	// to delete an organization.
-	UserCanDeleteOrganization(context.Context, *connect.Request[v1alpha1.UserCanDeleteOrganizationRequest]) (*connect.Response[v1alpha1.UserCanDeleteOrganizationResponse], error)
+	UserCanDeleteOrganization(context.Context, *v1alpha1.UserCanDeleteOrganizationRequest) (*v1alpha1.UserCanDeleteOrganizationResponse, error)
 	// UserCanDeleteRepository returns whether the user is authorized
 	// to delete a repository.
-	UserCanDeleteRepository(context.Context, *connect.Request[v1alpha1.UserCanDeleteRepositoryRequest]) (*connect.Response[v1alpha1.UserCanDeleteRepositoryResponse], error)
+	UserCanDeleteRepository(context.Context, *v1alpha1.UserCanDeleteRepositoryRequest) (*v1alpha1.UserCanDeleteRepositoryResponse, error)
 	// UserCanDeleteUser returns whether the user is authorized
 	// to delete a user.
-	UserCanDeleteUser(context.Context, *connect.Request[v1alpha1.UserCanDeleteUserRequest]) (*connect.Response[v1alpha1.UserCanDeleteUserResponse], error)
+	UserCanDeleteUser(context.Context, *v1alpha1.UserCanDeleteUserRequest) (*v1alpha1.UserCanDeleteUserResponse, error)
 	// UserCanSeeServerAdminPanel returns whether the user is authorized
 	// to see server admin panel.
-	UserCanSeeServerAdminPanel(context.Context, *connect.Request[v1alpha1.UserCanSeeServerAdminPanelRequest]) (*connect.Response[v1alpha1.UserCanSeeServerAdminPanelResponse], error)
+	UserCanSeeServerAdminPanel(context.Context, *v1alpha1.UserCanSeeServerAdminPanelRequest) (*v1alpha1.UserCanSeeServerAdminPanelResponse, error)
 	// UserCanManageRepositoryContributors returns whether the user is authorized to manage
 	// any contributors to the repository and the list of roles they can manage.
-	UserCanManageRepositoryContributors(context.Context, *connect.Request[v1alpha1.UserCanManageRepositoryContributorsRequest]) (*connect.Response[v1alpha1.UserCanManageRepositoryContributorsResponse], error)
+	UserCanManageRepositoryContributors(context.Context, *v1alpha1.UserCanManageRepositoryContributorsRequest) (*v1alpha1.UserCanManageRepositoryContributorsResponse, error)
 	// UserCanReviewCommits returns whether the user is authorized to review
 	// commits within a repository.
-	UserCanReviewCommits(context.Context, *connect.Request[v1alpha1.UserCanReviewCommitsRequest]) (*connect.Response[v1alpha1.UserCanReviewCommitsResponse], error)
+	UserCanReviewCommits(context.Context, *v1alpha1.UserCanReviewCommitsRequest) (*v1alpha1.UserCanReviewCommitsResponse, error)
 }
 
-// NewAuthzServiceHandler builds an HTTP handler from the service implementation. It returns the
-// path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewAuthzServiceHandler(svc AuthzServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	authzServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_authz_proto.Services().ByName("AuthzService").Methods()
-	authzServiceUserCanCreateOrganizationRepositoryHandler := connect.NewUnaryHandler(
-		AuthzServiceUserCanCreateOrganizationRepositoryProcedure,
-		svc.UserCanCreateOrganizationRepository,
-		connect.WithSchema(authzServiceMethods.ByName("UserCanCreateOrganizationRepository")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
+// RegisterAuthzServiceHandler registers svc as the buf.alpha.registry.v1alpha1.AuthzService
+// implementation on server.
+func RegisterAuthzServiceHandler(server *connect.Server, svc AuthzServiceHandler) {
+	adapter := authzServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: authzServiceUserCanCreateOrganizationRepositorySpec(), Handler: adapter.userCanCreateOrganizationRepository},
+		connect.Method{Spec: authzServiceUserCanSeeRepositorySettingsSpec(), Handler: adapter.userCanSeeRepositorySettings},
+		connect.Method{Spec: authzServiceUserCanSeeOrganizationSettingsSpec(), Handler: adapter.userCanSeeOrganizationSettings},
+		connect.Method{Spec: authzServiceUserCanAddOrganizationMemberSpec(), Handler: adapter.userCanAddOrganizationMember},
+		connect.Method{Spec: authzServiceUserCanUpdateOrganizationMemberSpec(), Handler: adapter.userCanUpdateOrganizationMember},
+		connect.Method{Spec: authzServiceUserCanRemoveOrganizationMemberSpec(), Handler: adapter.userCanRemoveOrganizationMember},
+		connect.Method{Spec: authzServiceUserCanDeleteOrganizationSpec(), Handler: adapter.userCanDeleteOrganization},
+		connect.Method{Spec: authzServiceUserCanDeleteRepositorySpec(), Handler: adapter.userCanDeleteRepository},
+		connect.Method{Spec: authzServiceUserCanDeleteUserSpec(), Handler: adapter.userCanDeleteUser},
+		connect.Method{Spec: authzServiceUserCanSeeServerAdminPanelSpec(), Handler: adapter.userCanSeeServerAdminPanel},
+		connect.Method{Spec: authzServiceUserCanManageRepositoryContributorsSpec(), Handler: adapter.userCanManageRepositoryContributors},
+		connect.Method{Spec: authzServiceUserCanReviewCommitsSpec(), Handler: adapter.userCanReviewCommits},
 	)
-	authzServiceUserCanSeeRepositorySettingsHandler := connect.NewUnaryHandler(
-		AuthzServiceUserCanSeeRepositorySettingsProcedure,
-		svc.UserCanSeeRepositorySettings,
-		connect.WithSchema(authzServiceMethods.ByName("UserCanSeeRepositorySettings")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	authzServiceUserCanSeeOrganizationSettingsHandler := connect.NewUnaryHandler(
-		AuthzServiceUserCanSeeOrganizationSettingsProcedure,
-		svc.UserCanSeeOrganizationSettings,
-		connect.WithSchema(authzServiceMethods.ByName("UserCanSeeOrganizationSettings")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	authzServiceUserCanAddOrganizationMemberHandler := connect.NewUnaryHandler(
-		AuthzServiceUserCanAddOrganizationMemberProcedure,
-		svc.UserCanAddOrganizationMember,
-		connect.WithSchema(authzServiceMethods.ByName("UserCanAddOrganizationMember")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	authzServiceUserCanUpdateOrganizationMemberHandler := connect.NewUnaryHandler(
-		AuthzServiceUserCanUpdateOrganizationMemberProcedure,
-		svc.UserCanUpdateOrganizationMember,
-		connect.WithSchema(authzServiceMethods.ByName("UserCanUpdateOrganizationMember")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	authzServiceUserCanRemoveOrganizationMemberHandler := connect.NewUnaryHandler(
-		AuthzServiceUserCanRemoveOrganizationMemberProcedure,
-		svc.UserCanRemoveOrganizationMember,
-		connect.WithSchema(authzServiceMethods.ByName("UserCanRemoveOrganizationMember")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	authzServiceUserCanDeleteOrganizationHandler := connect.NewUnaryHandler(
-		AuthzServiceUserCanDeleteOrganizationProcedure,
-		svc.UserCanDeleteOrganization,
-		connect.WithSchema(authzServiceMethods.ByName("UserCanDeleteOrganization")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	authzServiceUserCanDeleteRepositoryHandler := connect.NewUnaryHandler(
-		AuthzServiceUserCanDeleteRepositoryProcedure,
-		svc.UserCanDeleteRepository,
-		connect.WithSchema(authzServiceMethods.ByName("UserCanDeleteRepository")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	authzServiceUserCanDeleteUserHandler := connect.NewUnaryHandler(
-		AuthzServiceUserCanDeleteUserProcedure,
-		svc.UserCanDeleteUser,
-		connect.WithSchema(authzServiceMethods.ByName("UserCanDeleteUser")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	authzServiceUserCanSeeServerAdminPanelHandler := connect.NewUnaryHandler(
-		AuthzServiceUserCanSeeServerAdminPanelProcedure,
-		svc.UserCanSeeServerAdminPanel,
-		connect.WithSchema(authzServiceMethods.ByName("UserCanSeeServerAdminPanel")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	authzServiceUserCanManageRepositoryContributorsHandler := connect.NewUnaryHandler(
-		AuthzServiceUserCanManageRepositoryContributorsProcedure,
-		svc.UserCanManageRepositoryContributors,
-		connect.WithSchema(authzServiceMethods.ByName("UserCanManageRepositoryContributors")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	authzServiceUserCanReviewCommitsHandler := connect.NewUnaryHandler(
-		AuthzServiceUserCanReviewCommitsProcedure,
-		svc.UserCanReviewCommits,
-		connect.WithSchema(authzServiceMethods.ByName("UserCanReviewCommits")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	return "/buf.alpha.registry.v1alpha1.AuthzService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case AuthzServiceUserCanCreateOrganizationRepositoryProcedure:
-			authzServiceUserCanCreateOrganizationRepositoryHandler.ServeHTTP(w, r)
-		case AuthzServiceUserCanSeeRepositorySettingsProcedure:
-			authzServiceUserCanSeeRepositorySettingsHandler.ServeHTTP(w, r)
-		case AuthzServiceUserCanSeeOrganizationSettingsProcedure:
-			authzServiceUserCanSeeOrganizationSettingsHandler.ServeHTTP(w, r)
-		case AuthzServiceUserCanAddOrganizationMemberProcedure:
-			authzServiceUserCanAddOrganizationMemberHandler.ServeHTTP(w, r)
-		case AuthzServiceUserCanUpdateOrganizationMemberProcedure:
-			authzServiceUserCanUpdateOrganizationMemberHandler.ServeHTTP(w, r)
-		case AuthzServiceUserCanRemoveOrganizationMemberProcedure:
-			authzServiceUserCanRemoveOrganizationMemberHandler.ServeHTTP(w, r)
-		case AuthzServiceUserCanDeleteOrganizationProcedure:
-			authzServiceUserCanDeleteOrganizationHandler.ServeHTTP(w, r)
-		case AuthzServiceUserCanDeleteRepositoryProcedure:
-			authzServiceUserCanDeleteRepositoryHandler.ServeHTTP(w, r)
-		case AuthzServiceUserCanDeleteUserProcedure:
-			authzServiceUserCanDeleteUserHandler.ServeHTTP(w, r)
-		case AuthzServiceUserCanSeeServerAdminPanelProcedure:
-			authzServiceUserCanSeeServerAdminPanelHandler.ServeHTTP(w, r)
-		case AuthzServiceUserCanManageRepositoryContributorsProcedure:
-			authzServiceUserCanManageRepositoryContributorsHandler.ServeHTTP(w, r)
-		case AuthzServiceUserCanReviewCommitsProcedure:
-			authzServiceUserCanReviewCommitsHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedAuthzServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedAuthzServiceHandler struct{}
 
-func (UnimplementedAuthzServiceHandler) UserCanCreateOrganizationRepository(context.Context, *connect.Request[v1alpha1.UserCanCreateOrganizationRepositoryRequest]) (*connect.Response[v1alpha1.UserCanCreateOrganizationRepositoryResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanCreateOrganizationRepository is not implemented"))
+func (UnimplementedAuthzServiceHandler) UserCanCreateOrganizationRepository(context.Context, *v1alpha1.UserCanCreateOrganizationRepositoryRequest) (*v1alpha1.UserCanCreateOrganizationRepositoryResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AuthzService.UserCanCreateOrganizationRepository is not implemented")
 }
 
-func (UnimplementedAuthzServiceHandler) UserCanSeeRepositorySettings(context.Context, *connect.Request[v1alpha1.UserCanSeeRepositorySettingsRequest]) (*connect.Response[v1alpha1.UserCanSeeRepositorySettingsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanSeeRepositorySettings is not implemented"))
+func (UnimplementedAuthzServiceHandler) UserCanSeeRepositorySettings(context.Context, *v1alpha1.UserCanSeeRepositorySettingsRequest) (*v1alpha1.UserCanSeeRepositorySettingsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AuthzService.UserCanSeeRepositorySettings is not implemented")
 }
 
-func (UnimplementedAuthzServiceHandler) UserCanSeeOrganizationSettings(context.Context, *connect.Request[v1alpha1.UserCanSeeOrganizationSettingsRequest]) (*connect.Response[v1alpha1.UserCanSeeOrganizationSettingsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanSeeOrganizationSettings is not implemented"))
+func (UnimplementedAuthzServiceHandler) UserCanSeeOrganizationSettings(context.Context, *v1alpha1.UserCanSeeOrganizationSettingsRequest) (*v1alpha1.UserCanSeeOrganizationSettingsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AuthzService.UserCanSeeOrganizationSettings is not implemented")
 }
 
-func (UnimplementedAuthzServiceHandler) UserCanAddOrganizationMember(context.Context, *connect.Request[v1alpha1.UserCanAddOrganizationMemberRequest]) (*connect.Response[v1alpha1.UserCanAddOrganizationMemberResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanAddOrganizationMember is not implemented"))
+func (UnimplementedAuthzServiceHandler) UserCanAddOrganizationMember(context.Context, *v1alpha1.UserCanAddOrganizationMemberRequest) (*v1alpha1.UserCanAddOrganizationMemberResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AuthzService.UserCanAddOrganizationMember is not implemented")
 }
 
-func (UnimplementedAuthzServiceHandler) UserCanUpdateOrganizationMember(context.Context, *connect.Request[v1alpha1.UserCanUpdateOrganizationMemberRequest]) (*connect.Response[v1alpha1.UserCanUpdateOrganizationMemberResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanUpdateOrganizationMember is not implemented"))
+func (UnimplementedAuthzServiceHandler) UserCanUpdateOrganizationMember(context.Context, *v1alpha1.UserCanUpdateOrganizationMemberRequest) (*v1alpha1.UserCanUpdateOrganizationMemberResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AuthzService.UserCanUpdateOrganizationMember is not implemented")
 }
 
-func (UnimplementedAuthzServiceHandler) UserCanRemoveOrganizationMember(context.Context, *connect.Request[v1alpha1.UserCanRemoveOrganizationMemberRequest]) (*connect.Response[v1alpha1.UserCanRemoveOrganizationMemberResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanRemoveOrganizationMember is not implemented"))
+func (UnimplementedAuthzServiceHandler) UserCanRemoveOrganizationMember(context.Context, *v1alpha1.UserCanRemoveOrganizationMemberRequest) (*v1alpha1.UserCanRemoveOrganizationMemberResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AuthzService.UserCanRemoveOrganizationMember is not implemented")
 }
 
-func (UnimplementedAuthzServiceHandler) UserCanDeleteOrganization(context.Context, *connect.Request[v1alpha1.UserCanDeleteOrganizationRequest]) (*connect.Response[v1alpha1.UserCanDeleteOrganizationResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanDeleteOrganization is not implemented"))
+func (UnimplementedAuthzServiceHandler) UserCanDeleteOrganization(context.Context, *v1alpha1.UserCanDeleteOrganizationRequest) (*v1alpha1.UserCanDeleteOrganizationResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AuthzService.UserCanDeleteOrganization is not implemented")
 }
 
-func (UnimplementedAuthzServiceHandler) UserCanDeleteRepository(context.Context, *connect.Request[v1alpha1.UserCanDeleteRepositoryRequest]) (*connect.Response[v1alpha1.UserCanDeleteRepositoryResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanDeleteRepository is not implemented"))
+func (UnimplementedAuthzServiceHandler) UserCanDeleteRepository(context.Context, *v1alpha1.UserCanDeleteRepositoryRequest) (*v1alpha1.UserCanDeleteRepositoryResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AuthzService.UserCanDeleteRepository is not implemented")
 }
 
-func (UnimplementedAuthzServiceHandler) UserCanDeleteUser(context.Context, *connect.Request[v1alpha1.UserCanDeleteUserRequest]) (*connect.Response[v1alpha1.UserCanDeleteUserResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanDeleteUser is not implemented"))
+func (UnimplementedAuthzServiceHandler) UserCanDeleteUser(context.Context, *v1alpha1.UserCanDeleteUserRequest) (*v1alpha1.UserCanDeleteUserResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AuthzService.UserCanDeleteUser is not implemented")
 }
 
-func (UnimplementedAuthzServiceHandler) UserCanSeeServerAdminPanel(context.Context, *connect.Request[v1alpha1.UserCanSeeServerAdminPanelRequest]) (*connect.Response[v1alpha1.UserCanSeeServerAdminPanelResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanSeeServerAdminPanel is not implemented"))
+func (UnimplementedAuthzServiceHandler) UserCanSeeServerAdminPanel(context.Context, *v1alpha1.UserCanSeeServerAdminPanelRequest) (*v1alpha1.UserCanSeeServerAdminPanelResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AuthzService.UserCanSeeServerAdminPanel is not implemented")
 }
 
-func (UnimplementedAuthzServiceHandler) UserCanManageRepositoryContributors(context.Context, *connect.Request[v1alpha1.UserCanManageRepositoryContributorsRequest]) (*connect.Response[v1alpha1.UserCanManageRepositoryContributorsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanManageRepositoryContributors is not implemented"))
+func (UnimplementedAuthzServiceHandler) UserCanManageRepositoryContributors(context.Context, *v1alpha1.UserCanManageRepositoryContributorsRequest) (*v1alpha1.UserCanManageRepositoryContributorsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AuthzService.UserCanManageRepositoryContributors is not implemented")
 }
 
-func (UnimplementedAuthzServiceHandler) UserCanReviewCommits(context.Context, *connect.Request[v1alpha1.UserCanReviewCommitsRequest]) (*connect.Response[v1alpha1.UserCanReviewCommitsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanReviewCommits is not implemented"))
+func (UnimplementedAuthzServiceHandler) UserCanReviewCommits(context.Context, *v1alpha1.UserCanReviewCommitsRequest) (*v1alpha1.UserCanReviewCommitsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AuthzService.UserCanReviewCommits is not implemented")
+}
+
+type authzServiceClient struct {
+	client *connect.Client
+}
+
+func (c *authzServiceClient) UserCanCreateOrganizationRepository(ctx context.Context, req *v1alpha1.UserCanCreateOrganizationRepositoryRequest) (*v1alpha1.UserCanCreateOrganizationRepositoryResponse, error) {
+	var res v1alpha1.UserCanCreateOrganizationRepositoryResponse
+	if err := c.client.CallUnary(ctx, authzServiceUserCanCreateOrganizationRepositorySpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authzServiceClient) UserCanSeeRepositorySettings(ctx context.Context, req *v1alpha1.UserCanSeeRepositorySettingsRequest) (*v1alpha1.UserCanSeeRepositorySettingsResponse, error) {
+	var res v1alpha1.UserCanSeeRepositorySettingsResponse
+	if err := c.client.CallUnary(ctx, authzServiceUserCanSeeRepositorySettingsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authzServiceClient) UserCanSeeOrganizationSettings(ctx context.Context, req *v1alpha1.UserCanSeeOrganizationSettingsRequest) (*v1alpha1.UserCanSeeOrganizationSettingsResponse, error) {
+	var res v1alpha1.UserCanSeeOrganizationSettingsResponse
+	if err := c.client.CallUnary(ctx, authzServiceUserCanSeeOrganizationSettingsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authzServiceClient) UserCanAddOrganizationMember(ctx context.Context, req *v1alpha1.UserCanAddOrganizationMemberRequest) (*v1alpha1.UserCanAddOrganizationMemberResponse, error) {
+	var res v1alpha1.UserCanAddOrganizationMemberResponse
+	if err := c.client.CallUnary(ctx, authzServiceUserCanAddOrganizationMemberSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authzServiceClient) UserCanUpdateOrganizationMember(ctx context.Context, req *v1alpha1.UserCanUpdateOrganizationMemberRequest) (*v1alpha1.UserCanUpdateOrganizationMemberResponse, error) {
+	var res v1alpha1.UserCanUpdateOrganizationMemberResponse
+	if err := c.client.CallUnary(ctx, authzServiceUserCanUpdateOrganizationMemberSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authzServiceClient) UserCanRemoveOrganizationMember(ctx context.Context, req *v1alpha1.UserCanRemoveOrganizationMemberRequest) (*v1alpha1.UserCanRemoveOrganizationMemberResponse, error) {
+	var res v1alpha1.UserCanRemoveOrganizationMemberResponse
+	if err := c.client.CallUnary(ctx, authzServiceUserCanRemoveOrganizationMemberSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authzServiceClient) UserCanDeleteOrganization(ctx context.Context, req *v1alpha1.UserCanDeleteOrganizationRequest) (*v1alpha1.UserCanDeleteOrganizationResponse, error) {
+	var res v1alpha1.UserCanDeleteOrganizationResponse
+	if err := c.client.CallUnary(ctx, authzServiceUserCanDeleteOrganizationSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authzServiceClient) UserCanDeleteRepository(ctx context.Context, req *v1alpha1.UserCanDeleteRepositoryRequest) (*v1alpha1.UserCanDeleteRepositoryResponse, error) {
+	var res v1alpha1.UserCanDeleteRepositoryResponse
+	if err := c.client.CallUnary(ctx, authzServiceUserCanDeleteRepositorySpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authzServiceClient) UserCanDeleteUser(ctx context.Context, req *v1alpha1.UserCanDeleteUserRequest) (*v1alpha1.UserCanDeleteUserResponse, error) {
+	var res v1alpha1.UserCanDeleteUserResponse
+	if err := c.client.CallUnary(ctx, authzServiceUserCanDeleteUserSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authzServiceClient) UserCanSeeServerAdminPanel(ctx context.Context, req *v1alpha1.UserCanSeeServerAdminPanelRequest) (*v1alpha1.UserCanSeeServerAdminPanelResponse, error) {
+	var res v1alpha1.UserCanSeeServerAdminPanelResponse
+	if err := c.client.CallUnary(ctx, authzServiceUserCanSeeServerAdminPanelSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authzServiceClient) UserCanManageRepositoryContributors(ctx context.Context, req *v1alpha1.UserCanManageRepositoryContributorsRequest) (*v1alpha1.UserCanManageRepositoryContributorsResponse, error) {
+	var res v1alpha1.UserCanManageRepositoryContributorsResponse
+	if err := c.client.CallUnary(ctx, authzServiceUserCanManageRepositoryContributorsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authzServiceClient) UserCanReviewCommits(ctx context.Context, req *v1alpha1.UserCanReviewCommitsRequest) (*v1alpha1.UserCanReviewCommitsResponse, error) {
+	var res v1alpha1.UserCanReviewCommitsResponse
+	if err := c.client.CallUnary(ctx, authzServiceUserCanReviewCommitsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type authzServiceHandler struct{ svc AuthzServiceHandler }
+
+func (h authzServiceHandler) userCanCreateOrganizationRepository(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UserCanCreateOrganizationRepositoryRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UserCanCreateOrganizationRepository(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authzServiceHandler) userCanSeeRepositorySettings(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UserCanSeeRepositorySettingsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UserCanSeeRepositorySettings(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authzServiceHandler) userCanSeeOrganizationSettings(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UserCanSeeOrganizationSettingsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UserCanSeeOrganizationSettings(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authzServiceHandler) userCanAddOrganizationMember(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UserCanAddOrganizationMemberRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UserCanAddOrganizationMember(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authzServiceHandler) userCanUpdateOrganizationMember(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UserCanUpdateOrganizationMemberRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UserCanUpdateOrganizationMember(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authzServiceHandler) userCanRemoveOrganizationMember(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UserCanRemoveOrganizationMemberRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UserCanRemoveOrganizationMember(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authzServiceHandler) userCanDeleteOrganization(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UserCanDeleteOrganizationRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UserCanDeleteOrganization(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authzServiceHandler) userCanDeleteRepository(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UserCanDeleteRepositoryRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UserCanDeleteRepository(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authzServiceHandler) userCanDeleteUser(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UserCanDeleteUserRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UserCanDeleteUser(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authzServiceHandler) userCanSeeServerAdminPanel(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UserCanSeeServerAdminPanelRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UserCanSeeServerAdminPanel(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authzServiceHandler) userCanManageRepositoryContributors(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UserCanManageRepositoryContributorsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UserCanManageRepositoryContributors(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authzServiceHandler) userCanReviewCommits(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UserCanReviewCommitsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UserCanReviewCommits(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

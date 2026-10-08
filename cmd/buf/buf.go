@@ -25,7 +25,7 @@ import (
 	"buf.build/go/app"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/alpha/protoc"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/alpha/registry/token/tokenget"

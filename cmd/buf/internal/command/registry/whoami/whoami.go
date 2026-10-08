@@ -22,7 +22,7 @@ import (
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
@@ -97,14 +97,14 @@ func run(
 	}
 	ownerClientProvider := bufregistryapiowner.NewClientProvider(clientConfig)
 	userServiceClient := ownerClientProvider.V1UserServiceClient(remote)
-	currentUserResponse, err := userServiceClient.GetCurrentUser(ctx, connect.NewRequest(&ownerv1.GetCurrentUserRequest{}))
+	currentUserResponse, err := userServiceClient.GetCurrentUser(ctx, &ownerv1.GetCurrentUserRequest{})
 	if err != nil {
 		if connectErr := new(connect.Error); errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnauthenticated {
 			return fmt.Errorf("Not currently logged in for %s.", remote)
 		}
 		return err
 	}
-	user := currentUserResponse.Msg.GetUser()
+	user := currentUserResponse.GetUser()
 	if user == nil {
 		return fmt.Errorf(
 			`No user is logged in to %s. Run %q to refresh your credentials. If you have the %s environment variable set, ensure that the token is valid.`,

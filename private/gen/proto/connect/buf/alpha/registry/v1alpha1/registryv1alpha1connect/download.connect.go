@@ -19,94 +19,64 @@
 package registryv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// DownloadServiceName is the fully-qualified name of the DownloadService service.
 	DownloadServiceName = "buf.alpha.registry.v1alpha1.DownloadService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// DownloadServiceDownloadProcedure is the fully-qualified name of the DownloadService's Download
-	// RPC.
+	// DownloadServiceDownloadProcedure is the procedure name of the DownloadService's Download RPC.
 	DownloadServiceDownloadProcedure = "/buf.alpha.registry.v1alpha1.DownloadService/Download"
-	// DownloadServiceDownloadManifestAndBlobsProcedure is the fully-qualified name of the
-	// DownloadService's DownloadManifestAndBlobs RPC.
+	// DownloadServiceDownloadManifestAndBlobsProcedure is the procedure name of the DownloadService's
+	// DownloadManifestAndBlobs RPC.
 	DownloadServiceDownloadManifestAndBlobsProcedure = "/buf.alpha.registry.v1alpha1.DownloadService/DownloadManifestAndBlobs"
+)
+
+var (
+	downloadServiceDownloadSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_download_proto.Services().ByName("DownloadService").Methods().ByName("Download"),
+			Procedure:        DownloadServiceDownloadProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	downloadServiceDownloadManifestAndBlobsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_download_proto.Services().ByName("DownloadService").Methods().ByName("DownloadManifestAndBlobs"),
+			Procedure:        DownloadServiceDownloadManifestAndBlobsProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
 )
 
 // DownloadServiceClient is a client for the buf.alpha.registry.v1alpha1.DownloadService service.
 type DownloadServiceClient interface {
 	// Download downloads a BSR module.
 	// NOTE: Newer clients should use DownloadManifestAndBlobs instead.
-	Download(context.Context, *connect.Request[v1alpha1.DownloadRequest]) (*connect.Response[v1alpha1.DownloadResponse], error)
+	Download(context.Context, *v1alpha1.DownloadRequest) (*v1alpha1.DownloadResponse, error)
 	// DownloadManifestAndBlobs downloads a module in the manifest+blobs encoding format.
-	DownloadManifestAndBlobs(context.Context, *connect.Request[v1alpha1.DownloadManifestAndBlobsRequest]) (*connect.Response[v1alpha1.DownloadManifestAndBlobsResponse], error)
+	DownloadManifestAndBlobs(context.Context, *v1alpha1.DownloadManifestAndBlobsRequest) (*v1alpha1.DownloadManifestAndBlobsResponse, error)
 }
 
 // NewDownloadServiceClient constructs a client for the buf.alpha.registry.v1alpha1.DownloadService
-// service. By default, it uses the Connect protocol with the binary Protobuf Codec, asks for
-// gzipped responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply
-// the connect.WithGRPC() or connect.WithGRPCWeb() options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewDownloadServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) DownloadServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	downloadServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_download_proto.Services().ByName("DownloadService").Methods()
-	return &downloadServiceClient{
-		download: connect.NewClient[v1alpha1.DownloadRequest, v1alpha1.DownloadResponse](
-			httpClient,
-			baseURL+DownloadServiceDownloadProcedure,
-			connect.WithSchema(downloadServiceMethods.ByName("Download")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		downloadManifestAndBlobs: connect.NewClient[v1alpha1.DownloadManifestAndBlobsRequest, v1alpha1.DownloadManifestAndBlobsResponse](
-			httpClient,
-			baseURL+DownloadServiceDownloadManifestAndBlobsProcedure,
-			connect.WithSchema(downloadServiceMethods.ByName("DownloadManifestAndBlobs")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// downloadServiceClient implements DownloadServiceClient.
-type downloadServiceClient struct {
-	download                 *connect.Client[v1alpha1.DownloadRequest, v1alpha1.DownloadResponse]
-	downloadManifestAndBlobs *connect.Client[v1alpha1.DownloadManifestAndBlobsRequest, v1alpha1.DownloadManifestAndBlobsResponse]
-}
-
-// Download calls buf.alpha.registry.v1alpha1.DownloadService.Download.
-func (c *downloadServiceClient) Download(ctx context.Context, req *connect.Request[v1alpha1.DownloadRequest]) (*connect.Response[v1alpha1.DownloadResponse], error) {
-	return c.download.CallUnary(ctx, req)
-}
-
-// DownloadManifestAndBlobs calls
-// buf.alpha.registry.v1alpha1.DownloadService.DownloadManifestAndBlobs.
-func (c *downloadServiceClient) DownloadManifestAndBlobs(ctx context.Context, req *connect.Request[v1alpha1.DownloadManifestAndBlobsRequest]) (*connect.Response[v1alpha1.DownloadManifestAndBlobsResponse], error) {
-	return c.downloadManifestAndBlobs.CallUnary(ctx, req)
+// service. Multiple service clients may share a single connect.Client.
+func NewDownloadServiceClient(client *connect.Client) DownloadServiceClient {
+	return &downloadServiceClient{client: client}
 }
 
 // DownloadServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.DownloadService
@@ -114,51 +84,74 @@ func (c *downloadServiceClient) DownloadManifestAndBlobs(ctx context.Context, re
 type DownloadServiceHandler interface {
 	// Download downloads a BSR module.
 	// NOTE: Newer clients should use DownloadManifestAndBlobs instead.
-	Download(context.Context, *connect.Request[v1alpha1.DownloadRequest]) (*connect.Response[v1alpha1.DownloadResponse], error)
+	Download(context.Context, *v1alpha1.DownloadRequest) (*v1alpha1.DownloadResponse, error)
 	// DownloadManifestAndBlobs downloads a module in the manifest+blobs encoding format.
-	DownloadManifestAndBlobs(context.Context, *connect.Request[v1alpha1.DownloadManifestAndBlobsRequest]) (*connect.Response[v1alpha1.DownloadManifestAndBlobsResponse], error)
+	DownloadManifestAndBlobs(context.Context, *v1alpha1.DownloadManifestAndBlobsRequest) (*v1alpha1.DownloadManifestAndBlobsResponse, error)
 }
 
-// NewDownloadServiceHandler builds an HTTP handler from the service implementation. It returns the
-// path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewDownloadServiceHandler(svc DownloadServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	downloadServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_download_proto.Services().ByName("DownloadService").Methods()
-	downloadServiceDownloadHandler := connect.NewUnaryHandler(
-		DownloadServiceDownloadProcedure,
-		svc.Download,
-		connect.WithSchema(downloadServiceMethods.ByName("Download")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
+// RegisterDownloadServiceHandler registers svc as the buf.alpha.registry.v1alpha1.DownloadService
+// implementation on server.
+func RegisterDownloadServiceHandler(server *connect.Server, svc DownloadServiceHandler) {
+	adapter := downloadServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: downloadServiceDownloadSpec(), Handler: adapter.download},
+		connect.Method{Spec: downloadServiceDownloadManifestAndBlobsSpec(), Handler: adapter.downloadManifestAndBlobs},
 	)
-	downloadServiceDownloadManifestAndBlobsHandler := connect.NewUnaryHandler(
-		DownloadServiceDownloadManifestAndBlobsProcedure,
-		svc.DownloadManifestAndBlobs,
-		connect.WithSchema(downloadServiceMethods.ByName("DownloadManifestAndBlobs")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	return "/buf.alpha.registry.v1alpha1.DownloadService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case DownloadServiceDownloadProcedure:
-			downloadServiceDownloadHandler.ServeHTTP(w, r)
-		case DownloadServiceDownloadManifestAndBlobsProcedure:
-			downloadServiceDownloadManifestAndBlobsHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedDownloadServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedDownloadServiceHandler struct{}
 
-func (UnimplementedDownloadServiceHandler) Download(context.Context, *connect.Request[v1alpha1.DownloadRequest]) (*connect.Response[v1alpha1.DownloadResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DownloadService.Download is not implemented"))
+func (UnimplementedDownloadServiceHandler) Download(context.Context, *v1alpha1.DownloadRequest) (*v1alpha1.DownloadResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.DownloadService.Download is not implemented")
 }
 
-func (UnimplementedDownloadServiceHandler) DownloadManifestAndBlobs(context.Context, *connect.Request[v1alpha1.DownloadManifestAndBlobsRequest]) (*connect.Response[v1alpha1.DownloadManifestAndBlobsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DownloadService.DownloadManifestAndBlobs is not implemented"))
+func (UnimplementedDownloadServiceHandler) DownloadManifestAndBlobs(context.Context, *v1alpha1.DownloadManifestAndBlobsRequest) (*v1alpha1.DownloadManifestAndBlobsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.DownloadService.DownloadManifestAndBlobs is not implemented")
+}
+
+type downloadServiceClient struct {
+	client *connect.Client
+}
+
+func (c *downloadServiceClient) Download(ctx context.Context, req *v1alpha1.DownloadRequest) (*v1alpha1.DownloadResponse, error) {
+	var res v1alpha1.DownloadResponse
+	if err := c.client.CallUnary(ctx, downloadServiceDownloadSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *downloadServiceClient) DownloadManifestAndBlobs(ctx context.Context, req *v1alpha1.DownloadManifestAndBlobsRequest) (*v1alpha1.DownloadManifestAndBlobsResponse, error) {
+	var res v1alpha1.DownloadManifestAndBlobsResponse
+	if err := c.client.CallUnary(ctx, downloadServiceDownloadManifestAndBlobsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type downloadServiceHandler struct{ svc DownloadServiceHandler }
+
+func (h downloadServiceHandler) download(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.DownloadRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.Download(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h downloadServiceHandler) downloadManifestAndBlobs(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.DownloadManifestAndBlobsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DownloadManifestAndBlobs(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

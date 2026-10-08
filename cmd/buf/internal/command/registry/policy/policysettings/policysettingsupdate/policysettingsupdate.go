@@ -21,7 +21,7 @@ import (
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapipolicy"
@@ -107,7 +107,7 @@ func run(
 	policyServiceClient := bufregistryapipolicy.NewClientProvider(clientConfig).
 		V1Beta1PolicyServiceClient(policyFullName.Registry())
 
-	policyResponse, err := policyServiceClient.UpdatePolicies(ctx, connect.NewRequest(
+	policyResponse, err := policyServiceClient.UpdatePolicies(ctx,
 		&policyv1beta1.UpdatePoliciesRequest{
 			Values: []*policyv1beta1.UpdatePoliciesRequest_Value{
 				{
@@ -123,16 +123,16 @@ func run(
 				},
 			},
 		},
-	))
+	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewModuleNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	policys := policyResponse.Msg.Policies
-	if len(policys) != 1 {
-		return syserror.Newf("unexpected number of policys returned from server: %d", len(policys))
+	policies := policyResponse.Policies
+	if len(policies) != 1 {
+		return syserror.Newf("unexpected number of policies returned from server: %d", len(policies))
 	}
 	_, err = fmt.Fprintf(container.Stdout(), "Updated %s.\n", policyFullName)
 	if err != nil {

@@ -24,7 +24,7 @@ import (
 
 	"buf.build/go/app/appcmd"
 	"buf.build/go/app/appext"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/private/buf/bufapp"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
@@ -201,7 +201,7 @@ func inner(
 		return err
 	}
 	authnService := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewAuthnServiceClient)
-	resp, err := authnService.GetCurrentUser(ctx, connect.NewRequest(&registryv1alpha1.GetCurrentUserRequest{}))
+	resp, err := authnService.GetCurrentUser(ctx, &registryv1alpha1.GetCurrentUserRequest{})
 	if err != nil {
 		if connectErr := new(connect.Error); errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnavailable {
 			return connectErr
@@ -210,7 +210,7 @@ func inner(
 		// an unauthenticated error.
 		return fmt.Errorf("invalid token provided for %s", remote)
 	}
-	user := resp.Msg.GetUser()
+	user := resp.GetUser()
 	if user == nil {
 		return syserror.New("no user found for registry login token")
 	}

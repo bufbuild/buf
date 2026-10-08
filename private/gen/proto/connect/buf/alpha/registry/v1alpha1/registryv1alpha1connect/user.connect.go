@@ -19,399 +19,451 @@
 package registryv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// UserServiceName is the fully-qualified name of the UserService service.
 	UserServiceName = "buf.alpha.registry.v1alpha1.UserService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// UserServiceCreateUserProcedure is the fully-qualified name of the UserService's CreateUser RPC.
+	// UserServiceCreateUserProcedure is the procedure name of the UserService's CreateUser RPC.
 	UserServiceCreateUserProcedure = "/buf.alpha.registry.v1alpha1.UserService/CreateUser"
-	// UserServiceGetUserProcedure is the fully-qualified name of the UserService's GetUser RPC.
+	// UserServiceGetUserProcedure is the procedure name of the UserService's GetUser RPC.
 	UserServiceGetUserProcedure = "/buf.alpha.registry.v1alpha1.UserService/GetUser"
-	// UserServiceGetUserByUsernameProcedure is the fully-qualified name of the UserService's
+	// UserServiceGetUserByUsernameProcedure is the procedure name of the UserService's
 	// GetUserByUsername RPC.
 	UserServiceGetUserByUsernameProcedure = "/buf.alpha.registry.v1alpha1.UserService/GetUserByUsername"
-	// UserServiceListUsersProcedure is the fully-qualified name of the UserService's ListUsers RPC.
+	// UserServiceListUsersProcedure is the procedure name of the UserService's ListUsers RPC.
 	UserServiceListUsersProcedure = "/buf.alpha.registry.v1alpha1.UserService/ListUsers"
-	// UserServiceListOrganizationUsersProcedure is the fully-qualified name of the UserService's
+	// UserServiceListOrganizationUsersProcedure is the procedure name of the UserService's
 	// ListOrganizationUsers RPC.
 	UserServiceListOrganizationUsersProcedure = "/buf.alpha.registry.v1alpha1.UserService/ListOrganizationUsers"
-	// UserServiceDeleteUserProcedure is the fully-qualified name of the UserService's DeleteUser RPC.
+	// UserServiceDeleteUserProcedure is the procedure name of the UserService's DeleteUser RPC.
 	UserServiceDeleteUserProcedure = "/buf.alpha.registry.v1alpha1.UserService/DeleteUser"
-	// UserServiceDeactivateUserProcedure is the fully-qualified name of the UserService's
-	// DeactivateUser RPC.
+	// UserServiceDeactivateUserProcedure is the procedure name of the UserService's DeactivateUser RPC.
 	UserServiceDeactivateUserProcedure = "/buf.alpha.registry.v1alpha1.UserService/DeactivateUser"
-	// UserServiceUpdateUserServerRoleProcedure is the fully-qualified name of the UserService's
+	// UserServiceUpdateUserServerRoleProcedure is the procedure name of the UserService's
 	// UpdateUserServerRole RPC.
 	UserServiceUpdateUserServerRoleProcedure = "/buf.alpha.registry.v1alpha1.UserService/UpdateUserServerRole"
-	// UserServiceCountUsersProcedure is the fully-qualified name of the UserService's CountUsers RPC.
+	// UserServiceCountUsersProcedure is the procedure name of the UserService's CountUsers RPC.
 	UserServiceCountUsersProcedure = "/buf.alpha.registry.v1alpha1.UserService/CountUsers"
-	// UserServiceUpdateUserSettingsProcedure is the fully-qualified name of the UserService's
+	// UserServiceUpdateUserSettingsProcedure is the procedure name of the UserService's
 	// UpdateUserSettings RPC.
 	UserServiceUpdateUserSettingsProcedure = "/buf.alpha.registry.v1alpha1.UserService/UpdateUserSettings"
+)
+
+var (
+	userServiceCreateUserSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService").Methods().ByName("CreateUser"),
+			Procedure:        UserServiceCreateUserProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	userServiceGetUserSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService").Methods().ByName("GetUser"),
+			Procedure:        UserServiceGetUserProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	userServiceGetUserByUsernameSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService").Methods().ByName("GetUserByUsername"),
+			Procedure:        UserServiceGetUserByUsernameProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	userServiceListUsersSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService").Methods().ByName("ListUsers"),
+			Procedure:        UserServiceListUsersProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	userServiceListOrganizationUsersSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService").Methods().ByName("ListOrganizationUsers"),
+			Procedure:        UserServiceListOrganizationUsersProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	userServiceDeleteUserSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService").Methods().ByName("DeleteUser"),
+			Procedure:        UserServiceDeleteUserProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	userServiceDeactivateUserSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService").Methods().ByName("DeactivateUser"),
+			Procedure:        UserServiceDeactivateUserProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	userServiceUpdateUserServerRoleSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService").Methods().ByName("UpdateUserServerRole"),
+			Procedure:  UserServiceUpdateUserServerRoleProcedure,
+		}
+	})
+	userServiceCountUsersSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService").Methods().ByName("CountUsers"),
+			Procedure:        UserServiceCountUsersProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	userServiceUpdateUserSettingsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService").Methods().ByName("UpdateUserSettings"),
+			Procedure:  UserServiceUpdateUserSettingsProcedure,
+		}
+	})
 )
 
 // UserServiceClient is a client for the buf.alpha.registry.v1alpha1.UserService service.
 type UserServiceClient interface {
 	// CreateUser creates a new user with the given username.
-	CreateUser(context.Context, *connect.Request[v1alpha1.CreateUserRequest]) (*connect.Response[v1alpha1.CreateUserResponse], error)
+	CreateUser(context.Context, *v1alpha1.CreateUserRequest) (*v1alpha1.CreateUserResponse, error)
 	// GetUser gets a user by ID.
-	GetUser(context.Context, *connect.Request[v1alpha1.GetUserRequest]) (*connect.Response[v1alpha1.GetUserResponse], error)
+	GetUser(context.Context, *v1alpha1.GetUserRequest) (*v1alpha1.GetUserResponse, error)
 	// GetUserByUsername gets a user by username.
-	GetUserByUsername(context.Context, *connect.Request[v1alpha1.GetUserByUsernameRequest]) (*connect.Response[v1alpha1.GetUserByUsernameResponse], error)
+	GetUserByUsername(context.Context, *v1alpha1.GetUserByUsernameRequest) (*v1alpha1.GetUserByUsernameResponse, error)
 	// ListUsers lists all users.
-	ListUsers(context.Context, *connect.Request[v1alpha1.ListUsersRequest]) (*connect.Response[v1alpha1.ListUsersResponse], error)
+	ListUsers(context.Context, *v1alpha1.ListUsersRequest) (*v1alpha1.ListUsersResponse, error)
 	// ListOrganizationUsers lists all users for an organization.
 	// TODO: #663 move this to organization service
-	ListOrganizationUsers(context.Context, *connect.Request[v1alpha1.ListOrganizationUsersRequest]) (*connect.Response[v1alpha1.ListOrganizationUsersResponse], error)
+	ListOrganizationUsers(context.Context, *v1alpha1.ListOrganizationUsersRequest) (*v1alpha1.ListOrganizationUsersResponse, error)
 	// DeleteUser deletes a user.
-	DeleteUser(context.Context, *connect.Request[v1alpha1.DeleteUserRequest]) (*connect.Response[v1alpha1.DeleteUserResponse], error)
+	DeleteUser(context.Context, *v1alpha1.DeleteUserRequest) (*v1alpha1.DeleteUserResponse, error)
 	// Deactivate user deactivates a user.
-	DeactivateUser(context.Context, *connect.Request[v1alpha1.DeactivateUserRequest]) (*connect.Response[v1alpha1.DeactivateUserResponse], error)
+	DeactivateUser(context.Context, *v1alpha1.DeactivateUserRequest) (*v1alpha1.DeactivateUserResponse, error)
 	// UpdateUserServerRole update the role of an user in the server.
-	UpdateUserServerRole(context.Context, *connect.Request[v1alpha1.UpdateUserServerRoleRequest]) (*connect.Response[v1alpha1.UpdateUserServerRoleResponse], error)
+	UpdateUserServerRole(context.Context, *v1alpha1.UpdateUserServerRoleRequest) (*v1alpha1.UpdateUserServerRoleResponse, error)
 	// CountUsers returns the number of users in the server by the user state provided.
-	CountUsers(context.Context, *connect.Request[v1alpha1.CountUsersRequest]) (*connect.Response[v1alpha1.CountUsersResponse], error)
+	CountUsers(context.Context, *v1alpha1.CountUsersRequest) (*v1alpha1.CountUsersResponse, error)
 	// UpdateUserSettings update the user settings including description.
-	UpdateUserSettings(context.Context, *connect.Request[v1alpha1.UpdateUserSettingsRequest]) (*connect.Response[v1alpha1.UpdateUserSettingsResponse], error)
+	UpdateUserSettings(context.Context, *v1alpha1.UpdateUserSettingsRequest) (*v1alpha1.UpdateUserSettingsResponse, error)
 }
 
 // NewUserServiceClient constructs a client for the buf.alpha.registry.v1alpha1.UserService service.
-// By default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped
-// responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
-// connect.WithGRPC() or connect.WithGRPCWeb() options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) UserServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	userServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService").Methods()
-	return &userServiceClient{
-		createUser: connect.NewClient[v1alpha1.CreateUserRequest, v1alpha1.CreateUserResponse](
-			httpClient,
-			baseURL+UserServiceCreateUserProcedure,
-			connect.WithSchema(userServiceMethods.ByName("CreateUser")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		getUser: connect.NewClient[v1alpha1.GetUserRequest, v1alpha1.GetUserResponse](
-			httpClient,
-			baseURL+UserServiceGetUserProcedure,
-			connect.WithSchema(userServiceMethods.ByName("GetUser")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getUserByUsername: connect.NewClient[v1alpha1.GetUserByUsernameRequest, v1alpha1.GetUserByUsernameResponse](
-			httpClient,
-			baseURL+UserServiceGetUserByUsernameProcedure,
-			connect.WithSchema(userServiceMethods.ByName("GetUserByUsername")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		listUsers: connect.NewClient[v1alpha1.ListUsersRequest, v1alpha1.ListUsersResponse](
-			httpClient,
-			baseURL+UserServiceListUsersProcedure,
-			connect.WithSchema(userServiceMethods.ByName("ListUsers")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		listOrganizationUsers: connect.NewClient[v1alpha1.ListOrganizationUsersRequest, v1alpha1.ListOrganizationUsersResponse](
-			httpClient,
-			baseURL+UserServiceListOrganizationUsersProcedure,
-			connect.WithSchema(userServiceMethods.ByName("ListOrganizationUsers")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		deleteUser: connect.NewClient[v1alpha1.DeleteUserRequest, v1alpha1.DeleteUserResponse](
-			httpClient,
-			baseURL+UserServiceDeleteUserProcedure,
-			connect.WithSchema(userServiceMethods.ByName("DeleteUser")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		deactivateUser: connect.NewClient[v1alpha1.DeactivateUserRequest, v1alpha1.DeactivateUserResponse](
-			httpClient,
-			baseURL+UserServiceDeactivateUserProcedure,
-			connect.WithSchema(userServiceMethods.ByName("DeactivateUser")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		updateUserServerRole: connect.NewClient[v1alpha1.UpdateUserServerRoleRequest, v1alpha1.UpdateUserServerRoleResponse](
-			httpClient,
-			baseURL+UserServiceUpdateUserServerRoleProcedure,
-			connect.WithSchema(userServiceMethods.ByName("UpdateUserServerRole")),
-			connect.WithClientOptions(opts...),
-		),
-		countUsers: connect.NewClient[v1alpha1.CountUsersRequest, v1alpha1.CountUsersResponse](
-			httpClient,
-			baseURL+UserServiceCountUsersProcedure,
-			connect.WithSchema(userServiceMethods.ByName("CountUsers")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		updateUserSettings: connect.NewClient[v1alpha1.UpdateUserSettingsRequest, v1alpha1.UpdateUserSettingsResponse](
-			httpClient,
-			baseURL+UserServiceUpdateUserSettingsProcedure,
-			connect.WithSchema(userServiceMethods.ByName("UpdateUserSettings")),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// userServiceClient implements UserServiceClient.
-type userServiceClient struct {
-	createUser            *connect.Client[v1alpha1.CreateUserRequest, v1alpha1.CreateUserResponse]
-	getUser               *connect.Client[v1alpha1.GetUserRequest, v1alpha1.GetUserResponse]
-	getUserByUsername     *connect.Client[v1alpha1.GetUserByUsernameRequest, v1alpha1.GetUserByUsernameResponse]
-	listUsers             *connect.Client[v1alpha1.ListUsersRequest, v1alpha1.ListUsersResponse]
-	listOrganizationUsers *connect.Client[v1alpha1.ListOrganizationUsersRequest, v1alpha1.ListOrganizationUsersResponse]
-	deleteUser            *connect.Client[v1alpha1.DeleteUserRequest, v1alpha1.DeleteUserResponse]
-	deactivateUser        *connect.Client[v1alpha1.DeactivateUserRequest, v1alpha1.DeactivateUserResponse]
-	updateUserServerRole  *connect.Client[v1alpha1.UpdateUserServerRoleRequest, v1alpha1.UpdateUserServerRoleResponse]
-	countUsers            *connect.Client[v1alpha1.CountUsersRequest, v1alpha1.CountUsersResponse]
-	updateUserSettings    *connect.Client[v1alpha1.UpdateUserSettingsRequest, v1alpha1.UpdateUserSettingsResponse]
-}
-
-// CreateUser calls buf.alpha.registry.v1alpha1.UserService.CreateUser.
-func (c *userServiceClient) CreateUser(ctx context.Context, req *connect.Request[v1alpha1.CreateUserRequest]) (*connect.Response[v1alpha1.CreateUserResponse], error) {
-	return c.createUser.CallUnary(ctx, req)
-}
-
-// GetUser calls buf.alpha.registry.v1alpha1.UserService.GetUser.
-func (c *userServiceClient) GetUser(ctx context.Context, req *connect.Request[v1alpha1.GetUserRequest]) (*connect.Response[v1alpha1.GetUserResponse], error) {
-	return c.getUser.CallUnary(ctx, req)
-}
-
-// GetUserByUsername calls buf.alpha.registry.v1alpha1.UserService.GetUserByUsername.
-func (c *userServiceClient) GetUserByUsername(ctx context.Context, req *connect.Request[v1alpha1.GetUserByUsernameRequest]) (*connect.Response[v1alpha1.GetUserByUsernameResponse], error) {
-	return c.getUserByUsername.CallUnary(ctx, req)
-}
-
-// ListUsers calls buf.alpha.registry.v1alpha1.UserService.ListUsers.
-func (c *userServiceClient) ListUsers(ctx context.Context, req *connect.Request[v1alpha1.ListUsersRequest]) (*connect.Response[v1alpha1.ListUsersResponse], error) {
-	return c.listUsers.CallUnary(ctx, req)
-}
-
-// ListOrganizationUsers calls buf.alpha.registry.v1alpha1.UserService.ListOrganizationUsers.
-func (c *userServiceClient) ListOrganizationUsers(ctx context.Context, req *connect.Request[v1alpha1.ListOrganizationUsersRequest]) (*connect.Response[v1alpha1.ListOrganizationUsersResponse], error) {
-	return c.listOrganizationUsers.CallUnary(ctx, req)
-}
-
-// DeleteUser calls buf.alpha.registry.v1alpha1.UserService.DeleteUser.
-func (c *userServiceClient) DeleteUser(ctx context.Context, req *connect.Request[v1alpha1.DeleteUserRequest]) (*connect.Response[v1alpha1.DeleteUserResponse], error) {
-	return c.deleteUser.CallUnary(ctx, req)
-}
-
-// DeactivateUser calls buf.alpha.registry.v1alpha1.UserService.DeactivateUser.
-func (c *userServiceClient) DeactivateUser(ctx context.Context, req *connect.Request[v1alpha1.DeactivateUserRequest]) (*connect.Response[v1alpha1.DeactivateUserResponse], error) {
-	return c.deactivateUser.CallUnary(ctx, req)
-}
-
-// UpdateUserServerRole calls buf.alpha.registry.v1alpha1.UserService.UpdateUserServerRole.
-func (c *userServiceClient) UpdateUserServerRole(ctx context.Context, req *connect.Request[v1alpha1.UpdateUserServerRoleRequest]) (*connect.Response[v1alpha1.UpdateUserServerRoleResponse], error) {
-	return c.updateUserServerRole.CallUnary(ctx, req)
-}
-
-// CountUsers calls buf.alpha.registry.v1alpha1.UserService.CountUsers.
-func (c *userServiceClient) CountUsers(ctx context.Context, req *connect.Request[v1alpha1.CountUsersRequest]) (*connect.Response[v1alpha1.CountUsersResponse], error) {
-	return c.countUsers.CallUnary(ctx, req)
-}
-
-// UpdateUserSettings calls buf.alpha.registry.v1alpha1.UserService.UpdateUserSettings.
-func (c *userServiceClient) UpdateUserSettings(ctx context.Context, req *connect.Request[v1alpha1.UpdateUserSettingsRequest]) (*connect.Response[v1alpha1.UpdateUserSettingsResponse], error) {
-	return c.updateUserSettings.CallUnary(ctx, req)
+// Multiple service clients may share a single connect.Client.
+func NewUserServiceClient(client *connect.Client) UserServiceClient {
+	return &userServiceClient{client: client}
 }
 
 // UserServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.UserService service.
 type UserServiceHandler interface {
 	// CreateUser creates a new user with the given username.
-	CreateUser(context.Context, *connect.Request[v1alpha1.CreateUserRequest]) (*connect.Response[v1alpha1.CreateUserResponse], error)
+	CreateUser(context.Context, *v1alpha1.CreateUserRequest) (*v1alpha1.CreateUserResponse, error)
 	// GetUser gets a user by ID.
-	GetUser(context.Context, *connect.Request[v1alpha1.GetUserRequest]) (*connect.Response[v1alpha1.GetUserResponse], error)
+	GetUser(context.Context, *v1alpha1.GetUserRequest) (*v1alpha1.GetUserResponse, error)
 	// GetUserByUsername gets a user by username.
-	GetUserByUsername(context.Context, *connect.Request[v1alpha1.GetUserByUsernameRequest]) (*connect.Response[v1alpha1.GetUserByUsernameResponse], error)
+	GetUserByUsername(context.Context, *v1alpha1.GetUserByUsernameRequest) (*v1alpha1.GetUserByUsernameResponse, error)
 	// ListUsers lists all users.
-	ListUsers(context.Context, *connect.Request[v1alpha1.ListUsersRequest]) (*connect.Response[v1alpha1.ListUsersResponse], error)
+	ListUsers(context.Context, *v1alpha1.ListUsersRequest) (*v1alpha1.ListUsersResponse, error)
 	// ListOrganizationUsers lists all users for an organization.
 	// TODO: #663 move this to organization service
-	ListOrganizationUsers(context.Context, *connect.Request[v1alpha1.ListOrganizationUsersRequest]) (*connect.Response[v1alpha1.ListOrganizationUsersResponse], error)
+	ListOrganizationUsers(context.Context, *v1alpha1.ListOrganizationUsersRequest) (*v1alpha1.ListOrganizationUsersResponse, error)
 	// DeleteUser deletes a user.
-	DeleteUser(context.Context, *connect.Request[v1alpha1.DeleteUserRequest]) (*connect.Response[v1alpha1.DeleteUserResponse], error)
+	DeleteUser(context.Context, *v1alpha1.DeleteUserRequest) (*v1alpha1.DeleteUserResponse, error)
 	// Deactivate user deactivates a user.
-	DeactivateUser(context.Context, *connect.Request[v1alpha1.DeactivateUserRequest]) (*connect.Response[v1alpha1.DeactivateUserResponse], error)
+	DeactivateUser(context.Context, *v1alpha1.DeactivateUserRequest) (*v1alpha1.DeactivateUserResponse, error)
 	// UpdateUserServerRole update the role of an user in the server.
-	UpdateUserServerRole(context.Context, *connect.Request[v1alpha1.UpdateUserServerRoleRequest]) (*connect.Response[v1alpha1.UpdateUserServerRoleResponse], error)
+	UpdateUserServerRole(context.Context, *v1alpha1.UpdateUserServerRoleRequest) (*v1alpha1.UpdateUserServerRoleResponse, error)
 	// CountUsers returns the number of users in the server by the user state provided.
-	CountUsers(context.Context, *connect.Request[v1alpha1.CountUsersRequest]) (*connect.Response[v1alpha1.CountUsersResponse], error)
+	CountUsers(context.Context, *v1alpha1.CountUsersRequest) (*v1alpha1.CountUsersResponse, error)
 	// UpdateUserSettings update the user settings including description.
-	UpdateUserSettings(context.Context, *connect.Request[v1alpha1.UpdateUserSettingsRequest]) (*connect.Response[v1alpha1.UpdateUserSettingsResponse], error)
+	UpdateUserSettings(context.Context, *v1alpha1.UpdateUserSettingsRequest) (*v1alpha1.UpdateUserSettingsResponse, error)
 }
 
-// NewUserServiceHandler builds an HTTP handler from the service implementation. It returns the path
-// on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	userServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_user_proto.Services().ByName("UserService").Methods()
-	userServiceCreateUserHandler := connect.NewUnaryHandler(
-		UserServiceCreateUserProcedure,
-		svc.CreateUser,
-		connect.WithSchema(userServiceMethods.ByName("CreateUser")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
+// RegisterUserServiceHandler registers svc as the buf.alpha.registry.v1alpha1.UserService
+// implementation on server.
+func RegisterUserServiceHandler(server *connect.Server, svc UserServiceHandler) {
+	adapter := userServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: userServiceCreateUserSpec(), Handler: adapter.createUser},
+		connect.Method{Spec: userServiceGetUserSpec(), Handler: adapter.getUser},
+		connect.Method{Spec: userServiceGetUserByUsernameSpec(), Handler: adapter.getUserByUsername},
+		connect.Method{Spec: userServiceListUsersSpec(), Handler: adapter.listUsers},
+		connect.Method{Spec: userServiceListOrganizationUsersSpec(), Handler: adapter.listOrganizationUsers},
+		connect.Method{Spec: userServiceDeleteUserSpec(), Handler: adapter.deleteUser},
+		connect.Method{Spec: userServiceDeactivateUserSpec(), Handler: adapter.deactivateUser},
+		connect.Method{Spec: userServiceUpdateUserServerRoleSpec(), Handler: adapter.updateUserServerRole},
+		connect.Method{Spec: userServiceCountUsersSpec(), Handler: adapter.countUsers},
+		connect.Method{Spec: userServiceUpdateUserSettingsSpec(), Handler: adapter.updateUserSettings},
 	)
-	userServiceGetUserHandler := connect.NewUnaryHandler(
-		UserServiceGetUserProcedure,
-		svc.GetUser,
-		connect.WithSchema(userServiceMethods.ByName("GetUser")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	userServiceGetUserByUsernameHandler := connect.NewUnaryHandler(
-		UserServiceGetUserByUsernameProcedure,
-		svc.GetUserByUsername,
-		connect.WithSchema(userServiceMethods.ByName("GetUserByUsername")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	userServiceListUsersHandler := connect.NewUnaryHandler(
-		UserServiceListUsersProcedure,
-		svc.ListUsers,
-		connect.WithSchema(userServiceMethods.ByName("ListUsers")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	userServiceListOrganizationUsersHandler := connect.NewUnaryHandler(
-		UserServiceListOrganizationUsersProcedure,
-		svc.ListOrganizationUsers,
-		connect.WithSchema(userServiceMethods.ByName("ListOrganizationUsers")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	userServiceDeleteUserHandler := connect.NewUnaryHandler(
-		UserServiceDeleteUserProcedure,
-		svc.DeleteUser,
-		connect.WithSchema(userServiceMethods.ByName("DeleteUser")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	userServiceDeactivateUserHandler := connect.NewUnaryHandler(
-		UserServiceDeactivateUserProcedure,
-		svc.DeactivateUser,
-		connect.WithSchema(userServiceMethods.ByName("DeactivateUser")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	userServiceUpdateUserServerRoleHandler := connect.NewUnaryHandler(
-		UserServiceUpdateUserServerRoleProcedure,
-		svc.UpdateUserServerRole,
-		connect.WithSchema(userServiceMethods.ByName("UpdateUserServerRole")),
-		connect.WithHandlerOptions(opts...),
-	)
-	userServiceCountUsersHandler := connect.NewUnaryHandler(
-		UserServiceCountUsersProcedure,
-		svc.CountUsers,
-		connect.WithSchema(userServiceMethods.ByName("CountUsers")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	userServiceUpdateUserSettingsHandler := connect.NewUnaryHandler(
-		UserServiceUpdateUserSettingsProcedure,
-		svc.UpdateUserSettings,
-		connect.WithSchema(userServiceMethods.ByName("UpdateUserSettings")),
-		connect.WithHandlerOptions(opts...),
-	)
-	return "/buf.alpha.registry.v1alpha1.UserService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case UserServiceCreateUserProcedure:
-			userServiceCreateUserHandler.ServeHTTP(w, r)
-		case UserServiceGetUserProcedure:
-			userServiceGetUserHandler.ServeHTTP(w, r)
-		case UserServiceGetUserByUsernameProcedure:
-			userServiceGetUserByUsernameHandler.ServeHTTP(w, r)
-		case UserServiceListUsersProcedure:
-			userServiceListUsersHandler.ServeHTTP(w, r)
-		case UserServiceListOrganizationUsersProcedure:
-			userServiceListOrganizationUsersHandler.ServeHTTP(w, r)
-		case UserServiceDeleteUserProcedure:
-			userServiceDeleteUserHandler.ServeHTTP(w, r)
-		case UserServiceDeactivateUserProcedure:
-			userServiceDeactivateUserHandler.ServeHTTP(w, r)
-		case UserServiceUpdateUserServerRoleProcedure:
-			userServiceUpdateUserServerRoleHandler.ServeHTTP(w, r)
-		case UserServiceCountUsersProcedure:
-			userServiceCountUsersHandler.ServeHTTP(w, r)
-		case UserServiceUpdateUserSettingsProcedure:
-			userServiceUpdateUserSettingsHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedUserServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedUserServiceHandler struct{}
 
-func (UnimplementedUserServiceHandler) CreateUser(context.Context, *connect.Request[v1alpha1.CreateUserRequest]) (*connect.Response[v1alpha1.CreateUserResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.UserService.CreateUser is not implemented"))
+func (UnimplementedUserServiceHandler) CreateUser(context.Context, *v1alpha1.CreateUserRequest) (*v1alpha1.CreateUserResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.UserService.CreateUser is not implemented")
 }
 
-func (UnimplementedUserServiceHandler) GetUser(context.Context, *connect.Request[v1alpha1.GetUserRequest]) (*connect.Response[v1alpha1.GetUserResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.UserService.GetUser is not implemented"))
+func (UnimplementedUserServiceHandler) GetUser(context.Context, *v1alpha1.GetUserRequest) (*v1alpha1.GetUserResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.UserService.GetUser is not implemented")
 }
 
-func (UnimplementedUserServiceHandler) GetUserByUsername(context.Context, *connect.Request[v1alpha1.GetUserByUsernameRequest]) (*connect.Response[v1alpha1.GetUserByUsernameResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.UserService.GetUserByUsername is not implemented"))
+func (UnimplementedUserServiceHandler) GetUserByUsername(context.Context, *v1alpha1.GetUserByUsernameRequest) (*v1alpha1.GetUserByUsernameResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.UserService.GetUserByUsername is not implemented")
 }
 
-func (UnimplementedUserServiceHandler) ListUsers(context.Context, *connect.Request[v1alpha1.ListUsersRequest]) (*connect.Response[v1alpha1.ListUsersResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.UserService.ListUsers is not implemented"))
+func (UnimplementedUserServiceHandler) ListUsers(context.Context, *v1alpha1.ListUsersRequest) (*v1alpha1.ListUsersResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.UserService.ListUsers is not implemented")
 }
 
-func (UnimplementedUserServiceHandler) ListOrganizationUsers(context.Context, *connect.Request[v1alpha1.ListOrganizationUsersRequest]) (*connect.Response[v1alpha1.ListOrganizationUsersResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.UserService.ListOrganizationUsers is not implemented"))
+func (UnimplementedUserServiceHandler) ListOrganizationUsers(context.Context, *v1alpha1.ListOrganizationUsersRequest) (*v1alpha1.ListOrganizationUsersResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.UserService.ListOrganizationUsers is not implemented")
 }
 
-func (UnimplementedUserServiceHandler) DeleteUser(context.Context, *connect.Request[v1alpha1.DeleteUserRequest]) (*connect.Response[v1alpha1.DeleteUserResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.UserService.DeleteUser is not implemented"))
+func (UnimplementedUserServiceHandler) DeleteUser(context.Context, *v1alpha1.DeleteUserRequest) (*v1alpha1.DeleteUserResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.UserService.DeleteUser is not implemented")
 }
 
-func (UnimplementedUserServiceHandler) DeactivateUser(context.Context, *connect.Request[v1alpha1.DeactivateUserRequest]) (*connect.Response[v1alpha1.DeactivateUserResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.UserService.DeactivateUser is not implemented"))
+func (UnimplementedUserServiceHandler) DeactivateUser(context.Context, *v1alpha1.DeactivateUserRequest) (*v1alpha1.DeactivateUserResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.UserService.DeactivateUser is not implemented")
 }
 
-func (UnimplementedUserServiceHandler) UpdateUserServerRole(context.Context, *connect.Request[v1alpha1.UpdateUserServerRoleRequest]) (*connect.Response[v1alpha1.UpdateUserServerRoleResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.UserService.UpdateUserServerRole is not implemented"))
+func (UnimplementedUserServiceHandler) UpdateUserServerRole(context.Context, *v1alpha1.UpdateUserServerRoleRequest) (*v1alpha1.UpdateUserServerRoleResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.UserService.UpdateUserServerRole is not implemented")
 }
 
-func (UnimplementedUserServiceHandler) CountUsers(context.Context, *connect.Request[v1alpha1.CountUsersRequest]) (*connect.Response[v1alpha1.CountUsersResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.UserService.CountUsers is not implemented"))
+func (UnimplementedUserServiceHandler) CountUsers(context.Context, *v1alpha1.CountUsersRequest) (*v1alpha1.CountUsersResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.UserService.CountUsers is not implemented")
 }
 
-func (UnimplementedUserServiceHandler) UpdateUserSettings(context.Context, *connect.Request[v1alpha1.UpdateUserSettingsRequest]) (*connect.Response[v1alpha1.UpdateUserSettingsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.UserService.UpdateUserSettings is not implemented"))
+func (UnimplementedUserServiceHandler) UpdateUserSettings(context.Context, *v1alpha1.UpdateUserSettingsRequest) (*v1alpha1.UpdateUserSettingsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.UserService.UpdateUserSettings is not implemented")
+}
+
+type userServiceClient struct {
+	client *connect.Client
+}
+
+func (c *userServiceClient) CreateUser(ctx context.Context, req *v1alpha1.CreateUserRequest) (*v1alpha1.CreateUserResponse, error) {
+	var res v1alpha1.CreateUserResponse
+	if err := c.client.CallUnary(ctx, userServiceCreateUserSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *userServiceClient) GetUser(ctx context.Context, req *v1alpha1.GetUserRequest) (*v1alpha1.GetUserResponse, error) {
+	var res v1alpha1.GetUserResponse
+	if err := c.client.CallUnary(ctx, userServiceGetUserSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *userServiceClient) GetUserByUsername(ctx context.Context, req *v1alpha1.GetUserByUsernameRequest) (*v1alpha1.GetUserByUsernameResponse, error) {
+	var res v1alpha1.GetUserByUsernameResponse
+	if err := c.client.CallUnary(ctx, userServiceGetUserByUsernameSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *userServiceClient) ListUsers(ctx context.Context, req *v1alpha1.ListUsersRequest) (*v1alpha1.ListUsersResponse, error) {
+	var res v1alpha1.ListUsersResponse
+	if err := c.client.CallUnary(ctx, userServiceListUsersSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *userServiceClient) ListOrganizationUsers(ctx context.Context, req *v1alpha1.ListOrganizationUsersRequest) (*v1alpha1.ListOrganizationUsersResponse, error) {
+	var res v1alpha1.ListOrganizationUsersResponse
+	if err := c.client.CallUnary(ctx, userServiceListOrganizationUsersSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *userServiceClient) DeleteUser(ctx context.Context, req *v1alpha1.DeleteUserRequest) (*v1alpha1.DeleteUserResponse, error) {
+	var res v1alpha1.DeleteUserResponse
+	if err := c.client.CallUnary(ctx, userServiceDeleteUserSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *userServiceClient) DeactivateUser(ctx context.Context, req *v1alpha1.DeactivateUserRequest) (*v1alpha1.DeactivateUserResponse, error) {
+	var res v1alpha1.DeactivateUserResponse
+	if err := c.client.CallUnary(ctx, userServiceDeactivateUserSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *userServiceClient) UpdateUserServerRole(ctx context.Context, req *v1alpha1.UpdateUserServerRoleRequest) (*v1alpha1.UpdateUserServerRoleResponse, error) {
+	var res v1alpha1.UpdateUserServerRoleResponse
+	if err := c.client.CallUnary(ctx, userServiceUpdateUserServerRoleSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *userServiceClient) CountUsers(ctx context.Context, req *v1alpha1.CountUsersRequest) (*v1alpha1.CountUsersResponse, error) {
+	var res v1alpha1.CountUsersResponse
+	if err := c.client.CallUnary(ctx, userServiceCountUsersSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *userServiceClient) UpdateUserSettings(ctx context.Context, req *v1alpha1.UpdateUserSettingsRequest) (*v1alpha1.UpdateUserSettingsResponse, error) {
+	var res v1alpha1.UpdateUserSettingsResponse
+	if err := c.client.CallUnary(ctx, userServiceUpdateUserSettingsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type userServiceHandler struct{ svc UserServiceHandler }
+
+func (h userServiceHandler) createUser(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.CreateUserRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateUser(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h userServiceHandler) getUser(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetUserRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetUser(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h userServiceHandler) getUserByUsername(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetUserByUsernameRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetUserByUsername(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h userServiceHandler) listUsers(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ListUsersRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListUsers(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h userServiceHandler) listOrganizationUsers(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ListOrganizationUsersRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListOrganizationUsers(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h userServiceHandler) deleteUser(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.DeleteUserRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteUser(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h userServiceHandler) deactivateUser(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.DeactivateUserRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeactivateUser(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h userServiceHandler) updateUserServerRole(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UpdateUserServerRoleRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateUserServerRole(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h userServiceHandler) countUsers(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.CountUsersRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CountUsers(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h userServiceHandler) updateUserSettings(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UpdateUserSettingsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateUserSettings(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }
