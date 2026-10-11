@@ -13,7 +13,7 @@ require (
 	buf.build/go/bufprivateusage v0.1.0
 	buf.build/go/protovalidate v1.4.0
 	buf.build/go/protoyaml v0.7.0
-	buf.build/go/spdx v0.2.0
+	buf.build/go/spdx v0.3.0
 	buf.build/go/standard v0.1.1-0.20260325175353-2b287e071df5
 	cel.dev/cel-go v0.32.0
 	connectrpc.com/connect/v2 v2.0.0
