@@ -199,12 +199,17 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 	}
 
 	if importText.Len() > 0 {
+		newText := importText.String()
+		if insertOffset == len(file.file.Text()) && !strings.HasSuffix(file.file.Text(), "\n") {
+			// End the last line so the imports are preceded by a blank line.
+			newText = "\n" + newText
+		}
 		edits = append(edits, protocol.TextEdit{
 			Range: protocol.Range{
 				Start: insertPosition,
 				End:   insertPosition,
 			},
-			NewText: importText.String(),
+			NewText: newText,
 		})
 	}
 	return &protocol.CodeAction{
