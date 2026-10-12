@@ -256,13 +256,36 @@ import "types/toplevel_field.proto";
 		t,
 		"testdata/organize_imports/oneline_nonewline_test.proto",
 		[]protocol.TextEdit{
-			// Insert at the end of the file.
+			// Insert after syntax, moving the message onto its own line.
 			{
 				Range: protocol.Range{
-					Start: protocol.Position{Line: 0, Character: 67},
-					End:   protocol.Position{Line: 0, Character: 67},
+					Start: protocol.Position{Line: 0, Character: 18},
+					End:   protocol.Position{Line: 0, Character: 19},
 				},
-				NewText: "\n\nimport \"types/existing_field.proto\";\n",
+				NewText: "\n\nimport \"types/existing_field.proto\";\n\n",
+			},
+		},
+	)
+
+	// Used import on the same line as syntax and a message.
+	testCodeActionOrganizeImports(
+		t,
+		"testdata/organize_imports/oneline_import_used_test.proto",
+		[]protocol.TextEdit{
+			{
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 0, Character: 18},
+					End:   protocol.Position{Line: 0, Character: 55},
+				},
+				NewText: "",
+			},
+			// Insert after syntax, moving the message onto its own line.
+			{
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 0, Character: 18},
+					End:   protocol.Position{Line: 0, Character: 18},
+				},
+				NewText: "\n\nimport \"types/existing_field.proto\";\n\n",
 			},
 		},
 	)
@@ -404,13 +427,40 @@ func testCodeActionOrganizeImports(t *testing.T, filename string, expectedEdits 
 		// Applying the edits must be stable: a second request has no changes.
 		data, err := os.ReadFile(testProtoPath)
 		require.NoError(t, err)
+		text := string(data)
+		lineStarts := []int{0}
+		for i, r := range text {
+			if r == '\n' {
+				lineStarts = append(lineStarts, i+1)
+			}
+		}
+		offset := func(position protocol.Position) int {
+			return lineStarts[position.Line] + int(position.Character)
+		}
+		sortedEdits := slices.Clone(actualEdits)
+		slices.SortStableFunc(sortedEdits, func(a, b protocol.TextEdit) int {
+			return cmp.Or(
+				cmp.Compare(offset(a.Range.Start), offset(b.Range.Start)),
+				cmp.Compare(offset(a.Range.End), offset(b.Range.End)),
+			)
+		})
+		var newText strings.Builder
+		cursor := 0
+		for _, edit := range sortedEdits {
+			start, end := offset(edit.Range.Start), offset(edit.Range.End)
+			require.GreaterOrEqual(t, start, cursor, "overlapping edits")
+			newText.WriteString(text[cursor:start])
+			newText.WriteString(edit.NewText)
+			cursor = end
+		}
+		newText.WriteString(text[cursor:])
 		err = clientJSONConn.Notify(t.Context(), protocol.MethodTextDocumentDidChange, &protocol.DidChangeTextDocumentParams{
 			TextDocument: protocol.VersionedTextDocumentIdentifier{
 				TextDocumentIdentifier: protocol.TextDocumentIdentifier{URI: testURI},
 				Version:                2,
 			},
 			ContentChanges: []protocol.TextDocumentContentChangeEvent{
-				{Text: applyTextEdits(t, string(data), actualEdits)},
+				{Text: newText.String()},
 			},
 		})
 		require.NoError(t, err)
@@ -445,37 +495,4 @@ func requestOrganizeImports(t *testing.T, clientJSONConn jsonrpc2.Conn, testURI 
 		}
 	}
 	return nil
-}
-
-// applyTextEdits applies non-overlapping edits to ASCII text.
-func applyTextEdits(t *testing.T, text string, edits []protocol.TextEdit) string {
-	t.Helper()
-	lineStarts := []int{0}
-	for i, r := range text {
-		if r == '\n' {
-			lineStarts = append(lineStarts, i+1)
-		}
-	}
-	offset := func(position protocol.Position) int {
-		require.Less(t, int(position.Line), len(lineStarts))
-		return lineStarts[position.Line] + int(position.Character)
-	}
-	edits = slices.Clone(edits)
-	slices.SortStableFunc(edits, func(a, b protocol.TextEdit) int {
-		return cmp.Or(
-			cmp.Compare(offset(a.Range.Start), offset(b.Range.Start)),
-			cmp.Compare(offset(a.Range.End), offset(b.Range.End)),
-		)
-	})
-	var result strings.Builder
-	cursor := 0
-	for _, edit := range edits {
-		start, end := offset(edit.Range.Start), offset(edit.Range.End)
-		require.GreaterOrEqual(t, start, cursor, "overlapping edits")
-		result.WriteString(text[cursor:start])
-		result.WriteString(edit.NewText)
-		cursor = end
-	}
-	result.WriteString(text[cursor:])
-	return result.String()
 }
