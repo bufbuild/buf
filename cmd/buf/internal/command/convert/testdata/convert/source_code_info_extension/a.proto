@@ -1,0 +1,7 @@
+// No syntax and an unused import, so that buf build attaches its
+// SourceCodeInfo extension to this file.
+package a;
+
+import "google/protobuf/descriptor.proto";
+
+message A {}
