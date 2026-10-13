@@ -3921,6 +3921,30 @@ func TestConvertInvalidTypeName(t *testing.T) {
 	)
 }
 
+func TestConvertImageWithSourceCodeInfoExtension(t *testing.T) {
+	t.Parallel()
+	// The built image carries Buf's SourceCodeInfo extension, which is not part
+	// of the schema and so must not be resolved when converting.
+	tempDir := t.TempDir()
+	schemaDir := filepath.Join(convertTestDataDir, "source_code_info_extension")
+	imagePath := filepath.Join(tempDir, "image.binpb")
+	testRunStdout(t, nil, 0, ``, "build", schemaDir, "-o", imagePath)
+	testRun(
+		t,
+		0,
+		nil,
+		nil,
+		"convert",
+		schemaDir,
+		"--type",
+		"google.protobuf.FileDescriptorSet",
+		"--from",
+		imagePath,
+		"--to",
+		"-#format=json",
+	)
+}
+
 func TestConvert(t *testing.T) {
 	t.Parallel()
 	t.Run("binpb-to-json-file-proto", func(t *testing.T) {
