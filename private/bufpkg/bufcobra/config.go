@@ -18,7 +18,7 @@ import (
 	"io"
 	"os"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 // TODO: convert to flags, the only tricky one is command weigh configs

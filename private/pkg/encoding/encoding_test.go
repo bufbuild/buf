@@ -42,3 +42,34 @@ func testInterfaceSliceOrStringToCommaSepString(t *testing.T, in any, expected s
 	require.NoError(t, err)
 	require.Equal(t, expected, v)
 }
+
+func TestUnmarshalYAMLStrictRejectsLocalTags(t *testing.T) {
+	t.Parallel()
+	type external struct {
+		Ignore []string `yaml:"ignore"`
+	}
+	// An unquoted value that starts with "!" is a YAML local tag with an
+	// empty value, which the decoder would otherwise silently drop.
+	var v external
+	err := UnmarshalYAMLStrict([]byte("ignore:\n  - foo\n  - !foo/bar.proto\n"), &v)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), `line 3: unexpected tag "!foo/bar.proto"`)
+
+	v = external{}
+	err = UnmarshalYAMLStrict([]byte("ignore:\n  - !local bar\n"), &v)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), `unexpected tag "!local"`)
+
+	// Standard tags, anchors, aliases, and quoted values that start with "!"
+	// are all fine.
+	v = external{}
+	err = UnmarshalYAMLStrict([]byte("ignore:\n  - !!str 123\n  - &a foo\n  - *a\n  - \"!foo/bar.proto\"\n"), &v)
+	require.NoError(t, err)
+	require.Equal(t, []string{"123", "foo", "foo", "!foo/bar.proto"}, v.Ignore)
+
+	// Non-strict unmarshalling is unchanged.
+	v = external{}
+	err = UnmarshalYAMLNonStrict([]byte("ignore:\n  - !foo/bar.proto\n"), &v)
+	require.NoError(t, err)
+	require.Equal(t, []string{""}, v.Ignore)
+}

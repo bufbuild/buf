@@ -58,6 +58,11 @@ endif
 ifeq ($(UNAME_OS),Linux)
 OPEN_CMD := xdg-open
 endif
+# Fall back to printing the path on other OSes, such as Windows, so that
+# evaluating the Makefile does not fail the OPEN_CMD assertion in go.mk.
+ifndef OPEN_CMD
+OPEN_CMD := echo
+endif
 
 ifeq ($(UNAME_OS),Darwin)
 # Explicitly use the "BSD" sed shipped with Darwin. Otherwise if the user has a

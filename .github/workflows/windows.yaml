@@ -37,9 +37,11 @@ jobs:
         with:
           path: |
             ${{ env.DOWNLOAD_CACHE }}
-          key: ${{ runner.os }}-buf-windows-${{ hashFiles('windows/**') }}
+          key: ${{ runner.os }}-buf-windows-${{ hashFiles('etc/windows/**', 'make/go/dep_protoc.mk') }}
           restore-keys: |
             ${{ runner.os }}-buf-windows-
+      - name: install-make
+        run: choco install make -y --no-progress
       - name: test
         shell: bash
         run: ./etc/windows/test.bash

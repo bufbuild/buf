@@ -18,7 +18,7 @@ import (
 	"slices"
 
 	"go.lsp.dev/protocol"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 const bufPolicyYAMLDocsURL = "https://buf.build/docs/configuration/v2/buf-policy-yaml/"

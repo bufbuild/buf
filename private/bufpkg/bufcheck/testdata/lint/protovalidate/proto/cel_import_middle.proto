@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package a;
+
+import "cel_import_leaf.proto";
+
+message CelImportMiddle {
+  CelImportLeaf leaf = 1;
+  int32 count = 2;
+}

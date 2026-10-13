@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"go.lsp.dev/protocol"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 // getBufYAMLCompletionItems returns completion items for a buf.yaml file at

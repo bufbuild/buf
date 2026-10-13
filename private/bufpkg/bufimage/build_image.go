@@ -281,8 +281,9 @@ func BuildImageFromOpener(
 }
 
 // resolverForFDS normalizes the given [*descriptorpb.FileDescriptorSet] by
-// marshaling and re-parsing it, then builds a [protoencoding.Resolver] with
-// Buf's custom descriptor extensions recognised, ready for [fileDescriptorSetToImage].
+// marshaling and re-parsing it with Buf's custom descriptor extensions
+// recognised, then returns it with a [protoencoding.Resolver] for its files,
+// ready for [fileDescriptorSetToImage].
 //
 // The marshal/unmarshal round-trip is necessary because [fdp.DescriptorProto]
 // stores option values as unknown bytes via SetUnknown. Re-parsing converts those
@@ -301,15 +302,16 @@ func resolverForFDS(fds *descriptorpb.FileDescriptorSet) (*descriptorpb.FileDesc
 	// input exactly (including any vendored google/protobuf/descriptor.proto).
 	// Buf's descriptor extensions are supplied by a fallback resolver consulted
 	// only when the file graph cannot resolve a descriptor, so ReparseExtensions
-	// can recognise them without altering the graph.
+	// can recognise them without altering the graph. The fallback is only used
+	// for reparsing: the returned resolver must resolve only the image's files.
 	fileResolver := protoencoding.NewLazyResolver(normalizedFDS.File...)
-	resolver := protoencoding.CombineResolvers(fileResolver, bufDescriptorResolver)
+	reparseResolver := protoencoding.CombineResolvers(fileResolver, bufDescriptorResolver)
 	for _, fileDescriptor := range normalizedFDS.File {
-		if err := protoencoding.ReparseExtensions(resolver, fileDescriptor.ProtoReflect()); err != nil {
+		if err := protoencoding.ReparseExtensions(reparseResolver, fileDescriptor.ProtoReflect()); err != nil {
 			return nil, nil, err
 		}
 	}
-	return normalizedFDS, resolver, nil
+	return normalizedFDS, fileResolver, nil
 }
 
 // fileDescriptorSetToImage is a helper function that converts a [descriptorpb.FileDescriptorSet]

@@ -19,611 +19,696 @@
 package registryv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// OrganizationServiceName is the fully-qualified name of the OrganizationService service.
 	OrganizationServiceName = "buf.alpha.registry.v1alpha1.OrganizationService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// OrganizationServiceGetOrganizationProcedure is the fully-qualified name of the
-	// OrganizationService's GetOrganization RPC.
+	// OrganizationServiceGetOrganizationProcedure is the procedure name of the OrganizationService's
+	// GetOrganization RPC.
 	OrganizationServiceGetOrganizationProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganization"
-	// OrganizationServiceGetOrganizationByNameProcedure is the fully-qualified name of the
+	// OrganizationServiceGetOrganizationByNameProcedure is the procedure name of the
 	// OrganizationService's GetOrganizationByName RPC.
 	OrganizationServiceGetOrganizationByNameProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganizationByName"
-	// OrganizationServiceListOrganizationsProcedure is the fully-qualified name of the
-	// OrganizationService's ListOrganizations RPC.
+	// OrganizationServiceListOrganizationsProcedure is the procedure name of the OrganizationService's
+	// ListOrganizations RPC.
 	OrganizationServiceListOrganizationsProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/ListOrganizations"
-	// OrganizationServiceListUserOrganizationsProcedure is the fully-qualified name of the
+	// OrganizationServiceListUserOrganizationsProcedure is the procedure name of the
 	// OrganizationService's ListUserOrganizations RPC.
 	OrganizationServiceListUserOrganizationsProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/ListUserOrganizations"
-	// OrganizationServiceGetUserOrganizationProcedure is the fully-qualified name of the
+	// OrganizationServiceGetUserOrganizationProcedure is the procedure name of the
 	// OrganizationService's GetUserOrganization RPC.
 	OrganizationServiceGetUserOrganizationProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/GetUserOrganization"
-	// OrganizationServiceCreateOrganizationProcedure is the fully-qualified name of the
-	// OrganizationService's CreateOrganization RPC.
+	// OrganizationServiceCreateOrganizationProcedure is the procedure name of the OrganizationService's
+	// CreateOrganization RPC.
 	OrganizationServiceCreateOrganizationProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/CreateOrganization"
-	// OrganizationServiceDeleteOrganizationProcedure is the fully-qualified name of the
-	// OrganizationService's DeleteOrganization RPC.
+	// OrganizationServiceDeleteOrganizationProcedure is the procedure name of the OrganizationService's
+	// DeleteOrganization RPC.
 	OrganizationServiceDeleteOrganizationProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/DeleteOrganization"
-	// OrganizationServiceDeleteOrganizationByNameProcedure is the fully-qualified name of the
+	// OrganizationServiceDeleteOrganizationByNameProcedure is the procedure name of the
 	// OrganizationService's DeleteOrganizationByName RPC.
 	OrganizationServiceDeleteOrganizationByNameProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/DeleteOrganizationByName"
-	// OrganizationServiceAddOrganizationMemberProcedure is the fully-qualified name of the
+	// OrganizationServiceAddOrganizationMemberProcedure is the procedure name of the
 	// OrganizationService's AddOrganizationMember RPC.
 	OrganizationServiceAddOrganizationMemberProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationMember"
-	// OrganizationServiceUpdateOrganizationMemberProcedure is the fully-qualified name of the
+	// OrganizationServiceUpdateOrganizationMemberProcedure is the procedure name of the
 	// OrganizationService's UpdateOrganizationMember RPC.
 	OrganizationServiceUpdateOrganizationMemberProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/UpdateOrganizationMember"
-	// OrganizationServiceRemoveOrganizationMemberProcedure is the fully-qualified name of the
+	// OrganizationServiceRemoveOrganizationMemberProcedure is the procedure name of the
 	// OrganizationService's RemoveOrganizationMember RPC.
 	OrganizationServiceRemoveOrganizationMemberProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationMember"
-	// OrganizationServiceGetOrganizationSettingsProcedure is the fully-qualified name of the
+	// OrganizationServiceGetOrganizationSettingsProcedure is the procedure name of the
 	// OrganizationService's GetOrganizationSettings RPC.
 	OrganizationServiceGetOrganizationSettingsProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganizationSettings"
-	// OrganizationServiceUpdateOrganizationSettingsProcedure is the fully-qualified name of the
+	// OrganizationServiceUpdateOrganizationSettingsProcedure is the procedure name of the
 	// OrganizationService's UpdateOrganizationSettings RPC.
 	OrganizationServiceUpdateOrganizationSettingsProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/UpdateOrganizationSettings"
-	// OrganizationServiceAddOrganizationGroupProcedure is the fully-qualified name of the
+	// OrganizationServiceAddOrganizationGroupProcedure is the procedure name of the
 	// OrganizationService's AddOrganizationGroup RPC.
 	OrganizationServiceAddOrganizationGroupProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationGroup"
-	// OrganizationServiceUpdateOrganizationGroupProcedure is the fully-qualified name of the
+	// OrganizationServiceUpdateOrganizationGroupProcedure is the procedure name of the
 	// OrganizationService's UpdateOrganizationGroup RPC.
 	OrganizationServiceUpdateOrganizationGroupProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/UpdateOrganizationGroup"
-	// OrganizationServiceRemoveOrganizationGroupProcedure is the fully-qualified name of the
+	// OrganizationServiceRemoveOrganizationGroupProcedure is the procedure name of the
 	// OrganizationService's RemoveOrganizationGroup RPC.
 	OrganizationServiceRemoveOrganizationGroupProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationGroup"
+)
+
+var (
+	organizationServiceGetOrganizationSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods().ByName("GetOrganization"),
+			Procedure:        OrganizationServiceGetOrganizationProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	organizationServiceGetOrganizationByNameSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods().ByName("GetOrganizationByName"),
+			Procedure:        OrganizationServiceGetOrganizationByNameProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	organizationServiceListOrganizationsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods().ByName("ListOrganizations"),
+			Procedure:        OrganizationServiceListOrganizationsProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	organizationServiceListUserOrganizationsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods().ByName("ListUserOrganizations"),
+			Procedure:        OrganizationServiceListUserOrganizationsProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	organizationServiceGetUserOrganizationSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods().ByName("GetUserOrganization"),
+			Procedure:        OrganizationServiceGetUserOrganizationProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	organizationServiceCreateOrganizationSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods().ByName("CreateOrganization"),
+			Procedure:        OrganizationServiceCreateOrganizationProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	organizationServiceDeleteOrganizationSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods().ByName("DeleteOrganization"),
+			Procedure:        OrganizationServiceDeleteOrganizationProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	organizationServiceDeleteOrganizationByNameSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods().ByName("DeleteOrganizationByName"),
+			Procedure:        OrganizationServiceDeleteOrganizationByNameProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	organizationServiceAddOrganizationMemberSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods().ByName("AddOrganizationMember"),
+			Procedure:        OrganizationServiceAddOrganizationMemberProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	organizationServiceUpdateOrganizationMemberSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods().ByName("UpdateOrganizationMember"),
+			Procedure:  OrganizationServiceUpdateOrganizationMemberProcedure,
+		}
+	})
+	organizationServiceRemoveOrganizationMemberSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods().ByName("RemoveOrganizationMember"),
+			Procedure:        OrganizationServiceRemoveOrganizationMemberProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	organizationServiceGetOrganizationSettingsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods().ByName("GetOrganizationSettings"),
+			Procedure:        OrganizationServiceGetOrganizationSettingsProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	organizationServiceUpdateOrganizationSettingsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods().ByName("UpdateOrganizationSettings"),
+			Procedure:  OrganizationServiceUpdateOrganizationSettingsProcedure,
+		}
+	})
+	organizationServiceAddOrganizationGroupSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods().ByName("AddOrganizationGroup"),
+			Procedure:        OrganizationServiceAddOrganizationGroupProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	organizationServiceUpdateOrganizationGroupSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods().ByName("UpdateOrganizationGroup"),
+			Procedure:        OrganizationServiceUpdateOrganizationGroupProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	organizationServiceRemoveOrganizationGroupSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods().ByName("RemoveOrganizationGroup"),
+			Procedure:        OrganizationServiceRemoveOrganizationGroupProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
 )
 
 // OrganizationServiceClient is a client for the buf.alpha.registry.v1alpha1.OrganizationService
 // service.
 type OrganizationServiceClient interface {
 	// GetOrganization gets a organization by ID.
-	GetOrganization(context.Context, *connect.Request[v1alpha1.GetOrganizationRequest]) (*connect.Response[v1alpha1.GetOrganizationResponse], error)
+	GetOrganization(context.Context, *v1alpha1.GetOrganizationRequest) (*v1alpha1.GetOrganizationResponse, error)
 	// GetOrganizationByName gets a organization by name.
-	GetOrganizationByName(context.Context, *connect.Request[v1alpha1.GetOrganizationByNameRequest]) (*connect.Response[v1alpha1.GetOrganizationByNameResponse], error)
+	GetOrganizationByName(context.Context, *v1alpha1.GetOrganizationByNameRequest) (*v1alpha1.GetOrganizationByNameResponse, error)
 	// ListOrganizations lists all organizations.
-	ListOrganizations(context.Context, *connect.Request[v1alpha1.ListOrganizationsRequest]) (*connect.Response[v1alpha1.ListOrganizationsResponse], error)
+	ListOrganizations(context.Context, *v1alpha1.ListOrganizationsRequest) (*v1alpha1.ListOrganizationsResponse, error)
 	// ListUserOrganizations lists all organizations a user is member of.
-	ListUserOrganizations(context.Context, *connect.Request[v1alpha1.ListUserOrganizationsRequest]) (*connect.Response[v1alpha1.ListUserOrganizationsResponse], error)
-	GetUserOrganization(context.Context, *connect.Request[v1alpha1.GetUserOrganizationRequest]) (*connect.Response[v1alpha1.GetUserOrganizationResponse], error)
+	ListUserOrganizations(context.Context, *v1alpha1.ListUserOrganizationsRequest) (*v1alpha1.ListUserOrganizationsResponse, error)
+	GetUserOrganization(context.Context, *v1alpha1.GetUserOrganizationRequest) (*v1alpha1.GetUserOrganizationResponse, error)
 	// CreateOrganization creates a new organization.
-	CreateOrganization(context.Context, *connect.Request[v1alpha1.CreateOrganizationRequest]) (*connect.Response[v1alpha1.CreateOrganizationResponse], error)
+	CreateOrganization(context.Context, *v1alpha1.CreateOrganizationRequest) (*v1alpha1.CreateOrganizationResponse, error)
 	// DeleteOrganization deletes a organization.
-	DeleteOrganization(context.Context, *connect.Request[v1alpha1.DeleteOrganizationRequest]) (*connect.Response[v1alpha1.DeleteOrganizationResponse], error)
+	DeleteOrganization(context.Context, *v1alpha1.DeleteOrganizationRequest) (*v1alpha1.DeleteOrganizationResponse, error)
 	// DeleteOrganizationByName deletes a organization by name.
-	DeleteOrganizationByName(context.Context, *connect.Request[v1alpha1.DeleteOrganizationByNameRequest]) (*connect.Response[v1alpha1.DeleteOrganizationByNameResponse], error)
+	DeleteOrganizationByName(context.Context, *v1alpha1.DeleteOrganizationByNameRequest) (*v1alpha1.DeleteOrganizationByNameResponse, error)
 	// AddOrganizationMember add a role to an user in the organization.
-	AddOrganizationMember(context.Context, *connect.Request[v1alpha1.AddOrganizationMemberRequest]) (*connect.Response[v1alpha1.AddOrganizationMemberResponse], error)
+	AddOrganizationMember(context.Context, *v1alpha1.AddOrganizationMemberRequest) (*v1alpha1.AddOrganizationMemberResponse, error)
 	// UpdateOrganizationMember update the user's membership information in the organization.
-	UpdateOrganizationMember(context.Context, *connect.Request[v1alpha1.UpdateOrganizationMemberRequest]) (*connect.Response[v1alpha1.UpdateOrganizationMemberResponse], error)
+	UpdateOrganizationMember(context.Context, *v1alpha1.UpdateOrganizationMemberRequest) (*v1alpha1.UpdateOrganizationMemberResponse, error)
 	// RemoveOrganizationMember remove the role of an user in the organization.
-	RemoveOrganizationMember(context.Context, *connect.Request[v1alpha1.RemoveOrganizationMemberRequest]) (*connect.Response[v1alpha1.RemoveOrganizationMemberResponse], error)
+	RemoveOrganizationMember(context.Context, *v1alpha1.RemoveOrganizationMemberRequest) (*v1alpha1.RemoveOrganizationMemberResponse, error)
 	// GetOrganizationSettings gets the settings of an organization, including organization base roles.
-	GetOrganizationSettings(context.Context, *connect.Request[v1alpha1.GetOrganizationSettingsRequest]) (*connect.Response[v1alpha1.GetOrganizationSettingsResponse], error)
+	GetOrganizationSettings(context.Context, *v1alpha1.GetOrganizationSettingsRequest) (*v1alpha1.GetOrganizationSettingsResponse, error)
 	// UpdateOrganizationSettings update the organization settings including base roles.
-	UpdateOrganizationSettings(context.Context, *connect.Request[v1alpha1.UpdateOrganizationSettingsRequest]) (*connect.Response[v1alpha1.UpdateOrganizationSettingsResponse], error)
+	UpdateOrganizationSettings(context.Context, *v1alpha1.UpdateOrganizationSettingsRequest) (*v1alpha1.UpdateOrganizationSettingsResponse, error)
 	// AddOrganizationGroup adds an IdP Group to the organization.
-	AddOrganizationGroup(context.Context, *connect.Request[v1alpha1.AddOrganizationGroupRequest]) (*connect.Response[v1alpha1.AddOrganizationGroupResponse], error)
+	AddOrganizationGroup(context.Context, *v1alpha1.AddOrganizationGroupRequest) (*v1alpha1.AddOrganizationGroupResponse, error)
 	// UpdateOrganizationGroup updates an IdP Group for the organization.
-	UpdateOrganizationGroup(context.Context, *connect.Request[v1alpha1.UpdateOrganizationGroupRequest]) (*connect.Response[v1alpha1.UpdateOrganizationGroupResponse], error)
+	UpdateOrganizationGroup(context.Context, *v1alpha1.UpdateOrganizationGroupRequest) (*v1alpha1.UpdateOrganizationGroupResponse, error)
 	// RemoveOrganizationGroup removes an IdP Group from the organization.
-	RemoveOrganizationGroup(context.Context, *connect.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect.Response[v1alpha1.RemoveOrganizationGroupResponse], error)
+	RemoveOrganizationGroup(context.Context, *v1alpha1.RemoveOrganizationGroupRequest) (*v1alpha1.RemoveOrganizationGroupResponse, error)
 }
 
 // NewOrganizationServiceClient constructs a client for the
-// buf.alpha.registry.v1alpha1.OrganizationService service. By default, it uses the Connect protocol
-// with the binary Protobuf Codec, asks for gzipped responses, and sends uncompressed requests. To
-// use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or connect.WithGRPCWeb()
-// options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewOrganizationServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) OrganizationServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	organizationServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods()
-	return &organizationServiceClient{
-		getOrganization: connect.NewClient[v1alpha1.GetOrganizationRequest, v1alpha1.GetOrganizationResponse](
-			httpClient,
-			baseURL+OrganizationServiceGetOrganizationProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("GetOrganization")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getOrganizationByName: connect.NewClient[v1alpha1.GetOrganizationByNameRequest, v1alpha1.GetOrganizationByNameResponse](
-			httpClient,
-			baseURL+OrganizationServiceGetOrganizationByNameProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("GetOrganizationByName")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		listOrganizations: connect.NewClient[v1alpha1.ListOrganizationsRequest, v1alpha1.ListOrganizationsResponse](
-			httpClient,
-			baseURL+OrganizationServiceListOrganizationsProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("ListOrganizations")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		listUserOrganizations: connect.NewClient[v1alpha1.ListUserOrganizationsRequest, v1alpha1.ListUserOrganizationsResponse](
-			httpClient,
-			baseURL+OrganizationServiceListUserOrganizationsProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("ListUserOrganizations")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		getUserOrganization: connect.NewClient[v1alpha1.GetUserOrganizationRequest, v1alpha1.GetUserOrganizationResponse](
-			httpClient,
-			baseURL+OrganizationServiceGetUserOrganizationProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("GetUserOrganization")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		createOrganization: connect.NewClient[v1alpha1.CreateOrganizationRequest, v1alpha1.CreateOrganizationResponse](
-			httpClient,
-			baseURL+OrganizationServiceCreateOrganizationProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("CreateOrganization")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		deleteOrganization: connect.NewClient[v1alpha1.DeleteOrganizationRequest, v1alpha1.DeleteOrganizationResponse](
-			httpClient,
-			baseURL+OrganizationServiceDeleteOrganizationProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("DeleteOrganization")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		deleteOrganizationByName: connect.NewClient[v1alpha1.DeleteOrganizationByNameRequest, v1alpha1.DeleteOrganizationByNameResponse](
-			httpClient,
-			baseURL+OrganizationServiceDeleteOrganizationByNameProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("DeleteOrganizationByName")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		addOrganizationMember: connect.NewClient[v1alpha1.AddOrganizationMemberRequest, v1alpha1.AddOrganizationMemberResponse](
-			httpClient,
-			baseURL+OrganizationServiceAddOrganizationMemberProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("AddOrganizationMember")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		updateOrganizationMember: connect.NewClient[v1alpha1.UpdateOrganizationMemberRequest, v1alpha1.UpdateOrganizationMemberResponse](
-			httpClient,
-			baseURL+OrganizationServiceUpdateOrganizationMemberProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("UpdateOrganizationMember")),
-			connect.WithClientOptions(opts...),
-		),
-		removeOrganizationMember: connect.NewClient[v1alpha1.RemoveOrganizationMemberRequest, v1alpha1.RemoveOrganizationMemberResponse](
-			httpClient,
-			baseURL+OrganizationServiceRemoveOrganizationMemberProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("RemoveOrganizationMember")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		getOrganizationSettings: connect.NewClient[v1alpha1.GetOrganizationSettingsRequest, v1alpha1.GetOrganizationSettingsResponse](
-			httpClient,
-			baseURL+OrganizationServiceGetOrganizationSettingsProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("GetOrganizationSettings")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		updateOrganizationSettings: connect.NewClient[v1alpha1.UpdateOrganizationSettingsRequest, v1alpha1.UpdateOrganizationSettingsResponse](
-			httpClient,
-			baseURL+OrganizationServiceUpdateOrganizationSettingsProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("UpdateOrganizationSettings")),
-			connect.WithClientOptions(opts...),
-		),
-		addOrganizationGroup: connect.NewClient[v1alpha1.AddOrganizationGroupRequest, v1alpha1.AddOrganizationGroupResponse](
-			httpClient,
-			baseURL+OrganizationServiceAddOrganizationGroupProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("AddOrganizationGroup")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		updateOrganizationGroup: connect.NewClient[v1alpha1.UpdateOrganizationGroupRequest, v1alpha1.UpdateOrganizationGroupResponse](
-			httpClient,
-			baseURL+OrganizationServiceUpdateOrganizationGroupProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("UpdateOrganizationGroup")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		removeOrganizationGroup: connect.NewClient[v1alpha1.RemoveOrganizationGroupRequest, v1alpha1.RemoveOrganizationGroupResponse](
-			httpClient,
-			baseURL+OrganizationServiceRemoveOrganizationGroupProcedure,
-			connect.WithSchema(organizationServiceMethods.ByName("RemoveOrganizationGroup")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// organizationServiceClient implements OrganizationServiceClient.
-type organizationServiceClient struct {
-	getOrganization            *connect.Client[v1alpha1.GetOrganizationRequest, v1alpha1.GetOrganizationResponse]
-	getOrganizationByName      *connect.Client[v1alpha1.GetOrganizationByNameRequest, v1alpha1.GetOrganizationByNameResponse]
-	listOrganizations          *connect.Client[v1alpha1.ListOrganizationsRequest, v1alpha1.ListOrganizationsResponse]
-	listUserOrganizations      *connect.Client[v1alpha1.ListUserOrganizationsRequest, v1alpha1.ListUserOrganizationsResponse]
-	getUserOrganization        *connect.Client[v1alpha1.GetUserOrganizationRequest, v1alpha1.GetUserOrganizationResponse]
-	createOrganization         *connect.Client[v1alpha1.CreateOrganizationRequest, v1alpha1.CreateOrganizationResponse]
-	deleteOrganization         *connect.Client[v1alpha1.DeleteOrganizationRequest, v1alpha1.DeleteOrganizationResponse]
-	deleteOrganizationByName   *connect.Client[v1alpha1.DeleteOrganizationByNameRequest, v1alpha1.DeleteOrganizationByNameResponse]
-	addOrganizationMember      *connect.Client[v1alpha1.AddOrganizationMemberRequest, v1alpha1.AddOrganizationMemberResponse]
-	updateOrganizationMember   *connect.Client[v1alpha1.UpdateOrganizationMemberRequest, v1alpha1.UpdateOrganizationMemberResponse]
-	removeOrganizationMember   *connect.Client[v1alpha1.RemoveOrganizationMemberRequest, v1alpha1.RemoveOrganizationMemberResponse]
-	getOrganizationSettings    *connect.Client[v1alpha1.GetOrganizationSettingsRequest, v1alpha1.GetOrganizationSettingsResponse]
-	updateOrganizationSettings *connect.Client[v1alpha1.UpdateOrganizationSettingsRequest, v1alpha1.UpdateOrganizationSettingsResponse]
-	addOrganizationGroup       *connect.Client[v1alpha1.AddOrganizationGroupRequest, v1alpha1.AddOrganizationGroupResponse]
-	updateOrganizationGroup    *connect.Client[v1alpha1.UpdateOrganizationGroupRequest, v1alpha1.UpdateOrganizationGroupResponse]
-	removeOrganizationGroup    *connect.Client[v1alpha1.RemoveOrganizationGroupRequest, v1alpha1.RemoveOrganizationGroupResponse]
-}
-
-// GetOrganization calls buf.alpha.registry.v1alpha1.OrganizationService.GetOrganization.
-func (c *organizationServiceClient) GetOrganization(ctx context.Context, req *connect.Request[v1alpha1.GetOrganizationRequest]) (*connect.Response[v1alpha1.GetOrganizationResponse], error) {
-	return c.getOrganization.CallUnary(ctx, req)
-}
-
-// GetOrganizationByName calls
-// buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationByName.
-func (c *organizationServiceClient) GetOrganizationByName(ctx context.Context, req *connect.Request[v1alpha1.GetOrganizationByNameRequest]) (*connect.Response[v1alpha1.GetOrganizationByNameResponse], error) {
-	return c.getOrganizationByName.CallUnary(ctx, req)
-}
-
-// ListOrganizations calls buf.alpha.registry.v1alpha1.OrganizationService.ListOrganizations.
-func (c *organizationServiceClient) ListOrganizations(ctx context.Context, req *connect.Request[v1alpha1.ListOrganizationsRequest]) (*connect.Response[v1alpha1.ListOrganizationsResponse], error) {
-	return c.listOrganizations.CallUnary(ctx, req)
-}
-
-// ListUserOrganizations calls
-// buf.alpha.registry.v1alpha1.OrganizationService.ListUserOrganizations.
-func (c *organizationServiceClient) ListUserOrganizations(ctx context.Context, req *connect.Request[v1alpha1.ListUserOrganizationsRequest]) (*connect.Response[v1alpha1.ListUserOrganizationsResponse], error) {
-	return c.listUserOrganizations.CallUnary(ctx, req)
-}
-
-// GetUserOrganization calls buf.alpha.registry.v1alpha1.OrganizationService.GetUserOrganization.
-func (c *organizationServiceClient) GetUserOrganization(ctx context.Context, req *connect.Request[v1alpha1.GetUserOrganizationRequest]) (*connect.Response[v1alpha1.GetUserOrganizationResponse], error) {
-	return c.getUserOrganization.CallUnary(ctx, req)
-}
-
-// CreateOrganization calls buf.alpha.registry.v1alpha1.OrganizationService.CreateOrganization.
-func (c *organizationServiceClient) CreateOrganization(ctx context.Context, req *connect.Request[v1alpha1.CreateOrganizationRequest]) (*connect.Response[v1alpha1.CreateOrganizationResponse], error) {
-	return c.createOrganization.CallUnary(ctx, req)
-}
-
-// DeleteOrganization calls buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganization.
-func (c *organizationServiceClient) DeleteOrganization(ctx context.Context, req *connect.Request[v1alpha1.DeleteOrganizationRequest]) (*connect.Response[v1alpha1.DeleteOrganizationResponse], error) {
-	return c.deleteOrganization.CallUnary(ctx, req)
-}
-
-// DeleteOrganizationByName calls
-// buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganizationByName.
-func (c *organizationServiceClient) DeleteOrganizationByName(ctx context.Context, req *connect.Request[v1alpha1.DeleteOrganizationByNameRequest]) (*connect.Response[v1alpha1.DeleteOrganizationByNameResponse], error) {
-	return c.deleteOrganizationByName.CallUnary(ctx, req)
-}
-
-// AddOrganizationMember calls
-// buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationMember.
-func (c *organizationServiceClient) AddOrganizationMember(ctx context.Context, req *connect.Request[v1alpha1.AddOrganizationMemberRequest]) (*connect.Response[v1alpha1.AddOrganizationMemberResponse], error) {
-	return c.addOrganizationMember.CallUnary(ctx, req)
-}
-
-// UpdateOrganizationMember calls
-// buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationMember.
-func (c *organizationServiceClient) UpdateOrganizationMember(ctx context.Context, req *connect.Request[v1alpha1.UpdateOrganizationMemberRequest]) (*connect.Response[v1alpha1.UpdateOrganizationMemberResponse], error) {
-	return c.updateOrganizationMember.CallUnary(ctx, req)
-}
-
-// RemoveOrganizationMember calls
-// buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationMember.
-func (c *organizationServiceClient) RemoveOrganizationMember(ctx context.Context, req *connect.Request[v1alpha1.RemoveOrganizationMemberRequest]) (*connect.Response[v1alpha1.RemoveOrganizationMemberResponse], error) {
-	return c.removeOrganizationMember.CallUnary(ctx, req)
-}
-
-// GetOrganizationSettings calls
-// buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationSettings.
-func (c *organizationServiceClient) GetOrganizationSettings(ctx context.Context, req *connect.Request[v1alpha1.GetOrganizationSettingsRequest]) (*connect.Response[v1alpha1.GetOrganizationSettingsResponse], error) {
-	return c.getOrganizationSettings.CallUnary(ctx, req)
-}
-
-// UpdateOrganizationSettings calls
-// buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationSettings.
-func (c *organizationServiceClient) UpdateOrganizationSettings(ctx context.Context, req *connect.Request[v1alpha1.UpdateOrganizationSettingsRequest]) (*connect.Response[v1alpha1.UpdateOrganizationSettingsResponse], error) {
-	return c.updateOrganizationSettings.CallUnary(ctx, req)
-}
-
-// AddOrganizationGroup calls buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationGroup.
-func (c *organizationServiceClient) AddOrganizationGroup(ctx context.Context, req *connect.Request[v1alpha1.AddOrganizationGroupRequest]) (*connect.Response[v1alpha1.AddOrganizationGroupResponse], error) {
-	return c.addOrganizationGroup.CallUnary(ctx, req)
-}
-
-// UpdateOrganizationGroup calls
-// buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationGroup.
-func (c *organizationServiceClient) UpdateOrganizationGroup(ctx context.Context, req *connect.Request[v1alpha1.UpdateOrganizationGroupRequest]) (*connect.Response[v1alpha1.UpdateOrganizationGroupResponse], error) {
-	return c.updateOrganizationGroup.CallUnary(ctx, req)
-}
-
-// RemoveOrganizationGroup calls
-// buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationGroup.
-func (c *organizationServiceClient) RemoveOrganizationGroup(ctx context.Context, req *connect.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect.Response[v1alpha1.RemoveOrganizationGroupResponse], error) {
-	return c.removeOrganizationGroup.CallUnary(ctx, req)
+// buf.alpha.registry.v1alpha1.OrganizationService service. Multiple service clients may share a
+// single connect.Client.
+func NewOrganizationServiceClient(client *connect.Client) OrganizationServiceClient {
+	return &organizationServiceClient{client: client}
 }
 
 // OrganizationServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.OrganizationService service.
 type OrganizationServiceHandler interface {
 	// GetOrganization gets a organization by ID.
-	GetOrganization(context.Context, *connect.Request[v1alpha1.GetOrganizationRequest]) (*connect.Response[v1alpha1.GetOrganizationResponse], error)
+	GetOrganization(context.Context, *v1alpha1.GetOrganizationRequest) (*v1alpha1.GetOrganizationResponse, error)
 	// GetOrganizationByName gets a organization by name.
-	GetOrganizationByName(context.Context, *connect.Request[v1alpha1.GetOrganizationByNameRequest]) (*connect.Response[v1alpha1.GetOrganizationByNameResponse], error)
+	GetOrganizationByName(context.Context, *v1alpha1.GetOrganizationByNameRequest) (*v1alpha1.GetOrganizationByNameResponse, error)
 	// ListOrganizations lists all organizations.
-	ListOrganizations(context.Context, *connect.Request[v1alpha1.ListOrganizationsRequest]) (*connect.Response[v1alpha1.ListOrganizationsResponse], error)
+	ListOrganizations(context.Context, *v1alpha1.ListOrganizationsRequest) (*v1alpha1.ListOrganizationsResponse, error)
 	// ListUserOrganizations lists all organizations a user is member of.
-	ListUserOrganizations(context.Context, *connect.Request[v1alpha1.ListUserOrganizationsRequest]) (*connect.Response[v1alpha1.ListUserOrganizationsResponse], error)
-	GetUserOrganization(context.Context, *connect.Request[v1alpha1.GetUserOrganizationRequest]) (*connect.Response[v1alpha1.GetUserOrganizationResponse], error)
+	ListUserOrganizations(context.Context, *v1alpha1.ListUserOrganizationsRequest) (*v1alpha1.ListUserOrganizationsResponse, error)
+	GetUserOrganization(context.Context, *v1alpha1.GetUserOrganizationRequest) (*v1alpha1.GetUserOrganizationResponse, error)
 	// CreateOrganization creates a new organization.
-	CreateOrganization(context.Context, *connect.Request[v1alpha1.CreateOrganizationRequest]) (*connect.Response[v1alpha1.CreateOrganizationResponse], error)
+	CreateOrganization(context.Context, *v1alpha1.CreateOrganizationRequest) (*v1alpha1.CreateOrganizationResponse, error)
 	// DeleteOrganization deletes a organization.
-	DeleteOrganization(context.Context, *connect.Request[v1alpha1.DeleteOrganizationRequest]) (*connect.Response[v1alpha1.DeleteOrganizationResponse], error)
+	DeleteOrganization(context.Context, *v1alpha1.DeleteOrganizationRequest) (*v1alpha1.DeleteOrganizationResponse, error)
 	// DeleteOrganizationByName deletes a organization by name.
-	DeleteOrganizationByName(context.Context, *connect.Request[v1alpha1.DeleteOrganizationByNameRequest]) (*connect.Response[v1alpha1.DeleteOrganizationByNameResponse], error)
+	DeleteOrganizationByName(context.Context, *v1alpha1.DeleteOrganizationByNameRequest) (*v1alpha1.DeleteOrganizationByNameResponse, error)
 	// AddOrganizationMember add a role to an user in the organization.
-	AddOrganizationMember(context.Context, *connect.Request[v1alpha1.AddOrganizationMemberRequest]) (*connect.Response[v1alpha1.AddOrganizationMemberResponse], error)
+	AddOrganizationMember(context.Context, *v1alpha1.AddOrganizationMemberRequest) (*v1alpha1.AddOrganizationMemberResponse, error)
 	// UpdateOrganizationMember update the user's membership information in the organization.
-	UpdateOrganizationMember(context.Context, *connect.Request[v1alpha1.UpdateOrganizationMemberRequest]) (*connect.Response[v1alpha1.UpdateOrganizationMemberResponse], error)
+	UpdateOrganizationMember(context.Context, *v1alpha1.UpdateOrganizationMemberRequest) (*v1alpha1.UpdateOrganizationMemberResponse, error)
 	// RemoveOrganizationMember remove the role of an user in the organization.
-	RemoveOrganizationMember(context.Context, *connect.Request[v1alpha1.RemoveOrganizationMemberRequest]) (*connect.Response[v1alpha1.RemoveOrganizationMemberResponse], error)
+	RemoveOrganizationMember(context.Context, *v1alpha1.RemoveOrganizationMemberRequest) (*v1alpha1.RemoveOrganizationMemberResponse, error)
 	// GetOrganizationSettings gets the settings of an organization, including organization base roles.
-	GetOrganizationSettings(context.Context, *connect.Request[v1alpha1.GetOrganizationSettingsRequest]) (*connect.Response[v1alpha1.GetOrganizationSettingsResponse], error)
+	GetOrganizationSettings(context.Context, *v1alpha1.GetOrganizationSettingsRequest) (*v1alpha1.GetOrganizationSettingsResponse, error)
 	// UpdateOrganizationSettings update the organization settings including base roles.
-	UpdateOrganizationSettings(context.Context, *connect.Request[v1alpha1.UpdateOrganizationSettingsRequest]) (*connect.Response[v1alpha1.UpdateOrganizationSettingsResponse], error)
+	UpdateOrganizationSettings(context.Context, *v1alpha1.UpdateOrganizationSettingsRequest) (*v1alpha1.UpdateOrganizationSettingsResponse, error)
 	// AddOrganizationGroup adds an IdP Group to the organization.
-	AddOrganizationGroup(context.Context, *connect.Request[v1alpha1.AddOrganizationGroupRequest]) (*connect.Response[v1alpha1.AddOrganizationGroupResponse], error)
+	AddOrganizationGroup(context.Context, *v1alpha1.AddOrganizationGroupRequest) (*v1alpha1.AddOrganizationGroupResponse, error)
 	// UpdateOrganizationGroup updates an IdP Group for the organization.
-	UpdateOrganizationGroup(context.Context, *connect.Request[v1alpha1.UpdateOrganizationGroupRequest]) (*connect.Response[v1alpha1.UpdateOrganizationGroupResponse], error)
+	UpdateOrganizationGroup(context.Context, *v1alpha1.UpdateOrganizationGroupRequest) (*v1alpha1.UpdateOrganizationGroupResponse, error)
 	// RemoveOrganizationGroup removes an IdP Group from the organization.
-	RemoveOrganizationGroup(context.Context, *connect.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect.Response[v1alpha1.RemoveOrganizationGroupResponse], error)
+	RemoveOrganizationGroup(context.Context, *v1alpha1.RemoveOrganizationGroupRequest) (*v1alpha1.RemoveOrganizationGroupResponse, error)
 }
 
-// NewOrganizationServiceHandler builds an HTTP handler from the service implementation. It returns
-// the path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	organizationServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_organization_proto.Services().ByName("OrganizationService").Methods()
-	organizationServiceGetOrganizationHandler := connect.NewUnaryHandler(
-		OrganizationServiceGetOrganizationProcedure,
-		svc.GetOrganization,
-		connect.WithSchema(organizationServiceMethods.ByName("GetOrganization")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
+// RegisterOrganizationServiceHandler registers svc as the
+// buf.alpha.registry.v1alpha1.OrganizationService implementation on server.
+func RegisterOrganizationServiceHandler(server *connect.Server, svc OrganizationServiceHandler) {
+	adapter := organizationServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: organizationServiceGetOrganizationSpec(), Handler: adapter.getOrganization},
+		connect.Method{Spec: organizationServiceGetOrganizationByNameSpec(), Handler: adapter.getOrganizationByName},
+		connect.Method{Spec: organizationServiceListOrganizationsSpec(), Handler: adapter.listOrganizations},
+		connect.Method{Spec: organizationServiceListUserOrganizationsSpec(), Handler: adapter.listUserOrganizations},
+		connect.Method{Spec: organizationServiceGetUserOrganizationSpec(), Handler: adapter.getUserOrganization},
+		connect.Method{Spec: organizationServiceCreateOrganizationSpec(), Handler: adapter.createOrganization},
+		connect.Method{Spec: organizationServiceDeleteOrganizationSpec(), Handler: adapter.deleteOrganization},
+		connect.Method{Spec: organizationServiceDeleteOrganizationByNameSpec(), Handler: adapter.deleteOrganizationByName},
+		connect.Method{Spec: organizationServiceAddOrganizationMemberSpec(), Handler: adapter.addOrganizationMember},
+		connect.Method{Spec: organizationServiceUpdateOrganizationMemberSpec(), Handler: adapter.updateOrganizationMember},
+		connect.Method{Spec: organizationServiceRemoveOrganizationMemberSpec(), Handler: adapter.removeOrganizationMember},
+		connect.Method{Spec: organizationServiceGetOrganizationSettingsSpec(), Handler: adapter.getOrganizationSettings},
+		connect.Method{Spec: organizationServiceUpdateOrganizationSettingsSpec(), Handler: adapter.updateOrganizationSettings},
+		connect.Method{Spec: organizationServiceAddOrganizationGroupSpec(), Handler: adapter.addOrganizationGroup},
+		connect.Method{Spec: organizationServiceUpdateOrganizationGroupSpec(), Handler: adapter.updateOrganizationGroup},
+		connect.Method{Spec: organizationServiceRemoveOrganizationGroupSpec(), Handler: adapter.removeOrganizationGroup},
 	)
-	organizationServiceGetOrganizationByNameHandler := connect.NewUnaryHandler(
-		OrganizationServiceGetOrganizationByNameProcedure,
-		svc.GetOrganizationByName,
-		connect.WithSchema(organizationServiceMethods.ByName("GetOrganizationByName")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	organizationServiceListOrganizationsHandler := connect.NewUnaryHandler(
-		OrganizationServiceListOrganizationsProcedure,
-		svc.ListOrganizations,
-		connect.WithSchema(organizationServiceMethods.ByName("ListOrganizations")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	organizationServiceListUserOrganizationsHandler := connect.NewUnaryHandler(
-		OrganizationServiceListUserOrganizationsProcedure,
-		svc.ListUserOrganizations,
-		connect.WithSchema(organizationServiceMethods.ByName("ListUserOrganizations")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	organizationServiceGetUserOrganizationHandler := connect.NewUnaryHandler(
-		OrganizationServiceGetUserOrganizationProcedure,
-		svc.GetUserOrganization,
-		connect.WithSchema(organizationServiceMethods.ByName("GetUserOrganization")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	organizationServiceCreateOrganizationHandler := connect.NewUnaryHandler(
-		OrganizationServiceCreateOrganizationProcedure,
-		svc.CreateOrganization,
-		connect.WithSchema(organizationServiceMethods.ByName("CreateOrganization")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	organizationServiceDeleteOrganizationHandler := connect.NewUnaryHandler(
-		OrganizationServiceDeleteOrganizationProcedure,
-		svc.DeleteOrganization,
-		connect.WithSchema(organizationServiceMethods.ByName("DeleteOrganization")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	organizationServiceDeleteOrganizationByNameHandler := connect.NewUnaryHandler(
-		OrganizationServiceDeleteOrganizationByNameProcedure,
-		svc.DeleteOrganizationByName,
-		connect.WithSchema(organizationServiceMethods.ByName("DeleteOrganizationByName")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	organizationServiceAddOrganizationMemberHandler := connect.NewUnaryHandler(
-		OrganizationServiceAddOrganizationMemberProcedure,
-		svc.AddOrganizationMember,
-		connect.WithSchema(organizationServiceMethods.ByName("AddOrganizationMember")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	organizationServiceUpdateOrganizationMemberHandler := connect.NewUnaryHandler(
-		OrganizationServiceUpdateOrganizationMemberProcedure,
-		svc.UpdateOrganizationMember,
-		connect.WithSchema(organizationServiceMethods.ByName("UpdateOrganizationMember")),
-		connect.WithHandlerOptions(opts...),
-	)
-	organizationServiceRemoveOrganizationMemberHandler := connect.NewUnaryHandler(
-		OrganizationServiceRemoveOrganizationMemberProcedure,
-		svc.RemoveOrganizationMember,
-		connect.WithSchema(organizationServiceMethods.ByName("RemoveOrganizationMember")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	organizationServiceGetOrganizationSettingsHandler := connect.NewUnaryHandler(
-		OrganizationServiceGetOrganizationSettingsProcedure,
-		svc.GetOrganizationSettings,
-		connect.WithSchema(organizationServiceMethods.ByName("GetOrganizationSettings")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	organizationServiceUpdateOrganizationSettingsHandler := connect.NewUnaryHandler(
-		OrganizationServiceUpdateOrganizationSettingsProcedure,
-		svc.UpdateOrganizationSettings,
-		connect.WithSchema(organizationServiceMethods.ByName("UpdateOrganizationSettings")),
-		connect.WithHandlerOptions(opts...),
-	)
-	organizationServiceAddOrganizationGroupHandler := connect.NewUnaryHandler(
-		OrganizationServiceAddOrganizationGroupProcedure,
-		svc.AddOrganizationGroup,
-		connect.WithSchema(organizationServiceMethods.ByName("AddOrganizationGroup")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	organizationServiceUpdateOrganizationGroupHandler := connect.NewUnaryHandler(
-		OrganizationServiceUpdateOrganizationGroupProcedure,
-		svc.UpdateOrganizationGroup,
-		connect.WithSchema(organizationServiceMethods.ByName("UpdateOrganizationGroup")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	organizationServiceRemoveOrganizationGroupHandler := connect.NewUnaryHandler(
-		OrganizationServiceRemoveOrganizationGroupProcedure,
-		svc.RemoveOrganizationGroup,
-		connect.WithSchema(organizationServiceMethods.ByName("RemoveOrganizationGroup")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	return "/buf.alpha.registry.v1alpha1.OrganizationService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case OrganizationServiceGetOrganizationProcedure:
-			organizationServiceGetOrganizationHandler.ServeHTTP(w, r)
-		case OrganizationServiceGetOrganizationByNameProcedure:
-			organizationServiceGetOrganizationByNameHandler.ServeHTTP(w, r)
-		case OrganizationServiceListOrganizationsProcedure:
-			organizationServiceListOrganizationsHandler.ServeHTTP(w, r)
-		case OrganizationServiceListUserOrganizationsProcedure:
-			organizationServiceListUserOrganizationsHandler.ServeHTTP(w, r)
-		case OrganizationServiceGetUserOrganizationProcedure:
-			organizationServiceGetUserOrganizationHandler.ServeHTTP(w, r)
-		case OrganizationServiceCreateOrganizationProcedure:
-			organizationServiceCreateOrganizationHandler.ServeHTTP(w, r)
-		case OrganizationServiceDeleteOrganizationProcedure:
-			organizationServiceDeleteOrganizationHandler.ServeHTTP(w, r)
-		case OrganizationServiceDeleteOrganizationByNameProcedure:
-			organizationServiceDeleteOrganizationByNameHandler.ServeHTTP(w, r)
-		case OrganizationServiceAddOrganizationMemberProcedure:
-			organizationServiceAddOrganizationMemberHandler.ServeHTTP(w, r)
-		case OrganizationServiceUpdateOrganizationMemberProcedure:
-			organizationServiceUpdateOrganizationMemberHandler.ServeHTTP(w, r)
-		case OrganizationServiceRemoveOrganizationMemberProcedure:
-			organizationServiceRemoveOrganizationMemberHandler.ServeHTTP(w, r)
-		case OrganizationServiceGetOrganizationSettingsProcedure:
-			organizationServiceGetOrganizationSettingsHandler.ServeHTTP(w, r)
-		case OrganizationServiceUpdateOrganizationSettingsProcedure:
-			organizationServiceUpdateOrganizationSettingsHandler.ServeHTTP(w, r)
-		case OrganizationServiceAddOrganizationGroupProcedure:
-			organizationServiceAddOrganizationGroupHandler.ServeHTTP(w, r)
-		case OrganizationServiceUpdateOrganizationGroupProcedure:
-			organizationServiceUpdateOrganizationGroupHandler.ServeHTTP(w, r)
-		case OrganizationServiceRemoveOrganizationGroupProcedure:
-			organizationServiceRemoveOrganizationGroupHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedOrganizationServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedOrganizationServiceHandler struct{}
 
-func (UnimplementedOrganizationServiceHandler) GetOrganization(context.Context, *connect.Request[v1alpha1.GetOrganizationRequest]) (*connect.Response[v1alpha1.GetOrganizationResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.GetOrganization is not implemented"))
+func (UnimplementedOrganizationServiceHandler) GetOrganization(context.Context, *v1alpha1.GetOrganizationRequest) (*v1alpha1.GetOrganizationResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.OrganizationService.GetOrganization is not implemented")
 }
 
-func (UnimplementedOrganizationServiceHandler) GetOrganizationByName(context.Context, *connect.Request[v1alpha1.GetOrganizationByNameRequest]) (*connect.Response[v1alpha1.GetOrganizationByNameResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationByName is not implemented"))
+func (UnimplementedOrganizationServiceHandler) GetOrganizationByName(context.Context, *v1alpha1.GetOrganizationByNameRequest) (*v1alpha1.GetOrganizationByNameResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationByName is not implemented")
 }
 
-func (UnimplementedOrganizationServiceHandler) ListOrganizations(context.Context, *connect.Request[v1alpha1.ListOrganizationsRequest]) (*connect.Response[v1alpha1.ListOrganizationsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.ListOrganizations is not implemented"))
+func (UnimplementedOrganizationServiceHandler) ListOrganizations(context.Context, *v1alpha1.ListOrganizationsRequest) (*v1alpha1.ListOrganizationsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.OrganizationService.ListOrganizations is not implemented")
 }
 
-func (UnimplementedOrganizationServiceHandler) ListUserOrganizations(context.Context, *connect.Request[v1alpha1.ListUserOrganizationsRequest]) (*connect.Response[v1alpha1.ListUserOrganizationsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.ListUserOrganizations is not implemented"))
+func (UnimplementedOrganizationServiceHandler) ListUserOrganizations(context.Context, *v1alpha1.ListUserOrganizationsRequest) (*v1alpha1.ListUserOrganizationsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.OrganizationService.ListUserOrganizations is not implemented")
 }
 
-func (UnimplementedOrganizationServiceHandler) GetUserOrganization(context.Context, *connect.Request[v1alpha1.GetUserOrganizationRequest]) (*connect.Response[v1alpha1.GetUserOrganizationResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.GetUserOrganization is not implemented"))
+func (UnimplementedOrganizationServiceHandler) GetUserOrganization(context.Context, *v1alpha1.GetUserOrganizationRequest) (*v1alpha1.GetUserOrganizationResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.OrganizationService.GetUserOrganization is not implemented")
 }
 
-func (UnimplementedOrganizationServiceHandler) CreateOrganization(context.Context, *connect.Request[v1alpha1.CreateOrganizationRequest]) (*connect.Response[v1alpha1.CreateOrganizationResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.CreateOrganization is not implemented"))
+func (UnimplementedOrganizationServiceHandler) CreateOrganization(context.Context, *v1alpha1.CreateOrganizationRequest) (*v1alpha1.CreateOrganizationResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.OrganizationService.CreateOrganization is not implemented")
 }
 
-func (UnimplementedOrganizationServiceHandler) DeleteOrganization(context.Context, *connect.Request[v1alpha1.DeleteOrganizationRequest]) (*connect.Response[v1alpha1.DeleteOrganizationResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganization is not implemented"))
+func (UnimplementedOrganizationServiceHandler) DeleteOrganization(context.Context, *v1alpha1.DeleteOrganizationRequest) (*v1alpha1.DeleteOrganizationResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganization is not implemented")
 }
 
-func (UnimplementedOrganizationServiceHandler) DeleteOrganizationByName(context.Context, *connect.Request[v1alpha1.DeleteOrganizationByNameRequest]) (*connect.Response[v1alpha1.DeleteOrganizationByNameResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganizationByName is not implemented"))
+func (UnimplementedOrganizationServiceHandler) DeleteOrganizationByName(context.Context, *v1alpha1.DeleteOrganizationByNameRequest) (*v1alpha1.DeleteOrganizationByNameResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganizationByName is not implemented")
 }
 
-func (UnimplementedOrganizationServiceHandler) AddOrganizationMember(context.Context, *connect.Request[v1alpha1.AddOrganizationMemberRequest]) (*connect.Response[v1alpha1.AddOrganizationMemberResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationMember is not implemented"))
+func (UnimplementedOrganizationServiceHandler) AddOrganizationMember(context.Context, *v1alpha1.AddOrganizationMemberRequest) (*v1alpha1.AddOrganizationMemberResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationMember is not implemented")
 }
 
-func (UnimplementedOrganizationServiceHandler) UpdateOrganizationMember(context.Context, *connect.Request[v1alpha1.UpdateOrganizationMemberRequest]) (*connect.Response[v1alpha1.UpdateOrganizationMemberResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationMember is not implemented"))
+func (UnimplementedOrganizationServiceHandler) UpdateOrganizationMember(context.Context, *v1alpha1.UpdateOrganizationMemberRequest) (*v1alpha1.UpdateOrganizationMemberResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationMember is not implemented")
 }
 
-func (UnimplementedOrganizationServiceHandler) RemoveOrganizationMember(context.Context, *connect.Request[v1alpha1.RemoveOrganizationMemberRequest]) (*connect.Response[v1alpha1.RemoveOrganizationMemberResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationMember is not implemented"))
+func (UnimplementedOrganizationServiceHandler) RemoveOrganizationMember(context.Context, *v1alpha1.RemoveOrganizationMemberRequest) (*v1alpha1.RemoveOrganizationMemberResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationMember is not implemented")
 }
 
-func (UnimplementedOrganizationServiceHandler) GetOrganizationSettings(context.Context, *connect.Request[v1alpha1.GetOrganizationSettingsRequest]) (*connect.Response[v1alpha1.GetOrganizationSettingsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationSettings is not implemented"))
+func (UnimplementedOrganizationServiceHandler) GetOrganizationSettings(context.Context, *v1alpha1.GetOrganizationSettingsRequest) (*v1alpha1.GetOrganizationSettingsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationSettings is not implemented")
 }
 
-func (UnimplementedOrganizationServiceHandler) UpdateOrganizationSettings(context.Context, *connect.Request[v1alpha1.UpdateOrganizationSettingsRequest]) (*connect.Response[v1alpha1.UpdateOrganizationSettingsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationSettings is not implemented"))
+func (UnimplementedOrganizationServiceHandler) UpdateOrganizationSettings(context.Context, *v1alpha1.UpdateOrganizationSettingsRequest) (*v1alpha1.UpdateOrganizationSettingsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationSettings is not implemented")
 }
 
-func (UnimplementedOrganizationServiceHandler) AddOrganizationGroup(context.Context, *connect.Request[v1alpha1.AddOrganizationGroupRequest]) (*connect.Response[v1alpha1.AddOrganizationGroupResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationGroup is not implemented"))
+func (UnimplementedOrganizationServiceHandler) AddOrganizationGroup(context.Context, *v1alpha1.AddOrganizationGroupRequest) (*v1alpha1.AddOrganizationGroupResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationGroup is not implemented")
 }
 
-func (UnimplementedOrganizationServiceHandler) UpdateOrganizationGroup(context.Context, *connect.Request[v1alpha1.UpdateOrganizationGroupRequest]) (*connect.Response[v1alpha1.UpdateOrganizationGroupResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationGroup is not implemented"))
+func (UnimplementedOrganizationServiceHandler) UpdateOrganizationGroup(context.Context, *v1alpha1.UpdateOrganizationGroupRequest) (*v1alpha1.UpdateOrganizationGroupResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationGroup is not implemented")
 }
 
-func (UnimplementedOrganizationServiceHandler) RemoveOrganizationGroup(context.Context, *connect.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect.Response[v1alpha1.RemoveOrganizationGroupResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationGroup is not implemented"))
+func (UnimplementedOrganizationServiceHandler) RemoveOrganizationGroup(context.Context, *v1alpha1.RemoveOrganizationGroupRequest) (*v1alpha1.RemoveOrganizationGroupResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationGroup is not implemented")
+}
+
+type organizationServiceClient struct {
+	client *connect.Client
+}
+
+func (c *organizationServiceClient) GetOrganization(ctx context.Context, req *v1alpha1.GetOrganizationRequest) (*v1alpha1.GetOrganizationResponse, error) {
+	var res v1alpha1.GetOrganizationResponse
+	if err := c.client.CallUnary(ctx, organizationServiceGetOrganizationSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *organizationServiceClient) GetOrganizationByName(ctx context.Context, req *v1alpha1.GetOrganizationByNameRequest) (*v1alpha1.GetOrganizationByNameResponse, error) {
+	var res v1alpha1.GetOrganizationByNameResponse
+	if err := c.client.CallUnary(ctx, organizationServiceGetOrganizationByNameSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *organizationServiceClient) ListOrganizations(ctx context.Context, req *v1alpha1.ListOrganizationsRequest) (*v1alpha1.ListOrganizationsResponse, error) {
+	var res v1alpha1.ListOrganizationsResponse
+	if err := c.client.CallUnary(ctx, organizationServiceListOrganizationsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *organizationServiceClient) ListUserOrganizations(ctx context.Context, req *v1alpha1.ListUserOrganizationsRequest) (*v1alpha1.ListUserOrganizationsResponse, error) {
+	var res v1alpha1.ListUserOrganizationsResponse
+	if err := c.client.CallUnary(ctx, organizationServiceListUserOrganizationsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *organizationServiceClient) GetUserOrganization(ctx context.Context, req *v1alpha1.GetUserOrganizationRequest) (*v1alpha1.GetUserOrganizationResponse, error) {
+	var res v1alpha1.GetUserOrganizationResponse
+	if err := c.client.CallUnary(ctx, organizationServiceGetUserOrganizationSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *organizationServiceClient) CreateOrganization(ctx context.Context, req *v1alpha1.CreateOrganizationRequest) (*v1alpha1.CreateOrganizationResponse, error) {
+	var res v1alpha1.CreateOrganizationResponse
+	if err := c.client.CallUnary(ctx, organizationServiceCreateOrganizationSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *organizationServiceClient) DeleteOrganization(ctx context.Context, req *v1alpha1.DeleteOrganizationRequest) (*v1alpha1.DeleteOrganizationResponse, error) {
+	var res v1alpha1.DeleteOrganizationResponse
+	if err := c.client.CallUnary(ctx, organizationServiceDeleteOrganizationSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *organizationServiceClient) DeleteOrganizationByName(ctx context.Context, req *v1alpha1.DeleteOrganizationByNameRequest) (*v1alpha1.DeleteOrganizationByNameResponse, error) {
+	var res v1alpha1.DeleteOrganizationByNameResponse
+	if err := c.client.CallUnary(ctx, organizationServiceDeleteOrganizationByNameSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *organizationServiceClient) AddOrganizationMember(ctx context.Context, req *v1alpha1.AddOrganizationMemberRequest) (*v1alpha1.AddOrganizationMemberResponse, error) {
+	var res v1alpha1.AddOrganizationMemberResponse
+	if err := c.client.CallUnary(ctx, organizationServiceAddOrganizationMemberSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *organizationServiceClient) UpdateOrganizationMember(ctx context.Context, req *v1alpha1.UpdateOrganizationMemberRequest) (*v1alpha1.UpdateOrganizationMemberResponse, error) {
+	var res v1alpha1.UpdateOrganizationMemberResponse
+	if err := c.client.CallUnary(ctx, organizationServiceUpdateOrganizationMemberSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *organizationServiceClient) RemoveOrganizationMember(ctx context.Context, req *v1alpha1.RemoveOrganizationMemberRequest) (*v1alpha1.RemoveOrganizationMemberResponse, error) {
+	var res v1alpha1.RemoveOrganizationMemberResponse
+	if err := c.client.CallUnary(ctx, organizationServiceRemoveOrganizationMemberSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *organizationServiceClient) GetOrganizationSettings(ctx context.Context, req *v1alpha1.GetOrganizationSettingsRequest) (*v1alpha1.GetOrganizationSettingsResponse, error) {
+	var res v1alpha1.GetOrganizationSettingsResponse
+	if err := c.client.CallUnary(ctx, organizationServiceGetOrganizationSettingsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *organizationServiceClient) UpdateOrganizationSettings(ctx context.Context, req *v1alpha1.UpdateOrganizationSettingsRequest) (*v1alpha1.UpdateOrganizationSettingsResponse, error) {
+	var res v1alpha1.UpdateOrganizationSettingsResponse
+	if err := c.client.CallUnary(ctx, organizationServiceUpdateOrganizationSettingsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *organizationServiceClient) AddOrganizationGroup(ctx context.Context, req *v1alpha1.AddOrganizationGroupRequest) (*v1alpha1.AddOrganizationGroupResponse, error) {
+	var res v1alpha1.AddOrganizationGroupResponse
+	if err := c.client.CallUnary(ctx, organizationServiceAddOrganizationGroupSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *organizationServiceClient) UpdateOrganizationGroup(ctx context.Context, req *v1alpha1.UpdateOrganizationGroupRequest) (*v1alpha1.UpdateOrganizationGroupResponse, error) {
+	var res v1alpha1.UpdateOrganizationGroupResponse
+	if err := c.client.CallUnary(ctx, organizationServiceUpdateOrganizationGroupSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *organizationServiceClient) RemoveOrganizationGroup(ctx context.Context, req *v1alpha1.RemoveOrganizationGroupRequest) (*v1alpha1.RemoveOrganizationGroupResponse, error) {
+	var res v1alpha1.RemoveOrganizationGroupResponse
+	if err := c.client.CallUnary(ctx, organizationServiceRemoveOrganizationGroupSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type organizationServiceHandler struct{ svc OrganizationServiceHandler }
+
+func (h organizationServiceHandler) getOrganization(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetOrganizationRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetOrganization(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h organizationServiceHandler) getOrganizationByName(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetOrganizationByNameRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetOrganizationByName(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h organizationServiceHandler) listOrganizations(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ListOrganizationsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListOrganizations(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h organizationServiceHandler) listUserOrganizations(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ListUserOrganizationsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListUserOrganizations(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h organizationServiceHandler) getUserOrganization(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetUserOrganizationRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetUserOrganization(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h organizationServiceHandler) createOrganization(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.CreateOrganizationRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateOrganization(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h organizationServiceHandler) deleteOrganization(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.DeleteOrganizationRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteOrganization(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h organizationServiceHandler) deleteOrganizationByName(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.DeleteOrganizationByNameRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteOrganizationByName(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h organizationServiceHandler) addOrganizationMember(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.AddOrganizationMemberRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.AddOrganizationMember(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h organizationServiceHandler) updateOrganizationMember(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UpdateOrganizationMemberRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateOrganizationMember(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h organizationServiceHandler) removeOrganizationMember(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.RemoveOrganizationMemberRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RemoveOrganizationMember(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h organizationServiceHandler) getOrganizationSettings(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetOrganizationSettingsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetOrganizationSettings(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h organizationServiceHandler) updateOrganizationSettings(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UpdateOrganizationSettingsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateOrganizationSettings(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h organizationServiceHandler) addOrganizationGroup(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.AddOrganizationGroupRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.AddOrganizationGroup(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h organizationServiceHandler) updateOrganizationGroup(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UpdateOrganizationGroupRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateOrganizationGroup(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h organizationServiceHandler) removeOrganizationGroup(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.RemoveOrganizationGroupRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RemoveOrganizationGroup(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

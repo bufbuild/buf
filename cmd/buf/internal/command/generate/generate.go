@@ -534,6 +534,8 @@ func run(
 		container,
 		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
 		bufctl.WithFileAnnotationErrorFormat(flags.ErrorFormat),
+		// Multiple inputs may resolve to the same remote, fetch each one once.
+		bufctl.WithReaderFetchCache(),
 	)
 	if err != nil {
 		return err

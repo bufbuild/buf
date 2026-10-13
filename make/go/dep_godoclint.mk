@@ -19,7 +19,7 @@ GODOCLINT_GO_VERSION := $(call _major_minor,$(GODOCLINT_GOTOOLCHAIN_VERSION))
 #
 # Based off of dev branch.
 # https://github.com/bufbuild/godoc-lint/commits/dev
-GODOCLINT_VERSION ?= cbd52eb03aba73a3658b97058e44039f41e45a33
+GODOCLINT_VERSION ?= bdfc56fd22a090ecd78d0f6c957b3ee581d0dd31
 
 GODOCLINT := $(CACHE_BIN)/godoclint
 

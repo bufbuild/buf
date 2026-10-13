@@ -32,7 +32,7 @@ import (
 	"buf.build/go/app/appcmd/appcmdtesting"
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/bufbuild/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
@@ -3921,6 +3921,30 @@ func TestConvertInvalidTypeName(t *testing.T) {
 	)
 }
 
+func TestConvertImageWithSourceCodeInfoExtension(t *testing.T) {
+	t.Parallel()
+	// The built image carries Buf's SourceCodeInfo extension, which is not part
+	// of the schema and so must not be resolved when converting.
+	tempDir := t.TempDir()
+	schemaDir := filepath.Join(convertTestDataDir, "source_code_info_extension")
+	imagePath := filepath.Join(tempDir, "image.binpb")
+	testRunStdout(t, nil, 0, ``, "build", schemaDir, "-o", imagePath)
+	testRun(
+		t,
+		0,
+		nil,
+		nil,
+		"convert",
+		schemaDir,
+		"--type",
+		"google.protobuf.FileDescriptorSet",
+		"--from",
+		imagePath,
+		"--to",
+		"-#format=json",
+	)
+}
+
 func TestConvert(t *testing.T) {
 	t.Parallel()
 	t.Run("binpb-to-json-file-proto", func(t *testing.T) {
@@ -4716,6 +4740,22 @@ fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "
 	)
 }
 
+func TestLintWithPluginsModuleName(t *testing.T) {
+	t.Parallel()
+	// Module names that are valid in buf.yaml but not valid BSR module names
+	// are not sent to plugins.
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash("testdata/check_plugins_module_name/invalid/invalid.proto")+":1:1:<none> (buf-plugin-module-name)\n"+
+			filepath.FromSlash("testdata/check_plugins_module_name/named/named.proto")+":1:1:buf.build/acme/weather (buf-plugin-module-name)\n"+
+			filepath.FromSlash("testdata/check_plugins_module_name/unnamed/unnamed.proto")+":1:1:<none> (buf-plugin-module-name)",
+		"lint",
+		filepath.Join("testdata", "check_plugins_module_name"),
+	)
+}
+
 func TestLintDisabledForModuleInWorkspace(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
@@ -4987,7 +5027,7 @@ func TestWrapErrorInterrupt(t *testing.T) {
 	t.Parallel()
 	canceledCtx, cancel := context.WithCancel(t.Context())
 	cancel()
-	connectCanceledErr := connect.NewError(connect.CodeCanceled, context.Canceled)
+	connectCanceledErr := connect.NewError(connect.CodeCanceled, context.Canceled.Error()).WithCause(context.Canceled)
 
 	// Root context is canceled.
 	require.EqualError(t, wrapError(canceledCtx, connectCanceledErr), "Failure: interrupted")

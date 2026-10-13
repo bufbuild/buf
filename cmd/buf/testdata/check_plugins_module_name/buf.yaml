@@ -1,0 +1,12 @@
+version: v2
+modules:
+  - path: named
+    name: buf.build/acme/weather
+  - path: unnamed
+  - path: invalid
+    name: buf.build/acme/x
+lint:
+  use:
+    - MODULE_NAME
+plugins:
+  - plugin: buf-plugin-module-name

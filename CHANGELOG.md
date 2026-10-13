@@ -1,15 +1,34 @@
 # Changelog
-
 ## [Unreleased]
 
+- Improve the performance of the `PROTOVALIDATE` lint rule, which is now up to 3x faster
+  and allocates less memory on modules using `cel` rules or `example` values.
+- Send the module name of each file to check plugins, which is available as
+  `FileDescriptor.ModuleName()` in bufplugin-go v0.11.0 and later.
 - Update `buf curl` to automatically use HTTP/2 prior knowledge for `http` URLs when server
   reflection, the gRPC protocol, or a bidirectional streaming method is used, since all of these
   require HTTP/2. The `--http2-prior-knowledge` flag is no longer required in these cases.
 - Add `--stdin-filepath` flag to `buf format`, which reads a single `.proto` file from
   stdin and writes the formatted result to stdout. The path is not read from disk, and is
   only used to report parse errors and diffs.
+- Fix `buf convert` panic when converting images that contain files without a `syntax`
+  declaration or with unused imports.
+- Fix `buf generate` with `strategy: directory` and `include_imports: true` adding imports
+  to the `CodeGeneratorRequest` of the directory that imports them. Imports are now split
+  by directory into their own requests, the same as non-imports.
+- Fix configuration files silently accepting unquoted values that start with `!`, such as
+  `ignore: [!foo/bar.proto]`. Previously they parsed as empty strings, now they rejected
+  with an error.
 - Fix lint comment ignores on proto2 `group` fields being ignored.
+- Update the LSP to support named generation templates such as `buf.go.gen.yaml` and
+  `buf.gen.go.yaml`.
 - Improve the `buf curl` error message for methods that accept a single request message.
+- Deduplicate remote input fetches within a single command invocation, so that multiple
+  `inputs` in a `buf.gen.yaml` that resolve to the same archive, git repository, or image
+  are fetched once instead of once per input.
+- Fix intermittent concurrent map write crash when compiling Editions files.
+- Fix Edition 2024 handling of enum value features, `STRICT` default symbol visibility, and
+  source locations of `export`/`local` types.
 
 ## [v1.73.0] - 2026-09-11
 

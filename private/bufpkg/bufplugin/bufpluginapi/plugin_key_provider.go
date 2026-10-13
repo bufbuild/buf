@@ -20,7 +20,6 @@ import (
 
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
 	"buf.build/go/standard/xslices"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufregistryapi/bufregistryapiplugin"
@@ -126,14 +125,14 @@ func (p *pluginKeyProvider) getIndexedPluginKeysForRegistryAndIndexedPluginRefs(
 
 	pluginResponse, err := p.clientProvider.V1Beta1CommitServiceClient(registry).GetCommits(
 		ctx,
-		connect.NewRequest(&pluginv1beta1.GetCommitsRequest{
+		&pluginv1beta1.GetCommitsRequest{
 			ResourceRefs: resourceRefs,
-		}),
+		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	commits := pluginResponse.Msg.Commits
+	commits := pluginResponse.Commits
 	if len(commits) != len(indexedPluginRefs) {
 		return nil, syserror.New("did not get the expected number of plugin datas")
 	}

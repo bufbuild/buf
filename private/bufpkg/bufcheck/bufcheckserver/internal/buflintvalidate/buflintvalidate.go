@@ -15,14 +15,55 @@
 package buflintvalidate
 
 import (
+	"sync"
+
 	"buf.build/go/protovalidate"
+	celpv "buf.build/go/protovalidate/cel"
+	"cel.dev/cel-go/cel"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
+
+// Checker checks protovalidate rules.
+//
+// A Checker holds state that is reused across checks, so it should be created
+// once per set of files being checked and then discarded.
+type Checker struct {
+	extensionTypeResolver protoencoding.Resolver
+	exampleValidator      protovalidate.Validator
+	baseCELEnv            *cel.Env
+
+	mu          sync.Mutex
+	fileCELEnvs map[string]*cel.Env
+}
+
+// NewChecker returns a new Checker.
+//
+// The extensionTypeResolver must be able to resolve every predefined rule
+// extension used by the checked files, including those from imported files.
+func NewChecker(extensionTypeResolver protoencoding.Resolver) (*Checker, error) {
+	exampleValidator, err := protovalidate.New(
+		protovalidate.WithExtensionTypeResolver(extensionTypeResolver),
+	)
+	if err != nil {
+		return nil, err
+	}
+	baseCELEnv, err := cel.NewEnv(cel.Lib(celpv.NewLibrary()))
+	if err != nil {
+		return nil, err
+	}
+	return &Checker{
+		extensionTypeResolver: extensionTypeResolver,
+		exampleValidator:      exampleValidator,
+		baseCELEnv:            baseCELEnv,
+		fileCELEnvs:           make(map[string]*cel.Env),
+	}, nil
+}
 
 // CheckMessage validates that all rules on the message are valid, and any CEL expressions compile.
 // It also checks all predefined rule extensions on the messages.
-func CheckMessage(
+func (c *Checker) CheckMessage(
 	// addAnnotationFunc adds an annotation with the descriptor and location for check results.
 	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...any),
 	message bufprotosource.Message,
@@ -39,7 +80,7 @@ func CheckMessage(
 		return nil
 	}
 	checkOneofRulesForMessage(addAnnotationFunc, messageRules, messageDescriptor, message)
-	return checkCELForMessage(
+	return c.checkCELForMessage(
 		addAnnotationFunc,
 		messageRules,
 		messageDescriptor,
@@ -52,21 +93,60 @@ func CheckMessage(
 // For a set of rules to be valid, it must
 //  1. permit _some_ value and all example values, if any
 //  2. have a type compatible with the field it validates.
-func CheckField(
+func (c *Checker) CheckField(
 	// addAnnotationFunc adds an annotation with the descriptor and location for check results.
 	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...any),
 	field bufprotosource.Field,
-	extensionTypeResolver protoencoding.Resolver,
 ) error {
-	return checkField(addAnnotationFunc, field, extensionTypeResolver)
+	return c.checkField(addAnnotationFunc, field)
 }
 
 // CheckPredefinedRuleExtension checks that a predefined extension is valid, and any CEL expressions compile.
-func CheckPredefinedRuleExtension(
+func (c *Checker) CheckPredefinedRuleExtension(
 	// addAnnotationFunc adds an annotation with the descriptor and location for check results.
 	addAnnotationFunc func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...any),
 	field bufprotosource.Field,
-	extensionResolver protoencoding.Resolver,
 ) error {
-	return checkPredefinedRuleExtension(addAnnotationFunc, field, extensionResolver)
+	return c.checkPredefinedRuleExtension(addAnnotationFunc, field)
+}
+
+// celEnvForFile returns a CEL environment with the types from the file and
+// its transitive imports registered. This matches the types registered by
+// cel.Types for a message in the file, but registering them is expensive, so
+// the environment is built once per file.
+func (c *Checker) celEnvForFile(fileDescriptor protoreflect.FileDescriptor) (*cel.Env, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if celEnv, ok := c.fileCELEnvs[fileDescriptor.Path()]; ok {
+		return celEnv, nil
+	}
+	celEnv, err := c.baseCELEnv.Extend(cel.TypeDescs(transitiveFileDescriptors(fileDescriptor)...))
+	if err != nil {
+		return nil, err
+	}
+	c.fileCELEnvs[fileDescriptor.Path()] = celEnv
+	return celEnv, nil
+}
+
+func transitiveFileDescriptors(fileDescriptor protoreflect.FileDescriptor) []any {
+	seenPaths := map[string]struct{}{
+		fileDescriptor.Path(): {},
+	}
+	typeDescs := []any{fileDescriptor}
+	pending := []protoreflect.FileDescriptor{fileDescriptor}
+	for len(pending) > 0 {
+		current := pending[len(pending)-1]
+		pending = pending[:len(pending)-1]
+		imports := current.Imports()
+		for i := range imports.Len() {
+			importFileDescriptor := imports.Get(i).FileDescriptor
+			if _, ok := seenPaths[importFileDescriptor.Path()]; ok {
+				continue
+			}
+			seenPaths[importFileDescriptor.Path()] = struct{}{}
+			typeDescs = append(typeDescs, importFileDescriptor)
+			pending = append(pending, importFileDescriptor)
+		}
+	}
+	return typeDescs
 }

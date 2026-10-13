@@ -16,7 +16,7 @@ package bufcheck
 
 import (
 	descriptorv1 "buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go/buf/plugin/descriptor/v1"
-	"buf.build/go/standard/xslices"
+	"buf.build/go/bufplugin/descriptor"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 )
 
@@ -24,16 +24,37 @@ func imageToProtoFileDescriptors(image bufimage.Image) []*descriptorv1.FileDescr
 	if image == nil {
 		return nil
 	}
-	return xslices.Map(image.Files(), imageToProtoFileDescriptor)
-}
-
-func imageToProtoFileDescriptor(imageFile bufimage.ImageFile) *descriptorv1.FileDescriptor {
-	return &descriptorv1.FileDescriptor{
-		FileDescriptorProto: imageFile.FileDescriptorProto(),
-		IsImport:            imageFile.IsImport(),
-		IsSyntaxUnspecified: imageFile.IsSyntaxUnspecified(),
-		UnusedDependency:    imageFile.UnusedDependencyIndexes(),
+	imageFiles := image.Files()
+	fullNameStringToProtoModuleName := make(map[string]*descriptorv1.ModuleName)
+	protoFileDescriptors := make([]*descriptorv1.FileDescriptor, len(imageFiles))
+	for i, imageFile := range imageFiles {
+		var protoModuleName *descriptorv1.ModuleName
+		if fullName := imageFile.FullName(); fullName != nil {
+			fullNameString := fullName.String()
+			var ok bool
+			protoModuleName, ok = fullNameStringToProtoModuleName[fullNameString]
+			if !ok {
+				// Module names that are valid for buf.yaml may not be valid BSR module
+				// names. Omit those rather than failing the check.
+				if moduleName, err := descriptor.NewModuleName(
+					fullName.Registry(),
+					fullName.Owner(),
+					fullName.Name(),
+				); err == nil {
+					protoModuleName = moduleName.ToProto()
+				}
+				fullNameStringToProtoModuleName[fullNameString] = protoModuleName
+			}
+		}
+		protoFileDescriptors[i] = &descriptorv1.FileDescriptor{
+			FileDescriptorProto: imageFile.FileDescriptorProto(),
+			IsImport:            imageFile.IsImport(),
+			IsSyntaxUnspecified: imageFile.IsSyntaxUnspecified(),
+			UnusedDependency:    imageFile.UnusedDependencyIndexes(),
+			ModuleName:          protoModuleName,
+		}
 	}
+	return protoFileDescriptors
 }
 
 // imageToPathToExternalPath returns a map from path to external path for all ImageFiles in the Image.

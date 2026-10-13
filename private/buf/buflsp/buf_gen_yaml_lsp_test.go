@@ -631,6 +631,14 @@ func TestBufGenYAMLCodeLens(t *testing.T) {
 			wantRunLensLine:   0,
 			wantCheckLensLine: 1, // plugins: key is on line 1
 		},
+		{
+			name:              "named_template",
+			fixture:           "testdata/buf_gen_yaml/named_template/buf.go.gen.yaml",
+			wantCount:         2,
+			wantTitles:        []string{"Run buf generate", "Check for plugin updates"},
+			wantRunLensLine:   0,
+			wantCheckLensLine: 1,
+		},
 	}
 
 	for _, tc := range tests {

@@ -19,444 +19,502 @@
 package registryv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// AdminServiceName is the fully-qualified name of the AdminService service.
 	AdminServiceName = "buf.alpha.registry.v1alpha1.AdminService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// AdminServiceForceDeleteUserProcedure is the fully-qualified name of the AdminService's
-	// ForceDeleteUser RPC.
+	// AdminServiceForceDeleteUserProcedure is the procedure name of the AdminService's ForceDeleteUser
+	// RPC.
 	AdminServiceForceDeleteUserProcedure = "/buf.alpha.registry.v1alpha1.AdminService/ForceDeleteUser"
-	// AdminServiceUpdateUserVerificationStatusProcedure is the fully-qualified name of the
-	// AdminService's UpdateUserVerificationStatus RPC.
+	// AdminServiceUpdateUserVerificationStatusProcedure is the procedure name of the AdminService's
+	// UpdateUserVerificationStatus RPC.
 	AdminServiceUpdateUserVerificationStatusProcedure = "/buf.alpha.registry.v1alpha1.AdminService/UpdateUserVerificationStatus"
-	// AdminServiceUpdateOrganizationVerificationStatusProcedure is the fully-qualified name of the
+	// AdminServiceUpdateOrganizationVerificationStatusProcedure is the procedure name of the
 	// AdminService's UpdateOrganizationVerificationStatus RPC.
 	AdminServiceUpdateOrganizationVerificationStatusProcedure = "/buf.alpha.registry.v1alpha1.AdminService/UpdateOrganizationVerificationStatus"
-	// AdminServiceCreateMachineUserProcedure is the fully-qualified name of the AdminService's
+	// AdminServiceCreateMachineUserProcedure is the procedure name of the AdminService's
 	// CreateMachineUser RPC.
 	AdminServiceCreateMachineUserProcedure = "/buf.alpha.registry.v1alpha1.AdminService/CreateMachineUser"
-	// AdminServiceGetBreakingChangePolicyProcedure is the fully-qualified name of the AdminService's
+	// AdminServiceGetBreakingChangePolicyProcedure is the procedure name of the AdminService's
 	// GetBreakingChangePolicy RPC.
 	AdminServiceGetBreakingChangePolicyProcedure = "/buf.alpha.registry.v1alpha1.AdminService/GetBreakingChangePolicy"
-	// AdminServiceUpdateBreakingChangePolicyProcedure is the fully-qualified name of the AdminService's
+	// AdminServiceUpdateBreakingChangePolicyProcedure is the procedure name of the AdminService's
 	// UpdateBreakingChangePolicy RPC.
 	AdminServiceUpdateBreakingChangePolicyProcedure = "/buf.alpha.registry.v1alpha1.AdminService/UpdateBreakingChangePolicy"
-	// AdminServiceGetUniquenessPolicyProcedure is the fully-qualified name of the AdminService's
+	// AdminServiceGetUniquenessPolicyProcedure is the procedure name of the AdminService's
 	// GetUniquenessPolicy RPC.
 	AdminServiceGetUniquenessPolicyProcedure = "/buf.alpha.registry.v1alpha1.AdminService/GetUniquenessPolicy"
-	// AdminServiceUpdateUniquenessPolicyProcedure is the fully-qualified name of the AdminService's
+	// AdminServiceUpdateUniquenessPolicyProcedure is the procedure name of the AdminService's
 	// UpdateUniquenessPolicy RPC.
 	AdminServiceUpdateUniquenessPolicyProcedure = "/buf.alpha.registry.v1alpha1.AdminService/UpdateUniquenessPolicy"
-	// AdminServiceListServerUniquenessCollisionsProcedure is the fully-qualified name of the
-	// AdminService's ListServerUniquenessCollisions RPC.
+	// AdminServiceListServerUniquenessCollisionsProcedure is the procedure name of the AdminService's
+	// ListServerUniquenessCollisions RPC.
 	AdminServiceListServerUniquenessCollisionsProcedure = "/buf.alpha.registry.v1alpha1.AdminService/ListServerUniquenessCollisions"
-	// AdminServiceRunServerUniquenessBackfillTaskProcedure is the fully-qualified name of the
-	// AdminService's RunServerUniquenessBackfillTask RPC.
+	// AdminServiceRunServerUniquenessBackfillTaskProcedure is the procedure name of the AdminService's
+	// RunServerUniquenessBackfillTask RPC.
 	AdminServiceRunServerUniquenessBackfillTaskProcedure = "/buf.alpha.registry.v1alpha1.AdminService/RunServerUniquenessBackfillTask"
-	// AdminServiceGetClusterUsageProcedure is the fully-qualified name of the AdminService's
-	// GetClusterUsage RPC.
+	// AdminServiceGetClusterUsageProcedure is the procedure name of the AdminService's GetClusterUsage
+	// RPC.
 	AdminServiceGetClusterUsageProcedure = "/buf.alpha.registry.v1alpha1.AdminService/GetClusterUsage"
+)
+
+var (
+	adminServiceForceDeleteUserSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_admin_proto.Services().ByName("AdminService").Methods().ByName("ForceDeleteUser"),
+			Procedure:        AdminServiceForceDeleteUserProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	adminServiceUpdateUserVerificationStatusSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1alpha1.File_buf_alpha_registry_v1alpha1_admin_proto.Services().ByName("AdminService").Methods().ByName("UpdateUserVerificationStatus"),
+			Procedure:  AdminServiceUpdateUserVerificationStatusProcedure,
+		}
+	})
+	adminServiceUpdateOrganizationVerificationStatusSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1alpha1.File_buf_alpha_registry_v1alpha1_admin_proto.Services().ByName("AdminService").Methods().ByName("UpdateOrganizationVerificationStatus"),
+			Procedure:  AdminServiceUpdateOrganizationVerificationStatusProcedure,
+		}
+	})
+	adminServiceCreateMachineUserSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_admin_proto.Services().ByName("AdminService").Methods().ByName("CreateMachineUser"),
+			Procedure:        AdminServiceCreateMachineUserProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	adminServiceGetBreakingChangePolicySpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_admin_proto.Services().ByName("AdminService").Methods().ByName("GetBreakingChangePolicy"),
+			Procedure:        AdminServiceGetBreakingChangePolicyProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	adminServiceUpdateBreakingChangePolicySpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1alpha1.File_buf_alpha_registry_v1alpha1_admin_proto.Services().ByName("AdminService").Methods().ByName("UpdateBreakingChangePolicy"),
+			Procedure:  AdminServiceUpdateBreakingChangePolicyProcedure,
+		}
+	})
+	adminServiceGetUniquenessPolicySpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_admin_proto.Services().ByName("AdminService").Methods().ByName("GetUniquenessPolicy"),
+			Procedure:        AdminServiceGetUniquenessPolicyProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	adminServiceUpdateUniquenessPolicySpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1alpha1.File_buf_alpha_registry_v1alpha1_admin_proto.Services().ByName("AdminService").Methods().ByName("UpdateUniquenessPolicy"),
+			Procedure:  AdminServiceUpdateUniquenessPolicyProcedure,
+		}
+	})
+	adminServiceListServerUniquenessCollisionsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_admin_proto.Services().ByName("AdminService").Methods().ByName("ListServerUniquenessCollisions"),
+			Procedure:        AdminServiceListServerUniquenessCollisionsProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	adminServiceRunServerUniquenessBackfillTaskSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_admin_proto.Services().ByName("AdminService").Methods().ByName("RunServerUniquenessBackfillTask"),
+			Procedure:        AdminServiceRunServerUniquenessBackfillTaskProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	adminServiceGetClusterUsageSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1alpha1.File_buf_alpha_registry_v1alpha1_admin_proto.Services().ByName("AdminService").Methods().ByName("GetClusterUsage"),
+			Procedure:  AdminServiceGetClusterUsageProcedure,
+		}
+	})
 )
 
 // AdminServiceClient is a client for the buf.alpha.registry.v1alpha1.AdminService service.
 type AdminServiceClient interface {
 	// ForceDeleteUser forces to delete a user. Resources and organizations that are
 	// solely owned by the user will also be deleted.
-	ForceDeleteUser(context.Context, *connect.Request[v1alpha1.ForceDeleteUserRequest]) (*connect.Response[v1alpha1.ForceDeleteUserResponse], error)
+	ForceDeleteUser(context.Context, *v1alpha1.ForceDeleteUserRequest) (*v1alpha1.ForceDeleteUserResponse, error)
 	// Update a user's verification status.
-	UpdateUserVerificationStatus(context.Context, *connect.Request[v1alpha1.UpdateUserVerificationStatusRequest]) (*connect.Response[v1alpha1.UpdateUserVerificationStatusResponse], error)
+	UpdateUserVerificationStatus(context.Context, *v1alpha1.UpdateUserVerificationStatusRequest) (*v1alpha1.UpdateUserVerificationStatusResponse, error)
 	// Update a organization's verification.
-	UpdateOrganizationVerificationStatus(context.Context, *connect.Request[v1alpha1.UpdateOrganizationVerificationStatusRequest]) (*connect.Response[v1alpha1.UpdateOrganizationVerificationStatusResponse], error)
+	UpdateOrganizationVerificationStatus(context.Context, *v1alpha1.UpdateOrganizationVerificationStatusRequest) (*v1alpha1.UpdateOrganizationVerificationStatusResponse, error)
 	// Create a new machine user on the server.
-	CreateMachineUser(context.Context, *connect.Request[v1alpha1.CreateMachineUserRequest]) (*connect.Response[v1alpha1.CreateMachineUserResponse], error)
+	CreateMachineUser(context.Context, *v1alpha1.CreateMachineUserRequest) (*v1alpha1.CreateMachineUserResponse, error)
 	// Get breaking change policy for the server.
-	GetBreakingChangePolicy(context.Context, *connect.Request[v1alpha1.GetBreakingChangePolicyRequest]) (*connect.Response[v1alpha1.GetBreakingChangePolicyResponse], error)
+	GetBreakingChangePolicy(context.Context, *v1alpha1.GetBreakingChangePolicyRequest) (*v1alpha1.GetBreakingChangePolicyResponse, error)
 	// Update breaking change policy for the server.
-	UpdateBreakingChangePolicy(context.Context, *connect.Request[v1alpha1.UpdateBreakingChangePolicyRequest]) (*connect.Response[v1alpha1.UpdateBreakingChangePolicyResponse], error)
+	UpdateBreakingChangePolicy(context.Context, *v1alpha1.UpdateBreakingChangePolicyRequest) (*v1alpha1.UpdateBreakingChangePolicyResponse, error)
 	// Get uniqueness policy for the server.
-	GetUniquenessPolicy(context.Context, *connect.Request[v1alpha1.GetUniquenessPolicyRequest]) (*connect.Response[v1alpha1.GetUniquenessPolicyResponse], error)
+	GetUniquenessPolicy(context.Context, *v1alpha1.GetUniquenessPolicyRequest) (*v1alpha1.GetUniquenessPolicyResponse, error)
 	// Update uniqueness policy enforcement for the server.
-	UpdateUniquenessPolicy(context.Context, *connect.Request[v1alpha1.UpdateUniquenessPolicyRequest]) (*connect.Response[v1alpha1.UpdateUniquenessPolicyResponse], error)
+	UpdateUniquenessPolicy(context.Context, *v1alpha1.UpdateUniquenessPolicyRequest) (*v1alpha1.UpdateUniquenessPolicyResponse, error)
 	// Get state of uniqueness collisions for the server
-	ListServerUniquenessCollisions(context.Context, *connect.Request[v1alpha1.ListServerUniquenessCollisionsRequest]) (*connect.Response[v1alpha1.ListServerUniquenessCollisionsResponse], error)
+	ListServerUniquenessCollisions(context.Context, *v1alpha1.ListServerUniquenessCollisionsRequest) (*v1alpha1.ListServerUniquenessCollisionsResponse, error)
 	// Run a back-fill task to fill unique identifiers on the server.
 	// This is a potentially long-running operation, and should only be triggered by the administrator of the server,
 	// if they intend to enable uniqueness policy enforcement.
 	// Successful completion of this operation is a pre-requisite for enabling uniqueness policy enforcement.
-	RunServerUniquenessBackfillTask(context.Context, *connect.Request[v1alpha1.RunServerUniquenessBackfillTaskRequest]) (*connect.Response[v1alpha1.RunServerUniquenessBackfillTaskResponse], error)
+	RunServerUniquenessBackfillTask(context.Context, *v1alpha1.RunServerUniquenessBackfillTaskRequest) (*v1alpha1.RunServerUniquenessBackfillTaskResponse, error)
 	// GetClusterUsage returns the summation of total message, enum and service types usage
 	// for every repository in each organization within a single tenant BSR instance.
-	GetClusterUsage(context.Context, *connect.Request[v1alpha1.GetClusterUsageRequest]) (*connect.Response[v1alpha1.GetClusterUsageResponse], error)
+	GetClusterUsage(context.Context, *v1alpha1.GetClusterUsageRequest) (*v1alpha1.GetClusterUsageResponse, error)
 }
 
 // NewAdminServiceClient constructs a client for the buf.alpha.registry.v1alpha1.AdminService
-// service. By default, it uses the Connect protocol with the binary Protobuf Codec, asks for
-// gzipped responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply
-// the connect.WithGRPC() or connect.WithGRPCWeb() options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewAdminServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) AdminServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	adminServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_admin_proto.Services().ByName("AdminService").Methods()
-	return &adminServiceClient{
-		forceDeleteUser: connect.NewClient[v1alpha1.ForceDeleteUserRequest, v1alpha1.ForceDeleteUserResponse](
-			httpClient,
-			baseURL+AdminServiceForceDeleteUserProcedure,
-			connect.WithSchema(adminServiceMethods.ByName("ForceDeleteUser")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		updateUserVerificationStatus: connect.NewClient[v1alpha1.UpdateUserVerificationStatusRequest, v1alpha1.UpdateUserVerificationStatusResponse](
-			httpClient,
-			baseURL+AdminServiceUpdateUserVerificationStatusProcedure,
-			connect.WithSchema(adminServiceMethods.ByName("UpdateUserVerificationStatus")),
-			connect.WithClientOptions(opts...),
-		),
-		updateOrganizationVerificationStatus: connect.NewClient[v1alpha1.UpdateOrganizationVerificationStatusRequest, v1alpha1.UpdateOrganizationVerificationStatusResponse](
-			httpClient,
-			baseURL+AdminServiceUpdateOrganizationVerificationStatusProcedure,
-			connect.WithSchema(adminServiceMethods.ByName("UpdateOrganizationVerificationStatus")),
-			connect.WithClientOptions(opts...),
-		),
-		createMachineUser: connect.NewClient[v1alpha1.CreateMachineUserRequest, v1alpha1.CreateMachineUserResponse](
-			httpClient,
-			baseURL+AdminServiceCreateMachineUserProcedure,
-			connect.WithSchema(adminServiceMethods.ByName("CreateMachineUser")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		getBreakingChangePolicy: connect.NewClient[v1alpha1.GetBreakingChangePolicyRequest, v1alpha1.GetBreakingChangePolicyResponse](
-			httpClient,
-			baseURL+AdminServiceGetBreakingChangePolicyProcedure,
-			connect.WithSchema(adminServiceMethods.ByName("GetBreakingChangePolicy")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		updateBreakingChangePolicy: connect.NewClient[v1alpha1.UpdateBreakingChangePolicyRequest, v1alpha1.UpdateBreakingChangePolicyResponse](
-			httpClient,
-			baseURL+AdminServiceUpdateBreakingChangePolicyProcedure,
-			connect.WithSchema(adminServiceMethods.ByName("UpdateBreakingChangePolicy")),
-			connect.WithClientOptions(opts...),
-		),
-		getUniquenessPolicy: connect.NewClient[v1alpha1.GetUniquenessPolicyRequest, v1alpha1.GetUniquenessPolicyResponse](
-			httpClient,
-			baseURL+AdminServiceGetUniquenessPolicyProcedure,
-			connect.WithSchema(adminServiceMethods.ByName("GetUniquenessPolicy")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		updateUniquenessPolicy: connect.NewClient[v1alpha1.UpdateUniquenessPolicyRequest, v1alpha1.UpdateUniquenessPolicyResponse](
-			httpClient,
-			baseURL+AdminServiceUpdateUniquenessPolicyProcedure,
-			connect.WithSchema(adminServiceMethods.ByName("UpdateUniquenessPolicy")),
-			connect.WithClientOptions(opts...),
-		),
-		listServerUniquenessCollisions: connect.NewClient[v1alpha1.ListServerUniquenessCollisionsRequest, v1alpha1.ListServerUniquenessCollisionsResponse](
-			httpClient,
-			baseURL+AdminServiceListServerUniquenessCollisionsProcedure,
-			connect.WithSchema(adminServiceMethods.ByName("ListServerUniquenessCollisions")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-		runServerUniquenessBackfillTask: connect.NewClient[v1alpha1.RunServerUniquenessBackfillTaskRequest, v1alpha1.RunServerUniquenessBackfillTaskResponse](
-			httpClient,
-			baseURL+AdminServiceRunServerUniquenessBackfillTaskProcedure,
-			connect.WithSchema(adminServiceMethods.ByName("RunServerUniquenessBackfillTask")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		getClusterUsage: connect.NewClient[v1alpha1.GetClusterUsageRequest, v1alpha1.GetClusterUsageResponse](
-			httpClient,
-			baseURL+AdminServiceGetClusterUsageProcedure,
-			connect.WithSchema(adminServiceMethods.ByName("GetClusterUsage")),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// adminServiceClient implements AdminServiceClient.
-type adminServiceClient struct {
-	forceDeleteUser                      *connect.Client[v1alpha1.ForceDeleteUserRequest, v1alpha1.ForceDeleteUserResponse]
-	updateUserVerificationStatus         *connect.Client[v1alpha1.UpdateUserVerificationStatusRequest, v1alpha1.UpdateUserVerificationStatusResponse]
-	updateOrganizationVerificationStatus *connect.Client[v1alpha1.UpdateOrganizationVerificationStatusRequest, v1alpha1.UpdateOrganizationVerificationStatusResponse]
-	createMachineUser                    *connect.Client[v1alpha1.CreateMachineUserRequest, v1alpha1.CreateMachineUserResponse]
-	getBreakingChangePolicy              *connect.Client[v1alpha1.GetBreakingChangePolicyRequest, v1alpha1.GetBreakingChangePolicyResponse]
-	updateBreakingChangePolicy           *connect.Client[v1alpha1.UpdateBreakingChangePolicyRequest, v1alpha1.UpdateBreakingChangePolicyResponse]
-	getUniquenessPolicy                  *connect.Client[v1alpha1.GetUniquenessPolicyRequest, v1alpha1.GetUniquenessPolicyResponse]
-	updateUniquenessPolicy               *connect.Client[v1alpha1.UpdateUniquenessPolicyRequest, v1alpha1.UpdateUniquenessPolicyResponse]
-	listServerUniquenessCollisions       *connect.Client[v1alpha1.ListServerUniquenessCollisionsRequest, v1alpha1.ListServerUniquenessCollisionsResponse]
-	runServerUniquenessBackfillTask      *connect.Client[v1alpha1.RunServerUniquenessBackfillTaskRequest, v1alpha1.RunServerUniquenessBackfillTaskResponse]
-	getClusterUsage                      *connect.Client[v1alpha1.GetClusterUsageRequest, v1alpha1.GetClusterUsageResponse]
-}
-
-// ForceDeleteUser calls buf.alpha.registry.v1alpha1.AdminService.ForceDeleteUser.
-func (c *adminServiceClient) ForceDeleteUser(ctx context.Context, req *connect.Request[v1alpha1.ForceDeleteUserRequest]) (*connect.Response[v1alpha1.ForceDeleteUserResponse], error) {
-	return c.forceDeleteUser.CallUnary(ctx, req)
-}
-
-// UpdateUserVerificationStatus calls
-// buf.alpha.registry.v1alpha1.AdminService.UpdateUserVerificationStatus.
-func (c *adminServiceClient) UpdateUserVerificationStatus(ctx context.Context, req *connect.Request[v1alpha1.UpdateUserVerificationStatusRequest]) (*connect.Response[v1alpha1.UpdateUserVerificationStatusResponse], error) {
-	return c.updateUserVerificationStatus.CallUnary(ctx, req)
-}
-
-// UpdateOrganizationVerificationStatus calls
-// buf.alpha.registry.v1alpha1.AdminService.UpdateOrganizationVerificationStatus.
-func (c *adminServiceClient) UpdateOrganizationVerificationStatus(ctx context.Context, req *connect.Request[v1alpha1.UpdateOrganizationVerificationStatusRequest]) (*connect.Response[v1alpha1.UpdateOrganizationVerificationStatusResponse], error) {
-	return c.updateOrganizationVerificationStatus.CallUnary(ctx, req)
-}
-
-// CreateMachineUser calls buf.alpha.registry.v1alpha1.AdminService.CreateMachineUser.
-func (c *adminServiceClient) CreateMachineUser(ctx context.Context, req *connect.Request[v1alpha1.CreateMachineUserRequest]) (*connect.Response[v1alpha1.CreateMachineUserResponse], error) {
-	return c.createMachineUser.CallUnary(ctx, req)
-}
-
-// GetBreakingChangePolicy calls buf.alpha.registry.v1alpha1.AdminService.GetBreakingChangePolicy.
-func (c *adminServiceClient) GetBreakingChangePolicy(ctx context.Context, req *connect.Request[v1alpha1.GetBreakingChangePolicyRequest]) (*connect.Response[v1alpha1.GetBreakingChangePolicyResponse], error) {
-	return c.getBreakingChangePolicy.CallUnary(ctx, req)
-}
-
-// UpdateBreakingChangePolicy calls
-// buf.alpha.registry.v1alpha1.AdminService.UpdateBreakingChangePolicy.
-func (c *adminServiceClient) UpdateBreakingChangePolicy(ctx context.Context, req *connect.Request[v1alpha1.UpdateBreakingChangePolicyRequest]) (*connect.Response[v1alpha1.UpdateBreakingChangePolicyResponse], error) {
-	return c.updateBreakingChangePolicy.CallUnary(ctx, req)
-}
-
-// GetUniquenessPolicy calls buf.alpha.registry.v1alpha1.AdminService.GetUniquenessPolicy.
-func (c *adminServiceClient) GetUniquenessPolicy(ctx context.Context, req *connect.Request[v1alpha1.GetUniquenessPolicyRequest]) (*connect.Response[v1alpha1.GetUniquenessPolicyResponse], error) {
-	return c.getUniquenessPolicy.CallUnary(ctx, req)
-}
-
-// UpdateUniquenessPolicy calls buf.alpha.registry.v1alpha1.AdminService.UpdateUniquenessPolicy.
-func (c *adminServiceClient) UpdateUniquenessPolicy(ctx context.Context, req *connect.Request[v1alpha1.UpdateUniquenessPolicyRequest]) (*connect.Response[v1alpha1.UpdateUniquenessPolicyResponse], error) {
-	return c.updateUniquenessPolicy.CallUnary(ctx, req)
-}
-
-// ListServerUniquenessCollisions calls
-// buf.alpha.registry.v1alpha1.AdminService.ListServerUniquenessCollisions.
-func (c *adminServiceClient) ListServerUniquenessCollisions(ctx context.Context, req *connect.Request[v1alpha1.ListServerUniquenessCollisionsRequest]) (*connect.Response[v1alpha1.ListServerUniquenessCollisionsResponse], error) {
-	return c.listServerUniquenessCollisions.CallUnary(ctx, req)
-}
-
-// RunServerUniquenessBackfillTask calls
-// buf.alpha.registry.v1alpha1.AdminService.RunServerUniquenessBackfillTask.
-func (c *adminServiceClient) RunServerUniquenessBackfillTask(ctx context.Context, req *connect.Request[v1alpha1.RunServerUniquenessBackfillTaskRequest]) (*connect.Response[v1alpha1.RunServerUniquenessBackfillTaskResponse], error) {
-	return c.runServerUniquenessBackfillTask.CallUnary(ctx, req)
-}
-
-// GetClusterUsage calls buf.alpha.registry.v1alpha1.AdminService.GetClusterUsage.
-func (c *adminServiceClient) GetClusterUsage(ctx context.Context, req *connect.Request[v1alpha1.GetClusterUsageRequest]) (*connect.Response[v1alpha1.GetClusterUsageResponse], error) {
-	return c.getClusterUsage.CallUnary(ctx, req)
+// service. Multiple service clients may share a single connect.Client.
+func NewAdminServiceClient(client *connect.Client) AdminServiceClient {
+	return &adminServiceClient{client: client}
 }
 
 // AdminServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.AdminService service.
 type AdminServiceHandler interface {
 	// ForceDeleteUser forces to delete a user. Resources and organizations that are
 	// solely owned by the user will also be deleted.
-	ForceDeleteUser(context.Context, *connect.Request[v1alpha1.ForceDeleteUserRequest]) (*connect.Response[v1alpha1.ForceDeleteUserResponse], error)
+	ForceDeleteUser(context.Context, *v1alpha1.ForceDeleteUserRequest) (*v1alpha1.ForceDeleteUserResponse, error)
 	// Update a user's verification status.
-	UpdateUserVerificationStatus(context.Context, *connect.Request[v1alpha1.UpdateUserVerificationStatusRequest]) (*connect.Response[v1alpha1.UpdateUserVerificationStatusResponse], error)
+	UpdateUserVerificationStatus(context.Context, *v1alpha1.UpdateUserVerificationStatusRequest) (*v1alpha1.UpdateUserVerificationStatusResponse, error)
 	// Update a organization's verification.
-	UpdateOrganizationVerificationStatus(context.Context, *connect.Request[v1alpha1.UpdateOrganizationVerificationStatusRequest]) (*connect.Response[v1alpha1.UpdateOrganizationVerificationStatusResponse], error)
+	UpdateOrganizationVerificationStatus(context.Context, *v1alpha1.UpdateOrganizationVerificationStatusRequest) (*v1alpha1.UpdateOrganizationVerificationStatusResponse, error)
 	// Create a new machine user on the server.
-	CreateMachineUser(context.Context, *connect.Request[v1alpha1.CreateMachineUserRequest]) (*connect.Response[v1alpha1.CreateMachineUserResponse], error)
+	CreateMachineUser(context.Context, *v1alpha1.CreateMachineUserRequest) (*v1alpha1.CreateMachineUserResponse, error)
 	// Get breaking change policy for the server.
-	GetBreakingChangePolicy(context.Context, *connect.Request[v1alpha1.GetBreakingChangePolicyRequest]) (*connect.Response[v1alpha1.GetBreakingChangePolicyResponse], error)
+	GetBreakingChangePolicy(context.Context, *v1alpha1.GetBreakingChangePolicyRequest) (*v1alpha1.GetBreakingChangePolicyResponse, error)
 	// Update breaking change policy for the server.
-	UpdateBreakingChangePolicy(context.Context, *connect.Request[v1alpha1.UpdateBreakingChangePolicyRequest]) (*connect.Response[v1alpha1.UpdateBreakingChangePolicyResponse], error)
+	UpdateBreakingChangePolicy(context.Context, *v1alpha1.UpdateBreakingChangePolicyRequest) (*v1alpha1.UpdateBreakingChangePolicyResponse, error)
 	// Get uniqueness policy for the server.
-	GetUniquenessPolicy(context.Context, *connect.Request[v1alpha1.GetUniquenessPolicyRequest]) (*connect.Response[v1alpha1.GetUniquenessPolicyResponse], error)
+	GetUniquenessPolicy(context.Context, *v1alpha1.GetUniquenessPolicyRequest) (*v1alpha1.GetUniquenessPolicyResponse, error)
 	// Update uniqueness policy enforcement for the server.
-	UpdateUniquenessPolicy(context.Context, *connect.Request[v1alpha1.UpdateUniquenessPolicyRequest]) (*connect.Response[v1alpha1.UpdateUniquenessPolicyResponse], error)
+	UpdateUniquenessPolicy(context.Context, *v1alpha1.UpdateUniquenessPolicyRequest) (*v1alpha1.UpdateUniquenessPolicyResponse, error)
 	// Get state of uniqueness collisions for the server
-	ListServerUniquenessCollisions(context.Context, *connect.Request[v1alpha1.ListServerUniquenessCollisionsRequest]) (*connect.Response[v1alpha1.ListServerUniquenessCollisionsResponse], error)
+	ListServerUniquenessCollisions(context.Context, *v1alpha1.ListServerUniquenessCollisionsRequest) (*v1alpha1.ListServerUniquenessCollisionsResponse, error)
 	// Run a back-fill task to fill unique identifiers on the server.
 	// This is a potentially long-running operation, and should only be triggered by the administrator of the server,
 	// if they intend to enable uniqueness policy enforcement.
 	// Successful completion of this operation is a pre-requisite for enabling uniqueness policy enforcement.
-	RunServerUniquenessBackfillTask(context.Context, *connect.Request[v1alpha1.RunServerUniquenessBackfillTaskRequest]) (*connect.Response[v1alpha1.RunServerUniquenessBackfillTaskResponse], error)
+	RunServerUniquenessBackfillTask(context.Context, *v1alpha1.RunServerUniquenessBackfillTaskRequest) (*v1alpha1.RunServerUniquenessBackfillTaskResponse, error)
 	// GetClusterUsage returns the summation of total message, enum and service types usage
 	// for every repository in each organization within a single tenant BSR instance.
-	GetClusterUsage(context.Context, *connect.Request[v1alpha1.GetClusterUsageRequest]) (*connect.Response[v1alpha1.GetClusterUsageResponse], error)
+	GetClusterUsage(context.Context, *v1alpha1.GetClusterUsageRequest) (*v1alpha1.GetClusterUsageResponse, error)
 }
 
-// NewAdminServiceHandler builds an HTTP handler from the service implementation. It returns the
-// path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	adminServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_admin_proto.Services().ByName("AdminService").Methods()
-	adminServiceForceDeleteUserHandler := connect.NewUnaryHandler(
-		AdminServiceForceDeleteUserProcedure,
-		svc.ForceDeleteUser,
-		connect.WithSchema(adminServiceMethods.ByName("ForceDeleteUser")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
+// RegisterAdminServiceHandler registers svc as the buf.alpha.registry.v1alpha1.AdminService
+// implementation on server.
+func RegisterAdminServiceHandler(server *connect.Server, svc AdminServiceHandler) {
+	adapter := adminServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: adminServiceForceDeleteUserSpec(), Handler: adapter.forceDeleteUser},
+		connect.Method{Spec: adminServiceUpdateUserVerificationStatusSpec(), Handler: adapter.updateUserVerificationStatus},
+		connect.Method{Spec: adminServiceUpdateOrganizationVerificationStatusSpec(), Handler: adapter.updateOrganizationVerificationStatus},
+		connect.Method{Spec: adminServiceCreateMachineUserSpec(), Handler: adapter.createMachineUser},
+		connect.Method{Spec: adminServiceGetBreakingChangePolicySpec(), Handler: adapter.getBreakingChangePolicy},
+		connect.Method{Spec: adminServiceUpdateBreakingChangePolicySpec(), Handler: adapter.updateBreakingChangePolicy},
+		connect.Method{Spec: adminServiceGetUniquenessPolicySpec(), Handler: adapter.getUniquenessPolicy},
+		connect.Method{Spec: adminServiceUpdateUniquenessPolicySpec(), Handler: adapter.updateUniquenessPolicy},
+		connect.Method{Spec: adminServiceListServerUniquenessCollisionsSpec(), Handler: adapter.listServerUniquenessCollisions},
+		connect.Method{Spec: adminServiceRunServerUniquenessBackfillTaskSpec(), Handler: adapter.runServerUniquenessBackfillTask},
+		connect.Method{Spec: adminServiceGetClusterUsageSpec(), Handler: adapter.getClusterUsage},
 	)
-	adminServiceUpdateUserVerificationStatusHandler := connect.NewUnaryHandler(
-		AdminServiceUpdateUserVerificationStatusProcedure,
-		svc.UpdateUserVerificationStatus,
-		connect.WithSchema(adminServiceMethods.ByName("UpdateUserVerificationStatus")),
-		connect.WithHandlerOptions(opts...),
-	)
-	adminServiceUpdateOrganizationVerificationStatusHandler := connect.NewUnaryHandler(
-		AdminServiceUpdateOrganizationVerificationStatusProcedure,
-		svc.UpdateOrganizationVerificationStatus,
-		connect.WithSchema(adminServiceMethods.ByName("UpdateOrganizationVerificationStatus")),
-		connect.WithHandlerOptions(opts...),
-	)
-	adminServiceCreateMachineUserHandler := connect.NewUnaryHandler(
-		AdminServiceCreateMachineUserProcedure,
-		svc.CreateMachineUser,
-		connect.WithSchema(adminServiceMethods.ByName("CreateMachineUser")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	adminServiceGetBreakingChangePolicyHandler := connect.NewUnaryHandler(
-		AdminServiceGetBreakingChangePolicyProcedure,
-		svc.GetBreakingChangePolicy,
-		connect.WithSchema(adminServiceMethods.ByName("GetBreakingChangePolicy")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	adminServiceUpdateBreakingChangePolicyHandler := connect.NewUnaryHandler(
-		AdminServiceUpdateBreakingChangePolicyProcedure,
-		svc.UpdateBreakingChangePolicy,
-		connect.WithSchema(adminServiceMethods.ByName("UpdateBreakingChangePolicy")),
-		connect.WithHandlerOptions(opts...),
-	)
-	adminServiceGetUniquenessPolicyHandler := connect.NewUnaryHandler(
-		AdminServiceGetUniquenessPolicyProcedure,
-		svc.GetUniquenessPolicy,
-		connect.WithSchema(adminServiceMethods.ByName("GetUniquenessPolicy")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	adminServiceUpdateUniquenessPolicyHandler := connect.NewUnaryHandler(
-		AdminServiceUpdateUniquenessPolicyProcedure,
-		svc.UpdateUniquenessPolicy,
-		connect.WithSchema(adminServiceMethods.ByName("UpdateUniquenessPolicy")),
-		connect.WithHandlerOptions(opts...),
-	)
-	adminServiceListServerUniquenessCollisionsHandler := connect.NewUnaryHandler(
-		AdminServiceListServerUniquenessCollisionsProcedure,
-		svc.ListServerUniquenessCollisions,
-		connect.WithSchema(adminServiceMethods.ByName("ListServerUniquenessCollisions")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	adminServiceRunServerUniquenessBackfillTaskHandler := connect.NewUnaryHandler(
-		AdminServiceRunServerUniquenessBackfillTaskProcedure,
-		svc.RunServerUniquenessBackfillTask,
-		connect.WithSchema(adminServiceMethods.ByName("RunServerUniquenessBackfillTask")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	adminServiceGetClusterUsageHandler := connect.NewUnaryHandler(
-		AdminServiceGetClusterUsageProcedure,
-		svc.GetClusterUsage,
-		connect.WithSchema(adminServiceMethods.ByName("GetClusterUsage")),
-		connect.WithHandlerOptions(opts...),
-	)
-	return "/buf.alpha.registry.v1alpha1.AdminService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case AdminServiceForceDeleteUserProcedure:
-			adminServiceForceDeleteUserHandler.ServeHTTP(w, r)
-		case AdminServiceUpdateUserVerificationStatusProcedure:
-			adminServiceUpdateUserVerificationStatusHandler.ServeHTTP(w, r)
-		case AdminServiceUpdateOrganizationVerificationStatusProcedure:
-			adminServiceUpdateOrganizationVerificationStatusHandler.ServeHTTP(w, r)
-		case AdminServiceCreateMachineUserProcedure:
-			adminServiceCreateMachineUserHandler.ServeHTTP(w, r)
-		case AdminServiceGetBreakingChangePolicyProcedure:
-			adminServiceGetBreakingChangePolicyHandler.ServeHTTP(w, r)
-		case AdminServiceUpdateBreakingChangePolicyProcedure:
-			adminServiceUpdateBreakingChangePolicyHandler.ServeHTTP(w, r)
-		case AdminServiceGetUniquenessPolicyProcedure:
-			adminServiceGetUniquenessPolicyHandler.ServeHTTP(w, r)
-		case AdminServiceUpdateUniquenessPolicyProcedure:
-			adminServiceUpdateUniquenessPolicyHandler.ServeHTTP(w, r)
-		case AdminServiceListServerUniquenessCollisionsProcedure:
-			adminServiceListServerUniquenessCollisionsHandler.ServeHTTP(w, r)
-		case AdminServiceRunServerUniquenessBackfillTaskProcedure:
-			adminServiceRunServerUniquenessBackfillTaskHandler.ServeHTTP(w, r)
-		case AdminServiceGetClusterUsageProcedure:
-			adminServiceGetClusterUsageHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedAdminServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedAdminServiceHandler struct{}
 
-func (UnimplementedAdminServiceHandler) ForceDeleteUser(context.Context, *connect.Request[v1alpha1.ForceDeleteUserRequest]) (*connect.Response[v1alpha1.ForceDeleteUserResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.ForceDeleteUser is not implemented"))
+func (UnimplementedAdminServiceHandler) ForceDeleteUser(context.Context, *v1alpha1.ForceDeleteUserRequest) (*v1alpha1.ForceDeleteUserResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AdminService.ForceDeleteUser is not implemented")
 }
 
-func (UnimplementedAdminServiceHandler) UpdateUserVerificationStatus(context.Context, *connect.Request[v1alpha1.UpdateUserVerificationStatusRequest]) (*connect.Response[v1alpha1.UpdateUserVerificationStatusResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.UpdateUserVerificationStatus is not implemented"))
+func (UnimplementedAdminServiceHandler) UpdateUserVerificationStatus(context.Context, *v1alpha1.UpdateUserVerificationStatusRequest) (*v1alpha1.UpdateUserVerificationStatusResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AdminService.UpdateUserVerificationStatus is not implemented")
 }
 
-func (UnimplementedAdminServiceHandler) UpdateOrganizationVerificationStatus(context.Context, *connect.Request[v1alpha1.UpdateOrganizationVerificationStatusRequest]) (*connect.Response[v1alpha1.UpdateOrganizationVerificationStatusResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.UpdateOrganizationVerificationStatus is not implemented"))
+func (UnimplementedAdminServiceHandler) UpdateOrganizationVerificationStatus(context.Context, *v1alpha1.UpdateOrganizationVerificationStatusRequest) (*v1alpha1.UpdateOrganizationVerificationStatusResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AdminService.UpdateOrganizationVerificationStatus is not implemented")
 }
 
-func (UnimplementedAdminServiceHandler) CreateMachineUser(context.Context, *connect.Request[v1alpha1.CreateMachineUserRequest]) (*connect.Response[v1alpha1.CreateMachineUserResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.CreateMachineUser is not implemented"))
+func (UnimplementedAdminServiceHandler) CreateMachineUser(context.Context, *v1alpha1.CreateMachineUserRequest) (*v1alpha1.CreateMachineUserResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AdminService.CreateMachineUser is not implemented")
 }
 
-func (UnimplementedAdminServiceHandler) GetBreakingChangePolicy(context.Context, *connect.Request[v1alpha1.GetBreakingChangePolicyRequest]) (*connect.Response[v1alpha1.GetBreakingChangePolicyResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.GetBreakingChangePolicy is not implemented"))
+func (UnimplementedAdminServiceHandler) GetBreakingChangePolicy(context.Context, *v1alpha1.GetBreakingChangePolicyRequest) (*v1alpha1.GetBreakingChangePolicyResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AdminService.GetBreakingChangePolicy is not implemented")
 }
 
-func (UnimplementedAdminServiceHandler) UpdateBreakingChangePolicy(context.Context, *connect.Request[v1alpha1.UpdateBreakingChangePolicyRequest]) (*connect.Response[v1alpha1.UpdateBreakingChangePolicyResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.UpdateBreakingChangePolicy is not implemented"))
+func (UnimplementedAdminServiceHandler) UpdateBreakingChangePolicy(context.Context, *v1alpha1.UpdateBreakingChangePolicyRequest) (*v1alpha1.UpdateBreakingChangePolicyResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AdminService.UpdateBreakingChangePolicy is not implemented")
 }
 
-func (UnimplementedAdminServiceHandler) GetUniquenessPolicy(context.Context, *connect.Request[v1alpha1.GetUniquenessPolicyRequest]) (*connect.Response[v1alpha1.GetUniquenessPolicyResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.GetUniquenessPolicy is not implemented"))
+func (UnimplementedAdminServiceHandler) GetUniquenessPolicy(context.Context, *v1alpha1.GetUniquenessPolicyRequest) (*v1alpha1.GetUniquenessPolicyResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AdminService.GetUniquenessPolicy is not implemented")
 }
 
-func (UnimplementedAdminServiceHandler) UpdateUniquenessPolicy(context.Context, *connect.Request[v1alpha1.UpdateUniquenessPolicyRequest]) (*connect.Response[v1alpha1.UpdateUniquenessPolicyResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.UpdateUniquenessPolicy is not implemented"))
+func (UnimplementedAdminServiceHandler) UpdateUniquenessPolicy(context.Context, *v1alpha1.UpdateUniquenessPolicyRequest) (*v1alpha1.UpdateUniquenessPolicyResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AdminService.UpdateUniquenessPolicy is not implemented")
 }
 
-func (UnimplementedAdminServiceHandler) ListServerUniquenessCollisions(context.Context, *connect.Request[v1alpha1.ListServerUniquenessCollisionsRequest]) (*connect.Response[v1alpha1.ListServerUniquenessCollisionsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.ListServerUniquenessCollisions is not implemented"))
+func (UnimplementedAdminServiceHandler) ListServerUniquenessCollisions(context.Context, *v1alpha1.ListServerUniquenessCollisionsRequest) (*v1alpha1.ListServerUniquenessCollisionsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AdminService.ListServerUniquenessCollisions is not implemented")
 }
 
-func (UnimplementedAdminServiceHandler) RunServerUniquenessBackfillTask(context.Context, *connect.Request[v1alpha1.RunServerUniquenessBackfillTaskRequest]) (*connect.Response[v1alpha1.RunServerUniquenessBackfillTaskResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.RunServerUniquenessBackfillTask is not implemented"))
+func (UnimplementedAdminServiceHandler) RunServerUniquenessBackfillTask(context.Context, *v1alpha1.RunServerUniquenessBackfillTaskRequest) (*v1alpha1.RunServerUniquenessBackfillTaskResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AdminService.RunServerUniquenessBackfillTask is not implemented")
 }
 
-func (UnimplementedAdminServiceHandler) GetClusterUsage(context.Context, *connect.Request[v1alpha1.GetClusterUsageRequest]) (*connect.Response[v1alpha1.GetClusterUsageResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.GetClusterUsage is not implemented"))
+func (UnimplementedAdminServiceHandler) GetClusterUsage(context.Context, *v1alpha1.GetClusterUsageRequest) (*v1alpha1.GetClusterUsageResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.AdminService.GetClusterUsage is not implemented")
+}
+
+type adminServiceClient struct {
+	client *connect.Client
+}
+
+func (c *adminServiceClient) ForceDeleteUser(ctx context.Context, req *v1alpha1.ForceDeleteUserRequest) (*v1alpha1.ForceDeleteUserResponse, error) {
+	var res v1alpha1.ForceDeleteUserResponse
+	if err := c.client.CallUnary(ctx, adminServiceForceDeleteUserSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *adminServiceClient) UpdateUserVerificationStatus(ctx context.Context, req *v1alpha1.UpdateUserVerificationStatusRequest) (*v1alpha1.UpdateUserVerificationStatusResponse, error) {
+	var res v1alpha1.UpdateUserVerificationStatusResponse
+	if err := c.client.CallUnary(ctx, adminServiceUpdateUserVerificationStatusSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *adminServiceClient) UpdateOrganizationVerificationStatus(ctx context.Context, req *v1alpha1.UpdateOrganizationVerificationStatusRequest) (*v1alpha1.UpdateOrganizationVerificationStatusResponse, error) {
+	var res v1alpha1.UpdateOrganizationVerificationStatusResponse
+	if err := c.client.CallUnary(ctx, adminServiceUpdateOrganizationVerificationStatusSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *adminServiceClient) CreateMachineUser(ctx context.Context, req *v1alpha1.CreateMachineUserRequest) (*v1alpha1.CreateMachineUserResponse, error) {
+	var res v1alpha1.CreateMachineUserResponse
+	if err := c.client.CallUnary(ctx, adminServiceCreateMachineUserSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *adminServiceClient) GetBreakingChangePolicy(ctx context.Context, req *v1alpha1.GetBreakingChangePolicyRequest) (*v1alpha1.GetBreakingChangePolicyResponse, error) {
+	var res v1alpha1.GetBreakingChangePolicyResponse
+	if err := c.client.CallUnary(ctx, adminServiceGetBreakingChangePolicySpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *adminServiceClient) UpdateBreakingChangePolicy(ctx context.Context, req *v1alpha1.UpdateBreakingChangePolicyRequest) (*v1alpha1.UpdateBreakingChangePolicyResponse, error) {
+	var res v1alpha1.UpdateBreakingChangePolicyResponse
+	if err := c.client.CallUnary(ctx, adminServiceUpdateBreakingChangePolicySpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *adminServiceClient) GetUniquenessPolicy(ctx context.Context, req *v1alpha1.GetUniquenessPolicyRequest) (*v1alpha1.GetUniquenessPolicyResponse, error) {
+	var res v1alpha1.GetUniquenessPolicyResponse
+	if err := c.client.CallUnary(ctx, adminServiceGetUniquenessPolicySpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *adminServiceClient) UpdateUniquenessPolicy(ctx context.Context, req *v1alpha1.UpdateUniquenessPolicyRequest) (*v1alpha1.UpdateUniquenessPolicyResponse, error) {
+	var res v1alpha1.UpdateUniquenessPolicyResponse
+	if err := c.client.CallUnary(ctx, adminServiceUpdateUniquenessPolicySpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *adminServiceClient) ListServerUniquenessCollisions(ctx context.Context, req *v1alpha1.ListServerUniquenessCollisionsRequest) (*v1alpha1.ListServerUniquenessCollisionsResponse, error) {
+	var res v1alpha1.ListServerUniquenessCollisionsResponse
+	if err := c.client.CallUnary(ctx, adminServiceListServerUniquenessCollisionsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *adminServiceClient) RunServerUniquenessBackfillTask(ctx context.Context, req *v1alpha1.RunServerUniquenessBackfillTaskRequest) (*v1alpha1.RunServerUniquenessBackfillTaskResponse, error) {
+	var res v1alpha1.RunServerUniquenessBackfillTaskResponse
+	if err := c.client.CallUnary(ctx, adminServiceRunServerUniquenessBackfillTaskSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *adminServiceClient) GetClusterUsage(ctx context.Context, req *v1alpha1.GetClusterUsageRequest) (*v1alpha1.GetClusterUsageResponse, error) {
+	var res v1alpha1.GetClusterUsageResponse
+	if err := c.client.CallUnary(ctx, adminServiceGetClusterUsageSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type adminServiceHandler struct{ svc AdminServiceHandler }
+
+func (h adminServiceHandler) forceDeleteUser(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ForceDeleteUserRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ForceDeleteUser(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h adminServiceHandler) updateUserVerificationStatus(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UpdateUserVerificationStatusRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateUserVerificationStatus(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h adminServiceHandler) updateOrganizationVerificationStatus(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UpdateOrganizationVerificationStatusRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateOrganizationVerificationStatus(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h adminServiceHandler) createMachineUser(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.CreateMachineUserRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateMachineUser(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h adminServiceHandler) getBreakingChangePolicy(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetBreakingChangePolicyRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetBreakingChangePolicy(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h adminServiceHandler) updateBreakingChangePolicy(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UpdateBreakingChangePolicyRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateBreakingChangePolicy(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h adminServiceHandler) getUniquenessPolicy(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetUniquenessPolicyRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetUniquenessPolicy(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h adminServiceHandler) updateUniquenessPolicy(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.UpdateUniquenessPolicyRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateUniquenessPolicy(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h adminServiceHandler) listServerUniquenessCollisions(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ListServerUniquenessCollisionsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListServerUniquenessCollisions(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h adminServiceHandler) runServerUniquenessBackfillTask(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.RunServerUniquenessBackfillTaskRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RunServerUniquenessBackfillTask(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h adminServiceHandler) getClusterUsage(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.GetClusterUsageRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetClusterUsage(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

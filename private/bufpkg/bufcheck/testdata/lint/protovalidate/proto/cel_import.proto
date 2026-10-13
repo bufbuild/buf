@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package a;
+
+import "buf/validate/validate.proto";
+import "cel_import_middle.proto";
+
+message CelImportTest {
+  option (buf.validate.message).cel = {
+    id: "transitive_import"
+    expression: "this.middle.leaf.name != ''"
+  };
+  option (buf.validate.message).cel = {
+    id: "unknown_field_on_transitive_import"
+    expression: "this.middle.leaf.missing != ''"
+  };
+  CelImportMiddle middle = 1 [(buf.validate.field).cel = {
+    id: "direct_import"
+    expression: "this.count > 0 && this.leaf.name != ''"
+  }];
+}

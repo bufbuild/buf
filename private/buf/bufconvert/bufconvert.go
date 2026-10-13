@@ -138,6 +138,12 @@ func checkNoMessageSetWireFormat(descriptor protoreflect.MessageDescriptor, imag
 	// In order to create a protoreflect.MessageDescriptor, we may have already stripped
 	// any message_set_wire_format option. So we must examine the file descriptor proto
 	// in the image to see if the option is set. If it is, we cannot support this message.
+	if descriptor.IsPlaceholder() {
+		// The type is not in the image, such as when it was built with
+		// --exclude-imports, so there is nothing to check. Its fields are
+		// unknown and so are left as unknown bytes when unmarshaling.
+		return nil
+	}
 	name := descriptor.FullName()
 	if slices.Contains(checked, name) {
 		return nil

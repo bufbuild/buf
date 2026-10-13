@@ -517,15 +517,32 @@ func ImageWithOnlyPathsAllowNotExist(
 // by directory.
 //
 // That is, each Image will only contain a single directory's files
-// as it's non-imports, along with all required imports for the
+// as its non-imports, along with all required imports for the
 // files in that directory.
-func ImageByDir(image Image) ([]Image, error) {
+//
+// If ImageByDirWithIncludeImports is set, imports are split by directory as well.
+// Each non-well-known-type import is a non-import in the Image for its directory,
+// and remains an import in every other Image that requires it. If
+// ImageByDirWithIncludeWellKnownTypes is also set, well-known-type imports are split
+// by directory too. ImageByDirWithIncludeWellKnownTypes has no effect if
+// ImageByDirWithIncludeImports is not set.
+func ImageByDir(image Image, options ...ImageByDirOption) ([]Image, error) {
+	imageByDirOptions := newImageByDirOptions()
+	for _, option := range options {
+		option(imageByDirOptions)
+	}
 	imageFiles := image.Files()
 	paths := make([]string, 0, len(imageFiles))
 	for _, imageFile := range imageFiles {
-		if !imageFile.IsImport() {
-			paths = append(paths, imageFile.Path())
+		if imageFile.IsImport() {
+			if !imageByDirOptions.includeImports {
+				continue
+			}
+			if !imageByDirOptions.includeWellKnownTypes && datawkt.Exists(imageFile.Path()) {
+				continue
+			}
 		}
+		paths = append(paths, imageFile.Path())
 	}
 	dirToPaths := normalpath.ByDir(paths...)
 	// we need this to produce a deterministic order of the returned Images
@@ -541,6 +558,8 @@ func ImageByDir(image Image) ([]Image, error) {
 			// this should never happen
 			return nil, fmt.Errorf("no dir for %q in dirToPaths", dir)
 		}
+		// When includeImports is set, `paths` includes imports, and this call effectively
+		// promotes them to non-imports in their own image for generation.
 		newImage, err := ImageWithOnlyPaths(image, paths, nil)
 		if err != nil {
 			return nil, err
@@ -548,6 +567,27 @@ func ImageByDir(image Image) ([]Image, error) {
 		newImages = append(newImages, newImage)
 	}
 	return newImages, nil
+}
+
+// ImageByDirOption is an option for ImageByDir.
+type ImageByDirOption func(*imageByDirOptions)
+
+// ImageByDirWithIncludeImports returns a new ImageByDirOption that splits
+// non-well-known-type imports by directory alongside non-imports.
+func ImageByDirWithIncludeImports() ImageByDirOption {
+	return func(imageByDirOptions *imageByDirOptions) {
+		imageByDirOptions.includeImports = true
+	}
+}
+
+// ImageByDirWithIncludeWellKnownTypes returns a new ImageByDirOption that also
+// splits well-known-type imports by directory.
+//
+// This has no effect if ImageByDirWithIncludeImports is not set.
+func ImageByDirWithIncludeWellKnownTypes() ImageByDirOption {
+	return func(imageByDirOptions *imageByDirOptions) {
+		imageByDirOptions.includeWellKnownTypes = true
+	}
 }
 
 // ImageToProtoImage returns a new ProtoImage for the Image.
@@ -667,6 +707,15 @@ func ImagesToCodeGeneratorRequests(
 type newImageForProtoOptions struct {
 	noReparse            bool
 	computeUnusedImports bool
+}
+
+type imageByDirOptions struct {
+	includeImports        bool
+	includeWellKnownTypes bool
+}
+
+func newImageByDirOptions() *imageByDirOptions {
+	return &imageByDirOptions{}
 }
 
 func reparseImageProto(protoImage *imagev1.Image, resolver protoencoding.Resolver, computeUnusedImports bool) error {

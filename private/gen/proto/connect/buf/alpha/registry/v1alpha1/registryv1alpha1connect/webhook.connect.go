@@ -19,111 +19,78 @@
 package registryv1alpha1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// WebhookServiceName is the fully-qualified name of the WebhookService service.
 	WebhookServiceName = "buf.alpha.registry.v1alpha1.WebhookService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// WebhookServiceCreateWebhookProcedure is the fully-qualified name of the WebhookService's
-	// CreateWebhook RPC.
+	// WebhookServiceCreateWebhookProcedure is the procedure name of the WebhookService's CreateWebhook
+	// RPC.
 	WebhookServiceCreateWebhookProcedure = "/buf.alpha.registry.v1alpha1.WebhookService/CreateWebhook"
-	// WebhookServiceDeleteWebhookProcedure is the fully-qualified name of the WebhookService's
-	// DeleteWebhook RPC.
+	// WebhookServiceDeleteWebhookProcedure is the procedure name of the WebhookService's DeleteWebhook
+	// RPC.
 	WebhookServiceDeleteWebhookProcedure = "/buf.alpha.registry.v1alpha1.WebhookService/DeleteWebhook"
-	// WebhookServiceListWebhooksProcedure is the fully-qualified name of the WebhookService's
-	// ListWebhooks RPC.
+	// WebhookServiceListWebhooksProcedure is the procedure name of the WebhookService's ListWebhooks
+	// RPC.
 	WebhookServiceListWebhooksProcedure = "/buf.alpha.registry.v1alpha1.WebhookService/ListWebhooks"
+)
+
+var (
+	webhookServiceCreateWebhookSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_webhook_proto.Services().ByName("WebhookService").Methods().ByName("CreateWebhook"),
+			Procedure:        WebhookServiceCreateWebhookProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	webhookServiceDeleteWebhookSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_webhook_proto.Services().ByName("WebhookService").Methods().ByName("DeleteWebhook"),
+			Procedure:        WebhookServiceDeleteWebhookProcedure,
+			IdempotencyLevel: connect.IdempotencyIdempotent,
+		}
+	})
+	webhookServiceListWebhooksSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1alpha1.File_buf_alpha_registry_v1alpha1_webhook_proto.Services().ByName("WebhookService").Methods().ByName("ListWebhooks"),
+			Procedure:        WebhookServiceListWebhooksProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
 )
 
 // WebhookServiceClient is a client for the buf.alpha.registry.v1alpha1.WebhookService service.
 type WebhookServiceClient interface {
 	// Create a webhook, subscribes to a given repository event for a callback URL
 	// invocation.
-	CreateWebhook(context.Context, *connect.Request[v1alpha1.CreateWebhookRequest]) (*connect.Response[v1alpha1.CreateWebhookResponse], error)
+	CreateWebhook(context.Context, *v1alpha1.CreateWebhookRequest) (*v1alpha1.CreateWebhookResponse, error)
 	// Delete a webhook removes the event subscription.
-	DeleteWebhook(context.Context, *connect.Request[v1alpha1.DeleteWebhookRequest]) (*connect.Response[v1alpha1.DeleteWebhookResponse], error)
+	DeleteWebhook(context.Context, *v1alpha1.DeleteWebhookRequest) (*v1alpha1.DeleteWebhookResponse, error)
 	// Lists the webhooks subscriptions for a given repository.
-	ListWebhooks(context.Context, *connect.Request[v1alpha1.ListWebhooksRequest]) (*connect.Response[v1alpha1.ListWebhooksResponse], error)
+	ListWebhooks(context.Context, *v1alpha1.ListWebhooksRequest) (*v1alpha1.ListWebhooksResponse, error)
 }
 
 // NewWebhookServiceClient constructs a client for the buf.alpha.registry.v1alpha1.WebhookService
-// service. By default, it uses the Connect protocol with the binary Protobuf Codec, asks for
-// gzipped responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply
-// the connect.WithGRPC() or connect.WithGRPCWeb() options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewWebhookServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) WebhookServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	webhookServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_webhook_proto.Services().ByName("WebhookService").Methods()
-	return &webhookServiceClient{
-		createWebhook: connect.NewClient[v1alpha1.CreateWebhookRequest, v1alpha1.CreateWebhookResponse](
-			httpClient,
-			baseURL+WebhookServiceCreateWebhookProcedure,
-			connect.WithSchema(webhookServiceMethods.ByName("CreateWebhook")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		deleteWebhook: connect.NewClient[v1alpha1.DeleteWebhookRequest, v1alpha1.DeleteWebhookResponse](
-			httpClient,
-			baseURL+WebhookServiceDeleteWebhookProcedure,
-			connect.WithSchema(webhookServiceMethods.ByName("DeleteWebhook")),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
-			connect.WithClientOptions(opts...),
-		),
-		listWebhooks: connect.NewClient[v1alpha1.ListWebhooksRequest, v1alpha1.ListWebhooksResponse](
-			httpClient,
-			baseURL+WebhookServiceListWebhooksProcedure,
-			connect.WithSchema(webhookServiceMethods.ByName("ListWebhooks")),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// webhookServiceClient implements WebhookServiceClient.
-type webhookServiceClient struct {
-	createWebhook *connect.Client[v1alpha1.CreateWebhookRequest, v1alpha1.CreateWebhookResponse]
-	deleteWebhook *connect.Client[v1alpha1.DeleteWebhookRequest, v1alpha1.DeleteWebhookResponse]
-	listWebhooks  *connect.Client[v1alpha1.ListWebhooksRequest, v1alpha1.ListWebhooksResponse]
-}
-
-// CreateWebhook calls buf.alpha.registry.v1alpha1.WebhookService.CreateWebhook.
-func (c *webhookServiceClient) CreateWebhook(ctx context.Context, req *connect.Request[v1alpha1.CreateWebhookRequest]) (*connect.Response[v1alpha1.CreateWebhookResponse], error) {
-	return c.createWebhook.CallUnary(ctx, req)
-}
-
-// DeleteWebhook calls buf.alpha.registry.v1alpha1.WebhookService.DeleteWebhook.
-func (c *webhookServiceClient) DeleteWebhook(ctx context.Context, req *connect.Request[v1alpha1.DeleteWebhookRequest]) (*connect.Response[v1alpha1.DeleteWebhookResponse], error) {
-	return c.deleteWebhook.CallUnary(ctx, req)
-}
-
-// ListWebhooks calls buf.alpha.registry.v1alpha1.WebhookService.ListWebhooks.
-func (c *webhookServiceClient) ListWebhooks(ctx context.Context, req *connect.Request[v1alpha1.ListWebhooksRequest]) (*connect.Response[v1alpha1.ListWebhooksResponse], error) {
-	return c.listWebhooks.CallUnary(ctx, req)
+// service. Multiple service clients may share a single connect.Client.
+func NewWebhookServiceClient(client *connect.Client) WebhookServiceClient {
+	return &webhookServiceClient{client: client}
 }
 
 // WebhookServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.WebhookService
@@ -131,66 +98,101 @@ func (c *webhookServiceClient) ListWebhooks(ctx context.Context, req *connect.Re
 type WebhookServiceHandler interface {
 	// Create a webhook, subscribes to a given repository event for a callback URL
 	// invocation.
-	CreateWebhook(context.Context, *connect.Request[v1alpha1.CreateWebhookRequest]) (*connect.Response[v1alpha1.CreateWebhookResponse], error)
+	CreateWebhook(context.Context, *v1alpha1.CreateWebhookRequest) (*v1alpha1.CreateWebhookResponse, error)
 	// Delete a webhook removes the event subscription.
-	DeleteWebhook(context.Context, *connect.Request[v1alpha1.DeleteWebhookRequest]) (*connect.Response[v1alpha1.DeleteWebhookResponse], error)
+	DeleteWebhook(context.Context, *v1alpha1.DeleteWebhookRequest) (*v1alpha1.DeleteWebhookResponse, error)
 	// Lists the webhooks subscriptions for a given repository.
-	ListWebhooks(context.Context, *connect.Request[v1alpha1.ListWebhooksRequest]) (*connect.Response[v1alpha1.ListWebhooksResponse], error)
+	ListWebhooks(context.Context, *v1alpha1.ListWebhooksRequest) (*v1alpha1.ListWebhooksResponse, error)
 }
 
-// NewWebhookServiceHandler builds an HTTP handler from the service implementation. It returns the
-// path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewWebhookServiceHandler(svc WebhookServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	webhookServiceMethods := v1alpha1.File_buf_alpha_registry_v1alpha1_webhook_proto.Services().ByName("WebhookService").Methods()
-	webhookServiceCreateWebhookHandler := connect.NewUnaryHandler(
-		WebhookServiceCreateWebhookProcedure,
-		svc.CreateWebhook,
-		connect.WithSchema(webhookServiceMethods.ByName("CreateWebhook")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
+// RegisterWebhookServiceHandler registers svc as the buf.alpha.registry.v1alpha1.WebhookService
+// implementation on server.
+func RegisterWebhookServiceHandler(server *connect.Server, svc WebhookServiceHandler) {
+	adapter := webhookServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: webhookServiceCreateWebhookSpec(), Handler: adapter.createWebhook},
+		connect.Method{Spec: webhookServiceDeleteWebhookSpec(), Handler: adapter.deleteWebhook},
+		connect.Method{Spec: webhookServiceListWebhooksSpec(), Handler: adapter.listWebhooks},
 	)
-	webhookServiceDeleteWebhookHandler := connect.NewUnaryHandler(
-		WebhookServiceDeleteWebhookProcedure,
-		svc.DeleteWebhook,
-		connect.WithSchema(webhookServiceMethods.ByName("DeleteWebhook")),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
-		connect.WithHandlerOptions(opts...),
-	)
-	webhookServiceListWebhooksHandler := connect.NewUnaryHandler(
-		WebhookServiceListWebhooksProcedure,
-		svc.ListWebhooks,
-		connect.WithSchema(webhookServiceMethods.ByName("ListWebhooks")),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
-	)
-	return "/buf.alpha.registry.v1alpha1.WebhookService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case WebhookServiceCreateWebhookProcedure:
-			webhookServiceCreateWebhookHandler.ServeHTTP(w, r)
-		case WebhookServiceDeleteWebhookProcedure:
-			webhookServiceDeleteWebhookHandler.ServeHTTP(w, r)
-		case WebhookServiceListWebhooksProcedure:
-			webhookServiceListWebhooksHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedWebhookServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedWebhookServiceHandler struct{}
 
-func (UnimplementedWebhookServiceHandler) CreateWebhook(context.Context, *connect.Request[v1alpha1.CreateWebhookRequest]) (*connect.Response[v1alpha1.CreateWebhookResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.WebhookService.CreateWebhook is not implemented"))
+func (UnimplementedWebhookServiceHandler) CreateWebhook(context.Context, *v1alpha1.CreateWebhookRequest) (*v1alpha1.CreateWebhookResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.WebhookService.CreateWebhook is not implemented")
 }
 
-func (UnimplementedWebhookServiceHandler) DeleteWebhook(context.Context, *connect.Request[v1alpha1.DeleteWebhookRequest]) (*connect.Response[v1alpha1.DeleteWebhookResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.WebhookService.DeleteWebhook is not implemented"))
+func (UnimplementedWebhookServiceHandler) DeleteWebhook(context.Context, *v1alpha1.DeleteWebhookRequest) (*v1alpha1.DeleteWebhookResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.WebhookService.DeleteWebhook is not implemented")
 }
 
-func (UnimplementedWebhookServiceHandler) ListWebhooks(context.Context, *connect.Request[v1alpha1.ListWebhooksRequest]) (*connect.Response[v1alpha1.ListWebhooksResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.WebhookService.ListWebhooks is not implemented"))
+func (UnimplementedWebhookServiceHandler) ListWebhooks(context.Context, *v1alpha1.ListWebhooksRequest) (*v1alpha1.ListWebhooksResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "buf.alpha.registry.v1alpha1.WebhookService.ListWebhooks is not implemented")
+}
+
+type webhookServiceClient struct {
+	client *connect.Client
+}
+
+func (c *webhookServiceClient) CreateWebhook(ctx context.Context, req *v1alpha1.CreateWebhookRequest) (*v1alpha1.CreateWebhookResponse, error) {
+	var res v1alpha1.CreateWebhookResponse
+	if err := c.client.CallUnary(ctx, webhookServiceCreateWebhookSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *webhookServiceClient) DeleteWebhook(ctx context.Context, req *v1alpha1.DeleteWebhookRequest) (*v1alpha1.DeleteWebhookResponse, error) {
+	var res v1alpha1.DeleteWebhookResponse
+	if err := c.client.CallUnary(ctx, webhookServiceDeleteWebhookSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *webhookServiceClient) ListWebhooks(ctx context.Context, req *v1alpha1.ListWebhooksRequest) (*v1alpha1.ListWebhooksResponse, error) {
+	var res v1alpha1.ListWebhooksResponse
+	if err := c.client.CallUnary(ctx, webhookServiceListWebhooksSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type webhookServiceHandler struct{ svc WebhookServiceHandler }
+
+func (h webhookServiceHandler) createWebhook(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.CreateWebhookRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateWebhook(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h webhookServiceHandler) deleteWebhook(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.DeleteWebhookRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteWebhook(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h webhookServiceHandler) listWebhooks(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1alpha1.ListWebhooksRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListWebhooks(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }
