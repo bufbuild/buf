@@ -84,6 +84,63 @@ func TestImageWithoutMessageSetWireFormatResolution(t *testing.T) {
 	checker.succeeds(noResolveImage.Resolver().FindEnumByName("foo.bar.Enum"))
 }
 
+func TestImageWithoutMessageSetWireFormatResolutionPlaceholder(t *testing.T) {
+	t.Parallel()
+	// Types missing from the image, such as when it was built with
+	// --exclude-imports, resolve to placeholders that cannot be checked.
+	file := &descriptorpb.FileDescriptorProto{
+		Name:       new("test.proto"),
+		Package:    new("foo.bar"),
+		Dependency: []string{"missing.proto"},
+		MessageType: []*descriptorpb.DescriptorProto{
+			{
+				Name: new("Baz"),
+				Field: []*descriptorpb.FieldDescriptorProto{
+					{
+						Name:     new("missing"),
+						Number:   new(int32(1)),
+						Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
+						Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
+						TypeName: new(".missing.Missing"),
+					},
+				},
+				ExtensionRange: []*descriptorpb.DescriptorProto_ExtensionRange{
+					{Start: new(int32(100)), End: new(int32(200))},
+				},
+			},
+		},
+		Extension: []*descriptorpb.FieldDescriptorProto{
+			{
+				Name:     new("missing_ext"),
+				Number:   new(int32(100)),
+				Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
+				Type:     descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum(),
+				TypeName: new(".missing.Missing"),
+				Extendee: new(".foo.bar.Baz"),
+			},
+		},
+	}
+	imageFile, err := bufimage.NewImageFile(
+		file,
+		nil,
+		uuid.UUID{},
+		file.GetName(),
+		file.GetName(),
+		false,
+		false,
+		nil,
+	)
+	require.NoError(t, err)
+	image, err := bufimage.NewImage([]bufimage.ImageFile{imageFile})
+	require.NoError(t, err)
+	resolver := ImageWithoutMessageSetWireFormatResolution(image).Resolver()
+
+	checker := resultChecker{t}
+	checker.succeeds(resolver.FindMessageByName("foo.bar.Baz"))
+	checker.succeeds(resolver.FindExtensionByName("foo.bar.missing_ext"))
+	checker.succeeds(resolver.FindExtensionByNumber("foo.bar.Baz", 100))
+}
+
 func TestFindMessageInFile(t *testing.T) {
 	t.Parallel()
 	t.Run("no-package", func(t *testing.T) {
