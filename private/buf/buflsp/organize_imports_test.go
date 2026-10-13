@@ -15,11 +15,16 @@
 package buflsp_test
 
 import (
+	"cmp"
+	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
 )
 
@@ -231,6 +236,75 @@ import "types/toplevel_field.proto";
 		nil, // No changes are expected.
 	)
 
+	// Files without a trailing newline.
+	testCodeActionOrganizeImports(
+		t,
+		"testdata/organize_imports/empty_test.proto",
+		nil, // No changes are expected.
+	)
+	testCodeActionOrganizeImports(
+		t,
+		"testdata/organize_imports/syntax_nonewline_test.proto",
+		nil, // No changes are expected.
+	)
+	testCodeActionOrganizeImports(
+		t,
+		"testdata/organize_imports/package_nonewline_test.proto",
+		nil, // No changes are expected.
+	)
+	testCodeActionOrganizeImports(
+		t,
+		"testdata/organize_imports/oneline_nonewline_test.proto",
+		[]protocol.TextEdit{
+			// Insert after syntax, moving the message onto its own line.
+			{
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 0, Character: 18},
+					End:   protocol.Position{Line: 0, Character: 19},
+				},
+				NewText: "\n\nimport \"types/existing_field.proto\";\n\n",
+			},
+		},
+	)
+
+	// Used import on the same line as syntax and a message.
+	testCodeActionOrganizeImports(
+		t,
+		"testdata/organize_imports/oneline_import_used_test.proto",
+		[]protocol.TextEdit{
+			{
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 0, Character: 18},
+					End:   protocol.Position{Line: 0, Character: 55},
+				},
+				NewText: "",
+			},
+			// Insert after syntax, moving the message onto its own line.
+			{
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 0, Character: 18},
+					End:   protocol.Position{Line: 0, Character: 18},
+				},
+				NewText: "\n\nimport \"types/existing_field.proto\";\n\n",
+			},
+		},
+	)
+
+	// Unused import on the same line as syntax.
+	testCodeActionOrganizeImports(
+		t,
+		"testdata/organize_imports/oneline_import_test.proto",
+		[]protocol.TextEdit{
+			{
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 0, Character: 18},
+					End:   protocol.Position{Line: 0, Character: 55},
+				},
+				NewText: "",
+			},
+		},
+	)
+
 	testCodeActionOrganizeImports(
 		t,
 		"testdata/organize_imports/unknown_test.proto",
@@ -323,38 +397,12 @@ func testCodeActionOrganizeImports(t *testing.T, filename string, expectedEdits 
 
 		clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
 
-		// Request code actions for the file
-		// The specific position doesn't matter since we're checking for file-level actions
-		var codeActions []protocol.CodeAction
-		_, err = clientJSONConn.Call(t.Context(), protocol.MethodTextDocumentCodeAction, protocol.CodeActionParams{
-			TextDocument: protocol.TextDocumentIdentifier{
-				URI: testURI,
-			},
-			Range: protocol.Range{
-				Start: protocol.Position{Line: 8, Character: 2},
-				End:   protocol.Position{Line: 8, Character: 2},
-			},
-			Context: protocol.CodeActionContext{
-				Only: []protocol.CodeActionKind{
-					protocol.SourceOrganizeImports,
-				},
-			},
-		}, &codeActions)
-		require.NoError(t, err)
-
-		// Find the "Organize imports" code action
-		var organizeImportsAction *protocol.CodeAction
-		for _, codeAction := range codeActions {
-			if codeAction.Title == "Organize imports" {
-				organizeImportsAction = &codeAction
-				break
-			}
-		}
+		organizeImportsAction := requestOrganizeImports(t, clientJSONConn, testURI)
 		if expectedEdits == nil {
 			require.Nil(t, organizeImportsAction, "expected no changes to 'Organize imports' code action")
 			return
 		}
-		require.NotNil(t, organizeImportsAction, "expected to find 'Organize imports' code action, got actions: %v", codeActions)
+		require.NotNil(t, organizeImportsAction, "expected to find 'Organize imports' code action")
 
 		// Verify the code action properties
 		assert.Equal(t, protocol.SourceOrganizeImports, organizeImportsAction.Kind, "code action should be SourceOrganizeImports")
@@ -375,5 +423,76 @@ func testCodeActionOrganizeImports(t *testing.T, filename string, expectedEdits 
 			assert.Equal(t, expected.Range, actual.Range, "edit %d: range mismatch", i)
 			assert.Equal(t, expected.NewText, actual.NewText, "edit %d: newText mismatch", i)
 		}
+
+		// Applying the edits must be stable: a second request has no changes.
+		data, err := os.ReadFile(testProtoPath)
+		require.NoError(t, err)
+		text := string(data)
+		lineStarts := []int{0}
+		for i, r := range text {
+			if r == '\n' {
+				lineStarts = append(lineStarts, i+1)
+			}
+		}
+		offset := func(position protocol.Position) int {
+			return lineStarts[position.Line] + int(position.Character)
+		}
+		sortedEdits := slices.Clone(actualEdits)
+		slices.SortStableFunc(sortedEdits, func(a, b protocol.TextEdit) int {
+			return cmp.Or(
+				cmp.Compare(offset(a.Range.Start), offset(b.Range.Start)),
+				cmp.Compare(offset(a.Range.End), offset(b.Range.End)),
+			)
+		})
+		var newText strings.Builder
+		cursor := 0
+		for _, edit := range sortedEdits {
+			start, end := offset(edit.Range.Start), offset(edit.Range.End)
+			require.GreaterOrEqual(t, start, cursor, "overlapping edits")
+			newText.WriteString(text[cursor:start])
+			newText.WriteString(edit.NewText)
+			cursor = end
+		}
+		newText.WriteString(text[cursor:])
+		err = clientJSONConn.Notify(t.Context(), protocol.MethodTextDocumentDidChange, &protocol.DidChangeTextDocumentParams{
+			TextDocument: protocol.VersionedTextDocumentIdentifier{
+				TextDocumentIdentifier: protocol.TextDocumentIdentifier{URI: testURI},
+				Version:                2,
+			},
+			ContentChanges: []protocol.TextDocumentContentChangeEvent{
+				{Text: newText.String()},
+			},
+		})
+		require.NoError(t, err)
+		require.Nil(t, requestOrganizeImports(t, clientJSONConn, testURI), "expected no changes after applying edits")
 	})
+}
+
+// requestOrganizeImports requests code actions for the file and returns the
+// "Organize imports" action, or nil if there is none.
+func requestOrganizeImports(t *testing.T, clientJSONConn jsonrpc2.Conn, testURI protocol.URI) *protocol.CodeAction {
+	t.Helper()
+	// The specific position doesn't matter since we're checking for file-level actions
+	var codeActions []protocol.CodeAction
+	_, err := clientJSONConn.Call(t.Context(), protocol.MethodTextDocumentCodeAction, protocol.CodeActionParams{
+		TextDocument: protocol.TextDocumentIdentifier{
+			URI: testURI,
+		},
+		Range: protocol.Range{
+			Start: protocol.Position{Line: 8, Character: 2},
+			End:   protocol.Position{Line: 8, Character: 2},
+		},
+		Context: protocol.CodeActionContext{
+			Only: []protocol.CodeActionKind{
+				protocol.SourceOrganizeImports,
+			},
+		},
+	}, &codeActions)
+	require.NoError(t, err)
+	for _, codeAction := range codeActions {
+		if codeAction.Title == "Organize imports" {
+			return &codeAction
+		}
+	}
+	return nil
 }

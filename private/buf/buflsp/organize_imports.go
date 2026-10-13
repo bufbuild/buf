@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"slices"
 	"strings"
-	"unicode"
 
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ir"
@@ -131,7 +130,7 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 		}
 
 		text := importWithCommentsSpan.Text()
-		text = strings.TrimRightFunc(text, unicode.IsSpace)
+		text = strings.TrimSpace(text)
 
 		importInfo := importInfo{
 			path: importPath,
@@ -164,6 +163,9 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 		}
 	}
 	imports = deduped
+	if len(imports) == 0 && len(edits) == 0 {
+		return nil // No imports to delete or insert.
+	}
 
 	// Build the new import text
 	var importText strings.Builder
@@ -175,29 +177,59 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 	}
 
 	// Find the insert position after the package or syntax declaration
-	var insertLine int
+	var anchor source.Span
 	switch {
 	case !file.ir.AST().Package().IsZero():
-		insertLine = file.ir.AST().Package().Span().EndLoc().Line + 1
+		anchor = file.ir.AST().Package().Span()
 	case !file.ir.AST().Syntax().IsZero():
-		insertLine = file.ir.AST().Syntax().Span().EndLoc().Line + 1
-	default:
-		insertLine = 1 // Default at top of file.
+		anchor = file.ir.AST().Syntax().Span()
 	}
-	// Compare to the insert offset, at the newline (so increment 1)
-	insertOffset := file.file.InverseLocation(insertLine, 0, length.Bytes).Offset + 1
-	if !dirty && insertOffset < len(file.file.Text()) &&
-		strings.HasPrefix(file.file.Text()[insertOffset:], importText.String()) {
+	// Check for a non-import declaration on the same line after the anchor.
+	var hasDeclOnLine, hasImportBefore bool
+	for decl := range seq.Values(file.ir.AST().Decls()) {
+		if anchor.IsZero() || decl.Span().Start < anchor.End {
+			continue
+		}
+		if !decl.AsImport().IsZero() {
+			hasImportBefore = true
+			continue
+		}
+		hasDeclOnLine = decl.Span().StartLoc().Line == anchor.EndLoc().Line
+		break
+	}
+	text := file.file.Text()
+	insertStart, insertEnd := len(text), len(text)
+	var prefix, suffix string
+	switch {
+	case anchor.IsZero():
+		insertStart, insertEnd = 0, 0 // Default at top of file.
+	case hasDeclOnLine:
+		// Insert directly after the anchor and move the declaration onto its
+		// own line.
+		insertStart, insertEnd = anchor.End, anchor.End
+		if !hasImportBefore {
+			// Replace the whitespace before the declaration. An import's
+			// deletion already covers it.
+			insertEnd += len(text[anchor.End:]) - len(strings.TrimLeft(text[anchor.End:], " \t"))
+		}
+		prefix, suffix = "\n", "\n"
+	case anchor.EndLoc().Line < file.file.Location(len(text), length.Bytes).Line:
+		// Start of the next line.
+		insertStart = file.file.InverseLocation(anchor.EndLoc().Line+1, 1, length.Bytes).Offset
+		insertEnd = insertStart
+	case !strings.HasSuffix(text, "\n"):
+		// End the last line so the imports are preceded by a blank line.
+		prefix = "\n"
+	}
+	if !dirty && insertStart < len(text) &&
+		strings.HasPrefix(text[insertStart:], importText.String()) {
 		return nil // Matches, no changes needed.
 	}
 
 	if importText.Len() > 0 {
 		edits = append(edits, protocol.TextEdit{
-			Range: protocol.Range{
-				Start: protocol.Position{Line: uint32(insertLine - 1)},
-				End:   protocol.Position{Line: uint32(insertLine - 1)},
-			},
-			NewText: importText.String(),
+			Range:   reportSpanToProtocolRange(file.file.Span(insertStart, insertEnd)),
+			NewText: prefix + importText.String() + suffix,
 		})
 	}
 	return &protocol.CodeAction{
@@ -243,7 +275,11 @@ func captureImportSpan(decl ast.DeclImport) source.Span {
 	for isTokenSpace(tok) {
 		tok, prev = cursor.PrevSkippable(), tok
 	}
-	span.Start = tok.Span().Start
+	span.Start = prev.Span().Start
+	if !tok.IsZero() && tok.Kind() != token.Space {
+		// Import shares a line with another declaration.
+		return span
+	}
 	for isTokenNewline(tok) {
 		span.Start = prev.Span().Start // Capture the previous, up until this newline.
 		tok, prev = cursor.PrevSkippable(), tok
