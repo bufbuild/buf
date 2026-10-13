@@ -1,5 +1,4 @@
 # Changelog
-
 ## [Unreleased]
 
 - Improve the performance of the `PROTOVALIDATE` lint rule, which is now up to 3x faster
@@ -25,6 +24,9 @@
 - Deduplicate remote input fetches within a single command invocation, so that multiple
   `inputs` in a `buf.gen.yaml` that resolve to the same archive, git repository, or image
   are fetched once instead of once per input.
+- Fix intermittent concurrent map write crash when compiling Editions files.
+- Fix Edition 2024 handling of enum value features, `STRICT` default symbol visibility, and
+  source locations of `export`/`local` types.
 
 ## [v1.73.0] - 2026-09-11
 
