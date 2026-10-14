@@ -1,4 +1,5 @@
 # Changelog
+
 ## [v1.74.0] - 2026-10-14
 
 - Improve the performance of the `PROTOVALIDATE` lint rule, which is now up to 3x faster
