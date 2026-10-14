@@ -227,11 +227,18 @@ func celRuneOffsetToByteOffset(s string, runeOffset int32) int {
 //
 // CEL stores OffsetRange.Start as a Unicode code point (rune) offset, but
 // OffsetRange.Stop = Start + len(tokenText) where len uses Go's byte count (UTF-8 bytes).
-// Therefore Stop-Start equals the byte length of the token, not its rune length.
-// This gives correct byte bounds for both ASCII and non-ASCII tokens.
+// Therefore Stop-Start is the byte length of the token as the parser decoded it, which
+// matches the source except where the source is not valid UTF-8: each invalid byte is
+// decoded as U+FFFD, three bytes long. So the stop is found by walking the source from
+// the start, counting each rune at its decoded length, until the token's length is used up.
 func celOffsetRangeToByteRange(exprString string, r celast.OffsetRange) (byteStart, byteStop int) {
 	byteStart = celRuneOffsetToByteOffset(exprString, r.Start)
-	byteStop = byteStart + int(r.Stop-r.Start) // Stop-Start is byte length of the token
+	byteStop = byteStart
+	for decoded := int32(0); decoded < r.Stop-r.Start && byteStop < len(exprString); {
+		c, size := utf8.DecodeRuneInString(exprString[byteStop:])
+		decoded += int32(utf8.RuneLen(c))
+		byteStop += size
+	}
 	return
 }
 
