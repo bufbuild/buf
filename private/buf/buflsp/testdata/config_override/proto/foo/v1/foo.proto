@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package foo.v1;
+
+import "foo/v1/bar.proto";
+
+message Foo {
+  Bar bar = 1;
+  string badName = 2;
+}

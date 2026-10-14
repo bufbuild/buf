@@ -23,6 +23,7 @@ import (
 	"log/slog"
 
 	"buf.build/go/standard/xlog/xslog"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -169,7 +170,7 @@ func (w *workspace) Refresh(ctx context.Context) error {
 		return nil
 	}
 	fileName := w.workspaceURI.Filename()
-	bufWorkspace, err := w.lsp.controller.GetWorkspace(ctx, fileName)
+	bufWorkspace, err := w.getBufWorkspace(ctx, fileName)
 	if err != nil {
 		w.lsp.logger.Error("workspace: get workspace", slog.String("file", fileName), xslog.ErrorAttr(err))
 		return err
@@ -198,6 +199,27 @@ func (w *workspace) Refresh(ctx context.Context) error {
 	w.checkClient = checkClient
 	w.indexFiles(ctx)
 	return nil
+}
+
+// getBufWorkspace resolves the buf Workspace for the file.
+//
+// Without a config override, the workspace is discovered by walking up from
+// the file to the controlling buf.yaml or buf.work.yaml. With a config
+// override, the workspace is resolved from the client's root folder containing
+// the file, so module paths in the override are relative to that folder.
+func (w *workspace) getBufWorkspace(ctx context.Context, fileName string) (bufworkspace.Workspace, error) {
+	if w.lsp.configOverride == "" {
+		return w.lsp.controller.GetWorkspace(ctx, fileName)
+	}
+	rootDirPath, err := w.lsp.rootDirPathForFile(fileName)
+	if err != nil {
+		return nil, err
+	}
+	return w.lsp.controller.GetWorkspace(
+		ctx,
+		rootDirPath,
+		bufctl.WithConfigOverride(w.lsp.configOverride),
+	)
 }
 
 // FileInfo returns an iterator over the files in the workspace.
