@@ -43,14 +43,16 @@ EOF
     --config "${WORK_DIR}/verdaccio.yaml" \
     --listen "${VERDACCIO_PORT}" &
   VERDACCIO_PID="${!}"
-  local attempt
-  for attempt in $(seq 60); do
+  # npx installs verdaccio on first use, which takes over a minute on some
+  # runners.
+  local deadline=$((SECONDS + 300))
+  while [ "${SECONDS}" -lt "${deadline}" ]; do
     if curl -sf "${REGISTRY}/-/ping" >/dev/null; then
       return
     fi
     sleep 1
   done
-  echo "verdaccio did not start" >&2
+  echo "verdaccio did not start within 300 seconds" >&2
   exit 1
 }
 
