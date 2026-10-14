@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.74.0] - 2026-10-14
 
 - Improve the performance of the `PROTOVALIDATE` lint rule, which is now up to 3x faster
@@ -1615,6 +1619,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.74.0...HEAD
 [v1.74.0]: https://github.com/bufbuild/buf/compare/v1.73.0...v1.74.0
 [v1.73.0]: https://github.com/bufbuild/buf/compare/v1.72.0...v1.73.0
 [v1.72.0]: https://github.com/bufbuild/buf/compare/v1.71.0...v1.72.0
