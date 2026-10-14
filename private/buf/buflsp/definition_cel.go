@@ -44,7 +44,7 @@ func getCELDefinition(
 			}
 
 			// Calculate offset within the CEL expression.
-			celOffset := fileByteOffsetToCELOffset(byteOffset, exprInfo.span)
+			celOffset := newCELSourceMap(exprInfo.literal).offset(byteOffset)
 			if celOffset < 0 || celOffset >= len(exprInfo.expression) {
 				continue
 			}

@@ -414,3 +414,43 @@ message CELInvalidUTF8Test {
     expression: "this != '\x95' && this != ''"
   }];
 }
+
+// CEL string literals written with proto escape sequences
+message CELEscapesTest {
+  string quoted = 1 [(buf.validate.field).cel = {
+    id: "escapes.quoted"
+    expression: "this != \"a\" && this != ''"
+  }];
+
+  string escaped = 2 [(buf.validate.field).cel = {
+    id: "escapes.escaped"
+    expression: "this != '\\n' && this != ''"
+  }];
+
+  string unicode = 3 [(buf.validate.field).cel = {
+    id: "escapes.unicode"
+    expression: "this != '\u00e9' && this != ''"
+  }];
+
+  string long_unicode = 4 [(buf.validate.field).cel = {
+    id: "escapes.long_unicode"
+    expression: "this != '\U0001F600' && this != ''"
+  }];
+
+  string concatenated = 5 [(buf.validate.field).cel = {
+    id: "escapes.concatenated"
+    expression: "this != '\u00e9'"
+      " && this != \"a\""
+      " && this != ''"
+  }];
+
+  string unicode_method = 6 [(buf.validate.field).cel = {
+    id: "escapes.unicode_method"
+    expression: "this != '\U0001F389' && this.size() > 0"
+  }];
+
+  string invalid_unicode = 7 [(buf.validate.field).cel = {
+    id: "escapes.invalid_unicode"
+    expression: "this != '\uD800' && this != ''"
+  }];
+}

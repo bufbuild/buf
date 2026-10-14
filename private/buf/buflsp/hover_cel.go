@@ -51,10 +51,8 @@ func getCELHover(
 			}
 
 			// Calculate offset within the CEL expression.
-			// For single-line literals this is simple arithmetic; for multi-line
-			// (adjacent proto string literals) we must walk the span to find the
-			// matching CEL byte position.
-			celOffset := fileByteOffsetToCELOffset(byteOffset, exprInfo.span)
+			sourceMap := newCELSourceMap(exprInfo.literal)
+			celOffset := sourceMap.offset(byteOffset)
 			if celOffset < 0 || celOffset >= len(exprInfo.expression) {
 				continue
 			}
@@ -91,7 +89,7 @@ func getCELHover(
 			}
 
 			// Create hover range - highlight the whole token
-			tokenSpan := createCELSpan(hoverInfo.start, hoverInfo.end, exprInfo.span)
+			tokenSpan := sourceMap.span(hoverInfo.start, hoverInfo.end)
 			if tokenSpan.IsZero() {
 				continue
 			}
