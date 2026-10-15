@@ -401,3 +401,16 @@ message CELMessageTest {
     expression: "this.name != '' && this.value > 0"
   };
 }
+
+// CEL string literals holding a byte that is not valid UTF-8
+message CELInvalidUTF8Test {
+  string last = 1 [(buf.validate.field).cel = {
+    id: "invalid_utf8.last"
+    expression: "this != '\x95'"
+  }];
+
+  string middle = 2 [(buf.validate.field).cel = {
+    id: "invalid_utf8.middle"
+    expression: "this != '\x95' && this != ''"
+  }];
+}

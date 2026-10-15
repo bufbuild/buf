@@ -625,6 +625,21 @@ func TestCELHover(t *testing.T) {
 			char:     41, // `v` of `value` in `this.value > 0`
 			expected: "**Field**: `value`\n\n**Proto Field**: `test.cel.v1.CELMessageTest.value`\n\n**Field Number**: 2\n\n**Proto Type**: `int32`\n\nencoded (hex): `10` (1 byte)",
 		},
+
+		// String literals holding a byte that is not valid UTF-8, which the CEL
+		// parser reads as U+FFFD and measures as three bytes long.
+		{
+			name:     "invalid UTF-8: literal ending the expression",
+			line:     408,
+			char:     26,
+			expected: "**Literal**: `'\uFFFD'`\n\n**Type**: string",
+		},
+		{
+			name:     "invalid UTF-8: literal followed by an operator",
+			line:     413,
+			char:     26,
+			expected: "**Literal**: `'\uFFFD'`\n\n**Type**: string",
+		},
 	}
 
 	for _, tc := range testCases {

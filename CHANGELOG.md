@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix LSP crash when hovering on a CEL string literal containing a byte that is not valid UTF-8,
+  such as `'\x95'` in a protovalidate rule.
 
 ## [v1.74.0] - 2026-10-14
 
