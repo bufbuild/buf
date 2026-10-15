@@ -69,6 +69,32 @@ func TestOS(t *testing.T) {
 		require.ErrorIs(t, err, fs.ErrNotExist)
 	})
 
+	t.Run("put_read_only", func(t *testing.T) {
+		t.Parallel()
+		ctx := t.Context()
+		tempDir, err := filepath.Abs(t.TempDir())
+		require.NoError(t, err)
+		bucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+		require.NoError(t, err)
+
+		require.NoError(t, storage.PutPath(ctx, bucket, "foo.txt", []byte("foo"), storage.PutWithReadOnly()))
+		fileInfo, err := os.Stat(filepath.Join(tempDir, "foo.txt"))
+		require.NoError(t, err)
+		require.Zero(t, fileInfo.Mode().Perm()&0222, "file should not be writable")
+
+		// A read-only file can be replaced by another read-only Put, such as
+		// when rewriting a partially written cache.
+		require.NoError(t, storage.PutPath(ctx, bucket, "foo.txt", []byte("bar"), storage.PutWithReadOnly()))
+		data, err := storage.ReadPath(ctx, bucket, "foo.txt")
+		require.NoError(t, err)
+		require.Equal(t, "bar", string(data))
+
+		// A read-only file can be deleted.
+		require.NoError(t, bucket.DeleteAll(ctx, ""))
+		_, err = bucket.Get(ctx, "foo.txt")
+		require.ErrorIs(t, err, fs.ErrNotExist)
+	})
+
 	t.Run("get_non_existent_file_symlink", func(t *testing.T) {
 		t.Parallel()
 		ctx := t.Context()

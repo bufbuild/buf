@@ -67,7 +67,8 @@ func (s *store) GetBucket(ctx context.Context) (storage.ReadBucket, error) {
 }
 
 func copyToBucket(ctx context.Context, wktBucket storage.WriteBucket) error {
-	_, err := storage.Copy(ctx, datawkt.ReadBucket, wktBucket)
+	// Cached files are opened by editors through the LSP, so prevent edits.
+	_, err := storage.Copy(ctx, datawkt.ReadBucket, wktBucket, storage.CopyWithReadOnly())
 	return err
 }
 

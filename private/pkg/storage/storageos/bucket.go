@@ -190,9 +190,12 @@ func (b *bucket) Put(ctx context.Context, path string, options ...storage.PutOpt
 	} else if !fileInfo.IsDir() {
 		return nil, newErrNotDir(externalDir)
 	}
+	putOptions := storage.NewPutOptions(options)
 	var file *os.File
 	var finalPath string
-	if storage.NewPutOptions(options).Atomic() {
+	// Read-only writes always go through a temporary file, as an existing
+	// read-only file at the path cannot be opened for writing.
+	if putOptions.Atomic() || putOptions.ReadOnly() {
 		file, err = os.CreateTemp(externalDir, ".tmp"+filepath.Base(externalPath)+"*")
 		finalPath = externalPath
 	} else {
@@ -204,6 +207,7 @@ func (b *bucket) Put(ctx context.Context, path string, options ...storage.PutOpt
 	return newWriteObjectCloser(
 		file,
 		finalPath,
+		putOptions.ReadOnly(),
 	), nil
 }
 
@@ -358,6 +362,9 @@ type writeObjectCloser struct {
 	// path is set during atomic writes to the final path where the file should be created.
 	// If set, the file is a temp file that needs to be renamed to this path if Write/Close are successful.
 	path string
+	// readOnly is set if the file should be made read-only before it is
+	// renamed to path.
+	readOnly bool
 	// writeErr contains the first non-nil error caught by a call to Write.
 	// This is returned in Close for atomic writes to prevent writing an incomplete file.
 	writeErr onceError
@@ -366,10 +373,12 @@ type writeObjectCloser struct {
 func newWriteObjectCloser(
 	file *os.File,
 	path string,
+	readOnly bool,
 ) *writeObjectCloser {
 	return &writeObjectCloser{
-		file: file,
-		path: path,
+		file:     file,
+		path:     path,
+		readOnly: readOnly,
 	}
 }
 
@@ -398,8 +407,20 @@ func (w *writeObjectCloser) Close() error {
 		if atomicWriteErr != nil {
 			return toStorageError(errors.Join(atomicWriteErr, os.Remove(w.file.Name())))
 		}
+		if w.readOnly {
+			if err := os.Chmod(w.file.Name(), 0444); err != nil {
+				return toStorageError(errors.Join(err, os.Remove(w.file.Name())))
+			}
+		}
 		if err := os.Rename(w.file.Name(), w.path); err != nil {
-			return toStorageError(errors.Join(err, os.Remove(w.file.Name())))
+			// On Windows, a read-only file cannot be replaced by a rename.
+			// Make the existing file writable and retry.
+			if !w.readOnly || os.Chmod(w.path, 0644) != nil {
+				return toStorageError(errors.Join(err, os.Remove(w.file.Name())))
+			}
+			if err := os.Rename(w.file.Name(), w.path); err != nil {
+				return toStorageError(errors.Join(err, os.Remove(w.file.Name())))
+			}
 		}
 	}
 	return err
