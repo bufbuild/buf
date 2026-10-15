@@ -15,6 +15,7 @@
 package buflsp
 
 import (
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -74,38 +75,36 @@ func celOperatorSymbol(funcName string) (string, bool) {
 	return "", false
 }
 
-// protoEscapeLen returns the number of source bytes consumed by the proto string
-// escape sequence beginning at s[i] (where s[i] == '\\').
+// protoEscapeWidths returns the number of source bytes consumed by the proto
+// string escape sequence beginning at s[i] (where s[i] == '\\') and the number
+// of bytes that escape decodes to in the string value.
 // Handles simple escapes (\n, \\, etc.), hex (\xNN), Unicode (\uNNNN, \UNNNNNNNN),
 // and octal (\NNN) as defined by the proto language specification.
-func protoEscapeLen(s string, i int) int {
+//
+// Simple, hex, and octal escapes each decode to one byte. Unicode escapes
+// decode to the UTF-8 encoding of their code point, which protocompile writes
+// with strings.Builder.WriteRune: utf8.RuneLen bytes for a valid code point and
+// the three-byte U+FFFD for an invalid one.
+func protoEscapeWidths(s string, i int) (sourceWidth, decodedWidth int) {
 	if i+1 >= len(s) {
-		return 1
+		return 1, 1
 	}
 	switch s[i+1] {
 	case 'a', 'b', 'f', 'n', 'r', 't', 'v', '\\', '\'', '"', '?':
-		return 2
+		return 2, 1
 	case 'x', 'X':
 		// Hex escape: \xNN — consume up to 2 hex digits.
 		end := i + 2
 		for end < len(s) && end < i+4 && isProtoHexDigit(s[end]) {
 			end++
 		}
-		return end - i
+		return end - i, 1
 	case 'u':
 		// Unicode escape: \uNNNN — consume up to 4 hex digits.
-		end := i + 2
-		for end < len(s) && end < i+6 && isProtoHexDigit(s[end]) {
-			end++
-		}
-		return end - i
+		return protoUnicodeEscapeWidths(s, i, 4)
 	case 'U':
 		// Unicode escape: \UNNNNNNNN — consume up to 8 hex digits.
-		end := i + 2
-		for end < len(s) && end < i+10 && isProtoHexDigit(s[end]) {
-			end++
-		}
-		return end - i
+		return protoUnicodeEscapeWidths(s, i, 8)
 	default:
 		// Octal: \NNN — 1 to 3 octal digits.
 		if s[i+1] >= '0' && s[i+1] <= '7' {
@@ -113,10 +112,28 @@ func protoEscapeLen(s string, i int) int {
 			for end < len(s) && end < i+4 && s[end] >= '0' && s[end] <= '7' {
 				end++
 			}
-			return end - i
+			return end - i, 1
 		}
-		return 2
+		return 2, 1
 	}
+}
+
+// protoUnicodeEscapeWidths returns the source and decoded widths of the \u or
+// \U escape beginning at s[i], which takes up to maxDigits hex digits.
+func protoUnicodeEscapeWidths(s string, i int, maxDigits int) (sourceWidth, decodedWidth int) {
+	end := i + 2
+	for end < len(s) && end < i+2+maxDigits && isProtoHexDigit(s[end]) {
+		end++
+	}
+	// A missing or short digit sequence is an invalid escape that protocompile
+	// reports, but it still writes the (possibly zero) code point it read, so
+	// the decoded width follows the same rule.
+	value, _ := strconv.ParseUint(s[i+2:end], 16, 32)
+	codePoint := rune(value)
+	if !utf8.ValidRune(codePoint) {
+		codePoint = utf8.RuneError
+	}
+	return end - i, utf8.RuneLen(codePoint)
 }
 
 // isProtoHexDigit reports whether c is a valid hex digit (0-9, a-f, A-F).
@@ -126,39 +143,41 @@ func isProtoHexDigit(c byte) bool {
 	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
 }
 
-// createCELSpan creates a source.Span for a CEL token given its start and end offsets within the CEL expression.
+// createCELSpan creates a source.Span for a CEL token given its start and end byte offsets within the
+// CEL expression string.
 // exprLiteralSpan is the span of the proto string literal(s) containing the CEL expression (including quotes).
 // It handles both single-line and multi-line (adjacent proto string literals) spans uniformly by scanning for
-// opening quotes, then walking the string content while accounting for proto escape sequences.
+// opening quotes, then walking the string content while accounting for proto escape sequences. Each escape
+// advances the CEL offset by the number of bytes it decodes to, so the span is correct both after an escape
+// and for a token, such as a string literal, that contains one.
 func createCELSpan(celStart, celEnd int, exprLiteralSpan source.Span) source.Span {
 	spanText := exprLiteralSpan.Text()
 	celPos := 0
+	fileStart := -1
 
 	for i := 0; i < len(spanText); i++ {
 		if spanText[i] != '"' {
 			continue
 		}
-		// Scan the content of this string literal.
+		// Scan the content of this string literal up to its unescaped closing quote.
 		i++
-		for i < len(spanText) {
-			if spanText[i] == '"' {
-				break // End of this string literal (unescaped closing quote)
-			}
-			if celPos == celStart {
-				fileStart := exprLiteralSpan.Start + i
-				// The token (celStart..celEnd) is assumed not to straddle a proto
-				// escape sequence — true for all CEL identifiers, operators, and keywords.
-				fileEnd := fileStart + (celEnd - celStart)
-				return source.Span{File: exprLiteralSpan.File, Start: fileStart, End: fileEnd}
-			}
-			var charWidth int
+		for i < len(spanText) && spanText[i] != '"' {
+			sourceWidth, decodedWidth := 1, 1
 			if spanText[i] == '\\' && i+1 < len(spanText) {
-				charWidth = protoEscapeLen(spanText, i)
-			} else {
-				charWidth = 1
+				sourceWidth, decodedWidth = protoEscapeWidths(spanText, i)
 			}
-			celPos++
-			i += charWidth
+			if fileStart < 0 && celStart < celPos+decodedWidth {
+				fileStart = exprLiteralSpan.Start + i
+			}
+			if fileStart >= 0 && celPos >= celEnd {
+				return source.Span{File: exprLiteralSpan.File, Start: fileStart, End: exprLiteralSpan.Start + i}
+			}
+			celPos += decodedWidth
+			i += sourceWidth
+		}
+		// The token may end at the closing quote of this literal.
+		if fileStart >= 0 && celPos >= celEnd {
+			return source.Span{File: exprLiteralSpan.File, Start: fileStart, End: exprLiteralSpan.Start + i}
 		}
 	}
 
@@ -167,7 +186,8 @@ func createCELSpan(celStart, celEnd int, exprLiteralSpan source.Span) source.Spa
 
 // fileByteOffsetToCELOffset is the inverse of createCELSpan: given a file byte
 // offset that falls within exprLiteralSpan, it returns the corresponding byte
-// offset within the concatenated CEL expression string.
+// offset within the concatenated CEL expression string. A file offset anywhere
+// inside a proto escape sequence maps to the first byte the escape decodes to.
 // Returns -1 if fileByteOffset is not inside any string content of the span
 // (e.g. it lands on a quote character, whitespace between literals, or is out
 // of range).
@@ -180,21 +200,17 @@ func fileByteOffsetToCELOffset(fileByteOffset int, exprLiteralSpan source.Span) 
 			continue
 		}
 		i++
-		for i < len(spanText) {
-			if spanText[i] == '"' {
-				break // End of this string literal
+		for i < len(spanText) && spanText[i] != '"' {
+			sourceWidth, decodedWidth := 1, 1
+			if spanText[i] == '\\' && i+1 < len(spanText) {
+				sourceWidth, decodedWidth = protoEscapeWidths(spanText, i)
 			}
-			if exprLiteralSpan.Start+i == fileByteOffset {
+			fileStart := exprLiteralSpan.Start + i
+			if fileByteOffset >= fileStart && fileByteOffset < fileStart+sourceWidth {
 				return celPos
 			}
-			var charWidth int
-			if spanText[i] == '\\' && i+1 < len(spanText) {
-				charWidth = protoEscapeLen(spanText, i)
-			} else {
-				charWidth = 1
-			}
-			celPos++
-			i += charWidth
+			celPos += decodedWidth
+			i += sourceWidth
 		}
 	}
 	return -1

@@ -625,6 +625,58 @@ func TestCELHover(t *testing.T) {
 			char:     41, // `v` of `value` in `this.value > 0`
 			expected: "**Field**: `value`\n\n**Proto Field**: `test.cel.v1.CELMessageTest.value`\n\n**Field Number**: 2\n\n**Proto Type**: `int32`\n\nencoded (hex): `10` (1 byte)",
 		},
+
+		// Unicode-escape tests: a proto \u escape for U+00E9 is 6 source bytes
+		// but 2 bytes in the decoded CEL string, and \U0001F389 is 10 source
+		// bytes but 4 CEL bytes.
+		// Line 412 (0-indexed): `    expression: "this != '\u00e9' && this != ''"`
+		//                                         ^       ^        ^  ^    ^
+		//                        this at 17, literal at 25, && at 34, this at 37, != at 42
+		{
+			name:     "unicode escape: 2-byte literal",
+			line:     412,
+			char:     25,
+			expected: "**Literal**: `'é'`\n\n**Type**: string",
+		},
+		{
+			name:     "unicode escape: && after 2-byte literal",
+			line:     412,
+			char:     34,
+			expected: "**Operator**: `&&`\n\nlogically AND two boolean values. Errors and unknown values\nare valid inputs and will not halt evaluation.\n\n**Overloads**:\n- `bool && bool -> bool`\n\n[CEL by Example](https://celbyexample.com/logical-operators/#and)",
+		},
+		{
+			name:     "unicode escape: this after 2-byte literal",
+			line:     412,
+			char:     37,
+			expected: "**Special variable**\n\nRefers to the current message or field being validated.\n\nIn field-level rules, `this` refers to the field value.\nIn message-level rules, `this` refers to the entire message.\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#this)",
+		},
+		{
+			name:     "unicode escape: != after 2-byte literal",
+			line:     412,
+			char:     42,
+			expected: "**Operator**: `!=`\n\ncompare two values of the same type for inequality\n\n**Overloads**:\n- `<A> != <A> -> bool`\n\n[CEL by Example](https://celbyexample.com/comparison/#equality)",
+		},
+		// Line 417 (0-indexed): `    expression: "this != '\U0001F389' && this.size() > 0"`
+		//                                                 ^                ^    ^
+		//                                        literal at 25, this at 41, size at 46
+		{
+			name:     "unicode escape: 4-byte literal",
+			line:     417,
+			char:     25,
+			expected: "**Literal**: `'🎉'`\n\n**Type**: string",
+		},
+		{
+			name:     "unicode escape: this after 4-byte literal",
+			line:     417,
+			char:     41,
+			expected: "**Special variable**\n\nRefers to the current message or field being validated.\n\nIn field-level rules, `this` refers to the field value.\nIn message-level rules, `this` refers to the entire message.\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#this)",
+		},
+		{
+			name:     "unicode escape: size after 4-byte literal",
+			line:     417,
+			char:     46,
+			expected: "`size`\n\ncompute the size of a list or map, the number of characters in a string,\nor the number of bytes in a sequence\n\n**Overloads**:\n- `size(bytes) -> int`\n- `bytes.size() -> int`\n- `size(list(<A>)) -> int`\n- `list(<A>).size() -> int`\n- `size(map(<A>, <B>)) -> int`\n- `map(<A>, <B>).size() -> int`\n- `size(string) -> int`\n- `string.size() -> int`\n\n[CEL by Example](https://celbyexample.com/strings/#size)",
+		},
 	}
 
 	for _, tc := range testCases {

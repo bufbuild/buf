@@ -401,3 +401,20 @@ message CELMessageTest {
     expression: "this.name != '' && this.value > 0"
   };
 }
+
+// Unicode-escape test: a proto \u or \U escape occupies 6 or 10 source bytes
+// but decodes to a multi-byte UTF-8 sequence (2 bytes for \u00e9, 4 bytes for
+// \U0001F389), so tokens after it are shifted by more than one position per
+// escape. Without decoded-width-aware offset handling, hover lands one or more
+// columns early.
+message CELUnicodeEscapeTest {
+  string short = 1 [(buf.validate.field).cel = {
+    id: "unicode_escape.short"
+    expression: "this != '\u00e9' && this != ''"
+  }];
+
+  string long = 2 [(buf.validate.field).cel = {
+    id: "unicode_escape.long"
+    expression: "this != '\U0001F389' && this.size() > 0"
+  }];
+}
