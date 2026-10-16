@@ -15,12 +15,16 @@
 package buflsp
 
 import (
+	"cmp"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
 	celast "cel.dev/cel-go/common/ast"
 	"cel.dev/cel-go/common/operators"
+	"github.com/bufbuild/protocompile/experimental/seq"
 	"github.com/bufbuild/protocompile/experimental/source"
+	"github.com/bufbuild/protocompile/experimental/token"
 )
 
 // celIsIdentChar reports whether c is a valid CEL identifier character:
@@ -74,130 +78,108 @@ func celOperatorSymbol(funcName string) (string, bool) {
 	return "", false
 }
 
-// protoEscapeLen returns the number of source bytes consumed by the proto string
-// escape sequence beginning at s[i] (where s[i] == '\\').
-// Handles simple escapes (\n, \\, etc.), hex (\xNN), Unicode (\uNNNN, \UNNNNNNNN),
-// and octal (\NNN) as defined by the proto language specification.
-func protoEscapeLen(s string, i int) int {
-	if i+1 >= len(s) {
-		return 1
-	}
-	switch s[i+1] {
-	case 'a', 'b', 'f', 'n', 'r', 't', 'v', '\\', '\'', '"', '?':
-		return 2
-	case 'x', 'X':
-		// Hex escape: \xNN — consume up to 2 hex digits.
-		end := i + 2
-		for end < len(s) && end < i+4 && isProtoHexDigit(s[end]) {
-			end++
-		}
-		return end - i
-	case 'u':
-		// Unicode escape: \uNNNN — consume up to 4 hex digits.
-		end := i + 2
-		for end < len(s) && end < i+6 && isProtoHexDigit(s[end]) {
-			end++
-		}
-		return end - i
-	case 'U':
-		// Unicode escape: \UNNNNNNNN — consume up to 8 hex digits.
-		end := i + 2
-		for end < len(s) && end < i+10 && isProtoHexDigit(s[end]) {
-			end++
-		}
-		return end - i
-	default:
-		// Octal: \NNN — 1 to 3 octal digits.
-		if s[i+1] >= '0' && s[i+1] <= '7' {
-			end := i + 2
-			for end < len(s) && end < i+4 && s[end] >= '0' && s[end] <= '7' {
-				end++
-			}
-			return end - i
-		}
-		return 2
-	}
-}
-
-// isProtoHexDigit reports whether c is a valid hex digit (0-9, a-f, A-F).
+// celSourceSpans holds, for each byte of a CEL expression, the span of the proto
+// file the byte is written as, in the one or more adjacent string literals that
+// make up the expression.
 //
-// Equivalent to the unexported isHex in github.com/bufbuild/protocompile/linker.
-func isProtoHexDigit(c byte) bool {
-	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
-}
+// A byte is written as a byte of a literal's contents, or as an escape sequence,
+// which decodes to a single raw byte or to a rune in UTF-8. Every byte an escape
+// sequence decodes to is written as the whole escape sequence.
+type celSourceSpans []source.Span
 
-// createCELSpan creates a source.Span for a CEL token given its start and end offsets within the CEL expression.
-// exprLiteralSpan is the span of the proto string literal(s) containing the CEL expression (including quotes).
-// It handles both single-line and multi-line (adjacent proto string literals) spans uniformly by scanning for
-// opening quotes, then walking the string content while accounting for proto escape sequences.
-func createCELSpan(celStart, celEnd int, exprLiteralSpan source.Span) source.Span {
-	spanText := exprLiteralSpan.Text()
-	celPos := 0
-
-	for i := 0; i < len(spanText); i++ {
-		if spanText[i] != '"' {
-			continue
-		}
-		// Scan the content of this string literal.
-		i++
-		for i < len(spanText) {
-			if spanText[i] == '"' {
-				break // End of this string literal (unescaped closing quote)
-			}
-			if celPos == celStart {
-				fileStart := exprLiteralSpan.Start + i
-				// The token (celStart..celEnd) is assumed not to straddle a proto
-				// escape sequence — true for all CEL identifiers, operators, and keywords.
-				fileEnd := fileStart + (celEnd - celStart)
-				return source.Span{File: exprLiteralSpan.File, Start: fileStart, End: fileEnd}
-			}
-			var charWidth int
-			if spanText[i] == '\\' && i+1 < len(spanText) {
-				charWidth = protoEscapeLen(spanText, i)
-			} else {
-				charWidth = 1
-			}
-			celPos++
-			i += charWidth
+// newCELSourceSpans returns the spans of an expression written as the string
+// literal str, or nil if str is zero.
+func newCELSourceSpans(str token.StringToken) celSourceSpans {
+	if str.IsZero() {
+		return nil
+	}
+	// After a string's first escape sequence, Escapes has an entry for every rune
+	// that follows it, escaped or not. The entries that are not escape sequences
+	// have empty spans.
+	var escapes []token.Escape
+	for escape := range seq.Values(str.Escapes()) {
+		if escape.Len() > 0 {
+			escapes = append(escapes, escape)
 		}
 	}
-
-	return source.Span{}
-}
-
-// fileByteOffsetToCELOffset is the inverse of createCELSpan: given a file byte
-// offset that falls within exprLiteralSpan, it returns the corresponding byte
-// offset within the concatenated CEL expression string.
-// Returns -1 if fileByteOffset is not inside any string content of the span
-// (e.g. it lands on a quote character, whitespace between literals, or is out
-// of range).
-func fileByteOffsetToCELOffset(fileByteOffset int, exprLiteralSpan source.Span) int {
-	spanText := exprLiteralSpan.Text()
-	celPos := 0
-
-	for i := 0; i < len(spanText); i++ {
-		if spanText[i] != '"' {
-			continue
-		}
-		i++
-		for i < len(spanText) {
-			if spanText[i] == '"' {
-				break // End of this string literal
-			}
-			if exprLiteralSpan.Start+i == fileByteOffset {
-				return celPos
-			}
-			var charWidth int
-			if spanText[i] == '\\' && i+1 < len(spanText) {
-				charWidth = protoEscapeLen(spanText, i)
-			} else {
-				charWidth = 1
-			}
-			celPos++
-			i += charWidth
+	file := str.RawContent().File
+	spans := make(celSourceSpans, 0, len(str.Text()))
+	plain := func(from, to int) {
+		for i := from; i < to; i++ {
+			spans = append(spans, file.Span(i, i+1))
 		}
 	}
-	return -1
+	next := 0 // The first escape sequence not yet added.
+	for _, part := range celStringParts(str) {
+		content := part.RawContent()
+		pos := content.Start
+		for ; next < len(escapes) && escapes[next].Start < content.End; next++ {
+			escape := escapes[next]
+			plain(pos, escape.Start)
+			// The lexer writes an escaped rune in UTF-8, and one that is not a valid
+			// rune, which it reports, as U+FFFD; converting it to a string does the
+			// same. A raw byte has a zero Rune, which also takes one byte.
+			for range len(string(escape.Rune)) {
+				spans = append(spans, escape.Span)
+			}
+			pos = escape.End
+		}
+		plain(pos, content.End)
+	}
+	if len(spans) != len(str.Text()) {
+		// Shouldn't happen in practice.
+		return nil
+	}
+	return spans
+}
+
+// celStringParts returns the string literals that str is concatenated from, in
+// order, or str alone if it is a single literal.
+func celStringParts(str token.StringToken) []token.StringToken {
+	start, end := str.Token().StartEnd()
+	parts := []token.StringToken{start.AsString()}
+	if start == end {
+		return parts
+	}
+	if children := str.Token().Children(); children != nil {
+		for child := range children.Rest() {
+			if child == end {
+				break
+			}
+			if part := child.AsString(); !part.IsZero() {
+				parts = append(parts, part)
+			}
+		}
+	}
+	return append(parts, end.AsString())
+}
+
+// span returns the span of the file that the expression's bytes [start, end) are
+// written as, or the zero span if they are not all in the expression.
+func (s celSourceSpans) span(start, end int) source.Span {
+	if start < 0 || start > end || end > len(s) || start == len(s) {
+		return source.Span{}
+	}
+	first := s[start]
+	if start == end {
+		return source.Span{File: first.File, Start: first.Start, End: first.Start}
+	}
+	return source.Span{File: first.File, Start: first.Start, End: s[end-1].End}
+}
+
+// offset returns the offset in the expression of the byte written at fileOffset,
+// or -1 if no byte of the expression is written there, as for a quote or the
+// space between adjacent literals. An offset inside an escape sequence gives the
+// first byte the escape sequence decodes to.
+func (s celSourceSpans) offset(fileOffset int) int {
+	// The first byte whose span ends after fileOffset.
+	i, _ := slices.BinarySearchFunc(s, fileOffset+1, func(span source.Span, end int) int {
+		return cmp.Compare(span.End, end)
+	})
+	if i == len(s) || s[i].Start > fileOffset {
+		return -1
+	}
+	return i
 }
 
 // celLocByteOffset converts a CEL source location (line, col) to a byte offset
@@ -266,13 +248,13 @@ func findNameAfterDot(
 	targetByteOffset int,
 	name string,
 	exprString string,
-	exprLiteralSpan source.Span,
+	sourceSpans celSourceSpans,
 ) source.Span {
 	start, end := findMethodNameAfterDot(targetByteOffset, name, exprString)
 	if start < 0 {
 		return source.Span{}
 	}
-	return createCELSpan(start, end, exprLiteralSpan)
+	return sourceSpans.span(start, end)
 }
 
 // findStandaloneFunctionName calculates the position of a function name before an opening paren.

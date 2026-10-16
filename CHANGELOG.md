@@ -4,6 +4,8 @@
 
 - Fix LSP crash when hovering on a CEL string literal containing a byte that is not valid UTF-8,
   such as `'\x95'` in a protovalidate rule.
+- Fix LSP hover and highlighting of CEL expressions whose proto strings contain escape sequences,
+  which placed the ranges of string literals, and of tokens after a `\u` or `\U` escape, wrongly.
 
 ## [v1.74.0] - 2026-10-14
 
