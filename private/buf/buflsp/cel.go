@@ -15,6 +15,7 @@
 package buflsp
 
 import (
+	"cmp"
 	"slices"
 	"strings"
 	"unicode/utf8"
@@ -77,66 +78,59 @@ func celOperatorSymbol(funcName string) (string, bool) {
 	return "", false
 }
 
-// celSourceMap maps between byte offsets in a CEL expression and offsets in the
-// proto file it is written in, as one or more adjacent string literals.
+// celSourceSpans holds, for each byte of a CEL expression, the span of the proto
+// file the byte is written as, in the one or more adjacent string literals that
+// make up the expression.
 //
-// Each byte of the expression comes from a byte of a literal's contents, or from
-// an escape sequence, which decodes to a single raw byte or to a rune in UTF-8.
-type celSourceMap struct {
-	file *source.File
-	// starts[i] and ends[i] are the file offsets of the source of the expression's
-	// byte i. Every byte an escape sequence decodes to has the whole escape
-	// sequence as its source.
-	starts, ends []int
-}
+// A byte is written as a byte of a literal's contents, or as an escape sequence,
+// which decodes to a single raw byte or to a rune in UTF-8. Every byte an escape
+// sequence decodes to is written as the whole escape sequence.
+type celSourceSpans []source.Span
 
-// newCELSourceMap returns the map for an expression written as the string
-// literal str. It returns the zero map, which maps nothing, if str is zero.
-func newCELSourceMap(str token.StringToken) celSourceMap {
+// newCELSourceSpans returns the spans of an expression written as the string
+// literal str, or nil if str is zero.
+func newCELSourceSpans(str token.StringToken) celSourceSpans {
 	if str.IsZero() {
-		return celSourceMap{}
+		return nil
 	}
-	// Escapes also yields each rune that follows a string's first escape, with an
-	// empty span; only those with a span are escape sequences in the source.
+	// After a string's first escape sequence, Escapes has an entry for every rune
+	// that follows it, escaped or not. The entries that are not escape sequences
+	// have empty spans.
 	var escapes []token.Escape
 	for escape := range seq.Values(str.Escapes()) {
-		if escape.Start < escape.End {
+		if escape.Len() > 0 {
 			escapes = append(escapes, escape)
 		}
 	}
-	m := celSourceMap{
-		file:   str.RawContent().File,
-		starts: make([]int, 0, len(str.Text())),
-		ends:   make([]int, 0, len(str.Text())),
+	file := str.RawContent().File
+	spans := make(celSourceSpans, 0, len(str.Text()))
+	plain := func(from, to int) {
+		for i := from; i < to; i++ {
+			spans = append(spans, file.Span(i, i+1))
+		}
 	}
+	next := 0 // The first escape sequence not yet added.
 	for _, part := range celStringParts(str) {
 		content := part.RawContent()
-		for i := content.Start; i < content.End; {
-			if len(escapes) == 0 || escapes[0].Start != i {
-				m.starts = append(m.starts, i)
-				m.ends = append(m.ends, i+1)
-				i++
-				continue
-			}
-			escape := escapes[0]
-			escapes = escapes[1:]
+		pos := content.Start
+		for ; next < len(escapes) && escapes[next].Start < content.End; next++ {
+			escape := escapes[next]
+			plain(pos, escape.Start)
 			// The lexer writes an escaped rune in UTF-8, and one that is not a valid
 			// rune, which it reports, as U+FFFD; converting it to a string does the
 			// same. A raw byte has a zero Rune, which also takes one byte.
-			decodedLen := len(string(escape.Rune))
-			for range decodedLen {
-				m.starts = append(m.starts, escape.Start)
-				m.ends = append(m.ends, escape.End)
+			for range len(string(escape.Rune)) {
+				spans = append(spans, escape.Span)
 			}
-			i = escape.End
+			pos = escape.End
 		}
+		plain(pos, content.End)
 	}
-	if len(m.starts) != len(str.Text()) {
-		// The walk disagrees with the lexer about the string's value, so any
-		// offset it gives would be wrong.
-		return celSourceMap{}
+	if len(spans) != len(str.Text()) {
+		// Shouldn't happen in practice.
+		return nil
 	}
-	return m
+	return spans
 }
 
 // celStringParts returns the string literals that str is concatenated from, in
@@ -162,24 +156,27 @@ func celStringParts(str token.StringToken) []token.StringToken {
 
 // span returns the span of the file that the expression's bytes [start, end) are
 // written as, or the zero span if they are not all in the expression.
-func (m celSourceMap) span(start, end int) source.Span {
-	if start < 0 || start > end || end > len(m.starts) || start == len(m.starts) {
+func (s celSourceSpans) span(start, end int) source.Span {
+	if start < 0 || start > end || end > len(s) || start == len(s) {
 		return source.Span{}
 	}
+	first := s[start]
 	if start == end {
-		return source.Span{File: m.file, Start: m.starts[start], End: m.starts[start]}
+		return source.Span{File: first.File, Start: first.Start, End: first.Start}
 	}
-	return source.Span{File: m.file, Start: m.starts[start], End: m.ends[end-1]}
+	return source.Span{File: first.File, Start: first.Start, End: s[end-1].End}
 }
 
 // offset returns the offset in the expression of the byte written at fileOffset,
 // or -1 if no byte of the expression is written there, as for a quote or the
 // space between adjacent literals. An offset inside an escape sequence gives the
 // first byte the escape sequence decodes to.
-func (m celSourceMap) offset(fileOffset int) int {
-	// The first byte whose source ends after fileOffset.
-	i, _ := slices.BinarySearch(m.ends, fileOffset+1)
-	if i == len(m.ends) || m.starts[i] > fileOffset {
+func (s celSourceSpans) offset(fileOffset int) int {
+	// The first byte whose span ends after fileOffset.
+	i, _ := slices.BinarySearchFunc(s, fileOffset+1, func(span source.Span, end int) int {
+		return cmp.Compare(span.End, end)
+	})
+	if i == len(s) || s[i].Start > fileOffset {
 		return -1
 	}
 	return i
@@ -251,13 +248,13 @@ func findNameAfterDot(
 	targetByteOffset int,
 	name string,
 	exprString string,
-	sourceMap celSourceMap,
+	sourceSpans celSourceSpans,
 ) source.Span {
 	start, end := findMethodNameAfterDot(targetByteOffset, name, exprString)
 	if start < 0 {
 		return source.Span{}
 	}
-	return sourceMap.span(start, end)
+	return sourceSpans.span(start, end)
 }
 
 // findStandaloneFunctionName calculates the position of a function name before an opening paren.

@@ -53,7 +53,7 @@ func getCELCompletionItems(
 				continue
 			}
 
-			celOffset := newCELSourceMap(exprInfo.literal).offset(byteOffset)
+			celOffset := newCELSourceSpans(exprInfo.literal).offset(byteOffset)
 			if celOffset < 0 {
 				// Cursor is at the closing quote or inside an empty string literal;
 				// treat as end-of-expression for completion purposes.

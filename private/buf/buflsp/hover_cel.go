@@ -51,8 +51,8 @@ func getCELHover(
 			}
 
 			// Calculate offset within the CEL expression.
-			sourceMap := newCELSourceMap(exprInfo.literal)
-			celOffset := sourceMap.offset(byteOffset)
+			sourceSpans := newCELSourceSpans(exprInfo.literal)
+			celOffset := sourceSpans.offset(byteOffset)
 			if celOffset < 0 || celOffset >= len(exprInfo.expression) {
 				continue
 			}
@@ -89,7 +89,7 @@ func getCELHover(
 			}
 
 			// Create hover range - highlight the whole token
-			tokenSpan := sourceMap.span(hoverInfo.start, hoverInfo.end)
+			tokenSpan := sourceSpans.span(hoverInfo.start, hoverInfo.end)
 			if tokenSpan.IsZero() {
 				continue
 			}
