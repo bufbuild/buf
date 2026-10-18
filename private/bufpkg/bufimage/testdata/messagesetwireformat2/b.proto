@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package b;
+
+// a.proto does not import descriptor.proto itself, but it ends up in the same
+// import closure as descriptor.proto through this file.
+import "google/protobuf/descriptor.proto";
+import "a.proto";
