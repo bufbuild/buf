@@ -4,6 +4,8 @@
 
 - Fix LSP crash when hovering on a CEL string literal containing a byte that is not valid UTF-8,
   such as `'\x95'` in a protovalidate rule.
+- Add `BUF_DEBUG`, `BUF_LOG_FORMAT`, and `BUF_TIMEOUT` environment variables as defaults for the
+  `--debug`, `--log-format`, and `--timeout` global flags. Flags take precedence when set.
 
 ## [v1.74.0] - 2026-10-14
 
