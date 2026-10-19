@@ -242,22 +242,22 @@ func TestComparePublicImports(t *testing.T) {
 }
 
 func TestMessageSetWireFormat1(t *testing.T) {
-	// The resolver built for an image strips message_set_wire_format, and
-	// extension ranges above the regular field number limit, as the Go runtime
-	// does not support them. This must not leak into the image.
-	//
-	// This regressed when a MessageSet's file and descriptor.proto were both in
-	// the import closure of a built file. Here, the file imports
-	// descriptor.proto itself.
+	// An unused import builds the image's resolver, which strips legacy
+	// options, while the image is built.
 	t.Parallel()
 	testMessageSetWireFormat(t, "messagesetwireformat1")
 }
 
 func TestMessageSetWireFormat2(t *testing.T) {
-	// Like TestMessageSetWireFormat1, except the MessageSet's file does not
-	// import descriptor.proto. Another file imports both.
+	// Like TestMessageSetWireFormat1, but the unused import is in another file.
 	t.Parallel()
 	testMessageSetWireFormat(t, "messagesetwireformat2")
+}
+
+func TestMessageSetWireFormat3(t *testing.T) {
+	// No unused imports, so the resolver is not built during the image build.
+	t.Parallel()
+	testMessageSetWireFormat(t, "messagesetwireformat3")
 }
 
 func TestCustomOptionsError1(t *testing.T) {
@@ -403,20 +403,23 @@ func testCompare(t *testing.T, relDirPath string) {
 }
 
 func testMessageSetWireFormat(t *testing.T, relDirPath string) {
-	// This asserts on the image directly rather than using testCompare, since
-	// the comparison builds resolvers from both descriptor sets. A resolver that
-	// leaks stripped descriptors would strip protoc's side as well.
+	// testCompare would not catch this, as building its resolvers strips
+	// protoc's descriptors too.
 	image, fileAnnotations := testBuild(t, false, filepath.Join("testdata", relDirPath), false)
 	require.Empty(t, fileAnnotations)
 	imageFile := image.GetFile("a.proto")
 	require.NotNil(t, imageFile)
-	messages := imageFile.FileDescriptorProto().GetMessageType()
-	require.Len(t, messages, 1)
+	fileDescriptor := imageFile.FileDescriptorProto()
+	messages := fileDescriptor.GetMessageType()
+	require.Len(t, messages, 2)
 	require.True(t, messages[0].GetOptions().GetMessageSetWireFormat())
 	extensionRanges := messages[0].GetExtensionRange()
 	require.Len(t, extensionRanges, 1)
 	require.Equal(t, int32(4), extensionRanges[0].GetStart())
 	require.Equal(t, int32(2147483647), extensionRanges[0].GetEnd())
+	extensions := fileDescriptor.GetExtension()
+	require.Len(t, extensions, 1)
+	require.Equal(t, int32(536870912), extensions[0].GetNumber())
 }
 
 func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufimage.Image {

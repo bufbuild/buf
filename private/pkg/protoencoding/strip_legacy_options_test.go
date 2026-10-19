@@ -88,9 +88,8 @@ func TestStripLegacyOptions(t *testing.T) {
 func TestNewResolverDoesNotModifyFiles(t *testing.T) {
 	t.Parallel()
 
-	// The resolver is built from descriptors with legacy options stripped, but
-	// the caller's slice must keep the original descriptors. bufimage builds a
-	// resolver from the same slice that becomes the image, for example.
+	// Building a resolver strips legacy options, but must not replace the
+	// descriptors in the caller's slice.
 	assertFilesNotModified := func(t *testing.T, files []*descriptorpb.FileDescriptorProto, noLegacy, legacy *descriptorpb.FileDescriptorProto) {
 		require.Same(t, noLegacy, files[0])
 		require.Same(t, legacy, files[1])
@@ -112,7 +111,6 @@ func TestNewResolverDoesNotModifyFiles(t *testing.T) {
 		legacy := getFileWithLegacyOptions()
 		files := []*descriptorpb.FileDescriptorProto{noLegacy, legacy}
 		resolver := NewLazyResolver(files...)
-		// The first lookup builds the resolver.
 		_, err := resolver.FindMessageByName("foo.bar.Fizz")
 		require.NoError(t, err)
 		assertFilesNotModified(t, files, noLegacy, legacy)

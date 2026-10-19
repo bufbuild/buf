@@ -32,9 +32,8 @@ func newResolver[F protodescriptor.FileDescriptor](fileDescriptors ...F) (Resolv
 		return nil, nil
 	}
 	fileDescriptorSet := protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...)
-	// stripLegacyOptions replaces descriptors in the slice it is given, and
-	// FileDescriptorSetForFileDescriptors may return the caller's slice as is.
-	// Clone it, so the stripped descriptors don't leak back to the caller.
+	// FileDescriptorSetForFileDescriptors may return the caller's slice, and
+	// stripLegacyOptions replaces its elements.
 	fileDescriptorSet.File = slices.Clone(fileDescriptorSet.File)
 	if err := stripLegacyOptions(fileDescriptorSet.File); err != nil {
 		return nil, err
