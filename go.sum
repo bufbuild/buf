@@ -44,8 +44,8 @@ github.com/bmatcuk/doublestar/v4 v4.10.0 h1:zU9WiOla1YA122oLM6i4EXvGW62DvKZVxIe6
 github.com/bmatcuk/doublestar/v4 v4.10.0/go.mod h1:xBQ8jztBU6kakFMg+8WGxn0c6z1fTSPVIjEY1Wr7jzc=
 github.com/brianvoe/gofakeit/v6 v6.28.0 h1:Xib46XXuQfmlLS2EXRuJpqcw8St6qSZz75OUo0tgAW4=
 github.com/brianvoe/gofakeit/v6 v6.28.0/go.mod h1:Xj58BMSnFqcn/fAQeSK+/PLtC5kSb7FJIq4JyGa8vEs=
-github.com/bufbuild/protocompile v0.14.2-0.20261016165317-b72c9bfe2623 h1:D8JU6obDyi8r8RCzzhcId9DFkFR3xZIf2KqkNAe6Wac=
-github.com/bufbuild/protocompile v0.14.2-0.20261016165317-b72c9bfe2623/go.mod h1:bX3ObJfML+aki7PJevkWLSlOfEZ8EnNsfCz0hiYkhiI=
+github.com/bufbuild/protocompile v0.14.2-0.20261020145055-56248e843b50 h1:JjQ4WXOPRj7b404ouvTJNdYHi2Ib4Bfl5VoSBluKbGs=
+github.com/bufbuild/protocompile v0.14.2-0.20261020145055-56248e843b50/go.mod h1:mcyF/iWO0TSVh4LvVBH5gJO1N9pQyooNy+XR4tNlbO0=
 github.com/bufbuild/protoplugin v0.0.0-20260414125817-25d1d281b46b h1:b7wvo9ZhjLzCp7tGbOUMvgtYTnd33zGSAmMxcdxMnhQ=
 github.com/bufbuild/protoplugin v0.0.0-20260414125817-25d1d281b46b/go.mod h1:c5D8gWRIZ2HLWO3gXYTtUfw/hbJyD8xikv2ooPxnklQ=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
@@ -212,8 +212,8 @@ google.golang.org/genproto/googleapis/rpc v0.0.0-20261012220534-4341edf3f941 h1:
 google.golang.org/genproto/googleapis/rpc v0.0.0-20261012220534-4341edf3f941/go.mod h1:OaIUM3+LpYcK2GXM4FTmhWoIq371Owdr+Cc7/BsYHHc=
 google.golang.org/grpc v1.83.2 h1:EManeRomTObA0BU7I8vXgg/78uE5MJ9M8B39EX2WscU=
 google.golang.org/grpc v1.83.2/go.mod h1:YPI1hK3kDked6iHvgX3tR0y+nX/qpMFKhPgFsokw1S8=
-google.golang.org/protobuf v1.36.12 h1:pJOKDDOyeXErUroCihFAd5LQuwXBSpVnKGrj5o/fwxc=
-google.golang.org/protobuf v1.36.12/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=
+google.golang.org/protobuf v1.36.13-0.20261016172727-e9ee2a76ab8e h1:TU4XCsANCrpOpeS6NA+LhCA6H12DfxF2gIcYBrWcdwc=
+google.golang.org/protobuf v1.36.13-0.20261016172727-e9ee2a76ab8e/go.mod h1:X7eSFOSeyjM8zqq7vd+xpgLluojDTuH3nwq1zr6OCKg=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c h1:Hei/4ADfdWqJk1ZMxUNpqntNwaWcugrBjAiHlqqRiVk=
 gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c/go.mod h1:JHkPIbrfpd72SG/EVd6muEfDQjcINNoR0C8j2r3qZ4Q=

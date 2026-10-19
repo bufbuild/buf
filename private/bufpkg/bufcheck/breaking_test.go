@@ -904,6 +904,17 @@ func TestRunBreakingFileSameSyntax(t *testing.T) {
 	)
 }
 
+func TestRunBreakingFileSameCcEnableArenasEdition2026(t *testing.T) {
+	t.Parallel()
+	// cc_enable_arenas is removed in edition 2026, where arenas are always
+	// enabled. Only files that previously disabled arenas are flagged.
+	testBreaking(
+		t,
+		"breaking_file_same_cc_enable_arenas_edition_2026",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 1, 1, 1, 1, "FILE_SAME_CC_ENABLE_ARENAS"),
+	)
+}
+
 func TestRunBreakingFileSameValues(t *testing.T) {
 	t.Parallel()
 	testBreaking(

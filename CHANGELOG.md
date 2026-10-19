@@ -8,6 +8,10 @@
   such as `'\x95'` in a protovalidate rule.
 - Add `BUF_DEBUG`, `BUF_LOG_FORMAT`, and `BUF_TIMEOUT` environment variables as defaults for the
   `--debug`, `--log-format`, and `--timeout` global flags. Flags take precedence when set.
+- Add support for Protobuf edition 2026.
+- Update built-in Well-Known Types to Protobuf v36.2.
+- Update managed mode to skip `cc_enable_arenas` for edition 2026 files, where the option was
+  removed.
 
 ## [v1.74.0] - 2026-10-14
 

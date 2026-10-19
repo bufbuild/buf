@@ -19,7 +19,7 @@ require (
 	connectrpc.com/connect/v2 v2.0.1
 	connectrpc.com/grpcreflect/v2 v2.0.0
 	connectrpc.com/otelconnect v0.11.0
-	github.com/bufbuild/protocompile v0.14.2-0.20261016165317-b72c9bfe2623
+	github.com/bufbuild/protocompile v0.14.2-0.20261020145055-56248e843b50
 	github.com/bufbuild/protoplugin v0.0.0-20260414125817-25d1d281b46b
 	github.com/cli/browser v1.3.0
 	github.com/gofrs/flock v0.13.1
@@ -48,7 +48,7 @@ require (
 	golang.org/x/sync v0.24.0
 	golang.org/x/term v0.47.0
 	golang.org/x/tools v0.52.0
-	google.golang.org/protobuf v1.36.12
+	google.golang.org/protobuf v1.36.13-0.20261016172727-e9ee2a76ab8e
 	mvdan.cc/xurls/v2 v2.6.0
 	pluginrpc.com/pluginrpc v0.6.0
 )
