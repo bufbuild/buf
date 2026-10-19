@@ -10,8 +10,8 @@ buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.12-20261009230124-4d
 buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.12-20261009230124-4d217860dade.2/go.mod h1:v7IaNcBKy5G3G8gpG2m92P0R3HK2qtMGclWzf+1Aut4=
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.12-20241007202033-cf42259fcbfc.2 h1:9xw8g8Q6zHLC7CO/jtpl2UK0kQticxIG+mI6N86f2/M=
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.12-20241007202033-cf42259fcbfc.2/go.mod h1:+0bw+k8FY5MU3tojFh33HeA5xMfGWjAUQpr+maW5Z3o=
-buf.build/go/app v0.2.1-0.20260928213032-9a091f2dc726 h1:Xx8K9w2tN9TfQSq1g6g4vKuBbG3ZlOR2bb9A+PbgBt4=
-buf.build/go/app v0.2.1-0.20260928213032-9a091f2dc726/go.mod h1:KuUkGoXxZnxNVGN/AB7s4UCUG2/1xtk8NjxqdSCSSyM=
+buf.build/go/app v0.2.1-0.20261019124520-7c639576a2eb h1:7GLkk3qIKdT72ebsNC3NFIQO2z/+RfNy3Rf1UGBwVEE=
+buf.build/go/app v0.2.1-0.20261019124520-7c639576a2eb/go.mod h1:KuUkGoXxZnxNVGN/AB7s4UCUG2/1xtk8NjxqdSCSSyM=
 buf.build/go/bufplugin v0.11.1 h1:fegT6xiiGVwyNiLlxBz07ochKTX/DAtIKe/oPdrqrCs=
 buf.build/go/bufplugin v0.11.1/go.mod h1:0xoAhb/CPqXwS/FUup9vwIRBYxDcXYXeOhYXHca5uuc=
 buf.build/go/bufprivateusage v0.1.0 h1:SzCoCcmzS3zyXHEXHeSQhGI7OTkgtljoknLzsUz9Gg4=
