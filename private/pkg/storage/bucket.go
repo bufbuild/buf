@@ -223,6 +223,10 @@ type PutOptions interface {
 	// returned WriteObjectCloser is written and closed (without an error).
 	// Any errors will cause the Put to be skipped (no path will be created).
 	Atomic() bool
+	// ReadOnly requests that the written object be made read-only.
+	//
+	// This is a best-effort hint and may be ignored by the implementation.
+	ReadOnly() bool
 	// SuggestedDisableChunking says to suggest disable chunking entirely.
 	//
 	// If SuggestedChunkSize() > 0, this will always be false.
@@ -286,6 +290,15 @@ func PutWithAtomic() PutOption {
 	}
 }
 
+// PutWithReadOnly requests that the written object be made read-only.
+//
+// This is a best-effort hint and may be ignored by the implementation.
+func PutWithReadOnly() PutOption {
+	return func(putOptions *putOptions) {
+		putOptions.readOnly = true
+	}
+}
+
 type nopReadBucketCloser struct {
 	ReadBucket
 }
@@ -312,6 +325,7 @@ func (nopReadWriteBucketCloser) Close() error {
 
 type putOptions struct {
 	atomic             bool
+	readOnly           bool
 	suggestedChunkSize *int
 }
 
@@ -321,6 +335,10 @@ func newPutOptions() *putOptions {
 
 func (p *putOptions) Atomic() bool {
 	return p.atomic
+}
+
+func (p *putOptions) ReadOnly() bool {
+	return p.readOnly
 }
 
 func (p *putOptions) SuggestedDisableChunking() bool {

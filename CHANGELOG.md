@@ -4,6 +4,8 @@
 
 - Fix LSP crash when hovering on a CEL string literal containing a byte that is not valid UTF-8,
   such as `'\x95'` in a protovalidate rule.
+- Write module and Well-Known Type files to the cache as read-only, so that files opened from
+  LSP go-to-definition cannot be accidentally edited.
 
 ## [v1.74.0] - 2026-10-14
 
