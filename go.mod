@@ -18,7 +18,7 @@ require (
 	cel.dev/cel-go v0.32.0
 	connectrpc.com/connect/v2 v2.0.1
 	connectrpc.com/grpcreflect/v2 v2.0.0
-	connectrpc.com/otelconnect v0.12.0
+	connectrpc.com/otelconnect v0.11.0
 	github.com/bufbuild/protocompile v0.14.2-0.20261016165317-b72c9bfe2623
 	github.com/bufbuild/protoplugin v0.0.0-20260414125817-25d1d281b46b
 	github.com/cli/browser v1.3.0
@@ -57,7 +57,6 @@ require (
 	buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.12-20241007202033-cf42259fcbfc.2 // indirect
 	buf.build/go/interrupt v1.1.0 // indirect
 	cel.dev/expr v0.25.3 // indirect
-	connectrpc.com/connect v1.21.1 // indirect
 	github.com/Microsoft/go-winio v0.6.4 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
