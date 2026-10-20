@@ -270,6 +270,82 @@ func TestOptionDependency(t *testing.T) {
 	assert.Equal(t, wantOptionDependency, imageFromRequest.GetFile("a.proto").FileDescriptorProto().GetOptionDependency())
 }
 
+func TestCompareOptionDependencyIncludeImports(t *testing.T) {
+	t.Parallel()
+	dirPath := filepath.Join("testdata", "optiondependency")
+	image, fileAnnotations := testBuild(t, false, dirPath, false)
+	require.Empty(t, fileAnnotations)
+	image, err := bufimage.ImageWithOnlyPaths(image, []string{"a.proto"}, nil)
+	require.NoError(t, err)
+	fileDescriptorSet := bufimage.ImageToFileDescriptorSet(image)
+	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, true, false, dirPath, []string{"a.proto"})
+	prototesting.AssertFileDescriptorSetsEqual(t, fileDescriptorSet, actualProtocFileDescriptorSet)
+}
+
+func TestOptionDependencyImports(t *testing.T) {
+	// Files imported with `import option` must be included as imports, after
+	// regular imports, like protoc --include_imports.
+	t.Parallel()
+	moduleSet, err := bufmoduletesting.NewModuleSet(
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/a",
+			PathToData: map[string][]byte{
+				"a.proto": []byte(
+					`edition = "2024"; package a; import "b.proto"; import option "opts.proto"; option (opts.tag) = "a";`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/b",
+			PathToData: map[string][]byte{
+				"b.proto": []byte(`edition = "2024"; package b;`),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/opts",
+			PathToData: map[string][]byte{
+				"opts.proto": []byte(
+					`edition = "2024"; package opts; import "google/protobuf/descriptor.proto"; extend google.protobuf.FileOptions { string tag = 50000; }`,
+				),
+			},
+		},
+	)
+	require.NoError(t, err)
+	wantPaths := []string{"b.proto", "google/protobuf/descriptor.proto", "opts.proto", "a.proto"}
+	wantImportPaths := []string{"b.proto", "google/protobuf/descriptor.proto", "opts.proto"}
+
+	targetModuleSet, err := moduleSet.WithTargetOpaqueIDs("buf.build/foo/a")
+	require.NoError(t, err)
+	image, err := bufimage.BuildImage(
+		t.Context(),
+		slogtestext.NewLogger(t),
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(targetModuleSet),
+	)
+	require.NoError(t, err)
+	assert.Equal(t, wantPaths, testGetImageFilePathsInOrder(image))
+	assert.Equal(t, wantImportPaths, testGetImageImportPaths(image))
+
+	fullImage, err := bufimage.BuildImage(
+		t.Context(),
+		slogtestext.NewLogger(t),
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+	)
+	require.NoError(t, err)
+	pathsImage, err := bufimage.ImageWithOnlyPaths(fullImage, []string{"a.proto"}, nil)
+	require.NoError(t, err)
+	assert.Equal(t, wantPaths, testGetImageFilePathsInOrder(pathsImage))
+	assert.Equal(t, wantImportPaths, testGetImageImportPaths(pathsImage))
+
+	request, err := bufimage.ImageToCodeGeneratorRequest(image, "", nil, false, false)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"a.proto"}, request.GetFileToGenerate())
+	var protoFilePaths []string
+	for _, protoFile := range request.GetProtoFile() {
+		protoFilePaths = append(protoFilePaths, protoFile.GetName())
+	}
+	assert.Equal(t, wantPaths, protoFilePaths)
+}
+
 func TestMessageSetWireFormat1(t *testing.T) {
 	// An unused import builds the image's resolver, which strips legacy
 	// options, while the image is built.
@@ -487,6 +563,14 @@ func testGetImageFilePaths(image bufimage.Image) []string {
 		fileNames = append(fileNames, file.Path())
 	}
 	sort.Strings(fileNames)
+	return fileNames
+}
+
+func testGetImageFilePathsInOrder(image bufimage.Image) []string {
+	var fileNames []string
+	for _, file := range image.Files() {
+		fileNames = append(fileNames, file.Path())
+	}
 	return fileNames
 }
 
