@@ -1,0 +1,5 @@
+edition = "2024";
+
+package school.v1;
+
+import option "people/v1/people1.proto"; // file from transitive dep, not ok
