@@ -241,6 +241,35 @@ func TestComparePublicImports(t *testing.T) {
 	testCompare(t, "publicimports")
 }
 
+func TestOptionDependency(t *testing.T) {
+	// option_dependency must survive converting an image to and from its
+	// proto form, and to and from a CodeGeneratorRequest.
+	t.Parallel()
+	image, fileAnnotations := testBuild(t, false, filepath.Join("testdata", "optiondependency"), false)
+	require.Empty(t, fileAnnotations)
+	wantOptionDependency := []string{"opts.proto"}
+	require.Equal(t, wantOptionDependency, image.GetFile("a.proto").FileDescriptorProto().GetOptionDependency())
+
+	protoImage, err := bufimage.ImageToProtoImage(image)
+	require.NoError(t, err)
+	var protoImageFileOptionDependency []string
+	for _, protoImageFile := range protoImage.GetFile() {
+		if protoImageFile.GetName() == "a.proto" {
+			protoImageFileOptionDependency = protoImageFile.GetOptionDependency()
+		}
+	}
+	assert.Equal(t, wantOptionDependency, protoImageFileOptionDependency)
+	imageFromProto, err := bufimage.NewImageForProto(protoImage)
+	require.NoError(t, err)
+	assert.Equal(t, wantOptionDependency, imageFromProto.GetFile("a.proto").FileDescriptorProto().GetOptionDependency())
+
+	request, err := bufimage.ImageToCodeGeneratorRequest(image, "", nil, false, false)
+	require.NoError(t, err)
+	imageFromRequest, err := bufimage.NewImageForCodeGeneratorRequest(request)
+	require.NoError(t, err)
+	assert.Equal(t, wantOptionDependency, imageFromRequest.GetFile("a.proto").FileDescriptorProto().GetOptionDependency())
+}
+
 func TestMessageSetWireFormat1(t *testing.T) {
 	// An unused import builds the image's resolver, which strips legacy
 	// options, while the image is built.

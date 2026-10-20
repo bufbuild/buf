@@ -119,6 +119,7 @@ type ImageFile struct {
 	xxx_hidden_SourceCodeInfo   *descriptorpb.SourceCodeInfo            `protobuf:"bytes,9,opt,name=source_code_info,json=sourceCodeInfo"`
 	xxx_hidden_Syntax           *string                                 `protobuf:"bytes,12,opt,name=syntax"`
 	xxx_hidden_Edition          descriptorpb.Edition                    `protobuf:"varint,14,opt,name=edition,enum=google.protobuf.Edition"`
+	xxx_hidden_OptionDependency []string                                `protobuf:"bytes,15,rep,name=option_dependency,json=optionDependency"`
 	xxx_hidden_BufExtension     *ImageFileExtension                     `protobuf:"bytes,8042,opt,name=buf_extension,json=bufExtension"`
 	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
 	XXX_presence                [1]uint32
@@ -261,6 +262,13 @@ func (x *ImageFile) GetEdition() descriptorpb.Edition {
 	return descriptorpb.Edition(0)
 }
 
+func (x *ImageFile) GetOptionDependency() []string {
+	if x != nil {
+		return x.xxx_hidden_OptionDependency
+	}
+	return nil
+}
+
 func (x *ImageFile) GetBufExtension() *ImageFileExtension {
 	if x != nil {
 		return x.xxx_hidden_BufExtension
@@ -270,12 +278,12 @@ func (x *ImageFile) GetBufExtension() *ImageFileExtension {
 
 func (x *ImageFile) SetName(v string) {
 	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 14)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 15)
 }
 
 func (x *ImageFile) SetPackage(v string) {
 	x.xxx_hidden_Package = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 14)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 15)
 }
 
 func (x *ImageFile) SetDependency(v []string) {
@@ -316,12 +324,16 @@ func (x *ImageFile) SetSourceCodeInfo(v *descriptorpb.SourceCodeInfo) {
 
 func (x *ImageFile) SetSyntax(v string) {
 	x.xxx_hidden_Syntax = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 14)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 15)
 }
 
 func (x *ImageFile) SetEdition(v descriptorpb.Edition) {
 	x.xxx_hidden_Edition = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 14)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 15)
+}
+
+func (x *ImageFile) SetOptionDependency(v []string) {
+	x.xxx_hidden_OptionDependency = v
 }
 
 func (x *ImageFile) SetBufExtension(v *ImageFileExtension) {
@@ -425,6 +437,7 @@ type ImageFile_builder struct {
 	SourceCodeInfo   *descriptorpb.SourceCodeInfo
 	Syntax           *string
 	Edition          *descriptorpb.Edition
+	OptionDependency []string
 	// buf_extension contains buf-specific extensions to FileDescriptorProtos.
 	//
 	// The prefixed name and high tag value is used to all but guarantee there
@@ -439,11 +452,11 @@ func (b0 ImageFile_builder) Build() *ImageFile {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 14)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 15)
 		x.xxx_hidden_Name = b.Name
 	}
 	if b.Package != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 14)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 15)
 		x.xxx_hidden_Package = b.Package
 	}
 	x.xxx_hidden_Dependency = b.Dependency
@@ -456,13 +469,14 @@ func (b0 ImageFile_builder) Build() *ImageFile {
 	x.xxx_hidden_Options = b.Options
 	x.xxx_hidden_SourceCodeInfo = b.SourceCodeInfo
 	if b.Syntax != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 14)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 15)
 		x.xxx_hidden_Syntax = b.Syntax
 	}
 	if b.Edition != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 14)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 15)
 		x.xxx_hidden_Edition = *b.Edition
 	}
+	x.xxx_hidden_OptionDependency = b.OptionDependency
 	x.xxx_hidden_BufExtension = b.BufExtension
 	return m0
 }
@@ -913,7 +927,7 @@ const file_buf_alpha_image_v1_image_proto_rawDesc = "" +
 	"\n" +
 	"\x1ebuf/alpha/image/v1/image.proto\x12\x12buf.alpha.image.v1\x1a google/protobuf/descriptor.proto\":\n" +
 	"\x05Image\x121\n" +
-	"\x04file\x18\x01 \x03(\v2\x1d.buf.alpha.image.v1.ImageFileR\x04file\"\xdc\x05\n" +
+	"\x04file\x18\x01 \x03(\v2\x1d.buf.alpha.image.v1.ImageFileR\x04file\"\x89\x06\n" +
 	"\tImageFile\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\apackage\x18\x02 \x01(\tR\apackage\x12\x1e\n" +
@@ -930,7 +944,8 @@ const file_buf_alpha_image_v1_image_proto_rawDesc = "" +
 	"\aoptions\x18\b \x01(\v2\x1c.google.protobuf.FileOptionsR\aoptions\x12I\n" +
 	"\x10source_code_info\x18\t \x01(\v2\x1f.google.protobuf.SourceCodeInfoR\x0esourceCodeInfo\x12\x16\n" +
 	"\x06syntax\x18\f \x01(\tR\x06syntax\x122\n" +
-	"\aedition\x18\x0e \x01(\x0e2\x18.google.protobuf.EditionR\aedition\x12L\n" +
+	"\aedition\x18\x0e \x01(\x0e2\x18.google.protobuf.EditionR\aedition\x12+\n" +
+	"\x11option_dependency\x18\x0f \x03(\tR\x10optionDependency\x12L\n" +
 	"\rbuf_extension\x18\xea> \x01(\v2&.buf.alpha.image.v1.ImageFileExtensionR\fbufExtension\"\xd3\x01\n" +
 	"\x12ImageFileExtension\x12\x1b\n" +
 	"\tis_import\x18\x01 \x01(\bR\bisImport\x12?\n" +

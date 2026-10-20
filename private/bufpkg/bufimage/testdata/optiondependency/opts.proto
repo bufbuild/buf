@@ -1,0 +1,9 @@
+edition = "2024";
+
+package opts;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FileOptions {
+  string tag = 50000;
+}

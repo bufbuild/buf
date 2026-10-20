@@ -347,6 +347,7 @@ func fileDescriptorProtoToProtoImageFile(
 		Dependency:       fileDescriptorProto.GetDependency(),
 		PublicDependency: fileDescriptorProto.GetPublicDependency(),
 		WeakDependency:   fileDescriptorProto.GetWeakDependency(),
+		OptionDependency: fileDescriptorProto.GetOptionDependency(),
 		MessageType:      fileDescriptorProto.GetMessageType(),
 		EnumType:         fileDescriptorProto.GetEnumType(),
 		Service:          fileDescriptorProto.GetService(),
