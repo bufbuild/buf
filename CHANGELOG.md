@@ -8,6 +8,8 @@
   such as `'\x95'` in a protovalidate rule.
 - Add `BUF_DEBUG`, `BUF_LOG_FORMAT`, and `BUF_TIMEOUT` environment variables as defaults for the
   `--debug`, `--log-format`, and `--timeout` global flags. Flags take precedence when set.
+- Add support to images for option dependencies declared with the `import option` syntax in
+  edition 2024 and later.
 
 ## [v1.74.0] - 2026-10-14
 
