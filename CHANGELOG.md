@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Fix `buf build` dropping `message_set_wire_format`, `weak` field options, and MessageSet
+  extensions, and truncating MessageSet extension ranges, when a file has an unused import.
 - Fix LSP crash when hovering on a CEL string literal containing a byte that is not valid UTF-8,
   such as `'\x95'` in a protovalidate rule.
 - Add `BUF_DEBUG`, `BUF_LOG_FORMAT`, and `BUF_TIMEOUT` environment variables as defaults for the

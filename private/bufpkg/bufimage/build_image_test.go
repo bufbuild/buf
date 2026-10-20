@@ -241,6 +241,25 @@ func TestComparePublicImports(t *testing.T) {
 	testCompare(t, "publicimports")
 }
 
+func TestMessageSetWireFormat1(t *testing.T) {
+	// An unused import builds the image's resolver, which strips legacy
+	// options, while the image is built.
+	t.Parallel()
+	testMessageSetWireFormat(t, "messagesetwireformat1")
+}
+
+func TestMessageSetWireFormat2(t *testing.T) {
+	// Like TestMessageSetWireFormat1, but the unused import is in another file.
+	t.Parallel()
+	testMessageSetWireFormat(t, "messagesetwireformat2")
+}
+
+func TestMessageSetWireFormat3(t *testing.T) {
+	// No unused imports, so the resolver is not built during the image build.
+	t.Parallel()
+	testMessageSetWireFormat(t, "messagesetwireformat3")
+}
+
 func TestCustomOptionsError1(t *testing.T) {
 	t.Parallel()
 	testFileAnnotations(
@@ -381,6 +400,26 @@ func testCompare(t *testing.T, relDirPath string) {
 	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 0)
 	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, false, false, dirPath, filePaths)
 	prototesting.AssertFileDescriptorSetsEqual(t, fileDescriptorSet, actualProtocFileDescriptorSet)
+}
+
+func testMessageSetWireFormat(t *testing.T, relDirPath string) {
+	// testCompare would not catch this, as building its resolvers strips
+	// protoc's descriptors too.
+	image, fileAnnotations := testBuild(t, false, filepath.Join("testdata", relDirPath), false)
+	require.Empty(t, fileAnnotations)
+	imageFile := image.GetFile("a.proto")
+	require.NotNil(t, imageFile)
+	fileDescriptor := imageFile.FileDescriptorProto()
+	messages := fileDescriptor.GetMessageType()
+	require.Len(t, messages, 2)
+	require.True(t, messages[0].GetOptions().GetMessageSetWireFormat())
+	extensionRanges := messages[0].GetExtensionRange()
+	require.Len(t, extensionRanges, 1)
+	require.Equal(t, int32(4), extensionRanges[0].GetStart())
+	require.Equal(t, int32(2147483647), extensionRanges[0].GetEnd())
+	extensions := fileDescriptor.GetExtension()
+	require.Len(t, extensions, 1)
+	require.Equal(t, int32(536870912), extensions[0].GetNumber())
 }
 
 func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufimage.Image {
