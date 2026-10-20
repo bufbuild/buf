@@ -17,6 +17,7 @@ package bufimage
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
@@ -143,7 +144,8 @@ func orderImageFilesRec(
 		return outputImageFiles
 	}
 	alreadySeen[path] = struct{}{}
-	for _, dependency := range inputImageFile.FileDescriptorProto().GetDependency() {
+	fileDescriptorProto := inputImageFile.FileDescriptorProto()
+	for _, dependency := range slices.Concat(fileDescriptorProto.GetDependency(), fileDescriptorProto.GetOptionDependency()) {
 		dependencyImageFile, ok := pathToImageFile[dependency]
 		if ok {
 			outputImageFiles = orderImageFilesRec(

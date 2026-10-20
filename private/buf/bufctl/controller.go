@@ -1341,7 +1341,8 @@ func (c *controller) warnUnconfiguredTransitiveImports(
 		if imageFile.IsImport() {
 			continue
 		}
-		for _, importPath := range imageFile.FileDescriptorProto().GetDependency() {
+		fileDescriptorProto := imageFile.FileDescriptorProto()
+		for _, importPath := range slices.Concat(fileDescriptorProto.GetDependency(), fileDescriptorProto.GetOptionDependency()) {
 			moduleFullNameString, ok := pathToFullNameString[importPath]
 			if !ok {
 				// The import was from a local unnamed Module in the Workspace.

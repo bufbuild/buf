@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 
 	descriptorv1 "buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go/buf/descriptor/v1"
 	"buf.build/go/standard/xlog/xslog"
@@ -378,7 +379,8 @@ func getImageFilesForPath(
 	seen[path] = struct{}{}
 
 	var err error
-	for _, dependency := range fileDescriptor.Dependency {
+	// Option dependencies follow regular dependencies, matching protoc.
+	for _, dependency := range slices.Concat(fileDescriptor.Dependency, fileDescriptor.OptionDependency) {
 		imageFiles, err = getImageFilesForPath(
 			dependency,
 			pathToDescriptor,

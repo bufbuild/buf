@@ -15,7 +15,6 @@
 package bufimageutil
 
 import (
-	"errors"
 	"fmt"
 	"slices"
 	"sort"
@@ -259,7 +258,7 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 		return nil, false, err
 	}
 	isDirty = isDirty || changed
-	newDependencies, newPublicDependencies, newWeakDependencies, changed, err := b.remapDependencies(sourcePathsRemap, sourcePath, fileDescriptor)
+	newDependencies, newPublicDependencies, newWeakDependencies, newOptionDependencies, changed, err := b.remapDependencies(sourcePathsRemap, sourcePath, fileDescriptor)
 	if err != nil {
 		return nil, false, err
 	}
@@ -277,6 +276,7 @@ func (b *sourcePathsBuilder) remapFileDescriptor(
 	newFileDescriptor.Dependency = newDependencies
 	newFileDescriptor.PublicDependency = newPublicDependencies
 	newFileDescriptor.WeakDependency = newWeakDependencies
+	newFileDescriptor.OptionDependency = newOptionDependencies
 	return newFileDescriptor, true, nil
 }
 
@@ -284,19 +284,16 @@ func (b *sourcePathsBuilder) remapDependencies(
 	sourcePathsRemap *sourcePathsRemapTrie,
 	sourcePath protoreflect.SourcePath,
 	fileDescriptor *descriptorpb.FileDescriptorProto,
-) ([]string, []int32, []int32, bool, error) {
+) ([]string, []int32, []int32, []string, bool, error) {
 	dependencies := fileDescriptor.GetDependency()
 	publicDependencies := fileDescriptor.GetPublicDependency()
 	weakDependencies := fileDescriptor.GetWeakDependency()
-	// TODO: Add support for option dependencies when buf CLI supports edition 2024.
-	if len(fileDescriptor.GetOptionDependency()) > 0 {
-		return nil, nil, nil, false, errors.New("edition 2024 not yet supported: cannot filter a file descriptor with option dependencies")
-	}
+	optionDependencies := fileDescriptor.GetOptionDependency()
 
 	// Check if the imports need to be remapped.
 	importsRequired := b.closure.imports[fileDescriptor.GetName()]
 	importsCount := len(importsRequired)
-	for _, importPath := range dependencies {
+	for _, importPath := range slices.Concat(dependencies, optionDependencies) {
 		if _, ok := importsRequired[importPath]; ok {
 			importsCount--
 		} else {
@@ -306,7 +303,7 @@ func (b *sourcePathsBuilder) remapDependencies(
 	}
 	if importsCount == 0 && len(publicDependencies) == 0 {
 		// Imports match and no public dependencies.
-		return dependencies, publicDependencies, weakDependencies, false, nil
+		return dependencies, publicDependencies, weakDependencies, optionDependencies, false, nil
 	}
 
 	var newDependencies []string
@@ -331,6 +328,24 @@ func (b *sourcePathsBuilder) remapDependencies(
 		} else {
 			sourcePathsRemap.markDeleted(path)
 			dependencyChanges[indexFrom] = -1
+		}
+	}
+	var newOptionDependencies []string
+	if b.options.mutateInPlace {
+		newOptionDependencies = optionDependencies[:0]
+	}
+	optionDependencyPath := append(sourcePath, fileOptionDependencyTag)
+	for i, importPath := range optionDependencies {
+		indexFrom := int32(i)
+		path := append(optionDependencyPath, indexFrom)
+		if _, ok := importsRequired[importPath]; ok {
+			if indexTo := int32(len(newOptionDependencies)); indexTo != indexFrom {
+				sourcePathsRemap.markMoved(path, indexTo)
+			}
+			newOptionDependencies = append(newOptionDependencies, importPath)
+			delete(importsRequired, importPath)
+		} else {
+			sourcePathsRemap.markDeleted(path)
 		}
 	}
 	// Add imports picked up via a public import. The filtered files do not use public imports.
@@ -367,7 +382,7 @@ func (b *sourcePathsBuilder) remapDependencies(
 			}
 		}
 	}
-	return newDependencies, nil, newWeakDependencies, true, nil
+	return newDependencies, nil, newWeakDependencies, newOptionDependencies, true, nil
 }
 
 func (b *sourcePathsBuilder) remapDescriptor(
