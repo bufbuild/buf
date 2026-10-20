@@ -33,12 +33,17 @@ if [ "${CACHED_PROTOC_VERSION}" != "$PROTOC_VERSION" ]; then
   # Windows curl uses schannel, which fails if the certificate revocation
   # server is unreachable. Treat revocation checks as best effort.
   curl -sSL --retry 3 --ssl-revoke-best-effort -o "${DOWNLOAD_CACHE}/protoc.zip" "${PROTOC_URL}"
+  rm -rf "${DOWNLOAD_CACHE}/protoc"
   7z x -y -o"${DOWNLOAD_CACHE}/protoc" "${DOWNLOAD_CACHE}/protoc.zip"
-  mkdir -p "${DOWNLOAD_CACHE}/protoc/lib"
-  cp -a "${DOWNLOAD_CACHE}/protoc/include" "${DOWNLOAD_CACHE}/protoc/lib/include"
 else
   echo "Using cached protoc"
 fi
+
+# Tests read the Well-Known Types from lib/include. Refresh the copy on every
+# run so a restored cache can't pair protoc with older includes.
+rm -rf "${DOWNLOAD_CACHE}/protoc/lib/include"
+mkdir -p "${DOWNLOAD_CACHE}/protoc/lib"
+cp -a "${DOWNLOAD_CACHE}/protoc/include" "${DOWNLOAD_CACHE}/protoc/lib/include"
 
 PATH="${DOWNLOAD_CACHE}/protoc/bin:${PATH}"
 

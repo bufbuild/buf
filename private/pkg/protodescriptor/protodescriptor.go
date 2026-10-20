@@ -42,6 +42,7 @@ type FileDescriptor interface {
 	GetDependency() []string
 	GetPublicDependency() []int32
 	GetWeakDependency() []int32
+	GetOptionDependency() []string
 	GetMessageType() []*descriptorpb.DescriptorProto
 	GetEnumType() []*descriptorpb.EnumDescriptorProto
 	GetService() []*descriptorpb.ServiceDescriptorProto
@@ -68,6 +69,7 @@ func FileDescriptorProtoForFileDescriptor(fileDescriptor FileDescriptor) *descri
 		Dependency:       fileDescriptor.GetDependency(),
 		PublicDependency: fileDescriptor.GetPublicDependency(),
 		WeakDependency:   fileDescriptor.GetWeakDependency(),
+		OptionDependency: fileDescriptor.GetOptionDependency(),
 		MessageType:      fileDescriptor.GetMessageType(),
 		EnumType:         fileDescriptor.GetEnumType(),
 		Service:          fileDescriptor.GetService(),
@@ -135,6 +137,9 @@ func ValidateFileDescriptor(fileDescriptor FileDescriptor) error {
 		return err
 	}
 	if err := ValidateProtoPaths("FileDescriptor.Dependency", fileDescriptor.GetDependency()); err != nil {
+		return err
+	}
+	if err := ValidateProtoPaths("FileDescriptor.OptionDependency", fileDescriptor.GetOptionDependency()); err != nil {
 		return err
 	}
 	if fileDescriptor.GetSyntax() == "editions" {

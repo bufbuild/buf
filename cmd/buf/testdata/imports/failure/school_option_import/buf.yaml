@@ -1,0 +1,6 @@
+version: v2
+modules:
+  - name: bufbuild.test/bufbot/school
+    path: .
+deps:
+  - bufbuild.test/bufbot/students
