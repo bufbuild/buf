@@ -14,6 +14,8 @@
 - Update built-in Well-Known Types to Protobuf v36.2.
 - Update managed mode to skip `cc_enable_arenas` for edition 2026 files, where the option was
   removed.
+- Fix `buf convert` and `buf curl` ignoring the `(pb.enumvalue.json).string` option for enum
+  value JSON names.
 
 ## [v1.74.0] - 2026-10-14
 
