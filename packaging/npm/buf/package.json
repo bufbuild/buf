@@ -28,13 +28,13 @@
     "typescript": "4.9.5"
   },
   "optionalDependencies": {
-    "@bufbuild/buf-darwin-arm64": "1.74.0",
-    "@bufbuild/buf-darwin-x64": "1.74.0",
-    "@bufbuild/buf-linux-aarch64": "1.74.0",
-    "@bufbuild/buf-linux-armv7": "1.74.0",
-    "@bufbuild/buf-linux-x64": "1.74.0",
-    "@bufbuild/buf-win32-arm64": "1.74.0",
-    "@bufbuild/buf-win32-x64": "1.74.0"
+    "@bufbuild/buf-darwin-arm64": "1.75.0",
+    "@bufbuild/buf-darwin-x64": "1.75.0",
+    "@bufbuild/buf-linux-aarch64": "1.75.0",
+    "@bufbuild/buf-linux-armv7": "1.75.0",
+    "@bufbuild/buf-linux-x64": "1.75.0",
+    "@bufbuild/buf-win32-arm64": "1.75.0",
+    "@bufbuild/buf-win32-x64": "1.75.0"
   },
-  "version": "1.74.0"
+  "version": "1.75.0"
 }
