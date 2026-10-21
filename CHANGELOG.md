@@ -14,6 +14,8 @@
 - Update built-in Well-Known Types to Protobuf v36.2.
 - Update managed mode to skip `cc_enable_arenas` for edition 2026 files, where the option was
   removed.
+- Add `ENUM_VALUE_SAME_JSON_NAME` breaking rule to the `CSR`, `FILE`, `PACKAGE`, and `WIRE_JSON`
+  categories, which checks that enum values keep the same JSON name.
 
 ## [v1.74.0] - 2026-10-14
 

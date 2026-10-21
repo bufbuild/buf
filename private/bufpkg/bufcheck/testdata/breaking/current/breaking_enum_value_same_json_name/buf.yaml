@@ -1,0 +1,4 @@
+version: v2
+breaking:
+  use:
+    - ENUM_VALUE_SAME_JSON_NAME

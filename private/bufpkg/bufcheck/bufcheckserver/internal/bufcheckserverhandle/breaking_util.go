@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/protocompile/protoutil"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/jsonenumvalueoptionspb"
 )
 
 const (
@@ -271,6 +272,23 @@ func getCustomFeatureLocation(field bufprotosource.Field, extension protoreflect
 		return nil
 	}
 	return field.OptionLocation(featureField, int32(extension.Number()), int32(feature.Number()))
+}
+
+// enumValueJSONName returns the name protojson uses for the enum value, and
+// whether it is set by the (pb.enumvalue.json).string option.
+func enumValueJSONName(value protoreflect.EnumValueDescriptor) (string, bool) {
+	options := value.Options().ProtoReflect()
+	extension := jsonenumvalueoptionspb.E_Json.TypeDescriptor()
+	if !options.IsValid() || !options.Has(extension) {
+		return string(value.Name()), false
+	}
+	// The option may be a dynamic message, so read it by reflection.
+	jsonOptions := options.Get(extension).Message()
+	field := jsonOptions.Descriptor().Fields().ByName("string")
+	if field == nil || !jsonOptions.Has(field) {
+		return string(value.Name()), false
+	}
+	return jsonOptions.Get(field).String(), true
 }
 
 func fieldDescription(field bufprotosource.Field) string {
