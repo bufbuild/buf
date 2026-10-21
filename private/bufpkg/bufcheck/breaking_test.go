@@ -118,6 +118,20 @@ func TestRunBreakingEnumValueNoDeleteUnlessNumberReserved(t *testing.T) {
 	)
 }
 
+func TestRunBreakingEnumValueSameJSONName(t *testing.T) {
+	t.Parallel()
+	// Changing, removing, or adding a custom JSON name is breaking. Renaming
+	// a value that keeps its custom JSON name is not, and a plain rename is
+	// left to ENUM_VALUE_SAME_NAME.
+	testBreaking(
+		t,
+		"breaking_enum_value_same_json_name",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 10, 20, 10, 55, "ENUM_VALUE_SAME_JSON_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 18, "ENUM_VALUE_SAME_JSON_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 21, 12, 58, "ENUM_VALUE_SAME_JSON_NAME"),
+	)
+}
+
 func TestRunBreakingEnumValueSameName(t *testing.T) {
 	t.Parallel()
 	testBreaking(
