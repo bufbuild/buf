@@ -426,3 +426,25 @@ func TestConvertWKTImport(t *testing.T) {
 func testNewCommand(use string) *appcmd.Command {
 	return NewCommand("convert", appext.NewBuilder("convert"))
 }
+
+func TestConvertEnumJSONName(t *testing.T) {
+	t.Parallel()
+	// Read the schema from source and from a prebuilt image.
+	for _, schema := range []string{"testdata/convert/enum_json_name", "testdata/convert/enum_json_name.binpb"} {
+		for _, input := range []string{`{"color":"red"}`, `{"color":"COLOR_RED"}`} {
+			appcmdtesting.Run(
+				t,
+				testNewCommand,
+				appcmdtesting.WithExpectedExitCode(0),
+				appcmdtesting.WithExpectedStdout(`{"color":"red"}`),
+				appcmdtesting.WithStdin(strings.NewReader(input)),
+				appcmdtesting.WithArgs(
+					schema,
+					"--type=a.Foo",
+					"--from=-#format=json",
+					"--to=-#format=json",
+				),
+			)
+		}
+	}
+}

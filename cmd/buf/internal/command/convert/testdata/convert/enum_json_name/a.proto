@@ -1,0 +1,14 @@
+edition = "2026";
+
+package a;
+
+import option "google/protobuf/json_enumvalue_options.proto";
+
+enum Color {
+  COLOR_UNSPECIFIED = 0;
+  COLOR_RED = 1 [(pb.enumvalue.json).string = "red"];
+}
+
+message Foo {
+  Color color = 1;
+}

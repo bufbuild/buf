@@ -33,6 +33,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
+	"google.golang.org/protobuf/types/jsonenumvalueoptionspb"
 )
 
 const (
@@ -335,6 +336,13 @@ func (r *reflectionResolver) fileByNameLocked(name string) ([]*descriptorpb.File
 	return descriptorsInResponse(resp)
 }
 
+// descriptorOptionsResolver resolves the descriptor options that protojson
+// reads, so they are parsed rather than kept as unknown fields.
+var descriptorOptionsResolver = protoencoding.NewLazyResolver(
+	protodesc.ToFileDescriptorProto(descriptorpb.File_google_protobuf_descriptor_proto),
+	protodesc.ToFileDescriptorProto(jsonenumvalueoptionspb.File_google_protobuf_json_enumvalue_options_proto),
+)
+
 func descriptorsInResponse(resp *reflectionv1.ServerReflectionResponse) ([]*descriptorpb.FileDescriptorProto, error) {
 	switch resp.WhichMessageResponse() {
 	case reflectionv1.ServerReflectionResponse_ErrorResponse_case:
@@ -348,7 +356,7 @@ func descriptorsInResponse(resp *reflectionv1.ServerReflectionResponse) ([]*desc
 		files := make([]*descriptorpb.FileDescriptorProto, len(resp.GetFileDescriptorResponse().GetFileDescriptorProto()))
 		for i, data := range resp.GetFileDescriptorResponse().GetFileDescriptorProto() {
 			var file descriptorpb.FileDescriptorProto
-			if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, &file); err != nil {
+			if err := protoencoding.NewWireUnmarshaler(descriptorOptionsResolver).Unmarshal(data, &file); err != nil {
 				return nil, err
 			}
 			files[i] = &file
