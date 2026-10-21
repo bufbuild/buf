@@ -77,6 +77,13 @@ var (
 		Procedure:  "/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
 		StreamType: connect.StreamTypeBidi,
 	}
+
+	// descriptorOptionsResolver resolves the descriptor options that protojson
+	// reads, so they are parsed rather than kept as unknown fields.
+	descriptorOptionsResolver = protoencoding.NewLazyResolver(
+		protodesc.ToFileDescriptorProto(descriptorpb.File_google_protobuf_descriptor_proto),
+		protodesc.ToFileDescriptorProto(jsonenumvalueoptionspb.File_google_protobuf_json_enumvalue_options_proto),
+	)
 )
 
 // ReflectProtocol is a reflection protocol.
@@ -335,13 +342,6 @@ func (r *reflectionResolver) fileByNameLocked(name string) ([]*descriptorpb.File
 	}
 	return descriptorsInResponse(resp)
 }
-
-// descriptorOptionsResolver resolves the descriptor options that protojson
-// reads, so they are parsed rather than kept as unknown fields.
-var descriptorOptionsResolver = protoencoding.NewLazyResolver(
-	protodesc.ToFileDescriptorProto(descriptorpb.File_google_protobuf_descriptor_proto),
-	protodesc.ToFileDescriptorProto(jsonenumvalueoptionspb.File_google_protobuf_json_enumvalue_options_proto),
-)
 
 func descriptorsInResponse(resp *reflectionv1.ServerReflectionResponse) ([]*descriptorpb.FileDescriptorProto, error) {
 	switch resp.WhichMessageResponse() {
