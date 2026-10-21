@@ -16,7 +16,7 @@ require (
 	buf.build/go/spdx v0.3.0
 	buf.build/go/standard v0.1.1-0.20260325175353-2b287e071df5
 	cel.dev/cel-go v0.32.0
-	connectrpc.com/connect/v2 v2.0.1
+	connectrpc.com/connect/v2 v2.0.2
 	connectrpc.com/grpcreflect/v2 v2.0.0
 	connectrpc.com/otelconnect v0.11.0
 	github.com/bufbuild/protocompile v0.14.2-0.20261020145055-56248e843b50
