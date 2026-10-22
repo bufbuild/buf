@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.75.0] - 2026-10-21
 
 - Fix `buf build` dropping `message_set_wire_format`, `weak` field options, and MessageSet
@@ -1632,6 +1636,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.75.0...HEAD
 [v1.75.0]: https://github.com/bufbuild/buf/compare/v1.74.0...v1.75.0
 [v1.74.0]: https://github.com/bufbuild/buf/compare/v1.73.0...v1.74.0
 [v1.73.0]: https://github.com/bufbuild/buf/compare/v1.72.0...v1.73.0
