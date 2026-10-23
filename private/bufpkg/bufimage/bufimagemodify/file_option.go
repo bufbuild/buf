@@ -403,6 +403,10 @@ func modifyCcEnableArenas(
 	config bufconfig.GenerateManagedConfig,
 	options ...ModifyOption,
 ) error {
+	// The option was removed in edition 2026, where arenas are always enabled.
+	if imageFile.FileDescriptorProto().GetEdition() >= descriptorpb.Edition_EDITION_2026 {
+		return nil
+	}
 	modifyOptions := newModifyOptions()
 	for _, option := range options {
 		option(modifyOptions)

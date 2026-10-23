@@ -22,6 +22,7 @@ const (
 	fileDependencyTag         = 3
 	filePublicDependencyTag   = 10
 	fileWeakDependencyTag     = 11
+	fileOptionDependencyTag   = 15
 	fileMessagesTag           = 4
 	fileEnumsTag              = 5
 	fileServicesTag           = 6

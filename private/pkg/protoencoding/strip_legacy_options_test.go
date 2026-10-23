@@ -85,6 +85,38 @@ func TestStripLegacyOptions(t *testing.T) {
 	})
 }
 
+func TestNewResolverDoesNotModifyFiles(t *testing.T) {
+	t.Parallel()
+
+	// Building a resolver strips legacy options, but must not replace the
+	// descriptors in the caller's slice.
+	assertFilesNotModified := func(t *testing.T, files []*descriptorpb.FileDescriptorProto, noLegacy, legacy *descriptorpb.FileDescriptorProto) {
+		require.Same(t, noLegacy, files[0])
+		require.Same(t, legacy, files[1])
+		require.Empty(t, cmp.Diff(getFileWithNoLegacyOptions(), noLegacy, protocmp.Transform()))
+		require.Empty(t, cmp.Diff(getFileWithLegacyOptions(), legacy, protocmp.Transform()))
+	}
+	t.Run("eager", func(t *testing.T) {
+		t.Parallel()
+		noLegacy := getFileWithNoLegacyOptions()
+		legacy := getFileWithLegacyOptions()
+		files := []*descriptorpb.FileDescriptorProto{noLegacy, legacy}
+		_, err := NewResolver(files...)
+		require.NoError(t, err)
+		assertFilesNotModified(t, files, noLegacy, legacy)
+	})
+	t.Run("lazy", func(t *testing.T) {
+		t.Parallel()
+		noLegacy := getFileWithNoLegacyOptions()
+		legacy := getFileWithLegacyOptions()
+		files := []*descriptorpb.FileDescriptorProto{noLegacy, legacy}
+		resolver := NewLazyResolver(files...)
+		_, err := resolver.FindMessageByName("foo.bar.Fizz")
+		require.NoError(t, err)
+		assertFilesNotModified(t, files, noLegacy, legacy)
+	})
+}
+
 func getFileWithNoLegacyOptions() *descriptorpb.FileDescriptorProto {
 	return &descriptorpb.FileDescriptorProto{
 		Name:    new("no_legacy.proto"),

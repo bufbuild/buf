@@ -205,6 +205,13 @@ func TestHover(t *testing.T) {
 			character:        16, // On "ExportedMessage"
 			expectedContains: "ExportedMessage is visible outside this file",
 		},
+		{
+			name:             "hover_on_export_keyword_edition2026",
+			protoFile:        "testdata/hover/edition2026.proto",
+			line:             5, // Line with "export message ExportedMessage {"
+			character:        1, // On "export"
+			expectedContains: "but require `export` starting in 2026",
+		},
 	}
 
 	for _, tt := range tests {

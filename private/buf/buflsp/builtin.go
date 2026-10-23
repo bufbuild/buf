@@ -113,11 +113,13 @@ var builtinDocs = map[string][]string{
 	"export": {
 		"Marks a definition as exported, making it visible outside the current file.",
 		"",
-		"Available in edition 2024 and later.",
+		"Available in edition 2024 and later. Top-level definitions export by default ",
+		"in 2024, but require `export` starting in 2026.",
 	},
 	"local": {
 		"Marks a definition as local, restricting its visibility to the current file.",
 		"",
-		"Available in edition 2024 and later.",
+		"Available in edition 2024 and later. Top-level definitions export by default ",
+		"in 2024, but require `export` starting in 2026.",
 	},
 }

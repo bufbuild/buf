@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 
 	descriptorv1 "buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go/buf/descriptor/v1"
 	"buf.build/go/standard/xlog/xslog"
@@ -304,14 +305,18 @@ func resolverForFDS(fds *descriptorpb.FileDescriptorSet) (*descriptorpb.FileDesc
 	// only when the file graph cannot resolve a descriptor, so ReparseExtensions
 	// can recognise them without altering the graph. The fallback is only used
 	// for reparsing: the returned resolver must resolve only the image's files.
-	fileResolver := protoencoding.NewLazyResolver(normalizedFDS.File...)
-	reparseResolver := protoencoding.CombineResolvers(fileResolver, bufDescriptorResolver)
+	reparseResolver := protoencoding.CombineResolvers(
+		protoencoding.NewLazyResolver(normalizedFDS.File...),
+		bufDescriptorResolver,
+	)
 	for _, fileDescriptor := range normalizedFDS.File {
 		if err := protoencoding.ReparseExtensions(reparseResolver, fileDescriptor.ProtoReflect()); err != nil {
 			return nil, nil, err
 		}
 	}
-	return normalizedFDS, fileResolver, nil
+	// Descriptors copy their options when built, so build the returned
+	// resolver after reparsing to keep the reparsed extensions.
+	return normalizedFDS, protoencoding.NewLazyResolver(normalizedFDS.File...), nil
 }
 
 // fileDescriptorSetToImage is a helper function that converts a [descriptorpb.FileDescriptorSet]
@@ -378,7 +383,8 @@ func getImageFilesForPath(
 	seen[path] = struct{}{}
 
 	var err error
-	for _, dependency := range fileDescriptor.Dependency {
+	// Option dependencies follow regular dependencies, matching protoc.
+	for _, dependency := range slices.Concat(fileDescriptor.Dependency, fileDescriptor.OptionDependency) {
 		imageFiles, err = getImageFilesForPath(
 			dependency,
 			pathToDescriptor,

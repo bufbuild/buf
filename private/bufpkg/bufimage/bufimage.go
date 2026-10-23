@@ -363,6 +363,9 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 		if err := reparseImageProto(protoImage, resolver, newImageOptions.computeUnusedImports); err != nil {
 			return nil, err
 		}
+		// Descriptors copy their options when built, so a resolver built during
+		// the reparse would keep extensions as unknown fields.
+		resolver = protoencoding.NewLazyResolver(protoImage.GetFile()...)
 	}
 	if err := validateProtoImage(protoImage); err != nil {
 		return nil, err

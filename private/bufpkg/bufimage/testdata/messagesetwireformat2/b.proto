@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+package b;
+
+// Unused.
+import "a.proto";

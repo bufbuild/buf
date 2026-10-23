@@ -2,10 +2,25 @@
 
 ## [Unreleased]
 
-- Fix LSP crash when hovering on a CEL string literal containing a byte that is not valid UTF-8,
-  such as `'\x95'` in a protovalidate rule.
 - Fix LSP hover and highlighting of CEL expressions whose proto strings contain escape sequences,
   which placed the ranges of string literals, and of tokens after a `\u` or `\U` escape, wrongly.
+
+## [v1.75.0] - 2026-10-21
+
+- Fix `buf build` dropping `message_set_wire_format`, `weak` field options, and MessageSet
+  extensions, and truncating MessageSet extension ranges, when a file has an unused import.
+- Fix LSP crash when hovering on a CEL string literal containing a byte that is not valid UTF-8,
+  such as `'\x95'` in a protovalidate rule.
+- Add `BUF_DEBUG`, `BUF_LOG_FORMAT`, and `BUF_TIMEOUT` environment variables as defaults for the
+  `--debug`, `--log-format`, and `--timeout` global flags. Flags take precedence when set.
+- Add support to images for option dependencies declared with the `import option` syntax in
+  edition 2024 and later.
+- Add support for Protobuf edition 2026.
+- Update built-in Well-Known Types to Protobuf v36.2.
+- Update managed mode to skip `cc_enable_arenas` for edition 2026 files, where the option was
+  removed.
+- Fix `buf convert` and `buf curl` ignoring the `(pb.enumvalue.json).string` option for enum
+  value JSON names.
 
 ## [v1.74.0] - 2026-10-14
 
@@ -1622,7 +1637,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.74.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.75.0...HEAD
+[v1.75.0]: https://github.com/bufbuild/buf/compare/v1.74.0...v1.75.0
 [v1.74.0]: https://github.com/bufbuild/buf/compare/v1.73.0...v1.74.0
 [v1.73.0]: https://github.com/bufbuild/buf/compare/v1.72.0...v1.73.0
 [v1.72.0]: https://github.com/bufbuild/buf/compare/v1.71.0...v1.72.0

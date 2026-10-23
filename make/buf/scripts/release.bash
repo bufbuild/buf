@@ -56,7 +56,7 @@ if [ -z "${INSIDE_DOCKER}" ]; then
       fail "RELEASE_MINISIGN_PRIVATE_KEY and RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD must be set."
     fi
   fi
-  docker build -f "${RELEASE_DOCKER_FILE}" -t "${RELEASE_DOCKER_IMAGE}" .
+  docker build --pull -f "${RELEASE_DOCKER_FILE}" -t "${RELEASE_DOCKER_IMAGE}" .
   docker run --volume \
     "${DIR}:/app" \
     --workdir "/app" \
