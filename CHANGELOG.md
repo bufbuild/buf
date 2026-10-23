@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix LSP hover and highlighting of CEL expressions whose proto strings contain escape sequences,
+  which placed the ranges of string literals, and of tokens after a `\u` or `\U` escape, wrongly.
 
 ## [v1.75.0] - 2026-10-21
 
