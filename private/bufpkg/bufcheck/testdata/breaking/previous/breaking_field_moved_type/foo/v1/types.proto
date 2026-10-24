@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package foo.v1;
+
+import "google/protobuf/struct.proto";
+
+message A {
+  uint64 x = 1;
+  A next = 2;
+  repeated B children = 3;
+  map<string, B> lookup = 4;
+  State state = 5;
+  oneof choice {
+    string text = 6;
+    B child = 7;
+  }
+  optional int32 optional_value = 8;
+
+  message B {
+    A parent = 1;
+  }
+
+  enum State {
+    STATE_UNSPECIFIED = 0;
+    STATE_SET = 1;
+  }
+}
+
+message Changed {
+  Changed next = 1;
+  uint64 x = 2;
+}
+
+message Reserved {
+  reserved 2;
+  uint64 x = 1;
+}
+
+message NullContainer {
+  google.protobuf.NullValue value = 1;
+}

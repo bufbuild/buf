@@ -760,8 +760,7 @@ func handleBreakingFieldWireCompatibleType(
 	case descriptorpb.FieldDescriptorProto_TYPE_GROUP,
 		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
 		if previousField.TypeName() != field.TypeName() {
-			addEnumGroupMessageFieldChangedTypeName(responseWriter, previousField, field)
-			return nil
+			return checkMessageWireCompatibleForField(responseWriter, previousField, previousDescriptor, field, descriptor, false)
 		}
 	}
 	return nil
@@ -814,9 +813,26 @@ func handleBreakingFieldWireJSONCompatibleType(
 		}
 	case protoreflect.GroupKind, protoreflect.MessageKind:
 		if previousField.TypeName() != field.TypeName() {
-			addEnumGroupMessageFieldChangedTypeName(responseWriter, previousField, field)
-			return nil
+			return checkMessageWireCompatibleForField(responseWriter, previousField, previousDescriptor, field, descriptor, true)
 		}
+	}
+	return nil
+}
+
+func checkMessageWireCompatibleForField(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	previousField bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+	wireJSON bool,
+) error {
+	identical, err := messageTypesEqual(previousDescriptor.Message(), descriptor.Message(), wireJSON)
+	if err != nil {
+		return err
+	}
+	if !identical {
+		addEnumGroupMessageFieldChangedTypeName(responseWriter, previousField, field)
 	}
 	return nil
 }
