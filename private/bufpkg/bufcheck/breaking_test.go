@@ -786,6 +786,26 @@ func TestRunBreakingFieldWireCompatibleType(t *testing.T) {
 	)
 }
 
+func TestRunBreakingFieldMovedType(t *testing.T) {
+	t.Parallel()
+	// https://github.com/bufbuild/buf/issues/2318
+	testBreaking(
+		t,
+		"breaking_field_moved_type",
+		bufanalysistesting.NewFileAnnotation(t, "main.proto", 8, 3, 8, 11, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "main.proto", 9, 3, 9, 17, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "main.proto", 9, 3, 9, 17, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "main.proto", 9, 3, 9, 17, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "main.proto", 10, 12, 10, 20, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "main.proto", 11, 3, 11, 24, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "main.proto", 12, 3, 12, 18, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "main.proto", 12, 3, 12, 18, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "main.proto", 12, 3, 12, 18, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "main.proto", 13, 3, 13, 23, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "main.proto", 13, 3, 13, 23, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+	)
+}
+
 func TestRunBreakingFieldWireJSONCompatibleCardinality(t *testing.T) {
 	t.Parallel()
 	testBreaking(
