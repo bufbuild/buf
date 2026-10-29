@@ -292,6 +292,11 @@ func (b *sourcePathsBuilder) remapDependencies(
 
 	// Check if the imports need to be remapped.
 	importsRequired := b.closure.imports[fileDescriptor.GetName()]
+	for importPath := range importsRequired {
+		if _, ok := b.closure.imports[importPath]; !ok {
+			delete(importsRequired, importPath)
+		}
+	}
 	importsCount := len(importsRequired)
 	for _, importPath := range slices.Concat(dependencies, optionDependencies) {
 		if _, ok := importsRequired[importPath]; ok {
@@ -626,7 +631,15 @@ func (b *sourcePathsBuilder) remapField(
 		descriptorpb.FieldDescriptorProto_TYPE_GROUP:
 		typeName := protoreflect.FullName(strings.TrimPrefix(field.GetTypeName(), "."))
 		typeInfo := b.imageIndex.ByName[typeName]
-		if !b.closure.hasType(typeInfo.element, b.options) {
+		if b.options.excludeReferencedTypes {
+			// The field's type was not walked, so it is not in the closure.
+			// Remove the field only if the type was excluded.
+			if b.closure.elements[typeInfo.element] == inclusionModeExcluded {
+				return nil, true, nil
+			}
+		} else if !b.closure.hasType(typeInfo.element, b.options) {
+			// Remove the field if its type is not in the closure, whether
+			// because it was excluded or because nothing included needs it.
 			return nil, true, nil
 		}
 	case descriptorpb.FieldDescriptorProto_TYPE_DOUBLE,

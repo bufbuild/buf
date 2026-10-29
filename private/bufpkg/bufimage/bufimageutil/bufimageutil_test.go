@@ -676,6 +676,236 @@ extend google.protobuf.MessageOptions { string tag = 50000; }
 	testOptionDependencies(t, nil, WithIncludeTypes("a.Foo"), WithExcludeTypes("opts.tag"))
 }
 
+func TestExcludeReferencedTypes(t *testing.T) {
+	t.Parallel()
+	buildImage := func(t *testing.T, moduleData ...bufmoduletesting.ModuleData) bufimage.Image {
+		t.Helper()
+		moduleSet, err := bufmoduletesting.NewModuleSet(moduleData...)
+		require.NoError(t, err)
+		image, err := bufimage.BuildImage(
+			t.Context(),
+			slogtestext.NewLogger(t),
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+			bufimage.WithExcludeSourceCodeInfo(),
+		)
+		require.NoError(t, err)
+		return image
+	}
+	filePaths := func(image bufimage.Image) []string {
+		return xslices.Map(image.Files(), bufimage.ImageFile.Path)
+	}
+	messageNames := func(fileDescriptorProto *descriptorpb.FileDescriptorProto) []string {
+		return xslices.Map(fileDescriptorProto.GetMessageType(), (*descriptorpb.DescriptorProto).GetName)
+	}
+	extensionNames := func(fileDescriptorProto *descriptorpb.FileDescriptorProto) []string {
+		return xslices.Map(fileDescriptorProto.GetExtension(), (*descriptorpb.FieldDescriptorProto).GetName)
+	}
+	nestedMessageNames := func(descriptorProto *descriptorpb.DescriptorProto) []string {
+		return xslices.Map(descriptorProto.GetNestedType(), (*descriptorpb.DescriptorProto).GetName)
+	}
+
+	t.Run("requires_include_types", func(t *testing.T) {
+		t.Parallel()
+		image := buildImage(t, bufmoduletesting.ModuleData{
+			PathToData: map[string][]byte{
+				"a.proto": []byte(`syntax = "proto3"; package a; message A {}`),
+			},
+		})
+		_, err := FilterImage(image, WithExcludeReferencedTypes())
+		require.ErrorIs(t, err, ErrImageFilterIncludeTypesRequired)
+		_, err = FilterImage(image, WithExcludeTypes("a.A"), WithExcludeReferencedTypes())
+		require.ErrorIs(t, err, ErrImageFilterIncludeTypesRequired)
+	})
+	t.Run("field_type_in_other_file", func(t *testing.T) {
+		t.Parallel()
+		image := buildImage(t, bufmoduletesting.ModuleData{
+			PathToData: map[string][]byte{
+				"a.proto": []byte(`syntax = "proto3"; package a; import "b.proto"; message A { b.B b = 1; }`),
+				"b.proto": []byte(`syntax = "proto3"; package b; message B {}`),
+			},
+		})
+		filteredImage, err := FilterImage(image, WithIncludeTypes("a.A"), WithExcludeReferencedTypes())
+		require.NoError(t, err)
+		assert.Equal(t, []string{"a.proto"}, filePaths(filteredImage))
+		aProto := filteredImage.GetFile("a.proto").FileDescriptorProto()
+		assert.Empty(t, aProto.GetDependency())
+		assert.Len(t, aProto.GetMessageType(), 1)
+		assert.Equal(t, ".b.B", aProto.GetMessageType()[0].GetField()[0].GetTypeName())
+	})
+	t.Run("field_type_in_same_file", func(t *testing.T) {
+		t.Parallel()
+		image := buildImage(t, bufmoduletesting.ModuleData{
+			PathToData: map[string][]byte{
+				"a.proto": []byte(`syntax = "proto3"; package a; message A { B b = 1; } message B {}`),
+			},
+		})
+		filteredImage, err := FilterImage(image, WithIncludeTypes("a.A"), WithExcludeReferencedTypes())
+		require.NoError(t, err)
+		aProto := filteredImage.GetFile("a.proto").FileDescriptorProto()
+		assert.Equal(t, []string{"A"}, messageNames(aProto))
+		assert.Len(t, aProto.GetMessageType(), 1)
+		assert.Equal(t, ".a.B", aProto.GetMessageType()[0].GetField()[0].GetTypeName())
+	})
+	t.Run("field_type_excluded", func(t *testing.T) {
+		t.Parallel()
+		image := buildImage(t, bufmoduletesting.ModuleData{
+			PathToData: map[string][]byte{
+				"a.proto": []byte(`syntax = "proto3"; package a; message A { B b = 1; C c = 2; } message B {} message C {}`),
+			},
+		})
+		filteredImage, err := FilterImage(image, WithIncludeTypes("a.A"), WithExcludeTypes("a.B"), WithExcludeReferencedTypes())
+		require.NoError(t, err)
+		aProto := filteredImage.GetFile("a.proto").FileDescriptorProto()
+		assert.Equal(t, []string{"A"}, messageNames(aProto))
+		// The field typed with the excluded B is removed; the field typed with the unwalked C stays.
+		fields := aProto.GetMessageType()[0].GetField()
+		require.Len(t, fields, 1)
+		assert.Equal(t, "c", fields[0].GetName())
+		assert.Equal(t, ".a.C", fields[0].GetTypeName())
+	})
+	t.Run("referenced_type_also_named", func(t *testing.T) {
+		t.Parallel()
+		image := buildImage(t, bufmoduletesting.ModuleData{
+			PathToData: map[string][]byte{
+				"a.proto": []byte(`syntax = "proto3"; package a; import "b.proto"; message A { b.B b = 1; }`),
+				"b.proto": []byte(`syntax = "proto3"; package b; message B {}`),
+			},
+		})
+		filteredImage, err := FilterImage(image, WithIncludeTypes("a.A", "b.B"), WithExcludeReferencedTypes())
+		require.NoError(t, err)
+		assert.Equal(t, []string{"b.proto", "a.proto"}, filePaths(filteredImage))
+		assert.Equal(t, []string{"b.proto"}, filteredImage.GetFile("a.proto").FileDescriptorProto().GetDependency())
+	})
+	t.Run("unused_import_dropped", func(t *testing.T) {
+		t.Parallel()
+		image := buildImage(t, bufmoduletesting.ModuleData{
+			PathToData: map[string][]byte{
+				"a.proto": []byte(`syntax = "proto3"; package a; import "b.proto"; message A {} message X { b.B b = 1; }`),
+				"b.proto": []byte(`syntax = "proto3"; package b; message B {}`),
+			},
+		})
+		filteredImage, err := FilterImage(image, WithIncludeTypes("a.A", "b.B"), WithExcludeReferencedTypes())
+		require.NoError(t, err)
+		assert.Equal(t, []string{"b.proto", "a.proto"}, filePaths(filteredImage))
+		// Only X used b.proto, and X is gone.
+		assert.Empty(t, filteredImage.GetFile("a.proto").FileDescriptorProto().GetDependency())
+	})
+	t.Run("include_option_dependency", func(t *testing.T) {
+		t.Parallel()
+		image := buildImage(t, bufmoduletesting.ModuleData{
+			PathToData: map[string][]byte{
+				"a.proto": []byte(`edition = "2024";
+package a;
+import option "opts.proto";
+message A {
+  option (opts.tag) = "a";
+}`),
+				"opts.proto": []byte(`edition = "2024";
+package opts;
+import "google/protobuf/descriptor.proto";
+extend google.protobuf.MessageOptions {
+  string tag = 50000;
+}`),
+			},
+		})
+		filteredImage, err := FilterImage(image, WithIncludeTypes("a.A", "opts.tag"), WithExcludeReferencedTypes())
+		require.NoError(t, err)
+		assert.Equal(t, []string{"opts.proto", "a.proto"}, filePaths(filteredImage))
+		assert.Equal(t, []string{"opts.proto"}, filteredImage.GetFile("a.proto").FileDescriptorProto().GetOptionDependency())
+		assert.Empty(t, filteredImage.GetFile("opts.proto").FileDescriptorProto().GetDependency())
+	})
+	t.Run("nested_message_siblings", func(t *testing.T) {
+		t.Parallel()
+		image := buildImage(t, bufmoduletesting.ModuleData{
+			PathToData: map[string][]byte{
+				"a.proto": []byte(`syntax = "proto3";
+package pkg;
+message Level1 {
+  message Level2A {
+    message Level3A1 {}
+	message Level3A2 {}
+  }
+  message Level2B {
+    message Level3B1 {}
+	message Level3B2 {}
+  }
+}`),
+			},
+		})
+		filteredImage, err := FilterImage(image, WithIncludeTypes("pkg.Level1.Level2B.Level3B2"), WithExcludeReferencedTypes())
+		require.NoError(t, err)
+		aProto := filteredImage.GetFile("a.proto").FileDescriptorProto()
+		assert.Equal(t, []string{"Level1"}, messageNames(aProto))
+		level1 := aProto.GetMessageType()[0]
+		assert.Equal(t, []string{"Level2B"}, nestedMessageNames(level1))
+		assert.Equal(t, []string{"Level3B2"}, nestedMessageNames(level1.GetNestedType()[0]))
+	})
+	t.Run("method_types", func(t *testing.T) {
+		t.Parallel()
+		image := buildImage(t, bufmoduletesting.ModuleData{
+			PathToData: map[string][]byte{
+				"a.proto": []byte(`syntax = "proto3"; package a; message A {} service S { rpc Do(A) returns (A); }`),
+			},
+		})
+		filteredImage, err := FilterImage(image, WithIncludeTypes("a.S"), WithExcludeReferencedTypes())
+		require.NoError(t, err)
+		aProto := filteredImage.GetFile("a.proto").FileDescriptorProto()
+		assert.Empty(t, messageNames(aProto))
+		require.Len(t, aProto.GetService(), 1)
+		require.Len(t, aProto.GetService()[0].GetMethod(), 1)
+		assert.Equal(t, ".a.A", aProto.GetService()[0].GetMethod()[0].GetInputType())
+	})
+	t.Run("custom_option_definition", func(t *testing.T) {
+		t.Parallel()
+		// See private/bufpkg/bufimage/bufimageutil/testdata/deps/a.proto.
+		_, image, err := getImage(t.Context(), slogtestext.NewLogger(t), "testdata/deps", bufimage.WithExcludeSourceCodeInfo())
+		require.NoError(t, err)
+		filteredImage, err := FilterImage(image, WithIncludeTypes("a.A"), WithExcludeReferencedTypes())
+		require.NoError(t, err)
+		assert.Equal(t, []string{"a.proto"}, filePaths(filteredImage))
+		aProto := filteredImage.GetFile("a.proto").FileDescriptorProto()
+		assert.Empty(t, aProto.GetDependency())
+		assert.Len(t, aProto.GetMessageType(), 1)
+		// The option value stays on the message even though b.proto, which defines the option, is gone.
+		assert.NotNil(t, aProto.GetMessageType()[0].GetOptions())
+	})
+	t.Run("extension_extendee_and_type", func(t *testing.T) {
+		t.Parallel()
+		_, image, err := getImage(t.Context(), slogtestext.NewLogger(t), "testdata/deps", bufimage.WithExcludeSourceCodeInfo())
+		require.NoError(t, err)
+		// b.message_c is an extension field, see private/bufpkg/bufimage/bufimageutil/testdata/deps/b.proto.
+		filteredImage, err := FilterImage(image, WithIncludeTypes("b.message_c"), WithExcludeReferencedTypes())
+		require.NoError(t, err)
+		assert.Equal(t, []string{"b.proto"}, filePaths(filteredImage))
+		bProto := filteredImage.GetFile("b.proto").FileDescriptorProto()
+		assert.Empty(t, bProto.GetDependency())
+		assert.Empty(t, messageNames(bProto))
+		assert.Equal(t, []string{"message_c"}, extensionNames(bProto))
+		assert.Equal(t, ".google.protobuf.MessageOptions", bProto.GetExtension()[0].GetExtendee())
+		assert.Equal(t, ".c.C", bProto.GetExtension()[0].GetTypeName())
+	})
+	t.Run("known_extensions", func(t *testing.T) {
+		t.Parallel()
+		_, image, err := getImage(t.Context(), slogtestext.NewLogger(t), "testdata/extensions", bufimage.WithExcludeSourceCodeInfo())
+		require.NoError(t, err)
+		// Known extensions of pkg.Foo are still collected; the types those extensions reference are not.
+		// See private/bufpkg/bufimage/bufimageutil/testdata/extensions/a.proto.
+		filteredImage, err := FilterImage(image, WithIncludeTypes("pkg.Foo"), WithExcludeReferencedTypes())
+		require.NoError(t, err)
+		assert.Equal(t, []string{"a.proto", "b.proto"}, filePaths(filteredImage))
+		bProto := filteredImage.GetFile("b.proto").FileDescriptorProto()
+		assert.Equal(t, []string{"a.proto"}, bProto.GetDependency())
+		assert.Equal(t, []string{"Embedded"}, messageNames(bProto))
+		assert.Equal(t, []string{"from_other_file"}, extensionNames(bProto))
+		assert.Equal(t, ".other.Referenced", bProto.GetExtension()[0].GetTypeName())
+
+		filteredImage, err = FilterImage(image, WithIncludeTypes("pkg.Foo"), WithExcludeReferencedTypes(), WithExcludeKnownExtensions())
+		require.NoError(t, err)
+		assert.Equal(t, []string{"a.proto"}, filePaths(filteredImage))
+		assert.Empty(t, extensionNames(filteredImage.GetFile("a.proto").FileDescriptorProto()))
+	})
+}
+
 func TestEmptyFiles(t *testing.T) {
 	t.Parallel()
 	t.Run("include_empty_file", func(t *testing.T) {
