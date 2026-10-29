@@ -51,6 +51,10 @@ var (
 	// named for inclusion but it (or all of the types it expands to) has also
 	// been excluded, so the include and exclude filters contradict each other.
 	ErrImageFilterTypeExcluded = errors.New("type excluded by filter")
+
+	// ErrImageFilterIncludeTypesRequired is returned from FilterImage when
+	// WithExcludeReferencedTypes is set without WithIncludeTypes.
+	ErrImageFilterIncludeTypesRequired = errors.New("WithExcludeReferencedTypes requires WithIncludeTypes")
 )
 
 // FreeMessageRangeStrings gets the free MessageRange strings for the target files.
@@ -161,6 +165,27 @@ func WithExcludeTypes(typeNames ...string) ImageFilterOption {
 	}
 }
 
+// WithExcludeReferencedTypes returns an option that will cause an image filtered
+// via FilterImage to include only the types passed in [WithIncludeTypes]. It is
+// an error to set this option without [WithIncludeTypes].
+//
+// If a type from [WithIncludeTypes] is nested in one or more enclosing messages,
+// those messages are still included, but they become shells of the included type,
+// without other fields or nested enums of nested messages that aren't a parent
+// or ancestor of the included types.
+//
+// Known extensions are not excluded unless [WithExcludeKnownExtensions] is passed.
+//
+// Descriptors are not additionally modified to account for the missing types,
+// which means the filtered image may not be self-contained. A file keeps an
+// import only if its kept content refers to the imported file and that file
+// remains in the image.
+func WithExcludeReferencedTypes() ImageFilterOption {
+	return func(opts *imageFilterOptions) {
+		opts.excludeReferencedTypes = true
+	}
+}
+
 // WithMutateInPlace returns an option for FilterImage that specifies
 // that the filtered image should be mutated in place. This option is useful when the
 // unfiltered image is no longer needed and the caller wants to avoid the overhead of
@@ -257,6 +282,9 @@ func FilterImage(image bufimage.Image, options ...ImageFilterOption) (bufimage.I
 	filterOptions := newImageFilterOptions()
 	for _, option := range options {
 		option(filterOptions)
+	}
+	if filterOptions.excludeReferencedTypes && len(filterOptions.includeTypes) == 0 {
+		return nil, ErrImageFilterIncludeTypesRequired
 	}
 	// Check for defaults that would result in no filtering.
 	if len(filterOptions.excludeTypes) == 0 &&
@@ -535,10 +563,13 @@ func appendPackageFiles(files []bufimage.ImageFile, pkg *packageInfo) []bufimage
 	return files
 }
 
-func (t *transitiveClosure) addImport(fromPath, toPath string) {
-	if _, ok := t.imports[toPath]; !ok {
-		t.imports[toPath] = nil // mark as seen
+func (t *transitiveClosure) addFile(path string) {
+	if _, ok := t.imports[path]; !ok {
+		t.imports[path] = nil
 	}
+}
+
+func (t *transitiveClosure) addImport(fromPath, toPath string) {
 	if fromPath == "" {
 		return // the base included type, not imported
 	}
@@ -561,10 +592,15 @@ func (t *transitiveClosure) addElement(
 	opts *imageFilterOptions,
 ) error {
 	descriptorInfo := imageIndex.ByDescriptor[descriptor]
+	if opts.excludeReferencedTypes && referrerFile != "" {
+		t.addImport(referrerFile, descriptorInfo.file.Path())
+		return nil
+	}
 	if existingMode, ok := t.elements[descriptor]; ok && existingMode != inclusionModeEnclosing {
 		if existingMode == inclusionModeExcluded {
 			return nil // already excluded
 		}
+		t.addFile(descriptorInfo.file.Path())
 		t.addImport(referrerFile, descriptorInfo.file.Path())
 		if existingMode == inclusionModeImplicit && !impliedByCustomOption {
 			// upgrade from implied to explicitly part of closure
@@ -724,6 +760,7 @@ func (t *transitiveClosure) addElement(
 		return errorUnsupportedFilterType(descriptor, descriptorInfo.fullName)
 	}
 
+	t.addFile(descriptorInfo.file.Path())
 	// Add the file to the imports for this file.
 	t.addImport(referrerFile, descriptorInfo.file.Path())
 
@@ -1232,6 +1269,7 @@ type imageFilterOptions struct {
 	includeCustomOptions   bool
 	includeKnownExtensions bool
 	allowImportedTypes     bool
+	excludeReferencedTypes bool
 	mutateInPlace          bool
 	includeTypes           map[string]struct{}
 	excludeTypes           map[string]struct{}
