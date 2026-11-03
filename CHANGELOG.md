@@ -4,6 +4,8 @@
 
 - Fix LSP hover and highlighting of CEL expressions whose proto strings contain escape sequences,
   which placed the ranges of string literals, and of tokens after a `\u` or `\U` escape, wrongly.
+- Add `buf registry webhook` commands to create, list, update, delete, and ping BSR webhooks
+  scoped to an instance, organization, or module.
 
 ## [v1.75.0] - 2026-10-21
 

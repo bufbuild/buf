@@ -66,6 +66,12 @@ func NewPolicyNameAlreadyExistsError(name string) error {
 	return fmt.Errorf("a policy named %q already exists", name)
 }
 
+// NewWebhookNameAlreadyExistsError informs the user that a webhook
+// with that name already exists within the scope.
+func NewWebhookNameAlreadyExistsError(name string, scope string) error {
+	return fmt.Errorf("a webhook named %q already exists in %q", name, scope)
+}
+
 // NewOrganizationNotFoundError informs the user that an organization with
 // that name does not exist.
 func NewOrganizationNotFoundError(name string) error {
@@ -110,6 +116,12 @@ func NewPluginNotFoundError(name string) error {
 // that name does not exist.
 func NewPolicyNotFoundError(name string) error {
 	return fmt.Errorf("a plugin named %q does not exist", name)
+}
+
+// NewWebhookNotFoundError informs the user that a webhook with
+// that name or id does not exist within the scope.
+func NewWebhookNotFoundError(nameOrID string, scope string) error {
+	return fmt.Errorf("a webhook %q does not exist in %q", nameOrID, scope)
 }
 
 // NewInvalidRemoteError informs the user that the given remote is invalid.
