@@ -2559,6 +2559,44 @@ func TestBuildOverlappingPaths(t *testing.T) {
 	)
 }
 
+func TestBuildTypeWithExcludeImports(t *testing.T) {
+	t.Parallel()
+	testBuildLsFilesFormatImport(
+		t,
+		0,
+		[]string{"a.proto"},
+		filepath.Join("testdata", "imports", "success", "wkt"),
+		"--type",
+		"A",
+		"--exclude-imports",
+	)
+}
+
+func TestBuildPathWithExcludeImportsFromImage(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	imagePath := filepath.Join(tempDir, "image.binpb")
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "imports", "success", "sibling"),
+		"-o",
+		imagePath,
+	)
+	testBuildLsFilesFormatImport(
+		t,
+		0,
+		[]string{"a.proto"},
+		imagePath,
+		"--path",
+		"a.proto",
+		"--exclude-imports",
+	)
+}
+
 func TestExportProto(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()

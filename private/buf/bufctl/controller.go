@@ -1435,9 +1435,6 @@ func filterImage(
 ) (bufimage.Image, error) {
 	newImage := image
 	var err error
-	if functionOptions.imageExcludeImports {
-		newImage = bufimage.ImageWithoutImports(newImage)
-	}
 	includeTypes := functionOptions.imageIncludeTypes
 	excludeTypes := functionOptions.imageExcludeTypes
 	if len(includeTypes) > 0 || len(excludeTypes) > 0 {
@@ -1473,6 +1470,11 @@ func filterImage(
 				return nil, err
 			}
 		}
+	}
+	// Exclude imports last because the type filter (--type) and the path filter (--path) above can
+	// keep or re-add files as imports.
+	if functionOptions.imageExcludeImports {
+		newImage = bufimage.ImageWithoutImports(newImage)
 	}
 	return newImage, nil
 }
