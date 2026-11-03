@@ -29,6 +29,7 @@ import (
 	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	pluginv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/plugin/v1beta1"
 	policyv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/policy/v1beta1"
+	webhookv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/webhook/v1"
 	"buf.build/go/standard/xstrings"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -140,6 +141,8 @@ func PrintPage(
 			currentEntitiesName = "modules"
 		case outputOrganization:
 			currentEntitiesName = "organizations"
+		case outputWebhook:
+			currentEntitiesName = "webhooks"
 		default:
 			return syserror.Newf("unknown implementation of Entity: %T", entity)
 		}
@@ -299,6 +302,30 @@ func NewUserEntity(user *ownerv1.User, remote string) Entity {
 		CreateTime: user.GetCreateTime().AsTime(),
 		Type:       user.GetType().String(),
 		State:      user.GetState().String(),
+	}
+}
+
+// NewWebhookEntity returns a new webhook entity to print.
+//
+// The webhook only references its scope by id, so the caller provides the
+// scope in the form "registry", "registry/organization", or
+// "registry/organization/module".
+func NewWebhookEntity(webhook *webhookv1.Webhook, scope string) Entity {
+	eventTypes := make([]string, 0, len(webhook.GetEventTypes()))
+	for _, eventType := range webhook.GetEventTypes() {
+		eventTypes = append(eventTypes, eventType.String())
+	}
+	return outputWebhook{
+		ID:                   webhook.GetId(),
+		Name:                 webhook.GetName(),
+		Scope:                scope,
+		URL:                  webhook.GetUrl(),
+		EventTypes:           eventTypes,
+		EventTypesText:       strings.Join(eventTypes, ","),
+		HasSigningSecret:     webhook.GetHasSigningSecret(),
+		HasSigningSecretText: strconv.FormatBool(webhook.GetHasSigningSecret()),
+		CreateTime:           webhook.GetCreateTime().AsTime(),
+		UpdateTime:           webhook.GetUpdateTime().AsTime(),
 	}
 }
 
@@ -560,4 +587,21 @@ type outputUser struct {
 
 func (o outputUser) fullName() string {
 	return o.FullName
+}
+
+type outputWebhook struct {
+	ID                   string    `json:"id,omitempty"`
+	Name                 string    `json:"name,omitempty" bufprint:"Name"`
+	Scope                string    `json:"scope,omitempty" bufprint:"Scope"`
+	URL                  string    `json:"url,omitempty" bufprint:"URL"`
+	EventTypes           []string  `json:"event_types,omitempty"`
+	EventTypesText       string    `json:"-" bufprint:"Event Types"`
+	HasSigningSecret     bool      `json:"has_signing_secret"`
+	HasSigningSecretText string    `json:"-" bufprint:"Signing Secret"`
+	CreateTime           time.Time `json:"create_time" bufprint:"Create Time"`
+	UpdateTime           time.Time `json:"update_time" bufprint:"Update Time"`
+}
+
+func (w outputWebhook) fullName() string {
+	return w.Name
 }
