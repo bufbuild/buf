@@ -37,12 +37,14 @@ const (
 func NewCommand(
 	name string,
 	builder appext.SubCommandBuilder,
+	deprecated string,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name,
-		Short: "List repository webhooks",
-		Args:  appcmd.ExactArgs(0),
+		Use:        name,
+		Short:      "List repository webhooks",
+		Args:       appcmd.ExactArgs(0),
+		Deprecated: deprecated,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)

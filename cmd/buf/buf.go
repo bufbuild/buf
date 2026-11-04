@@ -416,12 +416,14 @@ func newRootCommand(name string) *appcmd.Command {
 						Short: "Manage assets on the Buf Schema Registry",
 						SubCommands: []*appcmd.Command{
 							{
-								Use:   "webhook",
-								Short: "Manage webhooks for a repository on the Buf Schema Registry",
+								Use:        "webhook",
+								Short:      "Manage webhooks for a repository on the Buf Schema Registry",
+								Deprecated: `all commands are deprecated and have moved to the "buf registry webhook" subcommands.`,
+								Hidden:     true,
 								SubCommands: []*appcmd.Command{
-									webhookcreate.NewCommand("create", builder),
-									webhookdelete.NewCommand("delete", builder),
-									webhooklist.NewCommand("list", builder),
+									webhookcreate.NewCommand("create", builder, deprecatedMessage("buf registry webhook create", "buf beta registry webhook create")),
+									webhookdelete.NewCommand("delete", builder, deprecatedMessage("buf registry webhook delete", "buf beta registry webhook delete")),
+									webhooklist.NewCommand("list", builder, deprecatedMessage("buf registry webhook list", "buf beta registry webhook list")),
 								},
 							},
 							{
