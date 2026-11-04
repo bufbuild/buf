@@ -598,7 +598,16 @@ func (r *runner) run(
 	container appext.Container,
 	bufGenYAMLFile bufconfig.BufGenYAMLFile,
 ) error {
-	images, err := getInputImages(
+	images, err := r.getImages(ctx, bufGenYAMLFile)
+	if err != nil {
+		return err
+	}
+	return r.generate(ctx, container, bufGenYAMLFile, images)
+}
+
+// getImages builds the images of the inputs for the given template.
+func (r *runner) getImages(ctx context.Context, bufGenYAMLFile bufconfig.BufGenYAMLFile) ([]bufimage.Image, error) {
+	return getInputImages(
 		ctx,
 		r.logger,
 		r.controller,
@@ -610,9 +619,15 @@ func (r *runner) run(
 		append(r.flags.Types, r.flags.TypesDeprecated...),
 		r.flags.ExcludeTypes,
 	)
-	if err != nil {
-		return err
-	}
+}
+
+// generate runs the plugins of the given template on the images.
+func (r *runner) generate(
+	ctx context.Context,
+	container appext.Container,
+	bufGenYAMLFile bufconfig.BufGenYAMLFile,
+	images []bufimage.Image,
+) error {
 	generateOptions := []bufgen.GenerateOption{
 		bufgen.GenerateWithBaseOutDirPath(r.flags.BaseOutDirPath),
 	}

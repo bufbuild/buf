@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/filewatch"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/osext"
@@ -84,6 +85,10 @@ type watchRunner struct {
 	watcher   filewatch.Watcher
 	// configFilePaths are the absolute paths of the template and config files given as flags.
 	configFilePaths []string
+	// inputFilePaths are the sorted absolute paths of the local files of the
+	// images last built, which are valid if hasInputFilePaths is true.
+	inputFilePaths    []string
+	hasInputFilePaths bool
 }
 
 func (w *watchRunner) run(ctx context.Context) error {
@@ -92,7 +97,7 @@ func (w *watchRunner) run(ctx context.Context) error {
 			return err
 		}
 	}
-	bufGenYAMLFile, inputDirPaths, err := w.updateWatchesForTemplate(ctx)
+	bufGenYAMLFile, inputDirPaths, err := w.readTemplate(ctx)
 	if err != nil {
 		return err
 	}
@@ -124,7 +129,7 @@ func (w *watchRunner) run(ctx context.Context) error {
 }
 
 func (w *watchRunner) runOnce(ctx context.Context) {
-	bufGenYAMLFile, inputDirPaths, err := w.updateWatchesForTemplate(ctx)
+	bufGenYAMLFile, inputDirPaths, err := w.readTemplate(ctx)
 	if ctx.Err() != nil {
 		return
 	}
@@ -136,18 +141,10 @@ func (w *watchRunner) runOnce(ctx context.Context) {
 	w.generate(ctx, bufGenYAMLFile)
 }
 
-// updateWatchesForTemplate reads the template, updates the excluded output
-// directories, and returns the template and the directories of the local inputs.
-func (w *watchRunner) updateWatchesForTemplate(ctx context.Context) (bufconfig.BufGenYAMLFile, []string, error) {
+// readTemplate reads the template, and returns it and the directories of the local inputs.
+func (w *watchRunner) readTemplate(ctx context.Context) (bufconfig.BufGenYAMLFile, []string, error) {
 	bufGenYAMLFile, err := readBufGenYAMLFile(ctx, w.runner.storageosProvider, w.runner.flags.Template)
 	if err != nil {
-		return nil, nil, err
-	}
-	pluginOutPaths, err := getPluginOutPaths(bufGenYAMLFile, w.runner.flags.BaseOutDirPath)
-	if err != nil {
-		return nil, nil, err
-	}
-	if err := w.watcher.SetExcludeDirPaths(pluginOutPaths...); err != nil {
 		return nil, nil, err
 	}
 	inputDirPaths, err := getLocalInputDirPaths(ctx, w.container.Logger(), w.runner.input, bufGenYAMLFile)
@@ -158,7 +155,28 @@ func (w *watchRunner) updateWatchesForTemplate(ctx context.Context) (bufconfig.B
 }
 
 func (w *watchRunner) generate(ctx context.Context, bufGenYAMLFile bufconfig.BufGenYAMLFile) {
-	err := w.runner.run(ctx, w.container, bufGenYAMLFile)
+	images, imagesErr := w.runner.getImages(ctx, bufGenYAMLFile)
+	if ctx.Err() != nil {
+		return
+	}
+	if imagesErr == nil {
+		inputFilePaths, err := getLocalFilePaths(images)
+		if err != nil {
+			logGenerationError(ctx, w.container.Logger(), err)
+			return
+		}
+		w.inputFilePaths = inputFilePaths
+		w.hasInputFilePaths = true
+	}
+	if err := w.updateExcludeDirPaths(bufGenYAMLFile); err != nil {
+		logGenerationError(ctx, w.container.Logger(), err)
+		return
+	}
+	if imagesErr != nil {
+		logGenerationError(ctx, w.container.Logger(), imagesErr)
+		return
+	}
+	err := w.runner.generate(ctx, w.container, bufGenYAMLFile, images)
 	if ctx.Err() != nil {
 		return
 	}
@@ -167,6 +185,20 @@ func (w *watchRunner) generate(ctx context.Context, bufGenYAMLFile bufconfig.Buf
 		return
 	}
 	w.container.Logger().InfoContext(ctx, "generation succeeded")
+}
+
+// updateExcludeDirPaths excludes the output directories of the plugins from
+// watching, except those that contain input files. Nothing is excluded until
+// the images have been built, so that a fix to an input file is not missed.
+func (w *watchRunner) updateExcludeDirPaths(bufGenYAMLFile bufconfig.BufGenYAMLFile) error {
+	if !w.hasInputFilePaths {
+		return w.watcher.SetExcludeDirPaths()
+	}
+	pluginOutPaths, err := getPluginOutPaths(bufGenYAMLFile, w.runner.flags.BaseOutDirPath)
+	if err != nil {
+		return err
+	}
+	return w.watcher.SetExcludeDirPaths(getExcludeDirPaths(pluginOutPaths, w.inputFilePaths)...)
 }
 
 // addInputDirPaths watches the modules declared by the workspaces of the
@@ -400,6 +432,46 @@ func getPluginOutPaths(bufGenYAMLFile bufconfig.BufGenYAMLFile, baseOutDirPath s
 		outPaths = append(outPaths, absOut)
 	}
 	return outPaths, nil
+}
+
+// getLocalFilePaths returns the sorted absolute paths of the files of the
+// images that are on disk.
+func getLocalFilePaths(images []bufimage.Image) ([]string, error) {
+	var filePaths []string
+	for _, image := range images {
+		for _, imageFile := range image.Files() {
+			localPath := imageFile.LocalPath()
+			if localPath == "" {
+				continue
+			}
+			filePath, err := filepath.Abs(localPath)
+			if err != nil {
+				return nil, err
+			}
+			filePaths = append(filePaths, filePath)
+		}
+	}
+	slices.Sort(filePaths)
+	return slices.Compact(filePaths), nil
+}
+
+// getExcludeDirPaths returns the output directories that contain none of the
+// sorted input files.
+func getExcludeDirPaths(pluginOutPaths []string, inputFilePaths []string) []string {
+	var excludeDirPaths []string
+	for _, pluginOutPath := range pluginOutPaths {
+		prefix := pluginOutPath + string(filepath.Separator)
+		if strings.HasSuffix(pluginOutPath, string(filepath.Separator)) {
+			prefix = pluginOutPath
+		}
+		// The files with the prefix, if any, start at its insertion point.
+		index, _ := slices.BinarySearch(inputFilePaths, prefix)
+		if index < len(inputFilePaths) && strings.HasPrefix(inputFilePaths[index], prefix) {
+			continue
+		}
+		excludeDirPaths = append(excludeDirPaths, pluginOutPath)
+	}
+	return excludeDirPaths
 }
 
 func logChanges(ctx context.Context, logger *slog.Logger, paths []string) {

@@ -31,6 +31,10 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
+// maxQueuedFsnotifyEvents is the maximum number of events from fsnotifyWatcher
+// that are queued for handling before further events are dropped.
+const maxQueuedFsnotifyEvents = 4096
+
 // watcher keeps the set of directories watched in fsnotifyWatcher in sync with
 // the directories and files it was asked to watch.
 //
@@ -48,6 +52,17 @@ type watcher struct {
 	closeOnce sync.Once
 	closeErr  error
 	waitGroup sync.WaitGroup
+
+	// queueLock guards queue and queueOverflowed. Events from fsnotifyWatcher
+	// are queued by read, so that it keeps receiving while run handles them, as
+	// fsnotifyWatcher.Add and Remove may wait for its events to be received.
+	queueLock       sync.Mutex
+	queue           []fsnotifyItem
+	queueOverflowed bool
+	// queueChan is signaled when an item is queued.
+	queueChan chan struct{}
+	// readDoneChan is closed by read once fsnotifyWatcher is closed.
+	readDoneChan chan struct{}
 
 	// lock is held while reconciling, and is never held while sending on
 	// eventChan or errChan, as the receiver may be calling a method.
@@ -74,10 +89,13 @@ func newWatcher(logger *slog.Logger) (*watcher, error) {
 		eventChan:       make(chan Event, 64),
 		errChan:         make(chan error),
 		closeChan:       make(chan struct{}),
+		queueChan:       make(chan struct{}, 1),
+		readDoneChan:    make(chan struct{}),
 		rootDirPaths:    make(map[string]struct{}),
 		filePaths:       make(map[string]struct{}),
 		watchedDirPaths: make(map[string]struct{}),
 	}
+	watcher.waitGroup.Go(watcher.read)
 	watcher.waitGroup.Go(watcher.run)
 	return watcher, nil
 }
@@ -164,10 +182,9 @@ func (w *watcher) Close() error {
 	return w.closeErr
 }
 
-// run handles events from the underlying fsnotify.Watcher until it is closed.
-func (w *watcher) run() {
-	defer close(w.eventChan)
-	defer close(w.errChan)
+// read queues the events and errors from fsnotifyWatcher until it is closed.
+func (w *watcher) read() {
+	defer close(w.readDoneChan)
 	fsnotifyEventChan := w.fsnotifyWatcher.Events
 	fsnotifyErrChan := w.fsnotifyWatcher.Errors
 	for fsnotifyEventChan != nil || fsnotifyErrChan != nil {
@@ -177,17 +194,66 @@ func (w *watcher) run() {
 				fsnotifyEventChan = nil
 				continue
 			}
-			w.handleFsnotifyEvent(fsnotifyEvent)
+			w.enqueue(fsnotifyItem{event: fsnotifyEvent})
 		case err, ok := <-fsnotifyErrChan:
 			if !ok {
 				fsnotifyErrChan = nil
 				continue
 			}
-			w.sendError(err)
+			w.enqueue(fsnotifyItem{err: err})
 		case <-w.closeChan:
 			return
 		}
 	}
+}
+
+// run handles the queued events and errors until the watcher is closed.
+func (w *watcher) run() {
+	defer close(w.eventChan)
+	defer close(w.errChan)
+	for {
+		select {
+		case <-w.queueChan:
+		case <-w.readDoneChan:
+			return
+		case <-w.closeChan:
+			return
+		}
+		items, overflowed := w.dequeueAll()
+		if overflowed {
+			w.sendError(ErrEventOverflow)
+		}
+		for _, item := range items {
+			if item.err != nil {
+				w.sendError(item.err)
+			} else {
+				w.handleFsnotifyEvent(item.event)
+			}
+		}
+	}
+}
+
+func (w *watcher) enqueue(item fsnotifyItem) {
+	w.queueLock.Lock()
+	if len(w.queue) < maxQueuedFsnotifyEvents {
+		w.queue = append(w.queue, item)
+	} else {
+		w.queueOverflowed = true
+	}
+	w.queueLock.Unlock()
+	select {
+	case w.queueChan <- struct{}{}:
+	default:
+	}
+}
+
+// dequeueAll returns the queued items, and whether any were dropped.
+func (w *watcher) dequeueAll() ([]fsnotifyItem, bool) {
+	w.queueLock.Lock()
+	defer w.queueLock.Unlock()
+	items, overflowed := w.queue, w.queueOverflowed
+	w.queue, w.queueOverflowed = nil, false
+	return items, overflowed
 }
 
 func (w *watcher) handleFsnotifyEvent(fsnotifyEvent fsnotify.Event) {
@@ -502,6 +568,12 @@ func (w *watcher) sendError(err error) {
 	case w.errChan <- err:
 	case <-w.closeChan:
 	}
+}
+
+// fsnotifyItem is an event or error from fsnotifyWatcher.
+type fsnotifyItem struct {
+	event fsnotify.Event
+	err   error
 }
 
 func isExcludedPath(path string, activeExcludeDirPaths []string) bool {

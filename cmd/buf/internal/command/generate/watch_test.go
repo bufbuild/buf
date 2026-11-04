@@ -426,6 +426,52 @@ func TestWatchOutDirIsModuleDir(t *testing.T) {
 	watchTest.requireStop(t)
 }
 
+func TestWatchOutDirContainsInputs(t *testing.T) {
+	t.Parallel()
+	inputDirPath := t.TempDir()
+	writeTestFile(t, filepath.Join(inputDirPath, "buf.yaml"), "version: v2\n")
+	writeTestFile(t, filepath.Join(inputDirPath, "api", "a", "v1", "a.proto"), "syntax = \"proto3\";\npackage a.v1;\n")
+
+	watchTest := startWatchTest(
+		t,
+		inputDirPath,
+		"--template",
+		`{"version":"v2","plugins":[{"local":"protoc-gen-files-to-generate-yaml","out":"api"}]}`,
+		"-o",
+		inputDirPath,
+		"--watch",
+	)
+	aGeneratedFilePath := filepath.Join(inputDirPath, "api", "api", "a", "v1", "files-to-generate.yaml")
+	watchTest.requireFileContent(t, aGeneratedFilePath, "files:\n    - api/a/v1/a.proto\n")
+
+	// The output directory contains input files within the module, so it is not excluded from watching.
+	writeTestFile(t, filepath.Join(inputDirPath, "api", "a", "v1", "b.proto"), "syntax = \"proto3\";\npackage a.v1;\n")
+	watchTest.requireFileContent(t, aGeneratedFilePath, "files:\n    - api/a/v1/a.proto\n    - api/a/v1/b.proto\n")
+	// Generated files within the output directory do not trigger further runs.
+	watchTest.requireStderrCount(t, "generation succeeded", 2)
+	watchTest.requireStderrCountUnchanged(t, "generation succeeded", 2)
+
+	watchTest.requireStop(t)
+}
+
+func TestGetExcludeDirPaths(t *testing.T) {
+	t.Parallel()
+	rootDirPath := t.TempDir()
+	apiDirPath := filepath.Join(rootDirPath, "api")
+	genDirPath := filepath.Join(rootDirPath, "gen")
+	apDirPath := filepath.Join(rootDirPath, "ap")
+	inputFilePaths := []string{
+		filepath.Join(rootDirPath, "api", "a", "v1", "a.proto"),
+		filepath.Join(rootDirPath, "apib", "b.proto"),
+	}
+	assert.Equal(
+		t,
+		[]string{genDirPath, apDirPath},
+		getExcludeDirPaths([]string{apiDirPath, genDirPath, apDirPath}, inputFilePaths),
+	)
+	assert.Equal(t, []string{apiDirPath}, getExcludeDirPaths([]string{apiDirPath}, nil))
+}
+
 func TestWatchWorkspaceConfigAboveModule(t *testing.T) {
 	t.Parallel()
 	rootDirPath := t.TempDir()
@@ -722,6 +768,22 @@ func (w *watchTest) requireStderrCount(t *testing.T, expected string, count int)
 		watchTestTimeout,
 		watchTestPollInterval,
 		"expected stderr to contain %q %d times",
+		expected,
+		count,
+	)
+}
+
+// requireStderrCountUnchanged requires that stderr keeps containing expected
+// count times for watchTestSettleDuration, failing as soon as it does not.
+func (w *watchTest) requireStderrCountUnchanged(t *testing.T, expected string, count int) {
+	require.Never(
+		t,
+		func() bool {
+			return strings.Count(w.stderr.String(), expected) != count
+		},
+		watchTestSettleDuration,
+		watchTestPollInterval,
+		"expected stderr to keep containing %q %d times",
 		expected,
 		count,
 	)

@@ -16,6 +16,7 @@ package filewatch
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -380,6 +381,48 @@ func TestIgnoresEventWithoutName(t *testing.T) {
 		require.Fail(t, "timed out handling event without name")
 	}
 	requireNoEvent(t, watcher)
+}
+
+func TestReadsWhileEventsNotReceived(t *testing.T) {
+	t.Parallel()
+	dirPath := t.TempDir()
+	watcher, err := newWatcher(slog.New(slog.DiscardHandler))
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, watcher.Close())
+	})
+	require.NoError(t, watcher.AddDirPath(dirPath))
+
+	// Events from fsnotify are still received while Events is not read, as
+	// fsnotify may wait for them to be received before adding a watch.
+	for i := range 2 * cap(watcher.eventChan) {
+		require.NoError(t, os.WriteFile(filepath.Join(dirPath, fmt.Sprintf("%d.proto", i)), nil, 0600))
+	}
+	require.Eventually(
+		t,
+		func() bool {
+			watcher.queueLock.Lock()
+			defer watcher.queueLock.Unlock()
+			return len(watcher.queue) > 0
+		},
+		eventTimeout,
+		10*time.Millisecond,
+	)
+	require.NoError(t, watcher.AddDirPath(t.TempDir()))
+}
+
+func TestEnqueueOverflow(t *testing.T) {
+	t.Parallel()
+	watcher := &watcher{queueChan: make(chan struct{}, 1)}
+	for range maxQueuedFsnotifyEvents + 1 {
+		watcher.enqueue(fsnotifyItem{event: fsnotify.Event{Name: "/a.proto", Op: fsnotify.Write}})
+	}
+	items, overflowed := watcher.dequeueAll()
+	require.Len(t, items, maxQueuedFsnotifyEvents)
+	require.True(t, overflowed)
+	items, overflowed = watcher.dequeueAll()
+	require.Empty(t, items)
+	require.False(t, overflowed)
 }
 
 func TestClose(t *testing.T) {
