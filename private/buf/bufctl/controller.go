@@ -1435,19 +1435,12 @@ func filterImage(
 ) (bufimage.Image, error) {
 	newImage := image
 	var err error
-	includeTypes := functionOptions.imageIncludeTypes
-	excludeTypes := functionOptions.imageExcludeTypes
-	if len(includeTypes) > 0 || len(excludeTypes) > 0 {
-		newImage, err = bufimageutil.FilterImage(
-			newImage,
-			bufimageutil.WithIncludeTypes(includeTypes...),
-			bufimageutil.WithExcludeTypes(excludeTypes...),
-			bufimageutil.WithMutateInPlace(),
-		)
-		if err != nil {
-			return nil, err
-		}
-	}
+	// Filter by path before filtering by type. For a workspace input, the target
+	// paths were applied when the workspace was read, so the type filter already
+	// runs after them. Running the path filter first for other inputs keeps both
+	// input kinds consistent. The order matters because the type filter marks
+	// files that contain no included type as imports, and the path filter
+	// resets the import flag of every file that matches --path.
 	if !imageCameFromAWorkspace {
 		if len(functionOptions.targetPaths) > 0 || len(functionOptions.targetExcludePaths) > 0 {
 			// bufimage expects normalized paths, so we need to normalize the paths
@@ -1469,6 +1462,19 @@ func filterImage(
 			if err != nil {
 				return nil, err
 			}
+		}
+	}
+	includeTypes := functionOptions.imageIncludeTypes
+	excludeTypes := functionOptions.imageExcludeTypes
+	if len(includeTypes) > 0 || len(excludeTypes) > 0 {
+		newImage, err = bufimageutil.FilterImage(
+			newImage,
+			bufimageutil.WithIncludeTypes(includeTypes...),
+			bufimageutil.WithExcludeTypes(excludeTypes...),
+			bufimageutil.WithMutateInPlace(),
+		)
+		if err != nil {
+			return nil, err
 		}
 	}
 	// Exclude imports last because the type filter (--type) and the path filter (--path) above can
