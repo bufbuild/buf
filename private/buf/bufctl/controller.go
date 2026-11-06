@@ -1435,12 +1435,14 @@ func filterImage(
 ) (bufimage.Image, error) {
 	newImage := image
 	var err error
-	// Filter by path before filtering by type. For a workspace input, the target
-	// paths were applied when the workspace was read, so the type filter already
-	// runs after them. Running the path filter first for other inputs keeps both
-	// input kinds consistent. The order matters because the type filter marks
-	// files that contain no included type as imports, and the path filter
-	// resets the import flag of every file that matches --path.
+	// Filter by path before filtering by type.
+	//  - For a workspace input, the target paths were applied when the workspace
+	//   was read, so the type filter already runs after them.
+	//  - For a non-workspace input, we need to apply the path filters first too to
+	//    stay consistent.
+	// The order matters because the type filter marks files that contain no
+	// included type as imports, and the path filter resets the import flag of every
+	// file that matches --path.
 	if !imageCameFromAWorkspace {
 		if len(functionOptions.targetPaths) > 0 || len(functionOptions.targetExcludePaths) > 0 {
 			// bufimage expects normalized paths, so we need to normalize the paths
