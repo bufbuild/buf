@@ -1437,7 +1437,7 @@ func filterImage(
 	var err error
 	// Filter by path before filtering by type.
 	//  - For a workspace input, the target paths were applied when the workspace
-	//   was read, so the type filter already runs after them.
+	//    was read, so the type filter already runs after them.
 	//  - For a non-workspace input, we need to apply the path filters first too to
 	//    stay consistent.
 	// The order matters because the type filter marks files that contain no
