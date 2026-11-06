@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Fix `buf breaking` reporting `FIELD_WIRE_COMPATIBLE_TYPE` and
+  `FIELD_WIRE_JSON_COMPATIBLE_TYPE` violations when a field's message type moves to a
+  different package or enclosing message with an identical definition.
 - Fix LSP hover and highlighting of CEL expressions whose proto strings contain escape sequences,
   which placed the ranges of string literals, and of tokens after a `\u` or `\U` escape, wrongly.
 
