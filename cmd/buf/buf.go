@@ -115,6 +115,12 @@ import (
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/registrylogout"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/sdk/sdkinfo"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/sdk/version"
+	registrywebhookcreate "github.com/bufbuild/buf/cmd/buf/internal/command/registry/webhook/webhookcreate"
+	registrywebhookdelete "github.com/bufbuild/buf/cmd/buf/internal/command/registry/webhook/webhookdelete"
+	registrywebhookinfo "github.com/bufbuild/buf/cmd/buf/internal/command/registry/webhook/webhookinfo"
+	registrywebhooklist "github.com/bufbuild/buf/cmd/buf/internal/command/registry/webhook/webhooklist"
+	registrywebhookping "github.com/bufbuild/buf/cmd/buf/internal/command/registry/webhook/webhookping"
+	registrywebhookupdate "github.com/bufbuild/buf/cmd/buf/internal/command/registry/webhook/webhookupdate"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/registry/whoami"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/source/sourceedit/sourceeditdeprecate"
 	"github.com/bufbuild/buf/cmd/buf/internal/command/stats"
@@ -397,6 +403,18 @@ func newRootCommand(name string) *appcmd.Command {
 							policycreate.NewCommand("create", builder),
 							policyinfo.NewCommand("info", builder),
 							policydelete.NewCommand("delete", builder),
+						},
+					},
+					{
+						Use:   "webhook",
+						Short: "Manage BSR webhooks",
+						SubCommands: []*appcmd.Command{
+							registrywebhookcreate.NewCommand("create", builder),
+							registrywebhookdelete.NewCommand("delete", builder),
+							registrywebhookinfo.NewCommand("info", builder),
+							registrywebhooklist.NewCommand("list", builder),
+							registrywebhookping.NewCommand("ping", builder),
+							registrywebhookupdate.NewCommand("update", builder),
 						},
 					},
 				},
