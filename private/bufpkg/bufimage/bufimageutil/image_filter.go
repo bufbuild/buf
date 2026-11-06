@@ -169,11 +169,32 @@ func filterImageFile(
 	if newFileDescriptor == nil {
 		return nil, nil // Filtered out.
 	}
+	// A file that contains no included type is kept only because an included
+	// type references it, so it becomes an import. Files that were already
+	// imports stay imports.
+	isImport := imageFile.IsImport()
+	if len(options.includeTypes) > 0 {
+		if _, ok := closure.includedFiles[imageFile.Path()]; !ok {
+			isImport = true
+		}
+	}
 	if !changed {
 		if len(sourcePathsRemap) > 0 {
 			return nil, syserror.Newf("unexpected %d sourcePathsRemaps", len(sourcePathsRemap))
 		}
-		return imageFile, nil // No changes required.
+		if isImport == imageFile.IsImport() {
+			return imageFile, nil // No changes required.
+		}
+		return bufimage.NewImageFile(
+			fileDescriptor,
+			imageFile.FullName(),
+			imageFile.CommitID(),
+			imageFile.ExternalPath(),
+			imageFile.LocalPath(),
+			isImport,
+			imageFile.IsSyntaxUnspecified(),
+			imageFile.UnusedDependencyIndexes(),
+		)
 	}
 
 	// Remap the source code info.
@@ -206,7 +227,7 @@ func filterImageFile(
 		imageFile.CommitID(),
 		imageFile.ExternalPath(),
 		imageFile.LocalPath(),
-		imageFile.IsImport(),
+		isImport,
 		imageFile.IsSyntaxUnspecified(),
 		nil, // There are no unused dependencies.
 	)
