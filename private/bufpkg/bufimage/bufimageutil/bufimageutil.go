@@ -121,6 +121,14 @@ func WithAllowIncludeOfImportedType() ImageFilterOption {
 // "acme.foo", all of its sub-packages, and all of their types; "acme.Foo.**"
 // matches the message "acme.Foo" and all of its nested types.
 //
+// A kept file that contains none of the included types is kept only because
+// an included type references a type in it, and is marked as an import. Files
+// that are already imports stay imports. Normally, if `--path a.proto` is passed
+// it's an error to pass `--type B`, because they don't intersect. However, if
+// `--path a.proto` and `--type pkg` is passed and both a.proto and b.proto are in
+// the pkg package, then it's valid. This time `--type pkg` doesn't not make b.proto
+// a target because it's excluded by `--path a.proto` already.
+//
 // If the type does not exist in the image, an error wrapping
 // [ErrImageFilterTypeNotFound] will be returned.
 func WithIncludeTypes(typeNames ...string) ImageFilterOption {
@@ -290,6 +298,10 @@ type transitiveClosure struct {
 	// The set of imports for each file. This allows for re-writing imports
 	// for files whose contents have been pruned.
 	imports map[string]map[string]struct{}
+	// The paths of files that contain an explicitly included type or package.
+	// Every other file kept in the closure is present only because an included
+	// type references it, and is marked as an import.
+	includedFiles map[string]struct{}
 }
 
 type closureInclusionMode int
@@ -315,8 +327,9 @@ const (
 
 func newTransitiveClosure() *transitiveClosure {
 	return &transitiveClosure{
-		elements: map[namedDescriptor]closureInclusionMode{},
-		imports:  map[string]map[string]struct{}{},
+		elements:      map[namedDescriptor]closureInclusionMode{},
+		imports:       map[string]map[string]struct{}{},
+		includedFiles: map[string]struct{}{},
 	}
 }
 
@@ -380,6 +393,7 @@ func (t *transitiveClosure) includeType(
 		if mode := t.elements[descriptorInfo.element]; mode == inclusionModeExcluded {
 			return fmt.Errorf("inclusion of type %q: %w", typeName, ErrImageFilterTypeExcluded)
 		}
+		t.includedFiles[descriptorInfo.file.Path()] = struct{}{}
 		// If an extension field, check if the extendee is excluded.
 		if field, ok := descriptorInfo.element.(*descriptorpb.FieldDescriptorProto); ok && field.Extendee != nil {
 			extendeeName := protoreflect.FullName(strings.TrimPrefix(field.GetExtendee(), "."))
@@ -467,6 +481,7 @@ func (t *transitiveClosure) includePackage(
 		if err := t.addElement(fileDescriptor, "", false, imageIndex, options); err != nil {
 			return included, fmt.Errorf("inclusion of package %q: %w", pkg.fullName, err)
 		}
+		t.includedFiles[file.Path()] = struct{}{}
 		included++
 	}
 	if recursive {
