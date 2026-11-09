@@ -2615,8 +2615,7 @@ func TestBuildTypeMarksReferencedFileAsImport(t *testing.T) {
 
 func TestBuildTypeWithPathMarksReferencedFileAsImport(t *testing.T) {
 	t.Parallel()
-	// --path lists b.proto, but --type includes no type defined in it, so
-	// b.proto is an import and --exclude-imports drops it.
+	// Image building/filtering takes the intersection of `--path` and `--type`.
 	testBuildLsFilesFormatImport(
 		t,
 		0,
@@ -2634,10 +2633,7 @@ func TestBuildTypeWithPathMarksReferencedFileAsImport(t *testing.T) {
 
 func TestBuildTypeWithPathMarksReferencedFileAsImportFromImage(t *testing.T) {
 	t.Parallel()
-	// Same flags as TestBuildTypeWithPathMarksReferencedFileAsImport, with an
-	// image input. The path filter must run before the type filter, as it does
-	// for a directory input, so that it does not reset the import flag that the
-	// type filter set on b.proto.
+	// Same flags as TestBuildTypeWithPathMarksReferencedFileAsImport, but with image input.
 	tempDir := t.TempDir()
 	imagePath := filepath.Join(tempDir, "image.binpb")
 	testRunStdout(
@@ -2667,8 +2663,7 @@ func TestBuildTypeWithPathMarksReferencedFileAsImportFromImage(t *testing.T) {
 
 func TestBuildTypeOutsidePathFromImage(t *testing.T) {
 	t.Parallel()
-	// --path keeps only b.proto, so --type A is not found, as for a directory
-	// input.
+	// It's an error when the intersection between `--path` and `--type` is empty.
 	tempDir := t.TempDir()
 	imagePath := filepath.Join(tempDir, "image.binpb")
 	testRunStdout(
