@@ -6,23 +6,23 @@ require (
 	buf.build/gen/go/bufbuild/bufplugin/protocolbuffers/go v1.36.12-20261002170247-538130002972.2
 	buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go v1.36.12-20261012172039-ff528c23443f.2
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260825204119-511051f7f437.2
-	buf.build/gen/go/bufbuild/registry/connectrpc/go/v2 v2.0.2-20261029170924-54cd3c2f6265.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.12-20261029170924-54cd3c2f6265.2
+	buf.build/gen/go/bufbuild/registry/connectrpc/go/v2 v2.0.2-20261105203900-12e7031be281.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.12-20261105203900-12e7031be281.2
 	buf.build/go/app v0.3.0
 	buf.build/go/bufplugin v0.11.1
 	buf.build/go/bufprivateusage v0.1.0
 	buf.build/go/protovalidate v1.4.0
-	buf.build/go/protoyaml v0.7.0
+	buf.build/go/protoyaml v0.8.0
 	buf.build/go/spdx v0.3.0
 	buf.build/go/standard v0.1.1-0.20260325175353-2b287e071df5
 	cel.dev/cel-go v0.33.2
 	connectrpc.com/connect/v2 v2.0.2
 	connectrpc.com/grpcreflect/v2 v2.0.0
 	connectrpc.com/otelconnect v0.11.0
-	github.com/bufbuild/protocompile v0.14.2-0.20261022205402-b3c25bb4887d
+	github.com/bufbuild/protocompile v0.14.2-0.20261109084347-76eaff9bbc3c
 	github.com/bufbuild/protoplugin v0.0.0-20260414125817-25d1d281b46b
 	github.com/cli/browser v1.3.0
-	github.com/gofrs/flock v0.13.1
+	github.com/gofrs/flock v0.13.2
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-containerregistry v0.22.1
 	github.com/google/uuid v1.6.0
@@ -33,10 +33,10 @@ require (
 	github.com/mattn/go-colorable v0.1.16
 	github.com/moby/moby/api v1.56.1
 	github.com/moby/moby/client v0.6.2
-	github.com/quic-go/quic-go v0.64.1
+	github.com/quic-go/quic-go v0.65.0
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.10.2
-	github.com/spf13/pflag v1.0.10
+	github.com/spf13/pflag v1.1.0
 	github.com/stretchr/testify v1.12.1
 	github.com/tetratelabs/wazero v1.12.0
 	go.lsp.dev/jsonrpc2 v0.10.0
@@ -47,7 +47,7 @@ require (
 	golang.org/x/mod v0.42.0
 	golang.org/x/sync v0.24.0
 	golang.org/x/term v0.47.0
-	golang.org/x/tools v0.52.0
+	golang.org/x/tools v0.52.1-0.20261106145633-d407941a339a
 	google.golang.org/protobuf v1.37.0-rc.1
 	mvdan.cc/xurls/v2 v2.6.0
 	pluginrpc.com/pluginrpc v0.6.0
@@ -64,7 +64,7 @@ require (
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/cli v29.9.2+incompatible // indirect
+	github.com/docker/cli v29.9.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.12 // indirect
 	github.com/docker/go-connections v0.8.2 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
@@ -76,7 +76,7 @@ require (
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
-	github.com/petermattis/goid v0.0.0-20261031113815-c1739d51dded // indirect
+	github.com/petermattis/goid v0.0.0-20261108111446-7b06cb8d5a54 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
@@ -93,10 +93,10 @@ require (
 	go.opentelemetry.io/otel/trace v1.47.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
-	golang.org/x/exp v0.0.0-20261014143641-f0251eb4aa3e // indirect
+	golang.org/x/exp v0.0.0-20261106192419-47ce03d25ef0 // indirect
 	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20261026165753-2ffab32bce7e // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20261026165753-2ffab32bce7e // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20261104224025-d1e00e9f33ab // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20261104224025-d1e00e9f33ab // indirect
 )
