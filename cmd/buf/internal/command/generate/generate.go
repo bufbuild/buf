@@ -487,7 +487,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Types,
 		typeFlagName,
 		nil,
-		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. A type name may end with \".**\" to recursively include the named element and everything nested beneath it, such as a package and all of its sub-packages. A file kept only because an included type references a type in it is marked as an import. Flag usage overrides buf.gen.yaml",
+		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. A type name may end with \".**\" to recursively include the named element and everything nested beneath it, such as a package and all of its sub-packages. Flag usage overrides buf.gen.yaml",
 	)
 	flagSet.StringSliceVar(
 		&f.TypesDeprecated,
