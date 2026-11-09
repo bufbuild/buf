@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package main.v1;
+
+import "bar/v1/types.proto";
+
+message Main {
+  bar.v1.A a = 1;
+  bar.v1.Changed changed = 2;
+  repeated bar.v1.A many = 3;
+  map<string, bar.v1.A> lookup = 4;
+  bar.v1.Reserved reserved_message = 5;
+  bar.v1.NullContainer null_container = 6;
+}
