@@ -170,12 +170,17 @@ func filterImageFile(
 		return nil, nil // Filtered out.
 	}
 	// A file that contains no included type is kept only because an included
-	// type references it, so it becomes an import. Files that were already
-	// imports stay imports.
+	// type references it, so it becomes an import. A file that was already an
+	// import stays one, unless WithAllowIncludeOfImportedType is set.
 	isImport := imageFile.IsImport()
 	if len(options.includeTypes) > 0 {
 		if _, ok := closure.includedFiles[imageFile.Path()]; !ok {
 			isImport = true
+		} else if options.allowImportedTypes {
+			// When WithAllowIncludeOfImportedType is set, a `--type` type can be
+			// in a dependency module, in which case we should mark the file containing
+			// it as a target file.
+			isImport = false
 		}
 	}
 	if !changed {

@@ -2690,6 +2690,21 @@ func TestBuildTypeOutsidePathFromImage(t *testing.T) {
 	)
 }
 
+func TestBuildPackageTypeWithPathKeepsIntersection(t *testing.T) {
+	t.Parallel()
+	testBuildLsFilesFormatImport(
+		t,
+		0,
+		[]string{"a.proto"},
+		filepath.Join("testdata", "imports", "success", "samepkg"),
+		"--type",
+		"pkg",
+		"--path",
+		filepath.Join("testdata", "imports", "success", "samepkg", "a.proto"),
+		"--exclude-imports",
+	)
+}
+
 func TestExportProto(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()

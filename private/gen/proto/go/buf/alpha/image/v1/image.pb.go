@@ -618,6 +618,10 @@ type ImageFileExtension_builder struct {
 	// 3. A file that is not itself a target, but is (possibly transitively)
 	//    imported by a target file.
 	//
+	// When a type filter is allowed to select types from imported files, as the
+	// BSR does, a file that defines a selected type is a target even if it falls
+	// under one of the cases above.
+	//
 	// We use "import" as this matches with the protoc concept of
 	// --include_imports, however import is a bit of an overloaded term.
 	//

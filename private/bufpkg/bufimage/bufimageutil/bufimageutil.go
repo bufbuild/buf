@@ -103,6 +103,10 @@ func WithExcludeKnownExtensions() ImageFilterOption {
 // that allows a named included type to be in an imported file or module. Without this
 // option, only types defined directly in the image to be filtered are allowed.
 // Excluded types are always allowed to be in imported files or modules.
+//
+// A file that defines an included type, named directly or through its package,
+// is marked as a non-import, since it was selected, even if it was an import
+// before the type filter is applied.
 func WithAllowIncludeOfImportedType() ImageFilterOption {
 	return func(opts *imageFilterOptions) {
 		opts.allowImportedTypes = true
@@ -123,11 +127,13 @@ func WithAllowIncludeOfImportedType() ImageFilterOption {
 //
 // A kept file that contains none of the included types is kept only because
 // an included type references a type in it, and is marked as an import. Files
-// that are already imports stay imports. Normally, if `--path a.proto` is passed
-// it's an error to pass `--type B`, because they don't intersect. However, if
-// `--path a.proto` and `--type pkg` is passed and both a.proto and b.proto are in
-// the pkg package, then it's valid. This time `--type pkg` doesn't not make b.proto
-// a target because it's excluded by `--path a.proto` already.
+// that are already imports stay imports, unless [WithAllowIncludeOfImportedType]
+// is set and the file defines an included type.
+//
+// Normally, if `--path a.proto` is passed it's an error to pass `--type B`, because
+// they don't intersect. However, if `--path a.proto` and `--type pkg` is passed and
+// both a.proto and b.proto are in the pkg package, then it's valid. This time `--type pkg`
+// does not make b.proto a target because it's excluded by `--path a.proto` already.
 //
 // If the type does not exist in the image, an error wrapping
 // [ErrImageFilterTypeNotFound] will be returned.

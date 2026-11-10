@@ -727,6 +727,69 @@ message B {}
 	})
 }
 
+func TestAllowIncludeOfImportedTypeMarksTargets(t *testing.T) {
+	t.Parallel()
+	moduleSet, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/repo/main",
+			PathToData: map[string][]byte{
+				"a.proto": []byte(`syntax = "proto3";
+package a;
+import "b.proto";
+message A { b.B b = 1; }
+`),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/repo/dep",
+			PathToData: map[string][]byte{
+				"b.proto": []byte(`syntax = "proto3";
+package b;
+message B {}
+`),
+			},
+			NotTargeted: true,
+		},
+	)
+	require.NoError(t, err)
+	image, err := bufimage.BuildImage(
+		t.Context(),
+		slogtestext.NewLogger(t),
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+		bufimage.WithExcludeSourceCodeInfo(),
+	)
+	require.NoError(t, err)
+
+	require.False(t, image.GetFile("a.proto").IsImport())
+	require.True(t, image.GetFile("b.proto").IsImport())
+
+	testIsImportAfterFilter := func(t *testing.T, want map[string]bool, opts ...ImageFilterOption) {
+		t.Helper()
+		_, filteredImage := runFilterImage(t, image, append(opts, WithAllowIncludeOfImportedType())...)
+		got := make(map[string]bool, len(filteredImage.Files()))
+		for _, imageFile := range filteredImage.Files() {
+			got[imageFile.Path()] = imageFile.IsImport()
+		}
+		assert.Equal(t, want, got)
+	}
+	t.Run("named_dependency_type_becomes_target", func(t *testing.T) {
+		t.Parallel()
+		testIsImportAfterFilter(t, map[string]bool{"b.proto": false}, WithIncludeTypes("b.B"))
+	})
+	t.Run("named_dependency_package_becomes_target", func(t *testing.T) {
+		t.Parallel()
+		testIsImportAfterFilter(t, map[string]bool{"b.proto": false}, WithIncludeTypes("b"))
+	})
+	t.Run("referenced_dependency_file_stays_import", func(t *testing.T) {
+		t.Parallel()
+		testIsImportAfterFilter(t, map[string]bool{"a.proto": false, "b.proto": true}, WithIncludeTypes("a.A"))
+	})
+	t.Run("both_named", func(t *testing.T) {
+		t.Parallel()
+		testIsImportAfterFilter(t, map[string]bool{"a.proto": false, "b.proto": false}, WithIncludeTypes("a.A", "b.B"))
+	})
+}
+
 func TestEmptyFiles(t *testing.T) {
 	t.Parallel()
 	t.Run("include_empty_file", func(t *testing.T) {
