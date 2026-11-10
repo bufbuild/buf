@@ -4,10 +4,10 @@
 
 - Fix LSP hover and highlighting of CEL expressions whose proto strings contain escape sequences,
   which placed the ranges of string literals, and of tokens after a `\u` or `\U` escape, wrongly.
-- Fix `buf build --type=X` filters to correctly mark non-targeted files as imports.The `is_import`
+- Fix `buf build --type=X` filters to correctly mark non-targeted files as imports. The `is_import`
   comment in `image.proto` is also updated to describe this. Image filtering now has a unified order
-  across commands, where the path filters apply during the image build, before the type filters take
-  place after the image build and `--exclude-imports` applies last. Some consequences:
+  across commands, where `--path` applies first, then `--type`, then `--exclude-imports`. Some
+  consequences:
   - `buf build --type a.A --exclude-imports` outputs only the file that defines `a.A`, and no longer
     fails when `a.A` has a field whose type is defined in a dependency or a Well-Known Type.
   - `buf generate` with `types` no longer generates code for files kept only by reference. To

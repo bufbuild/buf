@@ -127,11 +127,11 @@ func WithAllowIncludeOfImportedType() ImageFilterOption {
 //
 // When both `--path` and WithIncludeTypes are passed, without [WithAllowIncludeOfImportedType],
 // the resulting image is the union of the paths intersecting the union of the types. In this case,
-// the type filter marks a file as an import iff it doesn't contain a filtering type, but does not
-// set any file as target files.
+// the type filter marks a file as an import if it doesn't contain an included type, but does not
+// set any file as a target.
 //
-// With [WithAllowIncludeOfImportedType], `--type` and WithIncludeTypes set, the `--type` filter
-// sets a file as a target iff it contains a filtering type, and as an import otherwise.
+// With [WithAllowIncludeOfImportedType] set, the type filter sets a file as a target iff it
+// contains an included type, and as an import otherwise.
 //
 // If the type does not exist in the image, an error wrapping
 // [ErrImageFilterTypeNotFound] will be returned.
