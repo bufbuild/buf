@@ -125,15 +125,13 @@ func WithAllowIncludeOfImportedType() ImageFilterOption {
 // "acme.foo", all of its sub-packages, and all of their types; "acme.Foo.**"
 // matches the message "acme.Foo" and all of its nested types.
 //
-// A kept file that contains none of the included types is kept only because
-// an included type references a type in it, and is marked as an import. Files
-// that are already imports stay imports, unless [WithAllowIncludeOfImportedType]
-// is set and the file defines an included type.
+// When both `--path` and WithIncludeTypes are passed, without [WithAllowIncludeOfImportedType],
+// the resulting image is the union of the paths intersecting the union of the types. In this case,
+// the type filter marks a file as an import iff it doesn't contain a filtering type, but does not
+// set any file as target files.
 //
-// Normally, if `--path a.proto` is passed it's an error to pass `--type B`, because
-// they don't intersect. However, if `--path a.proto` and `--type pkg` is passed and
-// both a.proto and b.proto are in the pkg package, then it's valid. This time `--type pkg`
-// does not make b.proto a target because it's excluded by `--path a.proto` already.
+// With [WithAllowIncludeOfImportedType], `--type` and WithIncludeTypes set, the `--type` filter
+// sets a file as a target iff it contains a filtering type, and as an import otherwise.
 //
 // If the type does not exist in the image, an error wrapping
 // [ErrImageFilterTypeNotFound] will be returned.
