@@ -615,12 +615,10 @@ type ImageFileExtension_builder struct {
 	//
 	// 1. A Well-Known Type included from the compiler.
 	// 2. A file that was included from a Buf module dependency.
-	// 3. A file that is not itself a target, but is (possibly transitively)
-	//    imported by a target file.
+	// 3. A file that a target file depends on.
 	//
-	// When a type filter is allowed to select types from imported files, as the
-	// BSR does, a file that defines a selected type is a target even if it falls
-	// under one of the cases above.
+	// A target file always has its is_import set to false, regardless
+	// of which Module it derived from.
 	//
 	// We use "import" as this matches with the protoc concept of
 	// --include_imports, however import is a bit of an overloaded term.
