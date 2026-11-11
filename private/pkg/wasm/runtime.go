@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
@@ -30,6 +31,14 @@ const (
 	// wasmPageSize is the page size in bytes.
 	wasmPageSize = 1 << 16 // 64 KiB
 )
+
+// newWazeroRuntimeLock serializes creating wazero runtimes. wazero caches its
+// version in a global without synchronization the first time a runtime is
+// created, which races when runtimes are created concurrently.
+//
+// TODO: Remove once wazero is updated to a release that includes
+// https://github.com/wazero/wazero/pull/2536.
+var newWazeroRuntimeLock sync.Mutex
 
 type runtime struct {
 	runtime          wazero.Runtime
@@ -75,7 +84,11 @@ func newRuntime(ctx context.Context, options ...RuntimeOption) (*runtime, error)
 		}
 		wazeroRuntimeConfig = wazeroRuntimeConfig.WithCompilationCache(wazeroCompilationCache)
 	}
-	wazeroRuntime := wazero.NewRuntimeWithConfig(ctx, wazeroRuntimeConfig)
+	wazeroRuntime := func() wazero.Runtime {
+		newWazeroRuntimeLock.Lock()
+		defer newWazeroRuntimeLock.Unlock()
+		return wazero.NewRuntimeWithConfig(ctx, wazeroRuntimeConfig)
+	}()
 
 	// Init WASI preview1 APIs. This is required to support the pluginrpc
 	// protocol. The returned closer method is discarded as the
