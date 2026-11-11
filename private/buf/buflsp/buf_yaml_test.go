@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 func TestParseBufYAMLDeps(t *testing.T) {
@@ -108,7 +109,7 @@ func TestIsBufYAMLURI(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		uri      protocol.URI
+		uri      uri.URI
 		expected bool
 	}{
 		{"file:///home/user/project/buf.yaml", true},
@@ -129,7 +130,7 @@ func TestIsBufGenYAMLURI(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		uri      protocol.URI
+		uri      uri.URI
 		expected bool
 	}{
 		{"file:///home/user/project/buf.gen.yaml", true},
@@ -160,7 +161,7 @@ func TestBufGenerateArgs(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		uri      protocol.URI
+		uri      uri.URI
 		expected []string
 	}{
 		{"file:///home/user/project/buf.gen.yaml", []string{"generate"}},
@@ -179,7 +180,7 @@ func TestIsBufPolicyYAMLURI(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		uri      protocol.URI
+		uri      uri.URI
 		expected bool
 	}{
 		{"file:///home/user/project/buf.policy.yaml", true},
@@ -200,7 +201,7 @@ func TestIsBufLockURI(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		uri      protocol.URI
+		uri      uri.URI
 		expected bool
 	}{
 		{"file:///home/user/project/buf.lock", true},

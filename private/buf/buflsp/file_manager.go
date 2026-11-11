@@ -20,14 +20,14 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/pkg/refcount"
-	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 // fileManager tracks all files the LSP is currently handling, whether read from disk or opened
 // by the editor.
 type fileManager struct {
 	lsp       *lsp
-	uriToFile refcount.Map[protocol.URI, file]
+	uriToFile refcount.Map[uri.URI, file]
 }
 
 // newFileManager creates a new file manager.
@@ -39,8 +39,8 @@ func newFileManager(lsp *lsp) *fileManager {
 // before, a new entry for the file is created.
 //
 // This will increment the file's refcount.
-func (fm *fileManager) Track(uri protocol.URI) *file {
-	normalizedURI := normalizeURI(uri)
+func (fm *fileManager) Track(fileURI uri.URI) *file {
+	normalizedURI := normalizeURI(fileURI)
 	file, found := fm.uriToFile.Insert(normalizedURI)
 	if !found {
 		file.lsp = fm.lsp
@@ -50,16 +50,16 @@ func (fm *fileManager) Track(uri protocol.URI) *file {
 }
 
 // Get finds a file with the given URI, or returns nil.
-func (fm *fileManager) Get(uri protocol.URI) *file {
-	return fm.uriToFile.Get(normalizeURI(uri))
+func (fm *fileManager) Get(fileURI uri.URI) *file {
+	return fm.uriToFile.Get(normalizeURI(fileURI))
 }
 
 // Close marks a file as closed.
 //
 // This will not necessarily evict the file, since there may be more than one user
 // for this file.
-func (fm *fileManager) Close(ctx context.Context, uri protocol.URI) {
-	if deleted := fm.uriToFile.Delete(normalizeURI(uri)); deleted != nil {
+func (fm *fileManager) Close(ctx context.Context, fileURI uri.URI) {
+	if deleted := fm.uriToFile.Delete(normalizeURI(fileURI)); deleted != nil {
 		deleted.Reset(ctx)
 	}
 }

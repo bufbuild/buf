@@ -228,9 +228,9 @@ func bufYAMLPrependIndent(items []protocol.CompletionItem) []protocol.Completion
 	result := make([]protocol.CompletionItem, len(items))
 	for i, item := range items {
 		result[i] = item
-		if item.TextEdit != nil {
-			editCopy := *item.TextEdit
-			editCopy.NewText = "  " + item.TextEdit.NewText
+		if textEdit, ok := item.TextEdit.(*protocol.TextEdit); ok && textEdit != nil {
+			editCopy := *textEdit
+			editCopy.NewText = "  " + textEdit.NewText
 			result[i].TextEdit = &editCopy
 		}
 	}
@@ -626,7 +626,7 @@ func makeCompletionKeyItems(keys []string, primaryDocs, fallbackDocs map[string]
 			doc, ok = fallbackDocs[key]
 		}
 		if ok {
-			item.Detail = doc.valueType
+			item.Detail = newOptionalNonZero(doc.valueType)
 			item.Documentation = bufYAMLDocMarkup(doc)
 		}
 		items = append(items, item)
@@ -635,13 +635,13 @@ func makeCompletionKeyItems(keys []string, primaryDocs, fallbackDocs map[string]
 }
 
 // bufYAMLDocMarkup returns a MarkupContent for the given doc.
-func bufYAMLDocMarkup(doc bufYAMLDoc) protocol.MarkupContent {
+func bufYAMLDocMarkup(doc bufYAMLDoc) *protocol.MarkupContent {
 	value := doc.summary
 	if doc.url != "" {
 		value += "\n\n[Documentation](" + doc.url + ")"
 	}
-	return protocol.MarkupContent{
-		Kind:  protocol.Markdown,
+	return &protocol.MarkupContent{
+		Kind:  protocol.MarkupKindMarkdown,
 		Value: value,
 	}
 }

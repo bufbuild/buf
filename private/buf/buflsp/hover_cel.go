@@ -96,8 +96,8 @@ func getCELHover(
 
 			hoverRange := reportSpanToProtocolRange(tokenSpan)
 			return &protocol.Hover{
-				Contents: protocol.MarkupContent{
-					Kind:  protocol.Markdown,
+				Contents: &protocol.MarkupContent{
+					Kind:  protocol.MarkupKindMarkdown,
 					Value: docs,
 				},
 				Range: &hoverRange,

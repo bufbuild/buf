@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 // TestBufLockDocumentLinks verifies that document links are returned for
@@ -59,7 +60,7 @@ func TestBufLockDocumentLinks(t *testing.T) {
 						Start: protocol.Position{Line: 3, Character: 10},
 						End:   protocol.Position{Line: 3, Character: 42},
 					},
-					Target: "https://buf.build/bufbuild/protovalidate",
+					Target: new(uri.URI("https://buf.build/bufbuild/protovalidate")),
 				},
 				{
 					// deps[1].name: buf.build/googleapis/googleapis
@@ -67,7 +68,7 @@ func TestBufLockDocumentLinks(t *testing.T) {
 						Start: protocol.Position{Line: 6, Character: 10},
 						End:   protocol.Position{Line: 6, Character: 41},
 					},
-					Target: "https://buf.build/googleapis/googleapis",
+					Target: new(uri.URI("https://buf.build/googleapis/googleapis")),
 				},
 			},
 		},
@@ -203,9 +204,9 @@ func TestBufLockHover(t *testing.T) {
 				return
 			}
 			require.NotNil(t, hover, "expected hover at (%d, %d)", tc.line, tc.character)
-			assert.Equal(t, protocol.Markdown, hover.Contents.Kind)
+			assert.Equal(t, protocol.MarkupKindMarkdown, requireMarkupContent(t, hover.Contents).Kind)
 			for _, want := range tc.expectedContains {
-				assert.Contains(t, hover.Contents.Value, want,
+				assert.Contains(t, requireMarkupContent(t, hover.Contents).Value, want,
 					"hover at (%d, %d) should contain %q", tc.line, tc.character, want)
 			}
 		})

@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 func TestRename(t *testing.T) {
@@ -43,7 +44,7 @@ func TestRename(t *testing.T) {
 	subpkgOptionsURI := buflsp.FilePathToURI(subpkgOptionsProtoPath)
 
 	type editLocation struct {
-		uri            protocol.URI
+		uri            uri.URI
 		line           uint32
 		startCharacter uint32
 		endCharacter   uint32
@@ -51,7 +52,7 @@ func TestRename(t *testing.T) {
 	}
 	tests := []struct {
 		name          string
-		targetURI     protocol.URI
+		targetURI     uri.URI
 		line          uint32
 		character     uint32
 		newName       string
@@ -482,7 +483,7 @@ func TestPrepareRename(t *testing.T) {
 			t.Parallel()
 
 			// Determine which URI to use based on protoFile
-			var targetURI protocol.URI
+			var targetURI uri.URI
 			switch tt.protoFile {
 			case "testdata/rename/rename.proto":
 				targetURI = testURI

@@ -22,7 +22,7 @@ import (
 
 	"github.com/bufbuild/protocompile/experimental/ast"
 	"github.com/bufbuild/protocompile/experimental/ir"
-	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 // referenceKey identifies a symbol definition site: the path of the declaring file as it
@@ -61,23 +61,23 @@ func newReferenceKeyForDeclaration(declaration *symbol) (referenceKey, bool) {
 //
 // The index is not safe for concurrent use; it is protected by the [lsp] lock.
 type referenceIndex struct {
-	keyToFileRefs map[referenceKey]map[protocol.URI][]*symbol
+	keyToFileRefs map[referenceKey]map[uri.URI][]*symbol
 	// uriToKeys records which definitions each file contributes references to, so that a
 	// file's contribution can be removed without scanning the whole index.
-	uriToKeys map[protocol.URI][]referenceKey
+	uriToKeys map[uri.URI][]referenceKey
 }
 
 // newReferenceIndex creates a new reference index.
 func newReferenceIndex() *referenceIndex {
 	return &referenceIndex{
-		keyToFileRefs: make(map[referenceKey]map[protocol.URI][]*symbol),
-		uriToKeys:     make(map[protocol.URI][]referenceKey),
+		keyToFileRefs: make(map[referenceKey]map[uri.URI][]*symbol),
+		uriToKeys:     make(map[uri.URI][]referenceKey),
 	}
 }
 
 // SetFile replaces all references contributed by the file at the given URI.
-func (i *referenceIndex) SetFile(uri protocol.URI, references map[referenceKey][]*symbol) {
-	i.RemoveFile(uri)
+func (i *referenceIndex) SetFile(fileURI uri.URI, references map[referenceKey][]*symbol) {
+	i.RemoveFile(fileURI)
 	if len(references) == 0 {
 		return
 	}
@@ -85,13 +85,13 @@ func (i *referenceIndex) SetFile(uri protocol.URI, references map[referenceKey][
 	for key, symbols := range references {
 		fileRefs, ok := i.keyToFileRefs[key]
 		if !ok {
-			fileRefs = make(map[protocol.URI][]*symbol, 1)
+			fileRefs = make(map[uri.URI][]*symbol, 1)
 			i.keyToFileRefs[key] = fileRefs
 		}
-		fileRefs[uri] = symbols
+		fileRefs[fileURI] = symbols
 		keys = append(keys, key)
 	}
-	i.uriToKeys[uri] = keys
+	i.uriToKeys[fileURI] = keys
 }
 
 // RemoveFile drops all references contributed by the file at the given URI.
@@ -99,18 +99,18 @@ func (i *referenceIndex) SetFile(uri protocol.URI, references map[referenceKey][
 // This must be called when a file is evicted. The index holds symbols pointing back at
 // their file, and an evicted file is zeroed, so entries left behind would resolve to
 // locations with an empty URI.
-func (i *referenceIndex) RemoveFile(uri protocol.URI) {
-	for _, key := range i.uriToKeys[uri] {
+func (i *referenceIndex) RemoveFile(fileURI uri.URI) {
+	for _, key := range i.uriToKeys[fileURI] {
 		fileRefs, ok := i.keyToFileRefs[key]
 		if !ok {
 			continue
 		}
-		delete(fileRefs, uri)
+		delete(fileRefs, fileURI)
 		if len(fileRefs) == 0 {
 			delete(i.keyToFileRefs, key)
 		}
 	}
-	delete(i.uriToKeys, uri)
+	delete(i.uriToKeys, fileURI)
 }
 
 // References returns all symbols referencing the given definition, ordered by file URI and
@@ -136,6 +136,6 @@ func (i *referenceIndex) References(key referenceKey) []*symbol {
 
 // FileReferences returns the symbols in the file at the given URI that reference the given
 // definition. This is a direct lookup, cheap enough for per-cursor-move requests.
-func (i *referenceIndex) FileReferences(key referenceKey, uri protocol.URI) []*symbol {
-	return i.keyToFileRefs[key][uri]
+func (i *referenceIndex) FileReferences(key referenceKey, fileURI uri.URI) []*symbol {
+	return i.keyToFileRefs[key][fileURI]
 }

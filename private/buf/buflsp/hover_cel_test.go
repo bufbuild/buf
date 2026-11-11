@@ -818,9 +818,9 @@ func TestCELHover(t *testing.T) {
 			}, &hoverResult)
 			require.NoError(t, err)
 			require.NotNil(t, hoverResult, "Expected hover result at Line:%d Char:%d", tc.line, tc.char)
-			require.NotEmpty(t, hoverResult.Contents.Value, "Expected non-empty hover content at Line:%d Char:%d", tc.line, tc.char)
+			require.NotEmpty(t, requireMarkupContent(t, hoverResult.Contents).Value, "Expected non-empty hover content at Line:%d Char:%d", tc.line, tc.char)
 
-			assert.Equal(t, tc.expected, hoverResult.Contents.Value,
+			assert.Equal(t, tc.expected, requireMarkupContent(t, hoverResult.Contents).Value,
 				"Hover content mismatch at Line:%d Char:%d", tc.line, tc.char)
 			if tc.end != 0 {
 				assert.Equal(t, &protocol.Range{

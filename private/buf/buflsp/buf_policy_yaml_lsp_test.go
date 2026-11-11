@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 // TestBufPolicyYAMLCompletion verifies that completion items are returned for
@@ -189,7 +190,7 @@ func TestBufPolicyYAMLDocumentLinks(t *testing.T) {
 						Start: protocol.Position{Line: 1, Character: 6},
 						End:   protocol.Position{Line: 1, Character: 30},
 					},
-					Target: "https://buf.build/acme/my-policy",
+					Target: new(uri.URI("https://buf.build/acme/my-policy")),
 				},
 				{
 					// plugins[0].plugin: buf.build/acme/my-lint-plugin
@@ -197,7 +198,7 @@ func TestBufPolicyYAMLDocumentLinks(t *testing.T) {
 						Start: protocol.Position{Line: 9, Character: 12},
 						End:   protocol.Position{Line: 9, Character: 41},
 					},
-					Target: "https://buf.build/acme/my-lint-plugin",
+					Target: new(uri.URI("https://buf.build/acme/my-lint-plugin")),
 				},
 				// plugins[1].plugin: local-linter-binary is skipped (not a BSR ref).
 			},
@@ -442,9 +443,9 @@ func TestBufPolicyYAMLHover(t *testing.T) {
 				return
 			}
 			require.NotNil(t, hover, "expected hover at (%d, %d)", tc.line, tc.character)
-			assert.Equal(t, protocol.Markdown, hover.Contents.Kind)
+			assert.Equal(t, protocol.MarkupKindMarkdown, requireMarkupContent(t, hover.Contents).Kind)
 			for _, want := range tc.expectedContains {
-				assert.Contains(t, hover.Contents.Value, want,
+				assert.Contains(t, requireMarkupContent(t, hover.Contents).Value, want,
 					"hover at (%d, %d) should contain %q", tc.line, tc.character, want)
 			}
 		})

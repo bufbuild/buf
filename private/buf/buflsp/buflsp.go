@@ -37,7 +37,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/source"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
-	"go.uber.org/zap"
+	"go.lsp.dev/uri"
 )
 
 // CuratedPluginVersionProvider checks for the latest version of a BSR-hosted curated plugin.
@@ -83,7 +83,7 @@ func Serve(
 	logger = logger.With(slog.String("buf_version", bufVersion))
 	logger.Info("starting LSP server")
 
-	conn := jsonrpc2.NewConn(stream)
+	conn := jsonrpc2.NewConn(stream, jsonrpc2.WithCodec(lspCodec{}))
 	// connCtx is a context scoped to the connection's lifetime. It is cancelled
 	// when the connection is done (or when ctx is cancelled), so that background
 	// goroutines (e.g. RunChecks) do not outlive the connection.
@@ -97,10 +97,9 @@ func Serve(
 	}()
 	lsp := &lsp{
 		conn: conn,
-		client: protocol.ClientDispatcher(
-			&connWrapper{Conn: conn, logger: logger},
-			zap.NewNop(), // The logging from protocol itself isn't very good, we've replaced it with connAdapter here.
-		),
+		// The ClientDispatcher does not log calls, so we wrap the connection to
+		// log them ourselves.
+		client:                       protocol.ClientDispatcher(&connWrapper{Conn: conn, logger: logger}),
 		container:                    container,
 		logger:                       logger,
 		bufVersion:                   bufVersion,
@@ -126,7 +125,7 @@ func Serve(
 	lsp.bufGenYAMLManager = newBufGenYAMLManager(lsp)
 	lsp.bufPolicyYAMLManager = newBufPolicyYAMLManager()
 	lsp.bufLockManager = newBufLockManager()
-	off := protocol.TraceOff
+	off := protocol.TraceValueOff
 	lsp.traceValue.Store(&off)
 
 	handler, err := lsp.newHandler()
@@ -212,18 +211,19 @@ func (l *lsp) init(_ context.Context, params *protocol.InitializeParams) error {
 // and then the current working directory. Paths are normalized like file URIs
 // so they share a prefix with fileName.
 func (l *lsp) rootDirPathForFile(fileName string) (string, error) {
-	var rootURIs []protocol.URI
+	var rootURIs []uri.URI
 	if params := l.initParams.Load(); params != nil {
-		for _, workspaceFolder := range params.WorkspaceFolders {
-			rootURIs = append(rootURIs, protocol.URI(workspaceFolder.URI))
+		workspaceFolders, _ := params.WorkspaceFolders.Get()
+		for _, workspaceFolder := range workspaceFolders {
+			rootURIs = append(rootURIs, workspaceFolder.URI)
 		}
-		if params.RootURI != "" {
-			rootURIs = append(rootURIs, params.RootURI)
+		if params.RootURI != nil && *params.RootURI != "" {
+			rootURIs = append(rootURIs, *params.RootURI)
 		}
 	}
 	var rootDirPath string
 	for _, rootURI := range rootURIs {
-		dirPath := normalizeURI(rootURI).Filename()
+		dirPath := normalizeURI(rootURI).FsPath()
 		if len(dirPath) > len(rootDirPath) && normalpath.EqualsOrContainsPath(
 			normalpath.Normalize(dirPath),
 			normalpath.Normalize(fileName),
@@ -239,7 +239,7 @@ func (l *lsp) rootDirPathForFile(fileName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return FilePathToURI(workingDirPath).Filename(), nil
+	return FilePathToURI(workingDirPath).FsPath(), nil
 }
 
 // newHandler constructs an RPC handler that wraps the default one from jsonrpc2. This allows us
@@ -249,40 +249,42 @@ func (l *lsp) newHandler() (jsonrpc2.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	actual := protocol.ServerHandler(server, nil)
+	actual := protocol.ServerHandler(server, jsonrpc2.MethodNotFoundHandler)
 	// [protocol.CancelHandler] intercepts $/cancelRequest notifications from the client and
-	// cancels the context of the matching in-flight request. It must wrap AsyncHandler so
-	// that the cancellable context is the one running inside each spawned goroutine.
-	return protocol.CancelHandler(jsonrpc2.AsyncHandler(func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) error {
+	// cancels the context of the matching in-flight request. It must wrap orderedAsyncHandler
+	// so that cancellation is processed on the read loop, even while other messages are
+	// queued, and the cancellable context is the one running inside each spawned goroutine.
+	return protocol.CancelHandler(orderedAsyncHandler(func(ctx context.Context, req *jsonrpc2.Request) (any, error) {
+		method := req.Method()
 		l.logger.Debug(
 			"handling request",
-			slog.String("method", req.Method()),
+			slog.String("method", method),
 		)
 		defer xslog.DebugProfile(
 			l.logger,
-			slog.String("method", req.Method()),
+			slog.String("method", method),
 		)()
 
-		replier := l.wrapReplier(reply, req)
-
-		var err error
-		if req.Method() != protocol.MethodInitialize && l.initParams.Load() == nil {
+		var (
+			result any
+			err    error
+		)
+		if method != protocol.MethodInitialize && l.initParams.Load() == nil {
 			// Verify that the server has been initialized if this isn't the initialization
 			// request.
-			err = replier(ctx, nil, fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize))
+			err = fmt.Errorf("the first call to the server must be the %q method", protocol.MethodInitialize)
 		} else {
 			l.lock.Lock()
-			err = actual(ctx, replier, req)
+			result, err = actual(ctx, req)
 			l.lock.Unlock()
 		}
-
-		if err != nil {
-			l.logger.Error(
-				"error while replying to request",
-				slog.String("method", req.Method()),
-				xslog.ErrorAttr(err),
-			)
+		l.logResponse(method, err)
+		if !req.IsCall() {
+			// Notifications have no response, and jsonrpc2 tears down the
+			// connection if a notification handler returns an error. The error
+			// has been logged above, so drop it.
+			return nil, nil
 		}
-		return nil
+		return result, err
 	})), nil
 }

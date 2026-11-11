@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 func TestTypeDefinition(t *testing.T) {
@@ -42,7 +43,7 @@ func TestTypeDefinition(t *testing.T) {
 		name                string
 		line                uint32
 		character           uint32
-		expectedTypeDefURI  protocol.URI
+		expectedTypeDefURI  uri.URI
 		expectedTypeDefLine uint32
 		expectedTypeDefChar uint32
 	}{

@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 func TestReferences(t *testing.T) {
@@ -43,12 +44,12 @@ func TestReferences(t *testing.T) {
 	typesURI := buflsp.FilePathToURI(typesProtoPath)
 
 	type refLocation struct {
-		uri  protocol.URI
+		uri  uri.URI
 		line uint32
 	}
 	tests := []struct {
 		name               string
-		targetURI          protocol.URI
+		targetURI          uri.URI
 		line               uint32
 		character          uint32
 		includeDeclaration bool
@@ -178,7 +179,7 @@ func TestReferencesToDependency(t *testing.T) {
 	sharedURI := buflsp.FilePathToURI(sharedProtoPath)
 
 	type refLocation struct {
-		uri  protocol.URI
+		uri  uri.URI
 		line uint32
 	}
 	tests := []struct {
@@ -266,7 +267,7 @@ func TestReferencesStableAcrossReindex(t *testing.T) {
 			TextDocumentIdentifier: protocol.TextDocumentIdentifier{URI: firstURI},
 			Version:                2,
 		},
-		ContentChanges: []protocol.TextDocumentContentChangeEvent{{Text: string(firstProtoContent)}},
+		ContentChanges: []protocol.TextDocumentContentChangeEvent{&protocol.TextDocumentContentChangeWholeDocument{Text: string(firstProtoContent)}},
 	}))
 
 	after := testRequestReferences(ctx, t, clientJSONConn, firstURI, timestampLine, timestampCharacter, true)
@@ -280,7 +281,7 @@ func testRequestReferences(
 	ctx context.Context,
 	t *testing.T,
 	clientJSONConn jsonrpc2.Conn,
-	uri protocol.URI,
+	uri uri.URI,
 	line uint32,
 	character uint32,
 	includeDeclaration bool,

@@ -466,8 +466,9 @@ func TestGetBufYAMLCompletionItemsTextEdit(t *testing.T) {
 		items := getBufYAMLCompletionItems(parseYAMLDoc("lint:\n  \n"), "lint:\n  \n", protocol.Position{Line: 1, Character: 2}, "")
 		require.NotNil(t, items)
 		for _, item := range items {
-			require.NotNil(t, item.TextEdit, "item %q has no TextEdit", item.Label)
-			assert.Equal(t, item.Label+": ", item.TextEdit.NewText,
+			textEdit, ok := item.TextEdit.(*protocol.TextEdit)
+			require.True(t, ok, "item %q has no TextEdit", item.Label)
+			assert.Equal(t, item.Label+": ", textEdit.NewText,
 				"item %q TextEdit.NewText should be label + \": \"", item.Label)
 		}
 	})
@@ -484,10 +485,11 @@ func TestGetBufYAMLCompletionItemsTextEdit(t *testing.T) {
 		)
 		require.NotNil(t, items)
 		for _, item := range items {
-			require.NotNil(t, item.TextEdit, "item %q has no TextEdit", item.Label)
-			assert.Equal(t, uint32(6), item.TextEdit.Range.Start.Character,
+			textEdit, ok := item.TextEdit.(*protocol.TextEdit)
+			require.True(t, ok, "item %q has no TextEdit", item.Label)
+			assert.Equal(t, uint32(6), textEdit.Range.Start.Character,
 				"item %q TextEdit range should start at token start (col 6)", item.Label)
-			assert.Equal(t, uint32(10), item.TextEdit.Range.End.Character,
+			assert.Equal(t, uint32(10), textEdit.Range.End.Character,
 				"item %q TextEdit range should end at cursor (col 10)", item.Label)
 		}
 	})
@@ -503,8 +505,9 @@ func TestGetBufYAMLCompletionItemsTextEdit(t *testing.T) {
 		)
 		require.NotNil(t, items)
 		for _, item := range items {
-			require.NotNil(t, item.TextEdit, "item %q has no TextEdit", item.Label)
-			assert.Equal(t, item.Label+": ", item.TextEdit.NewText,
+			textEdit, ok := item.TextEdit.(*protocol.TextEdit)
+			require.True(t, ok, "item %q has no TextEdit", item.Label)
+			assert.Equal(t, item.Label+": ", textEdit.NewText,
 				"item %q TextEdit.NewText should be label + \": \"", item.Label)
 		}
 	})
@@ -516,8 +519,9 @@ func TestGetBufYAMLCompletionItemsTextEdit(t *testing.T) {
 		items := getBufYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 1, Character: 0}, "")
 		require.NotNil(t, items)
 		for _, item := range items {
-			require.NotNil(t, item.TextEdit, "item %q has no TextEdit", item.Label)
-			assert.Equal(t, "  "+item.Label+": ", item.TextEdit.NewText,
+			textEdit, ok := item.TextEdit.(*protocol.TextEdit)
+			require.True(t, ok, "item %q has no TextEdit", item.Label)
+			assert.Equal(t, "  "+item.Label+": ", textEdit.NewText,
 				"item %q TextEdit.NewText should have 2-space indent prefix", item.Label)
 		}
 	})
@@ -535,10 +539,11 @@ func TestGetBufYAMLCompletionItemsTextEdit(t *testing.T) {
 		)
 		require.NotNil(t, items)
 		for _, item := range items {
-			require.NotNil(t, item.TextEdit, "item %q has no TextEdit", item.Label)
-			assert.Equal(t, uint32(2), item.TextEdit.Range.Start.Character,
+			textEdit, ok := item.TextEdit.(*protocol.TextEdit)
+			require.True(t, ok, "item %q has no TextEdit", item.Label)
+			assert.Equal(t, uint32(2), textEdit.Range.Start.Character,
 				"item %q TextEdit range should start at token start (col 2)", item.Label)
-			assert.Equal(t, uint32(10), item.TextEdit.Range.End.Character,
+			assert.Equal(t, uint32(10), textEdit.Range.End.Character,
 				"item %q TextEdit range should end at token end (col 10), not cursor (col 7)", item.Label)
 		}
 	})

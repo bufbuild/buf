@@ -43,6 +43,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 // file is a file that has been opened by the client.
@@ -50,7 +51,7 @@ import (
 // Mutating a file is thread-safe.
 type file struct {
 	lsp *lsp
-	uri protocol.URI
+	uri uri.URI
 
 	file *source.File
 	// Version is an opaque version identifier given to us by the LSP client. This
@@ -92,7 +93,7 @@ func (f *file) Manager() *fileManager {
 
 // Reset clears all bookkeeping information on this file and resets it.
 func (f *file) Reset(ctx context.Context) {
-	f.lsp.logger.DebugContext(ctx, "resetting file", slog.String("uri", f.uri.Filename()))
+	f.lsp.logger.DebugContext(ctx, "resetting file", slog.String("uri", f.uri.FsPath()))
 	f.releaseWorkspace()
 	// Drop this file's references from the index before the file is zeroed.
 	f.lsp.referenceIndex.RemoveFile(f.uri)
@@ -133,7 +134,7 @@ func (f *file) ReadFromWorkspace(ctx context.Context) (err error) {
 		return nil
 	}
 
-	fileName := f.uri.Filename()
+	fileName := f.uri.FsPath()
 	var reader io.ReadCloser
 	switch info := f.objectInfo.(type) {
 	case bufmodule.FileInfo:
@@ -163,9 +164,9 @@ func (f *file) ReadFromWorkspace(ctx context.Context) (err error) {
 // Update updates the contents of this file with the given text received from
 // the LSP client.
 func (f *file) Update(ctx context.Context, version int32, text string) {
-	f.lsp.logger.InfoContext(ctx, "file updated", slog.String("uri", f.uri.Filename()), slog.Int("old_version", int(f.version)), slog.Int("new_version", int(version)))
+	f.lsp.logger.InfoContext(ctx, "file updated", slog.String("uri", f.uri.FsPath()), slog.Int("old_version", int(f.version)), slog.Int("new_version", int(version)))
 	f.version = version
-	f.file = source.NewFile(f.uri.Filename(), text)
+	f.file = source.NewFile(f.uri.FsPath(), text)
 	f.hasText = true
 
 	f.CancelChecks(ctx)
@@ -189,7 +190,7 @@ func (f *file) Update(ctx context.Context, version int32, text string) {
 func (f *file) RefreshWorkspace(ctx context.Context) {
 	f.lsp.logger.Debug(
 		"refresh workspace",
-		slog.String("file", f.uri.Filename()),
+		slog.String("file", f.uri.FsPath()),
 		slog.Int("version", int(f.version)),
 	)
 	defer f.lsp.workspaceManager.Cleanup(ctx)
@@ -317,7 +318,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 
 	f.lsp.logger.DebugContext(
 		ctx, "ir diagnostic(s)",
-		slog.String("uri", f.uri.Filename()),
+		slog.String("uri", f.uri.FsPath()),
 		slog.Int("count", len(f.diagnostics)),
 	)
 }
@@ -427,7 +428,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 			// This shouldn't happen, logging a warning
 			f.lsp.logger.Warn(
 				"found unresolved non-reference and non-option symbol",
-				slog.String("file", f.uri.Filename()),
+				slog.String("file", f.uri.FsPath()),
 				slog.Any("symbol", sym),
 			)
 		}
@@ -443,7 +444,7 @@ func (f *file) IndexSymbols(ctx context.Context) {
 		return diff
 	})
 
-	f.lsp.logger.DebugContext(ctx, "symbol indexing complete", slog.String("uri", f.uri.Filename()))
+	f.lsp.logger.DebugContext(ctx, "symbol indexing complete", slog.String("uri", f.uri.FsPath()))
 }
 
 // indexSymbols takes the IR [ir.File] for each [file] and returns all the file symbols in
@@ -1083,7 +1084,7 @@ func (f *file) RunChecks(ctx context.Context) {
 		if diagnostic.Severity == protocol.DiagnosticSeverityError {
 			f.lsp.logger.DebugContext(
 				ctx, "checks skipped on diagnostic severity",
-				slog.String("severity", diagnostic.Severity.String()),
+				slog.String("severity", "Error"),
 			)
 			return // Skip on not buildable images.
 		}
@@ -1093,7 +1094,7 @@ func (f *file) RunChecks(ctx context.Context) {
 	module := f.workspace.GetModule(f.uri)
 	checkClient := f.workspace.CheckClient()
 	if workspace == nil || module == nil || checkClient == nil || f.objectInfo == nil {
-		f.lsp.logger.Debug("checks skipped", slog.String("uri", f.uri.Filename()))
+		f.lsp.logger.Debug("checks skipped", slog.String("uri", f.uri.FsPath()))
 		return
 	}
 	path := f.objectInfo.Path()
@@ -1117,8 +1118,8 @@ func (f *file) RunChecks(ctx context.Context) {
 	// checks run, so the goroutine must re-resolve the file under the lock
 	// before reading f.
 	lsp := f.lsp
-	uri := f.uri
-	uriFilename := f.uri.Filename()
+	fileURI := f.uri
+	uriFilename := f.uri.FsPath()
 
 	go func() {
 		var annotations []bufanalysis.FileAnnotation
@@ -1161,7 +1162,7 @@ func (f *file) RunChecks(ctx context.Context) {
 		lsp.lock.Lock()
 		defer lsp.lock.Unlock()
 
-		if lsp.fileManager.Get(uri) != f {
+		if lsp.fileManager.Get(fileURI) != f {
 			lsp.logger.DebugContext(ctx, "checks: file evicted while checks ran", slog.String("uri", uriFilename))
 			return // The file was evicted, and possibly re-tracked, while checks ran.
 		}
@@ -1190,22 +1191,20 @@ func (f *file) appendAnnotations(source string, annotations []bufanalysis.FileAn
 		protocolRange := reportLocationsToProtocolRange(startLocation, endLocation)
 		diagnostic := protocol.Diagnostic{
 			Range:    protocolRange,
-			Code:     annotation.Type(),
+			Code:     protocol.String(annotation.Type()),
 			Severity: protocol.DiagnosticSeverityWarning,
-			Source:   source,
-			Message:  annotation.Message(),
+			Source:   newOptionalNonZero(source),
+			Message:  protocol.String(annotation.Message()),
 		}
 		// Only link to buf.build/docs for built-in rules. Plugin and policy
 		// rules have their own documentation, so we skip the link entirely.
 		if annotation.PluginName() == "" && annotation.PolicyName() == "" {
-			diagnostic.CodeDescription = &protocol.CodeDescription{
-				Href: protocol.URI("https://buf.build/docs/lint/rules/#" + strings.ToLower(annotation.Type())),
+			diagnostic.CodeDescription = protocol.CodeDescription{
+				Href: uri.URI("https://buf.build/docs/lint/rules/#" + strings.ToLower(annotation.Type())),
 			}
 		}
 		if annotation.Type() == "IMPORT_USED" {
-			diagnostic.Tags = []protocol.DiagnosticTag{
-				protocol.DiagnosticTagUnnecessary,
-			}
+			diagnostic.Tags = protocol.NewDiagnosticTags(protocol.DiagnosticTagUnnecessary)
 		}
 		f.diagnostics = append(f.diagnostics, diagnostic)
 	}
@@ -1232,10 +1231,8 @@ func (f *file) PublishDiagnostics(ctx context.Context) {
 
 	// Publish the diagnostics. This error is automatically logged by the LSP framework.
 	_ = f.lsp.client.PublishDiagnostics(ctx, &protocol.PublishDiagnosticsParams{
-		URI: f.uri,
-		// NOTE: For some reason, Version is int32 in the document struct, but uint32 here.
-		// This seems like a bug in the LSP protocol package.
-		Version:     uint32(f.version),
+		URI:         f.uri,
+		Version:     newOptionalNonZero(f.version),
 		Diagnostics: diagnostics,
 	})
 }

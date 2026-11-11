@@ -57,7 +57,7 @@ func getCompletionItems(
 		file.lsp.logger.DebugContext(
 			ctx,
 			"no AST found for completion",
-			slog.String("file", file.uri.Filename()),
+			slog.String("file", file.uri.FsPath()),
 		)
 		return nil
 	}
@@ -696,7 +696,7 @@ func completionItemsForImport(ctx context.Context, file *file, declImport ast.De
 				NewText: suggest[len(prefix) : len(suggest)-len(suffix)],
 			},
 			AdditionalTextEdits: additionalTextEdits,
-			Deprecated:          importFileIsDeprecated,
+			Deprecated:          newOptionalNonZero(importFileIsDeprecated),
 		})
 	}
 	return items
@@ -1136,8 +1136,8 @@ func typeReferencesToCompletionItems(
 					Range:   editRange,
 					NewText: label,
 				},
-				Deprecated:          isDeprecated,
-				Documentation:       symbol.FormatDocs(),
+				Deprecated:          newOptionalNonZero(isDeprecated),
+				Documentation:       protocol.String(symbol.FormatDocs()),
 				AdditionalTextEdits: additionalTextEdits,
 			}) {
 				break
@@ -1195,9 +1195,9 @@ func optionToCompletionItems(
 					Range:   reportSpanToProtocolRange(span),
 					NewText: label,
 				},
-				Deprecated:    isDeprecated,
-				Documentation: irMemberDoc(member),
-				Detail:        detail,
+				Deprecated:    newOptionalNonZero(isDeprecated),
+				Documentation: protocol.String(irMemberDoc(member)),
+				Detail:        newOptionalNonZero(detail),
 			}
 			if !yield(item) {
 				break
@@ -1264,9 +1264,9 @@ func extensionToCompletionItems(
 						Range:   reportSpanToProtocolRange(span),
 						NewText: label,
 					},
-					Deprecated:    isDeprecated,
-					Documentation: irMemberDoc(extension),
-					Detail:        detail,
+					Deprecated:    newOptionalNonZero(isDeprecated),
+					Documentation: protocol.String(irMemberDoc(extension)),
+					Detail:        newOptionalNonZero(detail),
 				}
 				if !yield(item) {
 					break
@@ -1447,9 +1447,9 @@ func messageFieldCompletionItems(
 					Range:   editRange,
 					NewText: newText,
 				},
-				Deprecated:    isDeprecated,
-				Documentation: irMemberDoc(member),
-				Detail:        detail,
+				Deprecated:    newOptionalNonZero(isDeprecated),
+				Documentation: protocol.String(irMemberDoc(member)),
+				Detail:        newOptionalNonZero(detail),
 			}
 			if !yield(item) {
 				return

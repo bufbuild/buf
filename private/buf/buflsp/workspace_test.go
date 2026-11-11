@@ -27,6 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 func TestWorkspaceSymbol(t *testing.T) {
@@ -48,7 +49,7 @@ func TestWorkspaceSymbol(t *testing.T) {
 		kind       protocol.SymbolKind
 		line       uint32
 		deprecated bool
-		uri        protocol.URI
+		uri        uri.URI
 	}
 
 	tests := []struct {
@@ -133,7 +134,7 @@ func TestWorkspaceSymbol(t *testing.T) {
 				assert.Equal(t, expectedSymbol.kind, found.Kind, "symbol %s has wrong kind", expectedSymbol.name)
 				assert.Equal(t, expectedSymbol.uri, found.Location.URI, "symbol %s has wrong URI", expectedSymbol.name)
 				assert.Equal(t, expectedSymbol.line, found.Location.Range.Start.Line, "symbol %s has wrong line number", expectedSymbol.name)
-				assert.Equal(t, expectedSymbol.deprecated, found.Deprecated, "symbol %s has wrong deprecated status", expectedSymbol.name)
+				assert.Equal(t, expectedSymbol.deprecated, found.Deprecated != nil && *found.Deprecated, "symbol %s has wrong deprecated status", expectedSymbol.name)
 			}
 		})
 	}
@@ -226,8 +227,8 @@ func resolveDependencyURI(
 	ctx context.Context,
 	t *testing.T,
 	clientJSONConn jsonrpc2.Conn,
-	testURI protocol.URI,
-) protocol.URI {
+	testURI uri.URI,
+) uri.URI {
 	t.Helper()
 
 	var locations []protocol.Location
@@ -245,10 +246,10 @@ func resolveDependencyURI(
 // dependencyTypePosition finds a position on a type reference in the
 // dependency file, so completion there suggests types. The line is found
 // rather than hardcoded so the test survives a well-known type update.
-func dependencyTypePosition(t *testing.T, dependencyURI protocol.URI) protocol.Position {
+func dependencyTypePosition(t *testing.T, dependencyURI uri.URI) protocol.Position {
 	t.Helper()
 
-	text, err := os.ReadFile(dependencyURI.Filename())
+	text, err := os.ReadFile(dependencyURI.FsPath())
 	require.NoError(t, err)
 	var line uint32
 	for fileLine := range strings.SplitSeq(string(text), "\n") {
@@ -265,7 +266,7 @@ func dependencyTypePosition(t *testing.T, dependencyURI protocol.URI) protocol.P
 		}
 		line++
 	}
-	t.Fatalf("no type reference found in %s", dependencyURI.Filename())
+	t.Fatalf("no type reference found in %s", dependencyURI.FsPath())
 	return protocol.Position{}
 }
 
@@ -274,11 +275,11 @@ func openFileFromDisk(
 	ctx context.Context,
 	t *testing.T,
 	clientJSONConn jsonrpc2.Conn,
-	uri protocol.URI,
+	uri uri.URI,
 ) {
 	t.Helper()
 
-	text, err := os.ReadFile(uri.Filename())
+	text, err := os.ReadFile(uri.FsPath())
 	require.NoError(t, err)
 	require.NoError(t, clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidOpen, &protocol.DidOpenTextDocumentParams{
 		TextDocument: protocol.TextDocumentItem{
@@ -295,7 +296,7 @@ func closeFile(
 	ctx context.Context,
 	t *testing.T,
 	clientJSONConn jsonrpc2.Conn,
-	uri protocol.URI,
+	uri uri.URI,
 ) {
 	t.Helper()
 
@@ -309,7 +310,7 @@ func requestDefinition(
 	ctx context.Context,
 	t *testing.T,
 	clientJSONConn jsonrpc2.Conn,
-	uri protocol.URI,
+	uri uri.URI,
 	position protocol.Position,
 ) []protocol.Location {
 	t.Helper()
@@ -330,7 +331,7 @@ func requestHover(
 	ctx context.Context,
 	t *testing.T,
 	clientJSONConn jsonrpc2.Conn,
-	uri protocol.URI,
+	uri uri.URI,
 	position protocol.Position,
 ) *protocol.Hover {
 	t.Helper()

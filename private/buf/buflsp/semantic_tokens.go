@@ -64,28 +64,28 @@ var (
 	// These slices must match the order of the indices in the above const blocks.
 	// We use protocol constants where available.
 	semanticTypeLegend = []string{
-		string(protocol.SemanticTokenProperty),
-		string(protocol.SemanticTokenStruct),
-		string(protocol.SemanticTokenVariable),
-		string(protocol.SemanticTokenEnum),
-		string(protocol.SemanticTokenEnumMember),
-		string(protocol.SemanticTokenInterface),
-		string(protocol.SemanticTokenMethod),
-		string(protocol.SemanticTokenFunction),
-		"decorator", // Added in LSP 3.17.0; not in our protocol library yet.
-		string(protocol.SemanticTokenMacro),
-		string(protocol.SemanticTokenNamespace),
-		string(protocol.SemanticTokenKeyword),
-		string(protocol.SemanticTokenModifier),
-		string(protocol.SemanticTokenComment),
-		string(protocol.SemanticTokenString),
-		string(protocol.SemanticTokenNumber),
-		string(protocol.SemanticTokenType),
-		string(protocol.SemanticTokenOperator),
+		string(protocol.SemanticTokenTypesProperty),
+		string(protocol.SemanticTokenTypesStruct),
+		string(protocol.SemanticTokenTypesVariable),
+		string(protocol.SemanticTokenTypesEnum),
+		string(protocol.SemanticTokenTypesEnumMember),
+		string(protocol.SemanticTokenTypesInterface),
+		string(protocol.SemanticTokenTypesMethod),
+		string(protocol.SemanticTokenTypesFunction),
+		string(protocol.SemanticTokenTypesDecorator),
+		string(protocol.SemanticTokenTypesMacro),
+		string(protocol.SemanticTokenTypesNamespace),
+		string(protocol.SemanticTokenTypesKeyword),
+		string(protocol.SemanticTokenTypesModifier),
+		string(protocol.SemanticTokenTypesComment),
+		string(protocol.SemanticTokenTypesString),
+		string(protocol.SemanticTokenTypesNumber),
+		string(protocol.SemanticTokenTypesType),
+		string(protocol.SemanticTokenTypesOperator),
 	}
 	semanticModifierLegend = []string{
-		string(protocol.SemanticTokenModifierDeprecated),
-		string(protocol.SemanticTokenModifierDefaultLibrary),
+		string(protocol.SemanticTokenModifiersDeprecated),
+		string(protocol.SemanticTokenModifiersDefaultLibrary),
 	}
 )
 

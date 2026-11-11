@@ -29,11 +29,11 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 // errUnresolvableWorkspace is an unsupported workspace error.
-type errUnresolvableWorkspace protocol.URI
+type errUnresolvableWorkspace uri.URI
 
 func (e errUnresolvableWorkspace) Error() string {
 	return fmt.Sprintf("unresolvable workspace for %q", string(e))
@@ -52,14 +52,14 @@ func newWorkspaceManager(lsp *lsp) *workspaceManager {
 
 // LeaseWorkspace attempts to find and lease the workspace for the given URI string. If the
 // workspace has not been seen before, a new workspace is created. This may fail.
-func (w *workspaceManager) LeaseWorkspace(ctx context.Context, uri protocol.URI) (*workspace, error) {
+func (w *workspaceManager) LeaseWorkspace(ctx context.Context, fileURI uri.URI) (*workspace, error) {
 	defer func() {
 		// Run a cleanup as a lazy job.
 		w.Cleanup(ctx)
 		w.lsp.logger.Debug("workspace: lease workspace", slog.Int("active", len(w.workspaces)))
 	}()
 
-	workspace, err := w.getOrCreateWorkspace(ctx, uri)
+	workspace, err := w.getOrCreateWorkspace(ctx, fileURI)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (w *workspaceManager) Cleanup(ctx context.Context) {
 			index++
 			continue // workspace in use
 		}
-		w.lsp.logger.Debug("workspace: cleanup removing workspace", slog.String("parent", workspace.workspaceURI.Filename()))
+		w.lsp.logger.Debug("workspace: cleanup removing workspace", slog.String("parent", workspace.workspaceURI.FsPath()))
 		for _, file := range workspace.pathToFile {
 			file.Close(ctx)
 		}
@@ -90,18 +90,18 @@ func (w *workspaceManager) Cleanup(ctx context.Context) {
 }
 
 // createWorkspace creates a new workspace for the protocol URI.
-func (w *workspaceManager) getOrCreateWorkspace(ctx context.Context, uri protocol.URI) (*workspace, error) {
+func (w *workspaceManager) getOrCreateWorkspace(ctx context.Context, fileURI uri.URI) (*workspace, error) {
 	// This looks for a workspace that already has ownership over the URI.
 	// If a new file is added we will create a new workspace.
 	// Reusing workspaces is an optimization. Matching is on best-effort.
-	fileName := uri.Filename()
+	fileName := fileURI.FsPath()
 	for _, workspace := range w.workspaces {
 		if _, ok := workspace.fileNameToFileInfo[fileName]; ok {
 			// Workspace already exists for this file. Refresh to update.
 			if err := workspace.Refresh(ctx); err != nil {
 				return nil, err
 			}
-			w.lsp.logger.Debug("workspace: reusing workspace", slog.String("file", uri.Filename()), slog.String("parent", workspace.workspaceURI.Filename()))
+			w.lsp.logger.Debug("workspace: reusing workspace", slog.String("file", fileURI.FsPath()), slog.String("parent", workspace.workspaceURI.FsPath()))
 			return workspace, nil
 		}
 	}
@@ -110,12 +110,12 @@ func (w *workspaceManager) getOrCreateWorkspace(ctx context.Context, uri protoco
 	isCache := normalpath.ContainsPath(w.lsp.container.CacheDirPath(), fileName, normalpath.Absolute)
 	if isCache {
 		w.lsp.logger.Debug("workspace: unresolvable cache file outside workspace", slog.String("path", fileName))
-		return nil, errUnresolvableWorkspace(uri)
+		return nil, errUnresolvableWorkspace(fileURI)
 	}
 	// Add the workspace to the manager.
 	workspace := &workspace{
 		lsp:          w.lsp,
-		workspaceURI: uri,
+		workspaceURI: fileURI,
 	}
 	if err := workspace.Refresh(ctx); err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ type workspace struct {
 	// refCount counts all the files that currently reference this workspace.
 	// A refCount of zero will be removed by the workspaceManager on cleanup.
 	refCount           int
-	workspaceURI       protocol.URI // File that created this workspace.
+	workspaceURI       uri.URI // File that created this workspace.
 	workspace          bufworkspace.Workspace
 	fileNameToFileInfo map[string]bufmodule.FileInfo
 	pathToFile         map[string]*file
@@ -140,15 +140,15 @@ type workspace struct {
 
 // Lease increments the reference count.
 func (w *workspace) Lease() {
-	w.lsp.logger.Debug("workspace: lease", slog.String("path", w.workspaceURI.Filename()))
+	w.lsp.logger.Debug("workspace: lease", slog.String("path", w.workspaceURI.FsPath()))
 	w.refCount++
 }
 
 // Release decrements the reference count.
 func (w *workspace) Release() {
-	w.lsp.logger.Debug("workspace: release", slog.String("path", w.workspaceURI.Filename()))
+	w.lsp.logger.Debug("workspace: release", slog.String("path", w.workspaceURI.FsPath()))
 	if w.refCount <= 0 {
-		w.lsp.logger.Error("workspace: refcount released below zero", slog.String("path", w.workspaceURI.Filename()))
+		w.lsp.logger.Error("workspace: refcount released below zero", slog.String("path", w.workspaceURI.FsPath()))
 		return
 	}
 	w.refCount--
@@ -169,7 +169,7 @@ func (w *workspace) Refresh(ctx context.Context) error {
 	if w == nil {
 		return nil
 	}
-	fileName := w.workspaceURI.Filename()
+	fileName := w.workspaceURI.FsPath()
 	bufWorkspace, err := w.getBufWorkspace(ctx, fileName)
 	if err != nil {
 		w.lsp.logger.Error("workspace: get workspace", slog.String("file", fileName), xslog.ErrorAttr(err))
@@ -245,15 +245,15 @@ func (w *workspace) Workspace() bufworkspace.Workspace {
 }
 
 // GetModule resolves the Module for the protocol URI.
-func (w *workspace) GetModule(uri protocol.URI) bufmodule.Module {
+func (w *workspace) GetModule(fileURI uri.URI) bufmodule.Module {
 	if w == nil {
 		return nil
 	}
-	fileName := uri.Filename()
+	fileName := fileURI.FsPath()
 	if fileInfo, ok := w.fileNameToFileInfo[fileName]; ok {
 		return fileInfo.Module()
 	}
-	w.lsp.logger.Warn("workspace: module not found", slog.String("file", fileName), slog.String("parent", w.workspaceURI.Filename()))
+	w.lsp.logger.Warn("workspace: module not found", slog.String("file", fileName), slog.String("parent", w.workspaceURI.FsPath()))
 	return nil
 }
 
@@ -275,7 +275,7 @@ func (w *workspace) PathToFile() map[string]*file {
 
 // indexFiles builds the pathToFile mapping.
 func (w *workspace) indexFiles(ctx context.Context) {
-	w.lsp.logger.Debug("workspace: index files", slog.String("path", w.workspaceURI.Filename()))
+	w.lsp.logger.Debug("workspace: index files", slog.String("path", w.workspaceURI.FsPath()))
 	previous := w.pathToFile
 	w.pathToFile = make(map[string]*file, len(previous))
 
@@ -284,7 +284,7 @@ func (w *workspace) indexFiles(ctx context.Context) {
 		if !ok {
 			fileURI := FilePathToURI(fileInfo.LocalPath())
 			file = w.lsp.fileManager.Track(fileURI)
-			w.lsp.logger.Debug("workspace: index track file", slog.String("path", file.uri.Filename()))
+			w.lsp.logger.Debug("workspace: index track file", slog.String("path", file.uri.FsPath()))
 		}
 
 		// Currently we only associate a file with one workspace. This assumption isn't accurate
@@ -311,7 +311,7 @@ func (w *workspace) indexFiles(ctx context.Context) {
 	}
 	// Drop all unused files. It was deleted from the workspace.
 	for _, file := range previous {
-		w.lsp.logger.Debug("workspace: index drop file", slog.String("path", file.uri.Filename()))
+		w.lsp.logger.Debug("workspace: index drop file", slog.String("path", file.uri.FsPath()))
 		file.Close(ctx)
 	}
 }

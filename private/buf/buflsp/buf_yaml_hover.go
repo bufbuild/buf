@@ -393,8 +393,8 @@ func makeBufYAMLHover(displayName string, doc bufYAMLDoc, nodeRange protocol.Ran
 		body += fmt.Sprintf("\n\n[Documentation](%s)", doc.url)
 	}
 	return &protocol.Hover{
-		Contents: protocol.MarkupContent{
-			Kind:  protocol.Markdown,
+		Contents: &protocol.MarkupContent{
+			Kind:  protocol.MarkupKindMarkdown,
 			Value: body,
 		},
 		Range: &nodeRange,

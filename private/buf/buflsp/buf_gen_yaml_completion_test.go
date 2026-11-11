@@ -363,8 +363,9 @@ func TestGetBufGenYAMLCompletionItemsTextEdit(t *testing.T) {
 		items := getBufGenYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 1, Character: 4}, "", nil)
 		require.NotNil(t, items)
 		for _, item := range items {
-			require.NotNil(t, item.TextEdit, "item %q has no TextEdit", item.Label)
-			assert.Equal(t, item.Label+": ", item.TextEdit.NewText,
+			textEdit, ok := item.TextEdit.(*protocol.TextEdit)
+			require.True(t, ok, "item %q has no TextEdit", item.Label)
+			assert.Equal(t, item.Label+": ", textEdit.NewText,
 				"item %q TextEdit.NewText should be label + \": \"", item.Label)
 		}
 	})
@@ -376,10 +377,11 @@ func TestGetBufGenYAMLCompletionItemsTextEdit(t *testing.T) {
 		items := getBufGenYAMLCompletionItems(parseYAMLDoc(text), text, protocol.Position{Line: 0, Character: 10}, "", nil)
 		require.NotNil(t, items)
 		for _, item := range items {
-			require.NotNil(t, item.TextEdit, "item %q has no TextEdit", item.Label)
-			assert.Equal(t, uint32(9), item.TextEdit.Range.Start.Character,
+			textEdit, ok := item.TextEdit.(*protocol.TextEdit)
+			require.True(t, ok, "item %q has no TextEdit", item.Label)
+			assert.Equal(t, uint32(9), textEdit.Range.Start.Character,
 				"item %q TextEdit range should start at token start (col 9)", item.Label)
-			assert.Equal(t, uint32(10), item.TextEdit.Range.End.Character,
+			assert.Equal(t, uint32(10), textEdit.Range.End.Character,
 				"item %q TextEdit range should end at cursor (col 10)", item.Label)
 		}
 	})

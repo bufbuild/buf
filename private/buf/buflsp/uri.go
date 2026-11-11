@@ -16,14 +16,19 @@ package buflsp
 
 import (
 	"net/url"
+	"path/filepath"
 	"strings"
 
-	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
 )
 
 // FilePathToURI converts a file path to a properly encoded URI.
-func FilePathToURI(path string) protocol.URI {
+//
+// Relative paths are resolved against the current working directory.
+func FilePathToURI(path string) uri.URI {
+	if absolutePath, err := filepath.Abs(path); err == nil {
+		path = absolutePath
+	}
 	return normalizeURI(uri.File(path))
 }
 
@@ -33,13 +38,13 @@ func FilePathToURI(path string) protocol.URI {
 // components (valid pchar); vscode-uri always encodes them. vscode-uri also
 // lowercases Windows drive letters. When URIs differ, LSP operations like
 // go-to-definition silently fail because the client and server URIs don't match.
-func normalizeURI(u protocol.URI) protocol.URI {
+func normalizeURI(u uri.URI) uri.URI {
 	str := string(u)
 
 	after, found := strings.CutPrefix(str, "file:///")
 	if !found {
 		// Non-file URIs: only encode @.
-		return protocol.URI(strings.ReplaceAll(str, "@", "%40"))
+		return uri.URI(strings.ReplaceAll(str, "@", "%40"))
 	}
 
 	segments := strings.Split(after, "/")
@@ -67,5 +72,5 @@ func normalizeURI(u protocol.URI) protocol.URI {
 		segments[0] = string(segments[0][0]+32) + "%3A"
 	}
 
-	return protocol.URI("file:///" + strings.Join(segments, "/"))
+	return uri.URI("file:///" + strings.Join(segments, "/"))
 }

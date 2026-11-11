@@ -19,7 +19,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"testing/synctest"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -192,101 +191,99 @@ func TestCodeAction_LintIgnore(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			synctest.Test(t, func(t *testing.T) {
-				testProtoPath, err := filepath.Abs(tt.filename)
-				require.NoError(t, err)
+			testProtoPath, err := filepath.Abs(tt.filename)
+			require.NoError(t, err)
 
-				clientJSONConn, testURI, capture := setupLSPServerWithDiagnostics(t, testProtoPath)
+			clientJSONConn, testURI, capture := setupLSPServerWithDiagnostics(t, testProtoPath)
 
-				// Wait for lint diagnostics if we expect actions
-				if !tt.expectNoAction && len(tt.expectedRuleIDs) > 0 {
-					diagnostics := capture.wait(t, testURI, 10*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
-						count := 0
-						for _, d := range p.Diagnostics {
-							if d.Source == "buf lint" {
-								if code, ok := d.Code.(string); ok {
-									if slices.Contains(tt.expectedRuleIDs, code) {
-										count++
-									}
+			// Wait for lint diagnostics if we expect actions
+			if !tt.expectNoAction && len(tt.expectedRuleIDs) > 0 {
+				diagnostics := capture.wait(t, testURI, 10*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+					count := 0
+					for _, d := range p.Diagnostics {
+						if source, _ := d.Source.Get(); source == "buf lint" {
+							if code, ok := d.Code.(protocol.String); ok {
+								if slices.Contains(tt.expectedRuleIDs, string(code)) {
+									count++
 								}
 							}
 						}
-						return count >= len(tt.expectedRuleIDs)
-					})
-					require.NotNil(t, diagnostics, "expected lint diagnostics to be published")
-				}
+					}
+					return count >= len(tt.expectedRuleIDs)
+				})
+				require.NotNil(t, diagnostics, "expected lint diagnostics to be published")
+			}
 
-				// Request code actions at the specified position
-				var codeActions []protocol.CodeAction
-				_, err = clientJSONConn.Call(t.Context(), protocol.MethodTextDocumentCodeAction, protocol.CodeActionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: testURI,
+			// Request code actions at the specified position
+			var codeActions []protocol.CodeAction
+			_, err = clientJSONConn.Call(t.Context(), protocol.MethodTextDocumentCodeAction, protocol.CodeActionParams{
+				TextDocument: protocol.TextDocumentIdentifier{
+					URI: testURI,
+				},
+				Range: protocol.Range{
+					Start: protocol.Position{Line: tt.cursorLine, Character: tt.cursorChar},
+					End:   protocol.Position{Line: tt.cursorLine, Character: tt.cursorChar},
+				},
+				Context: protocol.CodeActionContext{
+					Only: []protocol.CodeActionKind{
+						protocol.CodeActionKindQuickFix,
 					},
-					Range: protocol.Range{
-						Start: protocol.Position{Line: tt.cursorLine, Character: tt.cursorChar},
-						End:   protocol.Position{Line: tt.cursorLine, Character: tt.cursorChar},
-					},
-					Context: protocol.CodeActionContext{
-						Only: []protocol.CodeActionKind{
-							protocol.QuickFix,
-						},
-					},
-				}, &codeActions)
-				require.NoError(t, err)
+				},
+			}, &codeActions)
+			require.NoError(t, err)
 
-				// Filter to lint ignore actions only
-				var lintIgnoreActions []protocol.CodeAction
-				for _, action := range codeActions {
-					if action.Kind == protocol.QuickFix && strings.Contains(action.Title, "buf:lint:ignore") {
-						lintIgnoreActions = append(lintIgnoreActions, action)
+			// Filter to lint ignore actions only
+			var lintIgnoreActions []protocol.CodeAction
+			for _, action := range codeActions {
+				if action.Kind != nil && *action.Kind == protocol.CodeActionKindQuickFix && strings.Contains(action.Title, "buf:lint:ignore") {
+					lintIgnoreActions = append(lintIgnoreActions, action)
+				}
+			}
+
+			if tt.expectNoAction {
+				assert.Empty(t, lintIgnoreActions, "expected no lint ignore actions")
+				return
+			}
+
+			// Verify we have the expected number of actions
+			require.Len(t, lintIgnoreActions, len(tt.expectedRuleIDs),
+				"expected %d lint ignore action(s)", len(tt.expectedRuleIDs))
+
+			// Verify each expected rule has an action
+			for _, ruleID := range tt.expectedRuleIDs {
+				expectedTitle := "Suppress " + ruleID + " with buf:lint:ignore"
+				var foundAction *protocol.CodeAction
+				for i := range lintIgnoreActions {
+					if lintIgnoreActions[i].Title == expectedTitle {
+						foundAction = &lintIgnoreActions[i]
+						break
 					}
 				}
+				require.NotNil(t, foundAction, "expected to find action for rule %s", ruleID)
+				assert.Equal(t, new(protocol.CodeActionKindQuickFix), foundAction.Kind)
 
-				if tt.expectNoAction {
-					assert.Empty(t, lintIgnoreActions, "expected no lint ignore actions")
-					return
+				// Check IsPreferred flag
+				if tt.expectIsPreferred {
+					assert.True(t, foundAction.IsPreferred != nil && *foundAction.IsPreferred, "expected action to be marked as preferred")
 				}
+			}
 
-				// Verify we have the expected number of actions
-				require.Len(t, lintIgnoreActions, len(tt.expectedRuleIDs),
-					"expected %d lint ignore action(s)", len(tt.expectedRuleIDs))
+			// Verify edits if provided (only for single-action tests)
+			if len(tt.expectedEdits) > 0 && len(tt.expectedRuleIDs) == 1 {
+				action := lintIgnoreActions[0]
+				require.NotNil(t, action.Edit)
+				require.NotNil(t, action.Edit.Changes)
 
-				// Verify each expected rule has an action
-				for _, ruleID := range tt.expectedRuleIDs {
-					expectedTitle := "Suppress " + ruleID + " with buf:lint:ignore"
-					var foundAction *protocol.CodeAction
-					for i := range lintIgnoreActions {
-						if lintIgnoreActions[i].Title == expectedTitle {
-							foundAction = &lintIgnoreActions[i]
-							break
-						}
-					}
-					require.NotNil(t, foundAction, "expected to find action for rule %s", ruleID)
-					assert.Equal(t, protocol.QuickFix, foundAction.Kind)
+				changes, ok := action.Edit.Changes[testURI]
+				require.True(t, ok, "expected changes for test file")
+				require.Equal(t, len(tt.expectedEdits), len(changes),
+					"expected %d edit(s), got %d", len(tt.expectedEdits), len(changes))
 
-					// Check IsPreferred flag
-					if tt.expectIsPreferred {
-						assert.True(t, foundAction.IsPreferred, "expected action to be marked as preferred")
-					}
+				for i, expectedEdit := range tt.expectedEdits {
+					assert.Equal(t, expectedEdit.Range, changes[i].Range, "edit %d: range mismatch", i)
+					assert.Equal(t, expectedEdit.NewText, changes[i].NewText, "edit %d: new text mismatch", i)
 				}
-
-				// Verify edits if provided (only for single-action tests)
-				if len(tt.expectedEdits) > 0 && len(tt.expectedRuleIDs) == 1 {
-					action := lintIgnoreActions[0]
-					require.NotNil(t, action.Edit)
-					require.NotNil(t, action.Edit.Changes)
-
-					changes, ok := action.Edit.Changes[testURI]
-					require.True(t, ok, "expected changes for test file")
-					require.Equal(t, len(tt.expectedEdits), len(changes),
-						"expected %d edit(s), got %d", len(tt.expectedEdits), len(changes))
-
-					for i, expectedEdit := range tt.expectedEdits {
-						assert.Equal(t, expectedEdit.Range, changes[i].Range, "edit %d: range mismatch", i)
-						assert.Equal(t, expectedEdit.NewText, changes[i].NewText, "edit %d: new text mismatch", i)
-					}
-				}
-			})
+			}
 		})
 	}
 }

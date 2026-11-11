@@ -16,6 +16,7 @@ package buflsp_test
 
 import (
 	"context"
+	"encoding/json"
 	"net"
 	"net/http"
 	"os"
@@ -56,7 +57,7 @@ func (nopModuleKeyProvider) GetModuleKeysForModuleRefs(context.Context, []bufpar
 func setupLSPServer(
 	t *testing.T,
 	testProtoPath string,
-) (jsonrpc2.Conn, protocol.URI) {
+) (jsonrpc2.Conn, uri.URI) {
 	t.Helper()
 
 	ctx := t.Context()
@@ -139,11 +140,7 @@ func setupLSPServer(
 		require.NoError(t, conn.Close())
 	})
 
-	clientStream := jsonrpc2.NewStream(clientConn)
-	clientJSONConn := jsonrpc2.NewConn(clientStream)
-	clientJSONConn.Go(ctx, jsonrpc2.AsyncHandler(func(_ context.Context, reply jsonrpc2.Replier, _ jsonrpc2.Request) error {
-		return reply(ctx, nil, nil)
-	}))
+	clientJSONConn := newClientConn(ctx, protocol.UnimplementedClient{}, clientConn)
 	t.Cleanup(func() {
 		require.NoError(t, clientJSONConn.Close())
 	})
@@ -152,7 +149,7 @@ func setupLSPServer(
 	testURI := buflsp.FilePathToURI(testProtoPath)
 	var initResult protocol.InitializeResult
 	_, initErr := clientJSONConn.Call(ctx, protocol.MethodInitialize, &protocol.InitializeParams{
-		RootURI: uri.New(testWorkspaceDir),
+		RootURI: new(uri.File(testWorkspaceDir)),
 		Capabilities: protocol.ClientCapabilities{
 			TextDocument: &protocol.TextDocumentClientCapabilities{},
 		},
@@ -177,4 +174,44 @@ func setupLSPServer(
 	require.NoError(t, err)
 
 	return clientJSONConn, testURI
+}
+
+// requireMarkupContent asserts that contents is a [protocol.MarkupContent] and
+// returns it.
+func requireMarkupContent(t *testing.T, contents protocol.HoverContents) *protocol.MarkupContent {
+	t.Helper()
+	markupContent, ok := contents.(*protocol.MarkupContent)
+	require.True(t, ok, "expected hover contents to be MarkupContent, got %T", contents)
+	return markupContent
+}
+
+// newStringLSPAny returns value encoded as a JSON string [protocol.LSPAny].
+func newStringLSPAny(t *testing.T, value string) protocol.LSPAny {
+	t.Helper()
+	data, err := json.Marshal(value)
+	require.NoError(t, err)
+	return data
+}
+
+// newClientConn returns a client connection over netConn that dispatches
+// messages from the server to client.
+//
+// Messages are handled in the order they are received, so tests observe
+// notifications in the order the server sent them.
+func newClientConn(ctx context.Context, client protocol.Client, netConn net.Conn) jsonrpc2.Conn {
+	conn := jsonrpc2.NewConn(jsonrpc2.NewStream(netConn), jsonrpc2.WithCodec(lspCodec{}))
+	conn.Go(ctx, protocol.ClientHandler(client, jsonrpc2.MethodNotFoundHandler))
+	return conn
+}
+
+// lspCodec is a [jsonrpc2.Codec] that uses the protocol package's encoding,
+// which understands its union types.
+type lspCodec struct{}
+
+func (lspCodec) Marshal(value any) ([]byte, error) {
+	return protocol.Marshal(value)
+}
+
+func (lspCodec) Unmarshal(data []byte, value any) error {
+	return protocol.Unmarshal(data, value)
 }

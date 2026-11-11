@@ -25,6 +25,7 @@ import (
 
 	"github.com/bufbuild/protocompile/experimental/token"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 // getLintIgnoreCodeActions generates code actions for suppressing lint diagnostics
@@ -46,15 +47,16 @@ func (s *server) getLintIgnoreCodeActions(
 	// Filter diagnostics to find lint errors that overlap with the requested range
 	for _, diagnostic := range file.diagnostics {
 		// Only handle lint diagnostics (not IR diagnostics)
-		if diagnostic.Source != lintSourceName {
+		if source, _ := diagnostic.Source.Get(); source != lintSourceName {
 			continue
 		}
 
 		// Diagnostic must have a code (the rule ID)
-		ruleID, ok := diagnostic.Code.(string)
-		if !ok || ruleID == "" {
+		code, ok := diagnostic.Code.(protocol.String)
+		if !ok || code == "" {
 			continue
 		}
+		ruleID := string(code)
 
 		// Skip file-wide lints (e.g., PACKAGE_DEFINED, FILE_LOWER_SNAKE_CASE).
 		if isFileWideLint(diagnostic.Range) {
@@ -78,7 +80,7 @@ func (s *server) getLintIgnoreCodeActions(
 	// If there's only one lint ignore action, mark it as preferred, since this likely corresponds
 	// closely to a user's intent while requesting code actions on this line.
 	if len(actions) == 1 {
-		actions[0].IsPreferred = true
+		actions[0].IsPreferred = new(true)
 	}
 
 	s.logger.DebugContext(ctx, "lint_ignore: generated actions",
@@ -145,9 +147,9 @@ func (s *server) generateLintIgnoreAction(
 	// Create the code action.
 	action := protocol.CodeAction{
 		Title: fmt.Sprintf("Suppress %s with buf:lint:ignore", ruleID),
-		Kind:  protocol.QuickFix,
+		Kind:  new(protocol.CodeActionKindQuickFix),
 		Edit: &protocol.WorkspaceEdit{
-			Changes: map[protocol.DocumentURI][]protocol.TextEdit{
+			Changes: map[uri.URI][]protocol.TextEdit{
 				file.uri: {edit},
 			},
 		},
