@@ -3,6 +3,7 @@ GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/bufbuild/protocompile@main \
 	buf.build/go/standard@main \
 	buf.build/go/app@main \
+	connectrpc.com/otelconnect@v0.11.0 \
 	go.lsp.dev/jsonrpc2@v0.10.0 \
 	go.lsp.dev/protocol@v0.12.0 \
 	go.lsp.dev/uri@v0.3.0
@@ -59,6 +60,8 @@ LICENSE_HEADER_IGNORES := \
 BANDEPS_CONFIG := etc/bandeps/bandeps.yaml
 BUFPRIVATEUSAGE_PKGS := ./private/...
 PROTOVALIDATE_VERSION := v1.1.0
+# protocompile@main requires protobuf-go v1.37.0-rc.1.
+PROTOC_GEN_GO_VERSION := v1.37.0-rc.1
 # Comment out to use released buf
 #BUF_GO_INSTALL_PATH := ./cmd/buf
 

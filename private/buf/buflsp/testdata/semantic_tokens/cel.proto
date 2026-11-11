@@ -38,3 +38,11 @@ message AnotherValidatedMessage {
 
   int32 count = 1;
 }
+
+// Unicode escape: \u00e9 is 6 source bytes but 2 bytes in the CEL string
+message UnicodeEscape {
+  string nickname = 1 [(buf.validate.field).cel = {
+    id: "unicode_escape.nickname"
+    expression: "this != '\u00e9' && this != ''"
+  }];
+}

@@ -1,7 +1,9 @@
 version: 2
 updates:
   - package-ecosystem: "docker"
-    directory: "/"
+    directories:
+      - "/"
+      - "/make/buf/docker"
     schedule:
       interval: "weekly"
   - package-ecosystem: "github-actions"

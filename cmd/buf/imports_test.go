@@ -187,6 +187,19 @@ func TestInvalidImportFromTransitive(t *testing.T) {
 	)
 }
 
+func TestInvalidOptionImportFromTransitive(t *testing.T) {
+	t.Parallel()
+	testRunStderrContainsWithCache(
+		t, nil, 0,
+		[]string{
+			`WARN`,
+			`File "school/v1/school.proto" imports "people/v1/people1.proto", which is not in your workspace or in the dependencies declared in your buf.yaml`,
+		},
+		"build",
+		filepath.Join("testdata", "imports", "failure", "school_option_import"),
+	)
+}
+
 func TestInvalidImportFromTransitiveWorkspace(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(

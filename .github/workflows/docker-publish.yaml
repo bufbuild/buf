@@ -70,6 +70,7 @@ jobs:
         with:
           context: . # This uses the checkout context
           file: Dockerfile.buf
+          pull: true
           load: true
           push: false
           tags: ${{ steps.meta.outputs.tags }}
@@ -89,6 +90,7 @@ jobs:
         with:
           context: . # This uses the checkout context
           file: Dockerfile.buf
+          pull: true
           platforms: ${{ steps.qemu.outputs.platforms }}
           push: ${{ github.event.inputs.publish == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}

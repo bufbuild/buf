@@ -186,14 +186,16 @@ func TestModifyImageFile(
 		{
 			description: "cc_enable_arena",
 			dirPathToFullName: map[string]string{
-				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
-				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
+				filepath.Join("testdata", "foo"):      "buf.build/acme/foo",
+				filepath.Join("testdata", "bar"):      "buf.build/acme/bar",
+				filepath.Join("testdata", "editions"): "buf.build/acme/editions",
 			},
 			config: bufconfig.NewGenerateManagedConfig(
 				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
 					newTestFileOptionOverrideRule(t, "", "buf.build/acme/bar", bufconfig.FileOptionCcEnableArenas, false),
+					newTestFileOptionOverrideRule(t, "", "buf.build/acme/editions", bufconfig.FileOptionCcEnableArenas, false),
 				},
 			),
 			modifyFunc: modifyCcEnableArenas,
@@ -202,9 +204,15 @@ func TestModifyImageFile(
 				"bar_empty/without_package.proto": {
 					CcEnableArenas: new(false),
 				},
+				"edition_2024/a.proto": {
+					CcEnableArenas: new(false),
+				},
+				// Removed in edition 2026, where arenas are always enabled.
+				"edition_2026/a.proto": nil,
 			},
 			filePathToExpectedMarkedLocationPaths: map[string][][]int32{
 				"bar_empty/without_package.proto": {ccEnableArenasPath},
+				"edition_2024/a.proto":            {ccEnableArenasPath},
 			},
 		},
 		{
@@ -506,6 +514,7 @@ func TestModifyImageFile(
 				},
 				// Removed in edition 2024, where it is the default behavior.
 				"edition_2024/a.proto": nil,
+				"edition_2026/a.proto": nil,
 			},
 			filePathToExpectedMarkedLocationPaths: map[string][][]int32{
 				"foo_empty/with_package.proto": {javaMultipleFilesPath},

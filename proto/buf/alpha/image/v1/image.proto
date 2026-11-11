@@ -49,6 +49,7 @@ message ImageFile {
   optional google.protobuf.SourceCodeInfo source_code_info = 9;
   optional string syntax = 12;
   optional google.protobuf.Edition edition = 14;
+  repeated string option_dependency = 15;
 
   // buf_extension contains buf-specific extensions to FileDescriptorProtos.
   //

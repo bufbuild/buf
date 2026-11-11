@@ -642,6 +642,40 @@ func TestExcludeImportFileDependencies(t *testing.T) {
 	runFilterImage(t, image, WithExcludeTypes("excluded"))
 }
 
+func TestOptionDependencies(t *testing.T) {
+	t.Parallel()
+	moduleSet, err := bufmoduletesting.NewModuleSet(bufmoduletesting.ModuleData{
+		PathToData: map[string][]byte{
+			"a.proto": []byte(`edition = "2024";
+package a;
+import option "opts.proto";
+message Foo { option (opts.tag) = "foo"; }
+message Bar {}
+`),
+			"opts.proto": []byte(`edition = "2024";
+package opts;
+import "google/protobuf/descriptor.proto";
+extend google.protobuf.MessageOptions { string tag = 50000; }
+`),
+		},
+	})
+	require.NoError(t, err)
+	image, err := bufimage.BuildImage(
+		t.Context(),
+		slogtestext.NewLogger(t),
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+	)
+	require.NoError(t, err)
+	testOptionDependencies := func(t *testing.T, want []string, opts ...ImageFilterOption) {
+		t.Helper()
+		_, filteredImage := runFilterImage(t, image, opts...)
+		assert.Equal(t, want, filteredImage.GetFile("a.proto").FileDescriptorProto().GetOptionDependency())
+	}
+	testOptionDependencies(t, []string{"opts.proto"}, WithIncludeTypes("a.Foo"))
+	testOptionDependencies(t, nil, WithIncludeTypes("a.Bar"))
+	testOptionDependencies(t, nil, WithIncludeTypes("a.Foo"), WithExcludeTypes("opts.tag"))
+}
+
 func TestEmptyFiles(t *testing.T) {
 	t.Parallel()
 	t.Run("include_empty_file", func(t *testing.T) {

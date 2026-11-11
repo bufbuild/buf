@@ -1,0 +1,5 @@
+edition = "2023";
+
+package a2;
+
+option cc_enable_arenas = true;

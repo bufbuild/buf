@@ -15,6 +15,7 @@
 package protoencoding
 
 import (
+	"slices"
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
@@ -31,6 +32,9 @@ func newResolver[F protodescriptor.FileDescriptor](fileDescriptors ...F) (Resolv
 		return nil, nil
 	}
 	fileDescriptorSet := protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...)
+	// FileDescriptorSetForFileDescriptors may return the caller's slice, and
+	// stripLegacyOptions replaces its elements.
+	fileDescriptorSet.File = slices.Clone(fileDescriptorSet.File)
 	if err := stripLegacyOptions(fileDescriptorSet.File); err != nil {
 		return nil, err
 	}

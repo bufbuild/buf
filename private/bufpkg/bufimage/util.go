@@ -17,6 +17,7 @@ package bufimage
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"buf.build/go/standard/xslices"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
@@ -253,7 +254,8 @@ func addFileWithImports(
 	seenPaths[path] = struct{}{}
 
 	// then, add imports first, for proper ordering
-	for _, importPath := range imageFile.FileDescriptorProto().GetDependency() {
+	fileDescriptorProto := imageFile.FileDescriptorProto()
+	for _, importPath := range slices.Concat(fileDescriptorProto.GetDependency(), fileDescriptorProto.GetOptionDependency()) {
 		if importFile := image.GetFile(importPath); importFile != nil {
 			accumulator = addFileWithImports(
 				accumulator,
@@ -347,6 +349,7 @@ func fileDescriptorProtoToProtoImageFile(
 		Dependency:       fileDescriptorProto.GetDependency(),
 		PublicDependency: fileDescriptorProto.GetPublicDependency(),
 		WeakDependency:   fileDescriptorProto.GetWeakDependency(),
+		OptionDependency: fileDescriptorProto.GetOptionDependency(),
 		MessageType:      fileDescriptorProto.GetMessageType(),
 		EnumType:         fileDescriptorProto.GetEnumType(),
 		Service:          fileDescriptorProto.GetService(),

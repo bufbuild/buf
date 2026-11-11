@@ -1,0 +1,23 @@
+edition = "2026";
+
+package a.b.c;
+
+import "c.proto";
+import option "google/protobuf/cpp_options.proto";
+import option "google/protobuf/json_options.proto";
+
+option (pb.file.cpp).namespace = "a::b::c";
+
+export message PublicApi {
+  option features.enforce_proto_limits = LEGACY_NO_EXPLICIT_LIMITS;
+  string id = 1;
+}
+
+message DefaultLocal {
+  string name = 1;
+}
+
+export enum Status {
+  STATUS_UNSPECIFIED = 0 [(pb.enumvalue.json).string = "unspecified"];
+  STATUS_OK = 1 [(pb.enumvalue.json).string = "ok"];
+}

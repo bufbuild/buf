@@ -224,6 +224,17 @@ message ServiceResponse {
 // TestRunPlainTextReflectionWithoutHTTP2 verifies the failure when the
 // plain-text server only speaks HTTP 1.1, which cannot carry the
 // bidirectional stream that server reflection uses.
+//
+// The server sees the HTTP/2 preface, rejects it with 400 and closes the
+// connection.
+//
+// If the client finishes writing the request before it reads the 400, which
+// is almost always the case against a remote server, buf curl should report
+// that the server does not support HTTP/2.
+//
+// If the connection is closed before the client finishes writing the
+// request, which can happen against a server on the same host, it is
+// acceptable to report only the raw transport error.
 func TestRunPlainTextReflectionWithoutHTTP2(t *testing.T) {
 	t.Parallel()
 	resolver := newTestDescriptorResolver(t)
@@ -235,15 +246,23 @@ func TestRunPlainTextReflectionWithoutHTTP2(t *testing.T) {
 		appcmdtesting.WithEnv(internaltesting.NewEnvFunc(t)),
 		appcmdtesting.WithExpectedExitCode(1),
 		appcmdtesting.WithStderr(stderr),
-		// The client speaks HTTP/2 via prior knowledge, but the server answers
-		// with HTTP 1.1, which the HTTP/2 framer rejects.
-		appcmdtesting.WithExpectedStderrPartials(
-			"the RPC protocol or method requires HTTP/2, but the server at "+strings.TrimPrefix(server.URL, "http://")+
-				" responded with HTTP/1.1 and does not appear to support HTTP/2 over plain-text (h2c)",
-			"note that the frame header looked like an HTTP/1.1 header",
-		),
 		appcmdtesting.WithArgs("curl", "--list-services", server.URL),
 	)
+	if strings.Contains(stderr.String(), "note that the frame header looked like an HTTP/1.1 header") {
+		assert.Contains(
+			t,
+			stderr.String(),
+			"the RPC protocol or method requires HTTP/2, but the server at "+strings.TrimPrefix(server.URL, "http://")+
+				" responded with HTTP/1.1 and does not appear to support HTTP/2 over plain-text (h2c)",
+		)
+	} else {
+		assert.True(
+			t,
+			strings.HasPrefix(stderr.String(), "canceled: ") || strings.HasPrefix(stderr.String(), "unavailable: "),
+			"expected a transport error, got stderr:\n%s",
+			stderr.String(),
+		)
+	}
 	// The flag is implied, so the error must no longer tell the user to set it.
 	assert.NotContains(t, stderr.String(), http2PriorKnowledgeFlagName)
 }

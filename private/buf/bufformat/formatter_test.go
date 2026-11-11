@@ -43,6 +43,7 @@ func testFormatCustomOptions(t *testing.T) {
 func testFormatEditions(t *testing.T) {
 	testFormatNoDiff(t, "testdata/editions/2023")
 	testFormatNoDiff(t, "testdata/editions/2024")
+	testFormatNoDiff(t, "testdata/editions/2026")
 }
 
 func testFormatProto2(t *testing.T) {

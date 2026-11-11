@@ -36,6 +36,8 @@ func TestCELHover(t *testing.T) {
 		name     string
 		line     uint32 // 0-indexed
 		char     uint32 // Character offset where the token starts
+		start    uint32 // Character the hover range starts at, if end is set
+		end      uint32 // Character the hover range ends at; the range is unchecked if zero
 		expected string // Full expected hover content
 	}{
 		// Keywords
@@ -632,13 +634,174 @@ func TestCELHover(t *testing.T) {
 			name:     "invalid UTF-8: literal ending the expression",
 			line:     408,
 			char:     26,
+			start:    25,
+			end:      31,
 			expected: "**Literal**: `'\uFFFD'`\n\n**Type**: string",
 		},
 		{
 			name:     "invalid UTF-8: literal followed by an operator",
 			line:     413,
 			char:     26,
+			start:    25,
+			end:      31,
 			expected: "**Literal**: `'\uFFFD'`\n\n**Type**: string",
+		},
+
+		// String literals written with proto escape sequences, which take a
+		// different number of bytes in the file than in the CEL expression they
+		// unescape to, the literals that follow them, and literals in an
+		// expression written as several adjacent proto strings.
+		{
+			name:     "escapes: escaped quotes",
+			line:     421,
+			char:     27,
+			start:    25,
+			end:      30,
+			expected: "**Literal**: `\"a\"`\n\n**Type**: string",
+		},
+		{
+			name:     "escapes: escaped backslash",
+			line:     426,
+			char:     28,
+			start:    25,
+			end:      30,
+			expected: "**Literal**: `'\\n'`\n\n**Type**: string",
+		},
+		{
+			name:     "escapes: unicode escape",
+			line:     431,
+			char:     25,
+			start:    25,
+			end:      33,
+			expected: "**Literal**: `'é'`\n\n**Type**: string",
+		},
+		{
+			name:     "escapes: after a unicode escape",
+			line:     431,
+			char:     45,
+			start:    45,
+			end:      47,
+			expected: "**Literal**: `''`\n\n**Type**: string",
+		},
+		{
+			name:     "escapes: long unicode escape",
+			line:     436,
+			char:     25,
+			start:    25,
+			end:      37,
+			expected: "**Literal**: `'😀'`\n\n**Type**: string",
+		},
+		{
+			name:     "escapes: after a long unicode escape",
+			line:     436,
+			char:     49,
+			start:    49,
+			end:      51,
+			expected: "**Literal**: `''`\n\n**Type**: string",
+		},
+		{
+			name:     "escapes: inside an escape",
+			line:     421,
+			char:     26,
+			start:    25,
+			end:      30,
+			expected: "**Literal**: `\"a\"`\n\n**Type**: string",
+		},
+		{
+			name:     "escapes: concatenated, in the first literal",
+			line:     441,
+			char:     25,
+			start:    25,
+			end:      33,
+			expected: "**Literal**: `'é'`\n\n**Type**: string",
+		},
+		{
+			name:     "escapes: concatenated, in a middle literal",
+			line:     442,
+			char:     21,
+			start:    19,
+			end:      24,
+			expected: "**Literal**: `\"a\"`\n\n**Type**: string",
+		},
+		{
+			name:     "escapes: concatenated, in the last literal",
+			line:     443,
+			char:     19,
+			start:    19,
+			end:      21,
+			expected: "**Literal**: `''`\n\n**Type**: string",
+		},
+		{
+			name:     "escapes: && after 2-byte literal",
+			line:     431,
+			char:     34,
+			start:    34,
+			end:      36,
+			expected: "**Operator**: `&&`\n\nlogically AND two boolean values. Errors and unknown values\nare valid inputs and will not halt evaluation.\n\n**Overloads**:\n- `bool && bool -> bool`\n\n[CEL by Example](https://celbyexample.com/logical-operators/#and)",
+		},
+		{
+			name:     "escapes: this after 2-byte literal",
+			line:     431,
+			char:     37,
+			start:    37,
+			end:      41,
+			expected: "**Special variable**\n\nRefers to the current message or field being validated.\n\nIn field-level rules, `this` refers to the field value.\nIn message-level rules, `this` refers to the entire message.\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#this)",
+		},
+		{
+			name:     "escapes: != after 2-byte literal",
+			line:     431,
+			char:     42,
+			start:    42,
+			end:      44,
+			expected: "**Operator**: `!=`\n\ncompare two values of the same type for inequality\n\n**Overloads**:\n- `<A> != <A> -> bool`\n\n[CEL by Example](https://celbyexample.com/comparison/#equality)",
+		},
+		{
+			name:     "escapes: 4-byte literal",
+			line:     448,
+			char:     25,
+			start:    25,
+			end:      37,
+			expected: "**Literal**: `'🎉'`\n\n**Type**: string",
+		},
+		{
+			name:     "escapes: this after 4-byte literal",
+			line:     448,
+			char:     41,
+			start:    41,
+			end:      45,
+			expected: "**Special variable**\n\nRefers to the current message or field being validated.\n\nIn field-level rules, `this` refers to the field value.\nIn message-level rules, `this` refers to the entire message.\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#this)",
+		},
+		{
+			name:     "escapes: size after 4-byte literal",
+			line:     448,
+			char:     46,
+			start:    46,
+			end:      50,
+			expected: "`size`\n\ncompute the size of a list or map, the number of characters in a string,\nor the number of bytes in a sequence\n\n**Overloads**:\n- `size(bytes) -> int`\n- `bytes.size() -> int`\n- `size(list(<A>)) -> int`\n- `list(<A>).size() -> int`\n- `size(map(<A>, <B>)) -> int`\n- `map(<A>, <B>).size() -> int`\n- `size(string) -> int`\n- `string.size() -> int`\n\n[CEL by Example](https://celbyexample.com/strings/#size)",
+		},
+		{
+			name:     "escapes: before an invalid unicode escape",
+			line:     453,
+			char:     17,
+			start:    17,
+			end:      21,
+			expected: "**Special variable**\n\nRefers to the current message or field being validated.\n\nIn field-level rules, `this` refers to the field value.\nIn message-level rules, `this` refers to the entire message.\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#this)",
+		},
+		{
+			name:     "escapes: invalid unicode escape",
+			line:     453,
+			char:     25,
+			start:    25,
+			end:      33,
+			expected: "**Literal**: `'\uFFFD'`\n\n**Type**: string",
+		},
+		{
+			name:     "escapes: after an invalid unicode escape",
+			line:     453,
+			char:     37,
+			start:    37,
+			end:      41,
+			expected: "**Special variable**\n\nRefers to the current message or field being validated.\n\nIn field-level rules, `this` refers to the field value.\nIn message-level rules, `this` refers to the entire message.\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#this)",
 		},
 	}
 
@@ -659,6 +822,12 @@ func TestCELHover(t *testing.T) {
 
 			assert.Equal(t, tc.expected, hoverResult.Contents.Value,
 				"Hover content mismatch at Line:%d Char:%d", tc.line, tc.char)
+			if tc.end != 0 {
+				assert.Equal(t, &protocol.Range{
+					Start: protocol.Position{Line: tc.line, Character: tc.start},
+					End:   protocol.Position{Line: tc.line, Character: tc.end},
+				}, hoverResult.Range, "Hover range mismatch at Line:%d Char:%d", tc.line, tc.char)
+			}
 		})
 	}
 }

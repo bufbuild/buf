@@ -1,0 +1,3 @@
+edition = "2026";
+
+package a3;

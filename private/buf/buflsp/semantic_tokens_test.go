@@ -315,6 +315,18 @@ func TestSemanticTokensKeywords(t *testing.T) {
 				{36, 61, 1, semanticTypeOperator, "'<' operator in message cel_expression"},
 				// "100" number
 				{36, 63, 3, semanticTypeNumber, "'100' number in message cel_expression"},
+
+				// Line 46: expression: "this != '\u00e9' && this != ''"
+				// The \u escape for U+00E9 is 6 source bytes but 2 CEL bytes, so
+				// every token after it is shifted in the file relative to the CEL
+				// string, and the literal itself spans 8 source bytes.
+				{45, 17, 4, semanticTypeKeyword, "'this' keyword before unicode escape"},
+				{45, 22, 2, semanticTypeOperator, "'!=' operator before unicode escape"},
+				{45, 25, 8, semanticTypeString, "string literal containing unicode escape"},
+				{45, 34, 2, semanticTypeOperator, "'&&' operator after unicode escape"},
+				{45, 37, 4, semanticTypeKeyword, "'this' keyword after unicode escape"},
+				{45, 42, 2, semanticTypeOperator, "'!=' operator after unicode escape"},
+				{45, 45, 2, semanticTypeString, "empty string after unicode escape"},
 			},
 		},
 		{

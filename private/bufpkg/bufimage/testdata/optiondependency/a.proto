@@ -1,0 +1,7 @@
+edition = "2024";
+
+package a;
+
+import option "opts.proto";
+
+option (opts.tag) = "a";
