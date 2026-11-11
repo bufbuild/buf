@@ -2,8 +2,9 @@
 
 ## [Unreleased]
 
-- Fix LSP hover and highlighting of CEL expressions whose proto strings contain escape sequences,
-  which placed the ranges of string literals, and of tokens after a `\u` or `\U` escape, wrongly.
+- Fix LSP hover and highlighting of CEL expressions whose proto strings contain escape sequences, which placed the ranges of string literals, and of tokens after a `\u` or `\U` escape, wrongly.
+- Write module and Well-Known Type files to the cache as read-only, so that files opened from
+  LSP go-to-definition cannot be accidentally edited.
 
 ## [v1.75.0] - 2026-10-21
 
@@ -11,8 +12,6 @@
   extensions, and truncating MessageSet extension ranges, when a file has an unused import.
 - Fix LSP crash when hovering on a CEL string literal containing a byte that is not valid UTF-8,
   such as `'\x95'` in a protovalidate rule.
-- Write module and Well-Known Type files to the cache as read-only, so that files opened from
-  LSP go-to-definition cannot be accidentally edited.
 - Add `BUF_DEBUG`, `BUF_LOG_FORMAT`, and `BUF_TIMEOUT` environment variables as defaults for the
   `--debug`, `--log-format`, and `--timeout` global flags. Flags take precedence when set.
 - Add support to images for option dependencies declared with the `import option` syntax in
