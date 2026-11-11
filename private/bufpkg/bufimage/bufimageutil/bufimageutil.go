@@ -103,6 +103,10 @@ func WithExcludeKnownExtensions() ImageFilterOption {
 // that allows a named included type to be in an imported file or module. Without this
 // option, only types defined directly in the image to be filtered are allowed.
 // Excluded types are always allowed to be in imported files or modules.
+//
+// A file that defines an included type, named directly or through its package,
+// is marked as a non-import, since it was selected, even if it was an import
+// before the type filter is applied.
 func WithAllowIncludeOfImportedType() ImageFilterOption {
 	return func(opts *imageFilterOptions) {
 		opts.allowImportedTypes = true
@@ -120,6 +124,14 @@ func WithAllowIncludeOfImportedType() ImageFilterOption {
 // every symbol nested beneath it. For example, "acme.foo.**" matches the package
 // "acme.foo", all of its sub-packages, and all of their types; "acme.Foo.**"
 // matches the message "acme.Foo" and all of its nested types.
+//
+// When both `--path` and WithIncludeTypes are passed, without [WithAllowIncludeOfImportedType],
+// the resulting image is the union of the paths intersecting the union of the types. In this case,
+// the type filter marks a file as an import if it doesn't contain an included type, but does not
+// set any file as a target.
+//
+// With [WithAllowIncludeOfImportedType] set, the type filter sets a file as a target iff it
+// contains an included type, and as an import otherwise.
 //
 // If the type does not exist in the image, an error wrapping
 // [ErrImageFilterTypeNotFound] will be returned.
@@ -290,6 +302,10 @@ type transitiveClosure struct {
 	// The set of imports for each file. This allows for re-writing imports
 	// for files whose contents have been pruned.
 	imports map[string]map[string]struct{}
+	// The paths of files that contain an explicitly included type or package.
+	// Every other file kept in the closure is present only because an included
+	// type references it, and is marked as an import.
+	includedFiles map[string]struct{}
 }
 
 type closureInclusionMode int
@@ -315,8 +331,9 @@ const (
 
 func newTransitiveClosure() *transitiveClosure {
 	return &transitiveClosure{
-		elements: map[namedDescriptor]closureInclusionMode{},
-		imports:  map[string]map[string]struct{}{},
+		elements:      map[namedDescriptor]closureInclusionMode{},
+		imports:       map[string]map[string]struct{}{},
+		includedFiles: map[string]struct{}{},
 	}
 }
 
@@ -380,6 +397,7 @@ func (t *transitiveClosure) includeType(
 		if mode := t.elements[descriptorInfo.element]; mode == inclusionModeExcluded {
 			return fmt.Errorf("inclusion of type %q: %w", typeName, ErrImageFilterTypeExcluded)
 		}
+		t.includedFiles[descriptorInfo.file.Path()] = struct{}{}
 		// If an extension field, check if the extendee is excluded.
 		if field, ok := descriptorInfo.element.(*descriptorpb.FieldDescriptorProto); ok && field.Extendee != nil {
 			extendeeName := protoreflect.FullName(strings.TrimPrefix(field.GetExtendee(), "."))
@@ -467,6 +485,7 @@ func (t *transitiveClosure) includePackage(
 		if err := t.addElement(fileDescriptor, "", false, imageIndex, options); err != nil {
 			return included, fmt.Errorf("inclusion of package %q: %w", pkg.fullName, err)
 		}
+		t.includedFiles[file.Path()] = struct{}{}
 		included++
 	}
 	if recursive {

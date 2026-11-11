@@ -253,12 +253,17 @@ func (f *flagsBuilder) pluginFakeParse(name string, suffix string, isOut bool) {
 		pluginValue = newPluginValue()
 		f.pluginNameToValue[pluginName] = pluginValue
 	}
+	// pflag can call Normalize more than once for a single flag. Record each
+	// flag only once.
 	index := len(f.pluginFake)
+	indexes := &pluginValue.OptIndexes
 	if isOut {
-		pluginValue.OutIndexes = append(pluginValue.OutIndexes, index)
-	} else {
-		pluginValue.OptIndexes = append(pluginValue.OptIndexes, index)
+		indexes = &pluginValue.OutIndexes
 	}
+	if n := len(*indexes); n > 0 && (*indexes)[n-1] == index {
+		return
+	}
+	*indexes = append(*indexes, index)
 }
 
 func (f *flagsBuilder) buildRec(

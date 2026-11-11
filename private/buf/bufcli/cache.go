@@ -21,6 +21,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"buf.build/go/app/appext"
 	"github.com/bufbuild/buf/private/buf/bufwkt/bufwktstore"
@@ -206,21 +207,15 @@ func NewPolicyDataProvider(container appext.Container) (bufpolicy.PolicyDataProv
 	)
 }
 
-// NewWasmRuntime returns a new Wasm runtime while creating the required cache
-// directories.
-func NewWasmRuntime(ctx context.Context, container appext.Container) (wasm.Runtime, error) {
-	// This is used by the Wasm runtime to cache compiled Wasm plugins. This is an
-	// implementation specific cache and opaque outside of the runtime. The runtime
-	// will manage the cache versioning itself within this directory.
-	if err := createCacheDir(container.CacheDirPath(), v3CacheWasmRuntimeRelDirPath); err != nil {
-		return nil, err
-	}
-	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CacheWasmRuntimeRelDirPath)
-	wasmRuntime, err := wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(fullCacheDirPath))
-	if err != nil {
-		return nil, err
-	}
-	return wasmRuntime, nil
+// NewWasmRuntime returns a new Wasm runtime that caches compiled Wasm plugins
+// in the cache directory.
+//
+// The runtime and its cache directory are created on the first Compile, so
+// commands that never run a Wasm plugin do not touch the cache directory.
+func NewWasmRuntime(_ context.Context, container appext.Container) (wasm.Runtime, error) {
+	return &lazyWasmRuntime{
+		baseCacheDirPath: container.CacheDirPath(),
+	}, nil
 }
 
 // NewWKTStore returns a new bufwktstore.Store while creating the required cache directories.
@@ -396,4 +391,45 @@ func createCacheDir(baseCacheDirPath string, relDirPath string) error {
 		)
 	}
 	return nil
+}
+
+type lazyWasmRuntime struct {
+	baseCacheDirPath string
+
+	once    sync.Once
+	runtime wasm.Runtime
+	err     error
+}
+
+func (r *lazyWasmRuntime) Compile(ctx context.Context, moduleName string, moduleWasm []byte) (wasm.CompiledModule, error) {
+	r.once.Do(func() {
+		r.runtime, r.err = newCachedWasmRuntime(ctx, r.baseCacheDirPath)
+	})
+	if r.err != nil {
+		return nil, r.err
+	}
+	return r.runtime.Compile(ctx, moduleName, moduleWasm)
+}
+
+func (r *lazyWasmRuntime) Close(ctx context.Context) error {
+	// If Compile was never called, this prevents the runtime from being
+	// created after Close.
+	r.once.Do(func() {
+		r.err = errors.New("wasm runtime is closed")
+	})
+	if r.runtime == nil {
+		return nil
+	}
+	return r.runtime.Close(ctx)
+}
+
+func newCachedWasmRuntime(ctx context.Context, baseCacheDirPath string) (wasm.Runtime, error) {
+	// This is used by the Wasm runtime to cache compiled Wasm plugins. This is an
+	// implementation specific cache and opaque outside of the runtime. The runtime
+	// will manage the cache versioning itself within this directory.
+	if err := createCacheDir(baseCacheDirPath, v3CacheWasmRuntimeRelDirPath); err != nil {
+		return nil, err
+	}
+	fullCacheDirPath := normalpath.Join(baseCacheDirPath, v3CacheWasmRuntimeRelDirPath)
+	return wasm.NewRuntime(ctx, wasm.WithLocalCacheDir(fullCacheDirPath))
 }
