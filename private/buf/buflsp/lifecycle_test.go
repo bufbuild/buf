@@ -43,3 +43,20 @@ func TestShutdownExitClosesConnection(t *testing.T) {
 		require.Fail(t, "timed out waiting for the server to close the connection")
 	}
 }
+
+func TestMalformedCancelRequestKeepsConnection(t *testing.T) {
+	t.Parallel()
+
+	protoPath, err := filepath.Abs("testdata/diagnostics/valid.proto")
+	require.NoError(t, err)
+	clientJSONConn, _ := setupLSPServer(t, protoPath)
+	ctx := t.Context()
+
+	// The id overflows an LSP integer (int32), so it cannot be parsed.
+	require.NoError(t, clientJSONConn.Notify(ctx, protocol.MethodCancelRequest, map[string]any{
+		"id": int64(3000000000),
+	}))
+
+	_, err = clientJSONConn.Call(ctx, protocol.MethodShutdown, nil, nil)
+	require.NoError(t, err)
+}
