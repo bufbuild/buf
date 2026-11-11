@@ -39,7 +39,7 @@ require (
 	github.com/spf13/pflag v1.1.0
 	github.com/stretchr/testify v1.12.1
 	github.com/tetratelabs/wazero v1.12.0
-	go.lsp.dev/jsonrpc2 v1.0.1
+	go.lsp.dev/jsonrpc2 v1.0.2-0.20261027084609-29989bb0cb15
 	go.lsp.dev/protocol v1.0.1
 	go.lsp.dev/uri v1.0.1
 	go.yaml.in/yaml/v3 v3.0.6
