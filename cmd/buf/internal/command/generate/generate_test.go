@@ -323,9 +323,6 @@ inputs:
 		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
     - a.v1.Foo
 `),
-		filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
-    - b.v1.Baz
-`),
 	},
 		"--template",
 		filepath.Join("testdata", "v2", "types", "buf.gen.yaml"),
