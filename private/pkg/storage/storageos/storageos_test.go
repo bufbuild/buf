@@ -103,12 +103,14 @@ func TestOS(t *testing.T) {
 		bucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
 		require.NoError(t, err)
 		require.NoError(t, os.Mkdir(filepath.Join(tempDir, "foo"), 0755))
+		before, err := os.Stat(filepath.Join(tempDir, "foo"))
+		require.NoError(t, err)
 
 		// A failed Put must not change the mode of the existing path.
 		require.Error(t, storage.PutPath(ctx, bucket, "foo", []byte("foo"), storage.PutWithReadOnly()))
-		fileInfo, err := os.Stat(filepath.Join(tempDir, "foo"))
+		after, err := os.Stat(filepath.Join(tempDir, "foo"))
 		require.NoError(t, err)
-		require.Equal(t, fs.FileMode(0755), fileInfo.Mode().Perm())
+		require.Equal(t, before.Mode(), after.Mode())
 	})
 
 	t.Run("get_non_existent_file_symlink", func(t *testing.T) {
