@@ -415,11 +415,15 @@ func (w *writeObjectCloser) Close() error {
 		if err := os.Rename(w.file.Name(), w.path); err != nil {
 			// On Windows, a read-only file cannot be replaced by a rename.
 			// Make the existing file writable and retry.
-			if !w.readOnly || os.Chmod(w.path, 0644) != nil {
+			fileInfo, statErr := os.Lstat(w.path)
+			if !w.readOnly || statErr != nil || !fileInfo.Mode().IsRegular() || fileInfo.Mode().Perm()&0200 != 0 {
+				return toStorageError(errors.Join(err, os.Remove(w.file.Name())))
+			}
+			if err := os.Chmod(w.path, 0644); err != nil {
 				return toStorageError(errors.Join(err, os.Remove(w.file.Name())))
 			}
 			if err := os.Rename(w.file.Name(), w.path); err != nil {
-				return toStorageError(errors.Join(err, os.Remove(w.file.Name())))
+				return toStorageError(errors.Join(err, os.Chmod(w.path, fileInfo.Mode().Perm()), os.Remove(w.file.Name())))
 			}
 		}
 	}
