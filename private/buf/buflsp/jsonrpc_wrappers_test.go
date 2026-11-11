@@ -79,3 +79,38 @@ func TestOrderedAsyncHandler(t *testing.T) {
 	defer lock.Unlock()
 	assert.Equal(t, expected, handled)
 }
+
+func TestReadCancelStreamCancelsRequestsOnDisconnect(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+	serverStream, clientStream := jsonrpc2.NewChannelStreamPair(0)
+	readCtx, readCancel := context.WithCancel(ctx)
+	t.Cleanup(readCancel)
+	serverConn := jsonrpc2.NewConn(newReadCancelStream(serverStream, readCancel))
+	started := make(chan struct{})
+	queuedErr := make(chan error, 1)
+	serverConn.Go(readCtx, orderedAsyncHandler(func(ctx context.Context, request *jsonrpc2.Request) (any, error) {
+		if request.Method() == "test/block" {
+			close(started)
+			<-ctx.Done()
+			return nil, nil
+		}
+		queuedErr <- ctx.Err()
+		return nil, nil
+	}))
+	clientConn := jsonrpc2.NewConn(clientStream)
+	clientConn.Go(ctx, jsonrpc2.MethodNotFoundHandler)
+
+	require.NoError(t, clientConn.Notify(ctx, "test/block", nil))
+	require.NoError(t, clientConn.Notify(ctx, "test/queued", nil))
+	<-started
+	require.NoError(t, clientConn.Close())
+
+	select {
+	case <-serverConn.Done():
+	case <-time.After(10 * time.Second):
+		require.Fail(t, "timed out waiting for the server connection to be done")
+	}
+	assert.ErrorIs(t, <-queuedErr, context.Canceled)
+}

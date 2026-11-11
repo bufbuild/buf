@@ -83,14 +83,16 @@ func Serve(
 	logger = logger.With(slog.String("buf_version", bufVersion))
 	logger.Info("starting LSP server")
 
-	conn := jsonrpc2.NewConn(stream, jsonrpc2.WithCodec(lspCodec{}))
+	// readCtx is cancelled when reading from the stream fails.
+	readCtx, readCancel := context.WithCancel(ctx)
+	conn := jsonrpc2.NewConn(newReadCancelStream(stream, readCancel), jsonrpc2.WithCodec(lspCodec{}))
 	// connCtx is a context scoped to the connection's lifetime. It is cancelled
-	// when the connection is done (or when ctx is cancelled), so that background
-	// goroutines (e.g. RunChecks) do not outlive the connection.
+	// when the connection is done (or when readCtx is cancelled), so that
+	// background goroutines (e.g. RunChecks) do not outlive the connection.
 	connCtx, connCancel := context.WithCancel(context.Background())
 	go func() {
 		select {
-		case <-ctx.Done():
+		case <-readCtx.Done():
 		case <-conn.Done():
 		}
 		connCancel()
@@ -132,7 +134,7 @@ func Serve(
 	if err != nil {
 		return nil, err
 	}
-	conn.Go(ctx, handler)
+	conn.Go(readCtx, handler)
 	return conn, nil
 }
 
