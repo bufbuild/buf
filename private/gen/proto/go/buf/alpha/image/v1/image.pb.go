@@ -610,11 +610,15 @@ type ImageFileExtension_builder struct {
 
 	// is_import denotes whether this file is considered an "import".
 	//
-	// An import is a file which was not derived from the local source files.
-	// There are two cases where this could be true:
+	// An import is a file that is not a target of the build. There are three
+	// cases where this is true:
 	//
 	// 1. A Well-Known Type included from the compiler.
 	// 2. A file that was included from a Buf module dependency.
+	// 3. A file that a target file depends on.
+	//
+	// A target file always has its is_import set to false, regardless
+	// of which Module it derived from.
 	//
 	// We use "import" as this matches with the protoc concept of
 	// --include_imports, however import is a bit of an overloaded term.

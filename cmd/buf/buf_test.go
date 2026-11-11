@@ -2559,6 +2559,152 @@ func TestBuildOverlappingPaths(t *testing.T) {
 	)
 }
 
+func TestBuildTypeWithExcludeImports(t *testing.T) {
+	t.Parallel()
+	testBuildLsFilesFormatImport(
+		t,
+		0,
+		[]string{"a.proto"},
+		filepath.Join("testdata", "imports", "success", "wkt"),
+		"--type",
+		"A",
+		"--exclude-imports",
+	)
+}
+
+func TestBuildPathWithExcludeImportsFromImage(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	imagePath := filepath.Join(tempDir, "image.binpb")
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "imports", "success", "sibling"),
+		"-o",
+		imagePath,
+	)
+	testBuildLsFilesFormatImport(
+		t,
+		0,
+		[]string{"a.proto"},
+		imagePath,
+		"--path",
+		"a.proto",
+		"--exclude-imports",
+	)
+}
+
+func TestBuildTypeMarksReferencedFileAsImport(t *testing.T) {
+	t.Parallel()
+	// a.proto imports b.proto from the same module. Including only A keeps
+	// b.proto for B, but marks it as an import because it contains no
+	// included type, so --exclude-imports drops it.
+	testBuildLsFilesFormatImport(
+		t,
+		0,
+		[]string{"a.proto"},
+		filepath.Join("testdata", "imports", "success", "sibling"),
+		"--type",
+		"A",
+		"--exclude-imports",
+	)
+}
+
+func TestBuildTypeWithPathMarksReferencedFileAsImport(t *testing.T) {
+	t.Parallel()
+	// Image building/filtering takes the intersection of `--path` and `--type`.
+	testBuildLsFilesFormatImport(
+		t,
+		0,
+		[]string{"a.proto"},
+		filepath.Join("testdata", "imports", "success", "sibling"),
+		"--type",
+		"A",
+		"--path",
+		filepath.Join("testdata", "imports", "success", "sibling", "a.proto"),
+		"--path",
+		filepath.Join("testdata", "imports", "success", "sibling", "b.proto"),
+		"--exclude-imports",
+	)
+}
+
+func TestBuildTypeWithPathMarksReferencedFileAsImportFromImage(t *testing.T) {
+	t.Parallel()
+	// Same flags as TestBuildTypeWithPathMarksReferencedFileAsImport, but with image input.
+	tempDir := t.TempDir()
+	imagePath := filepath.Join(tempDir, "image.binpb")
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "imports", "success", "sibling"),
+		"-o",
+		imagePath,
+	)
+	testBuildLsFilesFormatImport(
+		t,
+		0,
+		[]string{"a.proto"},
+		imagePath,
+		"--type",
+		"A",
+		"--path",
+		"a.proto",
+		"--path",
+		"b.proto",
+		"--exclude-imports",
+	)
+}
+
+func TestBuildTypeOutsidePathFromImage(t *testing.T) {
+	t.Parallel()
+	// It's an error when the intersection between `--path` and `--type` is empty.
+	tempDir := t.TempDir()
+	imagePath := filepath.Join(tempDir, "image.binpb")
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "imports", "success", "sibling"),
+		"-o",
+		imagePath,
+	)
+	testRunStderrContainsNoWarn(
+		t,
+		nil,
+		1,
+		[]string{`inclusion of type "A": not found`},
+		"build",
+		imagePath,
+		"--path",
+		"b.proto",
+		"--type",
+		"A",
+	)
+}
+
+func TestBuildPackageTypeWithPathKeepsIntersection(t *testing.T) {
+	t.Parallel()
+	testBuildLsFilesFormatImport(
+		t,
+		0,
+		[]string{"a.proto"},
+		filepath.Join("testdata", "imports", "success", "samepkg"),
+		"--type",
+		"pkg",
+		"--path",
+		filepath.Join("testdata", "imports", "success", "samepkg", "a.proto"),
+		"--exclude-imports",
+	)
+}
+
 func TestExportProto(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
