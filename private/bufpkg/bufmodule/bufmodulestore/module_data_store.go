@@ -490,6 +490,8 @@ func (p *moduleDataStore) putModuleData(
 		ctx,
 		filesBucket,
 		storage.MapWriteBucket(moduleCacheBucket, storage.MapOnPrefix(externalModuleDataFilesDir)),
+		// Cached files are opened by editors through the LSP, so prevent edits.
+		storage.CopyWithReadOnly(),
 	); err != nil {
 		return err
 	}

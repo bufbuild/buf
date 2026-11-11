@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Fix LSP hover and highlighting of CEL expressions whose proto strings contain escape sequences, which placed the ranges of string literals, and of tokens after a `\u` or `\U` escape, wrongly.
+- Write module and Well-Known Type files to the cache as read-only, so that files opened from
+  LSP go-to-definition cannot be accidentally edited.
 - Fix LSP hover and highlighting of CEL expressions whose proto strings contain escape sequences,
   which placed the ranges of string literals, and of tokens after a `\u` or `\U` escape, wrongly.
 - Fix `buf build --type=X` filters to correctly mark non-targeted files as imports. The `is_import`
