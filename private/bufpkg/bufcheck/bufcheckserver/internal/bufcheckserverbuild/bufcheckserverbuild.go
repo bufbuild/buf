@@ -65,6 +65,13 @@ var (
 		Type:    check.RuleTypeBreaking,
 		Handler: bufcheckserverhandle.HandleBreakingEnumValueNoDeleteUnlessNumberReserved,
 	}
+	// BreakingEnumValueSameJSONNameRuleSpecBuilder is a rule spec builder.
+	BreakingEnumValueSameJSONNameRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
+		ID:      "ENUM_VALUE_SAME_JSON_NAME",
+		Purpose: "Checks that enum values have the same JSON name.",
+		Type:    check.RuleTypeBreaking,
+		Handler: bufcheckserverhandle.HandleBreakingEnumValueSameJSONName,
+	}
 	// BreakingEnumValueSameNameRuleSpecBuilder is a rule spec builder.
 	BreakingEnumValueSameNameRuleSpecBuilder = &bufcheckserverutil.RuleSpecBuilder{
 		ID:      "ENUM_VALUE_SAME_NAME",

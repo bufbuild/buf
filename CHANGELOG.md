@@ -17,6 +17,8 @@
     generate them again, set `include_imports: true` on the plugin or add their types.
   - `--path` now gives the same result for an image input as for a source input, with or without
     `--type`.
+- Add `ENUM_VALUE_SAME_JSON_NAME` breaking rule to the `CSR`, `FILE`, `PACKAGE`, and `WIRE_JSON`
+  categories, which checks that enum values keep the same JSON name.
 
 ## [v1.75.0] - 2026-10-21
 

@@ -320,6 +320,7 @@ var (
 			bufcheckserverbuild.BreakingOneofNoDeleteRuleSpecBuilder.Build(true, []string{"CSR", "FILE", "PACKAGE"}),
 			bufcheckserverbuild.BreakingRPCNoDeleteRuleSpecBuilder.Build(true, []string{"FILE", "PACKAGE"}),
 			bufcheckserverbuild.BreakingEnumSameJSONFormatRuleSpecBuilder.Build(true, []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON"}),
+			bufcheckserverbuild.BreakingEnumValueSameJSONNameRuleSpecBuilder.Build(true, []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON"}),
 			bufcheckserverbuild.BreakingEnumValueSameNameRuleSpecBuilder.Build(true, []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON"}),
 			bufcheckserverbuild.BreakingFieldSameJSONNameRuleSpecBuilder.Build(true, []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON"}),
 			bufcheckserverbuild.BreakingFieldSameNameRuleSpecBuilder.Build(true, []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON"}),

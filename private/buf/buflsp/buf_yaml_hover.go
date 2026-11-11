@@ -162,6 +162,7 @@ var bufYAMLBreakingRuleDocs = map[string]bufYAMLDoc{
 	"ENUM_VALUE_NO_DELETE":                        {summary: "Checks that no enum value is deleted.", url: bufYAMLBreakingRulesURL + "#enum_value_no_delete"},
 	"ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED":   {summary: "Checks that deleted enum values have their name reserved before deletion.", url: bufYAMLBreakingRulesURL + "#enum_value_no_delete_unless_name_reserved"},
 	"ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED": {summary: "Checks that deleted enum values have their number reserved before deletion.", url: bufYAMLBreakingRulesURL + "#enum_value_no_delete_unless_number_reserved"},
+	"ENUM_VALUE_SAME_JSON_NAME":                   {summary: "Checks that enum value JSON names do not change for a given numeric value.", url: bufYAMLBreakingRulesURL + "#enum_value_same_json_name"},
 	"ENUM_VALUE_SAME_NAME":                        {summary: "Checks that enum value names do not change for a given numeric value.", url: bufYAMLBreakingRulesURL + "#enum_value_same_name"},
 	// Extension rules
 	"EXTENSION_MESSAGE_NO_DELETE": {summary: "Checks that no extension range is deleted from a message.", url: bufYAMLBreakingRulesURL + "#extension_message_no_delete"},

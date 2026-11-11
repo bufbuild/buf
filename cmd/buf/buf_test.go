@@ -137,6 +137,7 @@ var (
 		{ID: "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR", Categories: []string{"CSR", "FILE", "PACKAGE"}, Default: true, Purpose: "Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true."},
 		{ID: "ONEOF_NO_DELETE", Categories: []string{"CSR", "FILE", "PACKAGE"}, Default: true, Purpose: "Checks that oneofs are not deleted from a given message."},
 		{ID: "ENUM_SAME_JSON_FORMAT", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that enums have the same JSON format support."},
+		{ID: "ENUM_VALUE_SAME_JSON_NAME", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that enum values have the same JSON name."},
 		{ID: "ENUM_VALUE_SAME_NAME", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that enum values have the same name."},
 		{ID: "FIELD_SAME_JSON_NAME", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that fields have the same value for the json_name option."},
 		{ID: "FIELD_SAME_NAME", Categories: []string{"CSR", "FILE", "PACKAGE", "WIRE_JSON"}, Default: true, Purpose: "Checks that fields have the same names in a given message."},
@@ -1180,6 +1181,7 @@ FILE_SAME_SYNTAX                                CSR, FILE, PACKAGE              
 MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  CSR, FILE, PACKAGE                   *        Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
 ONEOF_NO_DELETE                                 CSR, FILE, PACKAGE                   *        Checks that oneofs are not deleted from a given message.
 ENUM_SAME_JSON_FORMAT                           CSR, FILE, PACKAGE, WIRE_JSON        *        Checks that enums have the same JSON format support.
+ENUM_VALUE_SAME_JSON_NAME                       CSR, FILE, PACKAGE, WIRE_JSON        *        Checks that enum values have the same JSON name.
 ENUM_VALUE_SAME_NAME                            CSR, FILE, PACKAGE, WIRE_JSON        *        Checks that enum values have the same name.
 FIELD_SAME_JSON_NAME                            CSR, FILE, PACKAGE, WIRE_JSON        *        Checks that fields have the same value for the json_name option.
 FIELD_SAME_NAME                                 CSR, FILE, PACKAGE, WIRE_JSON        *        Checks that fields have the same names in a given message.

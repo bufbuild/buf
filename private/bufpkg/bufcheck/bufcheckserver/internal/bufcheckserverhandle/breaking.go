@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/protocompile/protoutil"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/jsonenumvalueoptionspb"
 )
 
 // HandleBreakingEnumNoDelete is a check function.
@@ -1495,6 +1496,65 @@ func handleBreakingEnumSameJSONFormat(
 			enum.Name(),
 			previousJSONFormat,
 			jsonFormat,
+		)
+	}
+	return nil
+}
+
+// HandleBreakingEnumValueSameJSONName is a check function.
+var HandleBreakingEnumValueSameJSONName = bufcheckserverutil.NewBreakingEnumPairRuleHandler(handleBreakingEnumValueSameJSONName)
+
+func handleBreakingEnumValueSameJSONName(
+	responseWriter bufcheckserverutil.ResponseWriter,
+	request bufcheckserverutil.Request,
+	enum bufprotosource.Enum,
+	previousEnum bufprotosource.Enum,
+) error {
+	previousDescriptor, err := previousEnum.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := enum.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	previousNameToEnumValue, err := bufprotosource.NameToEnumValue(previousEnum)
+	if err != nil {
+		return err
+	}
+	nameToEnumValue, err := bufprotosource.NameToEnumValue(enum)
+	if err != nil {
+		return err
+	}
+	previousValues := previousDescriptor.Values()
+	for i := range previousValues.Len() {
+		// Aliases share a number, and JSON is written with the first declared value.
+		previousValue := previousValues.ByNumber(previousValues.Get(i).Number())
+		if previousValue.Index() != i {
+			continue
+		}
+		value := descriptor.Values().ByNumber(previousValue.Number())
+		if value == nil {
+			continue
+		}
+		previousJSONName, previousIsCustom := enumValueJSONName(previousValue)
+		jsonName, isCustom := enumValueJSONName(value)
+		// Without a custom JSON name, the JSON name is the value name, which
+		// ENUM_VALUE_SAME_NAME checks.
+		if previousJSONName == jsonName || (!previousIsCustom && !isCustom) {
+			continue
+		}
+		enumValue := nameToEnumValue[string(value.Name())]
+		previousEnumValue := previousNameToEnumValue[string(previousValue.Name())]
+		responseWriter.AddProtosourceAnnotationf(
+			withBackupLocation(enumValue.OptionExtensionLocation(jsonenumvalueoptionspb.E_Json), enumValue.Location()),
+			withBackupLocation(previousEnumValue.OptionExtensionLocation(jsonenumvalueoptionspb.E_Json), previousEnumValue.Location()),
+			enum.File().Path(),
+			`Enum value "%d" on enum %q changed JSON name from %q to %q.`,
+			value.Number(),
+			enum.Name(),
+			previousJSONName,
+			jsonName,
 		)
 	}
 	return nil

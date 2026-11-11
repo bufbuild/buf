@@ -16,5 +16,6 @@ breaking:
   use:
     - FILE
   except:
+    - ENUM_VALUE_SAME_JSON_NAME
     - EXTENSION_NO_DELETE
     - FIELD_SAME_DEFAULT
