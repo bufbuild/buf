@@ -15,10 +15,13 @@
 package buflsp
 
 import (
+	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/stretchr/testify/assert"
-	"go.lsp.dev/protocol"
+	"github.com/stretchr/testify/require"
+	"go.lsp.dev/uri"
 )
 
 func TestNormalizeURI(t *testing.T) {
@@ -26,8 +29,8 @@ func TestNormalizeURI(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		input    protocol.URI
-		expected protocol.URI
+		input    uri.URI
+		expected uri.URI
 	}{
 		{
 			name:     "unix-path-unchanged",
@@ -101,4 +104,12 @@ func TestNormalizeURI(t *testing.T) {
 			assert.Equal(t, test.expected, normalizeURI(test.input))
 		})
 	}
+}
+
+func TestFilePathToURIRelative(t *testing.T) {
+	t.Parallel()
+
+	workingDirPath, err := osext.Getwd()
+	require.NoError(t, err)
+	assert.Equal(t, FilePathToURI(filepath.Join(workingDirPath, "foo.proto")), FilePathToURI("foo.proto"))
 }

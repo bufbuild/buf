@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/seq"
 	"github.com/bufbuild/protocompile/experimental/source"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 // getDeprecateCodeAction generates a code action for deprecating the symbol at the given range.
@@ -60,7 +61,7 @@ func (s *server) getDeprecateCodeAction(
 
 	// Generate workspace-wide edits for all types matching the FQN prefix.
 	checker := newFullNameMatcher(fqnPrefix)
-	edits := make(map[protocol.DocumentURI][]protocol.TextEdit)
+	edits := make(map[uri.URI][]protocol.TextEdit)
 	for _, wsFile := range file.workspace.PathToFile() {
 		if wsFile.ir == nil {
 			continue
@@ -80,7 +81,7 @@ func (s *server) getDeprecateCodeAction(
 	)
 	return &protocol.CodeAction{
 		Title: title,
-		Kind:  protocol.RefactorRewrite,
+		Kind:  new(protocol.CodeActionKindRefactorRewrite),
 		Edit:  &protocol.WorkspaceEdit{Changes: edits},
 	}
 }

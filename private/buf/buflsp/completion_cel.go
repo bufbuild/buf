@@ -580,19 +580,19 @@ func celProtoFieldCompletionItems(irType ir.Type) []protocol.CompletionItem {
 			detail = string(fieldType.FullName())
 		}
 		_, isDeprecated := member.Deprecated().AsBool()
-		var documentation any
+		var documentation protocol.InlayHintTooltip
 		if doc := leadingDocComments(member.AST()); doc != "" {
 			documentation = &protocol.MarkupContent{
-				Kind:  protocol.Markdown,
+				Kind:  protocol.MarkupKindMarkdown,
 				Value: doc,
 			}
 		}
 		items = append(items, protocol.CompletionItem{
 			Label:         member.Name(),
 			Kind:          protocol.CompletionItemKindField,
-			Detail:        detail,
+			Detail:        newOptionalNonZero(detail),
 			Documentation: documentation,
-			Deprecated:    isDeprecated,
+			Deprecated:    newOptionalNonZero(isDeprecated),
 		})
 	}
 	slices.SortFunc(items, func(a, b protocol.CompletionItem) int {
@@ -737,9 +737,9 @@ func celMemberCompletionItems(celEnv *cel.Env, receiverType *types.Type) []proto
 		items = append(items, protocol.CompletionItem{
 			Label:            name,
 			Kind:             protocol.CompletionItemKindMethod,
-			Detail:           celFormatOverloadSignature(fn.Name(), matchingOverloads[0]),
-			Documentation:    fn.Description(),
-			InsertText:       name + "($1)",
+			Detail:           newOptionalNonZero(celFormatOverloadSignature(fn.Name(), matchingOverloads[0])),
+			Documentation:    protocol.String(fn.Description()),
+			InsertText:       newOptionalNonZero(name + "($1)"),
 			InsertTextFormat: protocol.InsertTextFormatSnippet,
 		})
 	}
@@ -759,8 +759,8 @@ func celMemberMacroCompletionItems() []protocol.CompletionItem {
 		items = append(items, protocol.CompletionItem{
 			Label:            name,
 			Kind:             protocol.CompletionItemKindMethod,
-			Detail:           "macro",
-			InsertText:       name + "($1, $2)",
+			Detail:           protocol.NewOptional("macro"),
+			InsertText:       newOptionalNonZero(name + "($1, $2)"),
 			InsertTextFormat: protocol.InsertTextFormatSnippet,
 		})
 	}
@@ -794,9 +794,9 @@ func celGlobalCompletionItems(celEnv *cel.Env, expectedType *types.Type) []proto
 		items = append(items, protocol.CompletionItem{
 			Label:            name,
 			Kind:             protocol.CompletionItemKindFunction,
-			Detail:           celGlobalFunctionDetail(fn),
-			Documentation:    fn.Description(),
-			InsertText:       name + "($1)",
+			Detail:           newOptionalNonZero(celGlobalFunctionDetail(fn)),
+			Documentation:    protocol.String(fn.Description()),
+			InsertText:       newOptionalNonZero(name + "($1)"),
 			InsertTextFormat: protocol.InsertTextFormatSnippet,
 		})
 	}
@@ -828,8 +828,8 @@ func celMacroCompletionItems(celEnv *cel.Env) []protocol.CompletionItem {
 		items = append(items, protocol.CompletionItem{
 			Label:            name,
 			Kind:             protocol.CompletionItemKindFunction,
-			Detail:           "macro",
-			InsertText:       name + "($1)",
+			Detail:           protocol.NewOptional("macro"),
+			InsertText:       newOptionalNonZero(name + "($1)"),
 			InsertTextFormat: protocol.InsertTextFormatSnippet,
 		})
 	}
@@ -856,7 +856,7 @@ func celKeywordCompletionItems(celEnv *cel.Env, expectedType *types.Type) []prot
 				items = append(items, protocol.CompletionItem{
 					Label:  kw,
 					Kind:   protocol.CompletionItemKindVariable,
-					Detail: "protovalidate: current message or field",
+					Detail: protocol.NewOptional("protovalidate: current message or field"),
 				})
 			}
 			continue
@@ -879,7 +879,7 @@ func celKeywordCompletionItems(celEnv *cel.Env, expectedType *types.Type) []prot
 		items = append(items, protocol.CompletionItem{
 			Label:  kw,
 			Kind:   kind,
-			Detail: detail,
+			Detail: newOptionalNonZero(detail),
 		})
 	}
 	return items

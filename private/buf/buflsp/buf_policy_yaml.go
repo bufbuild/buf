@@ -22,23 +22,24 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufpolicy/bufpolicyconfig"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 	"go.yaml.in/yaml/v3"
 )
 
 // isBufPolicyYAMLURI reports whether uri refers to a buf.policy.yaml file.
-func isBufPolicyYAMLURI(uri protocol.URI) bool {
-	return filepath.Base(uri.Filename()) == bufpolicyconfig.DefaultBufPolicyYAMLFileName
+func isBufPolicyYAMLURI(fileURI uri.URI) bool {
+	return filepath.Base(fileURI.FsPath()) == bufpolicyconfig.DefaultBufPolicyYAMLFileName
 }
 
 // bufPolicyYAMLManager tracks open buf.policy.yaml files in the LSP session.
 type bufPolicyYAMLManager struct {
 	mu        sync.Mutex
-	uriToFile map[protocol.URI]*bufPolicyYAMLFile
+	uriToFile map[uri.URI]*bufPolicyYAMLFile
 }
 
 func newBufPolicyYAMLManager() *bufPolicyYAMLManager {
 	return &bufPolicyYAMLManager{
-		uriToFile: make(map[protocol.URI]*bufPolicyYAMLFile),
+		uriToFile: make(map[uri.URI]*bufPolicyYAMLFile),
 	}
 }
 
@@ -50,8 +51,8 @@ type bufPolicyYAMLFile struct {
 }
 
 // Track opens or refreshes a buf.policy.yaml file.
-func (m *bufPolicyYAMLManager) Track(uri protocol.URI, text string) {
-	normalized := normalizeURI(uri)
+func (m *bufPolicyYAMLManager) Track(fileURI uri.URI, text string) {
+	normalized := normalizeURI(fileURI)
 	docNode := parseYAMLDoc(text)
 	f := &bufPolicyYAMLFile{
 		text:    text,
@@ -64,17 +65,17 @@ func (m *bufPolicyYAMLManager) Track(uri protocol.URI, text string) {
 }
 
 // Close stops tracking a buf.policy.yaml file.
-func (m *bufPolicyYAMLManager) Close(uri protocol.URI) {
+func (m *bufPolicyYAMLManager) Close(fileURI uri.URI) {
 	m.mu.Lock()
-	delete(m.uriToFile, normalizeURI(uri))
+	delete(m.uriToFile, normalizeURI(fileURI))
 	m.mu.Unlock()
 }
 
 // GetCompletion returns completion items for the buf.policy.yaml field or value
 // at the given cursor position, or nil if no completions apply.
-func (m *bufPolicyYAMLManager) GetCompletion(uri protocol.URI, pos protocol.Position) []protocol.CompletionItem {
+func (m *bufPolicyYAMLManager) GetCompletion(fileURI uri.URI, pos protocol.Position) []protocol.CompletionItem {
 	m.mu.Lock()
-	f, ok := m.uriToFile[normalizeURI(uri)]
+	f, ok := m.uriToFile[normalizeURI(fileURI)]
 	m.mu.Unlock()
 	if !ok {
 		return nil
@@ -84,9 +85,9 @@ func (m *bufPolicyYAMLManager) GetCompletion(uri protocol.URI, pos protocol.Posi
 
 // GetHover returns hover documentation for the buf.policy.yaml field at the
 // given position, or nil if the position does not correspond to a known element.
-func (m *bufPolicyYAMLManager) GetHover(uri protocol.URI, pos protocol.Position) *protocol.Hover {
+func (m *bufPolicyYAMLManager) GetHover(fileURI uri.URI, pos protocol.Position) *protocol.Hover {
 	m.mu.Lock()
-	f, ok := m.uriToFile[normalizeURI(uri)]
+	f, ok := m.uriToFile[normalizeURI(fileURI)]
 	m.mu.Unlock()
 	if !ok || f.docNode == nil {
 		return nil
@@ -101,9 +102,9 @@ func (m *bufPolicyYAMLManager) GetHover(uri protocol.URI, pos protocol.Position)
 //   - The top-level name: value (always a BSR policy reference).
 //   - plugins[*].plugin values that parse as BSR references (registry/owner/name
 //     format). Local binary names and file paths are skipped.
-func (m *bufPolicyYAMLManager) GetDocumentLinks(uri protocol.URI) []protocol.DocumentLink {
+func (m *bufPolicyYAMLManager) GetDocumentLinks(fileURI uri.URI) []protocol.DocumentLink {
 	m.mu.Lock()
-	f, ok := m.uriToFile[normalizeURI(uri)]
+	f, ok := m.uriToFile[normalizeURI(fileURI)]
 	m.mu.Unlock()
 	if !ok {
 		return nil
@@ -116,7 +117,7 @@ func (m *bufPolicyYAMLManager) GetDocumentLinks(uri protocol.URI) []protocol.Doc
 		}
 		links = append(links, protocol.DocumentLink{
 			Range:  entry.refRange,
-			Target: protocol.DocumentURI(bsrRefDocURL(ref)),
+			Target: new(uri.URI(bsrRefDocURL(ref))),
 		})
 	}
 	return links

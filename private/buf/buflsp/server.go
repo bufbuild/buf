@@ -16,6 +16,7 @@ package buflsp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -23,6 +24,7 @@ import (
 	"unicode/utf16"
 
 	celpv "buf.build/go/protovalidate/cel"
+	"buf.build/go/standard/xlog/xslog"
 	"buf.build/go/standard/xslices"
 	"cel.dev/cel-go/cel"
 	"github.com/bufbuild/buf/private/buf/bufformat"
@@ -30,6 +32,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/report"
 	"github.com/bufbuild/protocompile/experimental/source"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 	"mvdan.cc/xurls/v2"
 )
 
@@ -48,8 +51,9 @@ const (
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification.
 type server struct {
 	// This automatically implements all of protocol.Server for us. By default,
-	// every method returns an error.
-	nyi
+	// every request returns a "method not found" error and every notification
+	// is ignored.
+	protocol.UnimplementedServer
 
 	// We embed the LSP pointer as well, since it only has private members.
 	*lsp
@@ -94,11 +98,12 @@ func (s *server) Initialize(
 		return nil, err
 	}
 
-	if params.ClientInfo != nil {
+	if params.ClientInfo.Name != "" {
+		clientVersion, _ := params.ClientInfo.Version.Get()
 		s.logger.Info(
 			"client attached",
 			"client_name", params.ClientInfo.Name,
-			"client_version", params.ClientInfo.Version,
+			"client_version", clientVersion,
 		)
 	}
 
@@ -107,73 +112,60 @@ func (s *server) Initialize(
 		s.lsp.traceValue.Store(&params.Trace)
 	}
 
-	info := &protocol.ServerInfo{
-		Name:    serverName,
-		Version: s.lsp.bufVersion,
-	}
-
-	// The LSP protocol library doesn't actually provide SemanticTokensOptions
-	// correctly.
-	type SemanticTokensLegend struct {
-		TokenTypes     []string `json:"tokenTypes"`
-		TokenModifiers []string `json:"tokenModifiers"`
-	}
-	type SemanticTokensOptions struct {
-		Legend SemanticTokensLegend `json:"legend"`
-		Full   bool                 `json:"full"`
-	}
-
 	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
 			// These are all the things we advertise to the client we can do.
 			// For now, incomplete features are explicitly disabled here as TODOs.
 			TextDocumentSync: &protocol.TextDocumentSyncOptions{
-				OpenClose: true,
+				OpenClose: new(true),
 				// Request that whole files be sent to us. Protobuf IDL files don't
 				// usually get especially huge, so this simplifies our logic without
 				// necessarily making the LSP slow.
-				Change: protocol.TextDocumentSyncKindFull,
+				Change: new(protocol.TextDocumentSyncKindFull),
 				Save: &protocol.SaveOptions{
-					IncludeText: false,
+					IncludeText: new(false),
 				},
 			},
 			CodeActionProvider: &protocol.CodeActionOptions{
 				CodeActionKinds: []protocol.CodeActionKind{
-					protocol.SourceOrganizeImports,
-					protocol.RefactorRewrite,
-					protocol.QuickFix,
+					protocol.CodeActionKindSourceOrganizeImports,
+					protocol.CodeActionKindRefactorRewrite,
+					protocol.CodeActionKindQuickFix,
 				},
 			},
 			CompletionProvider: &protocol.CompletionOptions{
-				ResolveProvider:   true,
+				ResolveProvider:   new(true),
 				TriggerCharacters: []string{".", "\"", "/"},
 			},
 			DefinitionProvider:         &protocol.DefinitionOptions{},
 			TypeDefinitionProvider:     &protocol.TypeDefinitionOptions{},
-			DocumentFormattingProvider: true,
-			DocumentHighlightProvider:  true,
-			HoverProvider:              true,
+			DocumentFormattingProvider: protocol.Boolean(true),
+			DocumentHighlightProvider:  protocol.Boolean(true),
+			HoverProvider:              protocol.Boolean(true),
 			ReferencesProvider:         &protocol.ReferenceOptions{},
 			RenameProvider: &protocol.RenameOptions{
-				PrepareProvider: true,
+				PrepareProvider: new(true),
 			},
-			SemanticTokensProvider: &SemanticTokensOptions{
-				Legend: SemanticTokensLegend{
+			SemanticTokensProvider: &protocol.SemanticTokensOptions{
+				Legend: protocol.SemanticTokensLegend{
 					TokenTypes:     semanticTypeLegend,
 					TokenModifiers: semanticModifierLegend,
 				},
-				Full: true,
+				Full: protocol.Boolean(true),
 			},
-			WorkspaceSymbolProvider: true,
-			DocumentSymbolProvider:  true,
-			FoldingRangeProvider:    true,
+			WorkspaceSymbolProvider: protocol.Boolean(true),
+			DocumentSymbolProvider:  protocol.Boolean(true),
+			FoldingRangeProvider:    protocol.Boolean(true),
 			DocumentLinkProvider:    &protocol.DocumentLinkOptions{},
 			CodeLensProvider:        &protocol.CodeLensOptions{},
-			ExecuteCommandProvider: &protocol.ExecuteCommandOptions{
+			ExecuteCommandProvider: protocol.ExecuteCommandOptions{
 				Commands: []string{commandUpdateAllDeps, commandCheckUpdates, CommandRunGenerate, CommandCheckPluginUpdates},
 			},
 		},
-		ServerInfo: info,
+		ServerInfo: protocol.ServerInfo{
+			Name:    serverName,
+			Version: protocol.NewOptional(s.lsp.bufVersion),
+		},
 	}, nil
 }
 
@@ -215,9 +207,14 @@ func (s *server) Exit(ctx context.Context) error {
 		return errors.New("shutdown was not called or not yet completed")
 	}
 
-	// Close the connection. This will let the server shut down gracefully once this
-	// notification is replied to.
-	return s.lsp.conn.Close()
+	// Close the connection. Close waits for in-flight handlers to finish, which
+	// includes this one, so it must not block this handler.
+	go func() {
+		if err := s.lsp.conn.Close(); err != nil {
+			s.lsp.logger.Warn("error closing connection", xslog.ErrorAttr(err))
+		}
+	}()
+	return nil
 }
 
 // -- File synchronization methods.
@@ -257,21 +254,31 @@ func (s *server) DidChange(
 	ctx context.Context,
 	params *protocol.DidChangeTextDocumentParams,
 ) error {
+	// We advertise TextDocumentSyncKindFull, so the client always sends a single
+	// change containing the whole document.
+	if len(params.ContentChanges) == 0 {
+		return fmt.Errorf("received update with no content changes: %q", params.TextDocument.URI)
+	}
+	wholeDocument, ok := params.ContentChanges[0].(*protocol.TextDocumentContentChangeWholeDocument)
+	if !ok {
+		return fmt.Errorf("received incremental update, expected whole document: %q", params.TextDocument.URI)
+	}
+	text := wholeDocument.Text
 	if isBufYAMLURI(params.TextDocument.URI) {
-		s.bufYAMLManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
+		s.bufYAMLManager.Track(params.TextDocument.URI, text)
 		s.bufYAMLManager.CheckIgnorePaths(params.TextDocument.URI)
 		return nil
 	}
 	if isBufGenYAMLURI(params.TextDocument.URI) {
-		s.bufGenYAMLManager.Track(ctx, params.TextDocument.URI, params.ContentChanges[0].Text)
+		s.bufGenYAMLManager.Track(ctx, params.TextDocument.URI, text)
 		return nil
 	}
 	if isBufPolicyYAMLURI(params.TextDocument.URI) {
-		s.bufPolicyYAMLManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
+		s.bufPolicyYAMLManager.Track(params.TextDocument.URI, text)
 		return nil
 	}
 	if isBufLockURI(params.TextDocument.URI) {
-		s.bufLockManager.Track(params.TextDocument.URI, params.ContentChanges[0].Text)
+		s.bufLockManager.Track(params.TextDocument.URI, text)
 		return nil
 	}
 	file := s.fileManager.Get(params.TextDocument.URI)
@@ -280,7 +287,7 @@ func (s *server) DidChange(
 		return fmt.Errorf("received update for file that was not open: %q", params.TextDocument.URI)
 	}
 
-	file.Update(ctx, params.TextDocument.Version, params.ContentChanges[0].Text)
+	file.Update(ctx, params.TextDocument.Version, text)
 	return nil
 }
 
@@ -326,8 +333,8 @@ func (s *server) Formatting(
 	// warnings at the source rather than generating them just to ignore.
 	r := &report.Report{Options: report.Options{SuppressWarnings: true}}
 	parsed, ok := parser.Parse(
-		file.uri.Filename(),
-		source.NewFile(file.uri.Filename(), file.file.Text()),
+		file.uri.FsPath(),
+		source.NewFile(file.uri.FsPath(), file.file.Text()),
 		r,
 	)
 	if !ok {
@@ -402,18 +409,18 @@ func (s *server) DidDeleteFiles(
 	params *protocol.DeleteFilesParams,
 ) error {
 	for _, deleted := range params.Files {
-		uri := protocol.URI(deleted.URI)
+		fileURI := uri.URI(deleted.URI)
 		switch {
-		case isBufYAMLURI(uri):
-			s.bufYAMLManager.Close(ctx, uri)
-		case isBufGenYAMLURI(uri):
-			s.bufGenYAMLManager.Close(ctx, uri)
-		case isBufPolicyYAMLURI(uri):
-			s.bufPolicyYAMLManager.Close(uri)
-		case isBufLockURI(uri):
-			s.bufLockManager.Close(uri)
+		case isBufYAMLURI(fileURI):
+			s.bufYAMLManager.Close(ctx, fileURI)
+		case isBufGenYAMLURI(fileURI):
+			s.bufGenYAMLManager.Close(ctx, fileURI)
+		case isBufPolicyYAMLURI(fileURI):
+			s.bufPolicyYAMLManager.Close(fileURI)
+		case isBufLockURI(fileURI):
+			s.bufLockManager.Close(fileURI)
 		default:
-			if file := s.fileManager.Get(uri); file != nil {
+			if file := s.fileManager.Get(fileURI); file != nil {
 				file.Close(ctx)
 			}
 		}
@@ -470,8 +477,8 @@ func (s *server) Hover(
 
 	range_ := symbol.Range() // Need to spill this here because Hover.Range is a pointer.
 	return &protocol.Hover{
-		Contents: protocol.MarkupContent{
-			Kind:  protocol.Markdown,
+		Contents: &protocol.MarkupContent{
+			Kind:  protocol.MarkupKindMarkdown,
 			Value: docs,
 		},
 		Range: &range_,
@@ -482,18 +489,18 @@ func (s *server) Hover(
 func (s *server) Definition(
 	ctx context.Context,
 	params *protocol.DefinitionParams,
-) ([]protocol.Location, error) {
+) (protocol.DefinitionResult, error) {
 	// First, try to resolve a CEL definition (e.g. `this` → field or message).
 	if file := s.fileManager.Get(params.TextDocument.URI); file != nil {
 		if loc := getCELDefinition(file, params.Position, s.celEnv); loc != nil {
-			return []protocol.Location{*loc}, nil
+			return protocol.LocationSlice{*loc}, nil
 		}
 	}
 	symbol := s.getSymbol(ctx, params.TextDocument.URI, params.Position)
 	if symbol == nil {
 		return nil, nil
 	}
-	return []protocol.Location{
+	return protocol.LocationSlice{
 		symbol.Definition(),
 	}, nil
 }
@@ -502,12 +509,12 @@ func (s *server) Definition(
 func (s *server) TypeDefinition(
 	ctx context.Context,
 	params *protocol.TypeDefinitionParams,
-) ([]protocol.Location, error) {
+) (protocol.DefinitionResult, error) {
 	symbol := s.getSymbol(ctx, params.TextDocument.URI, params.Position)
 	if symbol == nil {
 		return nil, nil
 	}
-	return []protocol.Location{
+	return protocol.LocationSlice{
 		symbol.TypeDefinition(),
 	}, nil
 }
@@ -528,7 +535,7 @@ func (s *server) References(
 func (s *server) Completion(
 	ctx context.Context,
 	params *protocol.CompletionParams,
-) (*protocol.CompletionList, error) {
+) (protocol.CompletionResult, error) {
 	// buf.gen.yaml, buf.yaml, and buf.policy.yaml completion is text-based and
 	// does not require a file manager entry.
 	if isBufGenYAMLURI(params.TextDocument.URI) {
@@ -591,9 +598,9 @@ func (s *server) SemanticTokensFull(
 func (s *server) Symbols(
 	ctx context.Context,
 	params *protocol.WorkspaceSymbolParams,
-) ([]protocol.SymbolInformation, error) {
+) (protocol.WorkspaceSymbolResult, error) {
 	query := strings.ToLower(params.Query)
-	var results []protocol.SymbolInformation
+	var results protocol.SymbolInformationSlice
 	for _, file := range s.fileManager.uriToFile.Range {
 		for symbol := range file.GetSymbols(query) {
 			results = append(results, symbol)
@@ -606,22 +613,22 @@ func (s *server) Symbols(
 }
 
 // DocumentSymbol is the entry point for document symbol search.
-func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) (
-	result []any, // []protocol.SymbolInformation
-	err error,
-) {
+func (s *server) DocumentSymbol(
+	ctx context.Context,
+	params *protocol.DocumentSymbolParams,
+) (protocol.DocumentSymbolResult, error) {
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {
 		return nil, nil
 	}
-	anyResults := []any{}
+	results := protocol.SymbolInformationSlice{}
 	for symbol := range file.GetSymbols("") {
-		anyResults = append(anyResults, symbol)
-		if len(anyResults) > maxSymbolResults {
+		results = append(results, symbol)
+		if len(results) > maxSymbolResults {
 			break
 		}
 	}
-	return anyResults, nil
+	return results, nil
 }
 
 // DocumentHighlight is the entry point for highlighting occurrences of a symbol within a file.
@@ -638,27 +645,28 @@ func (s *server) DocumentHighlight(ctx context.Context, params *protocol.Documen
 }
 
 // CodeAction is called when the client requests code actions for a given range.
-func (s *server) CodeAction(ctx context.Context, params *protocol.CodeActionParams) ([]protocol.CodeAction, error) {
+func (s *server) CodeAction(ctx context.Context, params *protocol.CodeActionParams) ([]protocol.CommandOrCodeAction, error) {
 	file := s.fileManager.Get(params.TextDocument.URI)
 	if file == nil {
 		return nil, nil
 	}
 	codeActionSet := xslices.ToStructMap(params.Context.Only)
 
-	var actions []protocol.CodeAction
-	if _, ok := codeActionSet[protocol.SourceOrganizeImports]; len(codeActionSet) == 0 || ok {
+	var actions []protocol.CommandOrCodeAction
+	if _, ok := codeActionSet[protocol.CodeActionKindSourceOrganizeImports]; len(codeActionSet) == 0 || ok {
 		if organizeImportsAction := s.getOrganizeImportsCodeAction(ctx, file); organizeImportsAction != nil {
-			actions = append(actions, *organizeImportsAction)
+			actions = append(actions, organizeImportsAction)
 		}
 	}
-	if _, ok := codeActionSet[protocol.RefactorRewrite]; len(codeActionSet) == 0 || ok {
+	if _, ok := codeActionSet[protocol.CodeActionKindRefactorRewrite]; len(codeActionSet) == 0 || ok {
 		if deprecateAction := s.getDeprecateCodeAction(ctx, file, params); deprecateAction != nil {
-			actions = append(actions, *deprecateAction)
+			actions = append(actions, deprecateAction)
 		}
 	}
-	if _, ok := codeActionSet[protocol.QuickFix]; len(codeActionSet) == 0 || ok {
-		lintIgnoreActions := s.getLintIgnoreCodeActions(ctx, file, params)
-		actions = append(actions, lintIgnoreActions...)
+	if _, ok := codeActionSet[protocol.CodeActionKindQuickFix]; len(codeActionSet) == 0 || ok {
+		for _, lintIgnoreAction := range s.getLintIgnoreCodeActions(ctx, file, params) {
+			actions = append(actions, &lintIgnoreAction)
+		}
 	}
 	return actions, nil
 }
@@ -684,33 +692,33 @@ func (s *server) CodeLens(ctx context.Context, params *protocol.CodeLensParams) 
 //   - buf.generate.run: run buf generate for the buf.gen.yaml at the given URI.
 //   - buf.generate.checkPluginUpdates: check for newer versions of remote plugins
 //     in the buf.gen.yaml and publish informational diagnostics for outdated ones.
-func (s *server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (any, error) {
+func (s *server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (protocol.LSPAny, error) {
 	if len(params.Arguments) < 1 {
 		return nil, fmt.Errorf("%s: expected at least 1 argument (file URI), got %d", params.Command, len(params.Arguments))
 	}
-	uriStr, ok := params.Arguments[0].(string)
-	if !ok {
-		return nil, fmt.Errorf("%s: argument 0 must be a string URI, got %T", params.Command, params.Arguments[0])
+	var uriString string
+	if err := json.Unmarshal(params.Arguments[0], &uriString); err != nil {
+		return nil, fmt.Errorf("%s: argument 0 must be a string URI, got %s", params.Command, params.Arguments[0])
 	}
-	uri := protocol.URI(uriStr)
+	fileURI := uri.URI(uriString)
 	switch params.Command {
 	case commandUpdateAllDeps:
-		if err := s.bufYAMLManager.ExecuteUpdateAll(ctx, uri); err != nil {
+		if err := s.bufYAMLManager.ExecuteUpdateAll(ctx, fileURI); err != nil {
 			return nil, fmt.Errorf("%s: %w", params.Command, err)
 		}
 		return nil, nil
 	case commandCheckUpdates:
-		if err := s.bufYAMLManager.ExecuteCheckUpdates(ctx, uri); err != nil {
+		if err := s.bufYAMLManager.ExecuteCheckUpdates(ctx, fileURI); err != nil {
 			return nil, fmt.Errorf("%s: %w", params.Command, err)
 		}
 		return nil, nil
 	case CommandRunGenerate:
-		if err := s.bufGenYAMLManager.ExecuteRunGenerate(ctx, uri); err != nil {
+		if err := s.bufGenYAMLManager.ExecuteRunGenerate(ctx, fileURI); err != nil {
 			return nil, fmt.Errorf("%s: %w", params.Command, err)
 		}
 		return nil, nil
 	case CommandCheckPluginUpdates:
-		if err := s.bufGenYAMLManager.ExecuteCheckPluginUpdates(ctx, uri); err != nil {
+		if err := s.bufGenYAMLManager.ExecuteCheckPluginUpdates(ctx, fileURI); err != nil {
 			return nil, fmt.Errorf("%s: %w", params.Command, err)
 		}
 		return nil, nil
@@ -726,7 +734,7 @@ func (s *server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCom
 // will handle providing feedback to the user.
 //
 // Supported symbol types for renaming are [referenceable], [static], and [reference].
-func (s *server) PrepareRename(ctx context.Context, params *protocol.PrepareRenameParams) (*protocol.Range, error) {
+func (s *server) PrepareRename(ctx context.Context, params *protocol.PrepareRenameParams) (protocol.PrepareRenameResult, error) {
 	symbol := s.getSymbol(ctx, params.TextDocument.URI, params.Position)
 	if symbol == nil {
 		return nil, nil
@@ -805,14 +813,14 @@ func (s *server) DocumentLink(
 	return s.documentLink(file), nil
 }
 
-// getSymbol is a helper function that gets the *[symbol] for the given [protocol.URI] and
+// getSymbol is a helper function that gets the *[symbol] for the given [uri.URI] and
 // [protocol.Position].
 func (s *server) getSymbol(
 	ctx context.Context,
-	uri protocol.URI,
+	fileURI uri.URI,
 	position protocol.Position,
 ) *symbol {
-	file := s.fileManager.Get(uri)
+	file := s.fileManager.Get(fileURI)
 	if file == nil {
 		return nil
 	}

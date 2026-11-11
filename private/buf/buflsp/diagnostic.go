@@ -59,9 +59,9 @@ func reportDiagnosticToProtocolDiagnostic(
 	}
 	message := strings.Join(parts, "\n")
 	diagnostic := protocol.Diagnostic{
-		Source:   serverName,
+		Source:   protocol.NewOptional(serverName),
 		Severity: reportLevelToDiagnosticSeverity[reportDiagnostic.Level()],
-		Message:  message,
+		Message:  protocol.String(message),
 	}
 	if primary := reportDiagnostic.Primary(); !primary.IsZero() {
 		startLocation := primary.Location(primary.Start, positionalEncoding)
@@ -79,13 +79,9 @@ func reportDiagnosticToProtocolDiagnostic(
 	}
 	switch reportDiagnostic.Tag() {
 	case rtags.UnusedImport:
-		diagnostic.Tags = []protocol.DiagnosticTag{
-			protocol.DiagnosticTagUnnecessary,
-		}
+		diagnostic.Tags = protocol.NewDiagnosticTags(protocol.DiagnosticTagUnnecessary)
 	case rtags.Deprecated:
-		diagnostic.Tags = []protocol.DiagnosticTag{
-			protocol.DiagnosticTagDeprecated,
-		}
+		diagnostic.Tags = protocol.NewDiagnosticTags(protocol.DiagnosticTagDeprecated)
 	}
 	return diagnostic
 }

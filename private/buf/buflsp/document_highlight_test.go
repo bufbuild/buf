@@ -37,7 +37,7 @@ func TestDocumentHighlight(t *testing.T) {
 	require.NoError(t, err)
 
 	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
-	typesURI := uri.New(typesProtoPath)
+	typesURI := uri.File(typesProtoPath)
 
 	type highlightLocation struct {
 		line           uint32
@@ -47,7 +47,7 @@ func TestDocumentHighlight(t *testing.T) {
 	}
 	tests := []struct {
 		name               string
-		targetURI          protocol.URI
+		targetURI          uri.URI
 		line               uint32
 		character          uint32
 		expectedHighlights []highlightLocation
@@ -342,7 +342,7 @@ func TestDocumentHighlight(t *testing.T) {
 			require.NoError(t, highlightErr)
 
 			if tt.expectedHighlights == nil {
-				require.Nil(t, highlights)
+				require.Empty(t, highlights)
 			} else {
 				require.Len(t, highlights, len(tt.expectedHighlights))
 

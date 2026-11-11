@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 func TestCodeAction_OrganizeImports(t *testing.T) {
@@ -405,7 +406,7 @@ func testCodeActionOrganizeImports(t *testing.T, filename string, expectedEdits 
 		require.NotNil(t, organizeImportsAction, "expected to find 'Organize imports' code action")
 
 		// Verify the code action properties
-		assert.Equal(t, protocol.SourceOrganizeImports, organizeImportsAction.Kind, "code action should be SourceOrganizeImports")
+		assert.Equal(t, new(protocol.CodeActionKindSourceOrganizeImports), organizeImportsAction.Kind, "code action should be SourceOrganizeImports")
 		assert.NotNil(t, organizeImportsAction.Edit, "code action should have a workspace edit")
 
 		// Verify the edit replaces the imports section
@@ -460,7 +461,7 @@ func testCodeActionOrganizeImports(t *testing.T, filename string, expectedEdits 
 				Version:                2,
 			},
 			ContentChanges: []protocol.TextDocumentContentChangeEvent{
-				{Text: newText.String()},
+				&protocol.TextDocumentContentChangeWholeDocument{Text: newText.String()},
 			},
 		})
 		require.NoError(t, err)
@@ -470,7 +471,7 @@ func testCodeActionOrganizeImports(t *testing.T, filename string, expectedEdits 
 
 // requestOrganizeImports requests code actions for the file and returns the
 // "Organize imports" action, or nil if there is none.
-func requestOrganizeImports(t *testing.T, clientJSONConn jsonrpc2.Conn, testURI protocol.URI) *protocol.CodeAction {
+func requestOrganizeImports(t *testing.T, clientJSONConn jsonrpc2.Conn, testURI uri.URI) *protocol.CodeAction {
 	t.Helper()
 	// The specific position doesn't matter since we're checking for file-level actions
 	var codeActions []protocol.CodeAction
@@ -484,7 +485,7 @@ func requestOrganizeImports(t *testing.T, clientJSONConn jsonrpc2.Conn, testURI 
 		},
 		Context: protocol.CodeActionContext{
 			Only: []protocol.CodeActionKind{
-				protocol.SourceOrganizeImports,
+				protocol.CodeActionKindSourceOrganizeImports,
 			},
 		},
 	}, &codeActions)

@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 func TestCELDefinition(t *testing.T) {
@@ -37,7 +38,7 @@ func TestCELDefinition(t *testing.T) {
 		name               string
 		line               uint32
 		character          uint32
-		expectedDefURI     protocol.URI
+		expectedDefURI     uri.URI
 		expectedDefLine    uint32
 		expectedDefCharMin uint32
 		expectedDefCharMax uint32

@@ -101,7 +101,7 @@ func TestDocumentSymbol(t *testing.T) {
 				assert.Equal(t, expectedSymbol.kind, found.Kind, "symbol %s has wrong kind", expectedSymbol.name)
 				assert.Equal(t, testURI, found.Location.URI, "symbol %s has wrong URI", expectedSymbol.name)
 				assert.Equal(t, expectedSymbol.line, found.Location.Range.Start.Line, "symbol %s has wrong line number", expectedSymbol.name)
-				assert.Equal(t, expectedSymbol.deprecated, found.Deprecated, "symbol %s has wrong deprecated status", expectedSymbol.name)
+				assert.Equal(t, expectedSymbol.deprecated, found.Deprecated != nil && *found.Deprecated, "symbol %s has wrong deprecated status", expectedSymbol.name)
 				// Tags must only carry SymbolTagDeprecated for symbols that are
 				// actually deprecated. Clients prefer Tags over the legacy
 				// Deprecated field, so an unconditional tag would render every

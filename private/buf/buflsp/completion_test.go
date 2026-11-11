@@ -193,7 +193,7 @@ message User {
 			Version: 2,
 		},
 		ContentChanges: []protocol.TextDocumentContentChangeEvent{
-			{
+			&protocol.TextDocumentContentChangeWholeDocument{
 				Text: updatedContent,
 			},
 		},

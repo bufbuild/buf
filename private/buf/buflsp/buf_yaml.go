@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 	"go.yaml.in/yaml/v3"
 )
 
@@ -64,15 +65,15 @@ type bufYAMLManager struct {
 
 	// mu guards uriToFile and uriToCancel.
 	mu          sync.Mutex
-	uriToFile   map[protocol.URI]*bufYAMLFile
-	uriToCancel map[protocol.URI]context.CancelFunc // cancel funcs for in-flight CheckIgnorePaths goroutines
+	uriToFile   map[uri.URI]*bufYAMLFile
+	uriToCancel map[uri.URI]context.CancelFunc // cancel funcs for in-flight CheckIgnorePaths goroutines
 }
 
 func newBufYAMLManager(lsp *lsp) *bufYAMLManager {
 	return &bufYAMLManager{
 		lsp:         lsp,
-		uriToFile:   make(map[protocol.URI]*bufYAMLFile),
-		uriToCancel: make(map[protocol.URI]context.CancelFunc),
+		uriToFile:   make(map[uri.URI]*bufYAMLFile),
+		uriToCancel: make(map[uri.URI]context.CancelFunc),
 	}
 }
 
@@ -100,13 +101,13 @@ type bufYAMLDep struct {
 }
 
 // isBufYAMLURI reports whether uri refers to a buf.yaml file.
-func isBufYAMLURI(uri protocol.URI) bool {
-	return filepath.Base(uri.Filename()) == bufconfig.DefaultBufYAMLFileName
+func isBufYAMLURI(fileURI uri.URI) bool {
+	return filepath.Base(fileURI.FsPath()) == bufconfig.DefaultBufYAMLFileName
 }
 
 // Track opens or refreshes a buf.yaml file.
-func (m *bufYAMLManager) Track(uri protocol.URI, text string) {
-	normalized := normalizeURI(uri)
+func (m *bufYAMLManager) Track(fileURI uri.URI, text string) {
+	normalized := normalizeURI(fileURI)
 	f := &bufYAMLFile{text: text}
 	f.depsKeyLine, f.deps, f.docNode, _ = parseBufYAMLDeps([]byte(text))
 	if f.docNode != nil {
@@ -122,8 +123,8 @@ func (m *bufYAMLManager) Track(uri protocol.URI, text string) {
 }
 
 // Close stops tracking a buf.yaml file and clears any diagnostics it published.
-func (m *bufYAMLManager) Close(ctx context.Context, uri protocol.URI) {
-	normalized := normalizeURI(uri)
+func (m *bufYAMLManager) Close(ctx context.Context, fileURI uri.URI) {
+	normalized := normalizeURI(fileURI)
 	m.mu.Lock()
 	if cancel, ok := m.uriToCancel[normalized]; ok {
 		cancel()
@@ -140,9 +141,9 @@ func (m *bufYAMLManager) Close(ctx context.Context, uri protocol.URI) {
 // Two whole-file lenses are shown at the deps: key line:
 //   - "Update all dependencies" triggers buf.dep.updateAll
 //   - "Check for updates" triggers buf.dep.checkUpdates
-func (m *bufYAMLManager) GetCodeLenses(uri protocol.URI) []protocol.CodeLens {
+func (m *bufYAMLManager) GetCodeLenses(fileURI uri.URI) []protocol.CodeLens {
 	m.mu.Lock()
-	f, ok := m.uriToFile[normalizeURI(uri)]
+	f, ok := m.uriToFile[normalizeURI(fileURI)]
 	m.mu.Unlock()
 	if !ok || len(f.deps) == 0 {
 		return nil
@@ -155,18 +156,18 @@ func (m *bufYAMLManager) GetCodeLenses(uri protocol.URI) []protocol.CodeLens {
 	return []protocol.CodeLens{
 		{
 			Range: keyRange,
-			Command: &protocol.Command{
+			Command: protocol.Command{
 				Title:     "Update all dependencies",
 				Command:   commandUpdateAllDeps,
-				Arguments: []any{string(uri)},
+				Arguments: []protocol.LSPAny{newStringLSPAny(string(fileURI))},
 			},
 		},
 		{
 			Range: keyRange,
-			Command: &protocol.Command{
+			Command: protocol.Command{
 				Title:     "Check for updates",
 				Command:   commandCheckUpdates,
-				Arguments: []any{string(uri)},
+				Arguments: []protocol.LSPAny{newStringLSPAny(string(fileURI))},
 			},
 		},
 	}
@@ -174,16 +175,16 @@ func (m *bufYAMLManager) GetCodeLenses(uri protocol.URI) []protocol.CodeLens {
 
 // ExecuteUpdateAll runs buf dep update for all configured deps in the
 // workspace containing the given buf.yaml URI.
-func (m *bufYAMLManager) ExecuteUpdateAll(ctx context.Context, uri protocol.URI) error {
-	dirPath := filepath.Dir(uri.Filename())
+func (m *bufYAMLManager) ExecuteUpdateAll(ctx context.Context, fileURI uri.URI) error {
+	dirPath := filepath.Dir(fileURI.FsPath())
 	return updateDeps(ctx, m.lsp, dirPath)
 }
 
 // ExecuteCheckUpdates queries the BSR for the latest commit of each configured
 // dependency and publishes an informational diagnostic on any dep line where a
 // newer version is available. It does not modify any files.
-func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.URI) error {
-	normalized := normalizeURI(uri)
+func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, fileURI uri.URI) error {
+	normalized := normalizeURI(fileURI)
 	m.mu.Lock()
 	f, ok := m.uriToFile[normalized]
 	m.mu.Unlock()
@@ -191,7 +192,7 @@ func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.U
 		return nil
 	}
 
-	dirPath := filepath.Dir(uri.Filename())
+	dirPath := filepath.Dir(fileURI.FsPath())
 	workspaceDepManager, err := m.lsp.controller.GetWorkspaceDepManager(ctx, dirPath)
 	if err != nil {
 		return fmt.Errorf("getting workspace dep manager: %w", err)
@@ -255,12 +256,12 @@ func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.U
 		depDiagnostics = append(depDiagnostics, protocol.Diagnostic{
 			Range:    depRange,
 			Severity: protocol.DiagnosticSeverityInformation,
-			Source:   serverName,
-			Message: fmt.Sprintf(
+			Source:   protocol.NewOptional(serverName),
+			Message: protocol.String(fmt.Sprintf(
 				"%s can be updated to %s",
 				fullName,
 				uuidutil.ToDashless(latestKey.CommitID()),
-			),
+			)),
 		})
 	}
 	m.mu.Lock()
@@ -275,8 +276,8 @@ func (m *bufYAMLManager) ExecuteCheckUpdates(ctx context.Context, uri protocol.U
 // CheckIgnorePaths asynchronously validates lint.ignore and breaking.ignore paths
 // in the given buf.yaml against the actual files in the workspace. It publishes
 // a warning diagnostic for each path that does not match any file.
-func (m *bufYAMLManager) CheckIgnorePaths(uri protocol.URI) {
-	normalized := normalizeURI(uri)
+func (m *bufYAMLManager) CheckIgnorePaths(fileURI uri.URI) {
+	normalized := normalizeURI(fileURI)
 	m.mu.Lock()
 	f, ok := m.uriToFile[normalized]
 	if !ok || (len(f.lintIgnorePaths) == 0 && len(f.breakingIgnorePaths) == 0) {
@@ -303,8 +304,8 @@ func (m *bufYAMLManager) CheckIgnorePaths(uri protocol.URI) {
 }
 
 // runIgnorePathChecks is the synchronous body of CheckIgnorePaths.
-func (m *bufYAMLManager) runIgnorePathChecks(ctx context.Context, uri protocol.URI, lintIgnorePaths, breakingIgnorePaths []bufYAMLIgnorePath) error {
-	dirPath := filepath.Dir(uri.Filename())
+func (m *bufYAMLManager) runIgnorePathChecks(ctx context.Context, fileURI uri.URI, lintIgnorePaths, breakingIgnorePaths []bufYAMLIgnorePath) error {
+	dirPath := filepath.Dir(fileURI.FsPath())
 	bufWorkspace, err := m.lsp.controller.GetWorkspace(ctx, dirPath)
 	if err != nil {
 		return fmt.Errorf("getting workspace: %w", err)
@@ -354,8 +355,8 @@ func (m *bufYAMLManager) runIgnorePathChecks(ctx context.Context, uri protocol.U
 				ignoreDiagnostics = append(ignoreDiagnostics, protocol.Diagnostic{
 					Range:    ignorePath.pathRange,
 					Severity: protocol.DiagnosticSeverityWarning,
-					Source:   serverName,
-					Message:  fmt.Sprintf("%q does not match any file in the workspace", ignorePath.path),
+					Source:   protocol.NewOptional(serverName),
+					Message:  protocol.String(fmt.Sprintf("%q does not match any file in the workspace", ignorePath.path)),
 				})
 			}
 		}
@@ -364,38 +365,38 @@ func (m *bufYAMLManager) runIgnorePathChecks(ctx context.Context, uri protocol.U
 	checkIgnorePaths(breakingIgnorePaths)
 
 	m.mu.Lock()
-	if f, ok := m.uriToFile[uri]; ok {
+	if f, ok := m.uriToFile[fileURI]; ok {
 		f.ignoreDiagnostics = ignoreDiagnostics
 	}
 	m.mu.Unlock()
-	m.publishAllDiagnostics(ctx, uri)
+	m.publishAllDiagnostics(ctx, fileURI)
 	return nil
 }
 
 // publishAllDiagnostics merges dep and ignore diagnostics and publishes them.
-func (m *bufYAMLManager) publishAllDiagnostics(ctx context.Context, uri protocol.URI) {
+func (m *bufYAMLManager) publishAllDiagnostics(ctx context.Context, fileURI uri.URI) {
 	m.mu.Lock()
-	f, ok := m.uriToFile[uri]
+	f, ok := m.uriToFile[fileURI]
 	if !ok {
 		m.mu.Unlock()
-		publishDiagnostics(ctx, m.lsp.client, uri, nil)
+		publishDiagnostics(ctx, m.lsp.client, fileURI, nil)
 		return
 	}
 	all := make([]protocol.Diagnostic, 0, len(f.depDiagnostics)+len(f.ignoreDiagnostics))
 	all = append(all, f.depDiagnostics...)
 	all = append(all, f.ignoreDiagnostics...)
 	m.mu.Unlock()
-	publishDiagnostics(ctx, m.lsp.client, uri, all)
+	publishDiagnostics(ctx, m.lsp.client, fileURI, all)
 }
 
 // publishDiagnostics publishes diagnostics to the client, clearing any
 // previously published diagnostics for uri when passed nil.
-func publishDiagnostics(ctx context.Context, client protocol.Client, uri protocol.URI, diagnostics []protocol.Diagnostic) {
+func publishDiagnostics(ctx context.Context, client protocol.Client, fileURI uri.URI, diagnostics []protocol.Diagnostic) {
 	if diagnostics == nil {
 		diagnostics = []protocol.Diagnostic{}
 	}
 	_ = client.PublishDiagnostics(ctx, &protocol.PublishDiagnosticsParams{
-		URI:         uri,
+		URI:         fileURI,
 		Diagnostics: diagnostics,
 	})
 }
@@ -527,9 +528,9 @@ func moduleKeysWithTransitiveDeps(
 // file. If the dep has an explicit ref (e.g. "buf.build/acme/mod:v1.2.3"),
 // the link points to that specific label or commit on BSR. Otherwise it
 // points to the module root.
-func (m *bufYAMLManager) GetDocumentLinks(uri protocol.URI) []protocol.DocumentLink {
+func (m *bufYAMLManager) GetDocumentLinks(fileURI uri.URI) []protocol.DocumentLink {
 	m.mu.Lock()
-	f, ok := m.uriToFile[normalizeURI(uri)]
+	f, ok := m.uriToFile[normalizeURI(fileURI)]
 	m.mu.Unlock()
 	if !ok {
 		return nil
@@ -542,7 +543,7 @@ func (m *bufYAMLManager) GetDocumentLinks(uri protocol.URI) []protocol.DocumentL
 		}
 		links = append(links, protocol.DocumentLink{
 			Range:  dep.depRange,
-			Target: protocol.DocumentURI(bsrRefDocURL(ref)),
+			Target: new(uri.URI(bsrRefDocURL(ref))),
 		})
 	}
 	return links
@@ -550,21 +551,21 @@ func (m *bufYAMLManager) GetDocumentLinks(uri protocol.URI) []protocol.DocumentL
 
 // GetCompletion returns completion items for the buf.yaml field or value at
 // the given cursor position, or nil if no completions apply.
-func (m *bufYAMLManager) GetCompletion(uri protocol.URI, pos protocol.Position) []protocol.CompletionItem {
+func (m *bufYAMLManager) GetCompletion(fileURI uri.URI, pos protocol.Position) []protocol.CompletionItem {
 	m.mu.Lock()
-	f, ok := m.uriToFile[normalizeURI(uri)]
+	f, ok := m.uriToFile[normalizeURI(fileURI)]
 	m.mu.Unlock()
 	if !ok {
 		return nil
 	}
-	return getBufYAMLCompletionItems(f.docNode, f.text, pos, filepath.Dir(uri.Filename()))
+	return getBufYAMLCompletionItems(f.docNode, f.text, pos, filepath.Dir(fileURI.FsPath()))
 }
 
 // GetHover returns hover documentation for the buf.yaml field or rule at the
 // given position, or nil if the position does not correspond to a known element.
-func (m *bufYAMLManager) GetHover(uri protocol.URI, pos protocol.Position) *protocol.Hover {
+func (m *bufYAMLManager) GetHover(fileURI uri.URI, pos protocol.Position) *protocol.Hover {
 	m.mu.Lock()
-	f, ok := m.uriToFile[normalizeURI(uri)]
+	f, ok := m.uriToFile[normalizeURI(fileURI)]
 	m.mu.Unlock()
 	if !ok || f.docNode == nil {
 		return nil

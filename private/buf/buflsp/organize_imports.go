@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 // importInfo represents an import statement to be included in the organized imports.
@@ -234,9 +235,9 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 	}
 	return &protocol.CodeAction{
 		Title: "Organize imports",
-		Kind:  protocol.SourceOrganizeImports,
+		Kind:  new(protocol.CodeActionKindSourceOrganizeImports),
 		Edit: &protocol.WorkspaceEdit{
-			Changes: map[protocol.DocumentURI][]protocol.TextEdit{
+			Changes: map[uri.URI][]protocol.TextEdit{
 				file.uri: edits,
 			},
 		},

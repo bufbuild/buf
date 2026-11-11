@@ -118,6 +118,12 @@ linters:
         text: "SA1019"
       - linters:
           - staticcheck
+        # LSP deprecated these fields in favor of tags, but we still set them for
+        # clients that do not support tags.
+        path: private/buf/buflsp/.*\.go
+        text: 'SA1019: \(go\.lsp\.dev/protocol\.(CompletionItem|SymbolInformation)\)\.Deprecated is deprecated'
+      - linters:
+          - staticcheck
         # We fall back to the deprecated RootURI initialize parameter, as some clients
         # only send it.
         path: private/buf/buflsp/buflsp.go

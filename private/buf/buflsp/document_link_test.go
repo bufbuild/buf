@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 func TestDocumentLink(t *testing.T) {
@@ -127,9 +128,12 @@ func TestDocumentLink(t *testing.T) {
 					localPath, err := filepath.Abs(expected.localPath)
 					require.NoError(t, err)
 					expectedURI := buflsp.FilePathToURI(localPath)
-					assert.Equal(t, expectedURI, link.Target, "link %d (%s): wrong target", i, expected.description)
+					assert.Equal(t, new(expectedURI), link.Target, "link %d (%s): wrong target", i, expected.description)
 				case linkTargetTypeURL:
-					assert.Equal(t, protocol.DocumentURI(expected.targetURL), link.Target, "link %d (%s): wrong target", i, expected.description)
+					// The client canonicalizes URIs when decoding them.
+					expectedURL, err := uri.Parse(expected.targetURL)
+					require.NoError(t, err)
+					assert.Equal(t, &expectedURL, link.Target, "link %d (%s): wrong target", i, expected.description)
 				}
 			}
 

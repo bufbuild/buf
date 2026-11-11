@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/experimental/token"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 const (
@@ -42,21 +43,21 @@ func (s *server) documentLink(file *file) []protocol.DocumentLink {
 	// Create links for import statements
 	for _, symbol := range file.symbols {
 		if imported, ok := symbol.kind.(*imported); ok && imported.file != nil {
-			var targetURI protocol.DocumentURI
+			var targetURI uri.URI
 
 			// Check if this is a Well-Known Type (WKT)
 			if imported.file.IsWKT() && imported.file.objectInfo != nil {
 				bsrHost := bufconnect.DefaultRemote + "/protocolbuffers/wellknowntypes"
 				filePath := imported.file.objectInfo.Path()
 				url := "https://" + bsrHost + "/file/main:" + filePath
-				targetURI = protocol.DocumentURI(url)
+				targetURI = uri.URI(url)
 			} else if file.workspace != nil && imported.file.objectInfo != nil {
 				// Try to get BSR module information for non-WKT imports
 				module := file.workspace.GetModule(imported.file.uri)
 				filePath := imported.file.objectInfo.Path()
 				url := bsrURL(module, filePath, "", bsrTabTypeFile)
 				if url != "" {
-					targetURI = protocol.DocumentURI(url)
+					targetURI = uri.URI(url)
 				}
 			}
 
@@ -67,7 +68,7 @@ func (s *server) documentLink(file *file) []protocol.DocumentLink {
 
 			links = append(links, protocol.DocumentLink{
 				Range:  reportSpanToProtocolRange(symbol.span),
-				Target: targetURI,
+				Target: new(targetURI),
 			})
 		}
 	}
@@ -150,7 +151,7 @@ func (s *server) findURLLinksInComments(astFile *ast.File) []protocol.DocumentLi
 
 			links = append(links, protocol.DocumentLink{
 				Range:  reportSpanToProtocolRange(urlSpan),
-				Target: protocol.DocumentURI(url),
+				Target: new(uri.URI(url)),
 			})
 		}
 	}

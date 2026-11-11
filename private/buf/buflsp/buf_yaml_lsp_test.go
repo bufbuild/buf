@@ -22,7 +22,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"testing/synctest"
 	"time"
 
 	"buf.build/go/app"
@@ -65,7 +64,7 @@ func setupLSPServerForBufYAML(
 	bufYAMLPath string,
 	mkp bufmodule.ModuleKeyProvider,
 	cvp buflsp.CuratedPluginVersionProvider,
-) (jsonrpc2.Conn, protocol.URI, *diagnosticsCapture) {
+) (jsonrpc2.Conn, uri.URI, *diagnosticsCapture) {
 	t.Helper()
 
 	ctx := t.Context()
@@ -149,9 +148,7 @@ func setupLSPServerForBufYAML(
 
 	capture := newDiagnosticsCapture()
 
-	clientStream := jsonrpc2.NewStream(clientConn)
-	clientJSONConn := jsonrpc2.NewConn(clientStream)
-	clientJSONConn.Go(ctx, jsonrpc2.AsyncHandler(capture.handle))
+	clientJSONConn := newClientConn(ctx, capture, clientConn)
 	t.Cleanup(func() {
 		require.NoError(t, clientJSONConn.Close())
 	})
@@ -161,7 +158,7 @@ func setupLSPServerForBufYAML(
 
 	var initResult protocol.InitializeResult
 	_, err = clientJSONConn.Call(ctx, protocol.MethodInitialize, &protocol.InitializeParams{
-		RootURI: uri.New(workspaceDir),
+		RootURI: new(uri.File(workspaceDir)),
 		Capabilities: protocol.ClientCapabilities{
 			TextDocument: &protocol.TextDocumentClientCapabilities{},
 		},
@@ -295,7 +292,7 @@ func TestBufYAMLCheckUpdates(t *testing.T) {
 				require.Len(t, diags.Diagnostics, 1, "expected exactly 1 diagnostic for the outdated dep")
 				d := diags.Diagnostics[0]
 				assert.Equal(t, protocol.DiagnosticSeverityInformation, d.Severity)
-				assert.Equal(t, "buf-lsp", d.Source)
+				assert.Equal(t, protocol.NewOptional("buf-lsp"), d.Source)
 				assert.Contains(t, d.Message, "buf.build/bufbuild/protovalidate")
 				assert.Contains(t, d.Message, "00000000000000000000000000000011")
 				// Diagnostic should be on the protovalidate dep line (line 2, 0-indexed).
@@ -314,7 +311,7 @@ func TestBufYAMLCheckUpdates(t *testing.T) {
 				assert.Len(t, diags.Diagnostics, 2, "expected 2 diagnostics when both deps are outdated")
 				for _, d := range diags.Diagnostics {
 					assert.Equal(t, protocol.DiagnosticSeverityInformation, d.Severity)
-					assert.Equal(t, "buf-lsp", d.Source)
+					assert.Equal(t, protocol.NewOptional("buf-lsp"), d.Source)
 					assert.Contains(t, d.Message, "can be updated to")
 				}
 			},
@@ -347,21 +344,19 @@ func TestBufYAMLCheckUpdates(t *testing.T) {
 			absPath, err := filepath.Abs(tc.fixture)
 			require.NoError(t, err)
 
-			synctest.Test(t, func(t *testing.T) {
-				clientJSONConn, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, mkp, nil)
-				ctx := t.Context()
+			clientJSONConn, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, mkp, nil)
+			ctx := t.Context()
 
-				var result any
-				_, err := clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
-					Command:   "buf.dep.checkUpdates",
-					Arguments: []any{string(bufYAMLURI)},
-				}, &result)
-				require.NoError(t, err)
+			var result any
+			_, err = clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
+				Command:   "buf.dep.checkUpdates",
+				Arguments: []protocol.LSPAny{newStringLSPAny(t, string(bufYAMLURI))},
+			}, &result)
+			require.NoError(t, err)
 
-				diags := capture.wait(t, bufYAMLURI, 5*time.Second, tc.waitPred)
-				require.NotNil(t, diags)
-				tc.check(t, diags)
-			})
+			diags := capture.wait(t, bufYAMLURI, 5*time.Second, tc.waitPred)
+			require.NotNil(t, diags)
+			tc.check(t, diags)
 		})
 	}
 }
@@ -381,38 +376,36 @@ func TestBufYAMLDiagnostics_ClearedOnClose(t *testing.T) {
 	absPath, err := filepath.Abs("testdata/buf_yaml/with_deps/buf.yaml")
 	require.NoError(t, err)
 
-	synctest.Test(t, func(t *testing.T) {
-		clientJSONConn, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, mkp, nil)
-		ctx := t.Context()
+	clientJSONConn, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, mkp, nil)
+	ctx := t.Context()
 
-		// Trigger a check to produce diagnostics.
-		var result any
-		_, err = clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
-			Command:   "buf.dep.checkUpdates",
-			Arguments: []any{string(bufYAMLURI)},
-		}, &result)
-		require.NoError(t, err)
+	// Trigger a check to produce diagnostics.
+	var result any
+	_, err = clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
+		Command:   "buf.dep.checkUpdates",
+		Arguments: []protocol.LSPAny{newStringLSPAny(t, string(bufYAMLURI))},
+	}, &result)
+	require.NoError(t, err)
 
-		// Wait for the non-empty diagnostics.
-		diags := capture.wait(t, bufYAMLURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
-			return len(p.Diagnostics) > 0
-		})
-		require.NotNil(t, diags)
-		require.NotEmpty(t, diags.Diagnostics, "expected diagnostics before close")
-
-		// Close the file.
-		err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidClose, &protocol.DidCloseTextDocumentParams{
-			TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
-		})
-		require.NoError(t, err)
-
-		// Diagnostics should now be cleared.
-		cleared := capture.wait(t, bufYAMLURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
-			return len(p.Diagnostics) == 0
-		})
-		require.NotNil(t, cleared)
-		assert.Empty(t, cleared.Diagnostics, "expected diagnostics to be cleared after close")
+	// Wait for the non-empty diagnostics.
+	diags := capture.wait(t, bufYAMLURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+		return len(p.Diagnostics) > 0
 	})
+	require.NotNil(t, diags)
+	require.NotEmpty(t, diags.Diagnostics, "expected diagnostics before close")
+
+	// Close the file.
+	err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidClose, &protocol.DidCloseTextDocumentParams{
+		TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
+	})
+	require.NoError(t, err)
+
+	// Diagnostics should now be cleared.
+	cleared := capture.wait(t, bufYAMLURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+		return len(p.Diagnostics) == 0
+	})
+	require.NotNil(t, cleared)
+	assert.Empty(t, cleared.Diagnostics, "expected diagnostics to be cleared after close")
 }
 
 // TestBufYAMLCheckUpdates_FileChange verifies that deps are re-read correctly
@@ -430,30 +423,28 @@ func TestBufYAMLCheckUpdates_FileChange(t *testing.T) {
 	absPath, err := filepath.Abs("testdata/buf_yaml/with_deps/buf.yaml")
 	require.NoError(t, err)
 
-	synctest.Test(t, func(t *testing.T) {
-		clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, mkp, nil)
-		ctx := t.Context()
+	clientJSONConn, bufYAMLURI, _ := setupLSPServerForBufYAML(t, absPath, mkp, nil)
+	ctx := t.Context()
 
-		// Update the buf.yaml in-memory to have no deps.
-		err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidChange, &protocol.DidChangeTextDocumentParams{
-			TextDocument: protocol.VersionedTextDocumentIdentifier{
-				TextDocumentIdentifier: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
-				Version:                2,
-			},
-			ContentChanges: []protocol.TextDocumentContentChangeEvent{
-				{Text: "version: v2\n"},
-			},
-		})
-		require.NoError(t, err)
-
-		// After the change, code lenses should reflect no deps.
-		var lenses []protocol.CodeLens
-		_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentCodeLens, &protocol.CodeLensParams{
-			TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
-		}, &lenses)
-		require.NoError(t, err)
-		assert.Empty(t, lenses, "expected no lenses after deps are removed")
+	// Update the buf.yaml in-memory to have no deps.
+	err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidChange, &protocol.DidChangeTextDocumentParams{
+		TextDocument: protocol.VersionedTextDocumentIdentifier{
+			TextDocumentIdentifier: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
+			Version:                2,
+		},
+		ContentChanges: []protocol.TextDocumentContentChangeEvent{
+			&protocol.TextDocumentContentChangeWholeDocument{Text: "version: v2\n"},
+		},
 	})
+	require.NoError(t, err)
+
+	// After the change, code lenses should reflect no deps.
+	var lenses []protocol.CodeLens
+	_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentCodeLens, &protocol.CodeLensParams{
+		TextDocument: protocol.TextDocumentIdentifier{URI: bufYAMLURI},
+	}, &lenses)
+	require.NoError(t, err)
+	assert.Empty(t, lenses, "expected no lenses after deps are removed")
 }
 
 // TestBufYAMLDocumentLinks verifies that document links are returned for buf.yaml dep
@@ -487,14 +478,14 @@ func TestBufYAMLDocumentLinks(t *testing.T) {
 						Start: protocol.Position{Line: 2, Character: 4},
 						End:   protocol.Position{Line: 2, Character: 36},
 					},
-					Target: "https://buf.build/bufbuild/protovalidate",
+					Target: new(uri.URI("https://buf.build/bufbuild/protovalidate")),
 				},
 				{
 					Range: protocol.Range{
 						Start: protocol.Position{Line: 3, Character: 4},
 						End:   protocol.Position{Line: 3, Character: 35},
 					},
-					Target: "https://buf.build/googleapis/googleapis",
+					Target: new(uri.URI("https://buf.build/googleapis/googleapis")),
 				},
 			},
 		},
@@ -508,7 +499,7 @@ func TestBufYAMLDocumentLinks(t *testing.T) {
 						Start: protocol.Position{Line: 2, Character: 4},
 						End:   protocol.Position{Line: 2, Character: 43},
 					},
-					Target: "https://buf.build/bufbuild/protovalidate/docs/v1.1.1",
+					Target: new(uri.URI("https://buf.build/bufbuild/protovalidate/docs/v1.1.1")),
 				},
 			},
 		},
@@ -846,9 +837,9 @@ func TestBufYAMLHover(t *testing.T) {
 				return
 			}
 			require.NotNil(t, hover, "expected hover at (%d, %d)", tc.line, tc.character)
-			assert.Equal(t, protocol.Markdown, hover.Contents.Kind)
+			assert.Equal(t, protocol.MarkupKindMarkdown, requireMarkupContent(t, hover.Contents).Kind)
 			for _, want := range tc.expectedContains {
-				assert.Contains(t, hover.Contents.Value, want,
+				assert.Contains(t, requireMarkupContent(t, hover.Contents).Value, want,
 					"hover at (%d, %d) should contain %q", tc.line, tc.character, want)
 			}
 		})
@@ -911,59 +902,57 @@ func TestBufYAMLIgnorePathDiagnostics(t *testing.T) {
 	absPath, err := filepath.Abs("testdata/buf_yaml/ignore_paths/buf.yaml")
 	require.NoError(t, err)
 
-	synctest.Test(t, func(t *testing.T) {
-		_, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, nil, nil)
+	_, bufYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, nil, nil)
 
-		// Wait for diagnostics with at least 3 warnings (one per nonexistent path).
-		diags := capture.wait(t, bufYAMLURI, 10*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
-			warnings := 0
-			for _, d := range p.Diagnostics {
-				if d.Severity == protocol.DiagnosticSeverityWarning {
-					warnings++
-				}
+	// Wait for diagnostics with at least 3 warnings (one per nonexistent path).
+	diags := capture.wait(t, bufYAMLURI, 10*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
+		warnings := 0
+		for _, d := range p.Diagnostics {
+			if d.Severity == protocol.DiagnosticSeverityWarning {
+				warnings++
 			}
-			return warnings >= 3
-		})
-		require.NotNil(t, diags, "expected ignore path diagnostics to be published")
-
-		// Index diagnostics by start position for easy lookup.
-		type pos struct{ line, char uint32 }
-		byPos := make(map[pos]protocol.Diagnostic)
-		for _, d := range diags.Diagnostics {
-			byPos[pos{d.Range.Start.Line, d.Range.Start.Character}] = d
 		}
-
-		// The buf.yaml fixture (0-indexed lines):
-		//  7:     - valid.proto          ← matches actual file; no diagnostic
-		//  8:     - subdir               ← dir containing sub.proto; no diagnostic
-		//  9:     - nonexistent.proto    ← no such file; warning expected
-		// 10:     - nonexistent_dir/     ← no such dir; warning expected
-		// 15:     - valid.proto          ← matches actual file; no diagnostic
-		// 16:     - missing.proto        ← no such file; warning expected
-
-		assertNoDiag := func(line, char uint32, label string) {
-			t.Helper()
-			_, exists := byPos[pos{line, char}]
-			assert.False(t, exists, "%s should not have a diagnostic", label)
-		}
-		assertWarning := func(line, char uint32, wantMsg, label string) {
-			t.Helper()
-			d, ok := byPos[pos{line, char}]
-			if !assert.True(t, ok, "expected warning for %s", label) {
-				return
-			}
-			assert.Equal(t, protocol.DiagnosticSeverityWarning, d.Severity, "%s severity", label)
-			assert.Equal(t, "buf-lsp", d.Source, "%s source", label)
-			assert.Contains(t, d.Message, wantMsg, "%s message", label)
-		}
-
-		assertNoDiag(7, 6, "lint.ignore valid.proto")
-		assertNoDiag(8, 6, "lint.ignore subdir (directory prefix match)")
-		assertWarning(9, 6, "nonexistent.proto", "lint.ignore nonexistent.proto")
-		assertWarning(10, 6, "nonexistent_dir/", "lint.ignore nonexistent_dir/")
-		assertNoDiag(15, 6, "breaking.ignore valid.proto")
-		assertWarning(16, 6, "missing.proto", "breaking.ignore missing.proto")
+		return warnings >= 3
 	})
+	require.NotNil(t, diags, "expected ignore path diagnostics to be published")
+
+	// Index diagnostics by start position for easy lookup.
+	type pos struct{ line, char uint32 }
+	byPos := make(map[pos]protocol.Diagnostic)
+	for _, d := range diags.Diagnostics {
+		byPos[pos{d.Range.Start.Line, d.Range.Start.Character}] = d
+	}
+
+	// The buf.yaml fixture (0-indexed lines):
+	//  7:     - valid.proto          ← matches actual file; no diagnostic
+	//  8:     - subdir               ← dir containing sub.proto; no diagnostic
+	//  9:     - nonexistent.proto    ← no such file; warning expected
+	// 10:     - nonexistent_dir/     ← no such dir; warning expected
+	// 15:     - valid.proto          ← matches actual file; no diagnostic
+	// 16:     - missing.proto        ← no such file; warning expected
+
+	assertNoDiag := func(line, char uint32, label string) {
+		t.Helper()
+		_, exists := byPos[pos{line, char}]
+		assert.False(t, exists, "%s should not have a diagnostic", label)
+	}
+	assertWarning := func(line, char uint32, wantMsg, label string) {
+		t.Helper()
+		d, ok := byPos[pos{line, char}]
+		if !assert.True(t, ok, "expected warning for %s", label) {
+			return
+		}
+		assert.Equal(t, protocol.DiagnosticSeverityWarning, d.Severity, "%s severity", label)
+		assert.Equal(t, protocol.NewOptional("buf-lsp"), d.Source, "%s source", label)
+		assert.Contains(t, d.Message, wantMsg, "%s message", label)
+	}
+
+	assertNoDiag(7, 6, "lint.ignore valid.proto")
+	assertNoDiag(8, 6, "lint.ignore subdir (directory prefix match)")
+	assertWarning(9, 6, "nonexistent.proto", "lint.ignore nonexistent.proto")
+	assertWarning(10, 6, "nonexistent_dir/", "lint.ignore nonexistent_dir/")
+	assertNoDiag(15, 6, "breaking.ignore valid.proto")
+	assertWarning(16, 6, "missing.proto", "breaking.ignore missing.proto")
 }
 
 // TestBufYAMLCompletion verifies that completion items are returned for buf.yaml files

@@ -21,23 +21,24 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 	"go.yaml.in/yaml/v3"
 )
 
 // isBufLockURI reports whether uri refers to a buf.lock file.
-func isBufLockURI(uri protocol.URI) bool {
-	return filepath.Base(uri.Filename()) == bufconfig.DefaultBufLockFileName
+func isBufLockURI(fileURI uri.URI) bool {
+	return filepath.Base(fileURI.FsPath()) == bufconfig.DefaultBufLockFileName
 }
 
 // bufLockManager tracks open buf.lock files in the LSP session.
 type bufLockManager struct {
 	mu        sync.Mutex
-	uriToFile map[protocol.URI]*bufLockFile
+	uriToFile map[uri.URI]*bufLockFile
 }
 
 func newBufLockManager() *bufLockManager {
 	return &bufLockManager{
-		uriToFile: make(map[protocol.URI]*bufLockFile),
+		uriToFile: make(map[uri.URI]*bufLockFile),
 	}
 }
 
@@ -48,8 +49,8 @@ type bufLockFile struct {
 }
 
 // Track opens or refreshes a buf.lock file.
-func (m *bufLockManager) Track(uri protocol.URI, text string) {
-	normalized := normalizeURI(uri)
+func (m *bufLockManager) Track(fileURI uri.URI, text string) {
+	normalized := normalizeURI(fileURI)
 	docNode := parseYAMLDoc(text)
 	f := &bufLockFile{
 		docNode: docNode,
@@ -61,17 +62,17 @@ func (m *bufLockManager) Track(uri protocol.URI, text string) {
 }
 
 // Close stops tracking a buf.lock file.
-func (m *bufLockManager) Close(uri protocol.URI) {
+func (m *bufLockManager) Close(fileURI uri.URI) {
 	m.mu.Lock()
-	delete(m.uriToFile, normalizeURI(uri))
+	delete(m.uriToFile, normalizeURI(fileURI))
 	m.mu.Unlock()
 }
 
 // GetHover returns hover documentation for the buf.lock field at the given
 // position, or nil if the position does not correspond to a known element.
-func (m *bufLockManager) GetHover(uri protocol.URI, pos protocol.Position) *protocol.Hover {
+func (m *bufLockManager) GetHover(fileURI uri.URI, pos protocol.Position) *protocol.Hover {
 	m.mu.Lock()
-	f, ok := m.uriToFile[normalizeURI(uri)]
+	f, ok := m.uriToFile[normalizeURI(fileURI)]
 	m.mu.Unlock()
 	if !ok || f.docNode == nil {
 		return nil
@@ -82,9 +83,9 @@ func (m *bufLockManager) GetHover(uri protocol.URI, pos protocol.Position) *prot
 // GetDocumentLinks returns document links for all deps[*].name module
 // references in the buf.lock file. Each link points to the BSR page for the
 // referenced module.
-func (m *bufLockManager) GetDocumentLinks(uri protocol.URI) []protocol.DocumentLink {
+func (m *bufLockManager) GetDocumentLinks(fileURI uri.URI) []protocol.DocumentLink {
 	m.mu.Lock()
-	f, ok := m.uriToFile[normalizeURI(uri)]
+	f, ok := m.uriToFile[normalizeURI(fileURI)]
 	m.mu.Unlock()
 	if !ok {
 		return nil
@@ -97,7 +98,7 @@ func (m *bufLockManager) GetDocumentLinks(uri protocol.URI) []protocol.DocumentL
 		}
 		links = append(links, protocol.DocumentLink{
 			Range:  dep.refRange,
-			Target: protocol.DocumentURI(bsrRefDocURL(ref)),
+			Target: new(uri.URI(bsrRefDocURL(ref))),
 		})
 	}
 	return links

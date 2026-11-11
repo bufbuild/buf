@@ -36,6 +36,7 @@ import (
 	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 	"google.golang.org/protobuf/encoding/protowire"
 )
 
@@ -275,10 +276,10 @@ func (s *symbol) LogValue() slog.Value {
 		slog.Any("end", loc(s.span.EndLoc())),
 	}
 	if imported, ok := s.kind.(*imported); ok && imported.file != nil {
-		attrs = append(attrs, slog.String("imported", imported.file.uri.Filename()))
+		attrs = append(attrs, slog.String("imported", imported.file.uri.FsPath()))
 	} else if s.def != nil {
 		attrs = append(attrs,
-			slog.String("uri", s.def.file.uri.Filename()),
+			slog.String("uri", s.def.file.uri.FsPath()),
 			slog.Any("start", loc(s.span.StartLoc())),
 			slog.Any("end", loc(s.span.EndLoc())),
 		)
@@ -390,17 +391,27 @@ func (s *symbol) GetSymbolInformation() protocol.SymbolInformation {
 		kind = protocol.SymbolKindVariable
 	}
 	isDeprecated, _ := s.ir.Deprecated().AsBool()
-	var tags []protocol.SymbolTag
+	var (
+		deprecated *bool
+		tags       []protocol.SymbolTag
+	)
 	if isDeprecated {
+		deprecated = new(true)
 		tags = []protocol.SymbolTag{protocol.SymbolTagDeprecated}
 	}
+	var containerNamePointer *string
+	if containerName != "" {
+		containerNamePointer = &containerName
+	}
 	return protocol.SymbolInformation{
-		Name:          string(name),
-		Kind:          kind,
-		Location:      location,
-		ContainerName: containerName,
-		Deprecated:    isDeprecated,
-		Tags:          tags,
+		BaseSymbolInformation: protocol.BaseSymbolInformation{
+			Name:          string(name),
+			Kind:          kind,
+			ContainerName: containerNamePointer,
+			Tags:          tags,
+		},
+		Location:   location,
+		Deprecated: deprecated,
 	}
 }
 
@@ -421,7 +432,7 @@ func (s *symbol) Rename(newName string) (*protocol.WorkspaceEdit, error) {
 		if err := checkRenameConflicts(s, newName); err != nil {
 			return nil, err
 		}
-		edits.Changes = map[protocol.DocumentURI][]protocol.TextEdit{
+		edits.Changes = map[uri.URI][]protocol.TextEdit{
 			s.file.uri: {{
 				Range:   reportSpanToProtocolRange(s.span),
 				NewText: newName,
@@ -472,9 +483,9 @@ func (s *symbol) referenceSymbols() []*symbol {
 
 // renameChangesForReferenceableSymbol is a helper for getting all rename changes for the
 // given referenceable symbol.
-func renameChangesForReferenceableSymbol(s *symbol, newName string) (map[protocol.DocumentURI][]protocol.TextEdit, error) {
+func renameChangesForReferenceableSymbol(s *symbol, newName string) (map[uri.URI][]protocol.TextEdit, error) {
 	// At minimum, we would rename the symbol itself.
-	changes := map[protocol.DocumentURI][]protocol.TextEdit{
+	changes := map[uri.URI][]protocol.TextEdit{
 		s.file.uri: {{
 			Range:   reportSpanToProtocolRange(s.span),
 			NewText: newName,

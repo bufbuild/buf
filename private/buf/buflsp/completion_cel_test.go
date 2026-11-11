@@ -559,16 +559,10 @@ func TestCELCompletion(t *testing.T) {
 					found = true
 					var docStr string
 					switch doc := item.Documentation.(type) {
-					case string:
-						docStr = doc
+					case protocol.String:
+						docStr = string(doc)
 					case *protocol.MarkupContent:
 						docStr = doc.Value
-					case map[string]any:
-						// After JSON round-trip through the LSP JSON-RPC layer,
-						// *protocol.MarkupContent is decoded as a generic map.
-						if v, ok := doc["value"].(string); ok {
-							docStr = v
-						}
 					}
 					assert.Contains(t, docStr, wantDoc, "item %q: expected documentation to contain %q", label, wantDoc)
 					break
@@ -582,7 +576,8 @@ func TestCELCompletion(t *testing.T) {
 						continue
 					}
 					found = true
-					assert.True(t, item.Deprecated, "item %q: expected Deprecated to be true", label)
+					deprecated, _ := item.Deprecated.Get()
+					assert.True(t, deprecated, "item %q: expected Deprecated to be true", label)
 					break
 				}
 				assert.True(t, found, "item %q not found in completion list for deprecated check", label)

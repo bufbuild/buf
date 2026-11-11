@@ -244,13 +244,13 @@ func TestHover(t *testing.T) {
 			} else {
 				if tt.expectedContains != "" {
 					require.NotNil(t, hover, "expected hover to be non-nil")
-					assert.Equal(t, protocol.Markdown, hover.Contents.Kind)
-					assert.Contains(t, hover.Contents.Value, tt.expectedContains)
+					assert.Equal(t, protocol.MarkupKindMarkdown, requireMarkupContent(t, hover.Contents).Kind)
+					assert.Contains(t, requireMarkupContent(t, hover.Contents).Value, tt.expectedContains)
 				}
 				if tt.expectedNotContains != "" {
 					require.NotNil(t, hover, "expected hover to be non-nil")
-					assert.Equal(t, protocol.Markdown, hover.Contents.Kind)
-					assert.NotContains(t, hover.Contents.Value, tt.expectedNotContains)
+					assert.Equal(t, protocol.MarkupKindMarkdown, requireMarkupContent(t, hover.Contents).Kind)
+					assert.NotContains(t, requireMarkupContent(t, hover.Contents).Value, tt.expectedNotContains)
 				}
 			}
 		})
@@ -289,7 +289,7 @@ func TestHoverImportInDependencyFile(t *testing.T) {
 	// Locate the first import in the dependency, which is
 	// google/protobuf/source_context.proto. The line is found rather than hardcoded
 	// so the test survives a well-known type update.
-	dependencyText, err := os.ReadFile(dependencyURI.Filename())
+	dependencyText, err := os.ReadFile(dependencyURI.FsPath())
 	require.NoError(t, err)
 	var importLine uint32
 	var foundImport bool
@@ -300,7 +300,7 @@ func TestHoverImportInDependencyFile(t *testing.T) {
 		}
 		importLine++
 	}
-	require.True(t, foundImport, "expected an import in %s", dependencyURI.Filename())
+	require.True(t, foundImport, "expected an import in %s", dependencyURI.FsPath())
 
 	var hover *protocol.Hover
 	_, hoverErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, protocol.HoverParams{
@@ -316,8 +316,8 @@ func TestHoverImportInDependencyFile(t *testing.T) {
 	}, &hover)
 	require.NoError(t, hoverErr)
 	require.NotNil(t, hover, "expected hover to be non-nil")
-	expectedImportPath := filepath.Join(filepath.Dir(dependencyURI.Filename()), "source_context.proto")
-	assert.Contains(t, hover.Contents.Value, expectedImportPath)
+	expectedImportPath := filepath.Join(filepath.Dir(dependencyURI.FsPath()), "source_context.proto")
+	assert.Contains(t, requireMarkupContent(t, hover.Contents).Value, expectedImportPath)
 
 	// Go to definition on the same import must resolve to the imported file
 	// rather than panicking or pointing at nothing.

@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufparse"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 	"go.yaml.in/yaml/v3"
 )
 
@@ -42,8 +43,8 @@ const CommandCheckPluginUpdates = "buf.generate.checkPluginUpdates"
 // isBufGenYAMLURI reports whether uri refers to a buf.gen.yaml file. Named
 // templates such as buf.go.gen.yaml and buf.gen.go.yaml are also matched, since
 // they are commonly passed to buf generate with --template.
-func isBufGenYAMLURI(uri protocol.URI) bool {
-	name := filepath.Base(uri.Filename())
+func isBufGenYAMLURI(fileURI uri.URI) bool {
+	name := filepath.Base(fileURI.FsPath())
 	return (strings.HasPrefix(name, "buf.") && strings.HasSuffix(name, ".gen.yaml")) ||
 		(strings.HasPrefix(name, "buf.gen.") && strings.HasSuffix(name, ".yaml"))
 }
@@ -52,13 +53,13 @@ func isBufGenYAMLURI(uri protocol.URI) bool {
 type bufGenYAMLManager struct {
 	lsp       *lsp
 	mu        sync.Mutex
-	uriToFile map[protocol.URI]*bufGenYAMLFile
+	uriToFile map[uri.URI]*bufGenYAMLFile
 }
 
 func newBufGenYAMLManager(lsp *lsp) *bufGenYAMLManager {
 	return &bufGenYAMLManager{
 		lsp:       lsp,
-		uriToFile: make(map[protocol.URI]*bufGenYAMLFile),
+		uriToFile: make(map[uri.URI]*bufGenYAMLFile),
 	}
 }
 
@@ -77,8 +78,8 @@ type bufGenYAMLFile struct {
 // The workspace is leased on first Track and reused on subsequent Tracks for
 // the same URI; LeaseWorkspace's Refresh is too expensive to run per keystroke,
 // and proto file changes already refresh the workspace via their own Update path.
-func (m *bufGenYAMLManager) Track(ctx context.Context, uri protocol.URI, text string) {
-	normalized := normalizeURI(uri)
+func (m *bufGenYAMLManager) Track(ctx context.Context, fileURI uri.URI, text string) {
+	normalized := normalizeURI(fileURI)
 	docNode := parseYAMLDoc(text)
 	allRefs, versionedPluginRefs, pluginsKeyLine := parseBufGenYAMLRefs(docNode)
 
@@ -93,12 +94,12 @@ func (m *bufGenYAMLManager) Track(ctx context.Context, uri protocol.URI, text st
 		// LeaseWorkspace passes the URI to controller.GetWorkspace, which infers
 		// the input format from the path. A .yaml file isn't a valid input format,
 		// so use the parent directory URI instead.
-		workspaceURI := FilePathToURI(filepath.Dir(uri.Filename()))
+		workspaceURI := FilePathToURI(filepath.Dir(fileURI.FsPath()))
 		var err error
 		ws, err = m.lsp.workspaceManager.LeaseWorkspace(ctx, workspaceURI)
 		if err != nil {
 			m.lsp.logger.DebugContext(ctx, "buf.gen.yaml: could not lease workspace",
-				slog.String("uri", string(uri)),
+				slog.String("uri", string(fileURI)),
 				slog.String("error", err.Error()),
 			)
 			ws = nil
@@ -119,8 +120,8 @@ func (m *bufGenYAMLManager) Track(ctx context.Context, uri protocol.URI, text st
 }
 
 // Close stops tracking a buf.gen.yaml file and clears any diagnostics it published.
-func (m *bufGenYAMLManager) Close(ctx context.Context, uri protocol.URI) {
-	normalized := normalizeURI(uri)
+func (m *bufGenYAMLManager) Close(ctx context.Context, fileURI uri.URI) {
+	normalized := normalizeURI(fileURI)
 	m.mu.Lock()
 	old := m.uriToFile[normalized]
 	delete(m.uriToFile, normalized)
@@ -133,21 +134,21 @@ func (m *bufGenYAMLManager) Close(ctx context.Context, uri protocol.URI) {
 
 // GetCompletion returns completion items for the buf.gen.yaml field or value at
 // the given cursor position, or nil if no completions apply.
-func (m *bufGenYAMLManager) GetCompletion(uri protocol.URI, pos protocol.Position) []protocol.CompletionItem {
+func (m *bufGenYAMLManager) GetCompletion(fileURI uri.URI, pos protocol.Position) []protocol.CompletionItem {
 	m.mu.Lock()
-	f, ok := m.uriToFile[normalizeURI(uri)]
+	f, ok := m.uriToFile[normalizeURI(fileURI)]
 	m.mu.Unlock()
 	if !ok {
 		return nil
 	}
-	return getBufGenYAMLCompletionItems(f.docNode, f.text, pos, filepath.Dir(uri.Filename()), f.workspace)
+	return getBufGenYAMLCompletionItems(f.docNode, f.text, pos, filepath.Dir(fileURI.FsPath()), f.workspace)
 }
 
 // GetHover returns hover documentation for the buf.gen.yaml field at the given
 // position, or nil if the position does not correspond to a known element.
-func (m *bufGenYAMLManager) GetHover(uri protocol.URI, pos protocol.Position) *protocol.Hover {
+func (m *bufGenYAMLManager) GetHover(fileURI uri.URI, pos protocol.Position) *protocol.Hover {
 	m.mu.Lock()
-	f, ok := m.uriToFile[normalizeURI(uri)]
+	f, ok := m.uriToFile[normalizeURI(fileURI)]
 	m.mu.Unlock()
 	if !ok || f.docNode == nil {
 		return nil
@@ -162,9 +163,9 @@ func (m *bufGenYAMLManager) GetHover(uri protocol.URI, pos protocol.Position) *p
 // parse as valid BSR references. Each link points to the BSR page for the
 // referenced plugin or module, including a /docs/<ref> path when an explicit
 // version or label is present.
-func (m *bufGenYAMLManager) GetDocumentLinks(uri protocol.URI) []protocol.DocumentLink {
+func (m *bufGenYAMLManager) GetDocumentLinks(fileURI uri.URI) []protocol.DocumentLink {
 	m.mu.Lock()
-	f, ok := m.uriToFile[normalizeURI(uri)]
+	f, ok := m.uriToFile[normalizeURI(fileURI)]
 	m.mu.Unlock()
 	if !ok {
 		return nil
@@ -177,16 +178,16 @@ func (m *bufGenYAMLManager) GetDocumentLinks(uri protocol.URI) []protocol.Docume
 		}
 		links = append(links, protocol.DocumentLink{
 			Range:  entry.refRange,
-			Target: protocol.DocumentURI(bsrRefDocURL(ref)),
+			Target: new(uri.URI(bsrRefDocURL(ref))),
 		})
 	}
 	return links
 }
 
 // GetCodeLenses returns code lenses for the given buf.gen.yaml URI.
-func (m *bufGenYAMLManager) GetCodeLenses(uri protocol.URI) []protocol.CodeLens {
+func (m *bufGenYAMLManager) GetCodeLenses(fileURI uri.URI) []protocol.CodeLens {
 	m.mu.Lock()
-	f, ok := m.uriToFile[normalizeURI(uri)]
+	f, ok := m.uriToFile[normalizeURI(fileURI)]
 	m.mu.Unlock()
 	if !ok {
 		return nil
@@ -194,10 +195,10 @@ func (m *bufGenYAMLManager) GetCodeLenses(uri protocol.URI) []protocol.CodeLens 
 	lenses := []protocol.CodeLens{
 		{
 			Range: protocol.Range{},
-			Command: &protocol.Command{
+			Command: protocol.Command{
 				Title:     "Run buf generate",
 				Command:   CommandRunGenerate,
-				Arguments: []any{string(uri)},
+				Arguments: []protocol.LSPAny{newStringLSPAny(string(fileURI))},
 			},
 		},
 	}
@@ -208,10 +209,10 @@ func (m *bufGenYAMLManager) GetCodeLenses(uri protocol.URI) []protocol.CodeLens 
 		}
 		lenses = append(lenses, protocol.CodeLens{
 			Range: pluginsRange,
-			Command: &protocol.Command{
+			Command: protocol.Command{
 				Title:     "Check for plugin updates",
 				Command:   CommandCheckPluginUpdates,
-				Arguments: []any{string(uri)},
+				Arguments: []protocol.LSPAny{newStringLSPAny(string(fileURI))},
 			},
 		})
 	}
@@ -221,8 +222,8 @@ func (m *bufGenYAMLManager) GetCodeLenses(uri protocol.URI) []protocol.CodeLens 
 // ExecuteRunGenerate runs buf generate with the given buf.gen.yaml URI as the
 // template, from the directory containing it. Results are reported to the user
 // via ShowMessage.
-func (m *bufGenYAMLManager) ExecuteRunGenerate(ctx context.Context, uri protocol.URI) error {
-	dirPath := filepath.Dir(uri.Filename())
+func (m *bufGenYAMLManager) ExecuteRunGenerate(ctx context.Context, fileURI uri.URI) error {
+	dirPath := filepath.Dir(fileURI.FsPath())
 	executable, err := os.Executable()
 	if err != nil {
 		executable = "buf"
@@ -231,7 +232,7 @@ func (m *bufGenYAMLManager) ExecuteRunGenerate(ctx context.Context, uri protocol
 	msg := "buf generate completed successfully"
 	var outBuf bytes.Buffer
 	if err := xexec.Run(ctx, executable,
-		xexec.WithArgs(bufGenerateArgs(uri)...),
+		xexec.WithArgs(bufGenerateArgs(fileURI)...),
 		xexec.WithDir(dirPath),
 		xexec.WithStdout(&outBuf),
 		xexec.WithStderr(&outBuf),
@@ -247,8 +248,8 @@ func (m *bufGenYAMLManager) ExecuteRunGenerate(ctx context.Context, uri protocol
 }
 
 // bufGenerateArgs returns the buf generate arguments for the template at uri.
-func bufGenerateArgs(uri protocol.URI) []string {
-	name := filepath.Base(uri.Filename())
+func bufGenerateArgs(fileURI uri.URI) []string {
+	name := filepath.Base(fileURI.FsPath())
 	if name == bufconfig.DefaultBufGenYAMLFileName {
 		return []string{"generate"}
 	}
@@ -259,8 +260,8 @@ func bufGenerateArgs(uri protocol.URI) []string {
 // versioned remote plugin in the buf.gen.yaml file and publishes an
 // informational diagnostic on any plugin line where a newer version is
 // available. It does not modify any files.
-func (m *bufGenYAMLManager) ExecuteCheckPluginUpdates(ctx context.Context, uri protocol.URI) error {
-	normalized := normalizeURI(uri)
+func (m *bufGenYAMLManager) ExecuteCheckPluginUpdates(ctx context.Context, fileURI uri.URI) error {
+	normalized := normalizeURI(fileURI)
 	m.mu.Lock()
 	f, ok := m.uriToFile[normalized]
 	m.mu.Unlock()
@@ -287,12 +288,12 @@ func (m *bufGenYAMLManager) ExecuteCheckPluginUpdates(ctx context.Context, uri p
 		diagnostics = append(diagnostics, protocol.Diagnostic{
 			Range:    entry.refRange,
 			Severity: protocol.DiagnosticSeverityInformation,
-			Source:   serverName,
-			Message: fmt.Sprintf(
+			Source:   protocol.NewOptional(serverName),
+			Message: protocol.String(fmt.Sprintf(
 				"%s can be updated (latest: %s)",
 				identity.IdentityString(),
 				latestVersion,
-			),
+			)),
 		})
 	}
 	publishDiagnostics(ctx, m.lsp.client, normalized, diagnostics)
