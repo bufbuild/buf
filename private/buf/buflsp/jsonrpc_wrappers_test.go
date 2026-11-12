@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"sync"
 	"testing"
-	"time"
+	"testing/synctest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,53 +29,102 @@ import (
 func TestOrderedAsyncHandler(t *testing.T) {
 	t.Parallel()
 
-	ctx := t.Context()
-	const messageCount = 10
+	synctest.Test(t, func(t *testing.T) {
+		ctx := t.Context()
+		const messageCount = 10
 
-	var (
-		lock    sync.Mutex
-		handled []int
-	)
-	allHandled := make(chan struct{})
-	serverStream, clientStream := jsonrpc2.NewChannelStreamPair(0)
-	serverConn := jsonrpc2.NewConn(serverStream)
-	serverConn.Go(ctx, orderedAsyncHandler(func(_ context.Context, request *jsonrpc2.Request) (any, error) {
-		var index int
-		if err := json.Unmarshal(request.Params(), &index); err != nil {
-			return nil, err
+		var (
+			lock    sync.Mutex
+			started []int
+			handled []int
+		)
+		release := make(chan struct{})
+		serverStream, clientStream := jsonrpc2.NewChannelStreamPair(0)
+		serverConn := jsonrpc2.NewConn(serverStream)
+		serverConn.Go(ctx, orderedAsyncHandler(func(_ context.Context, request *jsonrpc2.Request) (any, error) {
+			var index int
+			if err := json.Unmarshal(request.Params(), &index); err != nil {
+				return nil, err
+			}
+			lock.Lock()
+			started = append(started, index)
+			lock.Unlock()
+			<-release
+			lock.Lock()
+			handled = append(handled, index)
+			lock.Unlock()
+			return nil, nil
+		}))
+		clientConn := jsonrpc2.NewConn(clientStream)
+		clientConn.Go(ctx, jsonrpc2.MethodNotFoundHandler)
+		t.Cleanup(func() {
+			assert.NoError(t, clientConn.Close())
+			assert.NoError(t, serverConn.Close())
+		})
+		// Release the handler before closing the connections, so a failed
+		// assertion is reported instead of a deadlock.
+		releaseOnce := sync.OnceFunc(func() { close(release) })
+		t.Cleanup(releaseOnce)
+
+		for index := range messageCount {
+			require.NoError(t, clientConn.Notify(ctx, "test/notify", index))
 		}
-		// Earlier messages take longer to handle, so they would finish last if
-		// they were handled concurrently.
-		time.Sleep(time.Duration(messageCount-index) * time.Millisecond)
+		// All messages are queued, and only the first has started.
+		synctest.Wait()
+		lock.Lock()
+		assert.Equal(t, []int{0}, started)
+		lock.Unlock()
+
+		releaseOnce()
+		synctest.Wait()
+		expected := make([]int, messageCount)
+		for index := range expected {
+			expected[index] = index
+		}
 		lock.Lock()
 		defer lock.Unlock()
-		handled = append(handled, index)
-		if len(handled) == messageCount {
-			close(allHandled)
-		}
-		return nil, nil
-	}))
-	clientConn := jsonrpc2.NewConn(clientStream)
-	clientConn.Go(ctx, jsonrpc2.MethodNotFoundHandler)
-	t.Cleanup(func() {
-		assert.NoError(t, clientConn.Close())
-		assert.NoError(t, serverConn.Close())
+		assert.Equal(t, expected, started)
+		assert.Equal(t, expected, handled)
 	})
+}
 
-	for index := range messageCount {
-		require.NoError(t, clientConn.Notify(ctx, "test/notify", index))
-	}
-	select {
-	case <-allHandled:
-	case <-time.After(10 * time.Second):
-		require.Fail(t, "timed out waiting for messages to be handled")
-	}
+func TestReadCancelStreamCancelsRequestsOnDisconnect(t *testing.T) {
+	t.Parallel()
 
-	expected := make([]int, messageCount)
-	for index := range expected {
-		expected[index] = index
-	}
-	lock.Lock()
-	defer lock.Unlock()
-	assert.Equal(t, expected, handled)
+	synctest.Test(t, func(t *testing.T) {
+		ctx := t.Context()
+		serverStream, clientStream := jsonrpc2.NewChannelStreamPair(0)
+		readCtx, readCancel := context.WithCancel(ctx)
+		t.Cleanup(readCancel)
+		serverConn := jsonrpc2.NewConn(newReadCancelStream(serverStream, readCancel))
+		queuedErr := make(chan error, 1)
+		serverConn.Go(readCtx, orderedAsyncHandler(func(ctx context.Context, request *jsonrpc2.Request) (any, error) {
+			if request.Method() == "test/block" {
+				<-ctx.Done()
+				return nil, nil
+			}
+			queuedErr <- ctx.Err()
+			return nil, nil
+		}))
+		clientConn := jsonrpc2.NewConn(clientStream)
+		clientConn.Go(ctx, jsonrpc2.MethodNotFoundHandler)
+
+		require.NoError(t, clientConn.Notify(ctx, "test/block", nil))
+		require.NoError(t, clientConn.Notify(ctx, "test/queued", nil))
+		synctest.Wait()
+		require.NoError(t, clientConn.Close())
+
+		synctest.Wait()
+		select {
+		case <-serverConn.Done():
+		default:
+			require.Fail(t, "server connection is not done")
+		}
+		select {
+		case err := <-queuedErr:
+			assert.ErrorIs(t, err, context.Canceled)
+		default:
+			require.Fail(t, "queued request was not handled")
+		}
+	})
 }

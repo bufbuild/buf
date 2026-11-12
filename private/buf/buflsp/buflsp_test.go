@@ -59,6 +59,18 @@ func setupLSPServer(
 	testProtoPath string,
 ) (jsonrpc2.Conn, uri.URI) {
 	t.Helper()
+	clientJSONConn, testURI, _ := setupLSPServerWithStream(t, testProtoPath, nil)
+	return clientJSONConn, testURI
+}
+
+// setupLSPServerWithStream is like setupLSPServer, but wraps the server's
+// stream with wrapStream, if not nil. It also returns the server connection.
+func setupLSPServerWithStream(
+	t *testing.T,
+	testProtoPath string,
+	wrapStream func(jsonrpc2.Stream) jsonrpc2.Stream,
+) (jsonrpc2.Conn, uri.URI, jsonrpc2.Conn) {
+	t.Helper()
 
 	ctx := t.Context()
 
@@ -121,6 +133,9 @@ func setupLSPServer(
 	})
 
 	stream := jsonrpc2.NewStream(serverConn)
+	if wrapStream != nil {
+		stream = wrapStream(stream)
+	}
 
 	conn, err := buflsp.Serve(
 		ctx,
@@ -173,7 +188,7 @@ func setupLSPServer(
 	})
 	require.NoError(t, err)
 
-	return clientJSONConn, testURI
+	return clientJSONConn, testURI, conn
 }
 
 // requireMarkupContent asserts that contents is a [protocol.MarkupContent] and

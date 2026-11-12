@@ -83,14 +83,16 @@ func Serve(
 	logger = logger.With(slog.String("buf_version", bufVersion))
 	logger.Info("starting LSP server")
 
-	conn := jsonrpc2.NewConn(stream, jsonrpc2.WithCodec(lspCodec{}))
+	// readCtx is cancelled when reading from the stream fails.
+	readCtx, readCancel := context.WithCancel(ctx)
+	conn := jsonrpc2.NewConn(newReadCancelStream(stream, readCancel), jsonrpc2.WithCodec(lspCodec{}))
 	// connCtx is a context scoped to the connection's lifetime. It is cancelled
-	// when the connection is done (or when ctx is cancelled), so that background
-	// goroutines (e.g. RunChecks) do not outlive the connection.
+	// when the connection is done (or when readCtx is cancelled), so that
+	// background goroutines (e.g. RunChecks) do not outlive the connection.
 	connCtx, connCancel := context.WithCancel(context.Background())
 	go func() {
 		select {
-		case <-ctx.Done():
+		case <-readCtx.Done():
 		case <-conn.Done():
 		}
 		connCancel()
@@ -132,7 +134,7 @@ func Serve(
 	if err != nil {
 		return nil, err
 	}
-	conn.Go(ctx, handler)
+	conn.Go(readCtx, handler)
 	return conn, nil
 }
 
@@ -254,7 +256,7 @@ func (l *lsp) newHandler() (jsonrpc2.Handler, error) {
 	// cancels the context of the matching in-flight request. It must wrap orderedAsyncHandler
 	// so that cancellation is processed on the read loop, even while other messages are
 	// queued, and the cancellable context is the one running inside each spawned goroutine.
-	return protocol.CancelHandler(orderedAsyncHandler(func(ctx context.Context, req *jsonrpc2.Request) (any, error) {
+	handler := protocol.CancelHandler(orderedAsyncHandler(func(ctx context.Context, req *jsonrpc2.Request) (any, error) {
 		method := req.Method()
 		l.logger.Debug(
 			"handling request",
@@ -278,13 +280,20 @@ func (l *lsp) newHandler() (jsonrpc2.Handler, error) {
 			result, err = actual(ctx, req)
 			l.lock.Unlock()
 		}
-		l.logResponse(method, err)
+		return result, err
+	}))
+	return func(ctx context.Context, req *jsonrpc2.Request) (any, error) {
+		result, err := handler(ctx, req)
+		// req.Method may borrow the read buffer until the request is released
+		// with jsonrpc2.Async, so read it after the handler returns.
+		l.logResponse(req.Method(), err)
 		if !req.IsCall() {
-			// Notifications have no response, and jsonrpc2 tears down the
-			// connection if a notification handler returns an error. The error
-			// has been logged above, so drop it.
+			// jsonrpc2 closes the connection if a notification handler
+			// returns an error. That includes the error protocol.CancelHandler
+			// returns for a bad $/cancelRequest. The error is logged, so drop
+			// it.
 			return nil, nil
 		}
 		return result, err
-	})), nil
+	}, nil
 }

@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
-	"time"
+	"testing/synctest"
 
 	"buf.build/go/app"
 	"buf.build/go/app/appext"
@@ -392,32 +392,30 @@ func TestDiagnostics(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			protoPath, err := filepath.Abs(tt.protoFile)
-			require.NoError(t, err)
+			synctest.Test(t, func(t *testing.T) {
+				protoPath, err := filepath.Abs(tt.protoFile)
+				require.NoError(t, err)
 
-			_, testURI, capture := setupLSPServerWithDiagnostics(t, protoPath)
+				_, testURI, capture := setupLSPServerWithDiagnostics(t, protoPath)
 
-			// Wait for diagnostics to be published
-			timeout := 5 * time.Second
-			if len(tt.expectedDiagnostics) > 0 {
-				timeout = 10 * time.Second // Lint checks take longer
-			}
-			diagnostics := capture.wait(t, testURI, timeout, func(p *protocol.PublishDiagnosticsParams) bool {
-				return len(p.Diagnostics) >= len(tt.expectedDiagnostics)
+				// Wait for diagnostics to be published
+				diagnostics := capture.wait(t, testURI, func(p *protocol.PublishDiagnosticsParams) bool {
+					return len(p.Diagnostics) >= len(tt.expectedDiagnostics)
+				})
+
+				require.NotNil(t, diagnostics, "expected diagnostics to be published")
+				assert.Equal(t, testURI, diagnostics.URI)
+
+				// Check that we have the expected number of diagnostics
+				require.Len(t, diagnostics.Diagnostics, len(tt.expectedDiagnostics),
+					"expected %d diagnostic(s), got %d", len(tt.expectedDiagnostics), len(diagnostics.Diagnostics))
+
+				// Compare each diagnostic directly
+				for i, expected := range tt.expectedDiagnostics {
+					actual := diagnostics.Diagnostics[i]
+					assert.Equal(t, expected, actual, "diagnostic %d mismatch", i)
+				}
 			})
-
-			require.NotNil(t, diagnostics, "expected diagnostics to be published")
-			assert.Equal(t, testURI, diagnostics.URI)
-
-			// Check that we have the expected number of diagnostics
-			require.Len(t, diagnostics.Diagnostics, len(tt.expectedDiagnostics),
-				"expected %d diagnostic(s), got %d", len(tt.expectedDiagnostics), len(diagnostics.Diagnostics))
-
-			// Compare each diagnostic directly
-			for i, expected := range tt.expectedDiagnostics {
-				actual := diagnostics.Diagnostics[i]
-				assert.Equal(t, expected, actual, "diagnostic %d mismatch", i)
-			}
 		})
 	}
 }
@@ -427,47 +425,50 @@ func TestDiagnostics(t *testing.T) {
 func TestDiagnosticsConfigOverride(t *testing.T) {
 	t.Parallel()
 
-	rootDirPath, err := filepath.Abs("testdata/config_override")
-	require.NoError(t, err)
-	protoPath := filepath.Join(rootDirPath, "proto", "foo", "v1", "foo.proto")
-	configPath := filepath.Join(rootDirPath, "config", "buf.yaml")
+	synctest.Test(t, func(t *testing.T) {
+		rootDirPath, err := filepath.Abs("testdata/config_override")
+		require.NoError(t, err)
+		protoPath := filepath.Join(rootDirPath, "proto", "foo", "v1", "foo.proto")
+		configPath := filepath.Join(rootDirPath, "config", "buf.yaml")
 
-	_, testURI, capture := setupLSPServerWithDiagnosticsForRoot(
-		t,
-		rootDirPath,
-		protoPath,
-		buflsp.WithConfigOverride(configPath),
-	)
+		_, testURI, capture := setupLSPServerWithDiagnosticsForRoot(
+			t,
+			rootDirPath,
+			protoPath,
+			buflsp.WithConfigOverride(configPath),
+		)
 
-	// Wait for the publish from the asynchronous checks.
-	diagnostics := capture.waitForPublishCount(t, testURI, 2, 10*time.Second)
-	require.NotNil(t, diagnostics)
-	// The import resolves via the override's module path, and only the
-	// override's lint rules apply.
-	require.Len(t, diagnostics.Diagnostics, 1, "got %+v", diagnostics.Diagnostics)
-	assert.Equal(t, protocol.String("FIELD_LOWER_SNAKE_CASE"), diagnostics.Diagnostics[0].Code)
+		// Wait for the publish from the asynchronous checks.
+		diagnostics := capture.waitForPublishCount(t, testURI, 2)
+		require.NotNil(t, diagnostics)
+		// The import resolves via the override's module path, and only the
+		// override's lint rules apply.
+		require.Len(t, diagnostics.Diagnostics, 1, "got %+v", diagnostics.Diagnostics)
+		assert.Equal(t, protocol.String("FIELD_LOWER_SNAKE_CASE"), diagnostics.Diagnostics[0].Code)
+	})
 }
 
 // TestDiagnosticsUpdate tests that diagnostics are updated when file content changes.
 func TestDiagnosticsUpdate(t *testing.T) {
 	t.Parallel()
 
-	protoPath, err := filepath.Abs("testdata/diagnostics/valid.proto")
-	require.NoError(t, err)
+	synctest.Test(t, func(t *testing.T) {
+		protoPath, err := filepath.Abs("testdata/diagnostics/valid.proto")
+		require.NoError(t, err)
 
-	clientJSONConn, testURI, capture := setupLSPServerWithDiagnostics(t, protoPath)
+		clientJSONConn, testURI, capture := setupLSPServerWithDiagnostics(t, protoPath)
 
-	ctx := t.Context()
+		ctx := t.Context()
 
-	// Wait for initial diagnostics (should be empty for valid file)
-	initialDiagnostics := capture.wait(t, testURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
-		return true // Accept any diagnostics
-	})
-	require.NotNil(t, initialDiagnostics)
-	assert.Empty(t, initialDiagnostics.Diagnostics, "expected no initial diagnostics for valid file")
+		// Wait for initial diagnostics (should be empty for valid file)
+		initialDiagnostics := capture.wait(t, testURI, func(p *protocol.PublishDiagnosticsParams) bool {
+			return true // Accept any diagnostics
+		})
+		require.NotNil(t, initialDiagnostics)
+		assert.Empty(t, initialDiagnostics.Diagnostics, "expected no initial diagnostics for valid file")
 
-	// Update the file with invalid content (missing semicolon)
-	invalidContent := `syntax = "proto3";
+		// Update the file with invalid content (missing semicolon)
+		invalidContent := `syntax = "proto3";
 
 package diagnostics.v1;
 
@@ -477,34 +478,35 @@ message TestMessage {
 }
 `
 
-	err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidChange, &protocol.DidChangeTextDocumentParams{
-		TextDocument: protocol.VersionedTextDocumentIdentifier{
-			TextDocumentIdentifier: protocol.TextDocumentIdentifier{
-				URI: testURI,
+		err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidChange, &protocol.DidChangeTextDocumentParams{
+			TextDocument: protocol.VersionedTextDocumentIdentifier{
+				TextDocumentIdentifier: protocol.TextDocumentIdentifier{
+					URI: testURI,
+				},
+				Version: 2,
 			},
-			Version: 2,
-		},
-		ContentChanges: []protocol.TextDocumentContentChangeEvent{
-			&protocol.TextDocumentContentChangeWholeDocument{
-				Text: invalidContent,
+			ContentChanges: []protocol.TextDocumentContentChangeEvent{
+				&protocol.TextDocumentContentChangeWholeDocument{
+					Text: invalidContent,
+				},
 			},
-		},
-	})
-	require.NoError(t, err)
+		})
+		require.NoError(t, err)
 
-	// Wait for updated diagnostics with version 2 and at least one error
-	updatedDiagnostics := capture.wait(t, testURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
-		version, _ := p.Version.Get()
-		return version == 2 && len(p.Diagnostics) > 0
-	})
-	require.NotNil(t, updatedDiagnostics)
-	version, _ := updatedDiagnostics.Version.Get()
-	assert.Equal(t, int32(2), version, "expected diagnostics version to match file version")
-	assert.NotEmpty(t, updatedDiagnostics.Diagnostics, "expected diagnostics after introducing syntax error")
+		// Wait for updated diagnostics with version 2 and at least one error
+		updatedDiagnostics := capture.wait(t, testURI, func(p *protocol.PublishDiagnosticsParams) bool {
+			version, _ := p.Version.Get()
+			return version == 2 && len(p.Diagnostics) > 0
+		})
+		require.NotNil(t, updatedDiagnostics)
+		version, _ := updatedDiagnostics.Version.Get()
+		assert.Equal(t, int32(2), version, "expected diagnostics version to match file version")
+		assert.NotEmpty(t, updatedDiagnostics.Diagnostics, "expected diagnostics after introducing syntax error")
 
-	if len(updatedDiagnostics.Diagnostics) > 0 {
-		assert.Equal(t, protocol.DiagnosticSeverityError, updatedDiagnostics.Diagnostics[0].Severity)
-	}
+		if len(updatedDiagnostics.Diagnostics) > 0 {
+			assert.Equal(t, protocol.DiagnosticSeverityError, updatedDiagnostics.Diagnostics[0].Severity)
+		}
+	})
 }
 
 // TestDiagnosticsNoTransitiveLeak verifies that compile errors from a file
@@ -514,25 +516,27 @@ message TestMessage {
 func TestDiagnosticsNoTransitiveLeak(t *testing.T) {
 	t.Parallel()
 
-	importerPath, err := filepath.Abs("testdata/diagnostics/transitive_errors/importer.proto")
-	require.NoError(t, err)
+	synctest.Test(t, func(t *testing.T) {
+		importerPath, err := filepath.Abs("testdata/diagnostics/transitive_errors/importer.proto")
+		require.NoError(t, err)
 
-	_, testURI, capture := setupLSPServerWithDiagnostics(t, importerPath)
+		_, testURI, capture := setupLSPServerWithDiagnostics(t, importerPath)
 
-	// Wait for the publish from the asynchronous checks.
-	diagnostics := capture.waitForPublishCount(t, testURI, 2, 10*time.Second)
-	require.NotNil(t, diagnostics)
+		// Wait for the publish from the asynchronous checks.
+		diagnostics := capture.waitForPublishCount(t, testURI, 2)
+		require.NotNil(t, diagnostics)
 
-	// broken.proto has an `UnknownType` error at line 7 col 3. If the filter
-	// in buildImage regresses, that diagnostic resurfaces against
-	// importer.proto at the same (foreign) range.
-	for _, d := range diagnostics.Diagnostics {
-		assert.NotContains(
-			t, d.Message, "UnknownType",
-			"diagnostic from broken.proto leaked into importer.proto at %+v: %q",
-			d.Range, d.Message,
-		)
-	}
+		// broken.proto has an `UnknownType` error at line 7 col 3. If the filter
+		// in buildImage regresses, that diagnostic resurfaces against
+		// importer.proto at the same (foreign) range.
+		for _, d := range diagnostics.Diagnostics {
+			assert.NotContains(
+				t, d.Message, "UnknownType",
+				"diagnostic from broken.proto leaked into importer.proto at %+v: %q",
+				d.Range, d.Message,
+			)
+		}
+	})
 }
 
 // TestDiagnosticsClearedOnClose verifies that stale diagnostics are cleared from the
@@ -542,29 +546,31 @@ func TestDiagnosticsNoTransitiveLeak(t *testing.T) {
 func TestDiagnosticsClearedOnClose(t *testing.T) {
 	t.Parallel()
 
-	// Use an existing testdata file with a known lint violation (IMPORT_USED)
-	// so the workspace is fully configured and RunChecks produces diagnostics.
-	protoPath, err := filepath.Abs("testdata/diagnostics/unused_import.proto")
-	require.NoError(t, err)
+	synctest.Test(t, func(t *testing.T) {
+		// Use an existing testdata file with a known lint violation (IMPORT_USED)
+		// so the workspace is fully configured and RunChecks produces diagnostics.
+		protoPath, err := filepath.Abs("testdata/diagnostics/unused_import.proto")
+		require.NoError(t, err)
 
-	clientJSONConn, testURI, capture := setupLSPServerWithDiagnostics(t, protoPath)
+		clientJSONConn, testURI, capture := setupLSPServerWithDiagnostics(t, protoPath)
 
-	ctx := t.Context()
+		ctx := t.Context()
 
-	initial := capture.wait(t, testURI, 10*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
-		return len(p.Diagnostics) > 0
+		initial := capture.wait(t, testURI, func(p *protocol.PublishDiagnosticsParams) bool {
+			return len(p.Diagnostics) > 0
+		})
+		require.NotEmpty(t, initial.Diagnostics, "expected lint diagnostics before close")
+
+		err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidClose, &protocol.DidCloseTextDocumentParams{
+			TextDocument: protocol.TextDocumentIdentifier{URI: testURI},
+		})
+		require.NoError(t, err)
+
+		cleared := capture.wait(t, testURI, func(p *protocol.PublishDiagnosticsParams) bool {
+			return len(p.Diagnostics) == 0
+		})
+		assert.Empty(t, cleared.Diagnostics, "stale diagnostics should be cleared after file close")
 	})
-	require.NotEmpty(t, initial.Diagnostics, "expected lint diagnostics before close")
-
-	err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidClose, &protocol.DidCloseTextDocumentParams{
-		TextDocument: protocol.TextDocumentIdentifier{URI: testURI},
-	})
-	require.NoError(t, err)
-
-	cleared := capture.wait(t, testURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
-		return len(p.Diagnostics) == 0
-	})
-	assert.Empty(t, cleared.Diagnostics, "stale diagnostics should be cleared after file close")
 }
 
 // TestDiagnosticsClearedOnDelete verifies that stale diagnostics are cleared when
@@ -573,27 +579,29 @@ func TestDiagnosticsClearedOnClose(t *testing.T) {
 func TestDiagnosticsClearedOnDelete(t *testing.T) {
 	t.Parallel()
 
-	protoPath, err := filepath.Abs("testdata/diagnostics/unused_import.proto")
-	require.NoError(t, err)
+	synctest.Test(t, func(t *testing.T) {
+		protoPath, err := filepath.Abs("testdata/diagnostics/unused_import.proto")
+		require.NoError(t, err)
 
-	clientJSONConn, testURI, capture := setupLSPServerWithDiagnostics(t, protoPath)
+		clientJSONConn, testURI, capture := setupLSPServerWithDiagnostics(t, protoPath)
 
-	ctx := t.Context()
+		ctx := t.Context()
 
-	initial := capture.wait(t, testURI, 10*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
-		return len(p.Diagnostics) > 0
+		initial := capture.wait(t, testURI, func(p *protocol.PublishDiagnosticsParams) bool {
+			return len(p.Diagnostics) > 0
+		})
+		require.NotEmpty(t, initial.Diagnostics, "expected lint diagnostics before delete")
+
+		err = clientJSONConn.Notify(ctx, protocol.MethodWorkspaceDidDeleteFiles, &protocol.DeleteFilesParams{
+			Files: []protocol.FileDelete{{URI: string(testURI)}},
+		})
+		require.NoError(t, err)
+
+		cleared := capture.wait(t, testURI, func(p *protocol.PublishDiagnosticsParams) bool {
+			return len(p.Diagnostics) == 0
+		})
+		assert.Empty(t, cleared.Diagnostics, "stale diagnostics should be cleared after file delete")
 	})
-	require.NotEmpty(t, initial.Diagnostics, "expected lint diagnostics before delete")
-
-	err = clientJSONConn.Notify(ctx, protocol.MethodWorkspaceDidDeleteFiles, &protocol.DeleteFilesParams{
-		Files: []protocol.FileDelete{{URI: string(testURI)}},
-	})
-	require.NoError(t, err)
-
-	cleared := capture.wait(t, testURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
-		return len(p.Diagnostics) == 0
-	})
-	assert.Empty(t, cleared.Diagnostics, "stale diagnostics should be cleared after file delete")
 }
 
 // diagnosticsCapture captures publishDiagnostics notifications from the LSP server.
@@ -620,37 +628,32 @@ func (dc *diagnosticsCapture) PublishDiagnostics(_ context.Context, params *prot
 	return nil
 }
 
-// waitForPublishCount waits until diagnostics have been published for fileURI
-// at least count times, and returns the most recently published diagnostics.
+// waitForPublishCount waits until the server is idle, requires that
+// diagnostics have been published for fileURI at least count times, and
+// returns the most recently published diagnostics.
 //
 // Opening a file publishes its diagnostics once, then again when the
 // asynchronous checks complete.
-func (dc *diagnosticsCapture) waitForPublishCount(t *testing.T, fileURI uri.URI, count int, timeout time.Duration) *protocol.PublishDiagnosticsParams {
+func (dc *diagnosticsCapture) waitForPublishCount(t *testing.T, fileURI uri.URI, count int) *protocol.PublishDiagnosticsParams {
 	t.Helper()
 
-	require.Eventually(t, func() bool {
-		dc.mu.Lock()
-		defer dc.mu.Unlock()
-		return dc.publishCount[fileURI] >= count
-	}, timeout, 50*time.Millisecond, "timeout waiting for %d diagnostics publishes", count)
-
+	synctest.Wait()
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
+	require.GreaterOrEqual(t, dc.publishCount[fileURI], count, "expected %d diagnostics publishes", count)
 	return dc.diagnostics[fileURI]
 }
 
-// wait polls for diagnostics matching the predicate.
-func (dc *diagnosticsCapture) wait(t *testing.T, uri uri.URI, timeout time.Duration, pred func(*protocol.PublishDiagnosticsParams) bool) *protocol.PublishDiagnosticsParams {
+// wait waits until the server is idle and returns the most recently published
+// diagnostics for uri, which must match the predicate.
+func (dc *diagnosticsCapture) wait(t *testing.T, uri uri.URI, pred func(*protocol.PublishDiagnosticsParams) bool) *protocol.PublishDiagnosticsParams {
 	t.Helper()
 
-	require.Eventually(t, func() bool {
-		dc.mu.Lock()
-		params := dc.diagnostics[uri]
-		dc.mu.Unlock()
-		return params != nil && pred(params)
-	}, timeout, 50*time.Millisecond, "timeout waiting for diagnostics matching predicate")
-
+	synctest.Wait()
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
-	return dc.diagnostics[uri]
+	params := dc.diagnostics[uri]
+	require.NotNil(t, params, "expected diagnostics to be published")
+	require.True(t, pred(params), "diagnostics do not match predicate: %+v", params.Diagnostics)
+	return params
 }

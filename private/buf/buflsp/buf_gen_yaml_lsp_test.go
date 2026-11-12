@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
-	"time"
+	"testing/synctest"
 
 	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/stretchr/testify/assert"
@@ -735,23 +735,25 @@ func TestBufGenYAMLCheckPluginUpdates(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			cvp := &staticCuratedPluginVersionProvider{
-				latestByPlugin: map[string]string{"bufbuild/es": tc.latestVersion},
-			}
+			synctest.Test(t, func(t *testing.T) {
+				cvp := &staticCuratedPluginVersionProvider{
+					latestByPlugin: map[string]string{"bufbuild/es": tc.latestVersion},
+				}
 
-			clientJSONConn, bufGenYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, nil, cvp)
-			ctx := t.Context()
+				clientJSONConn, bufGenYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, nil, cvp)
+				ctx := t.Context()
 
-			var result any
-			_, err := clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
-				Command:   buflsp.CommandCheckPluginUpdates,
-				Arguments: []protocol.LSPAny{newStringLSPAny(t, string(bufGenYAMLURI))},
-			}, &result)
-			require.NoError(t, err)
+				var result any
+				_, err := clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
+					Command:   buflsp.CommandCheckPluginUpdates,
+					Arguments: []protocol.LSPAny{newStringLSPAny(t, string(bufGenYAMLURI))},
+				}, &result)
+				require.NoError(t, err)
 
-			diags := capture.wait(t, bufGenYAMLURI, 5*time.Second, tc.waitPred)
-			require.NotNil(t, diags)
-			tc.check(t, diags)
+				diags := capture.wait(t, bufGenYAMLURI, tc.waitPred)
+				require.NotNil(t, diags)
+				tc.check(t, diags)
+			})
 		})
 	}
 }
@@ -761,44 +763,46 @@ func TestBufGenYAMLCheckPluginUpdates(t *testing.T) {
 func TestBufGenYAMLDiagnostics_ClearedOnClose(t *testing.T) {
 	t.Parallel()
 
-	// Make the plugin appear outdated so we get a diagnostic to clear.
-	cvp := &staticCuratedPluginVersionProvider{
-		latestByPlugin: map[string]string{"bufbuild/es": "v2.10.3"},
-	}
+	synctest.Test(t, func(t *testing.T) {
+		// Make the plugin appear outdated so we get a diagnostic to clear.
+		cvp := &staticCuratedPluginVersionProvider{
+			latestByPlugin: map[string]string{"bufbuild/es": "v2.10.3"},
+		}
 
-	absPath, err := filepath.Abs("testdata/buf_gen_yaml/with_versioned_plugins/buf.gen.yaml")
-	require.NoError(t, err)
+		absPath, err := filepath.Abs("testdata/buf_gen_yaml/with_versioned_plugins/buf.gen.yaml")
+		require.NoError(t, err)
 
-	clientJSONConn, bufGenYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, nil, cvp)
-	ctx := t.Context()
+		clientJSONConn, bufGenYAMLURI, capture := setupLSPServerForBufYAML(t, absPath, nil, cvp)
+		ctx := t.Context()
 
-	// Trigger a check to produce diagnostics.
-	var result any
-	_, err = clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
-		Command:   buflsp.CommandCheckPluginUpdates,
-		Arguments: []protocol.LSPAny{newStringLSPAny(t, string(bufGenYAMLURI))},
-	}, &result)
-	require.NoError(t, err)
+		// Trigger a check to produce diagnostics.
+		var result any
+		_, err = clientJSONConn.Call(ctx, protocol.MethodWorkspaceExecuteCommand, &protocol.ExecuteCommandParams{
+			Command:   buflsp.CommandCheckPluginUpdates,
+			Arguments: []protocol.LSPAny{newStringLSPAny(t, string(bufGenYAMLURI))},
+		}, &result)
+		require.NoError(t, err)
 
-	// Wait for the non-empty diagnostic.
-	diags := capture.wait(t, bufGenYAMLURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
-		return len(p.Diagnostics) > 0
+		// Wait for the non-empty diagnostic.
+		diags := capture.wait(t, bufGenYAMLURI, func(p *protocol.PublishDiagnosticsParams) bool {
+			return len(p.Diagnostics) > 0
+		})
+		require.NotNil(t, diags)
+		require.NotEmpty(t, diags.Diagnostics, "expected diagnostics before close")
+
+		// Close the file.
+		err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidClose, &protocol.DidCloseTextDocumentParams{
+			TextDocument: protocol.TextDocumentIdentifier{URI: bufGenYAMLURI},
+		})
+		require.NoError(t, err)
+
+		// Diagnostics should now be cleared.
+		cleared := capture.wait(t, bufGenYAMLURI, func(p *protocol.PublishDiagnosticsParams) bool {
+			return len(p.Diagnostics) == 0
+		})
+		require.NotNil(t, cleared)
+		assert.Empty(t, cleared.Diagnostics, "expected diagnostics to be cleared after close")
 	})
-	require.NotNil(t, diags)
-	require.NotEmpty(t, diags.Diagnostics, "expected diagnostics before close")
-
-	// Close the file.
-	err = clientJSONConn.Notify(ctx, protocol.MethodTextDocumentDidClose, &protocol.DidCloseTextDocumentParams{
-		TextDocument: protocol.TextDocumentIdentifier{URI: bufGenYAMLURI},
-	})
-	require.NoError(t, err)
-
-	// Diagnostics should now be cleared.
-	cleared := capture.wait(t, bufGenYAMLURI, 5*time.Second, func(p *protocol.PublishDiagnosticsParams) bool {
-		return len(p.Diagnostics) == 0
-	})
-	require.NotNil(t, cleared)
-	assert.Empty(t, cleared.Diagnostics, "expected diagnostics to be cleared after close")
 }
 
 // TestBufGenYAMLTypeCompletions exercises the workspace lease wired up in

@@ -85,6 +85,60 @@ func orderedAsyncHandler(handler jsonrpc2.Handler) jsonrpc2.Handler {
 	}
 }
 
+// newReadCancelStream returns a stream that calls cancel when a read fails.
+//
+// jsonrpc2 does not cancel in-flight or queued requests when reading fails.
+// Cancel the context given to [jsonrpc2.Conn.Go] to do so.
+func newReadCancelStream(stream jsonrpc2.Stream, cancel context.CancelFunc) jsonrpc2.Stream {
+	readCancel := &readCancelStream{Stream: stream, cancel: cancel}
+	if frames, ok := stream.(frameStream); ok {
+		return &readCancelFrameStream{readCancelStream: readCancel, frames: frames}
+	}
+	return readCancel
+}
+
+// frameStream mirrors an unexported jsonrpc2 interface used for the fast frame
+// read and write path.
+type frameStream interface {
+	ReadFrame(ctx context.Context) ([]byte, int64, error)
+	WriteFrame(ctx context.Context, data []byte) (int64, error)
+}
+
+// readCancelStream calls cancel when a read fails.
+type readCancelStream struct {
+	jsonrpc2.Stream
+	cancel context.CancelFunc
+}
+
+// Read implements [jsonrpc2.Stream].
+func (s *readCancelStream) Read(ctx context.Context) (jsonrpc2.Message, int64, error) {
+	message, n, err := s.Stream.Read(ctx)
+	if err != nil {
+		s.cancel()
+	}
+	return message, n, err
+}
+
+// readCancelFrameStream is a readCancelStream that also forwards frames.
+type readCancelFrameStream struct {
+	*readCancelStream
+	frames frameStream
+}
+
+// ReadFrame implements [frameStream].
+func (s *readCancelFrameStream) ReadFrame(ctx context.Context) ([]byte, int64, error) {
+	frame, n, err := s.frames.ReadFrame(ctx)
+	if err != nil {
+		s.cancel()
+	}
+	return frame, n, err
+}
+
+// WriteFrame implements [frameStream].
+func (s *readCancelFrameStream) WriteFrame(ctx context.Context, data []byte) (int64, error) {
+	return s.frames.WriteFrame(ctx, data)
+}
+
 // logResponse logs the outcome of handling a request, allowing us to inject
 // logging and tracing and so on.
 func (l *lsp) logResponse(method string, err error) {

@@ -150,8 +150,8 @@ github.com/tetratelabs/wazero v1.12.0 h1:DuWcpNu/FzgEXgGBDp8J1Spc+CWOvvtvVyjKlaZ
 github.com/tetratelabs/wazero v1.12.0/go.mod h1:LvKtzl2RqO4gyF27BiXU+nKAjcV8f38U+kP/q2vgxh0=
 github.com/tidwall/btree v1.8.2 h1:mTY5iM4UTh2e80TG7RHDQQmnAY3xGNQA/DbU0olkhkA=
 github.com/tidwall/btree v1.8.2/go.mod h1:jBbTdUWhSZClZWoDg54VnvV7/54modSOzDN7VXftj1A=
-go.lsp.dev/jsonrpc2 v1.0.1 h1:JZAchpm6RcOuwEOnZ7kF3kA1EpEjdJZ/6rMSfOF3+F4=
-go.lsp.dev/jsonrpc2 v1.0.1/go.mod h1:WN+TesqrPumBmUdsuWyn9DHq3zl4i85L/qG0NLdj8qg=
+go.lsp.dev/jsonrpc2 v1.0.2-0.20261027084609-29989bb0cb15 h1:Jk45932lVj3ARgpfYAqzgvtMhqqFfmZaT92BXXOtYWo=
+go.lsp.dev/jsonrpc2 v1.0.2-0.20261027084609-29989bb0cb15/go.mod h1:WN+TesqrPumBmUdsuWyn9DHq3zl4i85L/qG0NLdj8qg=
 go.lsp.dev/protocol v1.0.1 h1:kLWUIk1v/deXxo1D0VO4avjZnfeuZ82mouJgJd/NbdU=
 go.lsp.dev/protocol v1.0.1/go.mod h1:e//i41aEqc9ml32xiNuneUwbjOjuvTA4+uv+AkssJgk=
 go.lsp.dev/uri v1.0.1 h1:ywxJN1UXoQ+v0I9lkoQNMmsm7lub5G9ZG7KXT8YTx30=

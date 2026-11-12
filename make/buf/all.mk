@@ -4,10 +4,10 @@ GO_GET_PKGS := $(GO_GET_PKGS) \
 	buf.build/go/standard@main \
 	buf.build/go/app@main \
 	connectrpc.com/otelconnect@v0.11.0 \
-	go.lsp.dev/jsonrpc2@v0.10.0 \
-	go.lsp.dev/protocol@v0.12.0 \
-	go.lsp.dev/uri@v0.3.0
-# go.lsp.dev v1.0.0+ requires go 1.26.
+	go.lsp.dev/jsonrpc2@29989bb0cb151fbb70d959b28f228589cec9ee6d
+# Pin go.lsp.dev/jsonrpc2 until a release includes
+# https://github.com/go-language-server/jsonrpc2/pull/41, which buflsp tests
+# need to use testing/synctest.
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
