@@ -94,6 +94,18 @@ func bsrRefDocURL(ref bufparse.Ref) string {
 	return url
 }
 
+// bsrRemotePluginURL builds a BSR page URL from a parsed remote (code
+// generation) plugin reference. Plugin pages have no /docs/<ref> route, so
+// when ref.Ref() is non-empty the version is passed as ?version=<ref>.
+func bsrRemotePluginURL(ref bufparse.Ref) string {
+	fn := ref.FullName()
+	url := "https://" + fn.Registry() + "/" + fn.Owner() + "/" + fn.Name()
+	if ref.Ref() != "" {
+		url += "?version=" + ref.Ref()
+	}
+	return url
+}
+
 // bsrURL constructs a BSR URL for a module.
 // Returns an empty string if the module has no FullName.
 // tabType should be bsrTabTypeDocs or bsrTabTypeFile.

@@ -161,8 +161,8 @@ func (m *bufGenYAMLManager) GetHover(fileURI uri.URI, pos protocol.Position) *pr
 //
 // Links are created for plugins[*].remote and inputs[*].module values that
 // parse as valid BSR references. Each link points to the BSR page for the
-// referenced plugin or module, including a /docs/<ref> path when an explicit
-// version or label is present.
+// referenced plugin or module, selecting an explicit plugin version with
+// ?version=<version> and an explicit module label or commit with /docs/<ref>.
 func (m *bufGenYAMLManager) GetDocumentLinks(fileURI uri.URI) []protocol.DocumentLink {
 	m.mu.Lock()
 	f, ok := m.uriToFile[normalizeURI(fileURI)]
@@ -176,9 +176,13 @@ func (m *bufGenYAMLManager) GetDocumentLinks(fileURI uri.URI) []protocol.Documen
 		if err != nil {
 			continue
 		}
+		target := bsrRefDocURL(ref)
+		if entry.remotePlugin {
+			target = bsrRemotePluginURL(ref)
+		}
 		links = append(links, protocol.DocumentLink{
 			Range:  entry.refRange,
-			Target: new(uri.URI(bsrRefDocURL(ref))),
+			Target: new(uri.URI(target)),
 		})
 	}
 	return links
@@ -329,7 +333,7 @@ func parseBufGenYAMLRefs(doc *yaml.Node) ([]bsrRef, []bsrRef, uint32) {
 				for j := 0; j+1 < len(item.Content); j += 2 {
 					k, v := item.Content[j], item.Content[j+1]
 					if k.Value == "remote" && v.Kind == yaml.ScalarNode && v.Value != "" {
-						entry := bsrRef{ref: v.Value, refRange: yamlNodeRange(v)}
+						entry := bsrRef{ref: v.Value, refRange: yamlNodeRange(v), remotePlugin: true}
 						refs = append(refs, entry)
 						if _, version, err := bufremotepluginref.ParsePluginIdentityOptionalVersion(v.Value); err == nil && version != "" {
 							versionedPluginRefs = append(versionedPluginRefs, entry)

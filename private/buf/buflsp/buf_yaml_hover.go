@@ -423,6 +423,9 @@ type bsrRef struct {
 	ref string
 	// refRange is the range spanning this value in the file.
 	refRange protocol.Range
+	// remotePlugin reports whether ref is a buf.gen.yaml plugins[*].remote
+	// value, whose BSR page takes its version as a query parameter.
+	remotePlugin bool
 }
 
 // yamlNodeRange returns the LSP protocol Range for a scalar YAML node.

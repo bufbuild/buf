@@ -161,6 +161,7 @@ func TestBufGenYAMLDocumentLinks(t *testing.T) {
 	//  8: inputs:
 	//  9:   - module: buf.build/acme/petapis
 	// 10:   - directory: proto
+	// 11:   - module: buf.build/acme/petapis:v1.0.0
 
 	tests := []struct {
 		name      string
@@ -190,7 +191,9 @@ func TestBufGenYAMLDocumentLinks(t *testing.T) {
 						Start: protocol.Position{Line: 4, Character: 12},
 						End:   protocol.Position{Line: 4, Character: 40},
 					},
-					Target: new(uri.URI("https://buf.build/bufbuild/es/docs/v2.2.2")),
+					// The client decodes targets with vscode-uri semantics, which
+					// percent-encode the query's "=".
+					Target: new(uri.MustParse("https://buf.build/bufbuild/es?version=v2.2.2")),
 				},
 				{
 					// inputs[0].module: buf.build/acme/petapis
@@ -199,6 +202,14 @@ func TestBufGenYAMLDocumentLinks(t *testing.T) {
 						End:   protocol.Position{Line: 9, Character: 34},
 					},
 					Target: new(uri.URI("https://buf.build/acme/petapis")),
+				},
+				{
+					// inputs[2].module: buf.build/acme/petapis:v1.0.0
+					Range: protocol.Range{
+						Start: protocol.Position{Line: 11, Character: 12},
+						End:   protocol.Position{Line: 11, Character: 41},
+					},
+					Target: new(uri.URI("https://buf.build/acme/petapis/docs/v1.0.0")),
 				},
 			},
 		},
@@ -607,6 +618,7 @@ func TestBufGenYAMLCodeLens(t *testing.T) {
 	//  8: inputs:
 	//  9:   - module: buf.build/acme/petapis
 	// 10:   - directory: proto
+	// 11:   - module: buf.build/acme/petapis:v1.0.0
 
 	tests := []struct {
 		name              string

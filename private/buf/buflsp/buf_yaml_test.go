@@ -293,7 +293,8 @@ plugins:
 			wantPluginsKeyLine: 1,
 			wantAllRefs: []bsrRef{
 				{
-					ref: "buf.build/protocolbuffers/go",
+					ref:          "buf.build/protocolbuffers/go",
+					remotePlugin: true,
 					refRange: protocol.Range{
 						Start: protocol.Position{Line: 2, Character: 12},
 						End:   protocol.Position{Line: 2, Character: 12 + uint32(len("buf.build/protocolbuffers/go"))},
@@ -312,7 +313,8 @@ plugins:
 			wantPluginsKeyLine: 1,
 			wantAllRefs: []bsrRef{
 				{
-					ref: "buf.build/bufbuild/es:v2.2.2",
+					ref:          "buf.build/bufbuild/es:v2.2.2",
+					remotePlugin: true,
 					refRange: protocol.Range{
 						Start: protocol.Position{Line: 2, Character: 12},
 						End:   protocol.Position{Line: 2, Character: 12 + uint32(len("buf.build/bufbuild/es:v2.2.2"))},
@@ -322,7 +324,8 @@ plugins:
 			// all remote plugins are versioned, so versionedRefs == allRefs
 			wantVersionedRefs: []bsrRef{
 				{
-					ref: "buf.build/bufbuild/es:v2.2.2",
+					ref:          "buf.build/bufbuild/es:v2.2.2",
+					remotePlugin: true,
 					refRange: protocol.Range{
 						Start: protocol.Position{Line: 2, Character: 12},
 						End:   protocol.Position{Line: 2, Character: 12 + uint32(len("buf.build/bufbuild/es:v2.2.2"))},
@@ -347,14 +350,16 @@ inputs:
 			wantPluginsKeyLine: 1,
 			wantAllRefs: []bsrRef{
 				{
-					ref: "buf.build/bufbuild/es:v2.2.2",
+					ref:          "buf.build/bufbuild/es:v2.2.2",
+					remotePlugin: true,
 					refRange: protocol.Range{
 						Start: protocol.Position{Line: 2, Character: 12},
 						End:   protocol.Position{Line: 2, Character: 12 + uint32(len("buf.build/bufbuild/es:v2.2.2"))},
 					},
 				},
 				{
-					ref: "buf.build/protocolbuffers/go",
+					ref:          "buf.build/protocolbuffers/go",
+					remotePlugin: true,
 					refRange: protocol.Range{
 						Start: protocol.Position{Line: 4, Character: 12},
 						End:   protocol.Position{Line: 4, Character: 12 + uint32(len("buf.build/protocolbuffers/go"))},
@@ -370,7 +375,8 @@ inputs:
 			},
 			wantVersionedRefs: []bsrRef{
 				{
-					ref: "buf.build/bufbuild/es:v2.2.2",
+					ref:          "buf.build/bufbuild/es:v2.2.2",
+					remotePlugin: true,
 					refRange: protocol.Range{
 						Start: protocol.Position{Line: 2, Character: 12},
 						End:   protocol.Position{Line: 2, Character: 12 + uint32(len("buf.build/bufbuild/es:v2.2.2"))},
@@ -396,9 +402,11 @@ func TestBsrRefDocURL(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		refStr  string
-		wantURL string
+		name   string
+		refStr string
+		// remotePlugin selects bsrRemotePluginURL instead of bsrRefDocURL.
+		remotePlugin bool
+		wantURL      string
 	}{
 		{
 			name:    "default_registry_no_ref",
@@ -407,8 +415,21 @@ func TestBsrRefDocURL(t *testing.T) {
 		},
 		{
 			name:    "default_registry_with_ref",
-			refStr:  "buf.build/bufbuild/es:v2.2.2",
-			wantURL: "https://buf.build/bufbuild/es/docs/v2.2.2",
+			refStr:  "buf.build/bufbuild/protovalidate:v1.0.0",
+			wantURL: "https://buf.build/bufbuild/protovalidate/docs/v1.0.0",
+		},
+		{
+			name:         "remote_plugin_no_version",
+			refStr:       "buf.build/bufbuild/es",
+			remotePlugin: true,
+			wantURL:      "https://buf.build/bufbuild/es",
+		},
+		{
+			// Remote plugin pages have no /docs/<ref> route.
+			name:         "remote_plugin_with_version",
+			refStr:       "buf.build/bufbuild/es:v2.2.2",
+			remotePlugin: true,
+			wantURL:      "https://buf.build/bufbuild/es?version=v2.2.2",
 		},
 		{
 			// /docs/<ref> is valid on any BSR host, not just buf.build.
@@ -428,7 +449,11 @@ func TestBsrRefDocURL(t *testing.T) {
 			t.Parallel()
 			ref, err := bufparse.ParseRef(tt.refStr)
 			require.NoError(t, err)
-			assert.Equal(t, tt.wantURL, bsrRefDocURL(ref))
+			got := bsrRefDocURL(ref)
+			if tt.remotePlugin {
+				got = bsrRemotePluginURL(ref)
+			}
+			assert.Equal(t, tt.wantURL, got)
 		})
 	}
 }
