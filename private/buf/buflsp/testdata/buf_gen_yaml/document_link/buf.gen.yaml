@@ -9,3 +9,4 @@ plugins:
 inputs:
   - module: buf.build/acme/petapis
   - directory: proto
+  - module: buf.build/acme/petapis:v1.0.0

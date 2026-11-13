@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Fix LSP document links for versioned remote plugins in `buf.gen.yaml`, which pointed to a
+  nonexistent BSR page.
 - Fix LSP hover and highlighting of CEL expressions whose proto strings contain escape sequences, which placed the ranges of string literals, and of tokens after a `\u` or `\U` escape, wrongly.
 - Write module and Well-Known Type files to the cache as read-only, so that files opened from
   LSP go-to-definition cannot be accidentally edited.
