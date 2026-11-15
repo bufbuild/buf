@@ -4,10 +4,10 @@ buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go v1.36.12-2026101217
 buf.build/gen/go/bufbuild/protodescriptor/protocolbuffers/go v1.36.12-20261012172039-ff528c23443f.2/go.mod h1:Gjxz0o7qPHokNsmlX8D+/aKd29NRLRr9CCUkPeMAzJ0=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260825204119-511051f7f437.2 h1:NbnlmV26O7oZ1iM5tsCI+GEx+3ZSdrhvnKQ/eWSrLiY=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260825204119-511051f7f437.2/go.mod h1:TCt1lluMFnctISJXvkIQ4x3ABrPuUKCWKyjKdkJNBpw=
-buf.build/gen/go/bufbuild/registry/connectrpc/go/v2 v2.0.2-20261105203900-12e7031be281.1 h1:wmEmJM2lVYj/ECq7YFR1c5Vi+GwzRM1Lhcgt4wFrRR8=
-buf.build/gen/go/bufbuild/registry/connectrpc/go/v2 v2.0.2-20261105203900-12e7031be281.1/go.mod h1:Vmoxa0bln0iHF6xfcwzXJDPMxSiPoqGKcHnqnRX218A=
-buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.12-20261105203900-12e7031be281.2 h1:AhXBE/44tl+aCktpSzQNmGp3ha/BW8LaOSLrUt97/68=
-buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.12-20261105203900-12e7031be281.2/go.mod h1:v7IaNcBKy5G3G8gpG2m92P0R3HK2qtMGclWzf+1Aut4=
+buf.build/gen/go/bufbuild/registry/connectrpc/go/v2 v2.0.2-20261111181020-2b3683116fcf.1 h1:2KjaYggBuhWtRfQwPc2rkC5hu5kdDwr6XOVxnRagV1g=
+buf.build/gen/go/bufbuild/registry/connectrpc/go/v2 v2.0.2-20261111181020-2b3683116fcf.1/go.mod h1:RYRvWMu8OTgnzCsdwIgIfz+pTfJqnW1fezYRQRFs+os=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.12-20261111181020-2b3683116fcf.2 h1:pQ3IsqzJY0HQCSpdlXolBvbsJQSPCIGmmxY2dIUhMdM=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.36.12-20261111181020-2b3683116fcf.2/go.mod h1:v7IaNcBKy5G3G8gpG2m92P0R3HK2qtMGclWzf+1Aut4=
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.12-20241007202033-cf42259fcbfc.2 h1:9xw8g8Q6zHLC7CO/jtpl2UK0kQticxIG+mI6N86f2/M=
 buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.12-20241007202033-cf42259fcbfc.2/go.mod h1:+0bw+k8FY5MU3tojFh33HeA5xMfGWjAUQpr+maW5Z3o=
 buf.build/go/app v0.3.0 h1:XGdGg3iI/465w+PPipShXqGwuT43/Omk+5EtHYYly9Q=
