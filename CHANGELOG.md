@@ -21,6 +21,9 @@
     `--type`.
 - Add `ENUM_VALUE_SAME_JSON_NAME` breaking rule to the `CSR`, `FILE`, `PACKAGE`, and `WIRE_JSON`
   categories, which checks that enum values keep the same JSON name.
+- Add `image` plugin entries to `buf.gen.yaml` v2, which make `buf generate` write a Buf image of
+  the inputs alongside generated code, with the same defaults and options as `buf build` except
+  that source-retention options are always stripped.
 
 ## [v1.75.0] - 2026-10-21
 

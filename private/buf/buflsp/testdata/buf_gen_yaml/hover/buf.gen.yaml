@@ -22,6 +22,10 @@ plugins:
       - acme.v1.Internal
   - protoc_builtin: java
     protoc_path: /usr/local/bin/protoc
+  - image: image.binpb
+    exclude_imports: true
+    exclude_source_info: true
+    as_file_descriptor_set: true
 inputs:
   - directory: proto
     types:

@@ -423,7 +423,7 @@ plugins:
     out: .
 `),
 	)
-	require.ErrorContains(t, err, "must specify one of remote, local or protoc_builtin")
+	require.ErrorContains(t, err, "must specify one of remote, local, protoc_builtin or image")
 	// Test that out is required.
 	_, err = ReadBufGenYAMLFile(
 		strings.NewReader(`version: v2
@@ -449,7 +449,7 @@ plugins:
     local: protoc-gen-go
     out: .
 `))
-	require.ErrorContains(t, err, "only one of remote, local or protoc_builtin")
+	require.ErrorContains(t, err, "only one of remote, local, protoc_builtin or image")
 	_, err = ReadBufGenYAMLFile(
 		strings.NewReader(`version: v2
 plugins:
@@ -458,7 +458,7 @@ plugins:
     out: .
 `),
 	)
-	require.ErrorContains(t, err, "only one of remote, local or protoc_builtin")
+	require.ErrorContains(t, err, "only one of remote, local, protoc_builtin or image")
 	_, err = ReadBufGenYAMLFile(
 		strings.NewReader(`version: v2
 plugins:
@@ -467,7 +467,358 @@ plugins:
     out: .
 `),
 	)
-	require.ErrorContains(t, err, "only one of remote, local or protoc_builtin")
+	require.ErrorContains(t, err, "only one of remote, local, protoc_builtin or image")
+}
+
+func TestBufGenYAMLFileImagePluginConfig(t *testing.T) {
+	t.Parallel()
+
+	bufGenYAMLFile := testReadBufGenYAMLFile(
+		t,
+		`version: v2
+plugins:
+  - image: image.binpb
+    out: gen
+`,
+	)
+	pluginConfigs := bufGenYAMLFile.GenerateConfig().GeneratePluginConfigs()
+	require.Len(t, pluginConfigs, 1)
+	pluginConfig := pluginConfigs[0]
+	assert.Equal(t, GeneratePluginConfigTypeImage, pluginConfig.Type())
+	assert.Equal(t, "image.binpb", pluginConfig.Image())
+	assert.Equal(t, "image.binpb", pluginConfig.Name())
+	assert.Equal(t, "gen", pluginConfig.Out())
+	assert.Empty(t, pluginConfig.Opt())
+	assert.False(t, pluginConfig.IncludeImports())
+	assert.False(t, pluginConfig.IncludeWKT())
+	assert.Equal(t, GenerateStrategy(0), pluginConfig.Strategy())
+	assert.Empty(t, pluginConfig.RemoteHost())
+	assert.False(t, pluginConfig.ExcludeImports())
+	assert.False(t, pluginConfig.ExcludeSourceInfo())
+	assert.False(t, pluginConfig.AsFileDescriptorSet())
+	assert.Empty(t, pluginConfig.IncludeTypes())
+	assert.Empty(t, pluginConfig.ExcludeTypes())
+
+	bufGenYAMLFile = testReadBufGenYAMLFile(
+		t,
+		`version: v2
+plugins:
+  - image: image.binpb
+    out: gen
+    exclude_imports: true
+    exclude_source_info: true
+    as_file_descriptor_set: true
+    types:
+      - acme.v1.UserService
+    exclude_types:
+      - buf.validate.**
+`,
+	)
+	pluginConfigs = bufGenYAMLFile.GenerateConfig().GeneratePluginConfigs()
+	require.Len(t, pluginConfigs, 1)
+	pluginConfig = pluginConfigs[0]
+	assert.True(t, pluginConfig.ExcludeImports())
+	assert.True(t, pluginConfig.ExcludeSourceInfo())
+	assert.True(t, pluginConfig.AsFileDescriptorSet())
+	assert.Equal(t, []string{"acme.v1.UserService"}, pluginConfig.IncludeTypes())
+	assert.Equal(t, []string{"buf.validate.**"}, pluginConfig.ExcludeTypes())
+
+	for _, image := range []string{
+		"image.binpb",
+		"image.json",
+		"image.txtpb",
+		"image.yaml",
+		"image.binpb.gz",
+		"image.json.gz",
+		"image.txtpb.gz",
+		"image.yaml.gz",
+		"image.binpb.zst",
+		"image.json.zst",
+		"image.txtpb.zst",
+		"image.yaml.zst",
+		"a/b/image.binpb",
+	} {
+		t.Run(image, func(t *testing.T) {
+			t.Parallel()
+			pluginConfig, err := NewImageGeneratePluginConfig(image, "gen", false, false, false, nil, nil)
+			require.NoError(t, err)
+			assert.Equal(t, image, pluginConfig.Image())
+		})
+	}
+
+	testReadWriteBufGenYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+plugins:
+  - remote: buf.build/bufbuild/es
+    out: gen/es
+  - image: image.binpb.zst
+    out: gen/es
+    exclude_imports: true
+    exclude_source_info: true
+    as_file_descriptor_set: true
+    types:
+      - acme.v1.UserService
+    exclude_types:
+      - buf.validate.**
+`,
+		// expected output
+		`version: v2
+plugins:
+  - remote: buf.build/bufbuild/es
+    out: gen/es
+  - image: image.binpb.zst
+    out: gen/es
+    exclude_imports: true
+    exclude_source_info: true
+    as_file_descriptor_set: true
+    types:
+      - acme.v1.UserService
+    exclude_types:
+      - buf.validate.**
+`,
+	)
+	testReadWriteBufGenYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+plugins:
+  - image: image.json
+    out: gen.zip
+`,
+		// expected output
+		`version: v2
+plugins:
+  - image: image.json
+    out: gen.zip
+`,
+	)
+}
+
+func TestBufGenYAMLFileImagePluginConfigErrors(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name          string
+		data          string
+		expectedError string
+	}{
+		{
+			name: "bad_extension",
+			data: `version: v2
+plugins:
+  - image: image.bin
+    out: gen
+`,
+			expectedError: "image image.bin must have one of the extensions",
+		},
+		{
+			name: "compression_only_extension",
+			data: `version: v2
+plugins:
+  - image: image.gz
+    out: gen
+`,
+			expectedError: "image image.gz must have one of the extensions",
+		},
+		{
+			name: "double_compression_extension",
+			data: `version: v2
+plugins:
+  - image: image.binpb.gz.zst
+    out: gen
+`,
+			expectedError: "image image.binpb.gz.zst must have one of the extensions",
+		},
+		{
+			name: "empty",
+			data: `version: v2
+plugins:
+  - image: ""
+    out: gen
+`,
+			expectedError: "image must not be empty",
+		},
+		{
+			name: "stdout",
+			data: `version: v2
+plugins:
+  - image: "-"
+    out: gen
+`,
+			expectedError: `image must not be "-"`,
+		},
+		{
+			name: "hash",
+			data: `version: v2
+plugins:
+  - image: "image.binpb#format=json"
+    out: gen
+`,
+			expectedError: "must not contain '#'",
+		},
+		{
+			name: "absolute",
+			data: `version: v2
+plugins:
+  - image: /tmp/image.binpb
+    out: gen
+`,
+			expectedError: "invalid image /tmp/image.binpb",
+		},
+		{
+			name: "parent_directory",
+			data: `version: v2
+plugins:
+  - image: ../image.binpb
+    out: gen
+`,
+			expectedError: "invalid image ../image.binpb",
+		},
+		{
+			name: "not_normalized",
+			data: `version: v2
+plugins:
+  - image: a/../image.binpb
+    out: gen
+`,
+			expectedError: "image a/../image.binpb must be a normalized path",
+		},
+		{
+			name: "missing_out",
+			data: `version: v2
+plugins:
+  - image: image.binpb
+`,
+			expectedError: "must specify out",
+		},
+		{
+			name: "image_and_remote",
+			data: `version: v2
+plugins:
+  - image: image.binpb
+    remote: buf.build/bufbuild/es
+    out: gen
+`,
+			expectedError: "only one of remote, local, protoc_builtin or image",
+		},
+		{
+			name: "image_opt",
+			data: `version: v2
+plugins:
+  - image: image.binpb
+    out: gen
+    opt: foo
+`,
+			expectedError: "cannot specify opt for image image.binpb",
+		},
+		{
+			name: "image_strategy",
+			data: `version: v2
+plugins:
+  - image: image.binpb
+    out: gen
+    strategy: all
+`,
+			expectedError: "cannot specify strategy for image image.binpb",
+		},
+		{
+			name: "image_revision",
+			data: `version: v2
+plugins:
+  - image: image.binpb
+    out: gen
+    revision: 1
+`,
+			expectedError: "cannot specify revision for image image.binpb",
+		},
+		{
+			name: "image_protoc_path",
+			data: `version: v2
+plugins:
+  - image: image.binpb
+    out: gen
+    protoc_path: /path/to/protoc
+`,
+			expectedError: "cannot specify protoc_path for image image.binpb",
+		},
+		{
+			name: "image_include_imports",
+			data: `version: v2
+plugins:
+  - image: image.binpb
+    out: gen
+    include_imports: true
+`,
+			expectedError: "cannot specify include_imports for image image.binpb",
+		},
+		{
+			name: "image_include_wkt",
+			data: `version: v2
+plugins:
+  - image: image.binpb
+    out: gen
+    include_wkt: true
+`,
+			expectedError: "cannot specify include_wkt for image image.binpb",
+		},
+		{
+			name: "plugin_exclude_imports",
+			data: `version: v2
+plugins:
+  - remote: buf.build/bufbuild/es
+    out: gen
+    exclude_imports: true
+`,
+			expectedError: "cannot specify exclude_imports without image",
+		},
+		{
+			name: "plugin_exclude_source_info",
+			data: `version: v2
+plugins:
+  - local: protoc-gen-go
+    out: gen
+    exclude_source_info: true
+`,
+			expectedError: "cannot specify exclude_source_info without image",
+		},
+		{
+			name: "plugin_as_file_descriptor_set",
+			data: `version: v2
+plugins:
+  - protoc_builtin: cpp
+    out: gen
+    as_file_descriptor_set: true
+`,
+			expectedError: "cannot specify as_file_descriptor_set without image",
+		},
+		{
+			name: "v1",
+			data: `version: v1
+plugins:
+  - image: image.binpb
+    out: gen
+`,
+			expectedError: "field image not found",
+		},
+		{
+			name: "v1beta1",
+			data: `version: v1beta1
+plugins:
+  - image: image.binpb
+    out: gen
+`,
+			expectedError: "field image not found",
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			_, err := ReadBufGenYAMLFile(strings.NewReader(testCase.data))
+			require.ErrorContains(t, err, testCase.expectedError)
+		})
+	}
 }
 
 func testReadBufGenYAMLFile(

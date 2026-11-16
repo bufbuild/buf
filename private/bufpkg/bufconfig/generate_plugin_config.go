@@ -23,6 +23,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	"github.com/bufbuild/buf/private/pkg/encoding"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -55,6 +56,10 @@ const (
 	// We defer further classification to the plugin executor. In v2 the exact
 	// plugin config type is always specified and it will never be just local.
 	GeneratePluginConfigTypeLocalOrProtocBuiltin
+	// GeneratePluginConfigTypeImage is the image plugin config type. Nothing is
+	// executed for it: the image that would be given to plugins is written to
+	// the file Image() under Out().
+	GeneratePluginConfigTypeImage
 )
 
 var (
@@ -117,6 +122,23 @@ type GeneratePluginConfig interface {
 	IncludeTypes() []string
 	// ExcludeTypes returns the types to exclude.
 	ExcludeTypes() []string
+	// Image returns the file name, relative to Out, to write the image to.
+	//
+	// This is only set when Type() is GeneratePluginConfigTypeImage.
+	Image() string
+	// ExcludeImports returns whether to exclude imports from the image.
+	//
+	// This is only set when Type() is GeneratePluginConfigTypeImage.
+	ExcludeImports() bool
+	// ExcludeSourceInfo returns whether to exclude source info from the image.
+	//
+	// This is only set when Type() is GeneratePluginConfigTypeImage.
+	ExcludeSourceInfo() bool
+	// AsFileDescriptorSet returns whether to write the image as a
+	// FileDescriptorSet instead of a Buf image.
+	//
+	// This is only set when Type() is GeneratePluginConfigTypeImage.
+	AsFileDescriptorSet() bool
 
 	isGeneratePluginConfig()
 }
@@ -218,6 +240,28 @@ func NewProtocBuiltinGeneratePluginConfig(
 	)
 }
 
+// NewImageGeneratePluginConfig returns a new GeneratePluginConfig for writing
+// an image.
+func NewImageGeneratePluginConfig(
+	image string,
+	out string,
+	excludeImports bool,
+	excludeSourceInfo bool,
+	asFileDescriptorSet bool,
+	includeTypes []string,
+	excludeTypes []string,
+) (GeneratePluginConfig, error) {
+	return newImageGeneratePluginConfig(
+		image,
+		out,
+		excludeImports,
+		excludeSourceInfo,
+		asFileDescriptorSet,
+		includeTypes,
+		excludeTypes,
+	)
+}
+
 // NewGeneratePluginConfigWithIncludeImportsAndWKT returns a GeneratePluginConfig the
 // same as the input, with include imports and include wkt overridden.
 func NewGeneratePluginConfigWithIncludeImportsAndWKT(
@@ -255,6 +299,10 @@ type generatePluginConfig struct {
 	protocPath               []string
 	remoteHost               string
 	revision                 int
+	image                    string
+	excludeImports           bool
+	excludeSourceInfo        bool
+	asFileDescriptorSet      bool
 }
 
 func newGeneratePluginConfigFromExternalV1Beta1(
@@ -414,14 +462,28 @@ func newGeneratePluginConfigFromExternalV2(
 	if externalConfig.ProtocBuiltin != nil {
 		pluginTypeCount++
 	}
+	if externalConfig.Image != nil {
+		pluginTypeCount++
+	}
 	if pluginTypeCount == 0 {
-		return nil, errors.New("must specify one of remote, local or protoc_builtin")
+		return nil, errors.New("must specify one of remote, local, protoc_builtin or image")
 	}
 	if pluginTypeCount > 1 {
-		return nil, errors.New("only one of remote, local or protoc_builtin")
+		return nil, errors.New("only one of remote, local, protoc_builtin or image")
 	}
 	if externalConfig.Out == "" {
 		return nil, errors.New("must specify out")
+	}
+	if externalConfig.Image == nil {
+		if externalConfig.ExcludeImports {
+			return nil, errors.New("cannot specify exclude_imports without image")
+		}
+		if externalConfig.ExcludeSourceInfo {
+			return nil, errors.New("cannot specify exclude_source_info without image")
+		}
+		if externalConfig.AsFileDescriptorSet {
+			return nil, errors.New("cannot specify as_file_descriptor_set without image")
+		}
 	}
 	var strategy string
 	if externalConfig.Strategy != nil {
@@ -499,8 +561,37 @@ func newGeneratePluginConfigFromExternalV2(
 			parsedStrategy,
 			protocPath,
 		)
+	case externalConfig.Image != nil:
+		image := *externalConfig.Image
+		if externalConfig.Opt != nil {
+			return nil, fmt.Errorf("cannot specify opt for image %s", image)
+		}
+		if externalConfig.Strategy != nil {
+			return nil, fmt.Errorf("cannot specify strategy for image %s", image)
+		}
+		if externalConfig.Revision != nil {
+			return nil, fmt.Errorf("cannot specify revision for image %s", image)
+		}
+		if externalConfig.ProtocPath != nil {
+			return nil, fmt.Errorf("cannot specify protoc_path for image %s", image)
+		}
+		if externalConfig.IncludeImports {
+			return nil, fmt.Errorf("cannot specify include_imports for image %s", image)
+		}
+		if externalConfig.IncludeWKT {
+			return nil, fmt.Errorf("cannot specify include_wkt for image %s", image)
+		}
+		return newImageGeneratePluginConfig(
+			image,
+			externalConfig.Out,
+			externalConfig.ExcludeImports,
+			externalConfig.ExcludeSourceInfo,
+			externalConfig.AsFileDescriptorSet,
+			externalConfig.Types,
+			externalConfig.ExcludeTypes,
+		)
 	default:
-		return nil, syserror.Newf("must specify one of remote, binary and protoc_builtin")
+		return nil, syserror.Newf("must specify one of remote, local, protoc_builtin or image")
 	}
 }
 
@@ -623,6 +714,31 @@ func newProtocBuiltinGeneratePluginConfig(
 	}, nil
 }
 
+func newImageGeneratePluginConfig(
+	image string,
+	out string,
+	excludeImports bool,
+	excludeSourceInfo bool,
+	asFileDescriptorSet bool,
+	includeTypes []string,
+	excludeTypes []string,
+) (*generatePluginConfig, error) {
+	if err := validateImageFileName(image); err != nil {
+		return nil, err
+	}
+	return &generatePluginConfig{
+		generatePluginConfigType: GeneratePluginConfigTypeImage,
+		name:                     image,
+		image:                    image,
+		out:                      out,
+		includeTypes:             includeTypes,
+		excludeTypes:             excludeTypes,
+		excludeImports:           excludeImports,
+		excludeSourceInfo:        excludeSourceInfo,
+		asFileDescriptorSet:      asFileDescriptorSet,
+	}, nil
+}
+
 func (p *generatePluginConfig) Type() GeneratePluginConfigType {
 	return p.generatePluginConfigType
 }
@@ -656,6 +772,9 @@ func (p *generatePluginConfig) ExcludeTypes() []string {
 }
 
 func (p *generatePluginConfig) Strategy() GenerateStrategy {
+	if p.generatePluginConfigType == GeneratePluginConfigTypeImage {
+		return 0
+	}
 	if p.strategy == nil {
 		return GenerateStrategyDirectory
 	}
@@ -676,6 +795,22 @@ func (p *generatePluginConfig) RemoteHost() string {
 
 func (p *generatePluginConfig) Revision() int {
 	return p.revision
+}
+
+func (p *generatePluginConfig) Image() string {
+	return p.image
+}
+
+func (p *generatePluginConfig) ExcludeImports() bool {
+	return p.excludeImports
+}
+
+func (p *generatePluginConfig) ExcludeSourceInfo() bool {
+	return p.excludeSourceInfo
+}
+
+func (p *generatePluginConfig) AsFileDescriptorSet() bool {
+	return p.asFileDescriptorSet
 }
 
 func (p *generatePluginConfig) isGeneratePluginConfig() {}
@@ -744,6 +879,13 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 		}
 		// Otherwise, assume this is a binary.
 		externalPluginConfigV2.Local = binaryName
+	case GeneratePluginConfigTypeImage:
+		externalPluginConfigV2.Image = new(generatePluginConfig.Image())
+		externalPluginConfigV2.ExcludeImports = generatePluginConfig.ExcludeImports()
+		externalPluginConfigV2.ExcludeSourceInfo = generatePluginConfig.ExcludeSourceInfo()
+		externalPluginConfigV2.AsFileDescriptorSet = generatePluginConfig.AsFileDescriptorSet()
+		externalPluginConfigV2.Types = generatePluginConfig.IncludeTypes()
+		externalPluginConfigV2.ExcludeTypes = generatePluginConfig.ExcludeTypes()
 	}
 	return externalPluginConfigV2, nil
 }
@@ -761,6 +903,43 @@ func parseStrategy(s string) (*GenerateStrategy, error) {
 		return nil, fmt.Errorf("unknown strategy: %s", s)
 	}
 	return &strategy, nil
+}
+
+// validateImageFileName validates that the image file name is a normalized
+// relative path with a supported extension.
+func validateImageFileName(image string) error {
+	if image == "" {
+		return errors.New("image must not be empty")
+	}
+	if image == "-" {
+		return errors.New(`image must not be "-"`)
+	}
+	if strings.ContainsRune(image, '#') {
+		return fmt.Errorf("image %s must not contain '#'", image)
+	}
+	normalizedImage, err := normalpath.NormalizeAndValidate(image)
+	if err != nil {
+		return fmt.Errorf("invalid image %s: %w", image, err)
+	}
+	if normalizedImage != image {
+		return fmt.Errorf("image %s must be a normalized path, use %s", image, normalizedImage)
+	}
+	uncompressedImage := image
+	for _, compressionExt := range []string{".gz", ".zst"} {
+		if trimmedImage, ok := strings.CutSuffix(image, compressionExt); ok {
+			uncompressedImage = trimmedImage
+			break
+		}
+	}
+	switch normalpath.Ext(uncompressedImage) {
+	case ".binpb", ".json", ".txtpb", ".yaml":
+		return nil
+	default:
+		return fmt.Errorf(
+			"image %s must have one of the extensions .binpb, .json, .txtpb or .yaml, optionally followed by .gz or .zst",
+			image,
+		)
+	}
 }
 
 func parseRemoteHostName(fullName string) (string, error) {

@@ -76,9 +76,10 @@ func TestGetBufGenYAMLCompletionItems(t *testing.T) {
 			text: "plugins:\n  - \n",
 			pos:  protocol.Position{Line: 1, Character: 4},
 			wantLabels: []string{
-				"remote", "local", "protoc_builtin", "protoc_path", "out", "opt",
+				"remote", "local", "protoc_builtin", "image", "protoc_path", "out", "opt",
 				"revision", "include_imports", "include_wkt", "strategy",
 				"types", "exclude_types",
+				"exclude_imports", "exclude_source_info", "as_file_descriptor_set",
 			},
 			wantKind: protocol.CompletionItemKindField,
 		},
@@ -91,7 +92,7 @@ func TestGetBufGenYAMLCompletionItems(t *testing.T) {
 			wantLabels: []string{
 				"out", "revision",
 			},
-			wantAbsentLabels: []string{"remote", "local", "protoc_builtin", "protoc_path", "strategy"},
+			wantAbsentLabels: []string{"remote", "local", "protoc_builtin", "image", "protoc_path", "strategy", "exclude_imports", "exclude_source_info", "as_file_descriptor_set"},
 			wantKind:         protocol.CompletionItemKindField,
 		},
 		{
@@ -119,6 +120,16 @@ func TestGetBufGenYAMLCompletionItems(t *testing.T) {
 			pos:              protocol.Position{Line: 2, Character: 4},
 			wantLabels:       []string{"out", "opt", "protoc_path", "strategy"},
 			wantAbsentLabels: []string{"protoc_builtin", "remote", "local", "revision"},
+			wantKind:         protocol.CompletionItemKindField,
+		},
+		{
+			// image present: image-only keys are available; keys that only apply
+			// to executed plugins must be absent.
+			name:             "plugin_item_image_excludes_others",
+			text:             "plugins:\n  - image: image.binpb\n    \n",
+			pos:              protocol.Position{Line: 2, Character: 4},
+			wantLabels:       []string{"out", "types", "exclude_types", "exclude_imports", "exclude_source_info", "as_file_descriptor_set"},
+			wantAbsentLabels: []string{"image", "remote", "local", "protoc_builtin", "protoc_path", "revision", "strategy", "opt", "include_imports", "include_wkt"},
 			wantKind:         protocol.CompletionItemKindField,
 		},
 
@@ -282,6 +293,13 @@ func TestGetBufGenYAMLCompletionItems(t *testing.T) {
 			wantLabels: []string{"true", "false"},
 			wantKind:   protocol.CompletionItemKindValue,
 		},
+		{
+			name:       "exclude_imports_boolean_value",
+			text:       "plugins:\n  - image: image.binpb\n    exclude_imports: \n",
+			pos:        protocol.Position{Line: 2, Character: 21},
+			wantLabels: []string{"true", "false"},
+			wantKind:   protocol.CompletionItemKindValue,
+		},
 
 		// ── Bare-parent-key heuristic ─────────────────────────────────────
 		{
@@ -319,6 +337,14 @@ func TestGetBufGenYAMLCompletionItems(t *testing.T) {
 			name:          "no_value_completions_for_remote",
 			text:          "plugins:\n  - remote: \n",
 			pos:           protocol.Position{Line: 1, Character: 14},
+			wantNilResult: true,
+		},
+		{
+			// The image file name is relative to out, so no builtin plugin
+			// names, BSR plugin names or filesystem paths are offered.
+			name:          "no_value_completions_for_image",
+			text:          "plugins:\n  - image: \n",
+			pos:           protocol.Position{Line: 1, Character: 13},
 			wantNilResult: true,
 		},
 	}

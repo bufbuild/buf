@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/protoplugin/protopluginutil"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/encoding/protowire"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -197,6 +198,70 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 	}
 	// we finally have all files that match fileOrDirPath that we can find, make the image
 	return getImageWithImports(image, nonImportPaths, nonImportImageFiles)
+}
+
+func mergeImages(images []Image) (Image, error) {
+	switch len(images) {
+	case 0:
+		return nil, errors.New("no images to merge")
+	case 1:
+		return images[0], nil
+	}
+	var imageFiles []ImageFile
+	pathToIndex := make(map[string]int)
+	for _, image := range images {
+		for _, imageFile := range image.Files() {
+			path := imageFile.Path()
+			index, ok := pathToIndex[path]
+			if !ok {
+				pathToIndex[path] = len(imageFiles)
+				imageFiles = append(imageFiles, imageFile)
+				continue
+			}
+			existingImageFile := imageFiles[index]
+			if !proto.Equal(existingImageFile.FileDescriptorProto(), imageFile.FileDescriptorProto()) {
+				return nil, fmt.Errorf("file %q differs between images", path)
+			}
+			if !imageFile.IsImport() {
+				imageFiles[index] = ImageFileWithIsImport(existingImageFile, false)
+			}
+		}
+	}
+	// The images may have the same module at different commits. An Image
+	// requires one commit per module, so clear the commit for those modules.
+	moduleFullNameStringToCommitID := make(map[string]uuid.UUID)
+	conflictingModuleFullNameStrings := make(map[string]struct{})
+	for _, imageFile := range imageFiles {
+		if imageFile.FullName() == nil {
+			continue
+		}
+		moduleFullNameString := imageFile.FullName().String()
+		commitID, ok := moduleFullNameStringToCommitID[moduleFullNameString]
+		if !ok {
+			moduleFullNameStringToCommitID[moduleFullNameString] = imageFile.CommitID()
+		} else if commitID != imageFile.CommitID() {
+			conflictingModuleFullNameStrings[moduleFullNameString] = struct{}{}
+		}
+	}
+	for i, imageFile := range imageFiles {
+		if imageFile.FullName() == nil {
+			continue
+		}
+		if _, ok := conflictingModuleFullNameStrings[imageFile.FullName().String()]; ok {
+			// No need to validate as ImageFile is already validated.
+			imageFiles[i] = newImageFileNoValidate(
+				imageFile.FileDescriptorProto(),
+				imageFile.FullName(),
+				uuid.Nil,
+				imageFile.ExternalPath(),
+				imageFile.LocalPath(),
+				imageFile.IsImport(),
+				imageFile.IsSyntaxUnspecified(),
+				imageFile.UnusedDependencyIndexes(),
+			)
+		}
+	}
+	return NewImage(imageFiles)
 }
 
 // shouldExcludeFile takes the map of all the matching target paths and the map of all the matching

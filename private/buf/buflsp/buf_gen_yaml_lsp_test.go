@@ -330,23 +330,27 @@ func TestBufGenYAMLHover(t *testing.T) {
 	// 21:       - acme.v1.Internal
 	// 22:   - protoc_builtin: java
 	// 23:     protoc_path: /usr/local/bin/protoc
-	// 24: inputs:
-	// 25:   - directory: proto
-	// 26:     types:
-	// 27:       - acme.v1.FooService
-	// 28:     paths:
-	// 29:       - acme/v1/foo.proto
-	// 30:     exclude_paths:
-	// 31:       - acme/v1/internal.proto
-	// 32:   - module: buf.build/acme/petapis
-	// 33:     exclude_types:
-	// 34:       - acme.v1.Internal
-	// 35:   - proto_file: acme/v1/bar.proto
-	// 36:     include_package_files: true
-	// 37:   - git_repo: github.com/acme/protos
-	// 38:     branch: main
-	// 39:     subdir: proto
-	// 40:     depth: 1
+	// 24:   - image: image.binpb
+	// 25:     exclude_imports: true
+	// 26:     exclude_source_info: true
+	// 27:     as_file_descriptor_set: true
+	// 28: inputs:
+	// 29:   - directory: proto
+	// 30:     types:
+	// 31:       - acme.v1.FooService
+	// 32:     paths:
+	// 33:       - acme/v1/foo.proto
+	// 34:     exclude_paths:
+	// 35:       - acme/v1/internal.proto
+	// 36:   - module: buf.build/acme/petapis
+	// 37:     exclude_types:
+	// 38:       - acme.v1.Internal
+	// 39:   - proto_file: acme/v1/bar.proto
+	// 40:     include_package_files: true
+	// 41:   - git_repo: github.com/acme/protos
+	// 42:     branch: main
+	// 43:     subdir: proto
+	// 44:     depth: 1
 
 	tests := []struct {
 		name      string
@@ -380,7 +384,7 @@ func TestBufGenYAMLHover(t *testing.T) {
 		},
 		{
 			name: "inputs_key",
-			line: 24, character: 0,
+			line: 28, character: 0,
 			expectedContains: []string{"inputs", "Protobuf sources", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#inputs"},
 		},
 
@@ -481,66 +485,86 @@ func TestBufGenYAMLHover(t *testing.T) {
 			line: 23, character: 4,
 			expectedContains: []string{"protoc_path", "protoc", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#plugins"},
 		},
+		{
+			name: "plugin_image_key",
+			line: 24, character: 4,
+			expectedContains: []string{"image", "Buf image", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#plugins"},
+		},
+		{
+			name: "plugin_exclude_imports_key",
+			line: 25, character: 4,
+			expectedContains: []string{"exclude_imports", "--exclude-imports", "Only valid with `image`"},
+		},
+		{
+			name: "plugin_exclude_source_info_key",
+			line: 26, character: 4,
+			expectedContains: []string{"exclude_source_info", "--exclude-source-info", "Only valid with `image`"},
+		},
+		{
+			name: "plugin_as_file_descriptor_set_key",
+			line: 27, character: 4,
+			expectedContains: []string{"as_file_descriptor_set", "--as-file-descriptor-set", "Only valid with `image`"},
+		},
 
 		// ── input entry keys ────────────────────────────────────────────────────
 		{
 			name: "input_directory_key",
-			line: 25, character: 4,
+			line: 29, character: 4,
 			expectedContains: []string{"directory", "Local directory", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#directory"},
 		},
 		{
 			name: "input_types_key",
-			line: 26, character: 4,
+			line: 30, character: 4,
 			expectedContains: []string{"types", "fully-qualified type names", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#types"},
 		},
 		{
 			name: "input_paths_key",
-			line: 28, character: 4,
+			line: 32, character: 4,
 			expectedContains: []string{"paths", "relative paths", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#inputs"},
 		},
 		{
 			name: "input_exclude_paths_key",
-			line: 30, character: 4,
+			line: 34, character: 4,
 			expectedContains: []string{"exclude_paths", "Exclude", "relative paths", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#inputs"},
 		},
 		{
 			name: "input_module_key",
-			line: 32, character: 4,
+			line: 36, character: 4,
 			expectedContains: []string{"module", "Remote BSR module", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#module"},
 		},
 		{
 			name: "input_exclude_types_key",
-			line: 33, character: 4,
+			line: 37, character: 4,
 			expectedContains: []string{"exclude_types", "Exclude", "type names", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#exclude-types"},
 		},
 		{
 			name: "input_proto_file_key",
-			line: 35, character: 4,
+			line: 39, character: 4,
 			expectedContains: []string{"proto_file", "single `.proto` file", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#proto_file"},
 		},
 		{
 			name: "input_include_package_files_key",
-			line: 36, character: 4,
+			line: 40, character: 4,
 			expectedContains: []string{"include_package_files", "same package", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#proto_file"},
 		},
 		{
 			name: "input_git_repo_key",
-			line: 37, character: 4,
+			line: 41, character: 4,
 			expectedContains: []string{"git_repo", "Git repository", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#git_repo"},
 		},
 		{
 			name: "input_branch_key",
-			line: 38, character: 4,
+			line: 42, character: 4,
 			expectedContains: []string{"branch", "Git branch", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#git_repo"},
 		},
 		{
 			name: "input_subdir_key",
-			line: 39, character: 4,
+			line: 43, character: 4,
 			expectedContains: []string{"subdir", "Subdirectory", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#subdir"},
 		},
 		{
 			name: "input_depth_key",
-			line: 40, character: 4,
+			line: 44, character: 4,
 			expectedContains: []string{"depth", "clone depth", "https://buf.build/docs/configuration/v2/buf-gen-yaml/#git_repo"},
 		},
 

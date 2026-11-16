@@ -510,7 +510,7 @@ type externalBufGenYAMLFileV2 struct {
 
 // externalGeneratePluginConfigV2 represents a single plugin config in a v2 buf.gen.yaml file.
 type externalGeneratePluginConfigV2 struct {
-	// Exactly one of Remote, Local and ProtocBuiltin is required.
+	// Exactly one of Remote, Local, ProtocBuiltin and Image is required.
 	Remote *string `json:"remote,omitempty" yaml:"remote,omitempty"`
 	// Revision is only valid with Remote set.
 	Revision *int `json:"revision,omitempty" yaml:"revision,omitempty"`
@@ -523,6 +523,9 @@ type externalGeneratePluginConfigV2 struct {
 	// ProtocPath is only valid with ProtocBuiltin. This can be one string (the path to protoc) or multiple
 	// (remaining strings are extra args to pass to protoc).
 	ProtocPath any `json:"protoc_path,omitempty" yaml:"protoc_path,omitempty"`
+	// Image is the file name, relative to Out, to write the image to. The
+	// encoding and compression are derived from the extension.
+	Image *string `json:"image,omitempty" yaml:"image,omitempty"`
 	// Out is required.
 	Out string `json:"out,omitempty" yaml:"out,omitempty"`
 	// Opt can be one string or multiple strings.
@@ -531,6 +534,11 @@ type externalGeneratePluginConfigV2 struct {
 	IncludeWKT     bool `json:"include_wkt,omitempty" yaml:"include_wkt,omitempty"`
 	// Strategy is only valid with ProtoBuiltin and Local.
 	Strategy *string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+	// ExcludeImports, ExcludeSourceInfo and AsFileDescriptorSet are only valid
+	// with Image.
+	ExcludeImports      bool `json:"exclude_imports,omitempty" yaml:"exclude_imports,omitempty"`
+	ExcludeSourceInfo   bool `json:"exclude_source_info,omitempty" yaml:"exclude_source_info,omitempty"`
+	AsFileDescriptorSet bool `json:"as_file_descriptor_set,omitempty" yaml:"as_file_descriptor_set,omitempty"`
 
 	// Types is a list of types to include in the image.
 	Types []string `json:"types,omitempty" yaml:"types,omitempty"`

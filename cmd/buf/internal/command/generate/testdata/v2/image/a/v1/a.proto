@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package a.v1;
+
+import "google/protobuf/timestamp.proto";
+import "options/v1/options.proto";
+
+message Foo {
+  option (options.v1.source_only) = "source";
+  option (options.v1.runtime) = "runtime";
+  google.protobuf.Timestamp time = 1;
+}
+
+message Bar {
+  string bar = 1;
+}

@@ -99,7 +99,8 @@ func bufGenYAMLValueItems(key string, editRange protocol.Range) []protocol.Compl
 	case "strategy":
 		values = []string{"directory", "all"}
 	case "clean", "include_imports", "include_wkt", "enabled",
-		"include_package_files", "recurse_submodules":
+		"include_package_files", "recurse_submodules",
+		"exclude_imports", "exclude_source_info", "as_file_descriptor_set":
 		values = []string{"true", "false"}
 	case "compression":
 		values = []string{"gzip", "bzip2", "zstd"}
@@ -119,7 +120,17 @@ var bufGenYAMLBareParentMappingKeys = map[string]bool{
 
 // bufGenYAMLPluginTypeKeys are the mutually exclusive plugin type specifiers: exactly
 // one of these can appear in a plugins item. If any is present, the others are excluded.
-var bufGenYAMLPluginTypeKeys = []string{"remote", "local", "protoc_builtin"}
+var bufGenYAMLPluginTypeKeys = []string{"remote", "local", "protoc_builtin", "image"}
+
+// bufGenYAMLImageOnlyPluginKeys are the plugin keys only valid with image entries.
+var bufGenYAMLImageOnlyPluginKeys = []string{
+	"exclude_imports", "exclude_source_info", "as_file_descriptor_set",
+}
+
+// bufGenYAMLNonImagePluginKeys are the plugin keys not valid with image entries.
+var bufGenYAMLNonImagePluginKeys = []string{
+	"opt", "include_imports", "include_wkt",
+}
 
 // bufGenYAMLInputSourceKeys are the mutually exclusive input source type keys: exactly
 // one must appear in each inputs item. If any is present, the others are excluded.
@@ -174,8 +185,17 @@ func bufGenYAMLKeyItems(section string, editRange protocol.Range, existingKeys m
 			if pluginType != "remote" {
 				existingKeys["revision"] = true
 			}
-			if pluginType == "remote" {
+			if pluginType == "remote" || pluginType == "image" {
 				existingKeys["strategy"] = true
+			}
+			if pluginType == "image" {
+				for _, k := range bufGenYAMLNonImagePluginKeys {
+					existingKeys[k] = true
+				}
+			} else {
+				for _, k := range bufGenYAMLImageOnlyPluginKeys {
+					existingKeys[k] = true
+				}
 			}
 		}
 	case "inputs":
@@ -268,8 +288,9 @@ var bufGenYAMLTopLevelKeys = []string{"version", "clean", "managed", "plugins", 
 
 // bufGenYAMLPluginKeys lists keys valid within a plugins[] item.
 var bufGenYAMLPluginKeys = []string{
-	"remote", "local", "protoc_builtin", "protoc_path", "out", "opt",
+	"remote", "local", "protoc_builtin", "image", "protoc_path", "out", "opt",
 	"revision", "include_imports", "include_wkt", "strategy", "types", "exclude_types",
+	"exclude_imports", "exclude_source_info", "as_file_descriptor_set",
 }
 
 // bufGenYAMLInputKeys lists keys valid within an inputs[] item. The source type

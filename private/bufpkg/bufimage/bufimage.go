@@ -486,6 +486,22 @@ func ImageWithoutImports(image Image) Image {
 	return newImageNoValidate(newImageFiles, image.Resolver())
 }
 
+// MergeImages merges the images into a single Image.
+//
+// The images are walked in order, and each file is added the first time its
+// path is seen. Each input Image is in DAG order, so the result is as well.
+// A file that appears in more than one Image must have an equal
+// FileDescriptorProto in each, otherwise this errors. The module of the first
+// Image that contains a file is kept. If a module has different commits
+// between Images, its files have no commit in the result. A file is an import
+// in the result only if it is an import in every Image that contains it.
+//
+// If one Image is given, it is returned unchanged.
+// If no Images are given, this errors.
+func MergeImages(images ...Image) (Image, error) {
+	return mergeImages(images)
+}
+
 // ImageWithOnlyPaths returns a copy of the Image that only includes the files
 // with the given root relative file paths or directories.
 //

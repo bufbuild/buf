@@ -114,19 +114,43 @@ func (g *generator) Generate(
 		g.storageosProvider,
 		responseWriterOptions...,
 	)
+	var codePluginConfigs []bufconfig.GeneratePluginConfig
+	var imagePluginConfigs []bufconfig.GeneratePluginConfig
+	for _, pluginConfig := range config.GeneratePluginConfigs() {
+		if pluginConfig.Type() == bufconfig.GeneratePluginConfigTypeImage {
+			imagePluginConfigs = append(imagePluginConfigs, pluginConfig)
+		} else {
+			codePluginConfigs = append(codePluginConfigs, pluginConfig)
+		}
+	}
+	codeResponsesForImages := make([][]*pluginpb.CodeGeneratorResponse, 0, len(images))
 	for _, image := range images {
-		if err := g.generateCode(
+		codeResponses, err := g.generateCode(
 			ctx,
 			container,
 			image,
 			generateOptions.baseOutDirPath,
-			config.GeneratePluginConfigs(),
+			codePluginConfigs,
 			responseWriter,
 			generateOptions.includeImportsOverride,
 			generateOptions.includeWellKnownTypesOverride,
-		); err != nil {
+		)
+		if err != nil {
 			return err
 		}
+		codeResponsesForImages = append(codeResponsesForImages, codeResponses)
+	}
+	// Image plugins are written once for all inputs, after the code plugins.
+	if err := generateImages(
+		ctx,
+		images,
+		generateOptions.baseOutDirPath,
+		imagePluginConfigs,
+		codePluginConfigs,
+		codeResponsesForImages,
+		responseWriter,
+	); err != nil {
+		return err
 	}
 	return responseWriter.Close(ctx)
 }
@@ -140,7 +164,7 @@ func (g *generator) generateCode(
 	responseWriter bufprotopluginos.ResponseWriter,
 	includeImportsOverride *bool,
 	includeWellKnownTypesOverride *bool,
-) error {
+) ([]*pluginpb.CodeGeneratorResponse, error) {
 	responses, err := g.execPlugins(
 		ctx,
 		container,
@@ -150,7 +174,7 @@ func (g *generator) generateCode(
 		includeWellKnownTypesOverride,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// Apply the CodeGeneratorResponses in the order they were specified.
 	for i, pluginConfig := range pluginConfigs {
@@ -160,17 +184,17 @@ func (g *generator) generateCode(
 		}
 		response := responses[i]
 		if response == nil {
-			return fmt.Errorf("failed to get plugin response for %s", pluginConfig.Name())
+			return nil, fmt.Errorf("failed to get plugin response for %s", pluginConfig.Name())
 		}
 		if err := responseWriter.AddResponse(
 			ctx,
 			response,
 			out,
 		); err != nil {
-			return fmt.Errorf("plugin %s: %v", pluginConfig.Name(), err)
+			return nil, fmt.Errorf("plugin %s: %v", pluginConfig.Name(), err)
 		}
 	}
-	return nil
+	return responses, nil
 }
 
 func (g *generator) execPlugins(

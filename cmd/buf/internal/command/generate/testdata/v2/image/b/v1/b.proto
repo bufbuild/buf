@@ -1,0 +1,7 @@
+edition = "2023";
+
+package b.v1;
+
+message Baz {
+  string baz = 1;
+}

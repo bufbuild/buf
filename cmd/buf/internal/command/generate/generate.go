@@ -80,7 +80,7 @@ func NewCommand(
     plugins:
         # Use the plugin hosted at buf.build/protocolbuffers/go at version v1.28.1.
         # If version is omitted, uses the latest version of the plugin.
-        # One of "remote", "local" and "protoc_builtin" is required.
+        # One of "remote", "local", "protoc_builtin" and "image" is required.
       - remote: buf.build/protocolbuffers/go:v1.28.1
         # The relative output directory.
         # Required.
@@ -152,6 +152,31 @@ func NewCommand(
         # Path to protoc. If not specified, the protoc installation in "${PATH}" is used.
         # Optional.
         protoc_path: path/to/protoc
+
+        # "image" writes a Buf image of the inputs instead of running a plugin, with the
+        # same defaults as "buf build". The value is the file name relative to "out", and its
+        # extension sets the format: .binpb, .json, .txtpb or .yaml, optionally followed by
+        # .gz or .zst for compression. The image is taken after managed mode, the images of
+        # all inputs are merged into one, and source-retention options are always stripped.
+        # "opt", "strategy", "revision", "protoc_path", "include_imports" and "include_wkt"
+        # are not allowed.
+      - image: image.binpb
+        out: gen/es
+        # Exclude imported files, as with "buf build --exclude-imports".
+        # Optional.
+        exclude_imports: false
+        # Exclude source code info, as with "buf build --exclude-source-info".
+        # Optional.
+        exclude_source_info: false
+        # Write a FileDescriptorSet instead of a Buf image, as with
+        # "buf build --as-file-descriptor-set".
+        # Optional.
+        as_file_descriptor_set: false
+        # "types" and "exclude_types" filter the image, as with "buf build --type" and
+        # "buf build --exclude-type".
+        # Optional.
+        types:
+          - "foo.v1.User"
 
     # Managed mode modifies file options and/or field options on the fly.
     managed:

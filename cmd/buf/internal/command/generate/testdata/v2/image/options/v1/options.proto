@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package options.v1;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.MessageOptions {
+  string source_only = 50000 [retention = RETENTION_SOURCE];
+  string runtime = 50001;
+}
