@@ -79,7 +79,7 @@ func TestGetBufGenYAMLCompletionItems(t *testing.T) {
 				"remote", "local", "protoc_builtin", "image", "protoc_path", "out", "opt",
 				"revision", "include_imports", "include_wkt", "strategy",
 				"types", "exclude_types",
-				"exclude_imports", "exclude_source_info", "as_file_descriptor_set",
+				"exclude_imports", "exclude_source_info", "exclude_source_retention_options", "as_file_descriptor_set",
 			},
 			wantKind: protocol.CompletionItemKindField,
 		},
@@ -92,7 +92,7 @@ func TestGetBufGenYAMLCompletionItems(t *testing.T) {
 			wantLabels: []string{
 				"out", "revision",
 			},
-			wantAbsentLabels: []string{"remote", "local", "protoc_builtin", "image", "protoc_path", "strategy", "exclude_imports", "exclude_source_info", "as_file_descriptor_set"},
+			wantAbsentLabels: []string{"remote", "local", "protoc_builtin", "image", "protoc_path", "strategy", "exclude_imports", "exclude_source_info", "exclude_source_retention_options", "as_file_descriptor_set"},
 			wantKind:         protocol.CompletionItemKindField,
 		},
 		{
@@ -128,7 +128,7 @@ func TestGetBufGenYAMLCompletionItems(t *testing.T) {
 			name:             "plugin_item_image_excludes_others",
 			text:             "plugins:\n  - image: image.binpb\n    \n",
 			pos:              protocol.Position{Line: 2, Character: 4},
-			wantLabels:       []string{"out", "types", "exclude_types", "exclude_imports", "exclude_source_info", "as_file_descriptor_set"},
+			wantLabels:       []string{"out", "types", "exclude_types", "exclude_imports", "exclude_source_info", "exclude_source_retention_options", "as_file_descriptor_set"},
 			wantAbsentLabels: []string{"image", "remote", "local", "protoc_builtin", "protoc_path", "revision", "strategy", "opt", "include_imports", "include_wkt"},
 			wantKind:         protocol.CompletionItemKindField,
 		},

@@ -62,9 +62,9 @@ plugins:
 	for _, imageFile := range image.GetFile() {
 		require.NotEmpty(t, imageFile.GetSourceCodeInfo().GetLocation(), imageFile.GetName())
 	}
-	// The source-retention option is stripped, the runtime option is kept.
+	// Source-retention options are kept, as with buf build.
 	fooOptions := getTestImageFile(t, image, "a/v1/a.proto").GetMessageType()[0].GetOptions()
-	require.Equal(t, []protowire.Number{50001}, getUnknownFieldNumbers(t, fooOptions))
+	require.Equal(t, []protowire.Number{50000, 50001}, getUnknownFieldNumbers(t, fooOptions))
 }
 
 func TestGenerateImageAsFileDescriptorSet(t *testing.T) {
@@ -189,7 +189,27 @@ plugins:
 		require.False(t, imageFile.HasSourceCodeInfo(), imageFile.GetName())
 	}
 	fooOptions := getTestImageFile(t, image, "a/v1/a.proto").GetMessageType()[0].GetOptions()
+	require.Equal(t, []protowire.Number{50000, 50001}, getUnknownFieldNumbers(t, fooOptions))
+}
+
+func TestGenerateImageExcludeSourceRetentionOptions(t *testing.T) {
+	t.Parallel()
+	tempDirPath := testGenerateImage(
+		t,
+		`
+version: v2
+plugins:
+  - image: image.binpb
+    out: gen
+    exclude_source_retention_options: true
+`,
+		testImageInputDirPath,
+	)
+	image := readTestImage(t, filepath.Join(tempDirPath, "gen", "image.binpb"), nil)
+	// The source-retention option is stripped, the runtime option is kept.
+	fooOptions := getTestImageFile(t, image, "a/v1/a.proto").GetMessageType()[0].GetOptions()
 	require.Equal(t, []protowire.Number{50001}, getUnknownFieldNumbers(t, fooOptions))
+	require.NotEmpty(t, getTestImageFile(t, image, "a/v1/a.proto").GetSourceCodeInfo().GetLocation())
 }
 
 func TestGenerateImageTypes(t *testing.T) {

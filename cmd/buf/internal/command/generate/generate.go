@@ -156,8 +156,8 @@ func NewCommand(
         # "image" writes a Buf image of the inputs instead of running a plugin, with the
         # same defaults as "buf build". The value is the file name relative to "out", and its
         # extension sets the format: .binpb, .json, .txtpb or .yaml, optionally followed by
-        # .gz or .zst for compression. The image is taken after managed mode, the images of
-        # all inputs are merged into one, and source-retention options are always stripped.
+        # .gz or .zst for compression. The image is taken after managed mode, and the images
+        # of all inputs are merged into one.
         # "opt", "strategy", "revision", "protoc_path", "include_imports" and "include_wkt"
         # are not allowed.
       - image: image.binpb
@@ -168,6 +168,10 @@ func NewCommand(
         # Exclude source code info, as with "buf build --exclude-source-info".
         # Optional.
         exclude_source_info: false
+        # Exclude options whose retention is source, as with
+        # "buf build --exclude-source-retention-options".
+        # Optional.
+        exclude_source_retention_options: false
         # Write a FileDescriptorSet instead of a Buf image, as with
         # "buf build --as-file-descriptor-set".
         # Optional.

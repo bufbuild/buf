@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin/bufprotopluginos"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/klauspost/compress/zstd"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -80,7 +81,7 @@ func generateImages(
 			out = filepath.Join(baseOutDir, out)
 		}
 		if err := responseWriter.AddResponse(ctx, imageResponses[i], out); err != nil {
-			return fmt.Errorf("plugin %s: %v", imagePluginConfig.Name(), err)
+			return fmt.Errorf("plugin %s: %w", imagePluginConfig.Name(), err)
 		}
 	}
 	return nil
@@ -92,12 +93,10 @@ func getImageResponse(
 	image bufimage.Image,
 	imagePluginConfig bufconfig.GeneratePluginConfig,
 ) (*pluginpb.CodeGeneratorResponse, error) {
-	// The resolver of the full image is used for JSON and YAML, so that custom
-	// options defined in excluded imports can still be resolved.
-	marshaler, err := newImageMarshaler(image.Resolver(), imagePluginConfig.Image())
-	if err != nil {
-		return nil, err
-	}
+	// The resolver of the full image is used for JSON, text and YAML, so that
+	// custom options defined in excluded imports can still be resolved.
+	resolver := image.Resolver()
+	var err error
 	includeTypes := imagePluginConfig.IncludeTypes()
 	excludeTypes := imagePluginConfig.ExcludeTypes()
 	if len(includeTypes) > 0 || len(excludeTypes) > 0 {
@@ -119,9 +118,11 @@ func getImageResponse(
 			return nil, err
 		}
 	}
-	image, err = bufimageutil.StripSourceRetentionOptions(image)
-	if err != nil {
-		return nil, err
+	if imagePluginConfig.ExcludeSourceRetentionOptions() {
+		image, err = bufimageutil.StripSourceRetentionOptions(image)
+		if err != nil {
+			return nil, err
+		}
 	}
 	var message proto.Message
 	if imagePluginConfig.AsFileDescriptorSet() {
@@ -132,11 +133,7 @@ func getImageResponse(
 			return nil, err
 		}
 	}
-	data, err := marshaler.Marshal(message)
-	if err != nil {
-		return nil, err
-	}
-	data, err = compressImageData(imagePluginConfig.Image(), data)
+	data, err := marshalImage(resolver, imagePluginConfig.Image(), message)
 	if err != nil {
 		return nil, err
 	}
@@ -175,28 +172,39 @@ func imageWithoutSourceCodeInfo(image bufimage.Image) (bufimage.Image, error) {
 	return bufimage.NewImage(imageFiles)
 }
 
-// newImageMarshaler returns the marshaler for the extension of the image file
-// name, ignoring any compression extension. This matches the defaults of
-// buf build.
-func newImageMarshaler(resolver protoencoding.Resolver, imageFileName string) (protoencoding.Marshaler, error) {
-	switch extension := normalpath.Ext(trimImageCompressionExt(imageFileName)); extension {
-	case ".binpb":
-		return protoencoding.NewWireMarshaler(), nil
-	case ".json":
-		return protoencoding.NewJSONMarshaler(resolver), nil
-	case ".txtpb":
-		return protoencoding.NewTxtpbMarshaler(resolver), nil
-	case ".yaml":
-		return protoencoding.NewYAMLMarshaler(resolver, protoencoding.YAMLMarshalerWithIndent()), nil
-	default:
-		return nil, fmt.Errorf("unknown image extension %q", extension)
+// marshalImage marshals the message with the encoding given by the extension
+// of the image file name, then compresses it if the name ends in .gz or .zst.
+// The encodings match the defaults of buf build.
+func marshalImage(
+	resolver protoencoding.Resolver,
+	imageFileName string,
+	message proto.Message,
+) ([]byte, error) {
+	extension := normalpath.Ext(imageFileName)
+	var compressionExtension string
+	if extension == ".gz" || extension == ".zst" {
+		compressionExtension = extension
+		extension = normalpath.Ext(strings.TrimSuffix(imageFileName, extension))
 	}
-}
-
-// compressImageData compresses the data with the compression given by the
-// extension of the image file name, if any.
-func compressImageData(imageFileName string, data []byte) ([]byte, error) {
-	switch normalpath.Ext(imageFileName) {
+	var marshaler protoencoding.Marshaler
+	switch extension {
+	case ".binpb":
+		marshaler = protoencoding.NewWireMarshaler()
+	case ".json":
+		marshaler = protoencoding.NewJSONMarshaler(resolver)
+	case ".txtpb":
+		marshaler = protoencoding.NewTxtpbMarshaler(resolver)
+	case ".yaml":
+		marshaler = protoencoding.NewYAMLMarshaler(resolver, protoencoding.YAMLMarshalerWithIndent())
+	default:
+		// The extension is validated when the config is read.
+		return nil, syserror.Newf("unknown image extension %q", extension)
+	}
+	data, err := marshaler.Marshal(message)
+	if err != nil {
+		return nil, err
+	}
+	switch compressionExtension {
 	case ".gz":
 		var buffer bytes.Buffer
 		gzipWriter := gzip.NewWriter(&buffer)
@@ -217,13 +225,4 @@ func compressImageData(imageFileName string, data []byte) ([]byte, error) {
 	default:
 		return data, nil
 	}
-}
-
-func trimImageCompressionExt(imageFileName string) string {
-	for _, compressionExt := range []string{".gz", ".zst"} {
-		if trimmed, ok := strings.CutSuffix(imageFileName, compressionExt); ok {
-			return trimmed
-		}
-	}
-	return imageFileName
 }

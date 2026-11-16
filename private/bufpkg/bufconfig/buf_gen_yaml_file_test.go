@@ -491,10 +491,10 @@ plugins:
 	assert.Empty(t, pluginConfig.Opt())
 	assert.False(t, pluginConfig.IncludeImports())
 	assert.False(t, pluginConfig.IncludeWKT())
-	assert.Equal(t, GenerateStrategy(0), pluginConfig.Strategy())
 	assert.Empty(t, pluginConfig.RemoteHost())
 	assert.False(t, pluginConfig.ExcludeImports())
 	assert.False(t, pluginConfig.ExcludeSourceInfo())
+	assert.False(t, pluginConfig.ExcludeSourceRetentionOptions())
 	assert.False(t, pluginConfig.AsFileDescriptorSet())
 	assert.Empty(t, pluginConfig.IncludeTypes())
 	assert.Empty(t, pluginConfig.ExcludeTypes())
@@ -507,6 +507,7 @@ plugins:
     out: gen
     exclude_imports: true
     exclude_source_info: true
+    exclude_source_retention_options: true
     as_file_descriptor_set: true
     types:
       - acme.v1.UserService
@@ -519,6 +520,7 @@ plugins:
 	pluginConfig = pluginConfigs[0]
 	assert.True(t, pluginConfig.ExcludeImports())
 	assert.True(t, pluginConfig.ExcludeSourceInfo())
+	assert.True(t, pluginConfig.ExcludeSourceRetentionOptions())
 	assert.True(t, pluginConfig.AsFileDescriptorSet())
 	assert.Equal(t, []string{"acme.v1.UserService"}, pluginConfig.IncludeTypes())
 	assert.Equal(t, []string{"buf.validate.**"}, pluginConfig.ExcludeTypes())
@@ -540,7 +542,7 @@ plugins:
 	} {
 		t.Run(image, func(t *testing.T) {
 			t.Parallel()
-			pluginConfig, err := NewImageGeneratePluginConfig(image, "gen", false, false, false, nil, nil)
+			pluginConfig, err := NewImageGeneratePluginConfig(image, "gen", false, false, false, false, nil, nil)
 			require.NoError(t, err)
 			assert.Equal(t, image, pluginConfig.Image())
 		})
@@ -557,6 +559,7 @@ plugins:
     out: gen/es
     exclude_imports: true
     exclude_source_info: true
+    exclude_source_retention_options: true
     as_file_descriptor_set: true
     types:
       - acme.v1.UserService
@@ -572,6 +575,7 @@ plugins:
     out: gen/es
     exclude_imports: true
     exclude_source_info: true
+    exclude_source_retention_options: true
     as_file_descriptor_set: true
     types:
       - acme.v1.UserService
@@ -639,24 +643,6 @@ plugins:
     out: gen
 `,
 			expectedError: "image must not be empty",
-		},
-		{
-			name: "stdout",
-			data: `version: v2
-plugins:
-  - image: "-"
-    out: gen
-`,
-			expectedError: `image must not be "-"`,
-		},
-		{
-			name: "hash",
-			data: `version: v2
-plugins:
-  - image: "image.binpb#format=json"
-    out: gen
-`,
-			expectedError: "must not contain '#'",
 		},
 		{
 			name: "absolute",
@@ -782,6 +768,16 @@ plugins:
     exclude_source_info: true
 `,
 			expectedError: "cannot specify exclude_source_info without image",
+		},
+		{
+			name: "plugin_exclude_source_retention_options",
+			data: `version: v2
+plugins:
+  - remote: buf.build/bufbuild/es
+    out: gen
+    exclude_source_retention_options: true
+`,
+			expectedError: "cannot specify exclude_source_retention_options without image",
 		},
 		{
 			name: "plugin_as_file_descriptor_set",

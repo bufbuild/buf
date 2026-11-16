@@ -534,11 +534,12 @@ type externalGeneratePluginConfigV2 struct {
 	IncludeWKT     bool `json:"include_wkt,omitempty" yaml:"include_wkt,omitempty"`
 	// Strategy is only valid with ProtoBuiltin and Local.
 	Strategy *string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
-	// ExcludeImports, ExcludeSourceInfo and AsFileDescriptorSet are only valid
-	// with Image.
-	ExcludeImports      bool `json:"exclude_imports,omitempty" yaml:"exclude_imports,omitempty"`
-	ExcludeSourceInfo   bool `json:"exclude_source_info,omitempty" yaml:"exclude_source_info,omitempty"`
-	AsFileDescriptorSet bool `json:"as_file_descriptor_set,omitempty" yaml:"as_file_descriptor_set,omitempty"`
+	// ExcludeImports, ExcludeSourceInfo, ExcludeSourceRetentionOptions and
+	// AsFileDescriptorSet are only valid with Image.
+	ExcludeImports                bool `json:"exclude_imports,omitempty" yaml:"exclude_imports,omitempty"`
+	ExcludeSourceInfo             bool `json:"exclude_source_info,omitempty" yaml:"exclude_source_info,omitempty"`
+	ExcludeSourceRetentionOptions bool `json:"exclude_source_retention_options,omitempty" yaml:"exclude_source_retention_options,omitempty"`
+	AsFileDescriptorSet           bool `json:"as_file_descriptor_set,omitempty" yaml:"as_file_descriptor_set,omitempty"`
 
 	// Types is a list of types to include in the image.
 	Types []string `json:"types,omitempty" yaml:"types,omitempty"`

@@ -134,6 +134,11 @@ type GeneratePluginConfig interface {
 	//
 	// This is only set when Type() is GeneratePluginConfigTypeImage.
 	ExcludeSourceInfo() bool
+	// ExcludeSourceRetentionOptions returns whether to exclude options whose
+	// retention is source from the image.
+	//
+	// This is only set when Type() is GeneratePluginConfigTypeImage.
+	ExcludeSourceRetentionOptions() bool
 	// AsFileDescriptorSet returns whether to write the image as a
 	// FileDescriptorSet instead of a Buf image.
 	//
@@ -247,6 +252,7 @@ func NewImageGeneratePluginConfig(
 	out string,
 	excludeImports bool,
 	excludeSourceInfo bool,
+	excludeSourceRetentionOptions bool,
 	asFileDescriptorSet bool,
 	includeTypes []string,
 	excludeTypes []string,
@@ -256,6 +262,7 @@ func NewImageGeneratePluginConfig(
 		out,
 		excludeImports,
 		excludeSourceInfo,
+		excludeSourceRetentionOptions,
 		asFileDescriptorSet,
 		includeTypes,
 		excludeTypes,
@@ -286,23 +293,24 @@ func NewGeneratePluginConfigWithIncludeImportsAndWKT(
 // *** PRIVATE ***
 
 type generatePluginConfig struct {
-	generatePluginConfigType GeneratePluginConfigType
-	name                     string
-	out                      string
-	opts                     []string
-	includeImports           bool
-	includeWKT               bool
-	includeTypes             []string
-	excludeTypes             []string
-	strategy                 *GenerateStrategy
-	path                     []string
-	protocPath               []string
-	remoteHost               string
-	revision                 int
-	image                    string
-	excludeImports           bool
-	excludeSourceInfo        bool
-	asFileDescriptorSet      bool
+	generatePluginConfigType      GeneratePluginConfigType
+	name                          string
+	out                           string
+	opts                          []string
+	includeImports                bool
+	includeWKT                    bool
+	includeTypes                  []string
+	excludeTypes                  []string
+	strategy                      *GenerateStrategy
+	path                          []string
+	protocPath                    []string
+	remoteHost                    string
+	revision                      int
+	image                         string
+	excludeImports                bool
+	excludeSourceInfo             bool
+	excludeSourceRetentionOptions bool
+	asFileDescriptorSet           bool
 }
 
 func newGeneratePluginConfigFromExternalV1Beta1(
@@ -481,6 +489,9 @@ func newGeneratePluginConfigFromExternalV2(
 		if externalConfig.ExcludeSourceInfo {
 			return nil, errors.New("cannot specify exclude_source_info without image")
 		}
+		if externalConfig.ExcludeSourceRetentionOptions {
+			return nil, errors.New("cannot specify exclude_source_retention_options without image")
+		}
 		if externalConfig.AsFileDescriptorSet {
 			return nil, errors.New("cannot specify as_file_descriptor_set without image")
 		}
@@ -586,6 +597,7 @@ func newGeneratePluginConfigFromExternalV2(
 			externalConfig.Out,
 			externalConfig.ExcludeImports,
 			externalConfig.ExcludeSourceInfo,
+			externalConfig.ExcludeSourceRetentionOptions,
 			externalConfig.AsFileDescriptorSet,
 			externalConfig.Types,
 			externalConfig.ExcludeTypes,
@@ -719,6 +731,7 @@ func newImageGeneratePluginConfig(
 	out string,
 	excludeImports bool,
 	excludeSourceInfo bool,
+	excludeSourceRetentionOptions bool,
 	asFileDescriptorSet bool,
 	includeTypes []string,
 	excludeTypes []string,
@@ -727,15 +740,16 @@ func newImageGeneratePluginConfig(
 		return nil, err
 	}
 	return &generatePluginConfig{
-		generatePluginConfigType: GeneratePluginConfigTypeImage,
-		name:                     image,
-		image:                    image,
-		out:                      out,
-		includeTypes:             includeTypes,
-		excludeTypes:             excludeTypes,
-		excludeImports:           excludeImports,
-		excludeSourceInfo:        excludeSourceInfo,
-		asFileDescriptorSet:      asFileDescriptorSet,
+		generatePluginConfigType:      GeneratePluginConfigTypeImage,
+		name:                          image,
+		image:                         image,
+		out:                           out,
+		includeTypes:                  includeTypes,
+		excludeTypes:                  excludeTypes,
+		excludeImports:                excludeImports,
+		excludeSourceInfo:             excludeSourceInfo,
+		excludeSourceRetentionOptions: excludeSourceRetentionOptions,
+		asFileDescriptorSet:           asFileDescriptorSet,
 	}, nil
 }
 
@@ -772,9 +786,6 @@ func (p *generatePluginConfig) ExcludeTypes() []string {
 }
 
 func (p *generatePluginConfig) Strategy() GenerateStrategy {
-	if p.generatePluginConfigType == GeneratePluginConfigTypeImage {
-		return 0
-	}
 	if p.strategy == nil {
 		return GenerateStrategyDirectory
 	}
@@ -807,6 +818,10 @@ func (p *generatePluginConfig) ExcludeImports() bool {
 
 func (p *generatePluginConfig) ExcludeSourceInfo() bool {
 	return p.excludeSourceInfo
+}
+
+func (p *generatePluginConfig) ExcludeSourceRetentionOptions() bool {
+	return p.excludeSourceRetentionOptions
 }
 
 func (p *generatePluginConfig) AsFileDescriptorSet() bool {
@@ -883,6 +898,7 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 		externalPluginConfigV2.Image = new(generatePluginConfig.Image())
 		externalPluginConfigV2.ExcludeImports = generatePluginConfig.ExcludeImports()
 		externalPluginConfigV2.ExcludeSourceInfo = generatePluginConfig.ExcludeSourceInfo()
+		externalPluginConfigV2.ExcludeSourceRetentionOptions = generatePluginConfig.ExcludeSourceRetentionOptions()
 		externalPluginConfigV2.AsFileDescriptorSet = generatePluginConfig.AsFileDescriptorSet()
 		externalPluginConfigV2.Types = generatePluginConfig.IncludeTypes()
 		externalPluginConfigV2.ExcludeTypes = generatePluginConfig.ExcludeTypes()
@@ -910,12 +926,6 @@ func parseStrategy(s string) (*GenerateStrategy, error) {
 func validateImageFileName(image string) error {
 	if image == "" {
 		return errors.New("image must not be empty")
-	}
-	if image == "-" {
-		return errors.New(`image must not be "-"`)
-	}
-	if strings.ContainsRune(image, '#') {
-		return fmt.Errorf("image %s must not contain '#'", image)
 	}
 	normalizedImage, err := normalpath.NormalizeAndValidate(image)
 	if err != nil {

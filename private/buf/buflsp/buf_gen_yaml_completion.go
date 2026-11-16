@@ -100,7 +100,7 @@ func bufGenYAMLValueItems(key string, editRange protocol.Range) []protocol.Compl
 		values = []string{"directory", "all"}
 	case "clean", "include_imports", "include_wkt", "enabled",
 		"include_package_files", "recurse_submodules",
-		"exclude_imports", "exclude_source_info", "as_file_descriptor_set":
+		"exclude_imports", "exclude_source_info", "exclude_source_retention_options", "as_file_descriptor_set":
 		values = []string{"true", "false"}
 	case "compression":
 		values = []string{"gzip", "bzip2", "zstd"}
@@ -124,7 +124,7 @@ var bufGenYAMLPluginTypeKeys = []string{"remote", "local", "protoc_builtin", "im
 
 // bufGenYAMLImageOnlyPluginKeys are the plugin keys only valid with image entries.
 var bufGenYAMLImageOnlyPluginKeys = []string{
-	"exclude_imports", "exclude_source_info", "as_file_descriptor_set",
+	"exclude_imports", "exclude_source_info", "exclude_source_retention_options", "as_file_descriptor_set",
 }
 
 // bufGenYAMLNonImagePluginKeys are the plugin keys not valid with image entries.
@@ -290,7 +290,7 @@ var bufGenYAMLTopLevelKeys = []string{"version", "clean", "managed", "plugins", 
 var bufGenYAMLPluginKeys = []string{
 	"remote", "local", "protoc_builtin", "image", "protoc_path", "out", "opt",
 	"revision", "include_imports", "include_wkt", "strategy", "types", "exclude_types",
-	"exclude_imports", "exclude_source_info", "as_file_descriptor_set",
+	"exclude_imports", "exclude_source_info", "exclude_source_retention_options", "as_file_descriptor_set",
 }
 
 // bufGenYAMLInputKeys lists keys valid within an inputs[] item. The source type

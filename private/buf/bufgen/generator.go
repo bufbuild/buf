@@ -165,6 +165,9 @@ func (g *generator) generateCode(
 	includeImportsOverride *bool,
 	includeWellKnownTypesOverride *bool,
 ) ([]*pluginpb.CodeGeneratorResponse, error) {
+	if len(pluginConfigs) == 0 {
+		return nil, nil
+	}
 	responses, err := g.execPlugins(
 		ctx,
 		container,
