@@ -47,9 +47,8 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 		return nil
 	}
 
-	// Find all unresolved type references and unused imports from the IR diagnostics
+	// Find all unresolved type references from the IR diagnostics
 	unresolvedRefs := make(map[ir.FullName]bool)
-	unusedImports := make(map[string]bool)
 
 	for _, diag := range file.irReport.Diagnostics {
 		if diag.Primary().Path() != file.file.Path() {
@@ -64,17 +63,6 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 				// The text may have a leading dot for absolute paths, remove it
 				typeName := strings.TrimPrefix(missingType, ".")
 				unresolvedRefs[ir.FullName(typeName)] = true
-			}
-		}
-
-		// Process UnusedImport diagnostics (imports to remove)
-		if diag.Tag() == rtags.UnusedImport {
-			// The diagnostic text contains the import path
-			unusedImportPath := diag.Primary().Text()
-			if unusedImportPath != "" {
-				// Remove quotes if present
-				unusedImportPath = strings.Trim(unusedImportPath, "\"")
-				unusedImports[unusedImportPath] = true
 			}
 		}
 	}
@@ -96,10 +84,11 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 		}
 	}
 
-	// Build a map of resolved imports from the IR (these exist and were successfully parsed)
-	resolvedImports := make(map[string]bool)
+	// Map each resolved import (one that exists and was successfully parsed) to
+	// whether any of its symbols are used. Unresolved imports are absent.
+	importUsed := make(map[string]bool)
 	for currentFileImport := range seq.Values(file.ir.Imports()) {
-		resolvedImports[currentFileImport.Path()] = true
+		importUsed[currentFileImport.Path()] = currentFileImport.Used
 	}
 
 	var (
@@ -121,11 +110,8 @@ func (s *server) getOrganizeImportsCodeAction(ctx context.Context, file *file) *
 			NewText: "", // delete
 		})
 
-		if unusedImports[importPath] {
-			dirty = true
-			continue
-		}
-		if !resolvedImports[importPath] {
+		// Drop imports that are unresolved or unused.
+		if used, resolved := importUsed[importPath]; !resolved || !used {
 			dirty = true
 			continue
 		}
