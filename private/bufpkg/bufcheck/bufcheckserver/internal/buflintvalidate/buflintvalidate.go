@@ -49,7 +49,14 @@ func NewChecker(extensionTypeResolver protoencoding.Resolver) (*Checker, error) 
 	if err != nil {
 		return nil, err
 	}
-	baseCELEnv, err := cel.NewEnv(cel.Lib(celpv.NewLibrary()))
+	baseCELEnv, err := cel.NewEnv(
+		cel.Lib(celpv.NewLibrary()),
+		cel.ASTValidators(
+			cel.ValidateDurationLiterals(),
+			cel.ValidateTimestampLiterals(),
+			cel.ValidateRegexLiterals(),
+		),
+	)
 	if err != nil {
 		return nil, err
 	}

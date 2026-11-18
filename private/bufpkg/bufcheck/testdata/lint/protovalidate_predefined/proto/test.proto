@@ -82,3 +82,24 @@ message TestFieldMaskRules {
     (buf.validate.field).field_mask.example = {}
   ];
 }
+
+extend buf.validate.StringRules {
+  optional bool invalid_regex = 1903 [(buf.validate.predefined).cel = {
+    id: "string.invalid_regex"
+    expression: "this.matches('^[a-z+$')"
+  }];
+}
+
+extend buf.validate.DurationRules {
+  optional bool invalid_duration = 1903 [(buf.validate.predefined).cel = {
+    id: "duration.invalid_duration"
+    expression: "this < duration('1d')"
+  }];
+}
+
+extend buf.validate.TimestampRules {
+  optional bool invalid_timestamp = 1903 [(buf.validate.predefined).cel = {
+    id: "timestamp.invalid_timestamp"
+    expression: "this > timestamp('2020-13-01T00:00:00Z')"
+  }];
+}
