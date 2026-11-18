@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Fix the `PROTOVALIDATE` lint rule to check constant arguments to `duration`, `timestamp`, and
+  `matches` in CEL expressions, such as `duration('1d')` or an invalid regex, which otherwise only
+  fail when the rules are evaluated.
 - Fix LSP document links for versioned remote plugins in `buf.gen.yaml`, which pointed to a
   nonexistent BSR page.
 - Fix LSP hover and highlighting of CEL expressions whose proto strings contain escape sequences, which placed the ranges of string literals, and of tokens after a `\u` or `\U` escape, wrongly.
