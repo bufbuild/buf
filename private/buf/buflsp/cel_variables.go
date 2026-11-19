@@ -58,6 +58,16 @@ func (e celExpressionInfo) celVariable(name string) (ir.Type, ir.Member) {
 	return ir.Type{}, ir.Member{}
 }
 
+// celDeclares reports whether the expression declares the protovalidate
+// variable name: `rule` and `rules` are only declared in predefined rules.
+func (e celExpressionInfo) celDeclares(name string) bool {
+	switch name {
+	case "rule", "rules":
+		return e.predefined
+	}
+	return true
+}
+
 // celVariableIRTypes returns the IR element types of the protovalidate
 // variables in the expression that have one, keyed by name.
 func (e celExpressionInfo) celVariableIRTypes() map[string]ir.Type {

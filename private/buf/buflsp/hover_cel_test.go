@@ -833,6 +833,30 @@ func TestCELHover(t *testing.T) {
 			char:       23,
 			expected:   "**Field**: `min_len`\n\n**Type**: `uint`\n\n**Proto Field**: `buf.validate.StringRules.min_len`\n\n**Field Number**: 2\n\n**Proto Type**: `uint64`\n\nencoded (hex): `10` (1 byte)",
 		},
+		{
+			// A comprehension variable named `rule` shadows the protovalidate variable.
+			name:     "variable: shadowed rule",
+			line:     461,
+			char:     32,
+			expected: "**Variable**: `rule`\n\nLoop variable from comprehension.\n\n**Type**: `int`",
+		},
+		{
+			// `rules.prefix` selects Word.prefix of the comprehension variable
+			// `rules`, not StringRules.prefix.
+			name:       "predefined: shadowed rules field",
+			predefined: true,
+			line:       25,
+			char:       39,
+			expected:   "**Field**: `prefix`\n\n**Type**: `string`",
+		},
+		{
+			// `rule` is not declared in a field rule, so it is not the protovalidate variable.
+			name:       "predefined: undeclared rule",
+			predefined: true,
+			line:       33,
+			char:       17,
+			expected:   "**Field**: `rule`",
+		},
 	}
 
 	for _, tc := range testCases {

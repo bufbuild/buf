@@ -212,7 +212,7 @@ func collectCELTokens(
 	sourceSpans := newCELSourceSpans(exprInfo.literal)
 
 	// Walk the CEL AST and collect tokens
-	walkCELExprWithVars(nativeAST.Expr(), nativeSourceInfo, sourceSpans, exprInfo.expression, collectToken, nil)
+	walkCELExprWithVars(nativeAST.Expr(), nativeSourceInfo, sourceSpans, exprInfo.expression, collectToken, nil, exprInfo)
 
 	// Process macro calls separately since they're expanded in the main AST
 	// but we want to highlight the original macro function names (has, all, exists, map, filter, etc.)
@@ -286,6 +286,7 @@ func walkCELExprWithVars(
 	exprString string,
 	collectToken func(span source.Span, semanticType, semanticModifier uint32, kw keyword.Keyword),
 	compVars map[string]bool,
+	exprInfo celExpressionInfo,
 ) {
 	if expr == nil || expr.Kind() == ast.UnspecifiedExprKind {
 		return
@@ -310,12 +311,11 @@ func walkCELExprWithVars(
 		var tokenType uint32
 		var tokenModifier uint32
 
-		if isCELKeyword(identName) {
-			// CEL keywords (true, false, null, this, etc.)
-			tokenType = semanticTypeKeyword
-		} else if compVars != nil && compVars[identName] {
-			// Comprehension variables
+		// A comprehension variable shadows a keyword variable of the same name.
+		if compVars[identName] {
 			tokenType = semanticTypeVariable
+		} else if isCELKeyword(identName) && exprInfo.celDeclares(identName) {
+			tokenType = semanticTypeKeyword
 		} else {
 			// Field access or other identifier
 			tokenType = semanticTypeProperty
@@ -335,7 +335,7 @@ func walkCELExprWithVars(
 
 		// Walk target first
 		if sel.Operand() != nil {
-			walkCELExprWithVars(sel.Operand(), sourceInfo, sourceSpans, exprString, collectToken, compVars)
+			walkCELExprWithVars(sel.Operand(), sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
 		}
 
 		// Highlight the field name
@@ -356,7 +356,7 @@ func walkCELExprWithVars(
 
 		// Walk target first (for method calls)
 		if call.IsMemberFunction() {
-			walkCELExprWithVars(call.Target(), sourceInfo, sourceSpans, exprString, collectToken, compVars)
+			walkCELExprWithVars(call.Target(), sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
 		}
 
 		funcName := call.FunctionName()
@@ -421,7 +421,7 @@ func walkCELExprWithVars(
 
 		// Walk arguments
 		for _, arg := range call.Args() {
-			walkCELExprWithVars(arg, sourceInfo, sourceSpans, exprString, collectToken, compVars)
+			walkCELExprWithVars(arg, sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
 		}
 
 	case ast.LiteralKind:
@@ -461,21 +461,21 @@ func walkCELExprWithVars(
 	case ast.ListKind:
 		// List literal - walk all elements
 		for _, elem := range expr.AsList().Elements() {
-			walkCELExprWithVars(elem, sourceInfo, sourceSpans, exprString, collectToken, compVars)
+			walkCELExprWithVars(elem, sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
 		}
 
 	case ast.MapKind:
 		// Map literal - walk all entries
 		for _, entry := range expr.AsMap().Entries() {
 			mapEntry := entry.AsMapEntry()
-			walkCELExprWithVars(mapEntry.Key(), sourceInfo, sourceSpans, exprString, collectToken, compVars)
-			walkCELExprWithVars(mapEntry.Value(), sourceInfo, sourceSpans, exprString, collectToken, compVars)
+			walkCELExprWithVars(mapEntry.Key(), sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
+			walkCELExprWithVars(mapEntry.Value(), sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
 		}
 
 	case ast.StructKind:
 		// Struct literal - walk all field values
 		for _, field := range expr.AsStruct().Fields() {
-			walkCELExprWithVars(field.AsStructField().Value(), sourceInfo, sourceSpans, exprString, collectToken, compVars)
+			walkCELExprWithVars(field.AsStructField().Value(), sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
 		}
 
 	case ast.ComprehensionKind:
@@ -483,8 +483,8 @@ func walkCELExprWithVars(
 		comp := expr.AsComprehension()
 
 		// Walk the range and init with current scope (they don't see loop variables)
-		walkCELExprWithVars(comp.IterRange(), sourceInfo, sourceSpans, exprString, collectToken, compVars)
-		walkCELExprWithVars(comp.AccuInit(), sourceInfo, sourceSpans, exprString, collectToken, compVars)
+		walkCELExprWithVars(comp.IterRange(), sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
+		walkCELExprWithVars(comp.AccuInit(), sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
 
 		// Create extended scope with comprehension variables for the loop body
 		extendedVars := compVars
@@ -505,8 +505,8 @@ func walkCELExprWithVars(
 		}
 
 		// Walk the loop body with extended scope (they can see loop variables)
-		walkCELExprWithVars(comp.LoopCondition(), sourceInfo, sourceSpans, exprString, collectToken, extendedVars)
-		walkCELExprWithVars(comp.LoopStep(), sourceInfo, sourceSpans, exprString, collectToken, extendedVars)
-		walkCELExprWithVars(comp.Result(), sourceInfo, sourceSpans, exprString, collectToken, extendedVars)
+		walkCELExprWithVars(comp.LoopCondition(), sourceInfo, sourceSpans, exprString, collectToken, extendedVars, exprInfo)
+		walkCELExprWithVars(comp.LoopStep(), sourceInfo, sourceSpans, exprString, collectToken, extendedVars, exprInfo)
+		walkCELExprWithVars(comp.Result(), sourceInfo, sourceSpans, exprString, collectToken, extendedVars, exprInfo)
 	}
 }

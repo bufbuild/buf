@@ -259,11 +259,11 @@ func walkCELExprForHover(
 
 		// Determine the hover kind
 		var hoverKind celHoverKind
-		if isCELKeyword(identName) {
-			hoverKind = celHoverKeyword
-		} else if compVars != nil && compVars[identName] {
-			// Comprehension variable
+		// A comprehension variable shadows a keyword variable of the same name.
+		if compVars[identName] {
 			hoverKind = celHoverVariable
+		} else if isCELKeyword(identName) && exprInfo.celDeclares(identName) {
+			hoverKind = celHoverKeyword
 		} else {
 			// Field access or other identifier
 			hoverKind = celHoverField
@@ -322,7 +322,7 @@ func walkCELExprForHover(
 						}
 					}
 					// Try to resolve proto field
-					hoverInfo.protoMember = resolveCELFieldAccess(sel, exprInfo)
+					hoverInfo.protoMember = resolveCELFieldAccess(sel, exprInfo, compVars)
 					bestMatch = hoverInfo
 				}
 			}
@@ -683,8 +683,9 @@ func celProtovalidateLink(anchor string) string {
 
 // resolveCELFieldAccess resolves a CEL SelectExpr to a proto field/member.
 // Handles expressions rooted at a protovalidate variable, like `this.fieldName`,
-// `this.address.city`, or `rules.min_len`.
-func resolveCELFieldAccess(sel ast.SelectExpr, exprInfo celExpressionInfo) ir.Member {
+// `this.address.city`, or `rules.min_len`, that is not shadowed by one of the
+// comprehension variables compVars.
+func resolveCELFieldAccess(sel ast.SelectExpr, exprInfo celExpressionInfo, compVars map[string]bool) ir.Member {
 	if sel == nil {
 		return ir.Member{}
 	}
@@ -710,7 +711,7 @@ func resolveCELFieldAccess(sel ast.SelectExpr, exprInfo celExpressionInfo) ir.Me
 			continue
 		}
 		// Non-select operand: must be a protovalidate variable to resolve.
-		if operand.Kind() != ast.IdentKind {
+		if operand.Kind() != ast.IdentKind || compVars[operand.AsIdent()] {
 			return ir.Member{}
 		}
 		currentType, _ = exprInfo.celVariable(operand.AsIdent())

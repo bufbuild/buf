@@ -83,6 +83,7 @@ func TestCELCompletion(t *testing.T) {
 	//  80:  `      expression: "this."`                                             (map.keys rule; this is a string)
 	//  84:  `      expression: "this == "`                                          (map.values rule; this is an int)
 	//  89:  `    expression: "this."`                                               (map.values rule; this is NameHolder)
+	//  98:  `    expression: "rule.all(rule, rule."`                                 (predefined; comprehension variable shadows rule)
 	tests := []struct {
 		name                string
 		extend              bool // use cel_completion_extend.proto
@@ -633,6 +634,16 @@ func TestCELCompletion(t *testing.T) {
 			extend:              true,
 			line:                89,
 			character:           22, // closing `"` after `this.`
+			expectedContains:    []string{"name"},
+			expectedNotContains: []string{"all", "exists"},
+		},
+		{
+			// A comprehension variable named `rule` shadows the predefined rule's
+			// repeated `rule`, so `rule.` completes one NameHolder.
+			name:                "shadowed_rule_dot",
+			extend:              true,
+			line:                98,
+			character:           37, // closing `"` after `rule.all(rule, rule.`
 			expectedContains:    []string{"name"},
 			expectedNotContains: []string{"all", "exists"},
 		},

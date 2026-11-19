@@ -93,6 +93,9 @@ func getCELCompletionItems(
 			// vars holds the IR element types of the protovalidate variables and of
 			// the iteration variables bound so far.
 			vars := exprInfo.celVariableIRTypes()
+			// iterVars holds the names of the iteration variables, which shadow the
+			// protovalidate variables of the same name.
+			iterVars := map[string]bool{}
 
 			// Peel comprehension layers from outermost to innermost.
 			// Each iteration resolves the range expression (using all known variables
@@ -114,6 +117,8 @@ func getCELCompletionItems(
 				if rangeType.IsZero() {
 					rangeType = lastRangeType
 				}
+				iterVars[iterVar] = true
+				delete(vars, iterVar)
 				if !rangeType.IsZero() {
 					vars[iterVar] = rangeType
 					lastRangeType = rangeType
@@ -134,8 +139,12 @@ func getCELCompletionItems(
 				var items []protocol.CompletionItem
 
 				// Try CEL compile to determine receiver type (works for variables like "now").
+				// The environment does not declare iteration variables, so a receiver
+				// rooted at one would compile against a variable it shadows, if any.
 				var receiverCELType *types.Type
-				if ast, iss := exprCELEnv.Compile(receiverExpr); iss.Err() == nil {
+				if iterVars[celRootIdent(receiverExpr)] {
+					// Resolved through the IR below.
+				} else if ast, iss := exprCELEnv.Compile(receiverExpr); iss.Err() == nil {
 					receiverCELType = ast.OutputType()
 				}
 
@@ -145,7 +154,7 @@ func getCELCompletionItems(
 				if !irType.IsZero() {
 					// A direct protovalidate variable receiver has its member's
 					// cardinality, which vars, holding element types, does not.
-					if _, member := exprInfo.celVariable(receiverExpr); member.IsMap() || member.IsRepeated() {
+					if _, member := exprInfo.celVariable(receiverExpr); !iterVars[receiverExpr] && (member.IsMap() || member.IsRepeated()) {
 						if receiverCELType == nil {
 							receiverCELType = celMemberType(irType, member)
 						}

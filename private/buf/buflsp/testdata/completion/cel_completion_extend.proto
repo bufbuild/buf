@@ -90,3 +90,12 @@ message ElementHolder {
     expression: "this."
   }];
 }
+
+// A comprehension variable named `rule` shadows the predefined rule's `rule`,
+// so `rule.` completes one NameHolder, not the repeated extension.
+extend buf.validate.StringRules {
+  repeated NameHolder holders = 80048956 [(buf.validate.predefined).cel = {
+    id: "holders"
+    expression: "rule.all(rule, rule."
+  }];
+}
