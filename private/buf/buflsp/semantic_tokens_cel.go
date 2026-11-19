@@ -15,8 +15,10 @@
 package buflsp
 
 import (
+	"fmt"
 	"maps"
 
+	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"cel.dev/cel-go/cel"
 	"cel.dev/cel-go/common/ast"
 	"cel.dev/cel-go/common/overloads"
@@ -26,28 +28,42 @@ import (
 	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-// Fields of the buf.validate package that hold CEL expressions.
+// Fields of the buf.validate package that hold CEL expressions, named by the
+// generated descriptors so that a field missing from them fails at init.
 // https://buf.build/bufbuild/protovalidate/docs/main:buf.validate
-const (
+var (
 	// celFieldRulesCel and celMessageRulesCel are repeated buf.validate.Rule.
-	celFieldRulesCel   ir.FullName = "buf.validate.FieldRules.cel"
-	celMessageRulesCel ir.FullName = "buf.validate.MessageRules.cel"
+	celFieldRulesCel   = celValidateFieldName(&validate.FieldRules{}, "cel")
+	celMessageRulesCel = celValidateFieldName(&validate.MessageRules{}, "cel")
 	// celPredefinedRulesCel is repeated buf.validate.Rule on an extension of a
 	// buf.validate.*Rules message.
-	celPredefinedRulesCel ir.FullName = "buf.validate.PredefinedRules.cel"
+	celPredefinedRulesCel = celValidateFieldName(&validate.PredefinedRules{}, "cel")
 	// celFieldRulesCelExpression and celMessageRulesCelExpression are repeated string.
-	celFieldRulesCelExpression   ir.FullName = "buf.validate.FieldRules.cel_expression"
-	celMessageRulesCelExpression ir.FullName = "buf.validate.MessageRules.cel_expression"
+	celFieldRulesCelExpression   = celValidateFieldName(&validate.FieldRules{}, "cel_expression")
+	celMessageRulesCelExpression = celValidateFieldName(&validate.MessageRules{}, "cel_expression")
 	// celRuleExpression is the expression field of buf.validate.Rule.
-	celRuleExpression ir.FullName = "buf.validate.Rule.expression"
+	celRuleExpression = celValidateFieldName(&validate.Rule{}, "expression")
 	// celRepeatedRulesItems, celMapRulesKeys, and celMapRulesValues are
 	// buf.validate.FieldRules for one element, key, or value.
-	celRepeatedRulesItems ir.FullName = "buf.validate.RepeatedRules.items"
-	celMapRulesKeys       ir.FullName = "buf.validate.MapRules.keys"
-	celMapRulesValues     ir.FullName = "buf.validate.MapRules.values"
+	celRepeatedRulesItems = celValidateFieldName(&validate.RepeatedRules{}, "items")
+	celMapRulesKeys       = celValidateFieldName(&validate.MapRules{}, "keys")
+	celMapRulesValues     = celValidateFieldName(&validate.MapRules{}, "values")
 )
+
+// celValidateFieldName returns the full name of the field name of message,
+// panicking if message has no such field.
+func celValidateFieldName(message proto.Message, name protoreflect.Name) ir.FullName {
+	descriptor := message.ProtoReflect().Descriptor()
+	field := descriptor.Fields().ByName(name)
+	if field == nil {
+		panic(fmt.Sprintf("%s has no field %q", descriptor.FullName(), name))
+	}
+	return ir.FullName(field.FullName())
+}
 
 // celExpressionInfo holds information about a CEL expression found in protovalidate options.
 type celExpressionInfo struct {

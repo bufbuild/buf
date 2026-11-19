@@ -17,16 +17,19 @@ package buflsp
 import (
 	"log/slog"
 
+	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"buf.build/go/standard/xlog/xslog"
 	"cel.dev/cel-go/cel"
 	"cel.dev/cel-go/common/types"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/protocompile/experimental/fdp"
 	"github.com/bufbuild/protocompile/experimental/ir"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 // celVariableNames are the protovalidate variables bound per expression. The
@@ -117,35 +120,47 @@ func celMemberType(irType ir.Type, member ir.Member) *types.Type {
 // extending the buf.validate.*Rules message rulesName, or nil if rulesName is
 // not one.
 func celStandardRulesType(rulesName ir.FullName) *types.Type {
-	switch rulesName {
-	case "buf.validate.AnyRules":
+	isRules := func(messages ...proto.Message) bool {
+		for _, message := range messages {
+			if rulesName == ir.FullName(message.ProtoReflect().Descriptor().FullName()) {
+				return true
+			}
+		}
+		return false
+	}
+	switch {
+	case isRules(&validate.AnyRules{}):
 		return types.AnyType
-	case "buf.validate.BoolRules":
+	case isRules(&validate.BoolRules{}):
 		return types.BoolType
-	case "buf.validate.BytesRules":
+	case isRules(&validate.BytesRules{}):
 		return types.BytesType
-	case "buf.validate.StringRules":
+	case isRules(&validate.StringRules{}):
 		return types.StringType
-	case "buf.validate.Int32Rules", "buf.validate.Int64Rules",
-		"buf.validate.SInt32Rules", "buf.validate.SInt64Rules",
-		"buf.validate.SFixed32Rules", "buf.validate.SFixed64Rules",
-		"buf.validate.EnumRules":
+	case isRules(
+		&validate.Int32Rules{}, &validate.Int64Rules{},
+		&validate.SInt32Rules{}, &validate.SInt64Rules{},
+		&validate.SFixed32Rules{}, &validate.SFixed64Rules{},
+		&validate.EnumRules{},
+	):
 		return types.IntType
-	case "buf.validate.UInt32Rules", "buf.validate.UInt64Rules",
-		"buf.validate.Fixed32Rules", "buf.validate.Fixed64Rules":
+	case isRules(
+		&validate.UInt32Rules{}, &validate.UInt64Rules{},
+		&validate.Fixed32Rules{}, &validate.Fixed64Rules{},
+	):
 		return types.UintType
-	case "buf.validate.FloatRules", "buf.validate.DoubleRules":
+	case isRules(&validate.FloatRules{}, &validate.DoubleRules{}):
 		return types.DoubleType
-	case "buf.validate.MapRules":
+	case isRules(&validate.MapRules{}):
 		return types.NewMapType(types.DynType, types.DynType)
-	case "buf.validate.RepeatedRules":
+	case isRules(&validate.RepeatedRules{}):
 		return types.NewListType(types.DynType)
-	case "buf.validate.DurationRules":
+	case isRules(&validate.DurationRules{}):
 		return types.DurationType
-	case "buf.validate.TimestampRules":
+	case isRules(&validate.TimestampRules{}):
 		return types.TimestampType
-	case "buf.validate.FieldMaskRules":
-		return types.NewObjectType("google.protobuf.FieldMask")
+	case isRules(&validate.FieldMaskRules{}):
+		return types.NewObjectType(string((&fieldmaskpb.FieldMask{}).ProtoReflect().Descriptor().FullName()))
 	}
 	return nil
 }
