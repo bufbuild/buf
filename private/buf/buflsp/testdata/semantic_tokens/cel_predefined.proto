@@ -1,0 +1,21 @@
+edition = "2023";
+
+package test.v1;
+
+import "buf/validate/validate.proto";
+
+// `rule` and `rules` are declared in predefined rules.
+extend buf.validate.StringRules {
+  int32 max_words = 80048954 [(buf.validate.predefined).cel = {
+    id: "max_words"
+    expression: "rules.min_len <= uint(rule)"
+  }];
+}
+
+// `rule` is not declared in a field rule.
+message Undeclared {
+  string name = 1 [(buf.validate.field).cel = {
+    id: "undeclared.name"
+    expression: "rule == this"
+  }];
+}

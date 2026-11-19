@@ -92,3 +92,11 @@ message Point {
   double x = 1;
   double y = 2;
 }
+
+// A comprehension variable named like a protovalidate variable shadows it.
+message ShadowedVariable {
+  repeated int32 values = 1 [(buf.validate.field).cel = {
+    id: "shadowed_variable.values"
+    expression: "this.all(rule, rule > 0)"
+  }];
+}

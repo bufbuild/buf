@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 func TestCELCompletion(t *testing.T) {
@@ -31,6 +32,13 @@ func TestCELCompletion(t *testing.T) {
 	require.NoError(t, err)
 
 	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
+
+	// Predefined rules extend buf.validate.*Rules, which proto3 only allows for
+	// options, so they live in a separate editions file.
+	extendProtoPath, err := filepath.Abs("testdata/completion/cel_completion_extend.proto")
+	require.NoError(t, err)
+	extendURI := uri.File(extendProtoPath)
+	openFileFromDisk(ctx, t, clientJSONConn, extendURI)
 
 	// File contents (0-indexed lines):
 	//  26:  `    expression: "this."`                                              (dot context; also used for expression-start)
@@ -61,8 +69,24 @@ func TestCELCompletion(t *testing.T) {
 	// 239:  `    expression: "this.create_time < this."`                              (MultiThisHolder — second this after operator)
 	// 243:  `    expression: "this.create_time < this.up"`                            (MultiThisHolder — second this with prefix)
 	// 253:  `    expression: "in"`                                                    (InOperatorHolder — "in" is an operator, not a function)
+	//
+	// cel_completion_extend.proto (0-indexed lines):
+	//  15:  `      expression: "this."`                                             (predefined; this is the string field value)
+	//  19:  `      expression: "rule."`                                             (predefined; rule is the repeated int32 extension value)
+	//  23:  `      expression: "rules."`                                            (predefined; rules is buf.validate.StringRules)
+	//  27:  `      expression: ""`                                                  (predefined; empty expression)
+	//  44:  `  option (route) = {path: "this."};`                                   (non-protovalidate string at field number 5)
+	//  51:  `    expression: "this."`                                               (field rule; string)
+	//  58:  `    expression: "this == "`                                            (bool field; this on the left of an operator)
+	//  65:  `    expression: "this.name == "`                                       (message rule; string field on the left of an operator)
+	//  75:  `    expression: "this."`                                               (repeated.items rule; this is a string)
+	//  80:  `      expression: "this."`                                             (map.keys rule; this is a string)
+	//  84:  `      expression: "this == "`                                          (map.values rule; this is an int)
+	//  89:  `    expression: "this."`                                               (map.values rule; this is NameHolder)
+	//  98:  `    expression: "rule.all(rule, rule."`                                 (predefined; comprehension variable shadows rule)
 	tests := []struct {
 		name                string
+		extend              bool // use cel_completion_extend.proto
 		line                uint32
 		character           uint32
 		noCompletions       bool // expect nil or empty completion list
@@ -108,6 +132,8 @@ func TestCELCompletion(t *testing.T) {
 				"has",
 				"map",
 			},
+			// "rule" and "rules" are only declared in predefined rules.
+			expectedNotContains: []string{"rule", "rules"},
 		},
 		{
 			// Cursor at closing `"` of `"1 > "` — inside a CEL expression after an operator.
@@ -138,12 +164,13 @@ func TestCELCompletion(t *testing.T) {
 				// bool keywords match the expected type
 				"true",
 				"false",
+				// "this" is the bool field test_eq.
+				"this",
 			},
 			// size() returns int, not bool — excluded by type narrowing.
-			// "this" is excluded because expectedType is non-nil.
 			// "null" has type "value", not bool — excluded.
 			// "now" is timestamp, not bool — excluded.
-			expectedNotContains: []string{"size", "this", "null", "now"},
+			expectedNotContains: []string{"size", "null", "now"},
 		},
 		{
 			// Cursor at char 17 (first character of `this` in `"this."`).
@@ -230,9 +257,11 @@ func TestCELCompletion(t *testing.T) {
 			expectedContains: []string{
 				"true",
 				"false",
+				// "this" is the bool field test_not.
+				"this",
 			},
 			// Non-bool items are excluded.
-			expectedNotContains: []string{"size", "null", "this", "now"},
+			expectedNotContains: []string{"size", "null", "now"},
 		},
 		{
 			// Nested path: cursor at end of `"this.address.ci"` on a Location-typed field.
@@ -500,17 +529,139 @@ func TestCELCompletion(t *testing.T) {
 			character:           19, // closing `"` after `in`
 			expectedNotContains: []string{"in"},
 		},
+		{
+			// `this` in a predefined rule is the value of the field the rule is
+			// applied to (string for StringRules), not the extension's type.
+			name:                "predefined_this_dot",
+			extend:              true,
+			line:                15,
+			character:           24, // closing `"` after `this.`
+			expectedContains:    []string{"startsWith", "endsWith", "contains"},
+			expectedNotContains: []string{"true", "false", "null"},
+		},
+		{
+			// `rule` is the value of the extension itself (list<int>).
+			name:                "predefined_rule_dot",
+			extend:              true,
+			line:                19,
+			character:           24, // closing `"` after `rule.`
+			expectedContains:    []string{"all", "exists", "size"},
+			expectedNotContains: []string{"startsWith", "true", "false", "null"},
+		},
+		{
+			// `rules` is the enclosing buf.validate.StringRules message.
+			name:                "predefined_rules_dot",
+			extend:              true,
+			line:                23,
+			character:           25, // closing `"` after `rules.`
+			expectedContains:    []string{"min_len", "prefix", "pattern"},
+			expectedNotContains: []string{"true", "false", "null"},
+		},
+		{
+			name:             "predefined_empty_expression",
+			extend:           true,
+			line:             27,
+			character:        19, // closing `"` in empty string
+			expectedContains: []string{"this", "rule", "rules", "now"},
+		},
+		{
+			// A string at field number 5 of a non-protovalidate option is not a
+			// CEL expression, even though MessageRules.cel_expression is field 5.
+			name:          "non_protovalidate_option_no_completions",
+			extend:        true,
+			line:          44,
+			character:     32, // closing `"` after `this.`
+			noCompletions: true,
+		},
+		{
+			// A field rule in the same file completes as usual.
+			name:             "extend_file_field_this_dot",
+			extend:           true,
+			line:             51,
+			character:        22, // closing `"` after `this.`
+			expectedContains: []string{"startsWith", "endsWith"},
+		},
+		{
+			// With a bool `this` on the left, `==` narrows the right operand to
+			// bool, as it does for a `true` literal.
+			name:                "this_operand_type_narrowed_to_bool",
+			extend:              true,
+			line:                58,
+			character:           25, // closing `"` after `this == `
+			expectedContains:    []string{"true", "false"},
+			expectedNotContains: []string{"size", "null", "now"},
+		},
+		{
+			// With a string field of `this` on the left, `==` narrows the right
+			// operand to string.
+			name:                "field_operand_type_narrowed_to_string",
+			extend:              true,
+			line:                65,
+			character:           30, // closing `"` after `this.name == `
+			expectedContains:    []string{"string"},
+			expectedNotContains: []string{"true", "false", "size", "now"},
+		},
+		{
+			// In a repeated.items rule, `this` is one string, not the list.
+			name:                "items_this_dot",
+			extend:              true,
+			line:                75,
+			character:           22, // closing `"` after `this.`
+			expectedContains:    []string{"startsWith"},
+			expectedNotContains: []string{"all", "exists", "join"},
+		},
+		{
+			// In a map.keys rule, `this` is one key, not the map.
+			name:                "map_keys_this_dot",
+			extend:              true,
+			line:                80,
+			character:           24, // closing `"` after `this.`
+			expectedContains:    []string{"startsWith"},
+			expectedNotContains: []string{"all", "exists"},
+		},
+		{
+			// In a map.values rule, `this` is one int64 value, so `==` narrows to int.
+			name:                "map_values_this_operand_type_narrowed_to_int",
+			extend:              true,
+			line:                84,
+			character:           27, // closing `"` after `this == `
+			expectedContains:    []string{"size", "this"},
+			expectedNotContains: []string{"true", "false"},
+		},
+		{
+			// In a map.values rule on a message-valued map, `this` is one message.
+			name:                "map_values_message_this_dot",
+			extend:              true,
+			line:                89,
+			character:           22, // closing `"` after `this.`
+			expectedContains:    []string{"name"},
+			expectedNotContains: []string{"all", "exists"},
+		},
+		{
+			// A comprehension variable named `rule` shadows the predefined rule's
+			// repeated `rule`, so `rule.` completes one NameHolder.
+			name:                "shadowed_rule_dot",
+			extend:              true,
+			line:                98,
+			character:           37, // closing `"` after `rule.all(rule, rule.`
+			expectedContains:    []string{"name"},
+			expectedNotContains: []string{"all", "exists"},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			docURI := testURI
+			if tt.extend {
+				docURI = extendURI
+			}
 			var completionList *protocol.CompletionList
 			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
-						URI: testURI,
+						URI: docURI,
 					},
 					Position: protocol.Position{
 						Line:      tt.line,

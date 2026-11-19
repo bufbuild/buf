@@ -1,0 +1,36 @@
+edition = "2023";
+
+package test.cel.v1;
+
+import "buf/validate/validate.proto";
+
+// In a predefined rule, `this` is the string being validated, `rule` the
+// extension value, and `rules` the extended buf.validate.StringRules.
+extend buf.validate.StringRules {
+  int32 max_words = 80048954 [(buf.validate.predefined).cel = {
+    id: "max_words"
+    expression: "rules.min_len <= uint(rule) && this.size() > 0"
+  }];
+}
+
+// Word has a field named like a field of buf.validate.StringRules.
+message Word {
+  string prefix = 1;
+}
+
+// A comprehension variable named `rules` shadows the predefined rule's `rules`,
+// so `rules.prefix` is Word.prefix, not StringRules.prefix.
+extend buf.validate.StringRules {
+  repeated Word words = 80048955 [(buf.validate.predefined).cel = {
+    id: "words"
+    expression: "rule.all(rules, rules.prefix != '')"
+  }];
+}
+
+// `rule` is not declared in a field rule.
+message Undeclared {
+  string name = 1 [(buf.validate.field).cel = {
+    id: "undeclared.name"
+    expression: "rule == this"
+  }];
+}

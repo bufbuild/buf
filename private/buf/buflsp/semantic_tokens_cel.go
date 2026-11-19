@@ -15,8 +15,10 @@
 package buflsp
 
 import (
+	"fmt"
 	"maps"
 
+	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"cel.dev/cel-go/cel"
 	"cel.dev/cel-go/common/ast"
 	"cel.dev/cel-go/common/overloads"
@@ -26,26 +28,47 @@ import (
 	"github.com/bufbuild/protocompile/experimental/source"
 	"github.com/bufbuild/protocompile/experimental/token"
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-const (
-	// buf.validate extension field number on descriptor options
-	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate
-	bufValidateExtensionNumber = 1159
-
-	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.FieldRules
-	celFieldNumberInFieldRules = 23
-	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.FieldRules
-	celExpressionFieldNumberInFieldRules = 29
-
-	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.MessageRules
-	celFieldNumberInMessageRules = 3
-	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.MessageRules
-	celExpressionFieldNumberInMessageRules = 5
-
-	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.Rule
-	expressionFieldNumberInRule = 3
+// Fields of the buf.validate package that hold CEL expressions, named by the
+// generated descriptors so that a field missing from them fails at init.
+// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate
+var (
+	// celFieldRulesCel and celMessageRulesCel are repeated buf.validate.Rule.
+	celFieldRulesCel   = celValidateFieldName(&validate.FieldRules{}, "cel")
+	celMessageRulesCel = celValidateFieldName(&validate.MessageRules{}, "cel")
+	// celPredefinedRulesCel is repeated buf.validate.Rule on an extension of a
+	// buf.validate.*Rules message.
+	celPredefinedRulesCel = celValidateFieldName(&validate.PredefinedRules{}, "cel")
+	// celFieldRulesCelExpression and celMessageRulesCelExpression are repeated string.
+	celFieldRulesCelExpression   = celValidateFieldName(&validate.FieldRules{}, "cel_expression")
+	celMessageRulesCelExpression = celValidateFieldName(&validate.MessageRules{}, "cel_expression")
+	// celRuleExpression is the expression field of buf.validate.Rule.
+	celRuleExpression = celValidateFieldName(&validate.Rule{}, "expression")
+	// celRepeatedRulesItems, celMapRulesKeys, and celMapRulesValues are
+	// buf.validate.FieldRules for one element, key, or value.
+	celRepeatedRulesItems = celValidateFieldName(&validate.RepeatedRules{}, "items")
+	celMapRulesKeys       = celValidateFieldName(&validate.MapRules{}, "keys")
+	celMapRulesValues     = celValidateFieldName(&validate.MapRules{}, "values")
 )
+
+// celMessageName returns the full name of message.
+func celMessageName(message proto.Message) ir.FullName {
+	return ir.FullName(message.ProtoReflect().Descriptor().FullName())
+}
+
+// celValidateFieldName returns the full name of the field name of message,
+// panicking if message has no such field.
+func celValidateFieldName(message proto.Message, name protoreflect.Name) ir.FullName {
+	descriptor := message.ProtoReflect().Descriptor()
+	field := descriptor.Fields().ByName(name)
+	if field == nil {
+		panic(fmt.Sprintf("%s has no field %q", descriptor.FullName(), name))
+	}
+	return ir.FullName(field.FullName())
+}
 
 // celExpressionInfo holds information about a CEL expression found in protovalidate options.
 type celExpressionInfo struct {
@@ -55,11 +78,15 @@ type celExpressionInfo struct {
 	irMember   ir.Member         // The field/member that has the option (for type context)
 	thisIRType ir.Type           // The IR type of `this` in the expression:
 	//   field/extension-level: the field's element type (e.g. string, Address)
+	//   repeated.items, map.keys, map.values: the element, key, or value type
 	//   message-level: the message type itself
+	thisMember ir.Member // The member whose cardinality `this` has; zero if `this` is one value.
+	predefined bool      // The expression is a predefined rule, and irMember is its extension; see [celExpressionInfo.celVariable].
 }
 
-// extractCELExpressions finds CEL expressions in protovalidate options.
-// It looks for (buf.validate.field).cel[].expression and (buf.validate.field).cel_expression[] patterns.
+// extractCELExpressions finds CEL expressions in protovalidate options: the
+// expressions of (buf.validate.field).cel, (buf.validate.message).cel, and
+// (buf.validate.predefined).cel, and the strings of cel_expression.
 func extractCELExpressions(file *file, symbol *symbol) []celExpressionInfo {
 	if symbol.ir.IsZero() {
 		return nil
@@ -86,101 +113,77 @@ func extractCELExpressions(file *file, symbol *symbol) []celExpressionInfo {
 	if optionValue.IsZero() {
 		return nil
 	}
+	// info is the template for the expressions of the options: everything but
+	// the expression and its location.
+	var info celExpressionInfo
+	switch symbol.ir.Kind() {
+	case ir.SymbolKindField, ir.SymbolKindExtension:
+		info.irMember = symbol.ir.AsMember()
+		info.thisMember = info.irMember
+		info.thisIRType = info.irMember.Element()
+	case ir.SymbolKindMessage:
+		info.thisIRType = symbol.ir.AsType()
+	}
 	// Traverse the option message value looking for buf.validate CEL expressions
-	return extractCELFromMessage(file, optionValue, symbol.ir)
+	return extractCELFromMessage(optionValue, info)
 }
 
-// extractCELFromMessage recursively extracts CEL expressions from an option message.
-func extractCELFromMessage(file *file, msgValue ir.MessageValue, irSym ir.Symbol) []celExpressionInfo {
+// extractCELFromMessage recursively extracts CEL expressions from an option
+// message, filling in the template info for each.
+func extractCELFromMessage(msgValue ir.MessageValue, info celExpressionInfo) []celExpressionInfo {
 	var results []celExpressionInfo
-
-	// Helper to extract member from symbol
-	getMember := func() ir.Member {
-		if irSym.Kind() == ir.SymbolKindField || irSym.Kind() == ir.SymbolKindExtension {
-			return irSym.AsMember()
-		}
-		return ir.Member{}
-	}
-	// getThisType returns the IR type of `this` for the expression:
-	//   field/extension → the field's element type
-	//   message         → the message type itself (so this.field completions work)
-	getThisType := func() ir.Type {
-		switch irSym.Kind() {
-		case ir.SymbolKindField, ir.SymbolKindExtension:
-			return irSym.AsMember().Element()
-		case ir.SymbolKindMessage:
-			return irSym.AsType()
-		default:
-			return ir.Type{}
+	add := func(info celExpressionInfo, element ir.Element) {
+		if exprString, ok := element.AsString(); ok {
+			info.expression = exprString
+			info.span = element.AST().Span()
+			info.literal = element.AST().AsLiteral().AsString()
+			results = append(results, info)
 		}
 	}
-
 	for field := range msgValue.Fields() {
 		for element := range seq.Values(field.Elements()) {
-			elementField := element.Field()
-			fieldNumber := elementField.Number()
-
-			// Check if this is a top-level buf.validate extension - recurse into it
-			if elementField.IsExtension() && fieldNumber == bufValidateExtensionNumber {
+			switch name := element.Field().FullName(); name {
+			case celFieldRulesCel, celMessageRulesCel, celPredefinedRulesCel:
 				nestedMsg := element.AsMessage()
-				if !nestedMsg.IsZero() {
-					results = append(results, extractCELFromMessage(file, nestedMsg, irSym)...)
-				}
-				continue
-			}
-
-			// Handle nested Rule message (cel field containing Rule messages with expressions)
-			if fieldNumber == celFieldNumberInFieldRules || fieldNumber == celFieldNumberInMessageRules {
-				// This is a Rule message, look for the expression field
-				nestedMsg := element.AsMessage()
-				if !nestedMsg.IsZero() {
-					for nestedField := range nestedMsg.Fields() {
-						for nestedElement := range seq.Values(nestedField.Elements()) {
-							nestedElementField := nestedElement.Field()
-							if nestedElementField.Number() == expressionFieldNumberInRule {
-								if exprString, ok := nestedElement.AsString(); ok {
-									results = append(results, celExpressionInfo{
-										expression: exprString,
-										span:       nestedElement.AST().Span(),
-										literal:    nestedElement.AST().AsLiteral().AsString(),
-										irMember:   getMember(),
-										thisIRType: getThisType(),
-									})
-								}
-							}
-						}
-					}
-					// Recursively check nested messages
-					results = append(results, extractCELFromMessage(file, nestedMsg, irSym)...)
-				}
-				continue
-			}
-
-			// Handle cel_expression string field
-			if fieldNumber == celExpressionFieldNumberInFieldRules || fieldNumber == celExpressionFieldNumberInMessageRules {
-				if exprString, ok := element.AsString(); ok {
-					results = append(results, celExpressionInfo{
-						expression: exprString,
-						span:       element.AST().Span(),
-						literal:    element.AST().AsLiteral().AsString(),
-						irMember:   getMember(),
-						thisIRType: getThisType(),
-					})
+				if nestedMsg.IsZero() {
 					continue
 				}
-				// Not a string value (e.g. a nested FieldRules message at the same field number
-				// as a MessageRules cel_expression field) - fall through to general recursion.
-			}
-
-			// General case: recursively search any nested message for CEL expressions.
-			// This handles nested structures like repeated.items.cel, map.keys.cel,
-			// map.values.cel, and any other type-specific rule nesting in protovalidate.
-			if nestedMsg := element.AsMessage(); !nestedMsg.IsZero() {
-				results = append(results, extractCELFromMessage(file, nestedMsg, irSym)...)
+				ruleInfo := info
+				ruleInfo.predefined = name == celPredefinedRulesCel
+				for nestedField := range nestedMsg.Fields() {
+					for nestedElement := range seq.Values(nestedField.Elements()) {
+						if nestedElement.Field().FullName() == celRuleExpression {
+							add(ruleInfo, nestedElement)
+						}
+					}
+				}
+			case celFieldRulesCelExpression, celMessageRulesCelExpression:
+				add(info, element)
+			default:
+				nestedMsg := element.AsMessage()
+				if nestedMsg.IsZero() {
+					continue
+				}
+				// Rules for one element, key, or value of a repeated or map field
+				// bind `this` to that one value.
+				nestedInfo := info
+				switch name {
+				case celRepeatedRulesItems:
+					nestedInfo.thisMember = ir.Member{}
+				case celMapRulesKeys, celMapRulesValues:
+					key, value := info.thisIRType.EntryFields()
+					nestedInfo.thisIRType, nestedInfo.thisMember = key.Element(), ir.Member{}
+					if name == celMapRulesValues {
+						nestedInfo.thisIRType = value.Element()
+					}
+				}
+				// Recurse into nested messages to reach rules nested under
+				// buf.validate.field/message options, such as repeated.items.cel,
+				// map.keys.cel, and map.values.cel.
+				results = append(results, extractCELFromMessage(nestedMsg, nestedInfo)...)
 			}
 		}
 	}
-
 	return results
 }
 
@@ -209,7 +212,7 @@ func collectCELTokens(
 	sourceSpans := newCELSourceSpans(exprInfo.literal)
 
 	// Walk the CEL AST and collect tokens
-	walkCELExprWithVars(nativeAST.Expr(), nativeSourceInfo, sourceSpans, exprInfo.expression, collectToken, nil)
+	walkCELExprWithVars(nativeAST.Expr(), nativeSourceInfo, sourceSpans, exprInfo.expression, collectToken, nil, exprInfo)
 
 	// Process macro calls separately since they're expanded in the main AST
 	// but we want to highlight the original macro function names (has, all, exists, map, filter, etc.)
@@ -283,6 +286,7 @@ func walkCELExprWithVars(
 	exprString string,
 	collectToken func(span source.Span, semanticType, semanticModifier uint32, kw keyword.Keyword),
 	compVars map[string]bool,
+	exprInfo celExpressionInfo,
 ) {
 	if expr == nil || expr.Kind() == ast.UnspecifiedExprKind {
 		return
@@ -307,12 +311,11 @@ func walkCELExprWithVars(
 		var tokenType uint32
 		var tokenModifier uint32
 
-		if isCELKeyword(identName) {
-			// CEL keywords (true, false, null, this, etc.)
-			tokenType = semanticTypeKeyword
-		} else if compVars != nil && compVars[identName] {
-			// Comprehension variables
+		// A comprehension variable shadows a keyword variable of the same name.
+		if compVars[identName] {
 			tokenType = semanticTypeVariable
+		} else if isCELKeyword(identName) && exprInfo.celDeclares(identName) {
+			tokenType = semanticTypeKeyword
 		} else {
 			// Field access or other identifier
 			tokenType = semanticTypeProperty
@@ -332,7 +335,7 @@ func walkCELExprWithVars(
 
 		// Walk target first
 		if sel.Operand() != nil {
-			walkCELExprWithVars(sel.Operand(), sourceInfo, sourceSpans, exprString, collectToken, compVars)
+			walkCELExprWithVars(sel.Operand(), sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
 		}
 
 		// Highlight the field name
@@ -353,7 +356,7 @@ func walkCELExprWithVars(
 
 		// Walk target first (for method calls)
 		if call.IsMemberFunction() {
-			walkCELExprWithVars(call.Target(), sourceInfo, sourceSpans, exprString, collectToken, compVars)
+			walkCELExprWithVars(call.Target(), sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
 		}
 
 		funcName := call.FunctionName()
@@ -418,7 +421,7 @@ func walkCELExprWithVars(
 
 		// Walk arguments
 		for _, arg := range call.Args() {
-			walkCELExprWithVars(arg, sourceInfo, sourceSpans, exprString, collectToken, compVars)
+			walkCELExprWithVars(arg, sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
 		}
 
 	case ast.LiteralKind:
@@ -458,21 +461,21 @@ func walkCELExprWithVars(
 	case ast.ListKind:
 		// List literal - walk all elements
 		for _, elem := range expr.AsList().Elements() {
-			walkCELExprWithVars(elem, sourceInfo, sourceSpans, exprString, collectToken, compVars)
+			walkCELExprWithVars(elem, sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
 		}
 
 	case ast.MapKind:
 		// Map literal - walk all entries
 		for _, entry := range expr.AsMap().Entries() {
 			mapEntry := entry.AsMapEntry()
-			walkCELExprWithVars(mapEntry.Key(), sourceInfo, sourceSpans, exprString, collectToken, compVars)
-			walkCELExprWithVars(mapEntry.Value(), sourceInfo, sourceSpans, exprString, collectToken, compVars)
+			walkCELExprWithVars(mapEntry.Key(), sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
+			walkCELExprWithVars(mapEntry.Value(), sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
 		}
 
 	case ast.StructKind:
 		// Struct literal - walk all field values
 		for _, field := range expr.AsStruct().Fields() {
-			walkCELExprWithVars(field.AsStructField().Value(), sourceInfo, sourceSpans, exprString, collectToken, compVars)
+			walkCELExprWithVars(field.AsStructField().Value(), sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
 		}
 
 	case ast.ComprehensionKind:
@@ -480,8 +483,8 @@ func walkCELExprWithVars(
 		comp := expr.AsComprehension()
 
 		// Walk the range and init with current scope (they don't see loop variables)
-		walkCELExprWithVars(comp.IterRange(), sourceInfo, sourceSpans, exprString, collectToken, compVars)
-		walkCELExprWithVars(comp.AccuInit(), sourceInfo, sourceSpans, exprString, collectToken, compVars)
+		walkCELExprWithVars(comp.IterRange(), sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
+		walkCELExprWithVars(comp.AccuInit(), sourceInfo, sourceSpans, exprString, collectToken, compVars, exprInfo)
 
 		// Create extended scope with comprehension variables for the loop body
 		extendedVars := compVars
@@ -502,8 +505,8 @@ func walkCELExprWithVars(
 		}
 
 		// Walk the loop body with extended scope (they can see loop variables)
-		walkCELExprWithVars(comp.LoopCondition(), sourceInfo, sourceSpans, exprString, collectToken, extendedVars)
-		walkCELExprWithVars(comp.LoopStep(), sourceInfo, sourceSpans, exprString, collectToken, extendedVars)
-		walkCELExprWithVars(comp.Result(), sourceInfo, sourceSpans, exprString, collectToken, extendedVars)
+		walkCELExprWithVars(comp.LoopCondition(), sourceInfo, sourceSpans, exprString, collectToken, extendedVars, exprInfo)
+		walkCELExprWithVars(comp.LoopStep(), sourceInfo, sourceSpans, exprString, collectToken, extendedVars, exprInfo)
+		walkCELExprWithVars(comp.Result(), sourceInfo, sourceSpans, exprString, collectToken, extendedVars, exprInfo)
 	}
 }

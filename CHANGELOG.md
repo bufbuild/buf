@@ -5,9 +5,13 @@
 - Fix the `PROTOVALIDATE` lint rule to check constant arguments to `duration`, `timestamp`, and
   `matches` in CEL expressions, such as `duration('1d')` or an invalid regex, which otherwise only
   fail when the rules are evaluated.
+- Add LSP completion, hover, and go-to-definition for CEL expressions in protovalidate predefined
+  rules, including the `rule` and `rules` variables. Type-check CEL expressions against the file's
+  messages, so that hover shows the types of fields and only the overloads a function call resolved
+  to, and completions after an operator such as `this.name == ` match the left operand's type. CEL
+  features no longer treat strings in other options as CEL expressions.
 - Fix LSP document links for versioned remote plugins in `buf.gen.yaml`, which pointed to a
   nonexistent BSR page.
-- Fix LSP hover and highlighting of CEL expressions whose proto strings contain escape sequences, which placed the ranges of string literals, and of tokens after a `\u` or `\U` escape, wrongly.
 - Write module and Well-Known Type files to the cache as read-only, so that files opened from
   LSP go-to-definition cannot be accidentally edited.
 - Fix LSP hover and highlighting of CEL expressions whose proto strings contain escape sequences,

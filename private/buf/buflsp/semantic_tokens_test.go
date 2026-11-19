@@ -404,6 +404,20 @@ func TestSemanticTokensKeywords(t *testing.T) {
 				// Line 82: "!= (this.point_a.y - this.point_c.y) * (this.point_a.x - this.point_b.x)"
 				{82, 7, 2, semanticTypeOperator, "'!=' operator in multi-line arithmetic"},
 				{82, 11, 4, semanticTypeKeyword, "'this' keyword on line 2 of multi-line arithmetic"},
+				// Line 99: expression: "this.all(rule, rule > 0)"
+				{99, 32, 4, semanticTypeVariable, "'rule' comprehension variable shadowing the protovalidate variable"},
+			},
+		},
+		{
+			name: "cel_predefined",
+			file: "testdata/semantic_tokens/cel_predefined.proto",
+			expectedTokens: []expectedToken{
+				// Line 10: expression: "rules.min_len <= uint(rule)"
+				{10, 17, 5, semanticTypeKeyword, "'rules' keyword in a predefined rule"},
+				{10, 39, 4, semanticTypeKeyword, "'rule' keyword in a predefined rule"},
+				// Line 18: expression: "rule == this"
+				{18, 17, 4, semanticTypeProperty, "'rule' undeclared in a field rule"},
+				{18, 25, 4, semanticTypeKeyword, "'this' keyword in a field rule"},
 			},
 		},
 		{

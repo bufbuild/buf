@@ -29,6 +29,7 @@ import (
 
 	"buf.build/go/standard/xlog/xslog"
 	"buf.build/go/standard/xslices"
+	"cel.dev/cel-go/cel"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -63,6 +64,7 @@ type file struct {
 	objectInfo storage.ObjectInfo // Info in the context of the workspace.
 
 	ir                   *ir.File
+	celTypesEnv          *cel.Env // Cached by [file.celEnv]; reset with ir.
 	referenceableSymbols map[ir.FullName]*symbol
 	symbols              []*symbol
 	irReport             *report.Report        // IR diagnostic report for code actions
@@ -248,6 +250,7 @@ func (f *file) RefreshIR(ctx context.Context) {
 	)
 	f.diagnostics = nil
 	f.ir = nil
+	f.celTypesEnv = nil
 	f.irReport = nil
 
 	// Opener creates a cached view of all files in the workspace.
@@ -298,6 +301,9 @@ func (f *file) RefreshIR(ctx context.Context) {
 	}
 
 	for i, file := range files {
+		if file.ir != results[i].Value {
+			file.celTypesEnv = nil
+		}
 		file.ir = results[i].Value
 		if f != file {
 			// Update symbols for imports.
