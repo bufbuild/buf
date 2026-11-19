@@ -462,3 +462,11 @@ message CELShadowedVariableTest {
     expression: "this.all(rule, rule > 0)"
   }];
 }
+
+// An expression that does not type-check lists every overload of a function.
+message CELUncheckedTest {
+  string name = 1 [(buf.validate.field).cel = {
+    id: "unchecked.name"
+    expression: "size(missing) > 0"
+  }];
+}

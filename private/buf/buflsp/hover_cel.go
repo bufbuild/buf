@@ -17,6 +17,7 @@ package buflsp
 import (
 	"fmt"
 	"maps"
+	"slices"
 	"strings"
 
 	"cel.dev/cel-go/cel"
@@ -69,10 +70,12 @@ func getCELHover(
 			// type information if type-checking succeeds.
 			astForTypeInfo := parsedAST
 			var typeMap map[int64]*types.Type
+			var referenceMap map[int64]*ast.ReferenceInfo
 
 			if checkedAST, compileIssues := exprInfo.celEnv(file, celEnv).Compile(exprInfo.expression); compileIssues.Err() == nil {
 				astForTypeInfo = checkedAST
 				typeMap = checkedAST.NativeRep().TypeMap()
+				referenceMap = checkedAST.NativeRep().ReferenceMap()
 			}
 
 			// Find the token at the cursor position using proper AST walking.
@@ -80,6 +83,9 @@ func getCELHover(
 			hoverInfo := findCELTokenAtOffset(astForTypeInfo, parsedAST, celOffset, exprInfo, typeMap)
 			if hoverInfo == nil {
 				continue
+			}
+			if reference, ok := referenceMap[hoverInfo.exprID]; ok {
+				hoverInfo.overloadIDs = reference.OverloadIDs
 			}
 
 			// Format documentation for the hover
@@ -117,6 +123,7 @@ type celHoverInfo struct {
 	celType     *types.Type // from type checker
 	protoMember ir.Member   // resolved proto field
 	exprID      int64
+	overloadIDs []string // overloads a call resolved to, if the expression type-checks
 }
 
 type celHoverKind int
@@ -505,17 +512,17 @@ func formatCELHoverContent(info *celHoverInfo, celEnv *cel.Env) string {
 	case celHoverKeyword:
 		result = getCELKeywordDocs(info.text)
 	case celHoverFunction:
-		result = getCELFunctionDocs(info.text, celEnv)
+		result = getCELFunctionDocs(info.text, celEnv, info.overloadIDs)
 		// Add inferred return type if available
 		if info.celType != nil {
 			result += fmt.Sprintf("\n\n**Return type**: `%s`", getCELTypeString(info.celType))
 		}
 	case celHoverOperator:
-		result = getCELOperatorDocs(info.text, celEnv)
+		result = getCELOperatorDocs(info.text, celEnv, info.overloadIDs)
 	case celHoverMacro:
 		result = getCELMacroDocs(info.text, celEnv)
 	case celHoverType:
-		result = getCELTypeDocs(info.text, celEnv)
+		result = getCELTypeDocs(info.text, celEnv, info.overloadIDs)
 	case celHoverField:
 		// For fields, show comprehensive proto field info
 		result = fmt.Sprintf("**Field**: `%s`", info.text)
@@ -827,13 +834,14 @@ func getCELKeywordDocs(keyword string) string {
 }
 
 // getCELFunctionDocs returns documentation for CEL functions
-func getCELFunctionDocs(function string, celEnv *cel.Env) string {
+func getCELFunctionDocs(function string, celEnv *cel.Env, overloadIDs []string) string {
 	// Try to get documentation from cel-go
 	if celEnv != nil {
 		funcs := celEnv.Functions()
 		if funcDecl, ok := funcs[function]; ok {
 			// Try structured documentation first
 			if doc := funcDecl.Documentation(); doc != nil {
+				celFilterOverloadDocs(doc, overloadIDs)
 				return formatCELDoc(doc)
 			}
 			// Fallback to simple description
@@ -919,7 +927,7 @@ func formatCELDoc(doc *common.Doc, headerPrefix ...string) string {
 
 // getCELOperatorDocs returns documentation for CEL operators.
 // funcName is the internal operator function name (e.g., "_&&_").
-func getCELOperatorDocs(funcName string, celEnv *cel.Env) string {
+func getCELOperatorDocs(funcName string, celEnv *cel.Env, overloadIDs []string) string {
 	if celEnv == nil {
 		return ""
 	}
@@ -930,6 +938,7 @@ func getCELOperatorDocs(funcName string, celEnv *cel.Env) string {
 	}
 	symbol, _ := celOperatorSymbol(funcName)
 	if doc := funcDecl.Documentation(); doc != nil {
+		celFilterOverloadDocs(doc, overloadIDs)
 		doc.Name = symbol
 		return formatCELDoc(doc, "**Operator**: ")
 	}
@@ -971,12 +980,13 @@ func getCELMacroDocs(macro string, celEnv *cel.Env) string {
 }
 
 // getCELTypeDocs returns documentation for CEL type functions
-func getCELTypeDocs(typeName string, celEnv *cel.Env) string {
+func getCELTypeDocs(typeName string, celEnv *cel.Env, overloadIDs []string) string {
 	// Type conversion functions are available in the environment
 	if celEnv != nil {
 		funcs := celEnv.Functions()
 		if funcDecl, ok := funcs[typeName]; ok {
 			if doc := funcDecl.Documentation(); doc != nil {
+				celFilterOverloadDocs(doc, overloadIDs)
 				return formatCELDoc(doc)
 			}
 			if desc := funcDecl.Description(); desc != "" {
@@ -1006,5 +1016,15 @@ func getPrimitiveTypeForLiteral(expr ast.Expr) *types.Type {
 		return types.BytesType
 	default:
 		return nil
+	}
+}
+
+// celFilterOverloadDocs keeps only the overloads of the function documented by
+// doc that overloadIDs names, if it names any of them.
+func celFilterOverloadDocs(doc *common.Doc, overloadIDs []string) {
+	if matched := slices.DeleteFunc(slices.Clone(doc.Children), func(overload *common.Doc) bool {
+		return !slices.Contains(overloadIDs, overload.Name)
+	}); len(matched) > 0 {
+		doc.Children = matched
 	}
 }
