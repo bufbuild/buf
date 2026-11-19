@@ -23,6 +23,7 @@ import (
 	"cel.dev/cel-go/cel"
 	"cel.dev/cel-go/common"
 	"cel.dev/cel-go/common/ast"
+	"cel.dev/cel-go/common/decls"
 	"cel.dev/cel-go/common/operators"
 	"cel.dev/cel-go/common/overloads"
 	"cel.dev/cel-go/common/types"
@@ -513,8 +514,8 @@ func formatCELHoverContent(info *celHoverInfo, celEnv *cel.Env) string {
 		result = getCELKeywordDocs(info.text)
 	case celHoverFunction:
 		result = getCELFunctionDocs(info.text, celEnv, info.overloadIDs)
-		// Add inferred return type if available
-		if info.celType != nil {
+		// Add the inferred return type, unless the signatures already give it.
+		if info.celType != nil && !celOverloadsDeclareType(celEnv.Functions()[info.text], info.overloadIDs, info.celType) {
 			result += fmt.Sprintf("\n\n**Return type**: `%s`", getCELTypeString(info.celType))
 		}
 	case celHoverOperator:
@@ -1027,4 +1028,21 @@ func celFilterOverloadDocs(doc *common.Doc, overloadIDs []string) {
 	}); len(matched) > 0 {
 		doc.Children = matched
 	}
+}
+
+// celOverloadsDeclareType reports whether every overload of funcDecl that
+// overloadIDs names declares exactly resultType as its result, so that their
+// signatures already give it. A generic overload, such as `type(<A>)`, does not.
+func celOverloadsDeclareType(funcDecl *decls.FunctionDecl, overloadIDs []string, resultType *types.Type) bool {
+	var named bool
+	for _, overload := range funcDecl.OverloadDecls() {
+		if !slices.Contains(overloadIDs, overload.ID()) {
+			continue
+		}
+		named = true
+		if !overload.ResultType().IsExactType(resultType) {
+			return false
+		}
+	}
+	return named
 }

@@ -170,25 +170,25 @@ func TestCELHover(t *testing.T) {
 			name:     "function: contains",
 			line:     113,
 			char:     23,
-			expected: "`contains`\n\ntest whether a string contains a substring\n\n**Overloads**:\n- `string.contains(string) -> bool`\n\n**Return type**: `bool`\n\n[CEL by Example](https://celbyexample.com/strings/#substring-search)",
+			expected: "`contains`\n\ntest whether a string contains a substring\n\n**Overloads**:\n- `string.contains(string) -> bool`\n\n[CEL by Example](https://celbyexample.com/strings/#substring-search)",
 		},
 		{
 			name:     "function: startsWith",
 			line:     118,
 			char:     23,
-			expected: "`startsWith`\n\ntest whether a string starts with a substring prefix\n\n**Overloads**:\n- `string.startsWith(string) -> bool`\n\n**Return type**: `bool`\n\n[CEL by Example](https://celbyexample.com/strings/#substring-search)",
+			expected: "`startsWith`\n\ntest whether a string starts with a substring prefix\n\n**Overloads**:\n- `string.startsWith(string) -> bool`\n\n[CEL by Example](https://celbyexample.com/strings/#substring-search)",
 		},
 		{
 			name:     "function: endsWith",
 			line:     123,
 			char:     23,
-			expected: "`endsWith`\n\ntest whether a string ends with a substring suffix\n\n**Overloads**:\n- `string.endsWith(string) -> bool`\n\n**Return type**: `bool`\n\n[CEL by Example](https://celbyexample.com/strings/#substring-search)",
+			expected: "`endsWith`\n\ntest whether a string ends with a substring suffix\n\n**Overloads**:\n- `string.endsWith(string) -> bool`\n\n[CEL by Example](https://celbyexample.com/strings/#substring-search)",
 		},
 		{
 			name:     "function: matches",
 			line:     128,
 			char:     23,
-			expected: "`matches`\n\ntest whether a string matches an RE2 regular expression\n\n**Overloads**:\n- `string.matches(string) -> bool`\n\n**Return type**: `bool`\n\n[CEL by Example](https://celbyexample.com/strings/#regular-expressions)",
+			expected: "`matches`\n\ntest whether a string matches an RE2 regular expression\n\n**Overloads**:\n- `string.matches(string) -> bool`\n\n[CEL by Example](https://celbyexample.com/strings/#regular-expressions)",
 		},
 
 		// Collection functions (upstream docs)
@@ -196,7 +196,7 @@ func TestCELHover(t *testing.T) {
 			name:     "function: size",
 			line:     134,
 			char:     23,
-			expected: "`size`\n\ncompute the size of a list or map, the number of characters in a string,\nor the number of bytes in a sequence\n\n**Overloads**:\n- `list(<A>).size() -> int`\n\n**Return type**: `int`\n\n[CEL by Example](https://celbyexample.com/strings/#size)",
+			expected: "`size`\n\ncompute the size of a list or map, the number of characters in a string,\nor the number of bytes in a sequence\n\n**Overloads**:\n- `list(<A>).size() -> int`\n\n[CEL by Example](https://celbyexample.com/strings/#size)",
 		},
 		{
 			name:     "operator: in",
@@ -266,43 +266,43 @@ func TestCELHover(t *testing.T) {
 			name:     "function: getFullYear",
 			line:     191,
 			char:     23,
-			expected: "`getFullYear`\n\nget the 0-based full year from a timestamp, UTC unless an IANA timezone is specified.\n\n**Overloads**:\n- `google.protobuf.Timestamp.getFullYear() -> int`\n\n**Return type**: `int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
+			expected: "`getFullYear`\n\nget the 0-based full year from a timestamp, UTC unless an IANA timezone is specified.\n\n**Overloads**:\n- `google.protobuf.Timestamp.getFullYear() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
 		},
 		{
 			name:     "function: getMonth",
 			line:     196,
 			char:     23,
-			expected: "`getMonth`\n\nget the 0-based month from a timestamp, UTC unless an IANA timezone is specified.\n\n**Overloads**:\n- `google.protobuf.Timestamp.getMonth() -> int`\n\n**Return type**: `int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
+			expected: "`getMonth`\n\nget the 0-based month from a timestamp, UTC unless an IANA timezone is specified.\n\n**Overloads**:\n- `google.protobuf.Timestamp.getMonth() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
 		},
 		{
 			name:     "function: getDate",
 			line:     201,
 			char:     23,
-			expected: "`getDate`\n\nget the 1-based day of the month from a timestamp, UTC unless an IANA timezone is specified.\n\n**Overloads**:\n- `google.protobuf.Timestamp.getDate() -> int`\n\n**Return type**: `int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
+			expected: "`getDate`\n\nget the 1-based day of the month from a timestamp, UTC unless an IANA timezone is specified.\n\n**Overloads**:\n- `google.protobuf.Timestamp.getDate() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
 		},
 		{
 			name:     "function: getHours",
 			line:     206,
 			char:     23,
-			expected: "`getHours`\n\nget the hours portion from a timestamp, or convert a duration to hours\n\n**Overloads**:\n- `google.protobuf.Timestamp.getHours() -> int`\n\n**Return type**: `int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
+			expected: "`getHours`\n\nget the hours portion from a timestamp, or convert a duration to hours\n\n**Overloads**:\n- `google.protobuf.Timestamp.getHours() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
 		},
 		{
 			name:     "function: getMinutes",
 			line:     211,
 			char:     23,
-			expected: "`getMinutes`\n\nget the minutes portion from a timestamp, or convert a duration to minutes\n\n**Overloads**:\n- `google.protobuf.Timestamp.getMinutes() -> int`\n\n**Return type**: `int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
+			expected: "`getMinutes`\n\nget the minutes portion from a timestamp, or convert a duration to minutes\n\n**Overloads**:\n- `google.protobuf.Timestamp.getMinutes() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
 		},
 		{
 			name:     "function: getSeconds",
 			line:     216,
 			char:     23,
-			expected: "`getSeconds`\n\nget the seconds portion from a timestamp, or convert a duration to seconds\n\n**Overloads**:\n- `google.protobuf.Timestamp.getSeconds() -> int`\n\n**Return type**: `int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
+			expected: "`getSeconds`\n\nget the seconds portion from a timestamp, or convert a duration to seconds\n\n**Overloads**:\n- `google.protobuf.Timestamp.getSeconds() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
 		},
 		{
 			name:     "function: getDayOfWeek",
 			line:     221,
 			char:     23,
-			expected: "`getDayOfWeek`\n\nget the 0-based day of the week from a timestamp, UTC unless an IANA timezone is specified.\n\n**Overloads**:\n- `google.protobuf.Timestamp.getDayOfWeek() -> int`\n\n**Return type**: `int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
+			expected: "`getDayOfWeek`\n\nget the 0-based day of the week from a timestamp, UTC unless an IANA timezone is specified.\n\n**Overloads**:\n- `google.protobuf.Timestamp.getDayOfWeek() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
 		},
 
 		// Duration functions (upstream docs)
@@ -310,7 +310,7 @@ func TestCELHover(t *testing.T) {
 			name:     "function: duration.getSeconds",
 			line:     227,
 			char:     23,
-			expected: "`getSeconds`\n\nget the seconds portion from a timestamp, or convert a duration to seconds\n\n**Overloads**:\n- `google.protobuf.Duration.getSeconds() -> int`\n\n**Return type**: `int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
+			expected: "`getSeconds`\n\nget the seconds portion from a timestamp, or convert a duration to seconds\n\n**Overloads**:\n- `google.protobuf.Duration.getSeconds() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
 		},
 
 		// Macros (upstream docs with examples)
@@ -356,43 +356,43 @@ func TestCELHover(t *testing.T) {
 			name:     "function: isEmail",
 			line:     264,
 			char:     22, // Position of "isEmail" in "this.isEmail()"
-			expected: "`isEmail`\n\n**Overloads**:\n- `string.isEmail() -> bool`\n\n**Return type**: `bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isemail)",
+			expected: "`isEmail`\n\n**Overloads**:\n- `string.isEmail() -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isemail)",
 		},
 		{
 			name:     "function: isHostname",
 			line:     269,
 			char:     22, // Position of "isHostname" in "this.isHostname()"
-			expected: "`isHostname`\n\n**Overloads**:\n- `string.isHostname() -> bool`\n\n**Return type**: `bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#ishostname)",
+			expected: "`isHostname`\n\n**Overloads**:\n- `string.isHostname() -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#ishostname)",
 		},
 		{
 			name:     "function: isIp",
 			line:     274,
 			char:     22, // Position of "isIp" in "this.isIp()"
-			expected: "`isIp`\n\n**Overloads**:\n- `string.isIp() -> bool`\n\n**Return type**: `bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isip)",
+			expected: "`isIp`\n\n**Overloads**:\n- `string.isIp() -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isip)",
 		},
 		{
 			name:     "function: isIpPrefix",
 			line:     279,
 			char:     22, // Position of "isIpPrefix" in "this.isIpPrefix()"
-			expected: "`isIpPrefix`\n\n**Overloads**:\n- `string.isIpPrefix() -> bool`\n\n**Return type**: `bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isipprefix)",
+			expected: "`isIpPrefix`\n\n**Overloads**:\n- `string.isIpPrefix() -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isipprefix)",
 		},
 		{
 			name:     "function: isUri",
 			line:     284,
 			char:     22, // Position of "isUri" in "this.isUri()"
-			expected: "`isUri`\n\n**Overloads**:\n- `string.isUri() -> bool`\n\n**Return type**: `bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isuri)",
+			expected: "`isUri`\n\n**Overloads**:\n- `string.isUri() -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isuri)",
 		},
 		{
 			name:     "function: isUriRef",
 			line:     289,
 			char:     22, // Position of "isUriRef" in "this.isUriRef()"
-			expected: "`isUriRef`\n\n**Overloads**:\n- `string.isUriRef() -> bool`\n\n**Return type**: `bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isuriref)",
+			expected: "`isUriRef`\n\n**Overloads**:\n- `string.isUriRef() -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isuriref)",
 		},
 		{
 			name:     "function: isHostAndPort",
 			line:     294,
 			char:     22, // Position of "isHostAndPort" in "this.isHostAndPort(true)"
-			expected: "`isHostAndPort`\n\n**Overloads**:\n- `string.isHostAndPort(bool) -> bool`\n\n**Return type**: `bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#ishostandport)",
+			expected: "`isHostAndPort`\n\n**Overloads**:\n- `string.isHostAndPort(bool) -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#ishostandport)",
 		},
 
 		// Field access (proto field resolution)
@@ -586,7 +586,7 @@ func TestCELHover(t *testing.T) {
 			name:     "function: isNan",
 			line:     378,
 			char:     22,
-			expected: "`isNan`\n\n**Overloads**:\n- `double.isNan() -> bool`\n\n**Return type**: `bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isnan)",
+			expected: "`isNan`\n\n**Overloads**:\n- `double.isNan() -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isnan)",
 		},
 		// Line 383 (0-indexed): `    expression: "this.isInf()"`
 		//                                                ^--- isInf at column 22
@@ -594,7 +594,7 @@ func TestCELHover(t *testing.T) {
 			name:     "function: isInf",
 			line:     383,
 			char:     22,
-			expected: "`isInf`\n\n**Overloads**:\n- `double.isInf() -> bool`\n\n**Return type**: `bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isinf)",
+			expected: "`isInf`\n\n**Overloads**:\n- `double.isInf() -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isinf)",
 		},
 
 		// Protovalidate list extension function
@@ -604,7 +604,7 @@ func TestCELHover(t *testing.T) {
 			name:     "function: unique",
 			line:     389,
 			char:     22,
-			expected: "`unique`\n\n**Overloads**:\n- `list(double).unique() -> bool`\n\n**Return type**: `bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#unique)",
+			expected: "`unique`\n\n**Overloads**:\n- `list(double).unique() -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#unique)",
 		},
 
 		// Message-level CEL rules
@@ -786,7 +786,7 @@ func TestCELHover(t *testing.T) {
 			char:     46,
 			start:    46,
 			end:      50,
-			expected: "`size`\n\ncompute the size of a list or map, the number of characters in a string,\nor the number of bytes in a sequence\n\n**Overloads**:\n- `string.size() -> int`\n\n**Return type**: `int`\n\n[CEL by Example](https://celbyexample.com/strings/#size)",
+			expected: "`size`\n\ncompute the size of a list or map, the number of characters in a string,\nor the number of bytes in a sequence\n\n**Overloads**:\n- `string.size() -> int`\n\n[CEL by Example](https://celbyexample.com/strings/#size)",
 		},
 		{
 			name:     "escapes: before an invalid unicode escape",
