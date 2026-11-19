@@ -70,7 +70,7 @@ func getCELHover(
 			astForTypeInfo := parsedAST
 			var typeMap map[int64]*types.Type
 
-			if checkedAST, compileIssues := celEnv.Compile(exprInfo.expression); compileIssues.Err() == nil {
+			if checkedAST, compileIssues := exprInfo.celEnv(file.celEnv(celEnv)).Compile(exprInfo.expression); compileIssues.Err() == nil {
 				astForTypeInfo = checkedAST
 				typeMap = checkedAST.NativeRep().TypeMap()
 			}
@@ -398,6 +398,10 @@ func walkCELExprForHover(
 					end:    funcEnd,
 					exprID: expr.ID(),
 				}
+				// Add the result type, if the expression type-checks.
+				if typeMap != nil {
+					bestMatch.celType = typeMap[expr.ID()]
+				}
 			}
 		}
 
@@ -556,10 +560,8 @@ func celDocumentationLinks(kind celHoverKind, name string) string {
 	switch kind {
 	case celHoverKeyword:
 		switch name {
-		case "this":
-			return celProtovalidateLink("this")
-		case "now":
-			return celProtovalidateLink("now")
+		case "this", "rule", "rules", "now":
+			return celProtovalidateLink(name)
 		}
 	case celHoverOperator:
 		switch name {
@@ -681,15 +683,15 @@ func celProtovalidateLink(anchor string) string {
 }
 
 // resolveCELFieldAccess resolves a CEL SelectExpr to a proto field/member.
-// Handles expressions like `this.fieldName` or `this.address.city`.
+// Handles expressions rooted at a protovalidate variable, like `this.fieldName`,
+// `this.address.city`, or `rules.min_len`.
 func resolveCELFieldAccess(sel ast.SelectExpr, exprInfo celExpressionInfo) ir.Member {
-	if sel == nil || exprInfo.thisIRType.IsZero() {
+	if sel == nil {
 		return ir.Member{}
 	}
 
-	// Start from the `this` type: the field's element type for field-level rules,
-	// or the message type itself for message-level rules.
-	currentType := exprInfo.thisIRType
+	// The type of the root variable, resolved once the select chain is walked.
+	var currentType ir.Type
 
 	// Build the field path by walking up the select chain
 	var fieldPath []string
@@ -708,10 +710,11 @@ func resolveCELFieldAccess(sel ast.SelectExpr, exprInfo celExpressionInfo) ir.Me
 			currentSel = operand.AsSelect()
 			continue
 		}
-		// Non-select operand: must be 'this' to resolve
-		if operand.Kind() != ast.IdentKind || operand.AsIdent() != "this" {
+		// Non-select operand: must be a protovalidate variable to resolve.
+		if operand.Kind() != ast.IdentKind {
 			return ir.Member{}
 		}
+		currentType, _ = exprInfo.celVariable(operand.AsIdent())
 		break
 	}
 
@@ -805,12 +808,18 @@ func getCELTypeString(t *types.Type) string {
 // These keywords are defined in the CEL specification and are not available from upstream documentation.
 func getCELKeywordDocs(keyword string) string {
 	// Note: true, false, and null are ConstExpr nodes in the CEL AST (not IdentExpr),
-	// so only "this" and "now" can reach this function via celHoverKeyword.
+	// so only the protovalidate variables can reach this function via celHoverKeyword.
 	switch keyword {
 	case "this":
 		return "**Special variable**\n\nRefers to the current message or field being validated.\n\n" +
 			"In field-level rules, `this` refers to the field value.\n" +
 			"In message-level rules, `this` refers to the entire message."
+	case "rule":
+		return "**Special variable**\n\nOnly available within predefined rules.\n\n" +
+			"Refers to the value assigned to the predefined rule when used as a field within a Protobuf message."
+	case "rules":
+		return "**Special variable**\n\nOnly available within predefined rules.\n\n" +
+			"An instance of the underlying Protovalidate rule message being extended."
 	case "now":
 		return "**Special variable**\n\nThe current timestamp at the time of validation.\n\n**Type**: `google.protobuf.Timestamp`"
 	}

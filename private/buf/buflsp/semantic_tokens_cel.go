@@ -28,23 +28,25 @@ import (
 	"github.com/bufbuild/protocompile/experimental/token/keyword"
 )
 
+// Fields of the buf.validate package that hold CEL expressions.
+// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate
 const (
-	// buf.validate extension field number on descriptor options
-	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate
-	bufValidateExtensionNumber = 1159
-
-	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.FieldRules
-	celFieldNumberInFieldRules = 23
-	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.FieldRules
-	celExpressionFieldNumberInFieldRules = 29
-
-	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.MessageRules
-	celFieldNumberInMessageRules = 3
-	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.MessageRules
-	celExpressionFieldNumberInMessageRules = 5
-
-	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.Rule
-	expressionFieldNumberInRule = 3
+	// celFieldRulesCel and celMessageRulesCel are repeated buf.validate.Rule.
+	celFieldRulesCel   ir.FullName = "buf.validate.FieldRules.cel"
+	celMessageRulesCel ir.FullName = "buf.validate.MessageRules.cel"
+	// celPredefinedRulesCel is repeated buf.validate.Rule on an extension of a
+	// buf.validate.*Rules message.
+	celPredefinedRulesCel ir.FullName = "buf.validate.PredefinedRules.cel"
+	// celFieldRulesCelExpression and celMessageRulesCelExpression are repeated string.
+	celFieldRulesCelExpression   ir.FullName = "buf.validate.FieldRules.cel_expression"
+	celMessageRulesCelExpression ir.FullName = "buf.validate.MessageRules.cel_expression"
+	// celRuleExpression is the expression field of buf.validate.Rule.
+	celRuleExpression ir.FullName = "buf.validate.Rule.expression"
+	// celRepeatedRulesItems, celMapRulesKeys, and celMapRulesValues are
+	// buf.validate.FieldRules for one element, key, or value.
+	celRepeatedRulesItems ir.FullName = "buf.validate.RepeatedRules.items"
+	celMapRulesKeys       ir.FullName = "buf.validate.MapRules.keys"
+	celMapRulesValues     ir.FullName = "buf.validate.MapRules.values"
 )
 
 // celExpressionInfo holds information about a CEL expression found in protovalidate options.
@@ -55,11 +57,16 @@ type celExpressionInfo struct {
 	irMember   ir.Member         // The field/member that has the option (for type context)
 	thisIRType ir.Type           // The IR type of `this` in the expression:
 	//   field/extension-level: the field's element type (e.g. string, Address)
+	//   repeated.items, map.keys, map.values: the element, key, or value type
 	//   message-level: the message type itself
+	//   predefined rule: zero; see [celExpressionInfo.celVariable]
+	thisMember ir.Member // The member whose cardinality `this` has; zero if `this` is one value.
+	predefined bool      // The expression is a predefined rule, and irMember is its extension.
 }
 
-// extractCELExpressions finds CEL expressions in protovalidate options.
-// It looks for (buf.validate.field).cel[].expression and (buf.validate.field).cel_expression[] patterns.
+// extractCELExpressions finds CEL expressions in protovalidate options: the
+// expressions of (buf.validate.field).cel, (buf.validate.message).cel, and
+// (buf.validate.predefined).cel, and the strings of cel_expression.
 func extractCELExpressions(file *file, symbol *symbol) []celExpressionInfo {
 	if symbol.ir.IsZero() {
 		return nil
@@ -86,101 +93,100 @@ func extractCELExpressions(file *file, symbol *symbol) []celExpressionInfo {
 	if optionValue.IsZero() {
 		return nil
 	}
+	var member, thisMember ir.Member
+	var thisIRType ir.Type
+	switch symbol.ir.Kind() {
+	case ir.SymbolKindField, ir.SymbolKindExtension:
+		member = symbol.ir.AsMember()
+		thisMember = member
+		thisIRType = member.Element()
+	case ir.SymbolKindMessage:
+		thisIRType = symbol.ir.AsType()
+	}
 	// Traverse the option message value looking for buf.validate CEL expressions
-	return extractCELFromMessage(file, optionValue, symbol.ir)
+	return extractCELFromMessage(file, optionValue, member, thisIRType, thisMember)
 }
 
-// extractCELFromMessage recursively extracts CEL expressions from an option message.
-func extractCELFromMessage(file *file, msgValue ir.MessageValue, irSym ir.Symbol) []celExpressionInfo {
+// extractCELFromMessage recursively extracts CEL expressions from an option
+// message on member, in which `this` has the element type thisIRType and the
+// cardinality of thisMember.
+func extractCELFromMessage(
+	file *file,
+	msgValue ir.MessageValue,
+	member ir.Member,
+	thisIRType ir.Type,
+	thisMember ir.Member,
+) []celExpressionInfo {
 	var results []celExpressionInfo
-
-	// Helper to extract member from symbol
-	getMember := func() ir.Member {
-		if irSym.Kind() == ir.SymbolKindField || irSym.Kind() == ir.SymbolKindExtension {
-			return irSym.AsMember()
-		}
-		return ir.Member{}
-	}
-	// getThisType returns the IR type of `this` for the expression:
-	//   field/extension → the field's element type
-	//   message         → the message type itself (so this.field completions work)
-	getThisType := func() ir.Type {
-		switch irSym.Kind() {
-		case ir.SymbolKindField, ir.SymbolKindExtension:
-			return irSym.AsMember().Element()
-		case ir.SymbolKindMessage:
-			return irSym.AsType()
-		default:
-			return ir.Type{}
-		}
-	}
-
 	for field := range msgValue.Fields() {
 		for element := range seq.Values(field.Elements()) {
-			elementField := element.Field()
-			fieldNumber := elementField.Number()
-
-			// Check if this is a top-level buf.validate extension - recurse into it
-			if elementField.IsExtension() && fieldNumber == bufValidateExtensionNumber {
+			switch element.Field().FullName() {
+			case celFieldRulesCel, celMessageRulesCel, celPredefinedRulesCel:
 				nestedMsg := element.AsMessage()
-				if !nestedMsg.IsZero() {
-					results = append(results, extractCELFromMessage(file, nestedMsg, irSym)...)
+				if nestedMsg.IsZero() {
+					continue
 				}
-				continue
-			}
-
-			// Handle nested Rule message (cel field containing Rule messages with expressions)
-			if fieldNumber == celFieldNumberInFieldRules || fieldNumber == celFieldNumberInMessageRules {
-				// This is a Rule message, look for the expression field
-				nestedMsg := element.AsMessage()
-				if !nestedMsg.IsZero() {
-					for nestedField := range nestedMsg.Fields() {
-						for nestedElement := range seq.Values(nestedField.Elements()) {
-							nestedElementField := nestedElement.Field()
-							if nestedElementField.Number() == expressionFieldNumberInRule {
-								if exprString, ok := nestedElement.AsString(); ok {
-									results = append(results, celExpressionInfo{
-										expression: exprString,
-										span:       nestedElement.AST().Span(),
-										literal:    nestedElement.AST().AsLiteral().AsString(),
-										irMember:   getMember(),
-										thisIRType: getThisType(),
-									})
-								}
-							}
+				info := celExpressionInfo{
+					irMember:   member,
+					thisIRType: thisIRType,
+					thisMember: thisMember,
+				}
+				if element.Field().FullName() == celPredefinedRulesCel {
+					info = celExpressionInfo{irMember: member, predefined: true}
+				}
+				for nestedField := range nestedMsg.Fields() {
+					for nestedElement := range seq.Values(nestedField.Elements()) {
+						if nestedElement.Field().FullName() != celRuleExpression {
+							continue
+						}
+						if exprString, ok := nestedElement.AsString(); ok {
+							info.expression = exprString
+							info.span = nestedElement.AST().Span()
+							info.literal = nestedElement.AST().AsLiteral().AsString()
+							results = append(results, info)
 						}
 					}
-					// Recursively check nested messages
-					results = append(results, extractCELFromMessage(file, nestedMsg, irSym)...)
 				}
-				continue
-			}
-
-			// Handle cel_expression string field
-			if fieldNumber == celExpressionFieldNumberInFieldRules || fieldNumber == celExpressionFieldNumberInMessageRules {
+			case celFieldRulesCelExpression, celMessageRulesCelExpression:
 				if exprString, ok := element.AsString(); ok {
 					results = append(results, celExpressionInfo{
 						expression: exprString,
 						span:       element.AST().Span(),
 						literal:    element.AST().AsLiteral().AsString(),
-						irMember:   getMember(),
-						thisIRType: getThisType(),
+						irMember:   member,
+						thisIRType: thisIRType,
+						thisMember: thisMember,
 					})
+				}
+			default:
+				nestedMsg := element.AsMessage()
+				if nestedMsg.IsZero() {
 					continue
 				}
-				// Not a string value (e.g. a nested FieldRules message at the same field number
-				// as a MessageRules cel_expression field) - fall through to general recursion.
-			}
-
-			// General case: recursively search any nested message for CEL expressions.
-			// This handles nested structures like repeated.items.cel, map.keys.cel,
-			// map.values.cel, and any other type-specific rule nesting in protovalidate.
-			if nestedMsg := element.AsMessage(); !nestedMsg.IsZero() {
-				results = append(results, extractCELFromMessage(file, nestedMsg, irSym)...)
+				// Rules for one element, key, or value of a repeated or map field
+				// bind `this` to that one value.
+				nestedThisIRType, nestedThisMember := thisIRType, thisMember
+				switch element.Field().FullName() {
+				case celRepeatedRulesItems:
+					nestedThisMember = ir.Member{}
+				case celMapRulesKeys, celMapRulesValues:
+					nestedThisIRType, nestedThisMember = ir.Type{}, ir.Member{}
+					if thisIRType.IsMapEntry() {
+						key, value := thisIRType.EntryFields()
+						if element.Field().FullName() == celMapRulesKeys {
+							nestedThisIRType = key.Element()
+						} else {
+							nestedThisIRType = value.Element()
+						}
+					}
+				}
+				// Recurse into nested messages to reach rules nested under
+				// buf.validate.field/message options, such as repeated.items.cel,
+				// map.keys.cel, and map.values.cel.
+				results = append(results, extractCELFromMessage(file, nestedMsg, member, nestedThisIRType, nestedThisMember)...)
 			}
 		}
 	}
-
 	return results
 }
 

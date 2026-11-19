@@ -39,7 +39,7 @@ func celIsIdentChar(c byte) bool {
 func isCELKeyword(name string) bool {
 	switch name {
 	case "true", "false", "null", // literals
-		"this", "now": // protovalidate special variables
+		"this", "rule", "rules", "now": // protovalidate special variables
 		return true
 	}
 	return false

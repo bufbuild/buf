@@ -1,0 +1,14 @@
+edition = "2023";
+
+package test.cel.v1;
+
+import "buf/validate/validate.proto";
+
+// In a predefined rule, `this` is the string being validated, `rule` the
+// extension value, and `rules` the extended buf.validate.StringRules.
+extend buf.validate.StringRules {
+  int32 max_words = 80048954 [(buf.validate.predefined).cel = {
+    id: "max_words"
+    expression: "rules.min_len <= uint(rule) && this.size() > 0"
+  }];
+}

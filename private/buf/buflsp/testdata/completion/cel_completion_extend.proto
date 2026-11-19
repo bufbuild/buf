@@ -1,0 +1,92 @@
+edition = "2023";
+
+package test.celcompletion.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/descriptor.proto";
+
+// Predefined rules bind `this` to the field value, `rule` to the extension
+// value, and `rules` to the enclosing StringRules message. The extension is
+// repeated int32 so that `this` (string), `rule` (list<int>), and `rules`
+// (StringRules) all complete differently.
+extend buf.validate.StringRules {
+  repeated int32 allowed_lens = 80048953 [
+    (buf.validate.predefined).cel = {
+      id: "predefined.this"
+      expression: "this."
+    },
+    (buf.validate.predefined).cel = {
+      id: "predefined.rule"
+      expression: "rule."
+    },
+    (buf.validate.predefined).cel = {
+      id: "predefined.rules"
+      expression: "rules."
+    },
+    (buf.validate.predefined).cel = {
+      id: "predefined.empty"
+      expression: ""
+    }
+  ];
+}
+
+// RouteOption is a non-protovalidate option whose string field shares field
+// number 5 with buf.validate.MessageRules.cel_expression. Its value is not a
+// CEL expression.
+message RouteOption {
+  string path = 5;
+}
+
+extend google.protobuf.MessageOptions {
+  RouteOption route = 50001;
+}
+
+message RouteHolder {
+  option (route) = {path: "this."};
+  string name = 1;
+}
+
+message FieldHolder {
+  string name = 1 [(buf.validate.field).cel = {
+    id: "field.this"
+    expression: "this."
+  }];
+}
+
+message BoolHolder {
+  bool flag = 1 [(buf.validate.field).cel = {
+    id: "bool.this.eq"
+    expression: "this == "
+  }];
+}
+
+message NameHolder {
+  option (buf.validate.message).cel = {
+    id: "name.eq"
+    expression: "this.name == "
+  };
+  string name = 1;
+}
+
+// In repeated.items, map.keys, and map.values rules, `this` is one element,
+// key, or value, not the whole field.
+message ElementHolder {
+  repeated string tags = 1 [(buf.validate.field).repeated.items.cel = {
+    id: "items.this"
+    expression: "this."
+  }];
+  map<string, int64> counts = 2 [
+    (buf.validate.field).map.keys.cel = {
+      id: "keys.this"
+      expression: "this."
+    },
+    (buf.validate.field).map.values.cel = {
+      id: "values.this"
+      expression: "this == "
+    }
+  ];
+  map<string, NameHolder> names = 3 [(buf.validate.field).map.values.cel = {
+    id: "values.message.this"
+    expression: "this."
+  }];
+}

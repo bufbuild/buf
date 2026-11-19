@@ -34,9 +34,16 @@ import (
 	"go.lsp.dev/protocol"
 )
 
-// celKeywords are CEL literal keywords, the protovalidate "this" special variable,
-// and the "now" runtime variable (google.protobuf.Timestamp) declared by protovalidate.
-var celKeywords = []string{"true", "false", "null", "this", "now"}
+// celKeywords are CEL literal keywords and the protovalidate variables.
+var celKeywords = []string{"true", "false", "null", "this", "rule", "rules", "now"}
+
+// celVariableDetails are the completion details of the protovalidate variables.
+var celVariableDetails = map[string]string{
+	"this":  "protovalidate: current message or field",
+	"rule":  "protovalidate: value of the predefined rule",
+	"rules": "protovalidate: rules message the predefined rule extends",
+	"now":   "protovalidate: current evaluation timestamp",
+}
 
 // getCELCompletionItems returns completion items if the cursor is inside a CEL expression.
 // Returns nil if the position is not inside a CEL expression.
@@ -53,6 +60,7 @@ func getCELCompletionItems(
 				continue
 			}
 
+			exprCELEnv := exprInfo.celEnv(file.celEnv(celEnv))
 			celOffset := newCELSourceSpans(exprInfo.literal).offset(byteOffset)
 			if celOffset < 0 {
 				// Cursor is at the closing quote or inside an empty string literal;
@@ -100,10 +108,7 @@ func getCELCompletionItems(
 				if !inBody {
 					break
 				}
-				vars := map[string]ir.Type{}
-				if !exprInfo.thisIRType.IsZero() {
-					vars["this"] = exprInfo.thisIRType
-				}
+				vars := exprInfo.celVariableIRTypes()
 				maps.Copy(vars, iterVarTypes)
 				rangeType, _ := celResolveExprType(rangeExpr, vars)
 				if rangeType.IsZero() {
@@ -130,31 +135,29 @@ func getCELCompletionItems(
 
 				// Try CEL compile to determine receiver type (works for variables like "now").
 				var receiverCELType *types.Type
-				if ast, iss := celEnv.Compile(receiverExpr); iss.Err() == nil {
+				if ast, iss := exprCELEnv.Compile(receiverExpr); iss.Err() == nil {
 					receiverCELType = ast.OutputType()
 				}
 
 				// Resolve via proto IR for field names and type mapping.
-				// Build a variable map from "this" and any comprehension iteration variables.
+				// Build a variable map from the protovalidate variables and any
+				// comprehension iteration variables.
 				var isListOrMapReceiver bool
-				if !exprInfo.thisIRType.IsZero() || len(iterVarTypes) > 0 {
-					vars := map[string]ir.Type{}
-					if !exprInfo.thisIRType.IsZero() {
-						vars["this"] = exprInfo.thisIRType
-					}
-					maps.Copy(vars, iterVarTypes)
+				vars := exprInfo.celVariableIRTypes()
+				maps.Copy(vars, iterVarTypes)
+				if len(vars) > 0 {
 					irType, isCollection := celResolveExprType(receiverExpr, vars)
 					if !irType.IsZero() {
-						// For the direct "this" receiver, use irMember cardinality:
-						// thisIRType is already the element type so cardinality is not in vars.
-						if receiverExpr == "this" && !exprInfo.irMember.IsZero() {
-							if exprInfo.irMember.IsMap() {
+						// For a direct protovalidate variable receiver, use its member's
+						// cardinality: vars holds element types, so it is not in vars.
+						if _, member := exprInfo.celVariable(receiverExpr); !member.IsZero() && (member.IsMap() || member.IsRepeated()) {
+							if member.IsMap() {
 								if receiverCELType == nil {
 									receiverCELType = celMapEntryToCELType(irType)
 								}
 								irType = ir.Type{}
 								isListOrMapReceiver = true
-							} else if exprInfo.irMember.IsRepeated() {
+							} else {
 								if receiverCELType == nil {
 									receiverCELType = types.NewListType(celProtoTypeToExprType(irType))
 								}
@@ -185,7 +188,7 @@ func getCELCompletionItems(
 					}
 				}
 
-				items = append(items, celMemberCompletionItems(celEnv, receiverCELType)...)
+				items = append(items, celMemberCompletionItems(exprCELEnv, receiverCELType)...)
 				if isListOrMapReceiver {
 					items = append(items, celMemberMacroCompletionItems()...)
 				}
@@ -204,13 +207,13 @@ func getCELCompletionItems(
 				// After logical NOT, the operand must be bool.
 				expectedType = types.BoolType
 			} else {
-				expectedType = celExpectedTypeAfterOperator(contentBeforePrefix, celEnv)
+				expectedType = celExpectedTypeAfterOperator(contentBeforePrefix, exprCELEnv)
 			}
 
 			var items []protocol.CompletionItem
-			items = append(items, celGlobalCompletionItems(celEnv, expectedType)...)
-			items = append(items, celMacroCompletionItems(celEnv)...)
-			items = append(items, celKeywordCompletionItems(celEnv, expectedType)...)
+			items = append(items, celGlobalCompletionItems(exprCELEnv, expectedType)...)
+			items = append(items, celMacroCompletionItems(exprCELEnv)...)
+			items = append(items, celKeywordCompletionItems(exprCELEnv, expectedType)...)
 			return celFilterByPrefix(items, prefix)
 		}
 	}
@@ -840,29 +843,23 @@ func celMacroCompletionItems(celEnv *cel.Env) []protocol.CompletionItem {
 }
 
 // celKeywordCompletionItems returns completion items for CEL literal keywords and
-// protovalidate runtime variables ("this", "now"). If expectedType is non-nil, only
+// the protovalidate variables declared in celEnv. If expectedType is non-nil, only
 // keywords whose compiled type is compatible with it are included.
-// "this" is always included when there is no expected type constraint.
-// "now" is included when its timestamp type is compatible with expectedType.
+// "this" is also included when it has no CEL type and there is no expected type
+// constraint.
 func celKeywordCompletionItems(celEnv *cel.Env, expectedType *types.Type) []protocol.CompletionItem {
 	var items []protocol.CompletionItem
 	for _, kw := range celKeywords {
-		if kw == "this" {
-			// "this" is the protovalidate special variable bound at eval time;
-			// it cannot be compiled in the static environment. Always include it
-			// unless the caller has narrowed to a specific expected type (in that
-			// case its type is unknown so we cannot confirm compatibility).
-			if expectedType == nil {
+		variableDetail, isVariable := celVariableDetails[kw]
+		ast, iss := celEnv.Compile(kw)
+		if iss.Err() != nil {
+			if kw == "this" && expectedType == nil {
 				items = append(items, protocol.CompletionItem{
 					Label:  kw,
 					Kind:   protocol.CompletionItemKindVariable,
-					Detail: protocol.NewOptional("protovalidate: current message or field"),
+					Detail: protocol.NewOptional(variableDetail),
 				})
 			}
-			continue
-		}
-		ast, iss := celEnv.Compile(kw)
-		if iss.Err() != nil {
 			continue
 		}
 		kwType := ast.OutputType()
@@ -871,10 +868,9 @@ func celKeywordCompletionItems(celEnv *cel.Env, expectedType *types.Type) []prot
 		}
 		kind := protocol.CompletionItemKindKeyword
 		detail := kwType.String()
-		if kw == "now" {
-			// "now" is a protovalidate runtime variable, not a literal keyword.
+		if isVariable {
 			kind = protocol.CompletionItemKindVariable
-			detail = "protovalidate: current evaluation timestamp"
+			detail = variableDetail
 		}
 		items = append(items, protocol.CompletionItem{
 			Label:  kw,
