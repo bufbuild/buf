@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 func TestCELHover(t *testing.T) {
@@ -36,7 +37,8 @@ func TestCELHover(t *testing.T) {
 	// options, so they live in a separate editions file.
 	predefinedProtoPath, err := filepath.Abs("testdata/hover/cel_predefined.proto")
 	require.NoError(t, err)
-	predefinedJSONConn, predefinedURI := setupLSPServer(t, predefinedProtoPath)
+	predefinedURI := uri.File(predefinedProtoPath)
+	openFileFromDisk(ctx, t, clientJSONConn, predefinedURI)
 
 	testCases := []struct {
 		name       string
@@ -837,12 +839,12 @@ func TestCELHover(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			conn, docURI := clientJSONConn, testURI
+			docURI := testURI
 			if tc.predefined {
-				conn, docURI = predefinedJSONConn, predefinedURI
+				docURI = predefinedURI
 			}
 			var hoverResult *protocol.Hover
-			_, err := conn.Call(ctx, protocol.MethodTextDocumentHover, protocol.HoverParams{
+			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, protocol.HoverParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{URI: docURI},
 					Position:     protocol.Position{Line: tc.line, Character: tc.char},

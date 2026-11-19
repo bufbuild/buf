@@ -21,10 +21,10 @@ import (
 	"buf.build/go/standard/xlog/xslog"
 	"cel.dev/cel-go/cel"
 	"cel.dev/cel-go/common/types"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/protocompile/experimental/fdp"
 	"github.com/bufbuild/protocompile/experimental/ir"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -70,21 +70,19 @@ func (e celExpressionInfo) celVariableIRTypes() map[string]ir.Type {
 	return vars
 }
 
-// celEnv returns base extended with the protovalidate variables in the
-// expression, or base if they cannot be declared.
-//
-// Message-typed variables only type-check field selections if base has their
-// types registered, as [file.celEnv] does.
-func (e celExpressionInfo) celEnv(base *cel.Env) *cel.Env {
+// celEnv returns base extended with the types of file (see [file.celEnv]) and
+// the protovalidate variables in the expression. Variables that cannot be
+// declared are left out.
+func (e celExpressionInfo) celEnv(file *file, base *cel.Env) *cel.Env {
+	base = file.celEnv(base)
 	var options []cel.EnvOption
 	if e.predefined {
-		if thisType := celStandardRulesType(e.irMember.Container().FullName()); thisType != nil {
+		if thisType := celStandardRulesTypes[e.irMember.Container().FullName()]; thisType != nil {
 			options = append(options, cel.Variable("this", thisType))
 		}
 	}
 	for _, name := range celVariableNames {
-		irType, member := e.celVariable(name)
-		if celType := celMemberType(irType, member); celType != nil {
+		if celType := celMemberType(e.celVariable(name)); celType != nil {
 			options = append(options, cel.Variable(name, celType))
 		}
 	}
@@ -102,11 +100,9 @@ func (e celExpressionInfo) celEnv(base *cel.Env) *cel.Env {
 // the cardinality of member, or nil if it has no CEL type.
 func celMemberType(irType ir.Type, member ir.Member) *types.Type {
 	switch {
-	case irType.IsZero():
-		return nil
-	case !member.IsZero() && member.IsMap():
+	case member.IsMap():
 		return celMapEntryToCELType(irType)
-	case !member.IsZero() && member.IsRepeated():
+	case member.IsRepeated():
 		if elemType := celProtoTypeToExprType(irType); elemType != nil {
 			return types.NewListType(elemType)
 		}
@@ -116,53 +112,31 @@ func celMemberType(irType ir.Type, member ir.Member) *types.Type {
 	}
 }
 
-// celStandardRulesType returns the CEL type of `this` in a predefined rule
-// extending the buf.validate.*Rules message rulesName, or nil if rulesName is
-// not one.
-func celStandardRulesType(rulesName ir.FullName) *types.Type {
-	isRules := func(messages ...proto.Message) bool {
-		for _, message := range messages {
-			if rulesName == ir.FullName(message.ProtoReflect().Descriptor().FullName()) {
-				return true
-			}
-		}
-		return false
-	}
-	switch {
-	case isRules(&validate.AnyRules{}):
-		return types.AnyType
-	case isRules(&validate.BoolRules{}):
-		return types.BoolType
-	case isRules(&validate.BytesRules{}):
-		return types.BytesType
-	case isRules(&validate.StringRules{}):
-		return types.StringType
-	case isRules(
-		&validate.Int32Rules{}, &validate.Int64Rules{},
-		&validate.SInt32Rules{}, &validate.SInt64Rules{},
-		&validate.SFixed32Rules{}, &validate.SFixed64Rules{},
-		&validate.EnumRules{},
-	):
-		return types.IntType
-	case isRules(
-		&validate.UInt32Rules{}, &validate.UInt64Rules{},
-		&validate.Fixed32Rules{}, &validate.Fixed64Rules{},
-	):
-		return types.UintType
-	case isRules(&validate.FloatRules{}, &validate.DoubleRules{}):
-		return types.DoubleType
-	case isRules(&validate.MapRules{}):
-		return types.NewMapType(types.DynType, types.DynType)
-	case isRules(&validate.RepeatedRules{}):
-		return types.NewListType(types.DynType)
-	case isRules(&validate.DurationRules{}):
-		return types.DurationType
-	case isRules(&validate.TimestampRules{}):
-		return types.TimestampType
-	case isRules(&validate.FieldMaskRules{}):
-		return types.NewObjectType(string((&fieldmaskpb.FieldMask{}).ProtoReflect().Descriptor().FullName()))
-	}
-	return nil
+// celStandardRulesTypes are the CEL types of `this` in a predefined rule,
+// keyed by the buf.validate.*Rules message the rule extends.
+var celStandardRulesTypes = map[ir.FullName]*types.Type{
+	celMessageName(&validate.AnyRules{}):       types.AnyType,
+	celMessageName(&validate.BoolRules{}):      types.BoolType,
+	celMessageName(&validate.BytesRules{}):     types.BytesType,
+	celMessageName(&validate.StringRules{}):    types.StringType,
+	celMessageName(&validate.Int32Rules{}):     types.IntType,
+	celMessageName(&validate.Int64Rules{}):     types.IntType,
+	celMessageName(&validate.SInt32Rules{}):    types.IntType,
+	celMessageName(&validate.SInt64Rules{}):    types.IntType,
+	celMessageName(&validate.SFixed32Rules{}):  types.IntType,
+	celMessageName(&validate.SFixed64Rules{}):  types.IntType,
+	celMessageName(&validate.EnumRules{}):      types.IntType,
+	celMessageName(&validate.UInt32Rules{}):    types.UintType,
+	celMessageName(&validate.UInt64Rules{}):    types.UintType,
+	celMessageName(&validate.Fixed32Rules{}):   types.UintType,
+	celMessageName(&validate.Fixed64Rules{}):   types.UintType,
+	celMessageName(&validate.FloatRules{}):     types.DoubleType,
+	celMessageName(&validate.DoubleRules{}):    types.DoubleType,
+	celMessageName(&validate.MapRules{}):       types.NewMapType(types.DynType, types.DynType),
+	celMessageName(&validate.RepeatedRules{}):  types.NewListType(types.DynType),
+	celMessageName(&validate.DurationRules{}):  types.DurationType,
+	celMessageName(&validate.TimestampRules{}): types.TimestampType,
+	celMessageName(&validate.FieldMaskRules{}): types.NewObjectType(string(celMessageName(&fieldmaskpb.FieldMask{}))),
 }
 
 // celEnv returns base extended with the message and enum types of the file
@@ -195,13 +169,15 @@ func (f *file) celEnv(base *cel.Env) *cel.Env {
 // celFileTypes returns the descriptors of irFile and its imports.
 //
 // References that do not resolve, as in a file with errors, become
-// placeholders rather than failing the file. The Well-Known Types, which the
-// descriptor set leaves out, resolve from [protoregistry.GlobalFiles].
+// placeholders rather than failing the file. The Well-Known Types are left
+// out of the descriptor set and resolve from [protoregistry.GlobalFiles].
 func celFileTypes(irFile *ir.File) (*protoregistry.Files, error) {
-	data, err := fdp.DescriptorSetBytes([]*ir.File{irFile})
+	data, err := fdp.DescriptorSetBytes([]*ir.File{irFile}, fdp.ExcludeFiles(celWKTExcluder{}))
 	if err != nil {
 		return nil, err
 	}
+	// Unmarshaling parses the option values that fdp writes as unknown fields,
+	// such as EnumOptions.allow_alias, which protodesc validates against.
 	fds := new(descriptorpb.FileDescriptorSet)
 	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, fds); err != nil {
 		return nil, err
@@ -220,6 +196,13 @@ func celFileTypes(irFile *ir.File) (*protoregistry.Files, error) {
 		}
 	}
 	return files, nil
+}
+
+// celWKTExcluder excludes the Well-Known Types from descriptor sets.
+type celWKTExcluder struct{}
+
+func (celWKTExcluder) Exclude(file *ir.File) bool {
+	return datawkt.Exists(file.Path())
 }
 
 // celFileResolver resolves descriptors from files, then from

@@ -54,6 +54,11 @@ var (
 	celMapRulesValues     = celValidateFieldName(&validate.MapRules{}, "values")
 )
 
+// celMessageName returns the full name of message.
+func celMessageName(message proto.Message) ir.FullName {
+	return ir.FullName(message.ProtoReflect().Descriptor().FullName())
+}
+
 // celValidateFieldName returns the full name of the field name of message,
 // panicking if message has no such field.
 func celValidateFieldName(message proto.Message, name protoreflect.Name) ir.FullName {
@@ -75,9 +80,8 @@ type celExpressionInfo struct {
 	//   field/extension-level: the field's element type (e.g. string, Address)
 	//   repeated.items, map.keys, map.values: the element, key, or value type
 	//   message-level: the message type itself
-	//   predefined rule: zero; see [celExpressionInfo.celVariable]
 	thisMember ir.Member // The member whose cardinality `this` has; zero if `this` is one value.
-	predefined bool      // The expression is a predefined rule, and irMember is its extension.
+	predefined bool      // The expression is a predefined rule, and irMember is its extension; see [celExpressionInfo.celVariable].
 }
 
 // extractCELExpressions finds CEL expressions in protovalidate options: the
@@ -109,71 +113,52 @@ func extractCELExpressions(file *file, symbol *symbol) []celExpressionInfo {
 	if optionValue.IsZero() {
 		return nil
 	}
-	var member, thisMember ir.Member
-	var thisIRType ir.Type
+	// info is the template for the expressions of the options: everything but
+	// the expression and its location.
+	var info celExpressionInfo
 	switch symbol.ir.Kind() {
 	case ir.SymbolKindField, ir.SymbolKindExtension:
-		member = symbol.ir.AsMember()
-		thisMember = member
-		thisIRType = member.Element()
+		info.irMember = symbol.ir.AsMember()
+		info.thisMember = info.irMember
+		info.thisIRType = info.irMember.Element()
 	case ir.SymbolKindMessage:
-		thisIRType = symbol.ir.AsType()
+		info.thisIRType = symbol.ir.AsType()
 	}
 	// Traverse the option message value looking for buf.validate CEL expressions
-	return extractCELFromMessage(file, optionValue, member, thisIRType, thisMember)
+	return extractCELFromMessage(optionValue, info)
 }
 
 // extractCELFromMessage recursively extracts CEL expressions from an option
-// message on member, in which `this` has the element type thisIRType and the
-// cardinality of thisMember.
-func extractCELFromMessage(
-	file *file,
-	msgValue ir.MessageValue,
-	member ir.Member,
-	thisIRType ir.Type,
-	thisMember ir.Member,
-) []celExpressionInfo {
+// message, filling in the template info for each.
+func extractCELFromMessage(msgValue ir.MessageValue, info celExpressionInfo) []celExpressionInfo {
 	var results []celExpressionInfo
+	add := func(info celExpressionInfo, element ir.Element) {
+		if exprString, ok := element.AsString(); ok {
+			info.expression = exprString
+			info.span = element.AST().Span()
+			info.literal = element.AST().AsLiteral().AsString()
+			results = append(results, info)
+		}
+	}
 	for field := range msgValue.Fields() {
 		for element := range seq.Values(field.Elements()) {
-			switch element.Field().FullName() {
+			switch name := element.Field().FullName(); name {
 			case celFieldRulesCel, celMessageRulesCel, celPredefinedRulesCel:
 				nestedMsg := element.AsMessage()
 				if nestedMsg.IsZero() {
 					continue
 				}
-				info := celExpressionInfo{
-					irMember:   member,
-					thisIRType: thisIRType,
-					thisMember: thisMember,
-				}
-				if element.Field().FullName() == celPredefinedRulesCel {
-					info = celExpressionInfo{irMember: member, predefined: true}
-				}
+				ruleInfo := info
+				ruleInfo.predefined = name == celPredefinedRulesCel
 				for nestedField := range nestedMsg.Fields() {
 					for nestedElement := range seq.Values(nestedField.Elements()) {
-						if nestedElement.Field().FullName() != celRuleExpression {
-							continue
-						}
-						if exprString, ok := nestedElement.AsString(); ok {
-							info.expression = exprString
-							info.span = nestedElement.AST().Span()
-							info.literal = nestedElement.AST().AsLiteral().AsString()
-							results = append(results, info)
+						if nestedElement.Field().FullName() == celRuleExpression {
+							add(ruleInfo, nestedElement)
 						}
 					}
 				}
 			case celFieldRulesCelExpression, celMessageRulesCelExpression:
-				if exprString, ok := element.AsString(); ok {
-					results = append(results, celExpressionInfo{
-						expression: exprString,
-						span:       element.AST().Span(),
-						literal:    element.AST().AsLiteral().AsString(),
-						irMember:   member,
-						thisIRType: thisIRType,
-						thisMember: thisMember,
-					})
-				}
+				add(info, element)
 			default:
 				nestedMsg := element.AsMessage()
 				if nestedMsg.IsZero() {
@@ -181,25 +166,21 @@ func extractCELFromMessage(
 				}
 				// Rules for one element, key, or value of a repeated or map field
 				// bind `this` to that one value.
-				nestedThisIRType, nestedThisMember := thisIRType, thisMember
-				switch element.Field().FullName() {
+				nestedInfo := info
+				switch name {
 				case celRepeatedRulesItems:
-					nestedThisMember = ir.Member{}
+					nestedInfo.thisMember = ir.Member{}
 				case celMapRulesKeys, celMapRulesValues:
-					nestedThisIRType, nestedThisMember = ir.Type{}, ir.Member{}
-					if thisIRType.IsMapEntry() {
-						key, value := thisIRType.EntryFields()
-						if element.Field().FullName() == celMapRulesKeys {
-							nestedThisIRType = key.Element()
-						} else {
-							nestedThisIRType = value.Element()
-						}
+					key, value := info.thisIRType.EntryFields()
+					nestedInfo.thisIRType, nestedInfo.thisMember = key.Element(), ir.Member{}
+					if name == celMapRulesValues {
+						nestedInfo.thisIRType = value.Element()
 					}
 				}
 				// Recurse into nested messages to reach rules nested under
 				// buf.validate.field/message options, such as repeated.items.cel,
 				// map.keys.cel, and map.values.cel.
-				results = append(results, extractCELFromMessage(file, nestedMsg, member, nestedThisIRType, nestedThisMember)...)
+				results = append(results, extractCELFromMessage(nestedMsg, nestedInfo)...)
 			}
 		}
 	}

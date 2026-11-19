@@ -58,7 +58,7 @@ func getCELDefinition(
 			// Default to the parsed AST, but prefer the checked AST for full type information.
 			astForTypeInfo := parsedAST
 			var typeMap map[int64]*types.Type
-			if checkedAST, compileIssues := exprInfo.celEnv(file.celEnv(celEnv)).Compile(exprInfo.expression); compileIssues.Err() == nil {
+			if checkedAST, compileIssues := exprInfo.celEnv(file, celEnv).Compile(exprInfo.expression); compileIssues.Err() == nil {
 				astForTypeInfo = checkedAST
 				typeMap = checkedAST.NativeRep().TypeMap()
 			}

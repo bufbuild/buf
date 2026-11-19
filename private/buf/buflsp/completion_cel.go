@@ -20,7 +20,6 @@ package buflsp
 import (
 	"cmp"
 	"fmt"
-	"maps"
 	"slices"
 	"strings"
 
@@ -60,7 +59,6 @@ func getCELCompletionItems(
 				continue
 			}
 
-			exprCELEnv := exprInfo.celEnv(file.celEnv(celEnv))
 			celOffset := newCELSourceSpans(exprInfo.literal).offset(byteOffset)
 			if celOffset < 0 {
 				// Cursor is at the closing quote or inside an empty string literal;
@@ -86,11 +84,15 @@ func getCELCompletionItems(
 				}
 			}
 
+			exprCELEnv := exprInfo.celEnv(file, celEnv)
+
 			// Determine the content to analyze for member access by stripping outer
 			// context layers: comprehension bodies first (to capture the iter var type),
 			// then has() macro arguments.
 			memberAccessContent := celContent
-			iterVarTypes := map[string]ir.Type{}
+			// vars holds the IR element types of the protovalidate variables and of
+			// the iteration variables bound so far.
+			vars := exprInfo.celVariableIRTypes()
 
 			// Peel comprehension layers from outermost to innermost.
 			// Each iteration resolves the range expression (using all known variables
@@ -108,14 +110,12 @@ func getCELCompletionItems(
 				if !inBody {
 					break
 				}
-				vars := exprInfo.celVariableIRTypes()
-				maps.Copy(vars, iterVarTypes)
 				rangeType, _ := celResolveExprType(rangeExpr, vars)
 				if rangeType.IsZero() {
 					rangeType = lastRangeType
 				}
 				if !rangeType.IsZero() {
-					iterVarTypes[iterVar] = rangeType
+					vars[iterVar] = rangeType
 					lastRangeType = rangeType
 				}
 				memberAccessContent = body
@@ -140,50 +140,36 @@ func getCELCompletionItems(
 				}
 
 				// Resolve via proto IR for field names and type mapping.
-				// Build a variable map from the protovalidate variables and any
-				// comprehension iteration variables.
 				var isListOrMapReceiver bool
-				vars := exprInfo.celVariableIRTypes()
-				maps.Copy(vars, iterVarTypes)
-				if len(vars) > 0 {
-					irType, isCollection := celResolveExprType(receiverExpr, vars)
-					if !irType.IsZero() {
-						// For a direct protovalidate variable receiver, use its member's
-						// cardinality: vars holds element types, so it is not in vars.
-						if _, member := exprInfo.celVariable(receiverExpr); !member.IsZero() && (member.IsMap() || member.IsRepeated()) {
-							if member.IsMap() {
-								if receiverCELType == nil {
-									receiverCELType = celMapEntryToCELType(irType)
-								}
-								irType = ir.Type{}
-								isListOrMapReceiver = true
-							} else {
-								if receiverCELType == nil {
-									receiverCELType = types.NewListType(celProtoTypeToExprType(irType))
-								}
-								irType = ir.Type{}
-								isListOrMapReceiver = true
-							}
-						} else if isCollection {
-							// Path through a repeated or map field (e.g., "this.items."):
-							// offer collection methods rather than element field names.
-							if receiverCELType == nil {
-								if irType.IsMessage() && irType.IsMapEntry() {
-									receiverCELType = celMapEntryToCELType(irType)
-								} else {
-									receiverCELType = types.NewListType(celProtoTypeToExprType(irType))
-								}
-							}
-							irType = ir.Type{}
-							isListOrMapReceiver = true
+				irType, isCollection := celResolveExprType(receiverExpr, vars)
+				if !irType.IsZero() {
+					// A direct protovalidate variable receiver has its member's
+					// cardinality, which vars, holding element types, does not.
+					if _, member := exprInfo.celVariable(receiverExpr); member.IsMap() || member.IsRepeated() {
+						if receiverCELType == nil {
+							receiverCELType = celMemberType(irType, member)
 						}
-						if !irType.IsZero() {
-							if receiverCELType == nil {
-								receiverCELType = celProtoTypeToExprType(irType)
+						irType = ir.Type{}
+						isListOrMapReceiver = true
+					} else if isCollection {
+						// Path through a repeated or map field (e.g., "this.items."):
+						// offer collection methods rather than element field names.
+						if receiverCELType == nil {
+							if irType.IsMessage() && irType.IsMapEntry() {
+								receiverCELType = celMapEntryToCELType(irType)
+							} else {
+								receiverCELType = types.NewListType(celProtoTypeToExprType(irType))
 							}
-							if irType.IsMessage() {
-								items = append(items, celProtoFieldCompletionItems(irType)...)
-							}
+						}
+						irType = ir.Type{}
+						isListOrMapReceiver = true
+					}
+					if !irType.IsZero() {
+						if receiverCELType == nil {
+							receiverCELType = celProtoTypeToExprType(irType)
+						}
+						if irType.IsMessage() {
+							items = append(items, celProtoFieldCompletionItems(irType)...)
 						}
 					}
 				}

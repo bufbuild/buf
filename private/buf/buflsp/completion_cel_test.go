@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 func TestCELCompletion(t *testing.T) {
@@ -36,7 +37,8 @@ func TestCELCompletion(t *testing.T) {
 	// options, so they live in a separate editions file.
 	extendProtoPath, err := filepath.Abs("testdata/completion/cel_completion_extend.proto")
 	require.NoError(t, err)
-	extendJSONConn, extendURI := setupLSPServer(t, extendProtoPath)
+	extendURI := uri.File(extendProtoPath)
+	openFileFromDisk(ctx, t, clientJSONConn, extendURI)
 
 	// File contents (0-indexed lines):
 	//  26:  `    expression: "this."`                                              (dot context; also used for expression-start)
@@ -640,15 +642,15 @@ func TestCELCompletion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			conn, uri := clientJSONConn, testURI
+			docURI := testURI
 			if tt.extend {
-				conn, uri = extendJSONConn, extendURI
+				docURI = extendURI
 			}
 			var completionList *protocol.CompletionList
-			_, err := conn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
+			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentCompletion, protocol.CompletionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
-						URI: uri,
+						URI: docURI,
 					},
 					Position: protocol.Position{
 						Line:      tt.line,

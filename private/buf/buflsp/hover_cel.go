@@ -70,7 +70,7 @@ func getCELHover(
 			astForTypeInfo := parsedAST
 			var typeMap map[int64]*types.Type
 
-			if checkedAST, compileIssues := exprInfo.celEnv(file.celEnv(celEnv)).Compile(exprInfo.expression); compileIssues.Err() == nil {
+			if checkedAST, compileIssues := exprInfo.celEnv(file, celEnv).Compile(exprInfo.expression); compileIssues.Err() == nil {
 				astForTypeInfo = checkedAST
 				typeMap = checkedAST.NativeRep().TypeMap()
 			}
@@ -559,8 +559,7 @@ func formatCELHoverContent(info *celHoverInfo, celEnv *cel.Env) string {
 func celDocumentationLinks(kind celHoverKind, name string) string {
 	switch kind {
 	case celHoverKeyword:
-		switch name {
-		case "this", "rule", "rules", "now":
+		if _, ok := celVariableDetails[name]; ok {
 			return celProtovalidateLink(name)
 		}
 	case celHoverOperator:

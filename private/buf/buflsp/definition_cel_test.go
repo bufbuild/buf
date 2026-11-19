@@ -38,7 +38,8 @@ func TestCELDefinition(t *testing.T) {
 	// options, so they live in a separate editions file.
 	predefinedProtoPath, err := filepath.Abs("testdata/definition/cel_definition_predefined.proto")
 	require.NoError(t, err)
-	predefinedJSONConn, predefinedURI := setupLSPServer(t, predefinedProtoPath)
+	predefinedURI := uri.File(predefinedProtoPath)
+	openFileFromDisk(ctx, t, clientJSONConn, predefinedURI)
 	validateProtoPath, err := filepath.Abs("testdata/definition/vendor/protovalidate/buf/validate/validate.proto")
 	require.NoError(t, err)
 	validateURI := uri.File(validateProtoPath)
@@ -159,12 +160,12 @@ func TestCELDefinition(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			conn, docURI := clientJSONConn, testURI
+			docURI := testURI
 			if tt.predefined {
-				conn, docURI = predefinedJSONConn, predefinedURI
+				docURI = predefinedURI
 			}
 			var locations []protocol.Location
-			_, defErr := conn.Call(ctx, protocol.MethodTextDocumentDefinition, protocol.DefinitionParams{
+			_, defErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentDefinition, protocol.DefinitionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
 						URI: docURI,

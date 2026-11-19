@@ -301,8 +301,10 @@ func (f *file) RefreshIR(ctx context.Context) {
 	}
 
 	for i, file := range files {
+		if file.ir != results[i].Value {
+			file.celTypesEnv = nil
+		}
 		file.ir = results[i].Value
-		file.celTypesEnv = nil
 		if f != file {
 			// Update symbols for imports.
 			file.IndexSymbols(ctx)
