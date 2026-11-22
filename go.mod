@@ -15,7 +15,7 @@ require (
 	buf.build/go/protoyaml v0.8.0
 	buf.build/go/spdx v0.3.0
 	buf.build/go/standard v0.1.1-0.20260325175353-2b287e071df5
-	cel.dev/cel-go v0.33.2
+	cel.dev/cel-go v0.33.4
 	connectrpc.com/connect/v2 v2.0.2
 	connectrpc.com/grpcreflect/v2 v2.0.0
 	connectrpc.com/otelconnect v0.11.0
