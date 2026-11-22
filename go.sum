@@ -18,8 +18,8 @@ buf.build/go/bufprivateusage v0.1.0 h1:SzCoCcmzS3zyXHEXHeSQhGI7OTkgtljoknLzsUz9G
 buf.build/go/bufprivateusage v0.1.0/go.mod h1:GlCCJ3VVF7EqqU0CoRmo1FzAwwaKymEWSr+ty69xU5w=
 buf.build/go/interrupt v1.1.0 h1:olBuhgv9Sav4/9pkSLoxgiOsZDgM5VhRhvRpn3DL0lE=
 buf.build/go/interrupt v1.1.0/go.mod h1:ql56nXPG1oHlvZa6efNC7SKAQ/tUjS6z0mhJl0gyeRM=
-buf.build/go/protovalidate v1.4.0 h1:UjLrYbt5VX7+TMOs2+pG5FhZhIG1mSfK4EIopbb4LcM=
-buf.build/go/protovalidate v1.4.0/go.mod h1:8vJfzNT6NIG2qm3uFsJDXMlRmG+bQJzbcIn1Aa0vPGs=
+buf.build/go/protovalidate v1.4.1 h1:G/AHf1EKrY9E0gXXxkPavEppwZe/7oAVq4rBbSWu0hQ=
+buf.build/go/protovalidate v1.4.1/go.mod h1:rwfPjgeCqK+DsDsBtLUNT1l5uoXl/0KFA632z3wlyCQ=
 buf.build/go/protoyaml v0.8.0 h1:n6q7ygZTZo4kLzKXsymkiLharUgHfd507Ymi4t5xhY8=
 buf.build/go/protoyaml v0.8.0/go.mod h1:3XRN/7BQCQNlhIgwzE46QTHLuUScH2d76lAFLCQEFWo=
 buf.build/go/spdx v0.3.0 h1:vVxy1W0x1n3sqhZmJ7VZ/UtzNwK3xm0QowGGtwric4Y=
