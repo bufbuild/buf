@@ -396,7 +396,11 @@ func (f *file) IndexSymbols(ctx context.Context) {
 	for _, sym := range resolved {
 		_, ok := sym.kind.(*referenceable)
 		if !ok {
-			continue
+			// Enum values too: their names are static symbols, but an
+			// option's value can refer to one.
+			if _, isStatic := sym.kind.(*static); !isStatic || sym.ir.Kind() != ir.SymbolKindEnumValue {
+				continue
+			}
 		}
 		f.referenceableSymbols[sym.ir.FullName()] = sym
 	}
@@ -925,6 +929,20 @@ func (f *file) messageToSymbolsHelper(msg ir.MessageValue, index int, parents []
 				},
 			}
 			symbols = append(symbols, sym)
+			// An enum value written as the option's value refers to its
+			// declaration, as a type name does.
+			if enumValue := element.AsEnum(); !enumValue.IsZero() {
+				if expr := element.AST(); !expr.IsZero() {
+					symbols = append(symbols, &symbol{
+						file: f,
+						span: expr.Span(),
+						kind: &reference{
+							def:      enumValue.AST(),
+							fullName: enumValue.FullName(),
+						},
+					})
+				}
+			}
 			if !element.AsMessage().IsZero() {
 				symbols = append(symbols, f.messageToSymbolsHelper(element.AsMessage(), index+1, symbols)...)
 			}

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Fix LSP go-to-definition for an enum value written as an option's value, such as
+  `option (my.level) = LEVEL_HIGH;` or `{level: LEVEL_HIGH}` in a message literal, which found
+  nothing.
 - Fix the `PROTOVALIDATE` lint rule to check constant arguments to `duration`, `timestamp`, and
   `matches` in CEL expressions, such as `duration('1d')` or an invalid regex, which otherwise only
   fail when the rules are evaluated.
