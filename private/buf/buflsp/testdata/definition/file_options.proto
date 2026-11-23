@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package definition.v1;
+
+import "options.proto";
+
+option (definition.v1.file_tag) = "f";
+
+message Tagged {
+  string x = 1 [(definition.v1.field_tag) = "g"];
+}

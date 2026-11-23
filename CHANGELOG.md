@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Fix LSP go-to-definition and references for custom file options, such as
+  `option (my.file_option) = "x";`: a file's own options were never indexed, unlike a message's or
+  a field's.
 - Fix the `PROTOVALIDATE` lint rule to check constant arguments to `duration`, `timestamp`, and
   `matches` in CEL expressions, such as `duration('1d')` or an invalid regex, which otherwise only
   fail when the rules are evaluated.

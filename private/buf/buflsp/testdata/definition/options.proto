@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package definition.v1;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FileOptions {
+  string file_tag = 50001;
+}
+
+extend google.protobuf.FieldOptions {
+  string field_tag = 50002;
+}
