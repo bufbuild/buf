@@ -11,15 +11,15 @@ require (
 	buf.build/go/app v0.3.0
 	buf.build/go/bufplugin v0.11.1
 	buf.build/go/bufprivateusage v0.1.0
-	buf.build/go/protovalidate v1.4.0
+	buf.build/go/protovalidate v1.4.1
 	buf.build/go/protoyaml v0.8.0
 	buf.build/go/spdx v0.3.0
 	buf.build/go/standard v0.1.1-0.20260325175353-2b287e071df5
-	cel.dev/cel-go v0.33.2
+	cel.dev/cel-go v0.33.4
 	connectrpc.com/connect/v2 v2.0.2
 	connectrpc.com/grpcreflect/v2 v2.0.0
 	connectrpc.com/otelconnect v0.11.0
-	github.com/bufbuild/protocompile v0.14.2-0.20261110142523-f8d0226c8d07
+	github.com/bufbuild/protocompile v0.14.2-0.20261119153707-fbe8bbfcfbbd
 	github.com/bufbuild/protoplugin v0.0.0-20260414125817-25d1d281b46b
 	github.com/cli/browser v1.3.0
 	github.com/gofrs/flock v0.13.2
@@ -28,7 +28,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jdx/go-netrc v1.0.0
 	github.com/jhump/protoreflect/v2 v2.0.1
-	github.com/klauspost/compress v1.20.4
+	github.com/klauspost/compress v1.20.5
 	github.com/klauspost/pgzip v1.3.0
 	github.com/mattn/go-colorable v0.1.16
 	github.com/moby/moby/api v1.57.0
@@ -46,7 +46,7 @@ require (
 	golang.org/x/mod v0.43.0
 	golang.org/x/sync v0.25.0
 	golang.org/x/term v0.48.0
-	golang.org/x/tools v0.52.1-0.20261106145633-d407941a339a
+	golang.org/x/tools v0.53.0
 	google.golang.org/protobuf v1.37.0-rc.1
 	mvdan.cc/xurls/v2 v2.6.0
 	pluginrpc.com/pluginrpc v0.6.0
@@ -76,23 +76,23 @@ require (
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
-	github.com/petermattis/goid v0.0.0-20261109124353-7cfa343ad0ab // indirect
+	github.com/petermattis/goid v0.0.0-20261120131106-3f141f74aebc // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sirupsen/logrus v1.10.2 // indirect
 	github.com/tidwall/btree v1.8.2 // indirect
-	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.2 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.72.0 // indirect
 	go.opentelemetry.io/otel v1.47.0 // indirect
 	go.opentelemetry.io/otel/log v1.47.0 // indirect
 	go.opentelemetry.io/otel/metric v1.47.0 // indirect
 	go.opentelemetry.io/otel/trace v1.47.0 // indirect
 	golang.org/x/crypto v0.59.0 // indirect
-	golang.org/x/exp v0.0.0-20261113113407-e3970619a1a4 // indirect
-	golang.org/x/net v0.62.0 // indirect
+	golang.org/x/exp v0.0.0-20261121134650-e1094eeca1b5 // indirect
+	golang.org/x/net v0.63.0 // indirect
 	golang.org/x/sys v0.50.0 // indirect
 	golang.org/x/text v0.44.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20261110000943-09e21b237f2c // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20261110000943-09e21b237f2c // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20261118221215-c8830f628b3f // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20261118221215-c8830f628b3f // indirect
 )
