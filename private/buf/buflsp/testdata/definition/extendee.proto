@@ -1,0 +1,23 @@
+syntax = "proto2";
+
+package definition.v1;
+
+import "google/protobuf/descriptor.proto";
+
+message Base {
+  extensions 100 to 199;
+}
+
+extend google.protobuf.FileOptions {
+  optional bool file_flag = 50001;
+}
+
+extend Base {
+  optional int32 tag = 100;
+}
+
+message Holder {
+  extend Base {
+    optional int32 nested_tag = 101;
+  }
+}
