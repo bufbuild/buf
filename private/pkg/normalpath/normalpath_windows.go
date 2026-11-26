@@ -103,11 +103,18 @@ func MapAllEqualOrContainingPathMap(m map[string]struct{}, path string, pathType
 	}
 
 	n := make(map[string]struct{})
-
-	for potentialMatch := range m {
-		if EqualsOrContainsPath(potentialMatch, path, pathType) {
-			n[potentialMatch] = struct{}{}
+	// Stop once every key has matched.
+	for curPath := path; len(n) < len(m); {
+		for potentialMatch := range m {
+			if strings.EqualFold(potentialMatch, curPath) {
+				n[potentialMatch] = struct{}{}
+			}
 		}
+		parent := Dir(curPath)
+		if parent == curPath {
+			break
+		}
+		curPath = parent
 	}
 	return n
 }

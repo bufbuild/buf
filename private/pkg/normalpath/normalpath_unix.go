@@ -117,7 +117,7 @@ func MapAllEqualOrContainingPathMap(m map[string]struct{}, path string, pathType
 		// also covers if path == separator.
 		n[pathRoot] = struct{}{}
 	}
-	// Each key can match one parent at most, so stop when all keys match.
+	// Stop once every key has matched.
 	for curPath := path; curPath != pathRoot && len(n) < len(m); curPath = Dir(curPath) {
 		if _, ok := m[curPath]; ok {
 			n[curPath] = struct{}{}
