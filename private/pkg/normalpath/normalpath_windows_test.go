@@ -381,6 +381,7 @@ func TestMapAllEqualOrContainingPaths(t *testing.T) {
 	testMapAllEqualOrContainingPaths(t, []string{"b"}, "b/a/c", "b")
 	testMapAllEqualOrContainingPaths(t, []string{"b", "."}, "b/b/c", "b", ".")
 	testMapAllEqualOrContainingPaths(t, []string{"b", "b/b", "."}, "b/b/c", "b", "b/b", ".")
+	testMapAllEqualOrContainingPaths(t, []string{"A", "a", "a/B"}, "a/b/c", "A", "a", "a/B", "b")
 }
 
 func testMapAllEqualOrContainingPaths(t *testing.T, expected []string, path string, keys ...string) {
