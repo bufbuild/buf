@@ -46,7 +46,7 @@ func TestCELDefinition(t *testing.T) {
 
 	tests := []struct {
 		name               string
-		predefined         bool // use cel_definition_predefined.proto
+		predefined         bool
 		line               uint32
 		character          uint32
 		expectedDefURI     uri.URI

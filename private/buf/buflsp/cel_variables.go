@@ -16,6 +16,7 @@ package buflsp
 
 import (
 	"log/slog"
+	"slices"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"buf.build/go/standard/xlog/xslog"
@@ -32,16 +33,8 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
-// celVariableNames are the protovalidate variables bound per expression. The
-// global "now" is declared by the base environment.
-//
-// https://protovalidate.com/reference/cel_extensions/#variables
 var celVariableNames = []string{"this", "rule", "rules"}
 
-// celVariable returns the IR element type of the protovalidate variable name
-// in the expression, and the member whose cardinality applies to it. Either
-// may be zero: message-level `this` has no member, and the `this` of a
-// predefined rule is not a proto type (see [celExpressionInfo.celEnv]).
 func (e celExpressionInfo) celVariable(name string) (ir.Type, ir.Member) {
 	if e.predefined {
 		switch name {
@@ -58,8 +51,6 @@ func (e celExpressionInfo) celVariable(name string) (ir.Type, ir.Member) {
 	return ir.Type{}, ir.Member{}
 }
 
-// celDeclares reports whether the expression declares the protovalidate
-// variable name: `rule` and `rules` are only declared in predefined rules.
 func (e celExpressionInfo) celDeclares(name string) bool {
 	switch name {
 	case "rule", "rules":
@@ -68,8 +59,6 @@ func (e celExpressionInfo) celDeclares(name string) bool {
 	return true
 }
 
-// celVariableIRTypes returns the IR element types of the protovalidate
-// variables in the expression that have one, keyed by name.
 func (e celExpressionInfo) celVariableIRTypes() map[string]ir.Type {
 	vars := map[string]ir.Type{}
 	for _, name := range celVariableNames {
@@ -80,9 +69,6 @@ func (e celExpressionInfo) celVariableIRTypes() map[string]ir.Type {
 	return vars
 }
 
-// celEnv returns base extended with the types of file (see [file.celEnv]) and
-// the protovalidate variables in the expression. Variables that cannot be
-// declared are left out.
 func (e celExpressionInfo) celEnv(file *file, base *cel.Env) *cel.Env {
 	base = file.celEnv(base)
 	var options []cel.EnvOption
@@ -106,8 +92,6 @@ func (e celExpressionInfo) celEnv(file *file, base *cel.Env) *cel.Env {
 	return env
 }
 
-// celMemberType returns the CEL type of a value with element type irType and
-// the cardinality of member, or nil if it has no CEL type.
 func celMemberType(irType ir.Type, member ir.Member) *types.Type {
 	switch {
 	case member.IsMap():
@@ -122,8 +106,6 @@ func celMemberType(irType ir.Type, member ir.Member) *types.Type {
 	}
 }
 
-// celStandardRulesTypes are the CEL types of `this` in a predefined rule,
-// keyed by the buf.validate.*Rules message the rule extends.
 var celStandardRulesTypes = map[ir.FullName]*types.Type{
 	celMessageName(&validate.AnyRules{}):       types.AnyType,
 	celMessageName(&validate.BoolRules{}):      types.BoolType,
@@ -149,11 +131,6 @@ var celStandardRulesTypes = map[ir.FullName]*types.Type{
 	celMessageName(&validate.FieldMaskRules{}): types.NewObjectType(string(celMessageName(&fieldmaskpb.FieldMask{}))),
 }
 
-// celEnv returns base extended with the message and enum types of the file
-// and its imports, so that expressions selecting their fields type-check.
-// It returns base if the file has no IR or its descriptors cannot be built.
-//
-// The environment is cached until the file's IR changes.
 func (f *file) celEnv(base *cel.Env) *cel.Env {
 	if f.celTypesEnv != nil {
 		return f.celTypesEnv
@@ -176,11 +153,6 @@ func (f *file) celEnv(base *cel.Env) *cel.Env {
 	return env
 }
 
-// celFileTypes returns the descriptors of irFile and its imports.
-//
-// References that do not resolve, as in a file with errors, become
-// placeholders rather than failing the file. The Well-Known Types are left
-// out of the descriptor set and resolve from [protoregistry.GlobalFiles].
 func celFileTypes(irFile *ir.File) (*protoregistry.Files, error) {
 	data, err := fdp.DescriptorSetBytes([]*ir.File{irFile}, fdp.ExcludeFiles(celWKTExcluder{}))
 	if err != nil {
@@ -196,9 +168,12 @@ func celFileTypes(irFile *ir.File) (*protoregistry.Files, error) {
 	resolver := celFileResolver{files}
 	options := protodesc.FileOptions{AllowUnresolvable: true}
 	for _, fileProto := range fds.GetFile() {
+		fileProto.Extension = celDeleteUntypedFields(fileProto.Extension)
+		for _, messageProto := range fileProto.MessageType {
+			celDeleteUntypedMessageFields(messageProto)
+		}
 		fileDescriptor, err := options.New(fileProto, resolver)
 		if err != nil {
-			// The types of a file that fails to build are left out.
 			continue
 		}
 		if err := files.RegisterFile(fileDescriptor); err != nil {
@@ -208,15 +183,29 @@ func celFileTypes(irFile *ir.File) (*protoregistry.Files, error) {
 	return files, nil
 }
 
-// celWKTExcluder excludes the Well-Known Types from descriptor sets.
+// celDeleteUntypedMessageFields deletes the fields and extensions of
+// messageProto and its nested messages that have no type, which fdp writes for
+// a field whose type does not resolve and protodesc rejects.
+func celDeleteUntypedMessageFields(messageProto *descriptorpb.DescriptorProto) {
+	messageProto.Field = celDeleteUntypedFields(messageProto.Field)
+	messageProto.Extension = celDeleteUntypedFields(messageProto.Extension)
+	for _, nestedProto := range messageProto.NestedType {
+		celDeleteUntypedMessageFields(nestedProto)
+	}
+}
+
+func celDeleteUntypedFields(fieldProtos []*descriptorpb.FieldDescriptorProto) []*descriptorpb.FieldDescriptorProto {
+	return slices.DeleteFunc(fieldProtos, func(fieldProto *descriptorpb.FieldDescriptorProto) bool {
+		return fieldProto.Type == nil && fieldProto.TypeName == nil
+	})
+}
+
 type celWKTExcluder struct{}
 
 func (celWKTExcluder) Exclude(file *ir.File) bool {
 	return datawkt.Exists(file.Path())
 }
 
-// celFileResolver resolves descriptors from files, then from
-// [protoregistry.GlobalFiles].
 type celFileResolver struct {
 	files *protoregistry.Files
 }

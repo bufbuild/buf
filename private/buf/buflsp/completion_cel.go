@@ -33,10 +33,8 @@ import (
 	"go.lsp.dev/protocol"
 )
 
-// celKeywords are CEL literal keywords and the protovalidate variables.
 var celKeywords = []string{"true", "false", "null", "this", "rule", "rules", "now"}
 
-// celVariableDetails are the completion details of the protovalidate variables.
 var celVariableDetails = map[string]string{
 	"this":  "protovalidate: current message or field",
 	"rule":  "protovalidate: value of the predefined rule",
@@ -90,11 +88,7 @@ func getCELCompletionItems(
 			// context layers: comprehension bodies first (to capture the iter var type),
 			// then has() macro arguments.
 			memberAccessContent := celContent
-			// vars holds the IR element types of the protovalidate variables and of
-			// the iteration variables bound so far.
 			vars := exprInfo.celVariableIRTypes()
-			// iterVars holds the names of the iteration variables, which shadow the
-			// protovalidate variables of the same name.
 			iterVars := map[string]bool{}
 
 			// Peel comprehension layers from outermost to innermost.
@@ -139,21 +133,17 @@ func getCELCompletionItems(
 				var items []protocol.CompletionItem
 
 				// Try CEL compile to determine receiver type (works for variables like "now").
-				// The environment does not declare iteration variables, so a receiver
-				// rooted at one would compile against a variable it shadows, if any.
 				var receiverCELType *types.Type
-				if iterVars[celRootIdent(receiverExpr)] {
-					// Resolved through the IR below.
-				} else if ast, iss := exprCELEnv.Compile(receiverExpr); iss.Err() == nil {
-					receiverCELType = ast.OutputType()
+				if !iterVars[celRootIdent(receiverExpr)] {
+					if ast, iss := exprCELEnv.Compile(receiverExpr); iss.Err() == nil {
+						receiverCELType = ast.OutputType()
+					}
 				}
 
 				// Resolve via proto IR for field names and type mapping.
 				var isListOrMapReceiver bool
 				irType, isCollection := celResolveExprType(receiverExpr, vars)
 				if !irType.IsZero() {
-					// A direct protovalidate variable receiver has its member's
-					// cardinality, which vars, holding element types, does not.
 					if _, member := exprInfo.celVariable(receiverExpr); !iterVars[receiverExpr] && (member.IsMap() || member.IsRepeated()) {
 						if receiverCELType == nil {
 							receiverCELType = celMemberType(irType, member)
@@ -183,6 +173,12 @@ func getCELCompletionItems(
 					}
 				}
 
+				if receiverCELType != nil {
+					switch receiverCELType.Kind() {
+					case types.ListKind, types.MapKind:
+						isListOrMapReceiver = true
+					}
+				}
 				items = append(items, celMemberCompletionItems(exprCELEnv, receiverCELType)...)
 				if isListOrMapReceiver {
 					items = append(items, celMemberMacroCompletionItems()...)
@@ -840,8 +836,6 @@ func celMacroCompletionItems(celEnv *cel.Env) []protocol.CompletionItem {
 // celKeywordCompletionItems returns completion items for CEL literal keywords and
 // the protovalidate variables declared in celEnv. If expectedType is non-nil, only
 // keywords whose compiled type is compatible with it are included.
-// "this" is also included when it has no CEL type and there is no expected type
-// constraint.
 func celKeywordCompletionItems(celEnv *cel.Env, expectedType *types.Type) []protocol.CompletionItem {
 	var items []protocol.CompletionItem
 	for _, kw := range celKeywords {

@@ -99,3 +99,19 @@ extend buf.validate.StringRules {
     expression: "rule.all(rule, rule."
   }];
 }
+
+// `this` in a predefined RepeatedRules or MapRules rule is the whole list or
+// map, so it completes the collection macros.
+extend buf.validate.RepeatedRules {
+  bool repeated_this = 80048957 [(buf.validate.predefined).cel = {
+    id: "repeated.this"
+    expression: "this."
+  }];
+}
+
+extend buf.validate.MapRules {
+  bool map_this = 80048958 [(buf.validate.predefined).cel = {
+    id: "map.this"
+    expression: "this."
+  }];
+}

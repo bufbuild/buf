@@ -42,7 +42,7 @@ func TestCELHover(t *testing.T) {
 
 	testCases := []struct {
 		name       string
-		predefined bool   // use cel_predefined.proto
+		predefined bool
 		line       uint32 // 0-indexed
 		char       uint32 // Character offset where the token starts
 		start      uint32 // Character the hover range starts at, if end is set
@@ -834,22 +834,18 @@ func TestCELHover(t *testing.T) {
 			expected:   "**Field**: `min_len`\n\n**Type**: `uint`\n\n**Proto Field**: `buf.validate.StringRules.min_len`\n\n**Field Number**: 2\n\n**Proto Type**: `uint64`\n\nencoded (hex): `10` (1 byte)",
 		},
 		{
-			// An expression that does not type-check lists every overload.
 			name:     "function: size unchecked",
 			line:     469,
 			char:     17,
 			expected: "`size`\n\ncompute the size of a list or map, the number of characters in a string,\nor the number of bytes in a sequence\n\n**Overloads**:\n- `size(bytes) -> int`\n- `bytes.size() -> int`\n- `size(list(<A>)) -> int`\n- `list(<A>).size() -> int`\n- `size(map(<A>, <B>)) -> int`\n- `map(<A>, <B>).size() -> int`\n- `size(string) -> int`\n- `string.size() -> int`\n\n[CEL by Example](https://celbyexample.com/strings/#size)",
 		},
 		{
-			// A comprehension variable named `rule` shadows the protovalidate variable.
 			name:     "variable: shadowed rule",
 			line:     461,
 			char:     32,
 			expected: "**Variable**: `rule`\n\nLoop variable from comprehension.\n\n**Type**: `int`",
 		},
 		{
-			// `rules.prefix` selects Word.prefix of the comprehension variable
-			// `rules`, not StringRules.prefix.
 			name:       "predefined: shadowed rules field",
 			predefined: true,
 			line:       25,
@@ -857,7 +853,6 @@ func TestCELHover(t *testing.T) {
 			expected:   "**Field**: `prefix`\n\n**Type**: `string`",
 		},
 		{
-			// `rule` is not declared in a field rule, so it is not the protovalidate variable.
 			name:       "predefined: undeclared rule",
 			predefined: true,
 			line:       33,
@@ -895,4 +890,25 @@ func TestCELHover(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestCELHoverUnresolvedType tests hover in a file with an unresolved field type.
+func TestCELHoverUnresolvedType(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+	testProtoPath, err := filepath.Abs("testdata/hover/cel_unresolved.proto")
+	require.NoError(t, err)
+	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
+
+	var hoverResult *protocol.Hover
+	_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, protocol.HoverParams{
+		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+			TextDocument: protocol.TextDocumentIdentifier{URI: testURI},
+			Position:     protocol.Position{Line: 10, Character: 22},
+		},
+	}, &hoverResult)
+	require.NoError(t, err)
+	require.NotNil(t, hoverResult)
+	assert.Contains(t, requireMarkupContent(t, hoverResult.Contents).Value, "**Type**: `string`")
 }

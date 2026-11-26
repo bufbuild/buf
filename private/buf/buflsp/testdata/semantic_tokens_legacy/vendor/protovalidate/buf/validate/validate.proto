@@ -1,0 +1,34 @@
+// A subset of buf/validate/validate.proto from before protovalidate renamed
+// *Constraints and Constraint to *Rules and Rule.
+syntax = "proto2";
+
+package buf.validate;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.MessageOptions {
+  optional MessageConstraints message = 1159;
+}
+
+extend google.protobuf.FieldOptions {
+  optional FieldConstraints field = 1159;
+  optional PredefinedConstraints predefined = 1160;
+}
+
+message Constraint {
+  optional string id = 1;
+  optional string message = 2;
+  optional string expression = 3;
+}
+
+message MessageConstraints {
+  repeated Constraint cel = 3;
+}
+
+message FieldConstraints {
+  repeated Constraint cel = 23;
+}
+
+message PredefinedConstraints {
+  repeated Constraint cel = 1;
+}

@@ -124,7 +124,7 @@ type celHoverInfo struct {
 	celType     *types.Type // from type checker
 	protoMember ir.Member   // resolved proto field
 	exprID      int64
-	overloadIDs []string // overloads a call resolved to, if the expression type-checks
+	overloadIDs []string
 }
 
 type celHoverKind int
@@ -267,7 +267,6 @@ func walkCELExprForHover(
 
 		// Determine the hover kind
 		var hoverKind celHoverKind
-		// A comprehension variable shadows a keyword variable of the same name.
 		if compVars[identName] {
 			hoverKind = celHoverVariable
 		} else if isCELKeyword(identName) && exprInfo.celDeclares(identName) {
@@ -406,7 +405,6 @@ func walkCELExprForHover(
 					end:    funcEnd,
 					exprID: expr.ID(),
 				}
-				// Add the result type, if the expression type-checks.
 				if typeMap != nil {
 					bestMatch.celType = typeMap[expr.ID()]
 				}
@@ -514,7 +512,6 @@ func formatCELHoverContent(info *celHoverInfo, celEnv *cel.Env) string {
 		result = getCELKeywordDocs(info.text)
 	case celHoverFunction:
 		result = getCELFunctionDocs(info.text, celEnv, info.overloadIDs)
-		// Add the inferred return type, unless the signatures already give it.
 		if info.celType != nil && !celOverloadsDeclareType(celEnv.Functions()[info.text], info.overloadIDs, info.celType) {
 			result += fmt.Sprintf("\n\n**Return type**: `%s`", getCELTypeString(info.celType))
 		}
@@ -690,15 +687,12 @@ func celProtovalidateLink(anchor string) string {
 }
 
 // resolveCELFieldAccess resolves a CEL SelectExpr to a proto field/member.
-// Handles expressions rooted at a protovalidate variable, like `this.fieldName`,
-// `this.address.city`, or `rules.min_len`, that is not shadowed by one of the
-// comprehension variables compVars.
+// Handles expressions like `this.fieldName` or `this.address.city`.
 func resolveCELFieldAccess(sel ast.SelectExpr, exprInfo celExpressionInfo, compVars map[string]bool) ir.Member {
 	if sel == nil {
 		return ir.Member{}
 	}
 
-	// The type of the root variable, resolved once the select chain is walked.
 	var currentType ir.Type
 
 	// Build the field path by walking up the select chain
@@ -718,7 +712,6 @@ func resolveCELFieldAccess(sel ast.SelectExpr, exprInfo celExpressionInfo, compV
 			currentSel = operand.AsSelect()
 			continue
 		}
-		// Non-select operand: must be a protovalidate variable to resolve.
 		if operand.Kind() != ast.IdentKind || compVars[operand.AsIdent()] {
 			return ir.Member{}
 		}
@@ -1020,8 +1013,6 @@ func getPrimitiveTypeForLiteral(expr ast.Expr) *types.Type {
 	}
 }
 
-// celFilterOverloadDocs keeps only the overloads of the function documented by
-// doc that overloadIDs names, if it names any of them.
 func celFilterOverloadDocs(doc *common.Doc, overloadIDs []string) {
 	if matched := slices.DeleteFunc(slices.Clone(doc.Children), func(overload *common.Doc) bool {
 		return !slices.Contains(overloadIDs, overload.Name)
@@ -1030,9 +1021,6 @@ func celFilterOverloadDocs(doc *common.Doc, overloadIDs []string) {
 	}
 }
 
-// celOverloadsDeclareType reports whether every overload of funcDecl that
-// overloadIDs names declares exactly resultType as its result, so that their
-// signatures already give it. A generic overload, such as `type(<A>)`, does not.
 func celOverloadsDeclareType(funcDecl *decls.FunctionDecl, overloadIDs []string, resultType *types.Type) bool {
 	var named bool
 	for _, overload := range funcDecl.OverloadDecls() {

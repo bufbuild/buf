@@ -75,10 +75,8 @@ func getCELDefinition(
 			case hoverInfo.kind == celHoverKeyword && exprInfo.predefined:
 				switch hoverInfo.text {
 				case "rule":
-					// The predefined rule extension.
 					fullName = exprInfo.irMember.FullName()
 				case "rules":
-					// The buf.validate.*Rules message the extension extends.
 					fullName = exprInfo.irMember.Container().FullName()
 				}
 			case hoverInfo.kind == celHoverKeyword && hoverInfo.text == "this":
