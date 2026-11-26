@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 func TestCELHover(t *testing.T) {
@@ -32,13 +33,21 @@ func TestCELHover(t *testing.T) {
 
 	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
 
+	// Predefined rules extend buf.validate.*Rules, which proto3 only allows for
+	// options, so they live in a separate editions file.
+	predefinedProtoPath, err := filepath.Abs("testdata/hover/cel_predefined.proto")
+	require.NoError(t, err)
+	predefinedURI := uri.File(predefinedProtoPath)
+	openFileFromDisk(ctx, t, clientJSONConn, predefinedURI)
+
 	testCases := []struct {
-		name     string
-		line     uint32 // 0-indexed
-		char     uint32 // Character offset where the token starts
-		start    uint32 // Character the hover range starts at, if end is set
-		end      uint32 // Character the hover range ends at; the range is unchecked if zero
-		expected string // Full expected hover content
+		name       string
+		predefined bool
+		line       uint32 // 0-indexed
+		char       uint32 // Character offset where the token starts
+		start      uint32 // Character the hover range starts at, if end is set
+		end        uint32 // Character the hover range ends at; the range is unchecked if zero
+		expected   string // Full expected hover content
 	}{
 		// Keywords
 		{
@@ -103,25 +112,25 @@ func TestCELHover(t *testing.T) {
 			name:     "operator: <",
 			line:     66,
 			char:     22,
-			expected: "**Operator**: `<`\n\ncompare two values and return true if the first value is\nless than the second\n\n**Overloads**:\n- `bool < bool -> bool`\n- `int < int -> bool`\n- `int < double -> bool`\n- `int < uint -> bool`\n- `uint < uint -> bool`\n- `uint < double -> bool`\n- `uint < int -> bool`\n- `double < double -> bool`\n- `double < int -> bool`\n- `double < uint -> bool`\n- `string < string -> bool`\n- `bytes < bytes -> bool`\n- `google.protobuf.Timestamp < google.protobuf.Timestamp -> bool`\n- `google.protobuf.Duration < google.protobuf.Duration -> bool`\n\n[CEL by Example](https://celbyexample.com/comparison/#ordering)",
+			expected: "**Operator**: `<`\n\ncompare two values and return true if the first value is\nless than the second\n\n**Overloads**:\n- `int < int -> bool`\n\n[CEL by Example](https://celbyexample.com/comparison/#ordering)",
 		},
 		{
 			name:     "operator: >",
 			line:     71,
 			char:     22,
-			expected: "**Operator**: `>`\n\ncompare two values and return true if the first value is\ngreater than the second\n\n**Overloads**:\n- `bool > bool -> bool`\n- `int > int -> bool`\n- `int > double -> bool`\n- `int > uint -> bool`\n- `uint > uint -> bool`\n- `uint > double -> bool`\n- `uint > int -> bool`\n- `double > double -> bool`\n- `double > int -> bool`\n- `double > uint -> bool`\n- `string > string -> bool`\n- `bytes > bytes -> bool`\n- `google.protobuf.Timestamp > google.protobuf.Timestamp -> bool`\n- `google.protobuf.Duration > google.protobuf.Duration -> bool`\n\n[CEL by Example](https://celbyexample.com/comparison/#ordering)",
+			expected: "**Operator**: `>`\n\ncompare two values and return true if the first value is\ngreater than the second\n\n**Overloads**:\n- `int > int -> bool`\n\n[CEL by Example](https://celbyexample.com/comparison/#ordering)",
 		},
 		{
 			name:     "operator: <=",
 			line:     76,
 			char:     22,
-			expected: "**Operator**: `<=`\n\ncompare two values and return true if the first value is\nless than or equal to the second\n\n**Overloads**:\n- `bool <= bool -> bool`\n- `int <= int -> bool`\n- `int <= double -> bool`\n- `int <= uint -> bool`\n- `uint <= uint -> bool`\n- `uint <= double -> bool`\n- `uint <= int -> bool`\n- `double <= double -> bool`\n- `double <= int -> bool`\n- `double <= uint -> bool`\n- `string <= string -> bool`\n- `bytes <= bytes -> bool`\n- `google.protobuf.Timestamp <= google.protobuf.Timestamp -> bool`\n- `google.protobuf.Duration <= google.protobuf.Duration -> bool`\n\n[CEL by Example](https://celbyexample.com/comparison/#ordering)",
+			expected: "**Operator**: `<=`\n\ncompare two values and return true if the first value is\nless than or equal to the second\n\n**Overloads**:\n- `int <= int -> bool`\n\n[CEL by Example](https://celbyexample.com/comparison/#ordering)",
 		},
 		{
 			name:     "operator: >=",
 			line:     81,
 			char:     22,
-			expected: "**Operator**: `>=`\n\ncompare two values and return true if the first value is\ngreater than or equal to the second\n\n**Overloads**:\n- `bool >= bool -> bool`\n- `int >= int -> bool`\n- `int >= double -> bool`\n- `int >= uint -> bool`\n- `uint >= uint -> bool`\n- `uint >= double -> bool`\n- `uint >= int -> bool`\n- `double >= double -> bool`\n- `double >= int -> bool`\n- `double >= uint -> bool`\n- `string >= string -> bool`\n- `bytes >= bytes -> bool`\n- `google.protobuf.Timestamp >= google.protobuf.Timestamp -> bool`\n- `google.protobuf.Duration >= google.protobuf.Duration -> bool`\n\n[CEL by Example](https://celbyexample.com/comparison/#ordering)",
+			expected: "**Operator**: `>=`\n\ncompare two values and return true if the first value is\ngreater than or equal to the second\n\n**Overloads**:\n- `int >= int -> bool`\n\n[CEL by Example](https://celbyexample.com/comparison/#ordering)",
 		},
 
 		// Arithmetic operators
@@ -129,31 +138,31 @@ func TestCELHover(t *testing.T) {
 			name:     "operator: +",
 			line:     87,
 			char:     22,
-			expected: "**Operator**: `+`\n\nadds two numeric values or concatenates two strings, bytes,\nor lists.\n\n**Overloads**:\n- `bytes + bytes -> bytes`\n- `double + double -> double`\n- `google.protobuf.Duration + google.protobuf.Duration -> google.protobuf.Duration`\n- `google.protobuf.Duration + google.protobuf.Timestamp -> google.protobuf.Timestamp`\n- `google.protobuf.Timestamp + google.protobuf.Duration -> google.protobuf.Timestamp`\n- `int + int -> int`\n- `list(<A>) + list(<A>) -> list(<A>)`\n- `string + string -> string`\n- `uint + uint -> uint`\n\n[CEL by Example](https://celbyexample.com/arithmetic/)",
+			expected: "**Operator**: `+`\n\nadds two numeric values or concatenates two strings, bytes,\nor lists.\n\n**Overloads**:\n- `int + int -> int`\n\n[CEL by Example](https://celbyexample.com/arithmetic/)",
 		},
 		{
 			name:     "operator: -",
 			line:     92,
 			char:     22,
-			expected: "**Operator**: `-`\n\nsubtract two numbers, or two time-related values\n\n**Overloads**:\n- `double - double -> double`\n- `google.protobuf.Duration - google.protobuf.Duration -> google.protobuf.Duration`\n- `int - int -> int`\n- `google.protobuf.Timestamp - google.protobuf.Duration -> google.protobuf.Timestamp`\n- `google.protobuf.Timestamp - google.protobuf.Timestamp -> google.protobuf.Duration`\n- `uint - uint -> uint`\n\n[CEL by Example](https://celbyexample.com/arithmetic/)",
+			expected: "**Operator**: `-`\n\nsubtract two numbers, or two time-related values\n\n**Overloads**:\n- `int - int -> int`\n\n[CEL by Example](https://celbyexample.com/arithmetic/)",
 		},
 		{
 			name:     "operator: *",
 			line:     97,
 			char:     22,
-			expected: "**Operator**: `*`\n\nmultiply two numbers\n\n**Overloads**:\n- `double * double -> double`\n- `int * int -> int`\n- `uint * uint -> uint`\n\n[CEL by Example](https://celbyexample.com/arithmetic/)",
+			expected: "**Operator**: `*`\n\nmultiply two numbers\n\n**Overloads**:\n- `int * int -> int`\n\n[CEL by Example](https://celbyexample.com/arithmetic/)",
 		},
 		{
 			name:     "operator: /",
 			line:     102,
 			char:     22,
-			expected: "**Operator**: `/`\n\ndivide two numbers\n\n**Overloads**:\n- `double / double -> double`\n- `int / int -> int`\n- `uint / uint -> uint`\n\n[CEL by Example](https://celbyexample.com/arithmetic/)",
+			expected: "**Operator**: `/`\n\ndivide two numbers\n\n**Overloads**:\n- `int / int -> int`\n\n[CEL by Example](https://celbyexample.com/arithmetic/)",
 		},
 		{
 			name:     "operator: %",
 			line:     107,
 			char:     22,
-			expected: "**Operator**: `%`\n\ncompute the modulus of one integer into another\n\n**Overloads**:\n- `int % int -> int`\n- `uint % uint -> uint`\n\n[CEL by Example](https://celbyexample.com/arithmetic/)",
+			expected: "**Operator**: `%`\n\ncompute the modulus of one integer into another\n\n**Overloads**:\n- `int % int -> int`\n\n[CEL by Example](https://celbyexample.com/arithmetic/)",
 		},
 
 		// String functions (upstream docs)
@@ -161,25 +170,25 @@ func TestCELHover(t *testing.T) {
 			name:     "function: contains",
 			line:     113,
 			char:     23,
-			expected: "`contains`\n\ntest whether a string contains a substring\n\n**Overloads**:\n- `string.contains(string) -> bool`\n- `bytes.contains(bytes) -> bool`\n\n[CEL by Example](https://celbyexample.com/strings/#substring-search)",
+			expected: "`contains`\n\ntest whether a string contains a substring\n\n**Overloads**:\n- `string.contains(string) -> bool`\n\n[CEL by Example](https://celbyexample.com/strings/#substring-search)",
 		},
 		{
 			name:     "function: startsWith",
 			line:     118,
 			char:     23,
-			expected: "`startsWith`\n\ntest whether a string starts with a substring prefix\n\n**Overloads**:\n- `string.startsWith(string) -> bool`\n- `bytes.startsWith(bytes) -> bool`\n\n[CEL by Example](https://celbyexample.com/strings/#substring-search)",
+			expected: "`startsWith`\n\ntest whether a string starts with a substring prefix\n\n**Overloads**:\n- `string.startsWith(string) -> bool`\n\n[CEL by Example](https://celbyexample.com/strings/#substring-search)",
 		},
 		{
 			name:     "function: endsWith",
 			line:     123,
 			char:     23,
-			expected: "`endsWith`\n\ntest whether a string ends with a substring suffix\n\n**Overloads**:\n- `string.endsWith(string) -> bool`\n- `bytes.endsWith(bytes) -> bool`\n\n[CEL by Example](https://celbyexample.com/strings/#substring-search)",
+			expected: "`endsWith`\n\ntest whether a string ends with a substring suffix\n\n**Overloads**:\n- `string.endsWith(string) -> bool`\n\n[CEL by Example](https://celbyexample.com/strings/#substring-search)",
 		},
 		{
 			name:     "function: matches",
 			line:     128,
 			char:     23,
-			expected: "`matches`\n\ntest whether a string matches an RE2 regular expression\n\n**Overloads**:\n- `matches(string, string) -> bool`\n- `string.matches(string) -> bool`\n\n[CEL by Example](https://celbyexample.com/strings/#regular-expressions)",
+			expected: "`matches`\n\ntest whether a string matches an RE2 regular expression\n\n**Overloads**:\n- `string.matches(string) -> bool`\n\n[CEL by Example](https://celbyexample.com/strings/#regular-expressions)",
 		},
 
 		// Collection functions (upstream docs)
@@ -187,13 +196,13 @@ func TestCELHover(t *testing.T) {
 			name:     "function: size",
 			line:     134,
 			char:     23,
-			expected: "`size`\n\ncompute the size of a list or map, the number of characters in a string,\nor the number of bytes in a sequence\n\n**Overloads**:\n- `size(bytes) -> int`\n- `bytes.size() -> int`\n- `size(list(<A>)) -> int`\n- `list(<A>).size() -> int`\n- `size(map(<A>, <B>)) -> int`\n- `map(<A>, <B>).size() -> int`\n- `size(string) -> int`\n- `string.size() -> int`\n\n[CEL by Example](https://celbyexample.com/strings/#size)",
+			expected: "`size`\n\ncompute the size of a list or map, the number of characters in a string,\nor the number of bytes in a sequence\n\n**Overloads**:\n- `list(<A>).size() -> int`\n\n[CEL by Example](https://celbyexample.com/strings/#size)",
 		},
 		{
 			name:     "operator: in",
 			line:     139,
 			char:     26,
-			expected: "**Operator**: `in`\n\ntest whether a value exists in a list, or a key exists in a map\n\n**Overloads**:\n- `<A> in list(<A>) -> bool`\n- `<A> in map(<A>, <B>) -> bool`\n\n[CEL by Example](https://celbyexample.com/collections/#membership-and-access)",
+			expected: "**Operator**: `in`\n\ntest whether a value exists in a list, or a key exists in a map\n\n**Overloads**:\n- `<A> in list(<A>) -> bool`\n\n[CEL by Example](https://celbyexample.com/collections/#membership-and-access)",
 		},
 
 		// Type conversion functions (upstream docs)
@@ -201,43 +210,43 @@ func TestCELHover(t *testing.T) {
 			name:     "function: int",
 			line:     145,
 			char:     17,
-			expected: "`int`\n\nconvert a value to an int\n\n**Overloads**:\n- `int(int) -> int`\n- `int(double) -> int`\n- `int(google.protobuf.Duration) -> int`\n- `int(string) -> int`\n- `int(google.protobuf.Timestamp) -> int`\n- `int(uint) -> int`\n\n[CEL by Example](https://celbyexample.com/type-conversions/#numeric-conversions)",
+			expected: "`int`\n\nconvert a value to an int\n\n**Overloads**:\n- `int(string) -> int`\n\n[CEL by Example](https://celbyexample.com/type-conversions/#numeric-conversions)",
 		},
 		{
 			name:     "function: uint",
 			line:     150,
 			char:     17,
-			expected: "`uint`\n\nconvert a value to a uint\n\n**Overloads**:\n- `uint(uint) -> uint`\n- `uint(double) -> uint`\n- `uint(int) -> uint`\n- `uint(string) -> uint`\n\n[CEL by Example](https://celbyexample.com/type-conversions/#numeric-conversions)",
+			expected: "`uint`\n\nconvert a value to a uint\n\n**Overloads**:\n- `uint(string) -> uint`\n\n[CEL by Example](https://celbyexample.com/type-conversions/#numeric-conversions)",
 		},
 		{
 			name:     "function: double",
 			line:     155,
 			char:     17,
-			expected: "`double`\n\nconvert a value to a double\n\n**Overloads**:\n- `double(double) -> double`\n- `double(int) -> double`\n- `double(string) -> double`\n- `double(uint) -> double`\n\n[CEL by Example](https://celbyexample.com/type-conversions/#numeric-conversions)",
+			expected: "`double`\n\nconvert a value to a double\n\n**Overloads**:\n- `double(int) -> double`\n\n[CEL by Example](https://celbyexample.com/type-conversions/#numeric-conversions)",
 		},
 		{
 			name:     "function: string",
 			line:     160,
 			char:     17,
-			expected: "`string`\n\nconvert a value to a string\n\n**Overloads**:\n- `string(string) -> string`\n- `string(bool) -> string`\n- `string(bytes) -> string`\n- `string(double) -> string`\n- `string(google.protobuf.Duration) -> string`\n- `string(int) -> string`\n- `string(google.protobuf.Timestamp) -> string`\n- `string(uint) -> string`\n\n[CEL by Example](https://celbyexample.com/type-conversions/#string-conversions)",
+			expected: "`string`\n\nconvert a value to a string\n\n**Overloads**:\n- `string(int) -> string`\n\n[CEL by Example](https://celbyexample.com/type-conversions/#string-conversions)",
 		},
 		{
 			name:     "function: bytes",
 			line:     165,
 			char:     17,
-			expected: "`bytes`\n\nconvert a value to bytes\n\n**Overloads**:\n- `bytes(bytes) -> bytes`\n- `bytes(string) -> bytes`\n\n[CEL by Example](https://celbyexample.com/type-conversions/#bytes-conversions)",
+			expected: "`bytes`\n\nconvert a value to bytes\n\n**Overloads**:\n- `bytes(string) -> bytes`\n\n[CEL by Example](https://celbyexample.com/type-conversions/#bytes-conversions)",
 		},
 		{
 			name:     "function: timestamp",
 			line:     170,
 			char:     17,
-			expected: "`timestamp`\n\nconvert a value to a google.protobuf.Timestamp\n\n**Overloads**:\n- `timestamp(google.protobuf.Timestamp) -> google.protobuf.Timestamp`\n- `timestamp(int) -> google.protobuf.Timestamp`\n- `timestamp(string) -> google.protobuf.Timestamp`\n\n[CEL by Example](https://celbyexample.com/type-conversions/#time-conversions)",
+			expected: "`timestamp`\n\nconvert a value to a google.protobuf.Timestamp\n\n**Overloads**:\n- `timestamp(string) -> google.protobuf.Timestamp`\n\n[CEL by Example](https://celbyexample.com/type-conversions/#time-conversions)",
 		},
 		{
 			name:     "function: duration",
 			line:     175,
 			char:     17,
-			expected: "`duration`\n\nconvert a value to a google.protobuf.Duration\n\n**Overloads**:\n- `duration(google.protobuf.Duration) -> google.protobuf.Duration`\n- `duration(string) -> google.protobuf.Duration`\n\n[CEL by Example](https://celbyexample.com/type-conversions/#time-conversions)",
+			expected: "`duration`\n\nconvert a value to a google.protobuf.Duration\n\n**Overloads**:\n- `duration(string) -> google.protobuf.Duration`\n\n[CEL by Example](https://celbyexample.com/type-conversions/#time-conversions)",
 		},
 		{
 			name:     "function: type",
@@ -257,43 +266,43 @@ func TestCELHover(t *testing.T) {
 			name:     "function: getFullYear",
 			line:     191,
 			char:     23,
-			expected: "`getFullYear`\n\nget the 0-based full year from a timestamp, UTC unless an IANA timezone is specified.\n\n**Overloads**:\n- `google.protobuf.Timestamp.getFullYear() -> int`\n- `google.protobuf.Timestamp.getFullYear(string) -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
+			expected: "`getFullYear`\n\nget the 0-based full year from a timestamp, UTC unless an IANA timezone is specified.\n\n**Overloads**:\n- `google.protobuf.Timestamp.getFullYear() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
 		},
 		{
 			name:     "function: getMonth",
 			line:     196,
 			char:     23,
-			expected: "`getMonth`\n\nget the 0-based month from a timestamp, UTC unless an IANA timezone is specified.\n\n**Overloads**:\n- `google.protobuf.Timestamp.getMonth() -> int`\n- `google.protobuf.Timestamp.getMonth(string) -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
+			expected: "`getMonth`\n\nget the 0-based month from a timestamp, UTC unless an IANA timezone is specified.\n\n**Overloads**:\n- `google.protobuf.Timestamp.getMonth() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
 		},
 		{
 			name:     "function: getDate",
 			line:     201,
 			char:     23,
-			expected: "`getDate`\n\nget the 1-based day of the month from a timestamp, UTC unless an IANA timezone is specified.\n\n**Overloads**:\n- `google.protobuf.Timestamp.getDate() -> int`\n- `google.protobuf.Timestamp.getDate(string) -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
+			expected: "`getDate`\n\nget the 1-based day of the month from a timestamp, UTC unless an IANA timezone is specified.\n\n**Overloads**:\n- `google.protobuf.Timestamp.getDate() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
 		},
 		{
 			name:     "function: getHours",
 			line:     206,
 			char:     23,
-			expected: "`getHours`\n\nget the hours portion from a timestamp, or convert a duration to hours\n\n**Overloads**:\n- `google.protobuf.Timestamp.getHours() -> int`\n- `google.protobuf.Timestamp.getHours(string) -> int`\n- `google.protobuf.Duration.getHours() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
+			expected: "`getHours`\n\nget the hours portion from a timestamp, or convert a duration to hours\n\n**Overloads**:\n- `google.protobuf.Timestamp.getHours() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
 		},
 		{
 			name:     "function: getMinutes",
 			line:     211,
 			char:     23,
-			expected: "`getMinutes`\n\nget the minutes portion from a timestamp, or convert a duration to minutes\n\n**Overloads**:\n- `google.protobuf.Timestamp.getMinutes() -> int`\n- `google.protobuf.Timestamp.getMinutes(string) -> int`\n- `google.protobuf.Duration.getMinutes() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
+			expected: "`getMinutes`\n\nget the minutes portion from a timestamp, or convert a duration to minutes\n\n**Overloads**:\n- `google.protobuf.Timestamp.getMinutes() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
 		},
 		{
 			name:     "function: getSeconds",
 			line:     216,
 			char:     23,
-			expected: "`getSeconds`\n\nget the seconds portion from a timestamp, or convert a duration to seconds\n\n**Overloads**:\n- `google.protobuf.Timestamp.getSeconds() -> int`\n- `google.protobuf.Timestamp.getSeconds(string) -> int`\n- `google.protobuf.Duration.getSeconds() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
+			expected: "`getSeconds`\n\nget the seconds portion from a timestamp, or convert a duration to seconds\n\n**Overloads**:\n- `google.protobuf.Timestamp.getSeconds() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
 		},
 		{
 			name:     "function: getDayOfWeek",
 			line:     221,
 			char:     23,
-			expected: "`getDayOfWeek`\n\nget the 0-based day of the week from a timestamp, UTC unless an IANA timezone is specified.\n\n**Overloads**:\n- `google.protobuf.Timestamp.getDayOfWeek() -> int`\n- `google.protobuf.Timestamp.getDayOfWeek(string) -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
+			expected: "`getDayOfWeek`\n\nget the 0-based day of the week from a timestamp, UTC unless an IANA timezone is specified.\n\n**Overloads**:\n- `google.protobuf.Timestamp.getDayOfWeek() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
 		},
 
 		// Duration functions (upstream docs)
@@ -301,7 +310,7 @@ func TestCELHover(t *testing.T) {
 			name:     "function: duration.getSeconds",
 			line:     227,
 			char:     23,
-			expected: "`getSeconds`\n\nget the seconds portion from a timestamp, or convert a duration to seconds\n\n**Overloads**:\n- `google.protobuf.Timestamp.getSeconds() -> int`\n- `google.protobuf.Timestamp.getSeconds(string) -> int`\n- `google.protobuf.Duration.getSeconds() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
+			expected: "`getSeconds`\n\nget the seconds portion from a timestamp, or convert a duration to seconds\n\n**Overloads**:\n- `google.protobuf.Duration.getSeconds() -> int`\n\n[CEL by Example](https://celbyexample.com/time/#timestamp-components)",
 		},
 
 		// Macros (upstream docs with examples)
@@ -359,13 +368,13 @@ func TestCELHover(t *testing.T) {
 			name:     "function: isIp",
 			line:     274,
 			char:     22, // Position of "isIp" in "this.isIp()"
-			expected: "`isIp`\n\n**Overloads**:\n- `string.isIp() -> bool`\n- `string.isIp(int) -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isip)",
+			expected: "`isIp`\n\n**Overloads**:\n- `string.isIp() -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isip)",
 		},
 		{
 			name:     "function: isIpPrefix",
 			line:     279,
 			char:     22, // Position of "isIpPrefix" in "this.isIpPrefix()"
-			expected: "`isIpPrefix`\n\n**Overloads**:\n- `string.isIpPrefix() -> bool`\n- `string.isIpPrefix(int) -> bool`\n- `string.isIpPrefix(bool) -> bool`\n- `string.isIpPrefix(int, bool) -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isipprefix)",
+			expected: "`isIpPrefix`\n\n**Overloads**:\n- `string.isIpPrefix() -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isipprefix)",
 		},
 		{
 			name:     "function: isUri",
@@ -391,7 +400,7 @@ func TestCELHover(t *testing.T) {
 			name:     "field: city",
 			line:     300,
 			char:     23,
-			expected: "**Field**: `city`\n\n**Proto Field**: `test.cel.v1.Address.city`\n\n**Field Number**: 1\n\n**Proto Type**: `string`\n\nencoded (hex): `0A` (1 byte)",
+			expected: "**Field**: `city`\n\n**Type**: `string`\n\n**Proto Field**: `test.cel.v1.Address.city`\n\n**Field Number**: 1\n\n**Proto Type**: `string`\n\nencoded (hex): `0A` (1 byte)",
 		},
 
 		// Literals
@@ -425,7 +434,7 @@ func TestCELHover(t *testing.T) {
 			name:     "variable: item",
 			line:     327,
 			char:     32,
-			expected: "**Variable**: `item`\n\nLoop variable from comprehension.",
+			expected: "**Variable**: `item`\n\nLoop variable from comprehension.\n\n**Type**: `int`",
 		},
 
 		// Ternary operator
@@ -585,7 +594,7 @@ func TestCELHover(t *testing.T) {
 			name:     "function: isInf",
 			line:     383,
 			char:     22,
-			expected: "`isInf`\n\n**Overloads**:\n- `double.isInf() -> bool`\n- `double.isInf(int) -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isinf)",
+			expected: "`isInf`\n\n**Overloads**:\n- `double.isInf() -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#isinf)",
 		},
 
 		// Protovalidate list extension function
@@ -595,7 +604,7 @@ func TestCELHover(t *testing.T) {
 			name:     "function: unique",
 			line:     389,
 			char:     22,
-			expected: "`unique`\n\n**Overloads**:\n- `list(bool).unique() -> bool`\n- `list(int).unique() -> bool`\n- `list(uint).unique() -> bool`\n- `list(double).unique() -> bool`\n- `list(string).unique() -> bool`\n- `list(bytes).unique() -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#unique)",
+			expected: "`unique`\n\n**Overloads**:\n- `list(double).unique() -> bool`\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#unique)",
 		},
 
 		// Message-level CEL rules
@@ -617,7 +626,7 @@ func TestCELHover(t *testing.T) {
 			name:     "message-level: field access name",
 			line:     400,
 			char:     22, // `n` of `name` in `this.name != ''`
-			expected: "**Field**: `name`\n\n**Proto Field**: `test.cel.v1.CELMessageTest.name`\n\n**Field Number**: 1\n\n**Proto Type**: `string`\n\nencoded (hex): `0A` (1 byte)",
+			expected: "**Field**: `name`\n\n**Type**: `string`\n\n**Proto Field**: `test.cel.v1.CELMessageTest.name`\n\n**Field Number**: 1\n\n**Proto Type**: `string`\n\nencoded (hex): `0A` (1 byte)",
 		},
 		{
 			// `this.value` in the message-level expression; hovering over `value` should
@@ -625,7 +634,7 @@ func TestCELHover(t *testing.T) {
 			name:     "message-level: field access value",
 			line:     400,
 			char:     41, // `v` of `value` in `this.value > 0`
-			expected: "**Field**: `value`\n\n**Proto Field**: `test.cel.v1.CELMessageTest.value`\n\n**Field Number**: 2\n\n**Proto Type**: `int32`\n\nencoded (hex): `10` (1 byte)",
+			expected: "**Field**: `value`\n\n**Type**: `int`\n\n**Proto Field**: `test.cel.v1.CELMessageTest.value`\n\n**Field Number**: 2\n\n**Proto Type**: `int32`\n\nencoded (hex): `10` (1 byte)",
 		},
 
 		// String literals holding a byte that is not valid UTF-8, which the CEL
@@ -777,7 +786,7 @@ func TestCELHover(t *testing.T) {
 			char:     46,
 			start:    46,
 			end:      50,
-			expected: "`size`\n\ncompute the size of a list or map, the number of characters in a string,\nor the number of bytes in a sequence\n\n**Overloads**:\n- `size(bytes) -> int`\n- `bytes.size() -> int`\n- `size(list(<A>)) -> int`\n- `list(<A>).size() -> int`\n- `size(map(<A>, <B>)) -> int`\n- `map(<A>, <B>).size() -> int`\n- `size(string) -> int`\n- `string.size() -> int`\n\n[CEL by Example](https://celbyexample.com/strings/#size)",
+			expected: "`size`\n\ncompute the size of a list or map, the number of characters in a string,\nor the number of bytes in a sequence\n\n**Overloads**:\n- `string.size() -> int`\n\n[CEL by Example](https://celbyexample.com/strings/#size)",
 		},
 		{
 			name:     "escapes: before an invalid unicode escape",
@@ -803,16 +812,67 @@ func TestCELHover(t *testing.T) {
 			end:      41,
 			expected: "**Special variable**\n\nRefers to the current message or field being validated.\n\nIn field-level rules, `this` refers to the field value.\nIn message-level rules, `this` refers to the entire message.\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#this)",
 		},
+		{
+			name:       "predefined: rule",
+			predefined: true,
+			line:       11,
+			char:       39,
+			expected:   "**Special variable**\n\nOnly available within predefined rules.\n\nRefers to the value assigned to the predefined rule when used as a field within a Protobuf message.\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#rule)",
+		},
+		{
+			name:       "predefined: rules",
+			predefined: true,
+			line:       11,
+			char:       17,
+			expected:   "**Special variable**\n\nOnly available within predefined rules.\n\nAn instance of the underlying Protovalidate rule message being extended.\n\n[Protovalidate CEL Extensions](https://protovalidate.com/reference/cel_extensions/#rules)",
+		},
+		{
+			name:       "predefined: rules field",
+			predefined: true,
+			line:       11,
+			char:       23,
+			expected:   "**Field**: `min_len`\n\n**Type**: `uint`\n\n**Proto Field**: `buf.validate.StringRules.min_len`\n\n**Field Number**: 2\n\n**Proto Type**: `uint64`\n\nencoded (hex): `10` (1 byte)",
+		},
+		{
+			name:     "function: size unchecked",
+			line:     469,
+			char:     17,
+			expected: "`size`\n\ncompute the size of a list or map, the number of characters in a string,\nor the number of bytes in a sequence\n\n**Overloads**:\n- `size(bytes) -> int`\n- `bytes.size() -> int`\n- `size(list(<A>)) -> int`\n- `list(<A>).size() -> int`\n- `size(map(<A>, <B>)) -> int`\n- `map(<A>, <B>).size() -> int`\n- `size(string) -> int`\n- `string.size() -> int`\n\n[CEL by Example](https://celbyexample.com/strings/#size)",
+		},
+		{
+			name:     "variable: shadowed rule",
+			line:     461,
+			char:     32,
+			expected: "**Variable**: `rule`\n\nLoop variable from comprehension.\n\n**Type**: `int`",
+		},
+		{
+			name:       "predefined: shadowed rules field",
+			predefined: true,
+			line:       25,
+			char:       39,
+			expected:   "**Field**: `prefix`\n\n**Type**: `string`",
+		},
+		{
+			name:       "predefined: undeclared rule",
+			predefined: true,
+			line:       33,
+			char:       17,
+			expected:   "**Field**: `rule`",
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
+			docURI := testURI
+			if tc.predefined {
+				docURI = predefinedURI
+			}
 			var hoverResult *protocol.Hover
 			_, err := clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, protocol.HoverParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{URI: testURI},
+					TextDocument: protocol.TextDocumentIdentifier{URI: docURI},
 					Position:     protocol.Position{Line: tc.line, Character: tc.char},
 				},
 			}, &hoverResult)
@@ -830,4 +890,25 @@ func TestCELHover(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestCELHoverUnresolvedType tests hover in a file with an unresolved field type.
+func TestCELHoverUnresolvedType(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+	testProtoPath, err := filepath.Abs("testdata/hover/cel_unresolved.proto")
+	require.NoError(t, err)
+	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
+
+	var hoverResult *protocol.Hover
+	_, err = clientJSONConn.Call(ctx, protocol.MethodTextDocumentHover, protocol.HoverParams{
+		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+			TextDocument: protocol.TextDocumentIdentifier{URI: testURI},
+			Position:     protocol.Position{Line: 10, Character: 22},
+		},
+	}, &hoverResult)
+	require.NoError(t, err)
+	require.NotNil(t, hoverResult)
+	assert.Contains(t, requireMarkupContent(t, hoverResult.Contents).Value, "**Type**: `string`")
 }

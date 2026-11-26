@@ -454,3 +454,19 @@ message CELEscapesTest {
     expression: "this != '\uD800' && this != ''"
   }];
 }
+
+// A comprehension variable named like a protovalidate variable shadows it.
+message CELShadowedVariableTest {
+  repeated int32 values = 1 [(buf.validate.field).cel = {
+    id: "shadowed_variable.values"
+    expression: "this.all(rule, rule > 0)"
+  }];
+}
+
+// An expression that does not type-check lists every overload of a function.
+message CELUncheckedTest {
+  string name = 1 [(buf.validate.field).cel = {
+    id: "unchecked.name"
+    expression: "size(missing) > 0"
+  }];
+}

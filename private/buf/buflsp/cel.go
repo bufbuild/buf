@@ -34,15 +34,17 @@ func celIsIdentChar(c byte) bool {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'
 }
 
-// isCELKeyword returns true if the identifier is a CEL reserved keyword.
-// See https://github.com/google/cel-spec/blob/master/doc/langdef.md#syntax
-func isCELKeyword(name string) bool {
-	switch name {
-	case "true", "false", "null", // literals
-		"this", "now": // protovalidate special variables
-		return true
+func celRootIdent(expr string) string {
+	expr = strings.TrimSpace(expr)
+	end := 0
+	for end < len(expr) && celIsIdentChar(expr[end]) {
+		end++
 	}
-	return false
+	return expr[:end]
+}
+
+func isCELKeyword(name string) bool {
+	return slices.Contains(celKeywords, name)
 }
 
 // isCELMacroFunction returns true if the function name is a CEL macro (comprehension or special function).

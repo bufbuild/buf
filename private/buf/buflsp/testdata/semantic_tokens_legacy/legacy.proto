@@ -1,0 +1,16 @@
+edition = "2023";
+
+package test.v1;
+
+import "buf/validate/validate.proto";
+
+message Legacy {
+  option (buf.validate.message).cel = {
+    id: "legacy.message"
+    expression: "this.name != ''"
+  };
+  string name = 1 [(buf.validate.field).cel = {
+    id: "legacy.field"
+    expression: "this.size() > 0"
+  }];
+}

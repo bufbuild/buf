@@ -58,7 +58,7 @@ func getCELDefinition(
 			// Default to the parsed AST, but prefer the checked AST for full type information.
 			astForTypeInfo := parsedAST
 			var typeMap map[int64]*types.Type
-			if checkedAST, compileIssues := celEnv.Compile(exprInfo.expression); compileIssues.Err() == nil {
+			if checkedAST, compileIssues := exprInfo.celEnv(file, celEnv).Compile(exprInfo.expression); compileIssues.Err() == nil {
 				astForTypeInfo = checkedAST
 				typeMap = checkedAST.NativeRep().TypeMap()
 			}
@@ -72,6 +72,13 @@ func getCELDefinition(
 			// Determine what the token refers to and find the corresponding symbol.
 			var fullName ir.FullName
 			switch {
+			case hoverInfo.kind == celHoverKeyword && exprInfo.predefined:
+				switch hoverInfo.text {
+				case "rule":
+					fullName = exprInfo.irMember.FullName()
+				case "rules":
+					fullName = exprInfo.irMember.Container().FullName()
+				}
 			case hoverInfo.kind == celHoverKeyword && hoverInfo.text == "this":
 				if !exprInfo.irMember.IsZero() {
 					// Field-level CEL rule: `this` refers to the field being validated.

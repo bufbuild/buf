@@ -1,0 +1,15 @@
+edition = "2023";
+
+package test.cel.v1;
+
+import "buf/validate/validate.proto";
+
+// Unresolved has a field whose type does not resolve, as in a file being edited.
+message Unresolved {
+  option (buf.validate.message).cel = {
+    id: "unresolved"
+    expression: "this.name != ''"
+  };
+  string name = 1;
+  Missing missing = 2;
+}
