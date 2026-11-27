@@ -16,6 +16,7 @@ package buflsp_test
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/buflsp"
@@ -206,6 +207,98 @@ func TestDefinition(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestDefinitionExtendee checks that the message an extend block extends
+// resolves to its declaration, and that the message's references include
+// its extend blocks.
+func TestDefinitionExtendee(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+
+	testProtoPath, err := filepath.Abs("testdata/definition/extendee.proto")
+	require.NoError(t, err)
+
+	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
+
+	tests := []struct {
+		name            string
+		line            uint32
+		character       uint32
+		expectedDefURI  uri.URI // Empty for descriptor.proto, checked by its path.
+		expectedDefLine uint32
+	}{
+		{
+			name:            "definition_of_extendee",
+			line:            14, // Line with "extend Base {"
+			character:       7,  // On "Base"
+			expectedDefURI:  testURI,
+			expectedDefLine: 6, // message Base
+		},
+		{
+			name:            "definition_of_nested_extendee",
+			line:            19, // Line with "  extend Base {" in message Holder
+			character:       9,  // On "Base"
+			expectedDefURI:  testURI,
+			expectedDefLine: 6, // message Base
+		},
+		{
+			name:      "definition_of_options_extendee",
+			line:      10, // Line with "extend google.protobuf.FileOptions {"
+			character: 23, // On "FileOptions"
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			var locations []protocol.Location
+			_, defErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentDefinition, protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: testURI,
+					},
+					Position: protocol.Position{
+						Line:      tt.line,
+						Character: tt.character,
+					},
+				},
+			}, &locations)
+			require.NoError(t, defErr)
+			require.Len(t, locations, 1, "expected exactly one definition location")
+			if tt.expectedDefURI == "" {
+				assert.True(t, strings.HasSuffix(string(locations[0].URI), "google/protobuf/descriptor.proto"), locations[0].URI)
+				return
+			}
+			assert.Equal(t, tt.expectedDefURI, locations[0].URI)
+			assert.Equal(t, tt.expectedDefLine, locations[0].Range.Start.Line)
+		})
+	}
+
+	t.Run("references_include_extend_blocks", func(t *testing.T) {
+		t.Parallel()
+		var locations []protocol.Location
+		_, refErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentReferences, protocol.ReferenceParams{
+			TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+				TextDocument: protocol.TextDocumentIdentifier{
+					URI: testURI,
+				},
+				Position: protocol.Position{
+					Line:      6, // Line with "message Base {"
+					Character: 8, // On "Base"
+				},
+			},
+			Context: protocol.ReferenceContext{IncludeDeclaration: false},
+		}, &locations)
+		require.NoError(t, refErr)
+		var lines []uint32
+		for _, location := range locations {
+			assert.Equal(t, testURI, location.URI)
+			lines = append(lines, location.Range.Start.Line)
+		}
+		assert.ElementsMatch(t, []uint32{14, 19}, lines)
+	})
 }
 
 // TestDefinitionURLEncoding verifies that file paths with special characters

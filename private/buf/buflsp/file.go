@@ -469,6 +469,25 @@ func (f *file) indexSymbols() ([]*symbol, []*symbol) {
 		resolved = append(resolved, resolvedSyms...)
 		unresolved = append(unresolved, unresolvedSyms...)
 	}
+	// The message each extend block extends: no symbol spans it (an
+	// extension's symbol spans its own name), so it refers to its
+	// declaration here, as a field's type does. One per block, nested
+	// blocks included.
+	for extend := range seq.Values(f.ir.AllExtends()) {
+		extendee := extend.Extendee()
+		span := extend.AST().AsExtend().Extendee.Span()
+		if extendee.IsZero() || span.IsZero() {
+			continue
+		}
+		unresolved = append(unresolved, &symbol{
+			file: f,
+			span: span,
+			kind: &reference{
+				def:      extendee.AST(),
+				fullName: extendee.FullName(),
+			},
+		})
+	}
 	return resolved, unresolved
 }
 

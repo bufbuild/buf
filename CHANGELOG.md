@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Fix LSP go-to-definition and references for the message an `extend` block extends, such as
+  `google.protobuf.FieldOptions` in `extend google.protobuf.FieldOptions { ... }`, which found
+  nothing.
 - Fix the `PROTOVALIDATE` lint rule to check constant arguments to `duration`, `timestamp`, and
   `matches` in CEL expressions, such as `duration('1d')` or an invalid regex, which otherwise only
   fail when the rules are evaluated.
