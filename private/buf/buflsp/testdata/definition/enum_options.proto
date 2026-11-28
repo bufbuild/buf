@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package definition.v1;
+
+import "google/protobuf/descriptor.proto";
+
+enum Level {
+  LEVEL_UNSPECIFIED = 0;
+  LEVEL_HIGH = 1;
+}
+
+message Meta {
+  Level level = 1;
+}
+
+extend google.protobuf.MessageOptions {
+  Level level = 50003;
+  Meta meta = 50004;
+}

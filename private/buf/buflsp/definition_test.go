@@ -208,6 +208,71 @@ func TestDefinition(t *testing.T) {
 	}
 }
 
+// TestDefinitionOptionEnumValue checks that an enum value written as an
+// option's value, directly or in a message literal, resolves to the enum
+// value's declaration.
+func TestDefinitionOptionEnumValue(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+
+	testProtoPath, err := filepath.Abs("testdata/definition/enum_option_values.proto")
+	require.NoError(t, err)
+	optionsProtoPath, err := filepath.Abs("testdata/definition/enum_options.proto")
+	require.NoError(t, err)
+
+	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
+	optionsURI := buflsp.FilePathToURI(optionsProtoPath)
+
+	tests := []struct {
+		name            string
+		line            uint32
+		character       uint32
+		expectedDefLine uint32
+	}{
+		{
+			name:            "definition_of_enum_value_as_option_value",
+			line:            7,  // Line with "option (definition.v1.level) = LEVEL_HIGH;"
+			character:       33, // On "LEVEL_HIGH"
+			expectedDefLine: 8,  // LEVEL_HIGH = 1;
+		},
+		{
+			name:            "definition_of_enum_value_in_message_literal",
+			line:            8,  // Line with "option (definition.v1.meta) = {level: LEVEL_HIGH};"
+			character:       40, // On "LEVEL_HIGH"
+			expectedDefLine: 8,  // LEVEL_HIGH = 1;
+		},
+		{
+			name:            "definition_of_option_name",
+			line:            7,  // Line with "option (definition.v1.level) = LEVEL_HIGH;"
+			character:       24, // On "level"
+			expectedDefLine: 16, // Level level = 50003;
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			var locations []protocol.Location
+			_, defErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentDefinition, protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: testURI,
+					},
+					Position: protocol.Position{
+						Line:      tt.line,
+						Character: tt.character,
+					},
+				},
+			}, &locations)
+			require.NoError(t, defErr)
+			require.Len(t, locations, 1, "expected exactly one definition location")
+			assert.Equal(t, optionsURI, locations[0].URI)
+			assert.Equal(t, tt.expectedDefLine, locations[0].Range.Start.Line)
+		})
+	}
+}
+
 // TestDefinitionURLEncoding verifies that file paths with special characters
 // like '@' are properly URL-encoded in the URI responses.
 func TestDefinitionURLEncoding(t *testing.T) {

@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package definition.v1;
+
+import "enum_options.proto";
+
+message Leveled {
+  option (definition.v1.level) = LEVEL_HIGH;
+  option (definition.v1.meta) = {level: LEVEL_HIGH};
+}
