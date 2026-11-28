@@ -208,6 +208,65 @@ func TestDefinition(t *testing.T) {
 	}
 }
 
+// TestDefinitionFileOption checks that a file's own options are indexed, as
+// a message's or a field's are: go-to-definition on a custom file option
+// reaches its extension's declaration.
+func TestDefinitionFileOption(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+
+	testProtoPath, err := filepath.Abs("testdata/definition/file_options.proto")
+	require.NoError(t, err)
+	optionsProtoPath, err := filepath.Abs("testdata/definition/options.proto")
+	require.NoError(t, err)
+
+	clientJSONConn, testURI := setupLSPServer(t, testProtoPath)
+	optionsURI := buflsp.FilePathToURI(optionsProtoPath)
+
+	tests := []struct {
+		name            string
+		line            uint32
+		character       uint32
+		expectedDefLine uint32
+	}{
+		{
+			name:            "definition_of_file_option",
+			line:            6,  // Line with "option (definition.v1.file_tag) = "f";"
+			character:       22, // On "file_tag"
+			expectedDefLine: 7,  // string file_tag = 50001;
+		},
+		{
+			name:            "definition_of_field_option",
+			line:            9,  // Line with "string x = 1 [(definition.v1.field_tag) = "g"];"
+			character:       31, // On "field_tag"
+			expectedDefLine: 11, // string field_tag = 50002;
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			var locations []protocol.Location
+			_, defErr := clientJSONConn.Call(ctx, protocol.MethodTextDocumentDefinition, protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: testURI,
+					},
+					Position: protocol.Position{
+						Line:      tt.line,
+						Character: tt.character,
+					},
+				},
+			}, &locations)
+			require.NoError(t, defErr)
+			require.Len(t, locations, 1, "expected exactly one definition location")
+			assert.Equal(t, optionsURI, locations[0].URI)
+			assert.Equal(t, tt.expectedDefLine, locations[0].Range.Start.Line)
+		})
+	}
+}
+
 // TestDefinitionURLEncoding verifies that file paths with special characters
 // like '@' are properly URL-encoded in the URI responses.
 func TestDefinitionURLEncoding(t *testing.T) {

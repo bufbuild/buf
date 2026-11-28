@@ -469,6 +469,9 @@ func (f *file) indexSymbols() ([]*symbol, []*symbol) {
 		resolved = append(resolved, resolvedSyms...)
 		unresolved = append(unresolved, unresolvedSyms...)
 	}
+	// The file's own options: the file is no symbol, so the loop above,
+	// which indexes each symbol's options, never reaches them.
+	unresolved = append(unresolved, f.messageToSymbols(f.ir.Options())...)
 	return resolved, unresolved
 }
 
